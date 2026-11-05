@@ -132,6 +132,12 @@ recorder enforces it.
 - `?load=<url>` opens a graph or session at startup; `&app=1` hides the console.
 - Clear autosave: DevTools → Application → IndexedDB → `guess`.
 
+## Gestures guide screenshots
+
+The in-app "Mouse and gestures" guide (`web/src/gestures.ts`) uses screenshots
+in `web/public/help/`. Regenerate them after UI changes with
+`npm run help-shots` (all) or `npm run help-shots -- ring edge` (some).
+
 ## Demo video
 
 `web/demo/` rebuilds the narrated demo after changes (see its README):

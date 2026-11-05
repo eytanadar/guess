@@ -53,6 +53,7 @@ v1 -> v2        v1 <- v2              # directed edges between nodes or sets
 v1 <-> v2       v1 - v2               # undirected edges
 v1 ? g.nodes                          # any edges between v1 and anything
 (dept == 'dept1') & (freq > 10)       # set intersection; | is union
+(freq > 100).nodes                    # the nodes those edges touch; (dept == 'dept3').edges: their edges
 for n in (dept == 'dept3'):           # sets are iterable
     n.labelvisible = true
 colorize(dept); resizeLinear(totaldegree, 5, 30)
@@ -63,6 +64,11 @@ gemLayout                             # commands without arguments need no ()
 See [API.md](API.md) for every command and field.
 
 ## Clicking and selecting in the graph
+
+The app explains these itself: **Help → Mouse and gestures** (or the "Mouse &
+gestures" tab of the Help panel, F1) has a card with a screenshot for every
+gesture below, and a tip appears the first time a gesture becomes available
+(e.g. after `colorize(dept)`, dragging into groups).
 
 | gesture | does |
 |---|---|

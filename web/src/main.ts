@@ -3,6 +3,7 @@ import { Console, groupTip, type Item } from "./console";
 import type { DragContext, FromWorker, Info, LegendRec, ToWorker } from "./protocol";
 import { Renderer, type DragBehaviour, type DragFrame, type Hit } from "./renderer";
 import { Dock } from "./dock";
+import { ask } from "./dialog";
 import { HelpPanel, type HelpIndex } from "./help";
 import { Palette, type PaletteItem } from "./palette";
 import { DataTable, type TableData } from "./table";
@@ -338,6 +339,7 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       $("#label-cull").setAttribute("aria-pressed", String(!!m.labels?.cull));
       savedStyles = m.styles ?? [];
       dragCtx = m.drag ?? {};
+      tipsForDragContext(dragCtx);
       stylePanel.refreshSaved();
       break;
     case "export":
@@ -539,7 +541,7 @@ function openMenu(items: Item[], x: number, y: number) {
     act("Show labels", runOn((t) => `${t}.labelvisible = true`));
     act("Hide labels", runOn((t) => `${t}.labelvisible = false`));
     act("Size 5 / 10 / 20 …", async () => {
-      const v = prompt("Node size", "15");
+      const v = await ask({ title: "Node size", label: "Size", value: "15", type: "number" });
       if (v && !isNaN(Number(v))) await runOn((t) => `${t}.size = ${Number(v)}`)();
     });
     act("Style: circle", runOn((t) => `${t}.style = 2`));
@@ -547,14 +549,14 @@ function openMenu(items: Item[], x: number, y: number) {
   }
   if (edges && !nodes) {
     act("Width…", async () => {
-      const v = prompt("Edge width", "3");
+      const v = await ask({ title: "Edge width", label: "Width", value: "3", type: "number" });
       if (v && !isNaN(Number(v))) await runOn((t) => `${t}.width = ${Number(v)}`)();
     });
   }
   act("Hide", runOn((t) => `${t}.visible = false`));
   act("Center on", runOn((t) => `center(${t})`));
   act("Assign to variable…", async () => {
-    const name = prompt("Variable name", "foo");
+    const name = await ask({ title: "Assign to a variable", note: `${items.length === 1 ? "This item" : `These ${items.length} items`} will be available in the console under this name.`, label: "Name", value: "foo", ok: "Assign" });
     if (!name) return;
     const res = await request<unknown>((id) => ({ type: "assign", id, name, items }));
     if (typeof res === "number") term.note(`${name} = ${res === 1 ? "1 item" : `${res} items`}`);
@@ -970,6 +972,53 @@ function dragBehaviour(id: number, alt: boolean): DragBehaviour | null {
   return null;
 }
 
+// ---- gesture guide and one-time tips -------------------------------------------------
+$("#btn-gestures").addEventListener("click", () => void openSide("help", "gestures"));
+const TIPS: Record<string, string> = {
+  "group-drop": "Tip: drag a node into another colour group to change its value.",
+  ring: "Tip: drag a node around the circle to reorder it; the others make room.",
+  scatter: "Tip: drag a node in the scatter plot to edit its two values.",
+  box: "Tip: shift-drag to box-select, Alt-drag to lasso, click a node to see its neighbours.",
+};
+let tipTimer = 0;
+function seenTips(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem("guess.tips") || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+/** Show a tip once per browser, linking to its card in the gestures guide. */
+function offerTip(id: string) {
+  const seen = seenTips();
+  if (seen.has(id) || appMode) return;
+  seen.add(id);
+  try {
+    localStorage.setItem("guess.tips", JSON.stringify([...seen]));
+  } catch {
+    /* storage unavailable */
+  }
+  const card = $("#tipcard");
+  card.querySelector(".tipcard-text")!.textContent = TIPS[id];
+  card.hidden = false;
+  (card.querySelector(".tipcard-show") as HTMLButtonElement).onclick = () => {
+    card.hidden = true;
+    void openSide("help", `gestures:${id}`);
+  };
+  clearTimeout(tipTimer);
+  tipTimer = window.setTimeout(() => (card.hidden = true), 14000);
+}
+$(".tipcard-close").addEventListener("click", () => ($("#tipcard").hidden = true));
+let lastDragKinds = "";
+function tipsForDragContext(ctx: DragContext) {
+  const kinds = [ctx.groups && "group-drop", ctx.ring && "ring", ctx.axes && "scatter"].filter(Boolean).join(",");
+  if (kinds === lastDragKinds) return;
+  lastDragKinds = kinds;
+  if (ctx.axes) offerTip("scatter");
+  else if (ctx.ring) offerTip("ring");
+  else if (ctx.groups) offerTip("group-drop");
+}
+
 // ---- presentation (slides) ------------------------------------------------------------
 let slideList: { note: string }[] = [];
 let slideIndex: number | null = null;
@@ -1018,12 +1067,12 @@ document.addEventListener("keydown", (ev) => {
 });
 
 // ---- getting data in: URL, pasted tables, NDEx, Wikidata ---------------------------------
-$("#open-url").addEventListener("click", () => {
-  const url = prompt("Graph URL (GDF, GEXF, GraphML, Pajek, DL, CSV or .guess)", "https://");
-  if (url && url !== "https://") void term.submit(`makeFromURL(${JSON.stringify(url)})`);
+$("#open-url").addEventListener("click", async () => {
+  const url = await ask({ title: "Open from URL", note: "A GDF, GEXF, GraphML, Pajek, DL or CSV file, or a .guess session. The server must allow cross-origin requests.", label: "URL", placeholder: "https://…", type: "url", ok: "Open" });
+  if (url) void term.submit(`makeFromURL(${JSON.stringify(url)})`);
 });
-$("#open-ndex").addEventListener("click", () => {
-  const id = prompt("NDEx network UUID (from www.ndexbio.org)", "");
+$("#open-ndex").addEventListener("click", async () => {
+  const id = await ask({ title: "Open from NDEx", note: "The UUID of a public network on www.ndexbio.org (it is in the network's address).", label: "UUID", placeholder: "e.g. 9c38ce6e-…", ok: "Open" });
   if (id) void term.submit(`makeFromNDEx(${JSON.stringify(id.trim())})`);
 });
 $("#paste-data").addEventListener("click", () => {
@@ -1400,6 +1449,7 @@ async function onReady() {
     showWelcome();
     await term.submit(`makeFromGDF("sample.gdf")`);
   }
+  window.setTimeout(() => offerTip("box"), 2500);
   term.focus();
 }
 

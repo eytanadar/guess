@@ -2,6 +2,7 @@
 // Examples insert into the working cell or run directly.
 import { classHighlighter, highlightCode } from "@lezer/highlight";
 import { pythonLanguage } from "@codemirror/lang-python";
+import { GESTURE_SECTIONS, type Gesture } from "./gestures";
 
 export interface HelpCommand { name: string; sig: string; doc: string; group: string }
 export interface HelpExample { group: string; title: string; code: string; tags: string }
@@ -54,13 +55,15 @@ export class HelpPanel {
   private search = el("input", "help-search") as HTMLInputElement;
   private body = el("div", "help-body");
   private current: string | null = null;
+  private tabs = el("div", "help-tabs");
 
   constructor(readonly root: HTMLElement, private host: HelpHost, private load: () => Promise<HelpIndex>) {
     root.classList.add("help");
     this.search.type = "search";
     this.search.placeholder = "Search commands and examples…";
     this.search.addEventListener("input", () => {
-      this.current = null;
+      // searching inside the gestures guide filters its cards
+      if (!this.current?.startsWith("gestures")) this.current = null;
       this.render();
     });
     this.search.addEventListener("keydown", (ev) => {
@@ -69,7 +72,20 @@ export class HelpPanel {
         first?.click();
       }
     });
-    root.append(this.search, this.body);
+    // two kinds of help: the language (commands, examples) and the mouse (gestures)
+    this.tabs.setAttribute("role", "tablist");
+    for (const [id, label] of [["commands", "Commands & examples"], ["gestures", "Mouse & gestures"]]) {
+      const b = el("button", "", label);
+      b.dataset.tab = id;
+      b.setAttribute("role", "tab");
+      b.onclick = () => {
+        this.current = id === "gestures" ? "gestures" : null;
+        this.search.value = "";
+        this.render();
+      };
+      this.tabs.append(b);
+    }
+    root.append(this.tabs, this.search, this.body);
   }
 
   async show(topic: string | null = null) {
@@ -86,15 +102,27 @@ export class HelpPanel {
   }
 
   private render() {
+    const gestures = !!this.current?.startsWith("gestures");
+    for (const b of this.tabs.querySelectorAll<HTMLElement>("button")) {
+      b.setAttribute("aria-selected", String((b.dataset.tab === "gestures") === gestures));
+    }
+    this.search.placeholder = gestures ? "Search gestures…" : "Search commands and examples…";
     const idx = this.index;
     this.body.replaceChildren();
     if (!idx) return;
+    if (this.current === "gestures" || this.current?.startsWith("gestures:")) return this.renderGestures(this.current.split(":")[1]);
     if (this.current) return this.renderCommand(this.current);
     const q = this.search.value.trim();
     if (q) return this.renderSearch(q);
     const intro = el("p", "help-intro");
     intro.innerHTML = "Search above, or browse. <kbd>Cmd/Ctrl+K</kbd> searches commands, examples, nodes and values from anywhere; <code>help(name)</code> in the console shows one command.";
-    this.body.append(intro);
+    const guide = el("button", "help-guide-link");
+    guide.innerHTML = "<strong>Mouse and gestures</strong><span>selecting, dragging with meaning, click tools, panels — with pictures</span>";
+    guide.onclick = () => {
+      this.current = "gestures";
+      this.render();
+    };
+    this.body.append(intro, guide);
     const ex = el("details", "help-group");
     ex.open = true;
     ex.append(el("summary", "", "Examples"));
@@ -143,6 +171,47 @@ export class HelpPanel {
       this.body.append(el("h4", "", "Examples"));
       for (const { e } of exs) this.body.append(this.example(e));
     }
+  }
+
+  /** The illustrated guide to direct manipulation; `focus` scrolls to one card. */
+  private renderGestures(focus?: string) {
+    this.body.append(el("p", "help-intro", "Everything you do with the mouse also appears as Gython in the console, so it can be read, undone (Cmd/Ctrl+Z) and run again."));
+    const q = this.search.value.trim().toLowerCase();
+    let target: HTMLElement | null = null;
+    for (const sec of GESTURE_SECTIONS) {
+      const items = sec.items.filter((g) => !q || `${g.title} ${g.how} ${g.what} ${g.when ?? ""}`.toLowerCase().includes(q));
+      if (!items.length) continue;
+      this.body.append(el("h4", "", sec.title));
+      for (const g of items) {
+        const card = this.gestureCard(g);
+        if (g.id === focus) {
+          card.classList.add("flash");
+          target = card;
+        }
+        this.body.append(card);
+      }
+    }
+    if (target) requestAnimationFrame(() => target!.scrollIntoView({ block: "start", behavior: "smooth" }));
+  }
+
+  private gestureCard(g: Gesture): HTMLElement {
+    const card = el("section", "gesture");
+    card.id = `gesture-${g.id}`;
+    card.append(el("div", "gesture-title", g.title));
+    if (g.when) card.append(el("div", "gesture-when", g.when));
+    if (g.img) {
+      const img = el("img", "gesture-img") as HTMLImageElement;
+      img.src = `help/${g.img}.png`;
+      img.alt = g.title;
+      img.loading = "lazy";
+      card.append(img);
+    }
+    const how = el("div", "gesture-how");
+    how.append(el("span", "gesture-label", "Do"), document.createTextNode(g.how));
+    const what = el("div", "gesture-what");
+    what.append(el("span", "gesture-label", "Then"), document.createTextNode(g.what));
+    card.append(how, what);
+    return card;
   }
 
   private renderCommand(name: string) {

@@ -126,6 +126,7 @@
           <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Help</button>
           <div class="menu-pop" role="menu" hidden>
             <button role="menuitemcheckbox" id="btn-help" aria-pressed="false" title="Searchable commands and examples">Help and examples<kbd>F1</kbd></button>
+            <button role="menuitem" id="btn-gestures" title="Selecting, dragging with meaning, click tools and panels, with pictures">Mouse and gestures</button>
             <button role="menuitem" id="btn-palette" title="Search commands, examples, nodes and values">Search everything…<kbd>⌘K</kbd></button>
             <button role="menuitem" data-run="history()">Commands run so far</button>
           </div>
@@ -163,6 +164,7 @@
             <div id="side-vars" class="sidebar-body" hidden></div>
           </aside>
           <div id="graph" class="graph"><div id="legends" class="legends"></div>
+            <div id="tipcard" class="tipcard" hidden><span class="tipcard-text"></span><button class="tipcard-show">Show me</button><button class="tipcard-close" aria-label="Dismiss">✕</button></div>
             <div id="present" class="present" hidden>
               <button id="slide-prev" title="Previous slide (←)">◀</button>
               <span id="slide-pos" class="slide-pos"></span>

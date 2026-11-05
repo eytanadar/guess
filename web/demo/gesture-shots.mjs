@@ -149,22 +149,22 @@ const SHOTS = {
     console.log("  output.png");
   },
   "group-drop": async () => {
-    await run("colorize(dept)\ncenter(dept == 'dept3')");
+    await run("colorize(dept)\ncenter()");
     const from = await nodeXY("v128"), to = await groupXY("v128");
-    await midDrag(from, [to[0] + 6, to[1] + 6], () => shot("group-drop", [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2], 620, 420));
+    await midDrag(from, [to[0] + 6, to[1] + 6], () => shotGraph("group-drop"));
   },
   ring: async () => {
-    await run("makeSimpleRandom(14, 18)\ncircleLayout()\ncolorize(totaldegree)\ng.nodes.size = 26\ng.nodes.labelvisible = true\ncenter()");
+    await run("makeSimpleRandom(14, 18)\ncircleLayout()\ncolorize(totaldegree)\ng.nodes.size = 64\ng.nodes.labelvisible = true\ncenter()");
     const from = await nodeXY("nd0"), to = await nodeXY("nd5");
     await midDrag(from, [to[0] + 10, to[1] + 10], () => shotGraph("ring"));
   },
   edge: async () => {
-    await run("makeSimpleRandom(10, 8)\ncircleLayout()\ng.nodes.size = 26\ng.nodes.labelvisible = true\ncenter()");
+    await run("makeSimpleRandom(10, 8)\ncircleLayout()\ng.nodes.size = 64\ng.nodes.labelvisible = true\ncenter()");
     const from = await nodeXY("nd1"), to = await nodeXY("nd6");
     await midDrag(from, [to[0] + 4, to[1] + 4], () => shotGraph("edge"), { alt: true });
   },
   scatter: async () => {
-    await run("makeSimpleRandom(12, 6)\naddNodeField('cost', DOUBLE, 0)\naddNodeField('value', DOUBLE, 0)\nfor n in g.nodes:\n    n.cost = (int(n.name[2:]) * 37) % 100\n    n.value = (int(n.name[2:]) * 23) % 50\nscatterLayout(cost, value)\ng.nodes.size = 20\ng.nodes.labelvisible = true\ncenter()");
+    await run("makeSimpleRandom(12, 6)\naddNodeField('cost', DOUBLE, 0)\naddNodeField('value', DOUBLE, 0)\nfor n in g.nodes:\n    n.cost = (int(n.name[2:]) * 37) % 100\n    n.value = (int(n.name[2:]) * 23) % 50\nscatterLayout(cost, value)\ng.nodes.size = 44\ng.nodes.labelvisible = true\ncenter()");
     const from = await nodeXY("nd3");
     const [cx, cy] = await graphCentre();
     await midDrag(from, [cx + 40, cy - 30], () => shotGraph("scatter"));

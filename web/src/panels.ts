@@ -23,6 +23,8 @@ export interface PanelHost {
   selectedNode(): string | null;
 }
 
+import { ask } from "./dialog";
+
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = "") => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -231,7 +233,7 @@ export class StylePanel {
     const actions = el("div", "pf-actions");
     const save = el("button", "", "Save as style…");
     save.onclick = async () => {
-      const name = prompt("Style name", "my style");
+      const name = await ask({ title: "Save as style", note: "The mappings listed here, saved under a name you can apply later (and saved with the session).", label: "Name", value: "my style", ok: "Save" });
       if (!name) return;
       await this.host.submit(`defineStyle(${JSON.stringify(name)}, [${this.rules.map((r) => JSON.stringify(r)).join(", ")}])`);
     };

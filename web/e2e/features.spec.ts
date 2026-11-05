@@ -399,3 +399,31 @@ test("declarative dragging: groups, ring, edges, scatter", async ({ page }) => {
   await expect(cells.last()).toContainText("True True");
   expect(errors).toEqual([]);
 });
+
+test("gestures guide, one-time tips and modal dialogs", async ({ page }) => {
+  const errors = await boot(page);
+  // the first-visit tip links to the guide
+  await expect(page.locator("#tipcard")).toBeVisible({ timeout: 8000 });
+  await page.locator(".tipcard-show").click();
+  await expect(page.locator("#gesture-box")).toHaveClass(/flash/);
+  await expect(page.locator(".help-tabs [data-tab=gestures]")).toHaveAttribute("aria-selected", "true");
+  await page.locator(".help-search").fill("circle");
+  await expect(page.locator(".gesture")).toHaveCount(1);
+  await expect(page.locator(".gesture-img").first()).toHaveJSProperty("complete", true);
+  await page.locator(".help-tabs [data-tab=commands]").click();
+  await expect(page.locator(".help-guide-link")).toBeVisible();
+  // a tip appears once when a drag gesture becomes available
+  await run(page, "colorize(dept)");
+  await expect(page.locator(".tipcard-text")).toContainText("another colour group");
+  // modal dialog instead of prompt()
+  await run(page, "center(v1)");
+  await page.waitForTimeout(700);
+  const box = (await page.locator("#graph canvas").boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: "right" });
+  await page.locator("#menu button", { hasText: "Assign to variable" }).click();
+  await expect(page.locator("dialog.ask-dialog")).toBeVisible();
+  await page.locator("dialog.ask-dialog input").fill("mine");
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".console-out .note").last()).toContainText("mine = 1 item");
+  expect(errors).toEqual([]);
+});
