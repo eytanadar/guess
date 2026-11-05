@@ -3,6 +3,10 @@ import { Console, groupTip, type Item } from "./console";
 import type { FromWorker, Info, LegendRec, ToWorker } from "./protocol";
 import { Renderer, type Hit } from "./renderer";
 import { Dock } from "./dock";
+import { HelpPanel, type HelpIndex } from "./help";
+import { Palette, type PaletteItem } from "./palette";
+import { DataTable, type TableData } from "./table";
+import { FilterPanel, StylePanel, pyLit, type FieldInfo, type PanelHost } from "./panels";
 import * as store from "./store";
 import sampleGdf from "../../guess-orig/sample.gdf?raw";
 
@@ -65,6 +69,7 @@ const renderer = new Renderer($("#graph"), {
 /** Tell Python about a selection made on the display (bound to `sel`). */
 function syncSelection(ids: number[]) {
   send({ type: "select", nodes: ids });
+  dataTable.setSelection(ids);
   status.textContent = ids.length ? `${ids.length} selected — sel in the console` : "";
 }
 
@@ -225,6 +230,7 @@ const term = new Console($("#console"), {
     if (interruptBuf) new Uint8Array(interruptBuf)[0] = 0;
     const ok = await request<boolean>((id) => ({ type: "run", id, code, cell }));
     scheduleAutosave();
+    afterRun();
     return ok;
   },
   completions: (text) => request((id) => ({ type: "completions", id, text })),
@@ -285,7 +291,13 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       term.text(m.text);
       break;
     case "error":
-      term.error(m.text);
+      term.error(m.text, m.summary, m.line);
+      break;
+    case "help":
+      void openSide("help", m.topic);
+      break;
+    case "table":
+      void openTable(m.kind, m.ids);
       break;
     case "center":
       renderer.center(m.nodes, m.edges);
@@ -294,6 +306,8 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       renderer.setOverlay(m);
       renderLegends(m.legends);
       $("#curved").setAttribute("aria-pressed", String(m.curvature > 0));
+      savedStyles = m.styles ?? [];
+      stylePanel.refreshSaved();
       break;
     case "export":
       exportView(m.format, m.name);
@@ -319,6 +333,7 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     case "select":
       renderer.setSelection(m.nodes);
+      dataTable.setSelection(m.nodes);
       status.textContent = m.nodes.length ? `${m.nodes.length} selected` : "";
       break;
     case "done":
@@ -722,6 +737,171 @@ function download(name: string, blob: Blob) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
+
+// ---- help, palette, data table, style and filter panels ------------------------------
+let savedStyles: string[] = [];
+let helpIndex: Promise<HelpIndex> | null = null;
+const loadHelp = () => (helpIndex ??= request<HelpIndex>((id) => ({ type: "query", id, what: "help" })));
+const loadFields = (kind: "n" | "e") => request<FieldInfo[]>((id) => ({ type: "query", id, what: "fields", kind }));
+
+const panelHost: PanelHost = {
+  fields: loadFields,
+  submit: (code) => term.submit(code),
+  styles: () => savedStyles,
+  selectedNode: () => {
+    const first = [...renderer.selection][0];
+    return first === undefined ? null : renderer.nodes.get(first)?.name ?? null;
+  },
+};
+
+const helpPanel = new HelpPanel($("#side-help"), {
+  insert: (code) => term.insert(code),
+  run: (code) => void term.submit(code),
+}, loadHelp);
+const stylePanel = new StylePanel($("#side-style"), panelHost);
+const filterPanel = new FilterPanel($("#side-filter"), panelHost);
+
+type Side = "help" | "style" | "filter";
+let side: Side | null = null;
+async function openSide(which: Side | null, topic: string | null = null) {
+  side = which;
+  $("#sidebar").hidden = which === null;
+  for (const s of ["help", "style", "filter"] as Side[]) {
+    $(`#side-${s}`).hidden = s !== which;
+    $(`#btn-${s}`).setAttribute("aria-pressed", String(s === which));
+  }
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-side]")) b.setAttribute("aria-selected", String(b.dataset.side === which));
+  if (which === "help") await helpPanel.show(topic);
+  else if (which === "style") await stylePanel.show();
+  else if (which === "filter") await filterPanel.show();
+}
+for (const s of ["help", "style", "filter"] as Side[]) {
+  $(`#btn-${s}`).addEventListener("click", () => void openSide(side === s ? null : s));
+}
+for (const b of document.querySelectorAll<HTMLButtonElement>("[data-side]")) b.addEventListener("click", () => void openSide(b.dataset.side as Side));
+$(".sidebar-close").addEventListener("click", () => void openSide(null));
+
+// data table
+const edgeExpr = (id: number) => `g.edge_by_id(${id})`;
+const dataTable = new DataTable($("#table-body"), {
+  load: (kind, ids) => request<TableData>((id) => ({ type: "query", id, what: "table", kind, ids })),
+  select: (kind, ids, add) => {
+    const nodes = new Set<number>(add ? renderer.selection : []);
+    for (const id of ids) {
+      if (kind === "n") {
+        if (add && nodes.has(id)) nodes.delete(id);
+        else nodes.add(id);
+      } else {
+        const e = renderer.edges.get(id);
+        if (e) nodes.add(e.s).add(e.t);
+      }
+    }
+    renderer.setSelection(nodes);
+    syncSelection([...renderer.selection]);
+  },
+  hover: (kind, id) => highlightItems(id === null ? null : [[kind, id]]),
+  center: (kind, id) => renderer.center(kind === "n" ? [id] : [], kind === "e" ? [id] : []),
+  edit: (kind, id, field, value, type) => {
+    const target = kind === "n" ? nodeExpr(id) : edgeExpr(id);
+    let lit: string;
+    const v = value.trim();
+    if (v === "") lit = "None";
+    else if (type === "BOOLEAN") lit = /^(true|1|yes|t)$/i.test(v) ? "true" : "false";
+    else if ((type === "DOUBLE" || type === "INTEGER") && !isNaN(Number(v))) lit = String(Number(v));
+    else lit = pyLit(value);
+    void term.submit(`${target}.${field} = ${lit}`);
+  },
+});
+dataTable.root.hidden = false;
+
+async function openTable(kind: "n" | "e" = "n", ids: number[] | null = null) {
+  $("#table-pane").hidden = false;
+  $("#btn-table").setAttribute("aria-pressed", "true");
+  dataTable.setSelection(renderer.selection);
+  await dataTable.show(kind, ids);
+}
+function closeTable() {
+  $("#table-pane").hidden = true;
+  $("#btn-table").setAttribute("aria-pressed", "false");
+}
+$("#btn-table").addEventListener("click", () => ($("#table-pane").hidden ? void openTable() : closeTable()));
+$(".table-close").addEventListener("click", closeTable);
+Object.defineProperty(dataTable, "visible", { get: () => !$("#table-pane").hidden });
+{
+  // drag the table's top edge to resize
+  const pane = $("#table-pane");
+  const KEY = "guess.tableHeight";
+  try {
+    const h = Number(localStorage.getItem(KEY));
+    if (h > 60) pane.style.height = `${h}px`;
+  } catch { /* storage unavailable */ }
+  const handle = $(".table-resize");
+  handle.addEventListener("pointerdown", (ev) => {
+    handle.setPointerCapture(ev.pointerId);
+    const y0 = ev.clientY, h0 = pane.getBoundingClientRect().height;
+    const move = (e: PointerEvent) => {
+      pane.style.height = `${Math.max(80, Math.min(window.innerHeight - 200, h0 - (e.clientY - y0)))}px`;
+    };
+    const up = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", up);
+      try { localStorage.setItem(KEY, String(Math.round(pane.getBoundingClientRect().height))); } catch { /* ignore */ }
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", up);
+  });
+}
+
+let refreshTimer = 0;
+/** After any command: refresh the open table (coalesced). */
+function afterRun() {
+  clearTimeout(refreshTimer);
+  refreshTimer = window.setTimeout(() => void dataTable.refresh(), 150);
+}
+
+// command palette
+const palette = new Palette(async () => {
+  const items: PaletteItem[] = [];
+  const idx = await loadHelp();
+  for (const c of idx.commands) {
+    const noArgs = /\(\)$/.test(c.sig);
+    items.push({ kind: "command", label: c.name, detail: c.doc.split("\n")[0] || c.sig, run: () => term.insert(noArgs ? `${c.name}()` : `${c.name}(`) });
+  }
+  for (const e of idx.examples) items.push({ kind: "example", label: e.title, detail: e.code.split("\n")[0] + (e.code.includes("\n") ? " …" : "") + ` ${e.tags}`, run: () => term.insert(e.code) });
+  for (const code of term.recent()) items.push({ kind: "recent", label: code.split("\n")[0], detail: code.includes("\n") ? "…" : "", run: () => term.insert(code) });
+  for (const b of document.querySelectorAll<HTMLButtonElement>(".toolbar button")) {
+    if (b.id === "btn-palette" || b.disabled || !b.textContent?.trim()) continue;
+    items.push({ kind: "action", label: b.textContent.trim(), detail: b.title, run: () => b.click() });
+  }
+  for (const n of renderer.nodes.values()) {
+    items.push({ kind: "node", label: n.name, detail: n.l && n.l !== n.name ? n.l : "", run: () => {
+      renderer.setSelection([n.i]);
+      syncSelection([n.i]);
+      renderer.center([n.i]);
+    } });
+  }
+  try {
+    for (const f of await loadFields("n")) {
+      if (f.numeric || !f.values || ["color", "strokecolor", "labelcolor", "label", "image"].includes(f.name)) continue;
+      for (const [v, count] of f.values.slice(0, 40)) {
+        if (v === null) continue;
+        items.push({ kind: "value", label: `${f.name} == ${String(v)}`, detail: `${count} node${count === 1 ? "" : "s"}`, run: () => void term.submit(`select(${f.name} == ${pyLit(v)})`) });
+      }
+    }
+  } catch { /* busy */ }
+  return items;
+});
+$("#btn-palette").addEventListener("click", () => void palette.open());
+document.addEventListener("keydown", (ev) => {
+  if ((ev.metaKey || ev.ctrlKey) && !ev.altKey && ev.key.toLowerCase() === "k") {
+    ev.preventDefault();
+    if (palette.isOpen) palette.close();
+    else void palette.open();
+  } else if (ev.key === "F1") {
+    ev.preventDefault();
+    void openSide(side === "help" ? null : "help");
+  }
+}, true);
 
 // ---- start --------------------------------------------------------------------------
 async function onReady() {

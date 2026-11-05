@@ -2,8 +2,8 @@
 // runs it) above which executed cells stack up with their output. Output spans
 // are linked to graph elements; an executed cell can be pulled back into the
 // working cell to edit and run again.
-import { EditorState, Prec, type Extension } from "@codemirror/state";
-import { EditorView, hoverTooltip, keymap, placeholder, drawSelection, tooltips, type Command } from "@codemirror/view";
+import { EditorState, Prec, StateField, type Extension } from "@codemirror/state";
+import { EditorView, hoverTooltip, keymap, placeholder, drawSelection, tooltips, showTooltip, type Command, type Tooltip } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { bracketMatching, indentOnInput, indentUnit, syntaxHighlighting, syntaxTree } from "@codemirror/language";
 import { python, pythonLanguage } from "@codemirror/lang-python";
@@ -51,6 +51,8 @@ export class Console {
   private cellCount = 0;
   /** where output goes while a cell runs (null: loose output, e.g. from timers) */
   private current: HTMLElement | null = null;
+  private currentCell: HTMLElement | null = null;
+  private currentCode = "";
   private hot: HTMLElement | null = null;
   private lastText: HTMLElement | null = null;
   docs: Record<string, string> = {};
@@ -165,6 +167,7 @@ export class Console {
         { key: "ArrowDown", run: down },
       ])),
       keymap.of([...closeBracketsKeymap, ...completionKeymap, ...historyKeymap, indentWithTab, ...defaultKeymap]),
+      this.signatureHelp(),
       hoverTooltip((view, pos) => {
         const w = view.state.wordAt(pos);
         if (!w) return null;
@@ -178,6 +181,46 @@ export class Console {
       }, { hoverTime: 400 }),
       EditorView.contentAttributes.of({ "aria-label": "GUESS code cell", autocapitalize: "off", spellcheck: "false" }),
     ];
+  }
+
+  /** Parameter hints: inside `name(`, show its signature with the current argument in bold. */
+  private signatureHelp(): Extension {
+    const compute = (state: EditorState): Tooltip | null => {
+      const sel = state.selection.main;
+      if (!sel.empty) return null;
+      const call = enclosingCall(state.sliceDoc(Math.max(0, sel.head - 3000), sel.head));
+      if (!call) return null;
+      const doc = this.docs[call.name];
+      if (!doc) return null;
+      const sig = doc.split("\n")[0];
+      const open = sel.head - call.offsetFromEnd;
+      return {
+        pos: open, above: true, strictSide: true, arrow: false,
+        create: () => ({ dom: sigDom(sig, call.name, call.arg, call.keyword) }),
+      };
+    };
+    return StateField.define<Tooltip | null>({
+      create: compute,
+      update: (old, tr) => (tr.docChanged || tr.selection ? compute(tr.state) : old),
+      provide: (f) => showTooltip.from(f),
+    });
+  }
+
+  /** Put code in the working cell: replace it if empty, else add on a new line. */
+  insert(code: string) {
+    const cur = this.code();
+    if (!cur.trim()) this.setCode(code);
+    else this.setCode(cur.replace(/\s+$/, "") + "\n" + code);
+    this.focus();
+  }
+
+  /** Most recent commands first (for the palette). */
+  recent(n = 30): string[] {
+    const out: string[] = [];
+    for (let i = this.history.length - 1; i >= 0 && out.length < n; i--) {
+      if (!out.includes(this.history[i])) out.push(this.history[i]);
+    }
+    return out;
   }
 
   private async complete(ctx: CompletionContext): Promise<CompletionResult | null> {
@@ -275,6 +318,8 @@ export class Console {
     const cell = this.newCell(code);
     this.remember(code);
     this.current = cell.out;
+    this.currentCell = cell.root;
+    this.currentCode = code;
     this.lastText = null;
     this.setBusy(true, cell);
     const t0 = performance.now();
@@ -284,6 +329,7 @@ export class Console {
       return ok;
     } finally {
       this.current = null;
+      this.currentCell = null;
       this.lastText = null;
       this.setBusy(false, cell);
       cell.root.classList.add(ok ? "ok" : "failed");
@@ -343,18 +389,24 @@ export class Console {
 
   /** Syntax-highlighted source; documented command names become hoverable. */
   private renderCode(code: string): DocumentFragment {
+    // one block per line, so an error can mark the line it happened on
     const frag = document.createDocumentFragment();
     const tree = pythonLanguage.parser.parse(code);
+    let line = el("span", "code-line");
     highlightCode(code, tree, classHighlighter, (text, classes) => {
       if (!classes) {
-        frag.append(text);
+        line.append(text);
         return;
       }
       const span = el("span", classes);
       if (text in this.docs && classes.includes("variableName")) span.classList.add("fn");
       span.textContent = text;
-      frag.append(span);
-    }, () => frag.append("\n"));
+      line.append(span);
+    }, () => {
+      frag.append(line);
+      line = el("span", "code-line");
+    });
+    frag.append(line);
     return frag;
   }
 
@@ -387,9 +439,33 @@ export class Console {
     this.append(this.lastText);
   }
 
-  error(t: string) {
+  /** An error: the one-line summary, with the full traceback behind "details";
+   *  `line` marks that line of the running cell. */
+  error(t: string, summary?: string, line?: number) {
     const d = el("div", "error");
-    d.textContent = t;
+    const short = summary && summary.trim() !== t.trim() ? summary : null;
+    const where = line && this.currentCell && this.currentCode.split("\n").length > 1 ? `Line ${line}: ` : "";
+    if (short) {
+      const s = el("span", "error-summary");
+      s.textContent = where + short;
+      const more = el("button", "error-more");
+      more.textContent = "details";
+      more.title = "Show the full traceback";
+      const full = el("div", "error-full");
+      full.textContent = t;
+      full.hidden = true;
+      more.onclick = () => {
+        full.hidden = !full.hidden;
+        more.textContent = full.hidden ? "details" : "hide";
+      };
+      d.append(s, " ", more, full);
+    } else {
+      d.textContent = where + t;
+    }
+    if (line && this.currentCell) {
+      const lines = this.currentCell.querySelectorAll(".cell-code .code-line");
+      lines[line - 1]?.classList.add("err-line");
+    }
     this.append(d);
   }
 
@@ -543,4 +619,72 @@ export function groupTip(t: HTMLElement): { title: string; lines: string[] } {
     m.dataset.k === "g" ? (m.dataset.a || "group") + ` (${collect(m).length})` : m.textContent || "");
   if (members.length > MAX_TIP_ITEMS) lines.push(`… ${members.length - MAX_TIP_ITEMS} more`);
   return { title, lines };
+}
+
+
+/** The innermost unclosed call before the cursor: its name, argument index and
+ *  any keyword being typed; offsetFromEnd is the distance back to its "(". */
+export function enclosingCall(text: string): { name: string; arg: number; keyword: string | null; offsetFromEnd: number } | null {
+  let depth = 0, arg = 0, quote = "";
+  for (let i = text.length - 1; i >= 0; i--) {
+    const ch = text[i];
+    if (quote) {
+      if (ch === quote && text[i - 1] !== "\\") quote = "";
+      continue;
+    }
+    if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === ")" || ch === "]" || ch === "}") depth++;
+    else if (ch === "[" || ch === "{") {
+      if (depth === 0) return null;
+      depth--;
+    } else if (ch === "(") {
+      if (depth > 0) {
+        depth--;
+        continue;
+      }
+      const m = /([A-Za-z_]\w*)\s*$/.exec(text.slice(0, i));
+      if (!m) return null;
+      const segment = text.slice(i + 1);
+      const kw = /(?:^|,)\s*([A-Za-z_]\w*)\s*=[^=]*$/.exec(segment);
+      return { name: m[1], arg, keyword: kw ? kw[1] : null, offsetFromEnd: text.length - i };
+    } else if (ch === "," && depth === 0) arg++;
+  }
+  return null;
+}
+
+function sigDom(sig: string, name: string, arg: number, keyword: string | null): HTMLElement {
+  const box = el("div", "cm-sig");
+  const open = sig.indexOf("(");
+  const inner = open >= 0 ? sig.slice(open + 1, sig.lastIndexOf(")")) : "";
+  const params: string[] = [];
+  let depth = 0, cur = "";
+  for (const ch of inner) {
+    if (ch === "," && depth === 0) {
+      params.push(cur.trim());
+      cur = "";
+      continue;
+    }
+    if ("([{".includes(ch)) depth++;
+    if (")]}".includes(ch)) depth--;
+    cur += ch;
+  }
+  if (cur.trim()) params.push(cur.trim());
+  let active = -1;
+  if (keyword) active = params.findIndex((p) => p.replace(/^\*+/, "").split(/[=:]/)[0].trim() === keyword);
+  if (active < 0) {
+    active = Math.min(arg, params.length - 1);
+    const star = params.findIndex((p) => p.startsWith("*") && !p.startsWith("**"));
+    if (star >= 0 && arg >= star) active = star;
+  }
+  const nameEl = el("span", "cm-sig-name");
+  nameEl.textContent = name;
+  box.append(nameEl, "(");
+  params.forEach((p, k) => {
+    if (k) box.append(", ");
+    const pe = el("span", k === active ? "cm-sig-param active" : "cm-sig-param");
+    pe.textContent = p;
+    box.append(pe);
+  });
+  box.append(")");
+  return box;
 }

@@ -51,7 +51,7 @@ class Session:
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
-        from . import algorithms, analysis, charts, gui, layouts, persist, ranges, states, visuals
+        from . import algorithms, analysis, charts, gui, layouts, persist, ranges, states, styles, visuals
         gui.install(self)
         charts.install(self)
         persist.install(self)
@@ -61,6 +61,7 @@ class Session:
         algorithms.install(self)
         analysis.install(self)
         visuals.install(self)
+        styles.install(self)
         states.install(self)
         ranges.install(self)
         self.pending_morph = None
@@ -217,10 +218,10 @@ class Session:
                 self.log_lines.append(source)
         except SyntaxError as e:
             ok = False
-            self.emit({"type": "error", "text": _format_syntax_error(e)})
+            self.emit(self._error_message(e, _format_syntax_error(e), filename))
         except BaseException as e:  # noqa: BLE001 - includes KeyboardInterrupt from interrupts
             ok = False
-            self.emit({"type": "error", "text": _format_exception(e)})
+            self.emit(self._error_message(e, _format_exception(e), filename))
         finally:
             sys.stdout, sys.stderr = old_out, old_err
             self._restore_system()
@@ -377,6 +378,85 @@ class Session:
                 return _MISSING
             obj = getattr(obj, p, _MISSING)
         return obj
+
+    def _error_message(self, e, text, filename="<console>"):
+        """An error for the console: the full text, a one-line summary (with a
+        "did you mean" suggestion when a name is misspelt) and the line of the
+        cell it happened on."""
+        line = None
+        if isinstance(e, SyntaxError):
+            line = e.lineno
+            summary = f"{'Syntax error' if type(e) is SyntaxError else 'Error'}: {e.msg}"
+        elif isinstance(e, KeyboardInterrupt):
+            summary = "Interrupted"
+        else:
+            tb = e.__traceback__
+            while tb is not None:
+                if tb.tb_frame.f_code.co_filename == filename:
+                    line = tb.tb_lineno
+                tb = tb.tb_next
+            summary = str(e) if isinstance(e, GuessError) else f"{type(e).__name__}: {e}"
+            hint = self._suggest(e)
+            if hint and "did you mean" not in summary.lower():
+                summary += f" — did you mean {hint}?"
+        msg = {"type": "error", "text": text, "summary": summary}
+        if line:
+            msg["line"] = line
+        return msg
+
+    def _suggest(self, e):
+        import difflib
+        name, pool = None, []
+        g = self.graph
+        if isinstance(e, NameError):
+            name = getattr(e, "name", None)
+            pool = list(self.ns) + list(g.node_schema) + list(g.edge_schema)
+        elif isinstance(e, AttributeError):
+            name = getattr(e, "name", None)
+            m = None
+            if name is None:
+                import re
+                m = re.search(r"no (?:field|attribute) '(\w+)'", str(e))
+                name = m.group(1) if m else None
+            obj = getattr(e, "obj", None)
+            pool = list(g.node_schema) + list(g.edge_schema)
+            if obj is not None and not isinstance(obj, (Node, Edge, GSet)):
+                try:
+                    pool = [n for n in dir(obj) if not n.startswith("_")]
+                except Exception:  # noqa: BLE001
+                    pool = []
+        if not name:
+            return None
+        close = difflib.get_close_matches(name, [p for p in pool if not p.startswith("_")], n=1, cutoff=0.75)
+        return f"'{close[0]}'" if close else None
+
+    def help_index(self):
+        """Commands (name, signature, doc, group) and curated examples for the
+        help browser and the command palette."""
+        import inspect
+        from . import helpdata
+        titles = dict(helpdata.GROUPS)
+        cmds = []
+        for name, (obj, kind) in self.system.items():
+            if kind != "command" or not callable(obj) or name.startswith("_"):
+                continue
+            try:
+                sig = str(inspect.signature(obj))
+            except (TypeError, ValueError):
+                sig = "(...)"
+            key = helpdata.group_of(name, obj)
+            cmds.append({"name": name, "sig": f"{name}{sig}", "doc": inspect.getdoc(obj) or "",
+                         "group": titles[key]})
+        cmds.sort(key=lambda c: c["name"].lower())
+        return {"commands": cmds, "groups": [t for _k, t in helpdata.GROUPS],
+                "examples": helpdata.examples()}
+
+    def panel_data(self, what, kind="n", ids=None):
+        """Data for the page's panels: "table" rows or "fields" summaries."""
+        from . import styles
+        if what == "table":
+            return styles.table_data(self.graph, kind, ids)
+        return styles.field_info(self.graph, kind)
 
     def command_docs(self):
         """name -> 'signature\ndoc' for every system command (for hover help)."""

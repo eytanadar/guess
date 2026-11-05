@@ -3,7 +3,9 @@
 A browser reimplementation of [GUESS](output-md/guess-chi2006/) (Adar, CHI 2006):
 graph exploration driven by **Gython**, Python 3 extended with graph operators.
 Everything runs client-side; Python runs in a Web Worker via Pyodide.
-See [PLAN.md](PLAN.md) for the architecture and roadmap.
+Documentation: [user guide](docs/USER_GUIDE.md), [API reference](docs/API.md),
+[architecture](docs/ARCHITECTURE.md), [developer guide](docs/DEVELOPER.md),
+[deployment](docs/DEPLOY.md). [PLAN.md](PLAN.md) has the design log and roadmap.
 
 ## Run
 
@@ -45,10 +47,17 @@ to GitHub Pages.
 
 ## Deploying
 
-`npm run build` produces a static site in `web/dist` (relative paths, so any
-sub-path works). Static hosts can't send the COOP/COEP headers Pyodide needs
-for interrupting Python; `public/coi-serviceworker.js` adds them on first load
-(one automatic reload). Pyodide itself is loaded from jsDelivr.
+```sh
+cd web
+npm run bundle                 # web/bundle/guess-web-<version>/ + .zip/.tar.gz
+npm run bundle -- --offline    # also bundles Pyodide: no CDN needed at run time
+```
+
+Upload the folder's contents to any web server or static host (any sub-path).
+Server configs for Apache (`.htaccess`, included), nginx, Caddy and
+Netlify/Cloudflare (`_headers`, included) set the cross-origin-isolation
+headers; without them `coi-serviceworker.js` adds them after one reload. See
+[docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Layout
 
@@ -108,6 +117,11 @@ Statistics such as `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`,
 highlights a clicked node's neighbourhood (click again or press Esc to clear);
 **Path**, **Heat** and **Paint** turn clicks into `shortestPath`, `heatMap` and
 `paint` commands using the colour beside them.
+
+**Undo/Redo** (toolbar, Cmd/Ctrl+Z outside the code cell, or `undo()`/`redo()`)
+step back through commands and node drags; undone cells are struck through.
+`history()` lists everything run. Shift-drag box-selects, Alt-drag lassos, and
+the selection is `sel` in the console. The theme button switches Auto/Light/Dark.
 
 The code console sits to the right of the graph (below it on narrow screens; drag
 the divider to resize). Write one or more lines in the working cell at the bottom

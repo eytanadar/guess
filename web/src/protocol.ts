@@ -42,6 +42,8 @@ export interface Overlay {
   /** 0 = straight edges; > 0 = every edge curves clockwise (Gephi preview style) */
   curvature: number;
   edgeColor?: "original" | "source" | "target" | "mixed";
+  /** names of saved styles (defineStyle) */
+  styles?: string[];
   labels?: { outline: boolean; cull: boolean };
   hulls: HullRec[];
   legends: LegendRec[];
@@ -81,7 +83,10 @@ export type FromWorker =
   | { type: "patch"; nodes: NodeRec[]; edges: EdgeRec[]; removedNodes: number[]; removedEdges: number[]; morph?: Morph; pos?: number[] }
   | { type: "out"; segs: Seg[] }
   | { type: "text"; text: string }
-  | { type: "error"; text: string }
+  /** summary: one line (with a "did you mean" hint); line: the cell line it happened on */
+  | { type: "error"; text: string; summary?: string; line?: number }
+  | { type: "help"; topic: string | null }
+  | { type: "table"; kind: "n" | "e"; ids: number[] | null }
   | { type: "center"; nodes: number[]; edges: number[] }
   | Overlay
   | ChartMsg
@@ -110,4 +115,6 @@ export type ToWorker =
   /** nodes dragged on the display, as [id, x, y, id, x, y, ...] (one undo step) */
   | { type: "move"; moves: number[] }
   | { type: "select"; nodes: number[] }
-  | { type: "writeFile"; id: number; name: string; data: Uint8Array };
+  | { type: "writeFile"; id: number; name: string; data: Uint8Array }
+  /** help index, field summaries (filters/style panel) or data-table rows */
+  | { type: "query"; id: number; what: "help" | "fields" | "table"; kind?: "n" | "e"; ids?: number[] | null };

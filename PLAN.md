@@ -267,6 +267,26 @@ web/              Vite app (main thread + worker)
 - Not done from the list: Label Adjust (needs measured label boxes in the
   worker), in/out edge colouring in the focus view, label size field.
 
+### Usability round (2026-11-05)
+
+- Selection: shift-drag box, alt-drag lasso (+Cmd/Ctrl adds), shift-click
+  toggles, group drag, right-click acts on the selection; bound to `sel`;
+  `select(seq)` from code. Clicking linked console output selects and zooms.
+- `print()` of nodes/edges/sets emits linked output.
+- Undo/redo: per-command journal in the model (`Journal`, `Graph.revert`),
+  plus view/states/ranges snapshots; 50 steps; node drags are steps; undone
+  cells struck through (`undone` message carries the console cell number).
+  `history()` / `saveHistory()` list every command run.
+- Dark mode: CSS tokens with `prefers-color-scheme` and an Auto/Light/Dark
+  toggle; display background `None` follows the theme (session format v2
+  migrates the old explicit "white" default); label colour adapts to the
+  background.
+- Taller working cell (3 lines minimum).
+- Docs in `docs/` (user guide, generated API reference with a staleness test,
+  architecture, developer, deploy). `npm run bundle [-- --offline]` builds a
+  deployable folder + zip/tar.gz; offline bundles include Pyodide (~18 MB),
+  verified loading with the CDN blocked from a plain static server.
+
 ### Gephi-inspired candidates (survey of gephi/modules, 2026-11-05)
 
 S = under a day, M = a few days, L = a week+. "nx" = networkx already has it.

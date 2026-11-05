@@ -15,6 +15,7 @@ Commands can be called without parentheses when they take no arguments
 - [Clustering and generators](#clustering-and-generators) (11)
 - [Layouts](#layouts) (28)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (22)
+- [Styles and visual mappings](#styles-and-visual-mappings) (8)
 - [States and morphing](#states-and-morphing) (12)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
 - [Charts](#charts) (4)
@@ -22,6 +23,7 @@ Commands can be called without parentheses when they take no arguments
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
 - [Colors](#colors) (4)
+- [Examples](#examples)
 - [Fields](#fields)
 - [Gython syntax](#gython-syntax)
 
@@ -701,6 +703,47 @@ Everything shown — layouts, morphs, edits, panning — is captured.
 
 Stop recording and download the video.
 
+## Styles and visual mappings
+
+### `applyStyle(name)`
+
+applyStyle(name) runs a style's commands (one undo step).
+
+### `defineStyle(name, commands)`
+
+defineStyle(name, [command, ...]) saves a named style: Gython lines that
+set colours, sizes, labels, legends or display settings. Styles are saved
+with the session; the style panel builds them for you.
+
+### `getStyles()`
+
+The saved styles: {name: [commands]}.
+
+### `labelBy(field, show=True)`
+
+labelBy(field) sets each node's (or edge's) label to its value of field
+and shows the labels; labelBy(field, false) sets them without showing.
+
+### `legendFor(field, title=None)`
+
+legendFor(field) adds a legend explaining the current colours by field:
+one entry per value (for categories, as after colorize), or a gradient
+from the lowest to the highest value (for numbers, as after colorBy).
+
+### `removeStyle(name)`
+
+removeStyle(name) deletes a saved style.
+
+### `shapeBy(field)`
+
+shapeBy(field) gives each value of a node field its own shape (circle,
+square, rounded square, repeating), the most common value first.
+
+### `table(seq=None)`
+
+table() opens the data table of all nodes; table(seq) shows just those
+nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)).
+
 ## States and morphing
 
 ### `getEdgeAppearAfter()`
@@ -897,6 +940,409 @@ generateColors(start, end, n) or generateColors(start, middle, end, n).
 ### `randomColor(alpha=None)`
 
 A random color "r,g,b"; randomColor(alpha) adds an alpha (0..255).
+
+## Examples
+
+The same examples are searchable in the app's Help panel and command palette (Cmd/Ctrl+K).
+
+### Basics
+
+**Colour nodes by a query**
+
+```python
+(freq > 100).color = red
+```
+
+**Nodes with a field value**
+
+```python
+dept == 'dept3'
+```
+
+**Pattern match names**
+
+```python
+name like 'v1%'
+```
+
+**Combine queries**
+
+```python
+(dept == 'dept1') & (totaldegree > 3)
+```
+
+**Loop over a set**
+
+```python
+for n in (dept == 'dept3'):
+    n.labelvisible = true
+```
+
+**Edges between two groups**
+
+```python
+(dept == 'dept1') <-> (dept == 'dept3')
+```
+
+**Directed edges**
+
+```python
+v1 -> g.nodes
+```
+
+**Any edges touching a node**
+
+```python
+v1 ? g.nodes
+```
+
+**Neighbours of a node**
+
+```python
+v1.getNeighbors()
+```
+
+**Add nodes and edges**
+
+```python
+addNode('zed', color=red)
+addEdge(zed, v1)
+```
+
+**Remove and restore**
+
+```python
+remove(totaldegree == 0)
+add(g.deleted)
+```
+
+**Undo the last command**
+
+```python
+undo()
+```
+
+### Appearance
+
+**A colour per category**
+
+```python
+colorize(dept)
+```
+
+**Gradient by value**
+
+```python
+colorBy(freq, yellow, red, 'log')
+```
+
+**Size by importance**
+
+```python
+sizeBy(pagerank, 5, 40, 'sqrt')
+```
+
+**Size by rank of a field**
+
+```python
+resizeLinear(totaldegree, 5, 30)
+```
+
+**Labels from a field**
+
+```python
+labelBy(dept)
+```
+
+**Shapes per category**
+
+```python
+shapeBy(dept)
+```
+
+**Legend for a mapping**
+
+```python
+colorize(dept)
+legendFor(dept)
+```
+
+**Edge width by weight**
+
+```python
+sizeBy(freq, 1, 8)
+```
+
+**Curved, mixed-colour edges**
+
+```python
+curvedEdges()
+setEdgeColorMode('mixed')
+```
+
+**Readable labels**
+
+```python
+labelOutlines()
+hideOverlappingLabels()
+```
+
+**Shade a group**
+
+```python
+createConvexHull(dept == 'dept1', '200,200,255,90')
+```
+
+**Dark background**
+
+```python
+setDisplayBackground(black)
+```
+
+**Save a named style**
+
+```python
+defineStyle('by dept', ['colorize(dept)', 'legendFor(dept)'])
+applyStyle('by dept')
+```
+
+### Layouts
+
+**ForceAtlas2**
+
+```python
+forceAtlas2Layout()
+```
+
+**ForceAtlas2, tighter clusters**
+
+```python
+forceAtlas2Layout(linLog=true, preventOverlap=true)
+```
+
+**GEM layout**
+
+```python
+gemLayout()
+```
+
+**Kamada-Kawai**
+
+```python
+kkLayout()
+```
+
+**Hierarchy**
+
+```python
+sugiyamaLayout()
+```
+
+**Radial around a node**
+
+```python
+radialLayout(v1)
+```
+
+**Remove overlaps**
+
+```python
+noverlapLayout()
+```
+
+**Pack components**
+
+```python
+binPackLayout()
+```
+
+**Rotate / mirror**
+
+```python
+rotateLayout(90)
+mirrorLayout()
+```
+
+### Analysis
+
+**Summary statistics**
+
+```python
+graphStats()
+```
+
+**Communities**
+
+```python
+louvainClusters()
+colorize(modularity_class)
+```
+
+**Most central nodes**
+
+```python
+sortBy(pagerank)[-10:]
+```
+
+**Label the hubs**
+
+```python
+(betweenness > 1000).labelvisible = true
+```
+
+**Shortest path**
+
+```python
+shortestPath(v1, v14).color = red
+```
+
+**Distance heat map**
+
+```python
+heatMap(v1)
+```
+
+**Groups as charts**
+
+```python
+plotSizesPie(dept)
+```
+
+**Distribution chart**
+
+```python
+plotHistogram(pagerank)
+```
+
+**SQL over fields**
+
+```python
+sql('select dept, count(*) from nodes group by dept')
+```
+
+### Filtering and selection
+
+**Show only a core**
+
+```python
+showOnly(kCore(3))
+```
+
+**Ego network**
+
+```python
+showOnly(egoNetwork(v1, 2))
+```
+
+**Largest component**
+
+```python
+showOnly(giantComponent())
+```
+
+**Edges inside communities**
+
+```python
+showOnly(intraEdges(modularity_class))
+```
+
+**Show everything again**
+
+```python
+showAll()
+```
+
+**Select from code**
+
+```python
+select(dept == 'dept2')
+```
+
+**Act on the selection**
+
+```python
+sel.color = orange
+center(sel)
+```
+
+**Table of a set**
+
+```python
+table(dept == 'dept3')
+```
+
+### Files and sessions
+
+**Load Gephi's format**
+
+```python
+makeFromGEXF('graph.gexf')
+```
+
+**Load spreadsheets**
+
+```python
+makeFromCSV('edges.csv', 'nodes.csv')
+```
+
+**Export for Gephi**
+
+```python
+exportGEXF('graph.gexf')
+```
+
+**Save a session**
+
+```python
+saveSession('work.guess')
+```
+
+**Save what you ran**
+
+```python
+saveHistory('work.py')
+```
+
+**Snapshot and morph**
+
+```python
+ss('before')
+circleLayout()
+morph('before', 2000)
+```
+
+**Random graph**
+
+```python
+makeBarabasiAlbertRandom(5, 2, 300)
+```
+
+### Interface building
+
+**A slider that filters**
+
+```python
+s = Slider(freq.min, freq.max, label='min freq')
+def update(v):
+    (freq < v).visible = false
+    (freq >= v).visible = true
+s.onChange = update
+ui.dock(Panel('Filter', s))
+```
+
+**React to clicks**
+
+```python
+graphevents.clickNode = lambda n: center([n] + n.getNeighbors())
+```
+
+**Record a movie**
+
+```python
+startMovie(30, 'run.webm')
+gemLayout()
+stopMovie()
+```
 
 ## Fields
 

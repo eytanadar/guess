@@ -492,12 +492,16 @@ def install(session):
     # ---- help -------------------------------------------------------------------
     @cmd
     def help(obj=None):
-        """help(command) shows documentation; help() lists commands."""
+        """help() opens the help browser (searchable commands and examples; also
+        F1 or Cmd/Ctrl+K for the command palette); help(command) prints that
+        command's documentation and shows it in the browser."""
         if obj is None:
-            names = sorted(n for n, (_o, k) in session.system.items() if k == "command")
-            print("Commands: " + ", ".join(names))
-            print("Type help(name) for details, e.g. help(colorize)")
+            session.emit({"type": "help", "topic": None})
+            print("Help is open beside the graph: search commands and examples, or "
+                  "type help(name), e.g. help(colorize). Cmd/Ctrl+K searches everything.")
             return
+        if callable(obj) and getattr(obj, "__name__", None) in session.system:
+            session.emit({"type": "help", "topic": obj.__name__})
         if isinstance(obj, Field):
             print(f"{obj.kind} field '{obj.name}' ({obj.type}), default {obj.default!r}")
             return

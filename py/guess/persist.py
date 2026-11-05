@@ -82,7 +82,8 @@ def serialize(session, script=None, app=False):
                   for h in view.hulls.values()],
         "legends": [lg.record() for lg in view.legends.values()],
         "view": {"background": view.background, "image": view.image, "arrow": view.arrow,
-                 "curvature": view.curvature, "edgeColor": view.edge_color, "labels": view.labels},
+                 "curvature": view.curvature, "edgeColor": view.edge_color, "labels": view.labels,
+                 "styles": view.styles},
     }
     if script is not None:
         data["script"] = script
@@ -161,6 +162,7 @@ def load(session, data):
     view.curvature = float(v.get("curvature", 0.0))
     view.edge_color = v.get("edgeColor", "original")
     view.labels = {"outline": False, "cull": False, **v.get("labels", {})}
+    view.styles = {str(k): list(map(str, c)) for k, c in v.get("styles", {}).items()}
     view.changed()
     session.scene()
     return data

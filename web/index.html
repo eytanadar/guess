@@ -29,6 +29,13 @@
         <button data-tool="paint" aria-pressed="false" title="Click nodes to paint them (shift-click paints the neighbours too)">Paint</button>
         <input type="color" id="paint-color" value="#e8384f" title="Colour for Path and Paint" />
       </span>
+      <span class="toolgroup" role="group" aria-label="Panels">
+        <button id="btn-table" aria-pressed="false" title="Data table of nodes and edges (table())">Table</button>
+        <button id="btn-style" aria-pressed="false" title="Map fields to colours, sizes, labels and shapes; saved styles">Style</button>
+        <button id="btn-filter" aria-pressed="false" title="Filter what is shown with live sliders">Filter</button>
+        <button id="btn-help" aria-pressed="false" title="Searchable commands and examples (F1)">Help</button>
+      </span>
+      <button id="btn-palette" class="palette-btn" title="Search commands, examples, nodes and values (Cmd/Ctrl+K)">⌘K</button>
       <button id="curved" title="Toggle curved edges (curvedEdges())" aria-pressed="false">Curved</button>
       <button id="png">PNG</button>
       <button id="svg">SVG</button>
@@ -39,9 +46,27 @@
     <main class="split">
       <div class="view-col">
         <div class="graph-row">
+          <aside id="sidebar" class="sidebar" hidden>
+            <div class="sidebar-head">
+              <span class="sidebar-tabs" role="tablist">
+                <button data-side="help" role="tab">Help</button>
+                <button data-side="style" role="tab">Style</button>
+                <button data-side="filter" role="tab">Filter</button>
+              </span>
+              <button class="sidebar-close" title="Close" aria-label="Close panel">✕</button>
+            </div>
+            <div id="side-help" class="sidebar-body" hidden></div>
+            <div id="side-style" class="sidebar-body" hidden></div>
+            <div id="side-filter" class="sidebar-body" hidden></div>
+          </aside>
           <div id="graph" class="graph"><div id="legends" class="legends"></div></div>
           <aside id="dock-right" class="dock dock-right" hidden></aside>
         </div>
+        <section id="table-pane" class="table-pane" hidden>
+          <div class="table-resize" title="Drag to resize"></div>
+          <button class="table-close" title="Close the table" aria-label="Close the table">✕</button>
+          <div id="table-body" class="table-body"></div>
+        </section>
         <div id="dock-bottom" class="dock dock-bottom" hidden></div>
       </div>
       <div class="divider" id="divider" role="separator" aria-orientation="vertical" title="Drag to resize"></div>

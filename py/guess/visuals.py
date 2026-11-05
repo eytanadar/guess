@@ -119,6 +119,7 @@ class View:
         self.curvature = 0.0        # 0 = straight edges; > 0 = Gephi-style curves
         self.edge_color = "original"  # or source / target / mixed (node colours)
         self.labels = {"outline": False, "cull": False}
+        self.styles = {}            # name -> [Gython lines] (defineStyle / applyStyle)
         self._next = 1
         self.dirty = True
         self.version = 0
@@ -132,7 +133,8 @@ class View:
         return {"hulls": [(h, h._color, list(h._nodes)) for h in self.hulls.values()],
                 "legends": [(lg, list(lg._entries)) for lg in self.legends.values()],
                 "background": self.background, "image": self.image, "arrow": dict(self.arrow),
-                "curvature": self.curvature, "edge_color": self.edge_color, "labels": dict(self.labels)}
+                "curvature": self.curvature, "edge_color": self.edge_color, "labels": dict(self.labels),
+                "styles": {k: list(v) for k, v in self.styles.items()}}
 
     def restore(self, snap):
         self.hulls = {}
@@ -147,6 +149,7 @@ class View:
         self.background, self.image = snap["background"], snap["image"]
         self.arrow, self.curvature = dict(snap["arrow"]), snap["curvature"]
         self.edge_color, self.labels = snap["edge_color"], dict(snap["labels"])
+        self.styles = {k: list(v) for k, v in snap.get("styles", {}).items()}
         self.changed()
 
     def next_id(self):
@@ -161,7 +164,7 @@ class View:
             hulls.append(h.record())
         bg = None if self.background is None else colors.to_rgba_int(self.background, (255, 255, 255, 255))[0]
         return {"type": "overlay", "background": bg, "image": self.image, "arrow": self.arrow,
-                "curvature": self.curvature, "edgeColor": self.edge_color, "labels": dict(self.labels), "hulls": hulls, "legends": [l.record() for l in self.legends.values()]}
+                "curvature": self.curvature, "edgeColor": self.edge_color, "labels": dict(self.labels), "styles": list(self.styles), "hulls": hulls, "legends": [l.record() for l in self.legends.values()]}
 
 
 def _data_url(path):

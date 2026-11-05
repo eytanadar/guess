@@ -125,6 +125,14 @@ function handle(msg: ToWorker) {
       py!.globals.set("__sel", JSON.stringify(msg.nodes));
       py!.runPython("session.set_selection(json.loads(__sel))");
       break;
+    case "query": {
+      py!.globals.set("__q", JSON.stringify([msg.what, msg.kind ?? "n", msg.ids ?? null]));
+      const text = py!.runPython(`
+__w, __k, __i = json.loads(__q)
+json.dumps(session.help_index() if __w == "help" else session.panel_data(__w, __k, __i))`) as string;
+      post({ type: "reply", id: msg.id, value: JSON.parse(text) });
+      break;
+    }
     case "writeFile":
       py!.FS.writeFile(`/data/${msg.name}`, msg.data);
       post({ type: "reply", id: msg.id, value: `/data/${msg.name}` });

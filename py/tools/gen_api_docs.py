@@ -13,21 +13,9 @@ from guess.analysis import LAZY  # noqa: E402
 
 OUT = pathlib.Path(__file__).resolve().parents[2] / "docs" / "API.md"
 
-SECTIONS = [
-    ("commands", "Graph structure, loading and saving, mapping, view"),
-    ("session", "Undo, redo, history and logging"),
-    ("analysis", "Statistics, communities, filters and paths"),
-    ("algorithms", "Clustering and generators"),
-    ("layouts", "Layouts"),
-    ("visuals", "Display: hulls, legends, background, edges, labels, selection, export"),
-    ("states", "States and morphing"),
-    ("ranges", "Ranges (existence intervals)"),
-    ("charts", "Charts"),
-    ("gui", "Interface building (panels, widgets, timers, events)"),
-    ("persist", "Sessions and apps"),
-    ("sqlquery", "SQL"),
-    ("colors", "Colors"),
-]
+from guess import helpdata  # noqa: E402
+
+SECTIONS = helpdata.GROUPS
 
 
 def signature(name, fn):
@@ -44,11 +32,7 @@ def main():
     for name, (obj, kind) in sorted(s.system.items(), key=lambda kv: kv[0].lower()):
         if kind != "command" or not callable(obj):
             continue
-        mod = getattr(obj, "__module__", "") or ""
-        key = mod.rsplit(".", 1)[-1] if mod.startswith("guess") else "commands"
-        if getattr(obj, "__qualname__", "").startswith("Session.__init__"):
-            key = "session"
-        groups.setdefault(key, []).append((name, obj))
+        groups.setdefault(helpdata.group_of(name, obj), []).append((name, obj))
     lines = [
         "# Gython API reference",
         "",
@@ -69,7 +53,7 @@ def main():
             title = titles.get(k, k)
             anchor = title.lower().replace(",", "").replace("(", "").replace(")", "").replace(":", "").replace(" ", "-")
             lines.append(f"- [{title}](#{anchor}) ({len(groups[k])})")
-    lines += ["- [Fields](#fields)", "- [Gython syntax](#gython-syntax)", ""]
+    lines += ["- [Examples](#examples)", "- [Fields](#fields)", "- [Gython syntax](#gython-syntax)", ""]
     for k in order:
         if k not in groups:
             continue
@@ -78,6 +62,11 @@ def main():
             doc = inspect.getdoc(fn) or ""
             lines += [f"### `{signature(name, fn)}`", ""]
             lines += [doc if doc else "_(no description)_", ""]
+    lines += ["## Examples", "", "The same examples are searchable in the app's Help panel and command palette (Cmd/Ctrl+K).", ""]
+    for group, items in helpdata.EXAMPLES:
+        lines += [f"### {group}", ""]
+        for title, code, _tags in items:
+            lines += [f"**{title}**", "", "```python", code, "```", ""]
     g = s.graph
     lines += ["## Fields", "", "Built-in node fields:", "", "| field | type | default |", "|---|---|---|"]
     for f in g.node_schema.values():
