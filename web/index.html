@@ -15,31 +15,110 @@
   <body>
     <header class="toolbar">
       <span class="brand">GUESS</span>
-      <button id="open" title="Open a graph (.gdf, .gexf, .graphml, .net, .dl, .csv), a .py script, or an image — or drop files on the page">Open…</button>
+      <nav class="menubar" aria-label="Main menu">
+        <div class="menu-root">
+          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">File</button>
+          <div class="menu-pop" role="menu" hidden>
+            <button role="menuitem" id="open" title="Open a graph (.gdf, .gexf, .graphml, .net, .dl, .csv), a .py script, or an image — or drop files on the page">Open…<kbd>⌘O</kbd></button>
+            <button role="menuitem" id="sample">Sample graph</button>
+            <hr />
+            <button role="menuitem" id="save" title="Download a .guess session file (graph, fields, states, hulls, legends)">Save session<kbd>⌘S</kbd></button>
+            <button role="menuitem" data-run='saveHistory("history.py")'>Save commands as script</button>
+            <hr />
+            <div class="menu-label">Export</div>
+            <button role="menuitem" id="png">Image (PNG)</button>
+            <button role="menuitem" id="svg">Vector image (SVG)</button>
+            <button role="menuitem" data-run='exportGEXF("graph.gexf")'>GEXF for Gephi</button>
+            <button role="menuitem" data-run='exportGraphML("graph.graphml")'>GraphML</button>
+            <button role="menuitem" data-run='exportCSV("edges.csv"); exportCSV("nodes.csv", "nodes")'>CSV tables</button>
+          </div>
+        </div>
+        <div class="menu-root">
+          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Edit</button>
+          <div class="menu-pop" role="menu" hidden>
+            <button role="menuitem" id="undo" title="Undo the last command">Undo<kbd>⌘Z</kbd></button>
+            <button role="menuitem" id="redo" title="Redo">Redo<kbd>⇧⌘Z</kbd></button>
+            <hr />
+            <button role="menuitem" data-run="select(g.nodes)">Select all nodes</button>
+            <button role="menuitem" data-run="select(ninverse(sel))">Invert selection</button>
+            <button role="menuitem" data-run="select()">Clear selection<kbd>Esc</kbd></button>
+            <hr />
+            <button role="menuitem" data-run="showOnly(sel)">Show only the selection</button>
+            <button role="menuitem" data-run="showAll()">Show everything</button>
+          </div>
+        </div>
+        <div class="menu-root">
+          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">View</button>
+          <div class="menu-pop" role="menu" hidden>
+            <button role="menuitem" id="center" title="Fit the graph (or double-click the background)">Fit graph</button>
+            <hr />
+            <button role="menuitemcheckbox" id="btn-table" aria-pressed="false" title="Data table of nodes and edges (table())">Data table</button>
+            <button role="menuitemcheckbox" id="btn-style" aria-pressed="false" title="Map fields to colours, sizes, labels and shapes; saved styles">Style panel</button>
+            <button role="menuitemcheckbox" id="btn-filter" aria-pressed="false" title="Filter what is shown with live sliders">Filter panel</button>
+            <hr />
+            <button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges())">Curved edges</button>
+            <button role="menuitemcheckbox" id="label-outlines" aria-pressed="false">Label outlines</button>
+            <button role="menuitemcheckbox" id="label-cull" aria-pressed="false">Hide overlapping labels</button>
+            <hr />
+            <div class="menu-label">Theme</div>
+            <button role="menuitemradio" data-theme-choice="auto" aria-pressed="true">Automatic</button>
+            <button role="menuitemradio" data-theme-choice="light" aria-pressed="false">Light</button>
+            <button role="menuitemradio" data-theme-choice="dark" aria-pressed="false">Dark</button>
+          </div>
+        </div>
+        <div class="menu-root">
+          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Layout</button>
+          <div class="menu-pop" role="menu" hidden>
+            <button role="menuitem" data-run="forceAtlas2Layout()">ForceAtlas2</button>
+            <button role="menuitem" data-run="forceAtlas2Layout(linLog=true)">ForceAtlas2 (LinLog clusters)</button>
+            <button role="menuitem" data-run="gemLayout()">GEM</button>
+            <button role="menuitem" data-run="kkLayout()">Kamada–Kawai</button>
+            <button role="menuitem" data-run="frLayout()">Fruchterman–Reingold</button>
+            <button role="menuitem" data-run="mdsLayout()">MDS</button>
+            <hr />
+            <button role="menuitem" data-run="circleLayout()">Circle</button>
+            <button role="menuitem" data-run="sugiyamaLayout()">Hierarchy</button>
+            <button role="menuitem" data-run="radialLayout(sel[0] if len(sel) else g.nodes[0])">Radial around selection</button>
+            <button role="menuitem" data-run="binPackLayout()">Pack components</button>
+            <hr />
+            <button role="menuitem" data-run="noverlapLayout()">Remove overlaps</button>
+            <button role="menuitem" data-run="rotateLayout(90)">Rotate 90°</button>
+            <button role="menuitem" data-run="mirrorLayout()">Mirror</button>
+          </div>
+        </div>
+        <div class="menu-root">
+          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Analyze</button>
+          <div class="menu-pop" role="menu" hidden>
+            <button role="menuitem" data-run="graphStats()">Graph statistics</button>
+            <button role="menuitem" data-run="cl = louvainClusters()&#10;colorize(modularity_class)&#10;legendFor(modularity_class)">Find communities</button>
+            <hr />
+            <button role="menuitem" data-run="sizeBy(pagerank, 5, 40, 'sqrt')">Size by PageRank</button>
+            <button role="menuitem" data-run="sizeBy(betweenness, 5, 40, 'sqrt')">Size by betweenness</button>
+            <button role="menuitem" data-run="colorBy(closeness, '#fff3b0', '#d7263d')">Colour by closeness</button>
+            <hr />
+            <button role="menuitem" data-run="showOnly(giantComponent())">Largest component only</button>
+            <button role="menuitem" data-run="showOnly(kCore(2))">2-core only</button>
+            <button role="menuitem" data-run="plotHistogram(totaldegree)">Degree histogram</button>
+          </div>
+        </div>
+        <div class="menu-root">
+          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Help</button>
+          <div class="menu-pop" role="menu" hidden>
+            <button role="menuitemcheckbox" id="btn-help" aria-pressed="false" title="Searchable commands and examples">Help and examples<kbd>F1</kbd></button>
+            <button role="menuitem" id="btn-palette" title="Search commands, examples, nodes and values">Search everything…<kbd>⌘K</kbd></button>
+            <button role="menuitem" data-run="history()">Commands run so far</button>
+          </div>
+        </div>
+      </nav>
       <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.dl,.csv,.tsv,.py,image/*" multiple hidden />
-      <button id="save" title="Download a .guess session file (graph, fields, states, hulls, legends)">Save</button>
-      <button id="sample">Sample graph</button>
-      <button id="undo" title="Undo the last command (Ctrl/Cmd+Z)">Undo</button>
-      <button id="redo" title="Redo (Shift+Ctrl/Cmd+Z)">Redo</button>
-      <button id="center" title="Fit the graph (or double-click the background)">Center</button>
       <span class="toolgroup" role="group" aria-label="Click tool">
-        <button data-tool="select" aria-pressed="true" title="Click a node to highlight its neighbourhood (again, or Esc, to clear); drag to move">Select</button>
+        <button data-tool="select" aria-pressed="true" title="Click a node to highlight its neighbourhood (again, or Esc, to clear); shift-drag box, alt-drag lasso">Select</button>
         <button data-tool="path" aria-pressed="false" title="Click two nodes to colour a shortest path between them">Path</button>
         <button data-tool="heat" aria-pressed="false" title="Click a node to colour every node by its distance from it">Heat</button>
         <button data-tool="paint" aria-pressed="false" title="Click nodes to paint them (shift-click paints the neighbours too)">Paint</button>
         <input type="color" id="paint-color" value="#e8384f" title="Colour for Path and Paint" />
       </span>
-      <span class="toolgroup" role="group" aria-label="Panels">
-        <button id="btn-table" aria-pressed="false" title="Data table of nodes and edges (table())">Table</button>
-        <button id="btn-style" aria-pressed="false" title="Map fields to colours, sizes, labels and shapes; saved styles">Style</button>
-        <button id="btn-filter" aria-pressed="false" title="Filter what is shown with live sliders">Filter</button>
-        <button id="btn-help" aria-pressed="false" title="Searchable commands and examples (F1)">Help</button>
-      </span>
-      <button id="btn-palette" class="palette-btn" title="Search commands, examples, nodes and values (Cmd/Ctrl+K)">⌘K</button>
-      <button id="curved" title="Toggle curved edges (curvedEdges())" aria-pressed="false">Curved</button>
-      <button id="png">PNG</button>
-      <button id="svg">SVG</button>
-      <button id="theme" title="Theme">◐ Auto</button>
+      <button id="search" class="search-btn" title="Search commands, examples, nodes and values (Cmd/Ctrl+K)">Search<kbd>⌘K</kbd></button>
       <button id="stop" disabled title="Interrupt the running command (Esc)">Stop</button>
       <span id="status" class="status"></span>
     </header>

@@ -234,3 +234,59 @@ test("undo / redo, clickable printed nodes, theme toggle", async ({ page }) => {
   await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
   expect(errors).toEqual([]);
 });
+
+test("help, palette, data table, style and filter panels, parameter hints", async ({ page }) => {
+  const errors = await boot(page);
+  const cells = page.locator(".cell");
+  // help: search and insert an example
+  await page.keyboard.press("F1");
+  await expect(page.locator("#side-help")).toBeVisible();
+  await page.locator(".help-search").fill("louvain");
+  await page.locator(".help-example", { hasText: "Communities" }).getByRole("button", { name: "Insert" }).click();
+  await expect(page.locator(".console-in .cm-content")).toContainText("louvainClusters()");
+  await run(page, "help(sizeBy)");
+  await expect(page.locator(".help-doc")).toContainText("proportion");
+  // parameter hints
+  await page.locator(".console-in .cm-content").click();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.type("sizeBy(freq, 1, ");
+  await expect(page.locator(".cm-sig-param.active")).toHaveText("largest");
+  // errors: summary, suggestion, line
+  await run(page, "a1 = 1\ncolorize(dpet)");
+  await expect(cells.last().locator(".error-summary")).toContainText("did you mean 'dept'");
+  await expect(cells.last().locator(".code-line.err-line")).toHaveText("colorize(dpet)");
+  // palette: search a value and select it
+  await page.locator(".toolbar .brand").click();
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.keyboard.type("dept == dept3");
+  await expect(page.locator(".palette-item.active")).toContainText("dept == dept3");
+  await page.keyboard.press("Enter");
+  await expect(cells.last()).toContainText('select(dept == "dept3")');
+  await expect(page.locator("#status")).toContainText(/selected/);
+  // table: opens, filters, edits
+  await page.click("#btn-table");
+  await expect(page.locator(".dtable-count")).toContainText("402 of 402 nodes");
+  await page.locator(".dtable-bar input[type=search]").fill("dept3");
+  await expect(page.locator(".dtable-count")).not.toContainText("402 of");
+  await page.locator(".dtable-bar input[type=search]").fill("");
+  const firstJob = page.locator(".dtable-rows .dtable-row").first().locator(".dtable-cell.editable").nth(1);
+  await firstJob.dblclick();
+  await page.locator(".dtable-edit").fill("boss");
+  await page.keyboard.press("Enter");
+  await expect(cells.last().locator(".cell-code")).toContainText('= "boss"');
+  await expect(cells.last()).not.toHaveClass(/failed/);
+  // style panel: map dept to colour
+  await page.click("#btn-style");
+  await page.locator("#side-style select").nth(2).selectOption("dept");
+  await page.locator("#side-style .pf-apply").click();
+  await expect(cells.last()).toContainText("legendFor(dept)");
+  await expect(page.locator("#side-style .pf-rule")).toHaveCount(2);
+  // filter panel: k-core
+  await page.click("#btn-filter");
+  await page.locator("#side-filter select").first().selectOption("s:kcore");
+  await page.locator("#side-filter button", { hasText: "Add" }).click();
+  await expect(cells.last()).toContainText("showOnly(kCore(2))");
+  await page.locator("#side-filter button", { hasText: "Show all" }).click();
+  await expect(cells.last()).toContainText("showAll()");
+  expect(errors).toEqual([]);
+});

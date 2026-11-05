@@ -146,7 +146,9 @@ groupBy(field) or groupBy(seq, field): groups of elements sharing a value.
 
 ### `help(obj=None)`
 
-help(command) shows documentation; help() lists commands.
+help() opens the help browser (searchable commands and examples; also
+F1 or Cmd/Ctrl+K for the command palette); help(command) prints that
+command's documentation and shows it in the browser.
 
 ### `hideDisconnected()`
 

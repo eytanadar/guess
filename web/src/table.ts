@@ -40,6 +40,7 @@ export class DataTable {
   private scope = document.createElement("button");
   private cols: number[] = [];
   private loading = false;
+  private editing = false;
   private dirty = false;
 
   constructor(readonly root: HTMLElement, private host: TableHost) {
@@ -189,6 +190,7 @@ export class DataTable {
   }
 
   private paint() {
+    if (this.editing) return;   // don't destroy an open editor; repaint when it closes
     const top = this.scroller.scrollTop, h = this.scroller.clientHeight || 200;
     const first = Math.max(0, Math.floor(top / ROW_H) - 5);
     const last = Math.min(this.view.length, Math.ceil((top + h) / ROW_H) + 5);
@@ -231,6 +233,7 @@ export class DataTable {
     const input = document.createElement("input");
     input.className = "dtable-edit";
     input.value = value === null || value === undefined ? "" : String(value);
+    this.editing = true;
     cell.replaceChildren(input);
     input.focus();
     input.select();
@@ -238,6 +241,7 @@ export class DataTable {
     const finish = (commit: boolean) => {
       if (done) return;
       done = true;
+      this.editing = false;
       if (commit && input.value !== String(value ?? "")) this.host.edit(this.kind, id, field, input.value, type);
       else this.paint();
     };

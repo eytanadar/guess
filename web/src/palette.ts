@@ -74,13 +74,15 @@ export class Palette {
 
   async open(query = "") {
     this.restoreFocus = document.activeElement as HTMLElement | null;
-    this.items = await this.source();
+    // show and focus first, so typing goes to the search box while items load
     this.root.hidden = false;
     this.input.value = query;
     this.active = 0;
-    this.render();
     this.input.focus();
     this.input.select();
+    this.render();
+    this.items = await this.source();
+    if (!this.root.hidden) this.render();
   }
 
   close() {
