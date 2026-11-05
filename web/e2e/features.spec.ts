@@ -195,3 +195,39 @@ test("box and lasso selection, group drag, select()", async ({ page }) => {
   await expect(page.locator(".cell").last()).toContainText("True True True");
   expect(errors).toEqual([]);
 });
+
+test("undo / redo, clickable printed nodes, theme toggle", async ({ page }) => {
+  const errors = await boot(page);
+  await run(page, "v1.color = red");
+  await page.click("#undo");
+  await expect(page.locator(".cell").last()).toContainText("undid: v1.color = red");
+  await run(page, "print(v1.color)");
+  await expect(page.locator(".cell").last()).toContainText("cornflowerblue");
+  // Ctrl/Cmd+Shift+Z outside the editor redoes
+  await page.locator("#graph canvas").click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press("ControlOrMeta+Shift+z");
+  await expect(page.locator(".cell").last()).toContainText("redid: v1.color = red");
+  // printed nodes are linked: clicking one selects it
+  await run(page, "for n in [v1, v2]:\n    print('node', n)");
+  await page.locator(".cell").last().locator(".obj.node", { hasText: "v2" }).click();
+  await expect(page.locator("#status")).toContainText("1 selected");
+  await run(page, "print(sel)");
+  await expect(page.locator(".cell").last()).toContainText("[v2]");
+  // "Run again" adds a new cell at the bottom; history() lists every run
+  const n = await page.locator(".cell").count();
+  await page.locator(".cell").nth(n - 2).hover();
+  await page.locator(".cell").nth(n - 2).locator(".cell-rerun").click();
+  await expect(page.locator(".cell")).toHaveCount(n + 1);
+  await expect(page.locator(".cell").last().locator(".cell-code")).toContainText("print('node', n)");
+  await run(page, "history()");
+  await expect(page.locator(".cell").last()).toContainText("print('node', n)");
+  // theme: Auto -> Light -> Dark
+  await page.click("#theme");
+  await page.click("#theme");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  expect(bg).toBe("rgb(24, 24, 26)");
+  await page.click("#theme");
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
+  expect(errors).toEqual([]);
+});

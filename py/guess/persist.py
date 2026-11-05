@@ -15,7 +15,7 @@ from .colors import normalize
 from .model import EDGE, NODE, Edge, GuessError, Node
 from .states import Snapshot
 
-VERSION = 1
+VERSION = 2   # 2: background None means "follow the light/dark theme"
 
 
 def _jsonable(v):
@@ -153,6 +153,8 @@ def load(session, data):
         view.legends[lg._id] = lg
     v = data.get("view", {})
     bg = v.get("background")
+    if data.get("version", 1) < 2 and bg == "white":
+        bg = None    # version 1 stored the old default explicitly; let it follow the theme
     view.background = None if bg is None else normalize(bg)
     view.image = v.get("image")
     view.arrow = v.get("arrow", {"length": None, "width": None})

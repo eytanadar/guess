@@ -189,14 +189,14 @@ class Session:
         before = self._undo_snapshot()
         g.journal = Journal()
         self._history_op = False
+        if interactive:
+            self.executed.append(source)
         self._run_depth += 1
         try:
             ok = self._run(source, interactive, filename)
         finally:
             self._run_depth -= 1
             j, g.journal = g.journal, None
-            if interactive:
-                self.executed.append(source)
             if not self._history_op:
                 self._record_undo(source, j, before)
         return ok
