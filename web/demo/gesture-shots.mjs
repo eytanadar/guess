@@ -70,7 +70,11 @@ async function midDrag(from, to, during, { alt = false, shift = false } = {}) {
 
 /** Crop around a point (clamped to the window) and save as png. */
 async function shot(name, [cx, cy], w = 560, h = 360) {
-  const x = Math.max(0, Math.min(W - w, cx - w / 2)), y = Math.max(0, Math.min(H - h, cy - h / 2));
+  // stay inside the graph area (not the toolbar or console)
+  const gb = await page.locator("#graph").boundingBox();
+  w = Math.min(w, gb.width);
+  h = Math.min(h, gb.height);
+  const x = Math.max(gb.x, Math.min(gb.x + gb.width - w, cx - w / 2)), y = Math.max(gb.y, Math.min(gb.y + gb.height - h, cy - h / 2));
   const png = join(tmp, `${name}.png`);
   await page.screenshot({ path: png, clip: { x, y, width: w, height: h } });
   execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", `scale=${Math.min(w, 560)}:-1`, join(outDir, `${name}.png`)]);
@@ -83,6 +87,12 @@ async function shotEl(name, selector, pad = 6) {
   await page.screenshot({ path: png, clip: { x: Math.max(0, b.x - pad), y: Math.max(0, b.y - pad), width: Math.min(W, b.width + 2 * pad), height: Math.min(H, b.height + 2 * pad) } });
   execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", "scale='min(560,iw)':-1", join(outDir, `${name}.png`)]);
   console.log(`  ${name}.png`);
+}
+
+/** The whole graph area (for small demo graphs). */
+async function shotGraph(name) {
+  const gb = await page.locator("#graph").boundingBox();
+  await shot(name, [gb.x + gb.width / 2, gb.y + gb.height / 2], gb.width, gb.height);
 }
 
 const graphCentre = async () => {
@@ -144,20 +154,20 @@ const SHOTS = {
     await midDrag(from, [to[0] + 6, to[1] + 6], () => shot("group-drop", [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2], 620, 420));
   },
   ring: async () => {
-    await run("makeSimpleRandom(14, 18)\ncircleLayout()\ncolorize(totaldegree)\ncenter()");
+    await run("makeSimpleRandom(14, 18)\ncircleLayout()\ncolorize(totaldegree)\ng.nodes.size = 26\ng.nodes.labelvisible = true\ncenter()");
     const from = await nodeXY("nd0"), to = await nodeXY("nd5");
-    await midDrag(from, [to[0] + 10, to[1] + 10], async () => shot("ring", await graphCentre(), 520, 460));
+    await midDrag(from, [to[0] + 10, to[1] + 10], () => shotGraph("ring"));
   },
   edge: async () => {
-    await run("makeSimpleRandom(10, 8)\ncircleLayout()\ncenter()");
+    await run("makeSimpleRandom(10, 8)\ncircleLayout()\ng.nodes.size = 26\ng.nodes.labelvisible = true\ncenter()");
     const from = await nodeXY("nd1"), to = await nodeXY("nd6");
-    await midDrag(from, [to[0] + 4, to[1] + 4], async () => shot("edge", await graphCentre(), 520, 460), { alt: true });
+    await midDrag(from, [to[0] + 4, to[1] + 4], () => shotGraph("edge"), { alt: true });
   },
   scatter: async () => {
-    await run("makeSimpleRandom(12, 6)\naddNodeField('cost', DOUBLE, 0)\naddNodeField('value', DOUBLE, 0)\nfor n in g.nodes:\n    n.cost = (int(n.name[2:]) * 37) % 100\n    n.value = (int(n.name[2:]) * 23) % 50\nscatterLayout(cost, value)\ng.nodes.labelvisible = true\ncenter()");
+    await run("makeSimpleRandom(12, 6)\naddNodeField('cost', DOUBLE, 0)\naddNodeField('value', DOUBLE, 0)\nfor n in g.nodes:\n    n.cost = (int(n.name[2:]) * 37) % 100\n    n.value = (int(n.name[2:]) * 23) % 50\nscatterLayout(cost, value)\ng.nodes.size = 20\ng.nodes.labelvisible = true\ncenter()");
     const from = await nodeXY("nd3");
     const [cx, cy] = await graphCentre();
-    await midDrag(from, [cx, cy], () => shot("scatter", [cx, cy], 560, 420));
+    await midDrag(from, [cx + 40, cy - 30], () => shotGraph("scatter"));
   },
   expand: async () => {
     await run("colorize(dept)\nm = collapse(dept == 'dept1', 'dept1')\ncenter(egoNetwork(m, 1))");
@@ -241,6 +251,8 @@ try {
     page = await ctx.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.locator(".console-out").getByText(/loaded 402/).first().waitFor({ timeout: 120000 });
+    // tooltips only where they are the point of the picture
+    if (!["hover-edge", "output"].includes(name)) await page.addStyleTag({ content: "#tip { display: none !important; }" });
     await sleep(500);
     try {
       await fn();
