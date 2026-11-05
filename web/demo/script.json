@@ -47,7 +47,8 @@
       "narration": "Layouts and network algorithms are a command away. ForceAtlas2 arranges the graph. Louvain finds communities, which we colour, and we size each person by PageRank. Every result is an ordinary field, so it works with everything else in the language.",
       "actions": [
         { "run": "forceAtlas2Layout()" },
-        { "run": "louvainClusters()" },
+        { "run": "center(giantComponent())" },
+        { "run": "cl = louvainClusters()" },
         { "run": "colorize(modularity_class)" },
         { "run": "sizeBy(pagerank, 5, 40, 'sqrt')" },
         { "wait": 600 }

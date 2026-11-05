@@ -198,6 +198,9 @@ async function act(a) {
     await sleep(500);
     const pop = page.locator(".menu-root", { has: page.locator(".menu-title", { hasText: a.menu[0] }) }).locator(".menu-pop");
     const item = a.menu[1].startsWith("#") || a.menu[1].startsWith("[") ? pop.locator(a.menu[1]) : pop.getByRole("menuitem", { name: a.menu[1] });
+    // go straight down into the menu first: crossing other titles would switch menus
+    const ib = await item.boundingBox();
+    if (ib) await moveTo(mouse[0], ib.y + ib.height / 2, 250);
     if (a.close) {
       await moveToEl(item);
       await sleep(600);
@@ -253,7 +256,15 @@ async function record(scenes) {
     const start = (Date.now() - t0) / 1000;
     const minEnd = Date.now() + sc.audio.dur * 1000 + (sc.pause ?? 600);
     console.log(`  scene ${sc.id} (${sc.audio.dur.toFixed(1)}s)`);
-    for (const a of sc.actions ?? []) await act(a);
+    for (const a of sc.actions ?? []) {
+      try {
+        await act(a);
+      } catch (e) {
+        const shot = join(outDir, `failed-${sc.id}.png`);
+        await page.screenshot({ path: shot });
+        throw new Error(`scene ${sc.id}, action ${JSON.stringify(a)}: ${String(e).split("\n")[0]} (screenshot: ${shot})`);
+      }
+    }
     const left = minEnd - Date.now();
     if (left > 0) await sleep(left);
     times.push({ id: sc.id, start, end: (Date.now() - t0) / 1000 });
