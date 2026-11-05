@@ -8,6 +8,8 @@ export interface NodeRec {
   img: string | null;
   /** 1 if this node is a collapsed group (meta-node) */
   m?: number;
+  /** pie slice sizes (see Overlay.pie) */
+  p?: number[];
 }
 
 export interface EdgeRec {
@@ -46,6 +48,9 @@ export interface Overlay {
   edgeColor?: "original" | "source" | "target" | "mixed";
   /** names of saved styles (defineStyle) */
   styles?: string[];
+  /** pie-chart node slice colours (node records then carry `p`, the slice sizes) */
+  pie?: number[] | null;
+  borderWidth?: number;
   labels?: { outline: boolean; cull: boolean };
   hulls: HullRec[];
   legends: LegendRec[];

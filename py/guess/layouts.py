@@ -2130,6 +2130,124 @@ def _noverlap_gen(snap, rng, margin=5.0, ratio=1.2, max_iter=1000):
         yield C - half
 
 
+def _tree_positions(snap, roots, horizontal=False, gap=None):
+    """Tidy tree drawing of a BFS spanning tree per component: leaves get
+    consecutive slots, parents sit over the middle of their children, depth
+    gives the level; components side by side."""
+    n = snap.n
+    P = snap.pos.copy()
+    if n == 0:
+        return P
+    indptr, ind = snap.csr
+    size = snap.size.max(1)
+    unit = float(gap) if gap else max(30.0, float(np.median(size)) * 2.5)
+    parent = np.full(n, -1)
+    depth = np.zeros(n, int)
+    seen = np.zeros(n, bool)
+    children = [[] for _ in range(n)]
+    order_roots = []
+    comps = snap.components
+    root_of = {}
+    for r in roots:
+        if r is not None:
+            root_of[r] = True
+    for comp in comps:
+        cand = [v for v in comp if v in root_of]
+        r = cand[0] if cand else max(comp, key=lambda v: (snap.degree[v], -v))
+        order_roots.append(r)
+        seen[r] = True
+        q = deque([r])
+        while q:
+            u = q.popleft()
+            for v in ind[indptr[u]:indptr[u + 1]].tolist():
+                if not seen[v]:
+                    seen[v] = True
+                    parent[v] = u
+                    depth[v] = depth[u] + 1
+                    children[u].append(v)
+                    q.append(v)
+    slot = np.zeros(n)
+    nxt = [0.0]
+
+    def place(r):
+        stack = [(r, False)]
+        while stack:
+            u, done = stack.pop()
+            if done:
+                ch = children[u]
+                slot[u] = (slot[ch[0]] + slot[ch[-1]]) / 2 if ch else nxt[0]
+                if not ch:
+                    nxt[0] += 1
+                continue
+            stack.append((u, True))
+            for v in reversed(children[u]):
+                stack.append((v, False))
+
+    for r in order_roots:
+        place(r)
+        nxt[0] += 1          # a gap between components
+    a = slot * unit
+    b = depth * unit * 1.6
+    C = np.stack([b, a], 1) if horizontal else np.stack([a, b], 1)
+    return C - snap.size / 2
+
+
+def _label_boxes(snap):
+    """Half-extents and centre offsets of node + visible label rectangles."""
+    w, h = snap.size[:, 0].copy(), snap.size[:, 1].copy()
+    off = np.zeros((snap.n, 2))
+    for i, nd in enumerate(snap.nodes):
+        v = nd._vals
+        lab = v.get("label")
+        if lab is None:
+            lab = nd._name
+        if v.get("labelvisible") and lab:
+            lw = 5.8 * len(str(lab)) + 2       # BitmapText at 10 world units, about 0.58 em per char
+            off[i, 0] = lw / 2                 # the box grows to the right of the node
+            w[i] += lw
+            h[i] = max(h[i], 12.0)
+    return np.stack([w / 2, h / 2], 1), off
+
+
+def _label_adjust_gen(snap, rng, margin=2.0, max_iter=600):
+    """Gephi's Label Adjust: push nodes apart until node+label rectangles don't
+    overlap (minimum-overlap axis), fixed nodes stay put."""
+    n = snap.n
+    if n < 2:
+        return
+    half, off = _label_boxes(snap)
+    half = half + margin / 2
+    mov = ~snap.fixed
+    C = _jitter_coincident(snap.pos + snap.size / 2, rng, 1.0, mov)
+    reach = np.hypot(half[:, 0], half[:, 1])
+    for _ in range(max_iter):
+        B = C + off
+        ii, jj = _close_pairs(B, reach)
+        if not len(ii):
+            break
+        d = B[ii] - B[jj]
+        ox = half[ii, 0] + half[jj, 0] - np.abs(d[:, 0])
+        oy = half[ii, 1] + half[jj, 1] - np.abs(d[:, 1])
+        hit = (ox > 0) & (oy > 0)
+        if not hit.any():
+            break
+        ii, jj, d, ox, oy = ii[hit], jj[hit], d[hit], ox[hit], oy[hit]
+        sx = np.where(d[:, 0] == 0, rng.choice([-1.0, 1.0], len(d)), np.sign(d[:, 0]))
+        sy = np.where(d[:, 1] == 0, rng.choice([-1.0, 1.0], len(d)), np.sign(d[:, 1]))
+        along_x = ox < oy
+        step = np.zeros((len(d), 2))
+        step[along_x, 0] = sx[along_x] * ox[along_x] * 0.51
+        step[~along_x, 1] = sy[~along_x] * oy[~along_x] * 0.51
+        share_i = np.where(mov[ii], np.where(mov[jj], 1.0, 2.0), 0.0)
+        share_j = np.where(mov[jj], np.where(mov[ii], 1.0, 2.0), 0.0)
+        D = np.zeros((n, 2))
+        for k in (0, 1):
+            D[:, k] = np.bincount(ii, step[:, k] * share_i, n) - np.bincount(jj, step[:, k] * share_j, n)
+        cnt = np.bincount(ii, minlength=n) + np.bincount(jj, minlength=n)
+        C = C + D / np.maximum(1.0, np.sqrt(cnt))[:, None]
+        yield C - snap.size / 2
+
+
 def install(session):
     lay = _Layouts(session)
     g = session.graph
@@ -2390,6 +2508,27 @@ def install(session):
         each node is treated as a disc of ratio x its size plus margin."""
         s = lay.snap()
         lay.run(s, _noverlap_gen(s, rng(0), float(margin), float(ratio)))
+
+    @cmd
+    def treeLayout(root=None, horizontal=False, spacing=None):
+        """treeLayout() draws each connected component as a tidy tree (a
+        breadth-first spanning tree from its best-connected node, or from root),
+        parents centred over their children; horizontal=true grows it left to
+        right; spacing sets the distance between neighbouring leaves."""
+        s = lay.snap()
+        roots = []
+        if root is not None:
+            for r in (root if isinstance(root, (list, tuple)) or hasattr(root, "__iter__") and not isinstance(root, (str, Node)) else [root]):
+                nd = _node_arg(g, r, "root")
+                roots.append(s.index[nd._id])
+        lay.apply(s, _tree_positions(s, roots, bool(horizontal), spacing))
+
+    @cmd
+    def labelAdjustLayout(margin=2):
+        """labelAdjustLayout() moves nodes just enough that nodes and their
+        visible labels stop overlapping (Gephi's Label Adjust)."""
+        s = lay.snap()
+        lay.run(s, _label_adjust_gen(s, rng(0), float(margin)))
 
     @cmd
     def rotateLayout(degrees=90):

@@ -67,6 +67,8 @@ export class Renderer {
   /** display background set from Python (null: the theme's) */
   private userBg: number | null = null;
   private dark = false;
+  private pieColors: number[] | null = null;
+  private borderWidth = 0.75;
   /** default label colour: dark on light backgrounds, light on dark ones */
   private labelColor = 0x222222;
   /** a clicked node whose neighbourhood stays bright while the rest dims */
@@ -243,6 +245,8 @@ export class Renderer {
 
   setOverlay(ov: Overlay) {
     this.userBg = ov.background;
+    this.pieColors = ov.pie ?? null;
+    this.borderWidth = ov.borderWidth ?? 0.75;
     this.applyBackground();
     this.hulls = ov.hulls;
     this.arrowLen = ov.arrow.length;
@@ -547,9 +551,27 @@ export class Renderer {
         this.imageLayer.addChild(sp);
         continue;
       }
+      const border = n.m ? Math.max(2.5, this.borderWidth) : this.borderWidth;
+      const pie = this.pieColors && n.p ? n.p : null;
+      const total = pie ? pie.reduce((a, b) => a + b, 0) : 0;
+      if (pie && total > 0) {
+        // pie-chart node: slices clockwise from 12 o'clock
+        const cx = n.x + n.w / 2, cy = n.y + n.h / 2, r = Math.min(n.w, n.h) / 2;
+        let a0 = -Math.PI / 2;
+        pie.forEach((v, k) => {
+          if (v <= 0) return;
+          const a1 = a0 + (v / total) * Math.PI * 2;
+          g.moveTo(cx, cy).arc(cx, cy, r, a0, a1).lineTo(cx, cy);
+          g.fill({ color: this.pieColors![k % this.pieColors!.length], alpha });
+          a0 = a1;
+        });
+        g.circle(cx, cy, r);
+        g.stroke({ width: border, color: n.sc >= 0 ? n.sc : darken(n.c), alpha });
+        continue;
+      }
       shape(g, n);
       g.fill({ color: n.c, alpha });
-      g.stroke({ width: n.m ? 2.5 : 0.75, color: n.sc >= 0 ? n.sc : darken(n.c), alpha });
+      g.stroke({ width: border, color: n.sc >= 0 ? n.sc : darken(n.c), alpha });
     }
   }
 
