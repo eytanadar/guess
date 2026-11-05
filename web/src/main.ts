@@ -306,6 +306,8 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       renderer.setOverlay(m);
       renderLegends(m.legends);
       $("#curved").setAttribute("aria-pressed", String(m.curvature > 0));
+      $("#label-outlines").setAttribute("aria-pressed", String(!!m.labels?.outline));
+      $("#label-cull").setAttribute("aria-pressed", String(!!m.labels?.cull));
       savedStyles = m.styles ?? [];
       stylePanel.refreshSaved();
       break;
@@ -634,11 +636,10 @@ $("#sample").addEventListener("click", () => term.submit(`makeFromGDF("sample.gd
 $("#save").addEventListener("click", () => term.submit(`saveSession("session.guess")`));
 $("#curved").addEventListener("click", () => term.submit(`curvedEdges(${renderer.curvature > 0 ? "false" : "true"})`));
 $("#center").addEventListener("click", () => renderer.center());
-// ---- light / dark theme: Auto follows the system; the button cycles Auto -> Light -> Dark
+// ---- light / dark theme: Automatic follows the system (View menu) ----------------------
 {
   type Theme = "auto" | "light" | "dark";
   const KEY = "guess.theme";
-  const btn = $("#theme");
   const system = window.matchMedia("(prefers-color-scheme: dark)");
   let theme: Theme = "auto";
   try {
@@ -650,24 +651,96 @@ $("#center").addEventListener("click", () => renderer.center());
   const apply = () => {
     if (theme === "auto") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = theme;
-    const dark = theme === "dark" || (theme === "auto" && system.matches);
-    renderer.setTheme(dark);
-    btn.textContent = theme === "auto" ? "◐ Auto" : theme === "dark" ? "☾ Dark" : "☀ Light";
-    btn.title = `Theme: ${theme} (click to change)`;
+    renderer.setTheme(theme === "dark" || (theme === "auto" && system.matches));
+    for (const b of document.querySelectorAll<HTMLElement>("[data-theme-choice]")) b.setAttribute("aria-pressed", String(b.dataset.themeChoice === theme));
   };
-  btn.addEventListener("click", () => {
-    theme = theme === "auto" ? "light" : theme === "light" ? "dark" : "auto";
-    try {
-      if (theme === "auto") localStorage.removeItem(KEY);
-      else localStorage.setItem(KEY, theme);
-    } catch {
-      /* storage unavailable */
-    }
-    apply();
-  });
+  for (const b of document.querySelectorAll<HTMLElement>("[data-theme-choice]")) {
+    b.addEventListener("click", () => {
+      theme = b.dataset.themeChoice as Theme;
+      try {
+        if (theme === "auto") localStorage.removeItem(KEY);
+        else localStorage.setItem(KEY, theme);
+      } catch {
+        /* storage unavailable */
+      }
+      apply();
+    });
+  }
   system.addEventListener("change", apply);
   themeReady = apply;
 }
+
+// ---- menus ---------------------------------------------------------------------------
+{
+  const roots = [...document.querySelectorAll<HTMLElement>(".menu-root")];
+  let openRoot: HTMLElement | null = null;
+  const pop = (r: HTMLElement) => r.querySelector<HTMLElement>(".menu-pop")!;
+  const title = (r: HTMLElement) => r.querySelector<HTMLElement>(".menu-title")!;
+  const items = (r: HTMLElement) => [...pop(r).querySelectorAll<HTMLButtonElement>("button:not([disabled])")];
+  const close = () => {
+    if (!openRoot) return;
+    pop(openRoot).hidden = true;
+    title(openRoot).setAttribute("aria-expanded", "false");
+    openRoot = null;
+  };
+  const open = (r: HTMLElement, focusFirst = false) => {
+    if (openRoot !== r) close();
+    openRoot = r;
+    pop(r).hidden = false;
+    title(r).setAttribute("aria-expanded", "true");
+    if (focusFirst) items(r)[0]?.focus();
+  };
+  for (const r of roots) {
+    title(r).addEventListener("click", () => (openRoot === r ? close() : open(r)));
+    title(r).addEventListener("pointerenter", () => {
+      if (openRoot && openRoot !== r) open(r);
+    });
+    title(r).addEventListener("keydown", (ev) => {
+      if (ev.key === "ArrowDown") {
+        ev.preventDefault();
+        open(r, true);
+      }
+    });
+    pop(r).addEventListener("click", (ev) => {
+      if ((ev.target as HTMLElement).closest("button")) close();
+    });
+    pop(r).addEventListener("keydown", (ev) => {
+      const list = items(r);
+      const k = list.indexOf(document.activeElement as HTMLButtonElement);
+      if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+        ev.preventDefault();
+        list[(k + (ev.key === "ArrowDown" ? 1 : list.length - 1)) % list.length]?.focus();
+      } else if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
+        const next = roots[(roots.indexOf(r) + (ev.key === "ArrowRight" ? 1 : roots.length - 1)) % roots.length];
+        open(next, true);
+      } else if (ev.key === "Escape") {
+        ev.stopPropagation();
+        close();
+        title(r).focus();
+      }
+    });
+  }
+  document.addEventListener("pointerdown", (ev) => {
+    if (openRoot && !openRoot.contains(ev.target as Node)) close();
+  });
+  // menu items that run a Gython command
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-run]")) {
+    b.addEventListener("click", () => void term.submit(b.dataset.run!));
+  }
+}
+$("#label-outlines").addEventListener("click", () => term.submit(`labelOutlines(${$("#label-outlines").getAttribute("aria-pressed") === "true" ? "false" : "true"})`));
+$("#label-cull").addEventListener("click", () => term.submit(`hideOverlappingLabels(${$("#label-cull").getAttribute("aria-pressed") === "true" ? "false" : "true"})`));
+document.addEventListener("keydown", (ev) => {
+  if (!(ev.metaKey || ev.ctrlKey) || ev.altKey || ev.shiftKey) return;
+  const k = ev.key.toLowerCase();
+  if (k === "o") {
+    ev.preventDefault();
+    $("#open").click();
+  } else if (k === "s") {
+    ev.preventDefault();
+    $("#save").click();
+  }
+});
 
 $("#undo").addEventListener("click", () => term.submit("undo()"));
 $("#redo").addEventListener("click", () => term.submit("redo()"));
@@ -869,9 +942,12 @@ const palette = new Palette(async () => {
   }
   for (const e of idx.examples) items.push({ kind: "example", label: e.title, detail: e.code.split("\n")[0] + (e.code.includes("\n") ? " …" : "") + ` ${e.tags}`, run: () => term.insert(e.code) });
   for (const code of term.recent()) items.push({ kind: "recent", label: code.split("\n")[0], detail: code.includes("\n") ? "…" : "", run: () => term.insert(code) });
-  for (const b of document.querySelectorAll<HTMLButtonElement>(".toolbar button")) {
-    if (b.id === "btn-palette" || b.disabled || !b.textContent?.trim()) continue;
-    items.push({ kind: "action", label: b.textContent.trim(), detail: b.title, run: () => b.click() });
+  for (const b of document.querySelectorAll<HTMLButtonElement>(".menu-pop button, [data-tool], #stop")) {
+    if (b.id === "btn-palette" || b.disabled) continue;
+    const label = [...b.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").trim();
+    if (!label) continue;
+    const menu = b.closest(".menu-root")?.querySelector(".menu-title")?.textContent;
+    items.push({ kind: "action", label: menu ? `${menu} › ${label}` : `Tool: ${label}`, detail: b.title || b.dataset.run || "", run: () => b.click() });
   }
   for (const n of renderer.nodes.values()) {
     items.push({ kind: "node", label: n.name, detail: n.l && n.l !== n.name ? n.l : "", run: () => {
@@ -892,6 +968,7 @@ const palette = new Palette(async () => {
   return items;
 });
 $("#btn-palette").addEventListener("click", () => void palette.open());
+$("#search").addEventListener("click", () => void palette.open());
 document.addEventListener("keydown", (ev) => {
   if ((ev.metaKey || ev.ctrlKey) && !ev.altKey && ev.key.toLowerCase() === "k") {
     ev.preventDefault();

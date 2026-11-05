@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { boot, lastError, run } from "./helpers";
+import { boot, lastError, menu, run } from "./helpers";
 
 test("layouts run without errors", async ({ page }) => {
   await boot(page);
@@ -79,12 +79,12 @@ test("app mode runs the bundled demo", async ({ page }) => {
 test("curved edges and edge colour modes", async ({ page }) => {
   await boot(page);
   await run(page, 'setEdgeColorMode("mixed")');
-  await page.click("#curved");
+  await menu(page, "View", "#curved");
   await expect(page.locator("#curved")).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".cell").last()).toContainText("curvedEdges(true)");
   await run(page, "curvedEdges(0.5)");
   expect(await lastError(page)).toBeNull();
-  await page.click("#curved");
+  await menu(page, "View", "#curved");
   await expect(page.locator("#curved")).toHaveAttribute("aria-pressed", "false");
 });
 
@@ -199,7 +199,7 @@ test("box and lasso selection, group drag, select()", async ({ page }) => {
 test("undo / redo, clickable printed nodes, theme toggle", async ({ page }) => {
   const errors = await boot(page);
   await run(page, "v1.color = red");
-  await page.click("#undo");
+  await menu(page, "Edit", "#undo");
   await expect(page.locator(".cell").last()).toContainText("undid: v1.color = red");
   const target = page.locator(".cell", { has: page.locator(".cell-code", { hasText: /^v1\.color = red$/ }) });
   await expect(target).toHaveClass(/undone/);
@@ -225,12 +225,11 @@ test("undo / redo, clickable printed nodes, theme toggle", async ({ page }) => {
   await run(page, "history()");
   await expect(page.locator(".cell").last()).toContainText("print('node', n)");
   // theme: Auto -> Light -> Dark
-  await page.click("#theme");
-  await page.click("#theme");
+  await menu(page, "View", "[data-theme-choice=dark]");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(bg).toBe("rgb(24, 24, 26)");
-  await page.click("#theme");
+  await menu(page, "View", "[data-theme-choice=auto]");
   await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
   expect(errors).toEqual([]);
 });
@@ -264,7 +263,7 @@ test("help, palette, data table, style and filter panels, parameter hints", asyn
   await expect(cells.last()).toContainText('select(dept == "dept3")');
   await expect(page.locator("#status")).toContainText(/selected/);
   // table: opens, filters, edits
-  await page.click("#btn-table");
+  await menu(page, "View", "#btn-table");
   await expect(page.locator(".dtable-count")).toContainText("402 of 402 nodes");
   await page.locator(".dtable-bar input[type=search]").fill("dept3");
   await expect(page.locator(".dtable-count")).not.toContainText("402 of");
@@ -276,13 +275,13 @@ test("help, palette, data table, style and filter panels, parameter hints", asyn
   await expect(cells.last().locator(".cell-code")).toContainText('= "boss"');
   await expect(cells.last()).not.toHaveClass(/failed/);
   // style panel: map dept to colour
-  await page.click("#btn-style");
+  await menu(page, "View", "#btn-style");
   await page.locator("#side-style select").nth(2).selectOption("dept");
   await page.locator("#side-style .pf-apply").click();
   await expect(cells.last()).toContainText("legendFor(dept)");
   await expect(page.locator("#side-style .pf-rule")).toHaveCount(2);
   // filter panel: k-core
-  await page.click("#btn-filter");
+  await menu(page, "View", "#btn-filter");
   await page.locator("#side-filter select").first().selectOption("s:kcore");
   await page.locator("#side-filter button", { hasText: "Add" }).click();
   await expect(cells.last()).toContainText("showOnly(kCore(2))");

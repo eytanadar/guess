@@ -285,7 +285,7 @@ body { display: flex; flex-direction: column; }
 .chart .pie-label { text-anchor: middle; dominant-baseline: central; fill: #222; font-size: 9px; pointer-events: none; }
 
 /* app mode (?app=1): an end-user view without the console */
-body.app #console, body.app #divider, body.app #open, body.app #save, body.app #sample, body.app #stop { display: none; }
+body.app #console, body.app #divider, body.app .menubar, body.app #search, body.app #stop { display: none; }
 body.app .view-col { flex: 1 1 auto; }
 .cm-tooltip-autocomplete ul li[aria-selected] .cm-completionDetail { color: rgba(255, 255, 255, 0.8); }
 
@@ -426,3 +426,27 @@ body.app .view-col { flex: 1 1 auto; }
 .cm-sig { font-family: var(--mono); font-size: 12px; padding: 3px 8px; }
 .cm-sig-name { color: var(--link-node); }
 .cm-sig-param.active { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- menu bar ---- */
+.menubar { display: flex; align-items: center; gap: 0; margin-right: 6px; }
+.menu-root { position: relative; }
+.toolbar .menu-title { border: 1px solid transparent; background: none; padding: 3px 9px; color: var(--text); }
+.toolbar .menu-title:hover, .toolbar .menu-title[aria-expanded=true] { background: var(--surface); border-color: var(--border); }
+.menu-pop {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; min-width: 230px; padding: 4px;
+  display: flex; flex-direction: column; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.menu-pop[hidden] { display: none; }
+.toolbar .menu-pop button {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  border: 0; border-radius: 5px; background: none; padding: 4px 10px 4px 26px; position: relative; white-space: nowrap;
+}
+.toolbar .menu-pop button:hover, .toolbar .menu-pop button:focus-visible { background: var(--selection); outline: none; }
+.toolbar .menu-pop button[aria-pressed=true]::before { content: "✓"; position: absolute; left: 9px; color: var(--accent); }
+.toolbar .menu-pop button[aria-pressed=true] { background: none; }
+.toolbar .menu-pop button[aria-pressed=true]:hover { background: var(--selection); }
+.menu-pop kbd, .search-btn kbd { margin-left: auto; font: 11px var(--mono); color: var(--muted); }
+.menu-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 6px; }
+.menu-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 4px 10px 2px 26px; }
+.toolbar .search-btn { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); min-width: 150px; }

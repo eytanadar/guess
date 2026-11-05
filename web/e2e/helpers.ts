@@ -32,3 +32,10 @@ export async function lastError(page: Page) {
   const errs = page.locator(".console-out .error");
   return (await errs.count()) ? errs.last().textContent() : null;
 }
+
+/** Choose a menu item: menu(page, "View", "#curved") or menu(page, "Edit", "Undo"). */
+export async function menu(page: Page, title: string, item: string) {
+  await page.locator(".menu-title", { hasText: title }).click();
+  const pop = page.locator(".menu-root", { has: page.locator(".menu-title", { hasText: title }) }).locator(".menu-pop");
+  await (item.startsWith("#") || item.startsWith("[") ? pop.locator(item) : pop.getByRole("menuitem", { name: item })).click();
+}
