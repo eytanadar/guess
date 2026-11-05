@@ -14,6 +14,7 @@ type Py = {
   runPython(code: string): unknown;
   loadPackage(names: string[]): Promise<unknown>;
   setInterruptBuffer(buf: Uint8Array): void;
+  pyimport(name: string): any;
   globals: { set(name: string, v: unknown): void; get(name: string): any };
   FS: { mkdirTree(p: string): void; writeFile(p: string, data: string | Uint8Array): void };
 };
@@ -65,6 +66,19 @@ async function loadWithoutDeps(py: Py, names: string[]) {
   const lock = await (await fetch(PYODIDE_URL + "pyodide-lock.json")).json();
   const urls = names.map((n) => PYODIDE_URL + lock.packages[n].file_name);
   await py.loadPackage(urls);
+}
+
+/** installPackage(): micropip, in the background (between commands). */
+async function installPackage(name: string) {
+  try {
+    await py!.loadPackage(["micropip"]);
+    const micropip = py!.pyimport("micropip");
+    await micropip.install(name);
+    micropip.destroy?.();
+    post({ type: "text", text: `installed ${name}; you can import it now\n` });
+  } catch (e) {
+    post({ type: "error", text: `could not install ${name}: ${String(e).split("\n").filter(Boolean).pop()}` });
+  }
 }
 
 function call(fn: string, ...args: unknown[]): unknown {
@@ -121,6 +135,9 @@ function handle(msg: ToWorker) {
     case "move":
       py!.globals.set("__mv", JSON.stringify(msg.moves));
       py!.runPython("__m = json.loads(__mv)\nsession.move_nodes([__m[k:k + 3] for k in range(0, len(__m), 3)])");
+      break;
+    case "install":
+      void installPackage(msg.name);
       break;
     case "select":
       py!.globals.set("__sel", JSON.stringify(msg.nodes));

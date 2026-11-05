@@ -305,6 +305,9 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
     case "graphs":
       renderGraphTabs(m.names, m.current);
       break;
+    case "install":
+      send({ type: "install", name: m.name });
+      break;
     case "table":
       void openTable(m.kind, m.ids);
       break;
@@ -794,6 +797,34 @@ async function exportView(format: "png" | "jpg" | "svg", name: string) {
   a.download = name;
   a.click();
 }
+
+// ---- getting data in: URL, pasted tables, NDEx, Wikidata ---------------------------------
+$("#open-url").addEventListener("click", () => {
+  const url = prompt("Graph URL (GDF, GEXF, GraphML, Pajek, DL, CSV or .guess)", "https://");
+  if (url && url !== "https://") void term.submit(`makeFromURL(${JSON.stringify(url)})`);
+});
+$("#open-ndex").addEventListener("click", () => {
+  const id = prompt("NDEx network UUID (from www.ndexbio.org)", "");
+  if (id) void term.submit(`makeFromNDEx(${JSON.stringify(id.trim())})`);
+});
+$("#paste-data").addEventListener("click", () => {
+  const dlg = $<HTMLDialogElement>("#paste-dialog");
+  const area = dlg.querySelector("textarea")!;
+  area.value = "";
+  dlg.showModal();
+  navigator.clipboard?.readText?.().then((t) => {
+    if (!area.value && t) area.value = t;
+  }).catch(() => {});
+});
+$("#paste-load").addEventListener("click", async () => {
+  const dlg = $<HTMLDialogElement>("#paste-dialog");
+  const text = dlg.querySelector("textarea")!.value;
+  dlg.close();
+  if (!text.trim()) return;
+  await request((id) => ({ type: "writeFile", id, name: "pasted.csv", data: new TextEncoder().encode(text) }));
+  await term.submit(`makeFromCSV("pasted.csv")`);
+});
+$("#paste-cancel").addEventListener("click", () => $<HTMLDialogElement>("#paste-dialog").close());
 
 // ---- graph tabs (several graphs in one session) ------------------------------------------
 function renderGraphTabs(names: string[], current: string) {

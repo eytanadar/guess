@@ -51,7 +51,7 @@ class Session:
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
-        from . import algorithms, analysis, charts, glyphs, groups, gui, layouts, persist, ranges, states, styles, visuals, workspaces
+        from . import algorithms, analysis, charts, connectors, glyphs, groups, gui, layouts, persist, ranges, states, styles, timeline, visuals, workspaces
         gui.install(self)
         charts.install(self)
         persist.install(self)
@@ -65,6 +65,8 @@ class Session:
         groups.install(self)
         workspaces.install(self)
         glyphs.install(self)
+        connectors.install(self)
+        timeline.install(self)
         states.install(self)
         ranges.install(self)
         self.pending_morph = None
@@ -503,6 +505,9 @@ class Session:
         from . import styles
         if what == "workspace":
             return self.workspace()
+        if what == "timeline":
+            from . import timeline
+            return timeline.info(self.graph, kind or None)
         if what == "table":
             return styles.table_data(self.graph, kind, ids)
         return styles.field_info(self.graph, kind)

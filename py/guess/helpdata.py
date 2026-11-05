@@ -13,6 +13,8 @@ GROUPS = [
     ("glyphs", "Pie nodes, borders and edge bundling"),
     ("groups", "Grouping: collapse and expand"),
     ("workspaces", "Several graphs: subgraphs and tabs"),
+    ("timeline", "Time: ranges, years and the timeline"),
+    ("connectors", "Data from the web: URLs, SPARQL, NDEx, Neo4j, packages"),
     ("states", "States and morphing"),
     ("ranges", "Ranges (existence intervals)"),
     ("charts", "Charts"),

@@ -93,6 +93,8 @@ export type FromWorker =
   /** summary: one line (with a "did you mean" hint); line: the cell line it happened on */
   | { type: "error"; text: string; summary?: string; line?: number }
   | { type: "help"; topic: string | null }
+  /** installPackage(): the page asks the worker to pip-install it */
+  | { type: "install"; name: string }
   /** the session's graphs (tabs above the graph when there are several) */
   | { type: "graphs"; names: string[]; current: string }
   | { type: "table"; kind: "n" | "e"; ids: number[] | null }
@@ -125,6 +127,7 @@ export type ToWorker =
   /** nodes dragged on the display, as [id, x, y, id, x, y, ...] (one undo step) */
   | { type: "move"; moves: number[] }
   | { type: "select"; nodes: number[] }
+  | { type: "install"; name: string }
   | { type: "writeFile"; id: number; name: string; data: Uint8Array }
   /** help index, field summaries (filters/style panel) or data-table rows */
-  | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace"; kind?: "n" | "e"; ids?: number[] | null };
+  | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace" | "timeline"; kind?: string; ids?: number[] | null };

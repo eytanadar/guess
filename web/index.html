@@ -21,6 +21,10 @@
           <div class="menu-pop" role="menu" hidden>
             <button role="menuitem" id="open" title="Open a graph (.gdf, .gexf, .graphml, .net, .dl, .csv), a .py script, or an image — or drop files on the page">Open…<kbd>⌘O</kbd></button>
             <button role="menuitem" id="sample">Sample graph</button>
+            <button role="menuitem" id="open-url">Open from URL…</button>
+            <button role="menuitem" id="paste-data" title="Paste an edge table, node table, adjacency matrix or list">Paste a table…</button>
+            <button role="menuitem" id="open-ndex">Open from NDEx…</button>
+            <button role="menuitem" data-run='makeFromSPARQL("""SELECT ?source ?sourceLabel ?target ?targetLabel WHERE {\n  ?source wdt:P737 ?target .\n  ?source wdt:P106 wd:Q4964182 .\n  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". }\n} LIMIT 400""")' title="Philosophers and who influenced them, from Wikidata">Wikidata example: philosophers' influences</button>
             <hr />
             <button role="menuitem" id="save" title="Download a .guess session file (graph, fields, states, hulls, legends)">Save session<kbd>⌘S</kbd></button>
             <button role="menuitem" data-run='saveHistory("history.py")'>Save commands as script</button>
@@ -90,8 +94,10 @@
             <button role="menuitem" data-run="sugiyamaLayout()">Hierarchy</button>
             <button role="menuitem" data-run="radialLayout(sel[0] if len(sel) else g.nodes[0])">Radial around selection</button>
             <button role="menuitem" data-run="binPackLayout()">Pack components</button>
+            <button role="menuitem" data-run="treeLayout(sel[0] if len(sel) else None)">Tree (from selection)</button>
             <hr />
             <button role="menuitem" data-run="noverlapLayout()">Remove overlaps</button>
+            <button role="menuitem" data-run="labelAdjustLayout()">Remove label overlaps</button>
             <button role="menuitem" data-run="rotateLayout(90)">Rotate 90°</button>
             <button role="menuitem" data-run="mirrorLayout()">Mirror</button>
           </div>
@@ -164,6 +170,12 @@
       <div class="divider" id="divider" role="separator" aria-orientation="vertical" title="Drag to resize"></div>
       <section id="console"></section>
     </main>
+    <dialog id="paste-dialog" class="paste-dialog">
+      <h3>Paste a table</h3>
+      <p>An edge table (Source, Target, …), a node table (Id, Label, …), an adjacency matrix or an adjacency list — comma, tab or semicolon separated.</p>
+      <textarea rows="12" spellcheck="false" placeholder="Source,Target,Weight&#10;a,b,2&#10;b,c,1"></textarea>
+      <div class="paste-actions"><button id="paste-cancel">Cancel</button><button id="paste-load" class="primary">Load</button></div>
+    </dialog>
     <div id="tip" class="tip" hidden></div>
     <div id="menu" class="menu" hidden></div>
     <script type="module" src="/src/main.ts"></script>
