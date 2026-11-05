@@ -13,3 +13,5 @@ output-md
 guess-chi2006.pdf
 web/bundle/
 web/.pyodide-cache/
+web/demo/out/
+web/demo/.cache/

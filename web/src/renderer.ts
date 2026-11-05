@@ -11,6 +11,22 @@ interface Anim {
 
 export type Hit = { kind: "n" | "e"; id: number } | null;
 
+/** A semantic drag (declarative dragging): where the dragged node goes for a
+ *  pointer position, other nodes' preview positions, a target to highlight, and
+ *  what to do on drop. Candidate states are computed in the page at drag start;
+ *  Python is only called once, on drop. */
+export interface DragFrame {
+  x: number; y: number;                         // dragged node's top-left
+  others?: Map<number, [number, number]>;       // preview positions of other nodes
+  ring?: { x: number; y: number; r: number; color?: number };  // highlight circle (world)
+  line?: [number, number, number, number];      // rubber band (world)
+  hint?: string;
+}
+export interface DragBehaviour {
+  move(wx: number, wy: number): DragFrame;
+  drop(last: DragFrame): void;
+}
+
 export interface RendererEvents {
   hover(hit: Hit, clientX: number, clientY: number): void;
   context(hit: Hit, clientX: number, clientY: number): void;
@@ -20,6 +36,10 @@ export interface RendererEvents {
   selected(ids: number[]): void;
   /** double-click; return true if handled (otherwise it zooms) */
   dblclick?(hit: Hit): boolean;
+  /** pointer down on a node: a semantic drag behaviour, or null for a plain move */
+  dragBehaviour?(id: number, alt: boolean): DragBehaviour | null;
+  /** hint text while dragging (null when done) */
+  dragHint?(text: string | null): void;
 }
 
 const HIGHLIGHT = 0xff1f6b;
@@ -760,6 +780,16 @@ export class Renderer {
       shape(g, { ...n, x: n.x - grow, y: n.y - grow, w: n.w + 2 * grow, h: n.h + 2 * grow });
       g.stroke({ width: 2 * px, color: SELECT, alpha: 1 });
     }
+    const df = this.dragOverlay;
+    if (df?.ring) {
+      g.circle(df.ring.x, df.ring.y, df.ring.r);
+      g.fill({ color: df.ring.color ?? SELECT, alpha: 0.07 });
+      g.stroke({ width: 2 * px, color: df.ring.color ?? SELECT, alpha: 0.85 });
+    }
+    if (df?.line) {
+      g.moveTo(df.line[0], df.line[1]).lineTo(df.line[2], df.line[3]);
+      g.stroke({ width: 2 * px, color: SELECT, alpha: 0.9 });
+    }
     const m = this.marquee;
     if (m && m.pts.length >= 4) {
       if (m.mode === "box") {
@@ -830,7 +860,8 @@ export class Renderer {
 
   private bindInput() {
     const el = this.app.canvas;
-    let drag: { mode: "pan" | "node" | "box" | "lasso"; id?: number; hit: Hit; lx: number; ly: number; moved: boolean; add?: boolean } | null = null;
+    let drag: { mode: "pan" | "node" | "box" | "lasso"; id?: number; hit: Hit; lx: number; ly: number; moved: boolean; add?: boolean;
+      beh?: DragBehaviour | null; frame?: DragFrame; saved?: Map<number, [number, number]>; grab?: [number, number] } | null = null;
     const local = (ev: PointerEvent | WheelEvent | MouseEvent) => {
       const r = el.getBoundingClientRect();
       return { sx: ev.clientX - r.left, sy: ev.clientY - r.top };
@@ -853,6 +884,16 @@ export class Renderer {
       drag = hit?.kind === "n"
         ? { mode: "node", id: hit.id, hit, lx: sx, ly: sy, moved: false }
         : { mode: "pan", hit, lx: sx, ly: sy, moved: false };
+      if (drag.mode === "node" && !(this.selection.has(hit!.id) && this.selection.size > 1)) {
+        const beh = this.events.dragBehaviour?.(hit!.id, ev.altKey) ?? null;
+        if (beh) {
+          const n = this.nodes.get(hit!.id)!;
+          const w = this.toWorld(sx, sy);
+          drag.beh = beh;
+          drag.grab = [w.x - n.x, w.y - n.y];   // keep the grab point under the pointer
+          drag.saved = new Map([[n.i, [n.x, n.y]]]);
+        }
+      }
       el.style.cursor = drag.mode === "pan" ? "grabbing" : "move";
     });
     el.addEventListener("pointermove", (ev) => {
@@ -870,6 +911,13 @@ export class Renderer {
         } else if (drag.mode === "pan") {
           this.world.position.set(this.world.x + dx, this.world.y + dy);
           this.needsRender = true;
+        } else if (drag.beh) {
+          if (!drag.moved) return;
+          const w = this.toWorld(sx, sy);
+          const f = drag.beh.move(w.x - drag.grab![0], w.y - drag.grab![1]);
+          drag.frame = f;
+          this.showDragFrame(drag.id!, f, drag.saved!);
+          this.events.dragHint?.(f.hint ?? null);
         } else {
           // dragging a selected node moves the whole selection
           const ids = this.selection.has(drag.id!) ? this.selection : [drag.id!];
@@ -886,6 +934,18 @@ export class Renderer {
       this.events.hover(this.hitTest(sx, sy), ev.clientX, ev.clientY);
     });
     const end = (ev: PointerEvent) => {
+      if (drag?.beh) {
+        this.dragOverlay = null;
+        this.events.dragHint?.(null);
+        if (drag.moved && drag.frame) drag.beh.drop(drag.frame);
+        else this.restoreDrag(drag.saved!);
+        if (!drag.moved) this.events.click(drag.hit, ev.shiftKey);
+        this.drawOverlay();
+        drag = null;
+        el.style.cursor = "";
+        if (el.hasPointerCapture(ev.pointerId)) el.releasePointerCapture(ev.pointerId);
+        return;
+      }
       if (drag?.mode === "node" && drag.moved) {
         const ids = this.selection.has(drag.id!) ? [...this.selection] : [drag.id!];
         for (const id of ids) {
@@ -942,6 +1002,37 @@ export class Renderer {
       const { sx, sy } = local(ev);
       this.events.context(this.hitTest(sx, sy), ev.clientX, ev.clientY);
     });
+  }
+
+  /** Semantic drag preview: move the node (and others), draw the hint shapes. */
+  private dragOverlay: DragFrame | null = null;
+  private showDragFrame(id: number, f: DragFrame, saved: Map<number, [number, number]>) {
+    const move = (nid: number, x: number, y: number) => {
+      const n = this.nodes.get(nid);
+      if (!n) return;
+      if (!saved.has(nid)) saved.set(nid, [n.x, n.y]);
+      n.x = x;
+      n.y = y;
+    };
+    // put back nodes no longer previewed elsewhere
+    for (const [nid, [x, y]] of saved) {
+      if (nid !== id && !f.others?.has(nid)) {
+        const n = this.nodes.get(nid);
+        if (n) { n.x = x; n.y = y; }
+      }
+    }
+    move(id, f.x, f.y);
+    for (const [nid, [x, y]] of f.others ?? []) move(nid, x, y);
+    this.dragOverlay = f;
+    this.invalidate(true);
+  }
+
+  private restoreDrag(saved: Map<number, [number, number]>) {
+    for (const [nid, [x, y]] of saved) {
+      const n = this.nodes.get(nid);
+      if (n) { n.x = x; n.y = y; }
+    }
+    this.invalidate(true);
   }
 
   /** Visible nodes whose centre lies in the box (corner points) or lasso polygon. */

@@ -287,6 +287,34 @@ web/              Vite app (main thread + worker)
   deployable folder + zip/tar.gz; offline bundles include Pyodide (~18 MB),
   verified loading with the CDN blocked from a plain static server.
 
+### Competitive-analysis round (2026-11-05)
+
+Built from docs/COMPETITIVE_ANALYSIS.md (everything except the assistant and
+collaboration) plus docs/DECLARATIVE_DRAGGING.md:
+- Help browser (searchable commands and curated examples, `helpdata.py`),
+  Cmd/Ctrl+K palette, parameter hints, one-line errors with the failing line
+  marked and "did you mean" suggestions.
+- Data table (virtualised, linked selection, inline edits as Gython),
+  Style panel (mappings → colorize/colorBy/sizeBy/labelBy/shapeBy/legendFor,
+  saved styles), Filter panel (histograms, range sliders, categories,
+  k-core/ego/component/group size → showOnly), Variables panel.
+- Menu bar (File, Edit, View, Layout, Analyze, Help) replacing the toolbar.
+- Watched (live) cells; charts re-plot in place. Notebook (.ipynb) and HTML
+  report export. Vim keys, multi-cursor, editor search, find in output.
+- Groups: collapse / collapseBy / expand (double-click), nested, undoable,
+  saved. Several graphs per session: subgraph / use / newGraph, tabs.
+- Pie nodes (pieChart / pieNeighbors), borderBy, bundleEdges (B-spline
+  routes through group centres). treeLayout, labelAdjustLayout, scatterLayout.
+- Connectors: makeFromURL, sparql / makeFromSPARQL (Wikidata), makeFromNDEx,
+  makeFromCypher (Neo4j HTTP), installPackage (micropip), paste a table.
+- Timeline bar (ranges or a numeric field; scrub, play, window, sparkline)
+  with quiet runs; Presentation mode (slides = state + camera + note).
+- Share links (gzip session in the URL hash; viewer links open in app mode).
+- Scale: ForceAtlas2 in JS with Barnes-Hut inside the Python worker for
+  graphs over 1,000 nodes (about 9x faster at 20k nodes / 80k edges),
+  on-demand rendering, batched edge drawing, quick-reject edge hit tests.
+- Declarative dragging: group drop, ring slide, Alt-drag edges, scatter edit.
+
 ### Gephi-inspired candidates (survey of gephi/modules, 2026-11-05)
 
 S = under a day, M = a few days, L = a week+. "nx" = networkx already has it.

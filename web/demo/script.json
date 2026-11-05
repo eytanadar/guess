@@ -1,0 +1,117 @@
+{
+  "title": "GUESS for the web",
+  "output": "guess-demo.mp4",
+  "voice": "JBFqnCBsd6RMkjVDRZzb",
+  "ttsModel": "eleven_multilingual_v2",
+  "theme": "light",
+  "setup": [
+    { "title": "GUESS", "subtitle": "graph exploration, now in the browser" }
+  ],
+  "scenes": [
+    {
+      "id": "intro",
+      "narration": "Graphs are everywhere: social networks, biological pathways, computer networks. When we built GUESS in 2006, we had watched researchers struggle with tools that were either too general or tied to one domain. What they needed was a flexible way to work with graph data. This is GUESS rebuilt for the web. It runs entirely in the browser, with nothing to install.",
+      "actions": [
+        { "wait": 6500 },
+        { "title": "" },
+        { "wait": 1500 },
+        { "hoverNode": "v128" }
+      ]
+    },
+    {
+      "id": "gython",
+      "narration": "The heart of GUESS is Gython, Python extended with graph operators. This sample network shows who emails whom, and how often. In one line we can find every edge with a frequency over one hundred and colour it red. And one command gives each department its own colour.",
+      "actions": [
+        { "run": "(freq > 100).color = red" },
+        { "wait": 1200 },
+        { "run": "colorize(dept)" },
+        { "wait": 800 }
+      ]
+    },
+    {
+      "id": "linked-output",
+      "narration": "The interpreter is tied to the visualization. Asking for the people in department three returns a set. Passing the mouse over that output highlights the matching nodes, and clicking selects them. Edges have their own operators, so we can ask which edges connect two departments.",
+      "actions": [
+        { "run": "dept == 'dept3'" },
+        { "hoverOutput": "v4" },
+        { "wait": 900 },
+        { "hoverText": [".cell .grp", "v"] },
+        { "wait": 1200 },
+        { "run": "(dept == 'dept1') <-> (dept == 'dept3')" },
+        { "hoverOutput": "-" },
+        { "wait": 900 }
+      ]
+    },
+    {
+      "id": "layout-analysis",
+      "narration": "Layouts and network algorithms are a command away. ForceAtlas2 arranges the graph. Louvain finds communities, which we colour, and we size each person by PageRank. Every result is an ordinary field, so it works with everything else in the language.",
+      "actions": [
+        { "run": "forceAtlas2Layout()" },
+        { "run": "louvainClusters()" },
+        { "run": "colorize(modularity_class)" },
+        { "run": "sizeBy(pagerank, 5, 40, 'sqrt')" },
+        { "wait": 600 }
+      ]
+    },
+    {
+      "id": "panels",
+      "narration": "Not everyone wants to type. The filter panel hides what doesn't match, and the data table shows every field. But each change writes Gython into the console. The interface teaches the language, and the work stays reproducible.",
+      "actions": [
+        { "menu": ["View", "#btn-filter"] },
+        { "select": ["#side-filter select", "s:kcore"] },
+        { "click": "#side-filter .pf-form button" },
+        { "wait": 1500 },
+        { "click": "#side-filter .pf-actions button" },
+        { "menu": ["View", "#btn-table"] },
+        { "wait": 1500 },
+        { "menu": ["View", "#btn-table"] },
+        { "menu": ["View", "#btn-filter"] }
+      ]
+    },
+    {
+      "id": "dragging",
+      "narration": "Direct manipulation means something too. Because the colours come from communities, dragging a person into another community changes their community. The drop becomes a line of code we can see, and undo.",
+      "actions": [
+        { "dragIntoGroup": "v128" },
+        { "wait": 1500 },
+        { "menu": ["Edit", "#undo"] },
+        { "wait": 600 }
+      ]
+    },
+    {
+      "id": "help",
+      "narration": "There are over two hundred commands. Search finds commands, examples, nodes and values. Here we look for communities and pick an example.",
+      "actions": [
+        { "key": "ControlOrMeta+k" },
+        { "typeKeys": "communit" },
+        { "wait": 1800 },
+        { "key": "Escape" },
+        { "key": "F1" },
+        { "wait": 1200 },
+        { "fill": [".help-search", "shortest path"] },
+        { "wait": 1500 },
+        { "key": "F1" }
+      ]
+    },
+    {
+      "id": "charts",
+      "narration": "Charts are linked to the graph as well. Hovering over a slice of this chart highlights its department's people.",
+      "actions": [
+        { "run": "plotSizesPie(dept)" },
+        { "wait": 600 },
+        { "hoverText": [".chart path.mark", ""] },
+        { "wait": 1400 }
+      ]
+    },
+    {
+      "id": "share",
+      "narration": "When we're done, a session can be saved, exported for Gephi, turned into a notebook, or shared as a link that opens in anyone's browser. We hope GUESS makes graph exploration a little more flexible, and a lot more fun.",
+      "actions": [
+        { "menu": ["File", "#share-link"], "close": true },
+        { "wait": 800 },
+        { "title": "GUESS", "subtitle": "graph exploration in the browser" },
+        { "wait": 2500 }
+      ]
+    }
+  ]
+}

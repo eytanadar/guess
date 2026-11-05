@@ -51,6 +51,8 @@ export interface Overlay {
   /** pie-chart node slice colours (node records then carry `p`, the slice sizes) */
   pie?: number[] | null;
   borderWidth?: number;
+  /** context for semantic dragging (see main.ts dragBehaviour) */
+  drag?: DragContext;
   labels?: { outline: boolean; cull: boolean };
   hulls: HullRec[];
   legends: LegendRec[];
@@ -134,3 +136,13 @@ export type ToWorker =
   | { type: "writeFile"; id: number; name: string; data: Uint8Array }
   /** help index, field summaries (filters/style panel) or data-table rows */
   | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace" | "timeline"; kind?: string; ids?: number[] | null };
+
+export interface DragContext {
+  /** the last categorical colouring: drop a node on another group to change its value */
+  groups?: { field: string; type: string; groups: { v: string | number | boolean; c: number; ids: number[] }[] };
+  /** circleLayout(): nodes slide around the ring and reorder */
+  ring?: { cx: number; cy: number; r: number; ids: number[] };
+  /** scatterLayout(x, y): dragging edits the two fields */
+  axes?: { x: string; y: string; x0: number; sx: number; y0: number; sy: number; h: number;
+           xint: boolean; yint: boolean; xedit: boolean; yedit: boolean };
+}

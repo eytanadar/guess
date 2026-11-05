@@ -84,3 +84,24 @@ Prototype idea 1 (drop on a group) and idea 2 (slide on circle/radial rings).
 They need only a candidate-state picker in `renderer.ts` and a drop-time
 Gython command, and they give GUESS something no other graph tool has:
 editing data and layout by dragging, recorded as reproducible code.
+
+## Implemented (2026-11-05)
+
+Each drag works out its candidate states when it starts (in `main.ts`
+`dragBehaviour`, from the `drag` context Python sends with the overlay). It
+follows the pointer through them, with snapping, a preview of other nodes and a
+highlight ring. On drop it runs **one** Gython command, so the change shows in
+the console, can be undone and can be re-run. The renderer's `DragBehaviour`
+interface (`move(world x, y) → frame`, `drop(frame)`) is the reusable core.
+
+| gesture | when | on drop |
+|---|---|---|
+| drag a node into another group | after `colorize(field)` or `legendFor(field)` on a node field | `v.field = value; v.color = …; v.x = …; v.y = …` |
+| drag a node around the circle | after `circleLayout()` (others make room as you drag) | `ringMove(v, k)` |
+| Alt-drag from a node to another | always | `addEdge(a, b)` |
+| drag a node in a scatter plot | after `scatterLayout(xfield, yfield)` (editable fields only) | `v.x_field = …; v.y_field = …` |
+
+Dragging a node that belongs to a multi-node selection still moves the whole
+selection, and any other drag is a plain move. Not built: scrubbing between
+states by dragging (the Timeline and Presentation panels cover this), Sugiyama
+layer reordering, and dragging to set layout parameters.

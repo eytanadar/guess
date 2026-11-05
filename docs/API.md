@@ -13,7 +13,7 @@ Commands can be called without parentheses when they take no arguments
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
-- [Layouts](#layouts) (30)
+- [Layouts](#layouts) (32)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (22)
 - [Styles and visual mappings](#styles-and-visual-mappings) (8)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
@@ -571,9 +571,21 @@ about its top-left corner; rescaleLayout(xpercent, ypercent) scales each
 axis separately; rescaleLayout(width, height) with integers fits the
 layout into a width x height box at the origin.
 
+### `ringMove(node, index)`
+
+ringMove(node, k) moves a node to position k around the circle made by
+circleLayout() and re-spaces the ring (what dragging a node around the
+circle does).
+
 ### `rotateLayout(degrees=90)`
 
 rotateLayout(degrees) turns the layout clockwise about its centre.
+
+### `scatterLayout(xfield, yfield, width=1000, height=1000)`
+
+scatterLayout(xfield, yfield) places nodes by two numeric fields (x to the
+right, y upwards) in a width x height area. Dragging a node then edits
+those two values.
 
 ### `springLayout(max=None)`
 

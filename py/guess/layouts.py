@@ -444,8 +444,12 @@ class _Layouts:
         self.center_after = True
 
     def snap(self):
-        # a new layout invalidates edge routes computed by an earlier one
+        # a new layout invalidates edge routes computed by an earlier one,
+        # and the drag constraints (ring, scatter axes) of the previous layout
         self.graph.clear_bends()
+        drag = getattr(self.session.view, "drag", None)
+        if drag and (drag.pop("ring", None) is not None) | (drag.pop("axes", None) is not None):
+            self.session.view.changed()
         return _Snapshot(self.graph)
 
     def finish(self):
@@ -526,6 +530,10 @@ def _field_arg(graph, f):
 # --------------------------------------------------------------------------
 # Simple layouts
 # --------------------------------------------------------------------------
+
+def _is_int(field):
+    return field.type == INT
+
 
 def _random_positions(snap, width, height, rng):
     P = snap.pos.copy()
@@ -2340,6 +2348,10 @@ def install(session):
         if field is None and center is None and x is None and y is None:
             s = lay.snap()
             lay.apply(s, _circle_positions(s))
+            # dragging a node now slides it around the ring (declarative dragging)
+            session.view.drag["ring"] = {"cx": BOX / 2, "cy": BOX / 2, "r": 0.45 * BOX,
+                                         "ids": [nd._id for nd in s.nodes]}
+            session.view.changed()
             return
         if field is None or center is None or ((x is None) != (y is None)):
             raise TypeError("circleLayout(), circleLayout(field, centerNode) or "
@@ -2589,6 +2601,53 @@ def install(session):
         visible labels stop overlapping (Gephi's Label Adjust)."""
         s = lay.snap()
         lay.run(s, _label_adjust_gen(s, rng(0), float(margin)))
+
+    @cmd
+    def ringMove(node, index):
+        """ringMove(node, k) moves a node to position k around the circle made by
+        circleLayout() and re-spaces the ring (what dragging a node around the
+        circle does)."""
+        ring = session.view.drag.get("ring")
+        if not ring:
+            raise GuessError("ringMove works after circleLayout()")
+        nd = _node_arg(g, node)
+        ids = [i for i in ring["ids"] if i != nd._id and g.node_by_id(i) is not None]
+        k = max(0, min(int(index), len(ids)))
+        ids.insert(k, nd._id)
+        n = len(ids)
+        for j, i in enumerate(ids):
+            a = 2 * math.pi * j / n
+            m = g.node_by_id(i)
+            m.x = ring["cx"] + ring["r"] * math.cos(a)
+            m.y = ring["cy"] + ring["r"] * math.sin(a)
+        ring["ids"] = ids
+        session.view.changed()
+
+    @cmd
+    def scatterLayout(xfield, yfield, width=1000, height=1000):
+        """scatterLayout(xfield, yfield) places nodes by two numeric fields (x to the
+        right, y upwards) in a width x height area. Dragging a node then edits
+        those two values."""
+        fx, fy = _field_arg(g, xfield), _field_arg(g, yfield)
+        s = lay.snap()
+        P = s.pos.copy()
+        vx = np.array([_num(fx.get(nd), np.nan) for nd in s.nodes])
+        vy = np.array([_num(fy.get(nd), np.nan) for nd in s.nodes])
+        ok = np.isfinite(vx) & np.isfinite(vy)
+        if not ok.any():
+            raise GuessError("no nodes have numbers in both fields")
+        x0, x1 = float(vx[ok].min()), float(vx[ok].max())
+        y0, y1 = float(vy[ok].min()), float(vy[ok].max())
+        sx = float(width) / ((x1 - x0) or 1)
+        sy = float(height) / ((y1 - y0) or 1)
+        P[ok, 0] = (vx[ok] - x0) * sx
+        P[ok, 1] = float(height) - (vy[ok] - y0) * sy
+        lay.apply(s, P)
+        session.view.drag["axes"] = {"x": fx.name, "y": fy.name, "x0": x0, "sx": sx, "y0": y0, "sy": sy,
+                                     "h": float(height), "xint": _is_int(fx), "yint": _is_int(fy),
+                                     "xedit": not fx.readonly and fx.compute is None,
+                                     "yedit": not fy.readonly and fy.compute is None}
+        session.view.changed()
 
     @cmd
     def rotateLayout(degrees=90):

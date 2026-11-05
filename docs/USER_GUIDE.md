@@ -76,6 +76,15 @@ See [API.md](API.md) for every command and field.
 | Esc, or click the background | clear the selection |
 | right-click | context menu (for the whole selection if you right-click a selected node) |
 
+**Dragging with meaning.**
+- After `colorize(dept)`, dragging a node into another department's cluster
+  changes its `dept` (a ring shows the target).
+- After `circleLayout()`, nodes slide around the circle and the others make room.
+- Alt-drag from one node to another adds an edge.
+- After `scatterLayout(x, y)`, dragging a node edits those two fields.
+
+Each drop is one command in the console, so it can be undone.
+
 The selection is the variable **`sel`** in the console (`sel.color = red`,
 `center(sel)`, `showOnly(sel)`), and `select(dept == 'dept2')` selects from code.
 

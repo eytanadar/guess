@@ -289,3 +289,113 @@ test("help, palette, data table, style and filter panels, parameter hints", asyn
   await expect(cells.last()).toContainText("showAll()");
   expect(errors).toEqual([]);
 });
+
+test("graph tabs, groups, watched cells, timeline, slides, find, exports, variables", async ({ page }) => {
+  const errors = await boot(page);
+  const cells = page.locator(".cell");
+  // several graphs: a subgraph opens a tab
+  await run(page, "subgraph(dept == 'dept3', 'three')");
+  await expect(page.locator(".graph-tab")).toHaveCount(2);
+  await page.locator(".graph-tab button", { hasText: "main" }).click();
+  await expect(cells.last()).toContainText('use("main")');
+  await expect(page.locator(".graph-tab.current")).toContainText("main");
+  // collapse a group; double-click expands it
+  await run(page, "m = collapse(dept == 'dept1', 'one')\ncenter(m)");
+  await page.waitForTimeout(700);
+  const box = (await page.locator("#graph canvas").boundingBox())!;
+  await page.mouse.dblclick(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(cells.last()).toContainText("expand(one)");
+  await expect(cells.last()).not.toHaveClass(/failed/);
+  // a watched cell re-runs after other commands
+  await run(page, "print(len(g.nodes))");
+  const watched = cells.nth((await cells.count()) - 1);
+  await watched.hover();
+  await watched.locator(".cell-watch").click();
+  await expect(watched).toHaveClass(/watched/);
+  await run(page, "addNode('extra1')");
+  await expect(watched.locator(".cell-out")).toContainText("403");
+  await watched.hover();
+  await watched.locator(".cell-watch").click();
+  // variables panel
+  await run(page, "hubs = (totaldegree > 10)");
+  await menu(page, "View", "#btn-vars");
+  await expect(page.locator(".ws-row", { hasText: "hubs" })).toContainText("nodes");
+  // timeline over a numeric field
+  await run(page, "addNodeField('year', INT, 0)\nfor n in g.nodes:\n    n.year = 1990 + (n.totaldegree % 10)");
+  await menu(page, "View", "#btn-timeline");
+  await page.locator(".timeline select").first().selectOption("year");
+  await expect(page.locator(".tl-time")).toHaveText("1999");
+  await page.locator(".tl-slider").fill("2");
+  await expect(page.locator(".tl-time")).toHaveText("1992");
+  await page.waitForTimeout(500);
+  await run(page, "print(len([n for n in g.nodes if n.visible]) < 403)");
+  await expect(cells.last()).toContainText("True");
+  await page.locator(".timeline button", { hasText: "Show all" }).click();
+  // presentation: add two slides and step back
+  await menu(page, "View", "#btn-present");
+  await page.locator("#slide-new-note").fill("everything");
+  await page.click("#slide-add");
+  await expect(page.locator("#slide-pos")).toHaveText("1 / 1");
+  await run(page, "colorize(dept)");
+  await page.locator("#slide-new-note").fill("by department");
+  await page.click("#slide-add");
+  await expect(page.locator("#slide-pos")).toHaveText("2 / 2");
+  await page.click("#slide-prev");
+  await expect(page.locator("#slide-note")).toHaveText("everything");
+  // find in output
+  await page.keyboard.press("ControlOrMeta+Shift+f");
+  await page.locator(".console-find input").fill("subgraph");
+  await expect(page.locator(".console-find-count")).toHaveText("1 match");
+  await page.keyboard.press("Escape");
+  // notebook export
+  const dl = page.waitForEvent("download");
+  await menu(page, "File", "#export-notebook");
+  expect((await dl).suggestedFilename()).toBe("guess.ipynb");
+  expect(errors).toEqual([]);
+});
+
+test("declarative dragging: groups, ring, edges, scatter", async ({ page }) => {
+  const errors = await boot(page);
+  const cells = page.locator(".cell");
+  const screen = (name: string) => page.evaluate((name) => {
+    const r = (window as any).__guess.renderer;
+    const n = [...r.nodes.values()].find((m: any) => m.name === name);
+    const c = r.app.canvas.getBoundingClientRect();
+    const v = r.getView();
+    const s = v[2];
+    return [c.left + c.width / 2 + (n.x + n.w / 2 - v[0]) * s, c.top + c.height / 2 + (n.y + n.h / 2 - v[1]) * s];
+  }, name);
+  const drag = async (from: number[], to: number[], alt = false) => {
+    await page.mouse.move(from[0], from[1]);
+    if (alt) await page.keyboard.down("Alt");
+    await page.mouse.down();
+    for (let k = 1; k <= 8; k++) await page.mouse.move(from[0] + ((to[0] - from[0]) * k) / 8, from[1] + ((to[1] - from[1]) * k) / 8);
+    await page.mouse.up();
+    if (alt) await page.keyboard.up("Alt");
+  };
+  // 1. drop a node into another department's group
+  await run(page, "makeSimpleRandom(3, 0)\naddNodeField('team', VARCHAR, 'a')\nnd0.x, nd0.y = 0, 0\nnd1.x, nd1.y = 400, 0\nnd2.x, nd2.y = 420, 30\nnd1.team = 'b'; nd2.team = 'b'\ncolorize(team)\ncenter()");
+  await page.waitForTimeout(700);
+  const q1 = await screen("nd1"), q2 = await screen("nd2");
+  await drag(await screen("nd0"), [(q1[0] + q2[0]) / 2, (q1[1] + q2[1]) / 2 + 30]);
+  await expect(cells.last()).toContainText('nd0.team = "b"');
+  await expect(cells.last()).not.toHaveClass(/failed/);
+  // 2. alt-drag from a node to another: a new edge
+  await drag(await screen("nd1"), await screen("nd2"), true);
+  await expect(cells.last()).toContainText("addEdge(nd1, nd2)");
+  // 3. circle layout: slide around the ring
+  await run(page, "makeSimpleRandom(8, 0)\ncircleLayout()\ncenter()");
+  await page.waitForTimeout(700);
+  await drag(await screen("nd0"), await screen("nd4"));
+  await expect(cells.last()).toContainText("ringMove(nd0,");
+  await expect(cells.last()).not.toHaveClass(/failed/);
+  // 4. scatter layout: dragging edits the two fields
+  await run(page, "makeSimpleRandom(3, 0)\naddNodeField('a', DOUBLE, 0)\naddNodeField('b', DOUBLE, 0)\nnd1.a, nd1.b = 10, 10\nnd2.a, nd2.b = 5, 2\nscatterLayout(a, b)\ncenter()");
+  await page.waitForTimeout(700);
+  const p0 = await screen("nd0"), p1 = await screen("nd1");
+  await drag(p0, [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2]);
+  await expect(cells.last()).toContainText("nd0.a = ");
+  await run(page, "print(4 < nd0.a < 6, 4 < nd0.b < 6)");
+  await expect(cells.last()).toContainText("True True");
+  expect(errors).toEqual([]);
+});

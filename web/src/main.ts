@@ -1,7 +1,7 @@
 import "./style.css";
 import { Console, groupTip, type Item } from "./console";
-import type { FromWorker, Info, LegendRec, ToWorker } from "./protocol";
-import { Renderer, type Hit } from "./renderer";
+import type { DragContext, FromWorker, Info, LegendRec, ToWorker } from "./protocol";
+import { Renderer, type DragBehaviour, type DragFrame, type Hit } from "./renderer";
 import { Dock } from "./dock";
 import { HelpPanel, type HelpIndex } from "./help";
 import { Palette, type PaletteItem } from "./palette";
@@ -68,6 +68,10 @@ const renderer = new Renderer($("#graph"), {
   },
   click: (hit, shift) => onGraphClick(hit, shift),
   selected: (ids) => syncSelection(ids),
+  dragBehaviour: (id, alt) => (tool === "select" ? dragBehaviour(id, alt) : null),
+  dragHint: (text) => {
+    status.textContent = text ?? "";
+  },
   // double-clicking a collapsed group expands it
   dblclick: (hit) => {
     if (hit?.kind !== "n" || !renderer.nodes.get(hit.id)?.m) return false;
@@ -333,6 +337,7 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       $("#label-outlines").setAttribute("aria-pressed", String(!!m.labels?.outline));
       $("#label-cull").setAttribute("aria-pressed", String(!!m.labels?.cull));
       savedStyles = m.styles ?? [];
+      dragCtx = m.drag ?? {};
       stylePanel.refreshSaved();
       break;
     case "export":
@@ -831,6 +836,139 @@ $("#btn-timeline").addEventListener("click", () => {
   if (bar.hidden) timeline.hide();
   else void timeline.show();
 });
+
+// ---- declarative dragging (docs/DECLARATIVE_DRAGGING.md) ------------------------------------
+// Each drag works out its candidate states when it starts, follows the pointer
+// through them (snapping, previewing other nodes), and on drop runs one Gython
+// command — visible in the console, undoable, reproducible.
+let dragCtx: DragContext = {};
+const hexColor = (c: number) => "#" + c.toString(16).padStart(6, "0");
+const fmtNum = (v: number, int: boolean) => (int ? String(Math.round(v)) : String(Math.round(v * 1000) / 1000));
+
+function dragBehaviour(id: number, alt: boolean): DragBehaviour | null {
+  const n = renderer.nodes.get(id);
+  if (!n) return null;
+  const expr = nodeExpr(id);
+  const centre = (m: { x: number; y: number; w: number; h: number }) => [m.x + m.w / 2, m.y + m.h / 2] as const;
+
+  // Alt-drag from a node: a rubber-band edge that snaps to the nearest node
+  if (alt) {
+    const [ax, ay] = centre(n);
+    let target: number | null = null;
+    return {
+      move(wx, wy): DragFrame {
+        const px = wx + n.w / 2, py = wy + n.h / 2;
+        const snap = 40 / renderer.scale;
+        target = null;
+        let best = snap;
+        for (const m of renderer.nodes.values()) {
+          if (m.i === id || !m.v) continue;
+          const [mx, my] = centre(m);
+          const d = Math.hypot(mx - px, my - py);
+          if (d < best) { best = d; target = m.i; }
+        }
+        const t = target !== null ? renderer.nodes.get(target)! : null;
+        const [ex, ey] = t ? centre(t) : [px, py];
+        return { x: n.x, y: n.y, line: [ax, ay, ex, ey], ring: t ? { x: ex, y: ey, r: Math.max(t.w, t.h) * 0.8 } : undefined,
+                 hint: t ? `release to connect ${n.name} — ${t.name}` : "drag to another node to connect" };
+      },
+      drop() {
+        if (target !== null) void term.submit(`addEdge(${expr}, ${nodeExpr(target)})`);
+      },
+    };
+  }
+
+  // scatterLayout: dragging edits the fields on the axes
+  const ax = dragCtx.axes;
+  if (ax && (ax.xedit || ax.yedit)) {
+    const ox = n.x, oy = n.y;
+    const vals = (x: number, y: number) => [ax.x0 + x / ax.sx, ax.y0 + (ax.h - y) / ax.sy];
+    return {
+      move(wx, wy): DragFrame {
+        const x = ax.xedit ? wx : ox, y = ax.yedit ? wy : oy;
+        const [vx, vy] = vals(x, y);
+        return { x, y, hint: [ax.xedit && `${ax.x} = ${fmtNum(vx, ax.xint)}`, ax.yedit && `${ax.y} = ${fmtNum(vy, ax.yint)}`].filter(Boolean).join(", ") };
+      },
+      drop(f) {
+        const [vx, vy] = vals(f.x, f.y);
+        const lines: string[] = [];
+        if (ax.xedit) lines.push(`${expr}.${ax.x} = ${fmtNum(vx, ax.xint)}`);
+        if (ax.yedit) lines.push(`${expr}.${ax.y} = ${fmtNum(vy, ax.yint)}`);
+        lines.push(`${expr}.x = ${fmtNum(f.x, false)}; ${expr}.y = ${fmtNum(f.y, false)}`);
+        void term.submit(lines.join("\n"));
+      },
+    };
+  }
+
+  // circleLayout: slide around the ring; the others make room
+  const ring = dragCtx.ring;
+  if (ring && ring.ids.includes(id)) {
+    const others = ring.ids.filter((i) => i !== id && renderer.nodes.has(i));
+    const total = others.length + 1;
+    let slot = ring.ids.indexOf(id);
+    return {
+      move(wx, wy): DragFrame {
+        let t = Math.atan2(wy - ring.cy, wx - ring.cx);
+        if (t < 0) t += 2 * Math.PI;
+        slot = Math.round((t / (2 * Math.PI)) * total) % total;
+        const order = [...others];
+        order.splice(slot, 0, id);
+        const pos = new Map<number, [number, number]>();
+        order.forEach((nid, j) => {
+          const a = (2 * Math.PI * j) / total;
+          if (nid !== id) pos.set(nid, [ring.cx + ring.r * Math.cos(a), ring.cy + ring.r * Math.sin(a)]);
+        });
+        return { x: ring.cx + ring.r * Math.cos(t), y: ring.cy + ring.r * Math.sin(t), others: pos,
+                 hint: `${n.name}: position ${slot + 1} of ${total}` };
+      },
+      drop() {
+        void term.submit(`ringMove(${expr}, ${slot})`);
+      },
+    };
+  }
+
+  // a categorical colouring is active: drop a node on another group to change its value
+  const gr = dragCtx.groups;
+  if (gr) {
+    const own = gr.groups.find((g) => g.ids.includes(id));
+    const zones = gr.groups.map((g) => {
+      const pts = g.ids.map((i) => renderer.nodes.get(i)).filter((m): m is NonNullable<typeof m> => !!m && m.v && m.i !== id);
+      if (!pts.length) return null;
+      const cx = pts.reduce((s, m) => s + m.x + m.w / 2, 0) / pts.length;
+      const cy = pts.reduce((s, m) => s + m.y + m.h / 2, 0) / pts.length;
+      const ds = pts.map((m) => Math.hypot(m.x + m.w / 2 - cx, m.y + m.h / 2 - cy)).sort((a, b) => a - b);
+      const r = Math.max(30, ds[Math.floor(ds.length * 0.8)] ?? 0) + 10;   // most of the group
+      return { g, cx, cy, r };
+    }).filter((z): z is NonNullable<typeof z> => z !== null);
+    let target: (typeof zones)[number] | null = null;
+    return {
+      move(wx, wy): DragFrame {
+        const px = wx + n.w / 2, py = wy + n.h / 2;
+        target = null;
+        let best = Infinity;
+        for (const z of zones) {
+          const d = Math.hypot(px - z.cx, py - z.cy) / z.r;
+          if (d < 1 && d < best && z.g !== own) { best = d; target = z; }
+        }
+        return {
+          x: wx, y: wy,
+          ring: target ? { x: target.cx, y: target.cy, r: target.r, color: target.g.c } : undefined,
+          hint: target ? `release: ${n.name}.${gr.field} = ${String(target.g.v)}` : `drag into another ${gr.field} group to change it`,
+        };
+      },
+      drop(f) {
+        if (!target) {
+          send({ type: "move", moves: [id, f.x, f.y] });
+          scheduleAutosave();
+          return;
+        }
+        const lit = gr.type === "VARCHAR" ? JSON.stringify(String(target.g.v)) : pyLit(target.g.v);
+        void term.submit(`${expr}.${gr.field} = ${lit}; ${expr}.color = ${JSON.stringify(hexColor(target.g.c))}\n${expr}.x = ${fmtNum(f.x, false)}; ${expr}.y = ${fmtNum(f.y, false)}`);
+      },
+    };
+  }
+  return null;
+}
 
 // ---- presentation (slides) ------------------------------------------------------------
 let slideList: { note: string }[] = [];
@@ -1356,3 +1494,6 @@ main();
     divider.addEventListener("pointerup", up);
   });
 }
+
+// for debugging and tests in the dev server only
+if (import.meta.env.DEV) (window as unknown as { __guess: unknown }).__guess = { renderer, term };
