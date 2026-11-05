@@ -51,7 +51,7 @@ class Session:
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
-        from . import algorithms, analysis, charts, gui, layouts, persist, ranges, states, styles, visuals
+        from . import algorithms, analysis, charts, glyphs, groups, gui, layouts, persist, ranges, states, styles, visuals, workspaces
         gui.install(self)
         charts.install(self)
         persist.install(self)
@@ -62,6 +62,9 @@ class Session:
         analysis.install(self)
         visuals.install(self)
         styles.install(self)
+        groups.install(self)
+        workspaces.install(self)
+        glyphs.install(self)
         states.install(self)
         ranges.install(self)
         self.pending_morph = None
@@ -72,6 +75,7 @@ class Session:
         self.redo_stack = []
         self._run_depth = 0
         self.current_cell = None  # console cell number of the next run (marks undone cells)
+        self.quiet_next = False   # the next run is a watched-cell refresh: no history or undo step
         self._history_op = False
 
         def undo():
@@ -100,6 +104,8 @@ class Session:
 
         for fn in (undo, redo, history, saveHistory):
             self.register_command(fn.__name__, fn)
+        # names present at startup (type names etc.) are not "your" variables
+        self._baseline = {k: id(v) for k, v in self.ns.items()}
 
         def log(filename="session.py"):
             """Start recording every successful command (save with stoplog())."""
@@ -189,10 +195,11 @@ class Session:
             return self._run(source, interactive, filename)
         g = self.graph
         cell, self.current_cell = self.current_cell, None
+        quiet, self.quiet_next = self.quiet_next, False
         before = self._undo_snapshot()
         g.journal = Journal()
         self._history_op = False
-        if interactive:
+        if interactive and not quiet:
             self.executed.append(source)
         self._run_depth += 1
         try:
@@ -200,7 +207,7 @@ class Session:
         finally:
             self._run_depth -= 1
             j, g.journal = g.journal, None
-            if not self._history_op:
+            if not self._history_op and not quiet:
                 self._record_undo(source, j, before, cell)
         return ok
 
@@ -451,9 +458,51 @@ class Session:
         return {"commands": cmds, "groups": [t for _k, t in helpdata.GROUPS],
                 "examples": helpdata.examples()}
 
+    def workspace(self):
+        """User variables (name, type, short value, linked elements) plus saved
+        states and styles, for the Variables panel."""
+        import types
+        out = []
+        hidden = set(runtime.HELPERS) | {"__name__", "__builtins__", "__display__", "_", "print", "__result__"}
+        for name, v in self.ns.items():
+            if name in hidden or name.startswith("__") or name in self.system:
+                continue
+            if name != "sel" and self._baseline.get(name) == id(v):
+                continue
+            if isinstance(v, types.ModuleType):
+                continue
+            rec = {"name": name, "type": type(v).__name__}
+            items = []
+            if isinstance(v, (Node, Edge)):
+                items = [v]
+                rec["value"] = repr(v) if isinstance(v, Edge) else v._name
+            elif isinstance(v, (GSet, list, tuple, set)) and _contains_elements(v):
+                flat = [x for x in _flatten(v) if isinstance(x, (Node, Edge))]
+                items = flat
+                nn = sum(isinstance(x, Node) for x in flat)
+                parts = [f"{nn} node{'s' * (nn != 1)}" if nn else "", f"{len(flat) - nn} edge{'s' * (len(flat) - nn != 1)}" if len(flat) > nn else ""]
+                rec["value"] = ", ".join(p for p in parts if p)
+            elif callable(v):
+                rec["type"] = "function"
+                rec["value"] = ""
+            else:
+                try:
+                    r = repr(v)
+                except Exception:  # noqa: BLE001
+                    r = "?"
+                rec["value"] = r if len(r) <= 80 else r[:77] + "..."
+            if items:
+                rec["items"] = [["n" if isinstance(x, Node) else "e", x._id] for x in items[:2000]]
+            out.append(rec)
+        out.sort(key=lambda r: (r["type"] == "function", r["name"].lower()))
+        return {"vars": out, "states": [str(k) for k in self.graph.states],
+                "styles": list(self.view.styles)}
+
     def panel_data(self, what, kind="n", ids=None):
-        """Data for the page's panels: "table" rows or "fields" summaries."""
+        """Data for the page's panels: "table" rows, "fields" summaries or "workspace"."""
         from . import styles
+        if what == "workspace":
+            return self.workspace()
         if what == "table":
             return styles.table_data(self.graph, kind, ids)
         return styles.field_info(self.graph, kind)
@@ -565,7 +614,34 @@ class Session:
             "lc": colors.to_rgba_int(lc)[0] if lc else -1,
             "v": bool(val("visible")),
             "img": self._image_key(val("image")),
+            **({"m": 1} if n._id in getattr(self, "groups", ()) else {}),
+            **({"p": self._pie(n)} if getattr(self.view, "pie", None) else {}),
         }
+
+    def _pie(self, n):
+        pie = self.view.pie
+        if pie["mode"] == "fields":
+            out = []
+            for f in pie["fields"]:
+                try:
+                    v = float(n._vals.get(f) or 0)
+                except (TypeError, ValueError):
+                    v = 0.0
+                out.append(max(v, 0.0) if v == v else 0.0)
+            return out
+        field = self.graph.node_schema.get(pie["field"])
+        counts = [0] * len(pie["labels"])
+        if field is None:
+            return counts
+        index = {v: i for i, v in enumerate(pie["values"])}
+        for e in n._inc.values():
+            other = e.opposite(n)
+            if other is n:
+                continue
+            k = index.get(field.get(other), len(pie["labels"]) - 1 if len(pie["labels"]) > len(pie["values"]) else None)
+            if k is not None:
+                counts[k] += 1
+        return counts
 
     def _image_key(self, source):
         """Register an image with the front end once; node records carry the key."""
@@ -736,6 +812,14 @@ def segment(value, depth=0):
     if len(text) > 20000:
         text = text[:20000] + " ..."
     return text
+
+
+def _flatten(seq, depth=0):
+    for x in seq:
+        if isinstance(x, (GSet, list, tuple, set)) and depth < 5:
+            yield from _flatten(x, depth + 1)
+        else:
+            yield x
 
 
 def _contains_elements(seq):

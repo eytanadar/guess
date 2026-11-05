@@ -6,7 +6,7 @@ import { Dock } from "./dock";
 import { HelpPanel, type HelpIndex } from "./help";
 import { Palette, type PaletteItem } from "./palette";
 import { DataTable, type TableData } from "./table";
-import { FilterPanel, StylePanel, pyLit, type FieldInfo, type PanelHost } from "./panels";
+import { FilterPanel, StylePanel, VarsPanel, pyLit, type FieldInfo, type PanelHost, type Workspace } from "./panels";
 import * as store from "./store";
 import sampleGdf from "../../guess-orig/sample.gdf?raw";
 
@@ -64,6 +64,12 @@ const renderer = new Renderer($("#graph"), {
   },
   click: (hit, shift) => onGraphClick(hit, shift),
   selected: (ids) => syncSelection(ids),
+  // double-clicking a collapsed group expands it
+  dblclick: (hit) => {
+    if (hit?.kind !== "n" || !renderer.nodes.get(hit.id)?.m) return false;
+    void term.submit(`expand(${nodeExpr(hit.id)})`);
+    return true;
+  },
 });
 
 /** Tell Python about a selection made on the display (bound to `sel`). */
@@ -226,9 +232,9 @@ function clearTimer(id: string) {
 }
 
 const term = new Console($("#console"), {
-  run: async (code, cell) => {
+  run: async (code, cell, quiet) => {
     if (interruptBuf) new Uint8Array(interruptBuf)[0] = 0;
-    const ok = await request<boolean>((id) => ({ type: "run", id, code, cell }));
+    const ok = await request<boolean>((id) => ({ type: "run", id, code, cell, quiet }));
     scheduleAutosave();
     afterRun();
     return ok;
@@ -295,6 +301,9 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     case "help":
       void openSide("help", m.topic);
+      break;
+    case "graphs":
+      renderGraphTabs(m.names, m.current);
       break;
     case "table":
       void openTable(m.kind, m.ids);
@@ -728,6 +737,19 @@ $("#center").addEventListener("click", () => renderer.center());
     b.addEventListener("click", () => void term.submit(b.dataset.run!));
   }
 }
+$("#find-output").addEventListener("click", () => term.openFind());
+$("#vim-keys").setAttribute("aria-pressed", String(term.vim));
+$("#vim-keys").addEventListener("click", () => {
+  const on = !term.vim;
+  term.setVim(on);
+  $("#vim-keys").setAttribute("aria-pressed", String(on));
+});
+document.addEventListener("keydown", (ev) => {
+  if ((ev.metaKey || ev.ctrlKey) && ev.shiftKey && ev.key.toLowerCase() === "f") {
+    ev.preventDefault();
+    term.openFind();
+  }
+});
 $("#label-outlines").addEventListener("click", () => term.submit(`labelOutlines(${$("#label-outlines").getAttribute("aria-pressed") === "true" ? "false" : "true"})`));
 $("#label-cull").addEventListener("click", () => term.submit(`hideOverlappingLabels(${$("#label-cull").getAttribute("aria-pressed") === "true" ? "false" : "true"})`));
 document.addEventListener("keydown", (ev) => {
@@ -772,6 +794,78 @@ async function exportView(format: "png" | "jpg" | "svg", name: string) {
   a.download = name;
   a.click();
 }
+
+// ---- graph tabs (several graphs in one session) ------------------------------------------
+function renderGraphTabs(names: string[], current: string) {
+  const bar = $("#graph-tabs");
+  bar.hidden = names.length < 2;
+  bar.replaceChildren();
+  for (const name of names) {
+    const tab = document.createElement("span");
+    tab.className = "graph-tab" + (name === current ? " current" : "");
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-selected", String(name === current));
+    const b = document.createElement("button");
+    b.textContent = name;
+    b.title = name === current ? "Current graph (renameGraph(...) to rename)" : `Switch to ${name}`;
+    b.onclick = () => {
+      if (name !== current) void term.submit(`use(${JSON.stringify(name)})`);
+    };
+    tab.append(b);
+    if (name !== current) {
+      const x = document.createElement("button");
+      x.className = "graph-tab-close";
+      x.textContent = "✕";
+      x.title = `Close ${name}`;
+      x.onclick = () => void term.submit(`closeGraph(${JSON.stringify(name)})`);
+      tab.append(x);
+    }
+    bar.append(tab);
+  }
+}
+
+// ---- notebook and report export ---------------------------------------------------------
+async function exportNotebook() {
+  const png = await renderer.exportImage("png");
+  const cells: object[] = [{
+    cell_type: "markdown", metadata: {},
+    source: [`# GUESS session\n\nExported ${new Date().toLocaleString()}. The code is Gython (GUESS's Python with graph operators); `,
+      "run it in GUESS, or adapt it with networkx.\n\n![graph](attachment:graph.png)"],
+    attachments: { "graph.png": { "image/png": png.split(",")[1] } },
+  }];
+  for (const c of term.cellsForExport()) {
+    if (c.undone) continue;
+    cells.push({
+      cell_type: "code", execution_count: c.n, metadata: {},
+      source: c.code.split("\n").map((l, i, a) => (i < a.length - 1 ? l + "\n" : l)),
+      outputs: c.output ? [c.failed
+        ? { output_type: "error", ename: "Error", evalue: c.output.split("\n")[0], traceback: c.output.split("\n") }
+        : { output_type: "stream", name: "stdout", text: c.output.split("\n").map((l, i, a) => (i < a.length - 1 ? l + "\n" : l)) }] : [],
+    });
+  }
+  const nb = { nbformat: 4, nbformat_minor: 5, metadata: { language_info: { name: "python" }, kernelspec: { name: "python3", display_name: "Python 3", language: "python" } }, cells };
+  download("guess.ipynb", new Blob([JSON.stringify(nb, null, 1)], { type: "application/x-ipynb+json" }));
+}
+
+async function exportReport() {
+  const png = await renderer.exportImage("png");
+  const esc = (t: string) => t.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[ch]!);
+  const legends = $("#legends").innerHTML;
+  const css = getComputedStyle(document.documentElement);
+  const v = (n: string) => css.getPropertyValue(n).trim();
+  const cells = term.cellsForExport().filter((c) => !c.undone).map((c) => `<section class="cell${c.failed ? " failed" : ""}"><div class="n">[${c.n}]</div><pre class="code">${esc(c.code)}</pre>${c.output ? `<pre class="out">${esc(c.output)}</pre>` : ""}</section>`).join("\n");
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GUESS report</title>
+<style>body{font:15px system-ui,sans-serif;max-width:980px;margin:24px auto;padding:0 16px;color:${v("--text")};background:${v("--bg")}}
+h1{font-size:22px}figure{margin:0;position:relative;border:1px solid ${v("--border")};border-radius:8px;overflow:hidden}figure img{display:block;width:100%}
+.legends{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:8px}.legend{background:${v("--legend-bg")};border:1px solid ${v("--border")};border-radius:6px;padding:6px 9px;font-size:12px}
+.legend-row{display:flex;align-items:center;gap:7px}.sw{display:inline-block;width:12px;height:12px;background:var(--c);border:1px solid #0005}.sw.round{border-radius:50%}.sw-e{width:18px;height:var(--w);border:0}.ramp{width:160px;height:10px}.ramp-ends{display:flex;justify-content:space-between;font-size:11px}
+.cell{display:grid;grid-template-columns:3.5em 1fr;gap:0 8px;border-top:1px solid ${v("--border")};padding:8px 0}.n{color:${v("--muted")};font:12px ui-monospace,monospace}
+pre{margin:0;font:12.5px/1.45 ui-monospace,Menlo,monospace;white-space:pre-wrap}.out{grid-column:2;color:${v("--echo")};margin-top:4px}.failed .out{color:${v("--error")}}</style></head>
+<body><h1>GUESS report</h1><p>${esc(new Date().toLocaleString())}</p><figure><img alt="graph" src="${png}"><div class="legends">${legends}</div></figure><h2>Commands</h2>${cells}</body></html>`;
+  download("guess-report.html", new Blob([html], { type: "text/html" }));
+}
+$("#export-notebook").addEventListener("click", () => void exportNotebook());
+$("#export-report").addEventListener("click", () => void exportReport());
 
 // ---- movies (startMovie / stopMovie) ---------------------------------------------------
 let recorder: { rec: MediaRecorder; chunks: Blob[]; name: string } | null = null;
@@ -833,13 +927,36 @@ const helpPanel = new HelpPanel($("#side-help"), {
 }, loadHelp);
 const stylePanel = new StylePanel($("#side-style"), panelHost);
 const filterPanel = new FilterPanel($("#side-filter"), panelHost);
+const varsPanel = new VarsPanel($("#side-vars"), {
+  load: () => request<Workspace>((id) => ({ type: "query", id, what: "workspace" })),
+  hover: (items) => highlightItems(items),
+  select: (items) => {
+    const nodes = new Set<number>();
+    for (const [k, id] of items) {
+      if (k === "n") nodes.add(id);
+      else {
+        const e = renderer.edges.get(id);
+        if (e) nodes.add(e.s).add(e.t);
+      }
+    }
+    renderer.setSelection(nodes);
+    syncSelection([...renderer.selection]);
+    renderer.center([...nodes]);
+  },
+  table: (items) => {
+    const nodes = items.filter((i) => i[0] === "n").map((i) => i[1]);
+    void openTable(nodes.length ? "n" : "e", nodes.length ? nodes : items.map((i) => i[1]));
+  },
+  insert: (code) => term.insert(code),
+  submit: (code) => void term.submit(code),
+});
 
-type Side = "help" | "style" | "filter";
+type Side = "help" | "style" | "filter" | "vars";
 let side: Side | null = null;
 async function openSide(which: Side | null, topic: string | null = null) {
   side = which;
   $("#sidebar").hidden = which === null;
-  for (const s of ["help", "style", "filter"] as Side[]) {
+  for (const s of ["help", "style", "filter", "vars"] as Side[]) {
     $(`#side-${s}`).hidden = s !== which;
     $(`#btn-${s}`).setAttribute("aria-pressed", String(s === which));
   }
@@ -847,8 +964,9 @@ async function openSide(which: Side | null, topic: string | null = null) {
   if (which === "help") await helpPanel.show(topic);
   else if (which === "style") await stylePanel.show();
   else if (which === "filter") await filterPanel.show();
+  else if (which === "vars") await varsPanel.show();
 }
-for (const s of ["help", "style", "filter"] as Side[]) {
+for (const s of ["help", "style", "filter", "vars"] as Side[]) {
   $(`#btn-${s}`).addEventListener("click", () => void openSide(side === s ? null : s));
 }
 for (const b of document.querySelectorAll<HTMLButtonElement>("[data-side]")) b.addEventListener("click", () => void openSide(b.dataset.side as Side));
@@ -929,7 +1047,10 @@ let refreshTimer = 0;
 /** After any command: refresh the open table (coalesced). */
 function afterRun() {
   clearTimeout(refreshTimer);
-  refreshTimer = window.setTimeout(() => void dataTable.refresh(), 150);
+  refreshTimer = window.setTimeout(() => {
+    void dataTable.refresh();
+    if (side === "vars") void varsPanel.show();
+  }, 150);
 }
 
 // command palette

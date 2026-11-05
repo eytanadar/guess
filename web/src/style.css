@@ -450,3 +450,38 @@ body.app .view-col { flex: 1 1 auto; }
 .menu-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 6px; }
 .menu-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 4px 10px 2px 26px; }
 .toolbar .search-btn { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); min-width: 150px; }
+
+/* console find bar */
+.console-find { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--border); background: var(--panel); }
+.console-find[hidden] { display: none; }
+.console-find input { flex: 1; font: inherit; padding: 2px 7px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); }
+.console-find-count { color: var(--muted); font-size: 11.5px; }
+.console-find-close { border: 0; background: none; color: var(--muted); cursor: pointer; }
+.console-out > .find-hidden { display: none; }
+.console-in .cm-panels { background: var(--panel); color: var(--text); border-color: var(--border); }
+.console-in .cm-searchMatch { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+.console-in .cm-selectionMatch { background: var(--selection); }
+.console-in .cm-fat-cursor { background: var(--link-node) !important; color: var(--surface) !important; }
+
+/* variables panel */
+.ws-row { display: flex; align-items: center; gap: 6px; padding: 3px 4px; border-radius: 5px; min-width: 0; }
+.ws-row.linked:hover { background: var(--surface); }
+.ws-row button { font-size: 11px !important; padding: 0 6px !important; flex: none; }
+.ws-name { font-family: var(--mono) !important; color: var(--link-node) !important; border: 0 !important; background: none !important; padding: 0 !important; font-size: 12.5px !important; }
+.ws-name-text { flex: 1; font-family: var(--mono); font-size: 12.5px; }
+.ws-type { color: var(--muted); font-size: 11px; flex: none; }
+.ws-value { flex: 1; min-width: 0; font-family: var(--mono); font-size: 11.5px; color: var(--echo); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* watched (live) cells */
+.cell.watched { border-left-color: var(--link-node); }
+.cell.watched .cell-num::after { content: " live"; font: 10px system-ui, sans-serif; color: var(--link-node); }
+.cell.refreshing .cell-out { opacity: 0.6; }
+
+/* graph tabs */
+.graph-tabs { display: flex; gap: 2px; padding: 4px 6px 0; background: var(--panel); border-bottom: 1px solid var(--border); flex: none; overflow-x: auto; }
+.graph-tabs[hidden] { display: none; }
+.graph-tab { display: inline-flex; align-items: center; border: 1px solid var(--border); border-bottom: 0; border-radius: 6px 6px 0 0; background: var(--panel); }
+.graph-tab.current { background: var(--surface); position: relative; top: 1px; }
+.graph-tab button { font: 12.5px system-ui, sans-serif; border: 0; background: none; color: var(--text); padding: 3px 10px; cursor: pointer; }
+.graph-tab:not(.current) button { color: var(--muted); }
+.graph-tab .graph-tab-close { padding: 3px 6px 3px 0; font-size: 11px; }

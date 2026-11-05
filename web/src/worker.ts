@@ -81,6 +81,7 @@ function handle(msg: ToWorker) {
   switch (msg.type) {
     case "run": {
       session.current_cell = msg.cell ?? null;
+      session.quiet_next = !!msg.quiet;
       const ok = call("run", msg.code) as boolean;
       post({ type: "done", id: msg.id, ok });
       break;

@@ -122,8 +122,15 @@ export class DataTable {
 
   setSelection(ids: Iterable<number>) {
     this.selection = new Set(ids);
-    if (this.selOnly) this.refilter();
-    else this.paint();
+    if (this.selOnly) {
+      this.refilter();
+      return;
+    }
+    // update the rows in place (repainting would swallow a double-click)
+    if (this.kind !== "n") return;
+    for (const row of this.rowsEl.children as HTMLCollectionOf<HTMLElement>) {
+      row.classList.toggle("selected", this.selection.has(Number(row.dataset.id)));
+    }
   }
 
   private async reload() {
@@ -202,6 +209,7 @@ export class DataTable {
       const id = rec[0] as number;
       const row = document.createElement("div");
       row.className = "dtable-row" + (this.kind === "n" && this.selection.has(id) ? " selected" : "");
+      row.dataset.id = String(id);
       const name = document.createElement("div");
       name.className = "dtable-cell dtable-name";
       name.textContent = String(rec[1]);

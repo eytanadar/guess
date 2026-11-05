@@ -2,8 +2,13 @@
 // runs it) above which executed cells stack up with their output. Output spans
 // are linked to graph elements; an executed cell can be pulled back into the
 // working cell to edit and run again.
-import { EditorState, Prec, StateField, type Extension } from "@codemirror/state";
-import { EditorView, hoverTooltip, keymap, placeholder, drawSelection, tooltips, showTooltip, type Command, type Tooltip } from "@codemirror/view";
+import { Compartment, EditorState, Prec, StateField, type Extension } from "@codemirror/state";
+import {
+  EditorView, hoverTooltip, keymap, placeholder, drawSelection, tooltips, showTooltip, rectangularSelection,
+  crosshairCursor, type Command, type Tooltip,
+} from "@codemirror/view";
+import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
+import { vim } from "@replit/codemirror-vim";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { bracketMatching, indentOnInput, indentUnit, syntaxHighlighting, syntaxTree } from "@codemirror/language";
 import { python, pythonLanguage } from "@codemirror/lang-python";
@@ -18,7 +23,7 @@ export type Item = ["n" | "e", number];
 
 export interface ConsoleHost {
   /** Run code; `cell` is the console cell number it belongs to. */
-  run(code: string, cell: number): Promise<boolean>;
+  run(code: string, cell: number, quiet?: boolean): Promise<boolean>;
   completions(text: string): Promise<{ prefix: string; items: string[] }>;
   /** Hovering a documented name in an executed cell. */
   doc(name: string | null, ev: MouseEvent | null): void;
@@ -56,10 +61,32 @@ export class Console {
   private hot: HTMLElement | null = null;
   private lastText: HTMLElement | null = null;
   docs: Record<string, string> = {};
+  private vimMode = new Compartment();
+  /** watched cells: re-run (quietly, in place) after every other command */
+  private watched = new Map<HTMLElement, { code: string; n: number; out: HTMLElement }>();
+  private findBar = el("div", "console-find");
+  private findInput = el("input") as HTMLInputElement;
+  private findCount = el("span", "console-find-count");
 
   constructor(root: HTMLElement, private host: ConsoleHost) {
     root.classList.add("console");
     this.out = el("div", "console-out");
+    this.findInput.type = "search";
+    this.findInput.placeholder = "Find in output…";
+    this.findInput.oninput = () => this.applyFind();
+    this.findInput.onkeydown = (ev) => {
+      if (ev.key === "Escape") {
+        ev.stopPropagation();
+        this.closeFind();
+      }
+    };
+    const findClose = el("button", "console-find-close");
+    findClose.textContent = "✕";
+    findClose.title = "Close (Esc)";
+    findClose.onclick = () => this.closeFind();
+    this.findBar.append(this.findInput, this.findCount, findClose);
+    this.findBar.hidden = true;
+    root.append(this.findBar);
     this.inputBox = el("div", "console-in");
     const gutter = el("div", "cell-gutter");
     gutter.textContent = "▶";
@@ -135,9 +162,20 @@ export class Console {
       void this.tabComplete(v, before);
       return true;
     };
+    let vimOn = false;
+    try {
+      vimOn = localStorage.getItem("guess.vim") === "1";
+    } catch {
+      /* storage unavailable */
+    }
     return [
+      this.vimMode.of(vimOn ? vim() : []),
       history(),
       drawSelection(),
+      EditorState.allowMultipleSelections.of(true),
+      rectangularSelection(),
+      crosshairCursor(),
+      highlightSelectionMatches(),
       // the editor sits in a scroll box; keep popups from being clipped by it
       tooltips({ position: "fixed", parent: document.body }),
       indentUnit.of("    "),
@@ -166,7 +204,7 @@ export class Console {
         { key: "ArrowUp", run: up },
         { key: "ArrowDown", run: down },
       ])),
-      keymap.of([...closeBracketsKeymap, ...completionKeymap, ...historyKeymap, indentWithTab, ...defaultKeymap]),
+      keymap.of([...closeBracketsKeymap, ...completionKeymap, ...historyKeymap, ...searchKeymap, indentWithTab, ...defaultKeymap]),
       this.signatureHelp(),
       hoverTooltip((view, pos) => {
         const w = view.state.wordAt(pos);
@@ -204,6 +242,100 @@ export class Console {
       update: (old, tr) => (tr.docChanged || tr.selection ? compute(tr.state) : old),
       provide: (f) => showTooltip.from(f),
     });
+  }
+
+  private toggleWatch(root: HTMLElement, code: string, n: number, out: HTMLElement, btn: HTMLElement) {
+    if (this.watched.has(root)) {
+      this.watched.delete(root);
+      root.classList.remove("watched");
+      btn.textContent = "Watch";
+    } else {
+      this.watched.set(root, { code, n, out });
+      root.classList.add("watched");
+      btn.textContent = "Unwatch";
+    }
+  }
+
+  private async runWatched() {
+    for (const [root, w] of [...this.watched]) {
+      if (!root.isConnected) {
+        this.watched.delete(root);
+        continue;
+      }
+      w.out.replaceChildren();
+      this.current = w.out;
+      this.currentCell = root;
+      this.currentCode = w.code;
+      this.lastText = null;
+      root.classList.add("refreshing");
+      try {
+        const ok = await this.host.run(w.code, w.n, true);
+        root.classList.toggle("failed", !ok);
+      } finally {
+        root.classList.remove("refreshing");
+        this.current = null;
+        this.currentCell = null;
+      }
+    }
+  }
+
+  /** The executed cells, for notebook and report export. */
+  cellsForExport(): { n: number; code: string; output: string; failed: boolean; undone: boolean }[] {
+    const out = [];
+    for (const c of this.out.querySelectorAll<HTMLElement>(".cell")) {
+      const code = [...c.querySelectorAll(".cell-code .code-line")].map((l) => l.textContent ?? "").join("\n");
+      const o = c.querySelector<HTMLElement>(".cell-out");
+      const output = o ? [...o.children].map((x) => {
+        const full = x.querySelector(".error-full");
+        return full ? full.textContent : (x as HTMLElement).innerText ?? x.textContent;
+      }).join("\n") : "";
+      out.push({ n: Number(c.dataset.n), code, output: output.replace(/\n+$/, ""), failed: c.classList.contains("failed"), undone: c.classList.contains("undone") });
+    }
+    return out;
+  }
+
+  /** Vim key bindings in the working cell (remembered). */
+  setVim(on: boolean) {
+    this.view.dispatch({ effects: this.vimMode.reconfigure(on ? vim() : []) });
+    try {
+      localStorage.setItem("guess.vim", on ? "1" : "0");
+    } catch {
+      /* storage unavailable */
+    }
+  }
+
+  get vim(): boolean {
+    try {
+      return localStorage.getItem("guess.vim") === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  /** Find in output: show only cells whose code or output contains the text. */
+  openFind() {
+    this.findBar.hidden = false;
+    this.findInput.focus();
+    this.findInput.select();
+    this.applyFind();
+  }
+
+  closeFind() {
+    this.findBar.hidden = true;
+    this.findInput.value = "";
+    this.applyFind();
+    this.focus();
+  }
+
+  private applyFind() {
+    const q = this.findInput.value.trim().toLowerCase();
+    let n = 0;
+    for (const c of this.out.children as HTMLCollectionOf<HTMLElement>) {
+      const hit = !q || (c.textContent ?? "").toLowerCase().includes(q);
+      c.classList.toggle("find-hidden", !hit);
+      if (q && hit) n++;
+    }
+    this.findCount.textContent = q ? `${n} match${n === 1 ? "" : "es"}` : "";
   }
 
   /** Put code in the working cell: replace it if empty, else add on a new line. */
@@ -340,6 +472,7 @@ export class Console {
         cell.root.querySelector(".cell-actions")!.before(t);
       }
       if (!cell.out.childElementCount) cell.root.classList.add("empty");
+      if (this.watched.size) await this.runWatched();
       this.focus();
     }
   }
@@ -369,7 +502,11 @@ export class Console {
     const rerun = el("button", "cell-rerun");
     rerun.textContent = "Run again";
     rerun.onclick = () => void this.submit(code);
-    actions.append(editBtn, rerun);
+    const watch = el("button", "cell-watch");
+    watch.textContent = "Watch";
+    watch.title = "Re-run this cell after every command (live statistics, charts, legends)";
+    watch.onclick = () => this.toggleWatch(root, code, n, out, watch);
+    actions.append(editBtn, rerun, watch);
     head.append(num, src, actions);
     const out = el("div", "cell-out");
     root.append(head, out);

@@ -31,6 +31,8 @@
             <button role="menuitem" data-run='exportGEXF("graph.gexf")'>GEXF for Gephi</button>
             <button role="menuitem" data-run='exportGraphML("graph.graphml")'>GraphML</button>
             <button role="menuitem" data-run='exportCSV("edges.csv"); exportCSV("nodes.csv", "nodes")'>CSV tables</button>
+            <button role="menuitem" id="export-notebook" title="The console's cells as a Jupyter notebook, with a snapshot of the graph">Jupyter notebook (.ipynb)</button>
+            <button role="menuitem" id="export-report" title="A self-contained HTML page: graph snapshot, legends and the cells you ran">Report (HTML)</button>
           </div>
         </div>
         <div class="menu-root">
@@ -42,6 +44,10 @@
             <button role="menuitem" data-run="select(g.nodes)">Select all nodes</button>
             <button role="menuitem" data-run="select(ninverse(sel))">Invert selection</button>
             <button role="menuitem" data-run="select()">Clear selection<kbd>Esc</kbd></button>
+            <hr />
+            <button role="menuitem" data-run="collapse(sel)">Collapse selection into a group</button>
+            <button role="menuitem" data-run="expandAll()">Expand all groups</button>
+            <button role="menuitem" data-run="subgraph(sel)">New graph from selection</button>
             <hr />
             <button role="menuitem" data-run="showOnly(sel)">Show only the selection</button>
             <button role="menuitem" data-run="showAll()">Show everything</button>
@@ -55,10 +61,14 @@
             <button role="menuitemcheckbox" id="btn-table" aria-pressed="false" title="Data table of nodes and edges (table())">Data table</button>
             <button role="menuitemcheckbox" id="btn-style" aria-pressed="false" title="Map fields to colours, sizes, labels and shapes; saved styles">Style panel</button>
             <button role="menuitemcheckbox" id="btn-filter" aria-pressed="false" title="Filter what is shown with live sliders">Filter panel</button>
+            <button role="menuitemcheckbox" id="btn-vars" aria-pressed="false" title="Your variables, saved states and styles">Variables</button>
             <hr />
             <button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges())">Curved edges</button>
             <button role="menuitemcheckbox" id="label-outlines" aria-pressed="false">Label outlines</button>
             <button role="menuitemcheckbox" id="label-cull" aria-pressed="false">Hide overlapping labels</button>
+            <hr />
+            <button role="menuitem" id="find-output">Find in console output<kbd>⇧⌘F</kbd></button>
+            <button role="menuitemcheckbox" id="vim-keys" aria-pressed="false">Vim keys in the code cell</button>
             <hr />
             <div class="menu-label">Theme</div>
             <button role="menuitemradio" data-theme-choice="auto" aria-pressed="true">Automatic</button>
@@ -124,6 +134,7 @@
     </header>
     <main class="split">
       <div class="view-col">
+        <div id="graph-tabs" class="graph-tabs" role="tablist" aria-label="Graphs" hidden></div>
         <div class="graph-row">
           <aside id="sidebar" class="sidebar" hidden>
             <div class="sidebar-head">
@@ -131,12 +142,14 @@
                 <button data-side="help" role="tab">Help</button>
                 <button data-side="style" role="tab">Style</button>
                 <button data-side="filter" role="tab">Filter</button>
+                <button data-side="vars" role="tab">Variables</button>
               </span>
               <button class="sidebar-close" title="Close" aria-label="Close panel">✕</button>
             </div>
             <div id="side-help" class="sidebar-body" hidden></div>
             <div id="side-style" class="sidebar-body" hidden></div>
             <div id="side-filter" class="sidebar-body" hidden></div>
+            <div id="side-vars" class="sidebar-body" hidden></div>
           </aside>
           <div id="graph" class="graph"><div id="legends" class="legends"></div></div>
           <aside id="dock-right" class="dock dock-right" hidden></aside>

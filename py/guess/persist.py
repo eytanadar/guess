@@ -28,7 +28,9 @@ def _vals(d):
     return {k: _jsonable(v) for k, v in d.items()}
 
 
-def serialize(session, script=None, app=False):
+def serialize(session, script=None, app=False, subset=None, workspaces=True):
+    """The session as JSON-able data. subset: node ids to keep (a subgraph:
+    those nodes, the edges among them, the view settings; no history)."""
     g = session.graph
     # every element we know about: current, deleted, and referenced by states
     nodes, edges = [], []
@@ -46,6 +48,14 @@ def serialize(session, script=None, app=False):
             eidx[id(e)] = len(edges)
             edges.append(e)
 
+    if subset is not None:
+        for n in g._nodes_list():
+            if n._id in subset:
+                note_node(n)
+        for e in g._edges_list():
+            if e._n1._id in subset and e._n2._id in subset:
+                note_edge(e)
+        return _data(session, g, nodes, edges, nidx, eidx, subset=True)
     for n in g._nodes_list():
         note_node(n)
     for e in g._edges_list():
@@ -57,6 +67,30 @@ def serialize(session, script=None, app=False):
             note_node(n)
         for e in snap.edges:
             note_edge(e)
+    groups = getattr(session, "groups", {})
+    for mid, info in groups.items():
+        meta = g._node_ids.get(mid)
+        if meta is not None:
+            note_node(meta)
+        for n in info["members"]:
+            note_node(n)
+        for e in info["edges"]:
+            note_edge(e)
+
+    data = _data(session, g, nodes, edges, nidx, eidx)
+    ws = getattr(session, "workspaces", None)
+    if workspaces and ws and ws["stored"]:
+        data["workspaces"] = {"current": ws["current"], "stored": ws["stored"],
+                              "order": list(getattr(session, "_graph_order", []))}
+    if script is not None:
+        data["script"] = script
+    if app:
+        data["app"] = True
+    return data
+
+
+def _data(session, g, nodes, edges, nidx, eidx, subset=False):
+    groups = {} if subset else getattr(session, "groups", {})
 
     def fields(schema):
         return [{"name": f.name, "type": f.type, "default": _jsonable(f.default)}
@@ -71,24 +105,27 @@ def serialize(session, script=None, app=False):
         "nodes": [{"name": n._name, "alive": g._nodes.get(n._name) is n, "vals": _vals(n._vals)} for n in nodes],
         "edges": [{"s": nidx[id(e._n1)], "t": nidx[id(e._n2)], "d": e._directed,
                    "alive": e._id in g._edges and g._edges[e._id] is e, "vals": _vals(e._vals)} for e in edges],
-        "deleted": [["n", nidx[id(x)]] if isinstance(x, Node) else ["e", eidx[id(x)]] for x in g._deleted.values()],
+        "deleted": [["n", nidx[id(x)]] if isinstance(x, Node) else ["e", eidx[id(x)]] for x in (() if subset else g._deleted.values())],
         "states": [{"key": k, "nodes": [[nidx[id(n)], _vals(v)] for n, v in snap.nodes.items()],
                     "edges": [[eidx[id(e)], _vals(v)] for e, v in snap.edges.items()]}
-                   for k, snap in g.states.items()],
+                   for k, snap in (() if subset else g.states.items())],
         "ranges": [["n", nidx[id(x)], iv] if isinstance(x, Node) else ["e", eidx[id(x)], iv]
                    for x, iv in g.ranges.items() if id(x) in nidx or id(x) in eidx],
         "bends": [[eidx[id(e)], pts] for e, pts in g.bends.items() if id(e) in eidx],
         "hulls": [{"nodes": [nidx[id(n)] for n in h._nodes if id(n) in nidx], "color": h._color}
-                  for h in view.hulls.values()],
+                  for h in (() if subset else view.hulls.values())],
         "legends": [lg.record() for lg in view.legends.values()],
+        "groups": [[nidx[id(g._node_ids[mid])], [nidx[id(n)] for n in info["members"]],
+                    [eidx[id(e)] for e in info["edges"]], list(info["centre"])]
+                   for mid, info in groups.items() if mid in g._node_ids],
         "view": {"background": view.background, "image": view.image, "arrow": view.arrow,
                  "curvature": view.curvature, "edgeColor": view.edge_color, "labels": view.labels,
-                 "styles": view.styles},
+                 "styles": view.styles, "pie": view.pie, "borderWidth": view.border_width},
     }
-    if script is not None:
-        data["script"] = script
-    if app:
-        data["app"] = True
+    if subset:
+        data["ranges"] = []
+        for n_rec in data["nodes"]:
+            n_rec["alive"] = True
     return data
 
 
@@ -139,6 +176,11 @@ def load(session, data):
     for k, i in deleted:
         x = elem(k, i)
         g._deleted[(type(x).__name__, x._id)] = x
+    if hasattr(session, "groups"):
+        session.groups.clear()
+        for mi, members, eds, centre in data.get("groups", []):
+            session.groups[nodes[mi]._id] = {"members": [nodes[i] for i in members],
+                                             "edges": [edges[i] for i in eds], "centre": tuple(centre)}
     from .visuals import ConvexHull, GradientLegend, Legend
     for h in data.get("hulls", []):
         hull = ConvexHull(view, view.next_id(), [nodes[i] for i in h["nodes"]], h["color"])
@@ -163,6 +205,14 @@ def load(session, data):
     view.edge_color = v.get("edgeColor", "original")
     view.labels = {"outline": False, "cull": False, **v.get("labels", {})}
     view.styles = {str(k): list(map(str, c)) for k, c in v.get("styles", {}).items()}
+    view.pie = v.get("pie")
+    view.border_width = float(v.get("borderWidth", 0.75))
+    ws = getattr(session, "workspaces", None)
+    if ws is not None and "workspaces" in data:
+        ws["current"] = data["workspaces"]["current"]
+        ws["stored"] = dict(data["workspaces"]["stored"])
+        session._graph_order = list(data["workspaces"].get("order") or [ws["current"], *ws["stored"]])
+        session.emit({"type": "graphs", "names": session._graph_order, "current": ws["current"]})
     view.changed()
     session.scene()
     return data

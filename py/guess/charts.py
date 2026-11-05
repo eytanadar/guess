@@ -42,8 +42,10 @@ def install(session):
     count = [0]
 
     def emit(kind, title, xlabel, ylabel, items):
+        # the same chart (kind + title) re-plotted updates its panel in place,
+        # so a watched cell like plotHistogram(pagerank) is a live chart
         count[0] += 1
-        cid = f"chart{count[0]}"
+        cid = f"chart:{kind}:{title}"
         session.emit({"type": "chart", "id": cid, "kind": kind, "title": title,
                       "xlabel": xlabel, "ylabel": ylabel, "items": items})
         return Chart(session, cid, title)

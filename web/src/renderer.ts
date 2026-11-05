@@ -18,6 +18,8 @@ export interface RendererEvents {
   click(hit: Hit, shift: boolean): void;
   /** the selection changed by a box or lasso gesture */
   selected(ids: number[]): void;
+  /** double-click; return true if handled (otherwise it zooms) */
+  dblclick?(hit: Hit): boolean;
 }
 
 const HIGHLIGHT = 0xff1f6b;
@@ -547,7 +549,7 @@ export class Renderer {
       }
       shape(g, n);
       g.fill({ color: n.c, alpha });
-      g.stroke({ width: 0.75, color: n.sc >= 0 ? n.sc : darken(n.c), alpha });
+      g.stroke({ width: n.m ? 2.5 : 0.75, color: n.sc >= 0 ? n.sc : darken(n.c), alpha });
     }
   }
 
@@ -849,9 +851,13 @@ export class Renderer {
       this.drawOverlay();
     }, { passive: false });
     el.addEventListener("dblclick", (ev) => {
-      if (!this.zoomOnDoubleClick) return;
       const { sx, sy } = local(ev);
+      if (!this.zoomOnDoubleClick) {
+        this.events.dblclick?.(this.hitTest(sx, sy));
+        return;
+      }
       const hit = this.hitTest(sx, sy);
+      if (this.events.dblclick?.(hit)) return;
       if (hit) this.center(hit.kind === "n" ? [hit.id] : [], hit.kind === "e" ? [hit.id] : []);
       else this.center();
     });

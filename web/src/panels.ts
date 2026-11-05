@@ -521,3 +521,75 @@ function histogram(info: FieldInfo, range: () => [number, number]): HTMLElement 
   });
   return svg as unknown as HTMLElement;
 }
+
+// ---------------------------------------------------------------------------
+// Variables panel (workspace)
+// ---------------------------------------------------------------------------
+
+export interface WorkspaceVar { name: string; type: string; value: string; items?: ["n" | "e", number][] }
+export interface Workspace { vars: WorkspaceVar[]; states: string[]; styles: string[] }
+
+export interface VarsHost {
+  load(): Promise<Workspace>;
+  hover(items: ["n" | "e", number][] | null): void;
+  select(items: ["n" | "e", number][]): void;
+  table(items: ["n" | "e", number][]): void;
+  insert(code: string): void;
+  submit(code: string): void;
+}
+
+export class VarsPanel {
+  constructor(readonly root: HTMLElement, private host: VarsHost) {
+    root.classList.add("pf");
+  }
+
+  async show() {
+    const ws = await this.host.load();
+    this.root.replaceChildren();
+    this.root.append(el("h3", "", "Variables"));
+    if (!ws.vars.length) this.root.append(el("p", "pf-note", "Variables you assign in the console appear here, e.g. hubs = (totaldegree > 10)."));
+    for (const v of ws.vars) {
+      const row = el("div", "ws-row");
+      const name = el("button", "ws-name", v.name);
+      name.title = "Insert the name into the code cell";
+      name.onclick = () => this.host.insert(v.name);
+      row.append(name, el("span", "ws-type", v.type), el("span", "ws-value", v.value));
+      if (v.items?.length) {
+        row.classList.add("linked");
+        row.onmouseenter = () => this.host.hover(v.items!);
+        row.onmouseleave = () => this.host.hover(null);
+        const sel = el("button", "", "select");
+        sel.title = "Select these in the graph";
+        sel.onclick = () => this.host.select(v.items!);
+        const tab = el("button", "", "table");
+        tab.title = "Show them in the data table";
+        tab.onclick = () => this.host.table(v.items!);
+        row.append(sel, tab);
+      }
+      this.root.append(row);
+    }
+    if (ws.states.length) {
+      this.root.append(el("h3", "", "Saved states"));
+      for (const st of ws.states) {
+        const row = el("div", "ws-row");
+        const lit = JSON.stringify(st);
+        const morph = el("button", "", "morph to");
+        morph.onclick = () => this.host.submit(`morph(${lit}, 1500)`);
+        const load = el("button", "", "load");
+        load.onclick = () => this.host.submit(`ls(${lit})`);
+        row.append(el("span", "ws-name-text", st), morph, load);
+        this.root.append(row);
+      }
+    }
+    if (ws.styles.length) {
+      this.root.append(el("h3", "", "Styles"));
+      for (const st of ws.styles) {
+        const row = el("div", "ws-row");
+        const ap = el("button", "", "apply");
+        ap.onclick = () => this.host.submit(`applyStyle(${JSON.stringify(st)})`);
+        row.append(el("span", "ws-name-text", st), ap);
+        this.root.append(row);
+      }
+    }
+  }
+}

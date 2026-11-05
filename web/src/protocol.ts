@@ -6,6 +6,8 @@ export interface NodeRec {
   c: number; a: number; s: number; sc: number;
   l: string; lv: boolean; lc: number; v: boolean;
   img: string | null;
+  /** 1 if this node is a collapsed group (meta-node) */
+  m?: number;
 }
 
 export interface EdgeRec {
@@ -86,6 +88,8 @@ export type FromWorker =
   /** summary: one line (with a "did you mean" hint); line: the cell line it happened on */
   | { type: "error"; text: string; summary?: string; line?: number }
   | { type: "help"; topic: string | null }
+  /** the session's graphs (tabs above the graph when there are several) */
+  | { type: "graphs"; names: string[]; current: string }
   | { type: "table"; kind: "n" | "e"; ids: number[] | null }
   | { type: "center"; nodes: number[]; edges: number[] }
   | Overlay
@@ -104,7 +108,8 @@ export type FromWorker =
 
 export type ToWorker =
   | { type: "init"; files: Record<string, string>; data: Record<string, string>; interrupt?: SharedArrayBuffer }
-  | { type: "run"; id: number; code: string; echo?: boolean; cell?: number }
+  /** quiet: a watched cell refreshing (not added to history or undo) */
+  | { type: "run"; id: number; code: string; echo?: boolean; cell?: number; quiet?: boolean }
   | { type: "complete"; id: number; code: string }
   | { type: "completions"; id: number; text: string }
   | { type: "docs"; id: number }
@@ -117,4 +122,4 @@ export type ToWorker =
   | { type: "select"; nodes: number[] }
   | { type: "writeFile"; id: number; name: string; data: Uint8Array }
   /** help index, field summaries (filters/style panel) or data-table rows */
-  | { type: "query"; id: number; what: "help" | "fields" | "table"; kind?: "n" | "e"; ids?: number[] | null };
+  | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace"; kind?: "n" | "e"; ids?: number[] | null };
