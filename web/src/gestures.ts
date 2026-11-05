@@ -1,5 +1,5 @@
 // The "Mouse and gestures" guide: every direct-manipulation element, with a
-// screenshot (public/help/*.webp, made by demo/gesture-shots.mjs).
+// screenshot (public/help/*.png, made by demo/gesture-shots.mjs).
 
 export interface Gesture {
   id: string;

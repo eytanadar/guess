@@ -222,3 +222,15 @@ def test_new_graph_drops_old_overlays(big, tmp_path):
     assert big.run(f"saveSession({str(f)!r})")
     assert big.run("makeSimpleRandom(5, 4)") and not big.view.legends
     assert big.run(f"makeFromSession({str(f)!r})") and big.view.legends and big.view.guides
+
+
+def test_set_nodes_and_edges(s):
+    heavy = ev(s, "(freq > 9).nodes")             # bob-alice (10), bob->jane (30)
+    assert sorted(n._name for n in heavy) == ["alice", "bob", "jane"]
+    assert len(ev(s, "(dept == 'IT').edges")) == 4    # every edge touching bob or alice
+    assert [n._name for n in ev(s, "(dept == 'IT').nodes")] == ["bob", "alice"]
+    assert s.run("(freq > 9).nodes.color = red") and ev(s, "jane.color") == "red"
+    s.run("setEdgeColorMode('mixed')")
+    s.rec.clear()
+    s.run("(freq > 9).color = blue")
+    assert "setEdgeColorMode" in "".join(m["text"] for m in s.rec.of("text"))

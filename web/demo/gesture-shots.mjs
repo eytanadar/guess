@@ -1,6 +1,6 @@
 // Screenshots for the in-app "Mouse and gestures" guide (src/gestures.ts).
 // Each one is taken in a fresh browser mid-gesture, cropped around the action
-// and saved as public/help/<name>.webp. Re-run after UI changes:
+// and saved as public/help/<name>.png. Re-run after UI changes:
 //
 //   cd web && npm run help-shots            # all
 //   npm run help-shots -- ring edge         # just these
@@ -68,21 +68,21 @@ async function midDrag(from, to, during, { alt = false, shift = false } = {}) {
   if (shift) await page.keyboard.up("Shift");
 }
 
-/** Crop around a point (clamped to the window) and save as webp. */
+/** Crop around a point (clamped to the window) and save as png. */
 async function shot(name, [cx, cy], w = 560, h = 360) {
   const x = Math.max(0, Math.min(W - w, cx - w / 2)), y = Math.max(0, Math.min(H - h, cy - h / 2));
   const png = join(tmp, `${name}.png`);
   await page.screenshot({ path: png, clip: { x, y, width: w, height: h } });
-  execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", `scale=${Math.min(w, 560)}:-1`, "-quality", "82", join(outDir, `${name}.webp`)]);
-  console.log(`  ${name}.webp`);
+  execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", `scale=${Math.min(w, 560)}:-1`, join(outDir, `${name}.png`)]);
+  console.log(`  ${name}.png`);
 }
 
 async function shotEl(name, selector, pad = 6) {
   const b = await page.locator(selector).first().boundingBox();
   const png = join(tmp, `${name}.png`);
   await page.screenshot({ path: png, clip: { x: Math.max(0, b.x - pad), y: Math.max(0, b.y - pad), width: Math.min(W, b.width + 2 * pad), height: Math.min(H, b.height + 2 * pad) } });
-  execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", "scale='min(560,iw)':-1", "-quality", "82", join(outDir, `${name}.webp`)]);
-  console.log(`  ${name}.webp`);
+  execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", "scale='min(560,iw)':-1", join(outDir, `${name}.png`)]);
+  console.log(`  ${name}.png`);
 }
 
 const graphCentre = async () => {
@@ -135,8 +135,8 @@ const SHOTS = {
     await sleep(600);
     const png = join(tmp, "output.png");
     await page.screenshot({ path: png, clip: { x: 360, y: 120, width: W - 360, height: 420 } });
-    execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", "scale=560:-1", "-quality", "82", join(outDir, "output.webp")]);
-    console.log("  output.webp");
+    execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", "scale=560:-1", join(outDir, "output.png")]);
+    console.log("  output.png");
   },
   "group-drop": async () => {
     await run("colorize(dept)\ncenter(dept == 'dept3')");

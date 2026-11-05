@@ -221,6 +221,7 @@ class Session:
             j, g.journal = g.journal, None
             if not self._history_op and not quiet:
                 self._record_undo(source, j, before, cell)
+            self._edge_colour_hint(j)
         return ok
 
     def _run(self, source, interactive, filename):
@@ -250,6 +251,16 @@ class Session:
     # ---- undo / redo --------------------------------------------------------
     UNDO_LIMIT = 50
     UNDO_BUDGET = 3_000_000     # recorded values/ops kept across the whole stack
+
+    def _edge_colour_hint(self, journal):
+        """Setting edge colours has no visible effect while edges are drawn in
+        their endpoints' colours: say so (once per command)."""
+        mode = getattr(self.view, "edge_color", "original")
+        if mode == "original" or journal is None:
+            return
+        if any(name == "color" and isinstance(elem, Edge) for elem, name, _old in journal.values.values()):
+            self.emit({"type": "text", "text": f"note: edges are drawn in their nodes' colours (setEdgeColorMode(\"{mode}\")), "
+                                               f"so their own colour doesn't show; setEdgeColorMode(\"original\") shows it\n"})
 
     def _undo_snapshot(self):
         g = self.graph

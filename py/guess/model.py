@@ -157,11 +157,29 @@ class GSet(list):
     def groupAndSortBy(self, field):
         return group_by(self, field, sort=True)
 
+    @property
     def nodes(self):
-        return GSet(x for x in _flatten(self) if isinstance(x, Node))
+        """The nodes in the set plus the endpoints of its edges, e.g.
+        (freq > 100).nodes: everyone involved in a heavy edge."""
+        out, seen = [], set()
+        for x in _flatten(self):
+            for n in ((x,) if isinstance(x, Node) else (x._n1, x._n2) if isinstance(x, Edge) else ()):
+                if id(n) not in seen:
+                    seen.add(id(n))
+                    out.append(n)
+        return GSet(out, "nodes")
 
+    @property
     def edges(self):
-        return GSet(x for x in _flatten(self) if isinstance(x, Edge))
+        """The edges in the set plus the edges touching its nodes, e.g.
+        (dept == 'dept3').edges: every edge of department three."""
+        out, seen = [], set()
+        for x in _flatten(self):
+            for e in ((x,) if isinstance(x, Edge) else x._inc.values() if isinstance(x, Node) else ()):
+                if id(e) not in seen:
+                    seen.add(id(e))
+                    out.append(e)
+        return GSet(out, "edges")
 
 
 def _as_seq(o):
