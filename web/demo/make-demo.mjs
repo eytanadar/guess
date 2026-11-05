@@ -194,8 +194,14 @@ async function act(a) {
     el.style.opacity = t ? "1" : "0";
   }, [a.title, a.subtitle ?? ""]);
   if (a.menu) {
-    await clickEl(page.locator(".menu-title", { hasText: a.menu[0] }));
+    const titleEl = page.locator(".menu-title", { hasText: a.menu[0] });
+    if ((await titleEl.getAttribute("aria-expanded")) !== "true") await clickEl(titleEl);
+    else await moveToEl(titleEl);
     await sleep(500);
+    if ((await titleEl.getAttribute("aria-expanded")) !== "true") {
+      await titleEl.click();   // the click closed a menu that was still open: open it again
+      await sleep(300);
+    }
     const pop = page.locator(".menu-root", { has: page.locator(".menu-title", { hasText: a.menu[0] }) }).locator(".menu-pop");
     const item = a.menu[1].startsWith("#") || a.menu[1].startsWith("[") ? pop.locator(a.menu[1]) : pop.getByRole("menuitem", { name: a.menu[1] });
     // go straight down into the menu first: crossing other titles would switch menus
@@ -247,7 +253,11 @@ async function record(scenes) {
   await ctx.addInitScript(OVERLAY);
   page = await ctx.newPage();
   const t0 = Date.now();
+  // warm up first: Vite may reload the page once after pre-bundling dependencies
   await page.goto(`http://localhost:${PORT}/`);
+  await page.locator(".console-out").getByText(/loaded 402/).first().waitFor({ timeout: 120000 });
+  await sleep(1500);
+  await page.reload();
   await page.locator(".console-out").getByText(/loaded 402/).first().waitFor({ timeout: 120000 });
   for (const a of script.setup ?? []) await act(a);
   await sleep(800);

@@ -69,6 +69,10 @@ export class Renderer {
   private world = new Container();
   private backdrop = new Container();
   private hullG = new Graphics();
+  private guideG = new Graphics();
+  private guideLabels = new Container();
+  private guides: NonNullable<Overlay["guides"]> = [];
+  private guidesNote = "";
   private imageLayer = new Container();
   private edgeG = new Graphics();
   private nodeG = new Graphics();
@@ -139,7 +143,7 @@ export class Renderer {
     }).observe(this.host);
     // draw only when something changed (idle graphs cost nothing)
     this.app.ticker.remove(this.app.render, this.app);
-    this.world.addChild(this.backdrop, this.hullG, this.edgeG, this.nodeG, this.imageLayer, this.halos, this.labels, this.overlay);
+    this.world.addChild(this.backdrop, this.guideG, this.guideLabels, this.hullG, this.edgeG, this.nodeG, this.imageLayer, this.halos, this.labels, this.overlay);
     this.app.stage.addChild(this.world);
     this.app.ticker.add(() => this.frame());
     this.bindInput();
@@ -272,6 +276,8 @@ export class Renderer {
 
   setOverlay(ov: Overlay) {
     this.userBg = ov.background;
+    this.guides = ov.guides ?? [];
+    this.guidesNote = ov.guidesNote ?? "";
     this.pieColors = ov.pie ?? null;
     this.borderWidth = ov.borderWidth ?? 0.75;
     this.applyBackground();
@@ -386,6 +392,14 @@ export class Renderer {
       x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y);
       x1 = Math.max(x1, n.x + n.w); y1 = Math.max(y1, n.y + n.h);
     }
+    if (!ids.size) {
+      // fitting everything: include hive plot axes and their labels
+      for (const gd of this.guides) {
+        x0 = Math.min(x0, gd.x2 - 70); x1 = Math.max(x1, gd.x2 + 70);
+        y0 = Math.min(y0, gd.y2 - 20); y1 = Math.max(y1, gd.y2 + 20);
+      }
+      if (this.guidesNote && this.guides.length) y1 += 50;
+    }
     const W = this.app.screen.width, H = this.app.screen.height;
     const pad = 40;
     const bw = Math.max(x1 - x0, 1), bh = Math.max(y1 - y0, 1);
@@ -440,6 +454,7 @@ export class Renderer {
     if (this.dirty) {
       this.dirty = false;
       this.updateFocus();
+      this.drawGuides();
       this.drawHulls();
       this.drawEdges();
       this.drawNodes();
@@ -459,6 +474,37 @@ export class Renderer {
   }
 
   private lastSize = [0, 0];
+
+  /** Hive plot axes: a line per axis with its label beyond the outer end. */
+  private drawGuides() {
+    const g = this.guideG;
+    g.clear();
+    for (const t of this.guideLabels.removeChildren()) t.destroy();
+    if (!this.guides.length) return;
+    const ink = this.labelColor;
+    for (const gd of this.guides) {
+      g.moveTo(gd.x1, gd.y1).lineTo(gd.x2, gd.y2);
+      g.stroke({ width: 2.5, color: ink, alpha: 0.35, cap: "round" });
+      const dx = gd.x2 - gd.x1, dy = gd.y2 - gd.y1, len = Math.hypot(dx, dy) || 1;
+      const t = new BitmapText({ text: gd.label, style: LABEL_STYLE });
+      t.scale.set(LABEL_SCALE * 1.6);
+      t.tint = ink;
+      // centred on the axis direction, just past its end
+      t.anchor.set(0.5 - (0.5 * dx) / len, 0.5 - (0.5 * dy) / len);
+      t.position.set(gd.x2 + (dx / len) * 8, gd.y2 + (dy / len) * 8);
+      this.guideLabels.addChild(t);
+    }
+    if (this.guidesNote) {
+      const xs = this.guides.flatMap((gd) => [gd.x1, gd.x2]), ys = this.guides.flatMap((gd) => [gd.y1, gd.y2]);
+      const t = new BitmapText({ text: this.guidesNote, style: LABEL_STYLE });
+      t.scale.set(LABEL_SCALE * 1.2);
+      t.tint = ink;
+      t.alpha = 0.7;
+      t.anchor.set(0.5, 0);
+      t.position.set((Math.min(...xs) + Math.max(...xs)) / 2, Math.max(...ys) + 40);
+      this.guideLabels.addChild(t);
+    }
+  }
 
   private drawHulls() {
     const g = this.hullG;
@@ -808,6 +854,22 @@ export class Renderer {
       if (!e || !a || !b || !e.v || !a.v || !b.v) continue;
       this.edgePath(g, e, a, b);
       g.stroke({ width: Math.max(e.w + 2 * px, 3 * px), color: HIGHLIGHT, alpha: 0.9, cap: "round" });
+    }
+    // a highlighted edge also marks its two endpoints, so it's obvious where it ends
+    const ends = new Set<number>();
+    for (const id of this.hl.edges) {
+      const e = this.edges.get(id);
+      if (e && !this.hl.nodes.has(e.s)) ends.add(e.s);
+      if (e && !this.hl.nodes.has(e.t)) ends.add(e.t);
+    }
+    for (const id of ends) {
+      const n = this.nodes.get(id);
+      if (!n || !n.v) continue;
+      // at least 7 screen pixels, so tiny nodes are still easy to spot when zoomed out
+      const r = Math.max(Math.max(n.w, n.h) / 2 + 6 * px, 9 * px);
+      g.circle(n.x + n.w / 2, n.y + n.h / 2, r);
+      g.fill({ color: HIGHLIGHT, alpha: 0.22 });
+      g.stroke({ width: 3 * px, color: HIGHLIGHT, alpha: 1 });
     }
     for (const id of this.hl.nodes) {
       const n = this.nodes.get(id);

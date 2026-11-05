@@ -450,6 +450,9 @@ class _Layouts:
         drag = getattr(self.session.view, "drag", None)
         if drag and (drag.pop("ring", None) is not None) | (drag.pop("axes", None) is not None):
             self.session.view.changed()
+        if getattr(self.session.view, "guides", None):
+            self.session.view.guides = []      # hive plot axes belong to that layout
+            self.session.view.changed()
         return _Snapshot(self.graph)
 
     def finish(self):
@@ -2648,6 +2651,112 @@ def install(session):
                                      "xedit": not fx.readonly and fx.compute is None,
                                      "yedit": not fy.readonly and fy.compute is None}
         session.view.changed()
+
+    @cmd
+    def hiveLayout(axis=None, position=None, scale="rank", axes=None, inner=60, length=440, curved=True):
+        """hiveLayout(axis, position) draws a hive plot (Krzywinski et al.): one
+        radial axis per value of the node field `axis` (the most common values,
+        at most `axes` of them, the rest merged into "other"), each node placed
+        along its axis by the numeric field `position` (default totaldegree),
+        and edges drawn as curves between axes. scale is "rank" (default; evenly
+        spread), "linear" or "log". Without `axis`: for directed graphs the
+        classic source / hub / sink axes (only outgoing, both, only incoming
+        edges), otherwise leaves / connectors / hubs by degree. The axes are drawn
+        with their labels; any later layout removes them.
+        E.g. hiveLayout(dept, pagerank) or hiveLayout(modularity_class, axes=5)"""
+        s = lay.snap()
+        if s.n == 0:
+            return lay.finish()
+        nodes = s.nodes
+        # 1. which axis each node is on
+        if axis is not None:
+            f = _field_arg(g, axis)
+            vals = [f.get(nd) for nd in nodes]
+            counts = {}
+            for v in vals:
+                counts[v] = counts.get(v, 0) + 1
+            limit = int(axes) if axes else 6
+            order = sorted(counts, key=lambda v: (-counts[v], str(v)))
+            keep = order[:limit] if len(order) <= limit else order[:limit - 1]
+            names = [f"{f.name} = {v}" for v in keep] + (["other"] if len(order) > len(keep) else [])
+            idx = {v: k for k, v in enumerate(keep)}
+            ax = np.array([idx.get(v, len(keep)) for v in vals])
+        else:
+            outd = np.bincount(s.src[s.directed], minlength=s.n)
+            ind = np.bincount(s.dst[s.directed], minlength=s.n)
+            if s.directed.any():
+                names = ["sources", "hubs", "sinks"]
+                ax = np.where((outd > 0) & (ind == 0), 0, np.where((ind > 0) & (outd == 0), 2, 1))
+            else:
+                deg = s.degree
+                cut = np.quantile(deg, 0.9) if s.n > 10 else deg.max()
+                names = ["leaves", "connectors", "hubs"]
+                ax = np.where(deg <= 1, 0, np.where(deg >= max(cut, 2), 2, 1))
+        k = len(names)
+        # 2. where along the axis
+        if position is None:
+            pv = np.array([float(len(nd._inc)) for nd in nodes])
+            pname = "totaldegree"
+        else:
+            pf = _field_arg(g, position)
+            pv = np.array([_num(pf.get(nd), np.nan) for nd in nodes])
+            pv = np.where(np.isfinite(pv), pv, np.nanmin(pv) if np.isfinite(pv).any() else 0.0)
+            pname = pf.name
+        scale = str(scale).lower()
+        t = np.zeros(s.n)
+        for a in range(k):
+            m = ax == a
+            if not m.any():
+                continue
+            v = pv[m]
+            if scale == "rank":
+                # ties share a rank; spread evenly along the axis
+                order = np.argsort(np.argsort(v, kind="stable"), kind="stable")
+                t[m] = order / max(m.sum() - 1, 1)
+            else:
+                if scale == "log":
+                    v = np.log1p(v - v.min())
+                elif scale != "linear":
+                    raise GuessError('scale is "rank", "linear" or "log"')
+                lo, hi = v.min(), v.max()
+                t[m] = (v - lo) / (hi - lo) if hi > lo else 0.5
+        ang = -math.pi / 2 + 2 * math.pi * np.arange(k) / k
+        r = float(inner) + t * float(length)
+        cx = cy = BOX / 2
+        C = np.stack([cx + r * np.cos(ang[ax]), cy + r * np.sin(ang[ax])], 1)
+        lay.apply(s, C - s.size / 2)
+        # 3. edges as curves between axes (control points on the bisector)
+        if curved:
+            span = 2 * math.pi / k
+            for e in s.edges:
+                i, j = s.index[e._n1._id], s.index[e._n2._id]
+                if i == j:
+                    continue
+                ai, aj = ang[ax[i]], ang[ax[j]]
+                if ax[i] == ax[j]:
+                    mid = ai + span * 0.12         # same axis: a narrow loop out to the side
+                else:
+                    d = (aj - ai + math.pi) % (2 * math.pi) - math.pi
+                    mid = ai + d / 2
+                p0, p3 = C[i], C[j]
+                p1 = (cx + r[i] * math.cos(mid), cy + r[i] * math.sin(mid))
+                p2 = (cx + r[j] * math.cos(mid), cy + r[j] * math.sin(mid))
+                pts = []
+                for q in range(1, 14):
+                    u = q / 14
+                    b0, b1, b2, b3 = (1 - u) ** 3, 3 * u * (1 - u) ** 2, 3 * u * u * (1 - u), u ** 3
+                    pts.append((b0 * p0[0] + b1 * p1[0] + b2 * p2[0] + b3 * p3[0],
+                                b0 * p0[1] + b1 * p1[1] + b2 * p2[1] + b3 * p3[1]))
+                g.set_bends(e, pts)
+        # 4. the axes, labelled
+        session.view.guides = [
+            {"x1": cx + inner * 0.6 * math.cos(a), "y1": cy + inner * 0.6 * math.sin(a),
+             "x2": cx + (inner + length + 25) * math.cos(a), "y2": cy + (inner + length + 25) * math.sin(a),
+             "label": f"{name} ({int((ax == q).sum())})"}
+            for q, (a, name) in enumerate(zip(ang, names))]
+        session.view.guides_note = f"position: {pname} ({scale})"
+        session.view.changed()
+        session.flush()
 
     @cmd
     def rotateLayout(degrees=90):

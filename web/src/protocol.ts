@@ -51,6 +51,9 @@ export interface Overlay {
   /** pie-chart node slice colours (node records then carry `p`, the slice sizes) */
   pie?: number[] | null;
   borderWidth?: number;
+  /** labelled lines under the graph (hive plot axes) */
+  guides?: { x1: number; y1: number; x2: number; y2: number; label: string }[];
+  guidesNote?: string;
   /** context for semantic dragging (see main.ts dragBehaviour) */
   drag?: DragContext;
   labels?: { outline: boolean; cull: boolean };

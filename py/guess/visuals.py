@@ -122,6 +122,8 @@ class View:
         self.styles = {}            # name -> [Gython lines] (defineStyle / applyStyle)
         self.pie = None             # pie-chart nodes (glyphs.py)
         self.drag = {}              # declarative dragging context: groups, ring, axes
+        self.guides = []            # labelled lines drawn under the graph (hive plot axes)
+        self.guides_note = ""
         self.border_width = 0.75
         self._next = 1
         self.dirty = True
@@ -130,6 +132,24 @@ class View:
     def changed(self):
         self.dirty = True
         self.version += 1
+
+    def reset_for_new_graph(self):
+        """A new graph was loaded: drop what belonged to the old one (legends,
+        hulls, hive plot axes, pies, drag context, slides). Display preferences
+        (background, curved edges, edge colours, label options, styles) stay."""
+        had = bool(self.legends or self.hulls or self.guides or self.pie or self.drag or getattr(self, "slides", None))
+        self.legends = {}
+        self.hulls = {}
+        self.guides = []
+        self.guides_note = ""
+        self.drag = {}
+        self.pie = None
+        self.pie_legend = None
+        if getattr(self, "slides", None):
+            self.slides = []
+            self.session.emit({"type": "slides", "slides": [], "index": None})
+        if had:
+            self.changed()
 
     def set_drag_groups(self, field):
         """Dragging a node onto another group of `field` will change its value."""
@@ -163,7 +183,8 @@ class View:
                 "curvature": self.curvature, "edge_color": self.edge_color, "labels": dict(self.labels),
                 "styles": {k: list(v) for k, v in self.styles.items()},
                 "pie": self.pie, "border_width": self.border_width,
-                "slides": [dict(s) for s in getattr(self, "slides", [])]}
+                "slides": [dict(s) for s in getattr(self, "slides", [])],
+                "guides": [dict(x) for x in self.guides], "guides_note": self.guides_note}
 
     def restore(self, snap):
         self.hulls = {}
@@ -181,6 +202,8 @@ class View:
         self.styles = {k: list(v) for k, v in snap.get("styles", {}).items()}
         self.pie, self.border_width = snap.get("pie"), snap.get("border_width", 0.75)
         self.slides = [dict(s) for s in snap.get("slides", [])]
+        self.guides = [dict(x) for x in snap.get("guides", [])]
+        self.guides_note = snap.get("guides_note", "")
         self.session.emit({"type": "slides", "slides": [{"note": s["note"]} for s in self.slides], "index": None})
         for n in self.session.graph._nodes_list():
             self.session.graph._mark(n)
@@ -200,7 +223,8 @@ class View:
         return {"type": "overlay", "background": bg, "image": self.image, "arrow": self.arrow,
                 "curvature": self.curvature, "edgeColor": self.edge_color, "labels": dict(self.labels), "styles": list(self.styles),
                 "pie": [colors.to_rgba_int(c)[0] for c in self.pie["colors"]] if self.pie else None,
-                "borderWidth": self.border_width, "drag": self._drag_record(), "hulls": hulls, "legends": [l.record() for l in self.legends.values()]}
+                "borderWidth": self.border_width, "drag": self._drag_record(),
+                "guides": self.guides, "guidesNote": self.guides_note, "hulls": hulls, "legends": [l.record() for l in self.legends.values()]}
 
 
 def _data_url(path):

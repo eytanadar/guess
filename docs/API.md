@@ -13,7 +13,7 @@ Commands can be called without parentheses when they take no arguments
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
-- [Layouts](#layouts) (32)
+- [Layouts](#layouts) (33)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (22)
 - [Styles and visual mappings](#styles-and-visual-mappings) (8)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
@@ -487,6 +487,19 @@ the size of the largest node; frLayout(width, height) uses that area.
 
 gemLayout() runs the GEM force-directed layout (Frick et al.);
 gemLayout(seed) seeds the random generator for a repeatable layout.
+
+### `hiveLayout(axis=None, position=None, scale='rank', axes=None, inner=60, length=440, curved=True)`
+
+hiveLayout(axis, position) draws a hive plot (Krzywinski et al.): one
+radial axis per value of the node field `axis` (the most common values,
+at most `axes` of them, the rest merged into "other"), each node placed
+along its axis by the numeric field `position` (default totaldegree),
+and edges drawn as curves between axes. scale is "rank" (default; evenly
+spread), "linear" or "log". Without `axis`: for directed graphs the
+classic source / hub / sink axes (only outgoing, both, only incoming
+edges), otherwise leaves / connectors / hubs by degree. The axes are drawn
+with their labels; any later layout removes them.
+E.g. hiveLayout(dept, pagerank) or hiveLayout(modularity_class, axes=5)
 
 ### `isomLayout(max=None)`
 
@@ -1326,6 +1339,12 @@ kkLayout()
 
 ```python
 sugiyamaLayout()
+```
+
+**Hive plot**
+
+```python
+hiveLayout(dept, pagerank, axes=5)
 ```
 
 **Radial around a node**

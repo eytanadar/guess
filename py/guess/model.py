@@ -888,6 +888,7 @@ class Graph:
         self._touch("bends")
         self._deleted.clear()
         self.bends.clear()
+        self._emit("on_graph_cleared")
 
     # undo ------------------------------------------------------------------
     def _touch(self, what):

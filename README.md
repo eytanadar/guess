@@ -59,6 +59,13 @@ Netlify/Cloudflare (`_headers`, included) set the cross-origin-isolation
 headers; without them `coi-serviceworker.js` adds them after one reload. See
 [docs/DEPLOY.md](docs/DEPLOY.md).
 
+## Demo video
+
+`cd web && npm run demo` records a narrated demo (at most 5 minutes) from
+`web/demo/script.json`; `npm run demo:script` has Claude rewrite that script
+from the current docs, in the voice of the CHI paper. See
+[web/demo/README.md](web/demo/README.md).
+
 ## Layout
 
 - `py/guess/` — the Python package that runs inside Pyodide (compiler, model,

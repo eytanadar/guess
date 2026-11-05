@@ -108,7 +108,8 @@ Layouts animate while they run and can be stopped with Esc/Stop:
 `forceAtlas2Layout()` (Gephi's; options such as `linLog=true`,
 `preventOverlap=true`), `gemLayout`, `frLayout`, `kkLayout`, `springLayout`,
 `mdsLayout`, `sugiyamaLayout`, `radialLayout(v1)`, `circleLayout`,
-`binPackLayout`, `noverlapLayout`, plus `rotateLayout`, `mirrorLayout`,
+`binPackLayout`, `hiveLayout(field, position)` (a hive plot: radial axes per
+group, nodes placed by a value), `treeLayout`, `noverlapLayout`, plus `rotateLayout`, `mirrorLayout`,
 `rescaleLayout`.
 
 Statistics are node fields computed on first use: `pagerank`, `betweenness`,

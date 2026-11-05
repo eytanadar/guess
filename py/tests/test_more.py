@@ -179,3 +179,46 @@ def test_charts_update_in_place(s):
     s.run("plotSizes(dept)")
     ids = [m["id"] for m in s.rec.of("chart")]
     assert len(ids) == 2 and ids[0] == ids[1]
+
+
+def test_hive_layout(big):
+    import math
+    assert big.run("hiveLayout(dept, pagerank, axes=4)")
+    guides = big.view.guides
+    assert len(guides) == 4 and guides[-1]["label"].startswith("other")
+    assert "pagerank" in big.view.guides_note
+    # every node lies on one of the axis rays from the centre
+    angles = [math.atan2(g["y2"] - 500, g["x2"] - 500) for g in guides]
+    for n in big.graph._nodes_list():
+        cx, cy = n.x + n.width / 2 - 500, n.y + n.height / 2 - 500
+        a = math.atan2(cy, cx)
+        assert min(abs((a - b + math.pi) % (2 * math.pi) - math.pi) for b in angles) < 1e-6
+    assert len(big.graph.bends) > 500
+    from tests.test_persist import roundtrip
+    assert len(roundtrip(big).view.guides) == 4
+    # the sample graph is undirected: leaves / connectors / hubs by degree
+    assert big.run("hiveLayout()")
+    assert [g["label"].split(" (")[0] for g in big.view.guides] == ["leaves", "connectors", "hubs"]
+    big.run("makeSimpleDirectedRandom(30, 60)")
+    assert big.run("hiveLayout()")
+    assert [g["label"].split(" (")[0] for g in big.view.guides] == ["sources", "hubs", "sinks"]
+    assert big.run("gemLayout()") and big.view.guides == [] and not big.graph.bends
+    assert not big.run("hiveLayout(dept, scale='cubic')")
+
+
+def test_new_graph_drops_old_overlays(big, tmp_path):
+    assert big.run("hiveLayout(dept); colorize(dept); legendFor(dept); createConvexHull(dept == 'dept1'); pieNeighbors(dept)")
+    assert big.view.guides and big.view.legends and big.view.hulls and big.view.pie
+    big.run("curvedEdges(); select(dept == 'dept1')")
+    assert big.run(f"makeFromGDF({str(SAMPLE)!r})")
+    v = big.view
+    assert v.guides == [] and v.guides_note == "" and v.legends == {} and v.hulls == {} and v.pie is None
+    assert v.drag == {} and len(ev(big, "sel")) == 0
+    assert v.curvature > 0                       # display preferences stay
+    big.run("undo()")                            # undoing the load brings them back
+    assert big.view.guides and big.view.legends and big.view.hulls
+    # a saved session restores its own legends after the clear
+    f = tmp_path / "s.guess"
+    assert big.run(f"saveSession({str(f)!r})")
+    assert big.run("makeSimpleRandom(5, 4)") and not big.view.legends
+    assert big.run(f"makeFromSession({str(f)!r})") and big.view.legends and big.view.guides

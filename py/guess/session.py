@@ -177,6 +177,15 @@ class Session:
     def on_node_removed(self, node):
         self._unbind(node._name, node)
 
+    def on_graph_cleared(self):
+        view = getattr(self, "view", None)
+        if view is not None:
+            view.reset_for_new_graph()
+        if hasattr(self, "groups"):
+            self.groups.clear()
+        if "sel" in self.ns:
+            self.ns["sel"] = GSet(annotation="selection")
+
     def on_field_removed(self, field):
         self._unbind(field.name, field)
 

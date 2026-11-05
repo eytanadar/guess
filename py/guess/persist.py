@@ -121,7 +121,7 @@ def _data(session, g, nodes, edges, nidx, eidx, subset=False):
         "view": {"background": view.background, "image": view.image, "arrow": view.arrow,
                  "curvature": view.curvature, "edgeColor": view.edge_color, "labels": view.labels,
                  "styles": view.styles, "pie": view.pie, "borderWidth": view.border_width,
-                 "slides": getattr(view, "slides", [])},
+                 "slides": getattr(view, "slides", []), "guides": view.guides, "guidesNote": view.guides_note},
     }
     if subset:
         data["ranges"] = []
@@ -208,6 +208,8 @@ def load(session, data):
     view.styles = {str(k): list(map(str, c)) for k, c in v.get("styles", {}).items()}
     view.pie = v.get("pie")
     view.border_width = float(v.get("borderWidth", 0.75))
+    view.guides = [dict(x) for x in v.get("guides", [])]
+    view.guides_note = v.get("guidesNote", "")
     view.slides = [dict(s) for s in v.get("slides", []) if s.get("state") in g.states or s.get("camera")]
     session.emit({"type": "slides", "slides": [{"note": s["note"]} for s in view.slides], "index": None})
     ws = getattr(session, "workspaces", None)

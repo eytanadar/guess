@@ -132,6 +132,13 @@ recorder enforces it.
 - `?load=<url>` opens a graph or session at startup; `&app=1` hides the console.
 - Clear autosave: DevTools → Application → IndexedDB → `guess`.
 
+## Demo video
+
+`web/demo/` rebuilds the narrated demo after changes (see its README):
+`npm run demo:script` (Claude rewrites the script), `npm run demo -- --dry-run`,
+then `npm run demo`. When UI selectors change, update the action table in
+`web/demo/PROMPT.md`.
+
 ## Releasing
 
 1. Bump `version` in `web/package.json`.

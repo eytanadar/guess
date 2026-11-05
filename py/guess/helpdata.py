@@ -72,6 +72,7 @@ EXAMPLES = [
         ("GEM layout", "gemLayout()", "force directed"),
         ("Kamada-Kawai", "kkLayout()", "spring stress"),
         ("Hierarchy", "sugiyamaLayout()", "tree dag layered"),
+        ("Hive plot", "hiveLayout(dept, pagerank, axes=5)", "hive radial axes krzywinski"),
         ("Radial around a node", "radialLayout(v1)", "tree centre"),
         ("Remove overlaps", "noverlapLayout()", "spread"),
         ("Pack components", "binPackLayout()", "disconnected"),
