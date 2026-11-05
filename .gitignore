@@ -1,0 +1,12 @@
+node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+py/.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+gephi
+guess-orig
+output-md
+guess-chi2006.pdf

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GUESS</title>
+    <!-- Static hosts can't send COOP/COEP headers; this service worker adds them
+         so Python can be interrupted (SharedArrayBuffer). No-op when already isolated. -->
+    <script src="coi-serviceworker.js"></script>
+    <script>
+      try { const t = localStorage.getItem("guess.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+    </script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 4L12 3L8 12Z' stroke='%23999' fill='none'/%3E%3Ccircle cx='3' cy='4' r='2' fill='%23ff1f6b'/%3E%3Ccircle cx='12' cy='3' r='2' fill='%231d4ed8'/%3E%3Ccircle cx='8' cy='12' r='2' fill='%23fcd870'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <span class="brand">GUESS</span>
+      <button id="open" title="Open a graph (.gdf, .gexf, .graphml, .net, .dl, .csv), a .py script, or an image — or drop files on the page">Open…</button>
+      <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.dl,.csv,.tsv,.py,image/*" multiple hidden />
+      <button id="save" title="Download a .guess session file (graph, fields, states, hulls, legends)">Save</button>
+      <button id="sample">Sample graph</button>
+      <button id="undo" title="Undo the last command (Ctrl/Cmd+Z)">Undo</button>
+      <button id="redo" title="Redo (Shift+Ctrl/Cmd+Z)">Redo</button>
+      <button id="center" title="Fit the graph (or double-click the background)">Center</button>
+      <span class="toolgroup" role="group" aria-label="Click tool">
+        <button data-tool="select" aria-pressed="true" title="Click a node to highlight its neighbourhood (again, or Esc, to clear); drag to move">Select</button>
+        <button data-tool="path" aria-pressed="false" title="Click two nodes to colour a shortest path between them">Path</button>
+        <button data-tool="heat" aria-pressed="false" title="Click a node to colour every node by its distance from it">Heat</button>
+        <button data-tool="paint" aria-pressed="false" title="Click nodes to paint them (shift-click paints the neighbours too)">Paint</button>
+        <input type="color" id="paint-color" value="#e8384f" title="Colour for Path and Paint" />
+      </span>
+      <button id="curved" title="Toggle curved edges (curvedEdges())" aria-pressed="false">Curved</button>
+      <button id="png">PNG</button>
+      <button id="svg">SVG</button>
+      <button id="theme" title="Theme">◐ Auto</button>
+      <button id="stop" disabled title="Interrupt the running command (Esc)">Stop</button>
+      <span id="status" class="status"></span>
+    </header>
+    <main class="split">
+      <div class="view-col">
+        <div class="graph-row">
+          <div id="graph" class="graph"><div id="legends" class="legends"></div></div>
+          <aside id="dock-right" class="dock dock-right" hidden></aside>
+        </div>
+        <div id="dock-bottom" class="dock dock-bottom" hidden></div>
+      </div>
+      <div class="divider" id="divider" role="separator" aria-orientation="vertical" title="Drag to resize"></div>
+      <section id="console"></section>
+    </main>
+    <div id="tip" class="tip" hidden></div>
+    <div id="menu" class="menu" hidden></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

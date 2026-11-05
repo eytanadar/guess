@@ -1,0 +1,376 @@
+"""Readers for Pajek (.net), GraphML and UCINET DL, and a GraphML writer.
+
+Pajek handling follows com/hp/hpl/guess/pajek/GuessPajekReader.java
+(node names are "pajek<id>", label from the quoted name, coordinates scaled
+by 1000, ``ic``/``lc``/``x_fact``/``y_fact``/shape honoured).
+"""
+import random
+import re
+import shlex
+import xml.etree.ElementTree as ET
+from xml.sax.saxutils import escape, quoteattr
+
+from .model import BOOL, DOUBLE, INT, STRING, GuessError, coerce
+
+# --------------------------------------------------------------------------
+# Pajek
+# --------------------------------------------------------------------------
+
+_PAJEK_SHAPES = {"box", "ellipse", "triangle", "diamond", "circle"}
+
+
+def _pajek_tokens(line):
+    try:
+        return shlex.split(line, posix=True)
+    except ValueError:
+        return line.split()
+
+
+def read_pajek(graph, text):
+    mode = None
+    part_name = None
+    part_index = 0
+    order = []
+    edges = 0
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("%"):
+            continue
+        low = line.lower()
+        if low.startswith("*vertices"):
+            if mode == "partition":
+                continue
+            mode = "vert"
+            continue
+        if low.startswith("*arcslist") or low.startswith("*edgeslist"):
+            mode = "arcslist" if low.startswith("*arcslist") else "edgeslist"
+            continue
+        if low.startswith("*arcs"):
+            mode = "arcs"
+            continue
+        if low.startswith("*edges"):
+            mode = "edges"
+            continue
+        if low.startswith("*partition"):
+            mode = "partition"
+            part_name = _ident(line.split()[-1]) if len(line.split()) > 1 else "partition"
+            graph.addNodeField(part_name, BOOL, False)
+            part_index = 0
+            continue
+        if low.startswith("*matrix"):
+            mode = "matrix"
+            part_index = 0
+            continue
+        if line.startswith("*"):
+            mode = None
+            continue
+        if mode == "vert":
+            order.append(_pajek_vertex(graph, line))
+        elif mode in ("edges", "arcs"):
+            _pajek_edge(graph, line, mode == "arcs")
+            edges += 1
+        elif mode in ("edgeslist", "arcslist"):
+            toks = line.split()
+            for t in toks[1:]:
+                graph.addEdge(_pajek_node(graph, toks[0]), _pajek_node(graph, t), mode == "arcslist")
+                edges += 1
+        elif mode == "partition":
+            if part_index < len(order) and line.split()[0] == "1":
+                setattr(order[part_index], part_name, True)
+            part_index += 1
+        elif mode == "matrix":
+            vals = line.split()
+            src = order[part_index] if part_index < len(order) else None
+            for j, v in enumerate(vals):
+                if src is not None and j < len(order) and float(v) != 0:
+                    graph.addEdge(src, order[j], True, weight=float(v))
+                    edges += 1
+            part_index += 1
+    return len(order), edges
+
+
+def _pajek_node(graph, ident):
+    name = "pajek" + ident
+    n = graph.getNodeByName(name)
+    if n is None:
+        n = graph.addNode(name)
+        n.x = random.random() * 1000
+        n.y = random.random() * 1000
+        n.label = ident
+    return n
+
+
+def _pajek_vertex(graph, line):
+    toks = _pajek_tokens(line)
+    ident = toks[0]
+    label = toks[1] if len(toks) > 1 else ident
+    rest = toks[2:]
+    p = 0
+    x = random.random() * 1000
+    y = random.random() * 1000
+    if len(rest) >= 2:
+        try:
+            x = 1000 * float(rest[0])
+            y = 1000 * float(rest[1])
+            p = 2
+        except ValueError:
+            pass
+    if len(rest) > p:
+        try:
+            float(rest[p])  # z coordinate, ignored
+            p += 1
+        except ValueError:
+            pass
+    shape = "ellipse"
+    if len(rest) > p and rest[p].lower() in _PAJEK_SHAPES:
+        shape = rest[p].lower()
+        p += 1
+    x_fact = y_fact = 1.0
+    rounded = False
+    color = "cornflowerblue"
+    labelcolor = None
+    while p < len(rest) - 1:
+        key, value = rest[p].lower(), rest[p + 1]
+        if key == "x_fact":
+            x_fact = _float(value, 1.0)
+        elif key == "y_fact":
+            y_fact = _float(value, 1.0)
+        elif key == "s_size":
+            x_fact = y_fact = _float(value, 1.0)
+        elif key == "sh":
+            shape = value.lower()
+        elif key == "r":
+            rounded = value != "0"
+        elif key == "ic":
+            color = value
+        elif key == "lc":
+            labelcolor = value
+        p += 2
+    style = 2
+    if shape == "box":
+        style = 3 if rounded else 1
+    n = graph.addNode("pajek" + ident)
+    n.style = style
+    n.x, n.y = x, y
+    n.width, n.height = 10 * x_fact, 10 * y_fact
+    n.color = color if _valid_color(color) else "cornflowerblue"
+    n.strokecolor = "cadetblue"
+    n.label = label
+    if labelcolor and _valid_color(labelcolor):
+        n.labelcolor = labelcolor
+    return n
+
+
+def _pajek_edge(graph, line, directed):
+    toks = _pajek_tokens(line)
+    if len(toks) < 2:
+        return
+    s = _pajek_node(graph, toks[0])
+    t = _pajek_node(graph, toks[1])
+    e = graph.addEdge(s, t, directed)
+    p = 2
+    if len(toks) > p:
+        try:
+            e.weight = float(toks[p])
+            p += 1
+        except ValueError:
+            pass
+    while p < len(toks) - 1:
+        key, value = toks[p].lower(), toks[p + 1]
+        if key == "c" and _valid_color(value):
+            e.color = value
+        elif key == "w" or key == "width":
+            e.width = _float(value, 2.0)
+        elif key in ("l", "label"):
+            e.label = value
+        elif key == "lc" and _valid_color(value):
+            e.labelcolor = value
+        p += 2
+
+
+def _float(v, default):
+    try:
+        return float(v)
+    except ValueError:
+        return default
+
+
+def _valid_color(c):
+    from . import colors
+    return colors.parse(c) is not None
+
+
+def _ident(s):
+    s = re.sub(r"\W", "_", s)
+    return s if s and not s[0].isdigit() else "_" + s
+
+
+# --------------------------------------------------------------------------
+# GraphML
+# --------------------------------------------------------------------------
+
+_GML_TYPES = {"boolean": BOOL, "int": INT, "long": INT, "float": DOUBLE, "double": DOUBLE, "string": STRING}
+
+
+def _local(tag):
+    return tag.rsplit("}", 1)[-1]
+
+
+def read_graphml(graph, text):
+    root = ET.fromstring(text)
+    keys = {}
+    for k in root.iter():
+        if _local(k.tag) != "key":
+            continue
+        kind = k.get("for", "all")
+        name = _ident(k.get("attr.name") or k.get("id"))
+        ftype = _GML_TYPES.get((k.get("attr.type") or "string").lower(), STRING)
+        default = None
+        for d in k:
+            if _local(d.tag) == "default":
+                default = d.text
+        keys[k.get("id")] = (name, kind, ftype, default)
+        targets = ["node", "edge"] if kind == "all" else [kind]
+        for t in targets:
+            if t == "node" and name not in graph.node_schema:
+                graph.addNodeField(name, ftype, coerce(ftype, default))
+            elif t == "edge" and name not in graph.edge_schema:
+                graph.addEdgeField(name, ftype, coerce(ftype, default))
+    gel = next((e for e in root.iter() if _local(e.tag) == "graph"), None)
+    if gel is None:
+        raise GuessError("no <graph> element in GraphML")
+    default_directed = gel.get("edgedefault", "undirected") == "directed"
+    nodes = edges = 0
+    has_xy = False
+    for el in gel:
+        tag = _local(el.tag)
+        if tag == "node":
+            n = graph.addNode(el.get("id"))
+            n.label = el.get("id")
+            for d in el:
+                if _local(d.tag) == "data" and d.get("key") in keys:
+                    name = keys[d.get("key")][0]
+                    if name in ("x", "y"):
+                        has_xy = True
+                    _set_data(n, graph.node_schema.get(name), d.text)
+            nodes += 1
+    for el in gel:
+        if _local(el.tag) != "edge":
+            continue
+        directed = el.get("directed")
+        directed = default_directed if directed is None else directed == "true"
+        e = graph.addEdge(el.get("source"), el.get("target"), directed)
+        for d in el:
+            if _local(d.tag) == "data" and d.get("key") in keys:
+                _set_data(e, graph.edge_schema.get(keys[d.get("key")][0]), d.text)
+        edges += 1
+    if not has_xy:
+        for n in graph._nodes_list():
+            n.x = random.random() * 500
+            n.y = random.random() * 500
+    return nodes, edges
+
+
+def _set_data(elem, field, text):
+    if field is None or field.readonly or text is None:
+        return
+    try:
+        field.set(elem, text.strip())
+    except GuessError:
+        pass
+
+
+_GML_OUT = {STRING: "string", INT: "int", DOUBLE: "double", BOOL: "boolean"}
+
+
+def write_graphml(graph):
+    nf = [f for f in graph.node_schema.values() if f.compute is None]
+    ef = [f for f in graph.edge_schema.values() if f.compute is None]
+    out = ['<?xml version="1.0" encoding="UTF-8"?>',
+           '<graphml xmlns="http://graphml.graphdrawing.org/xmlns">']
+    for f in nf:
+        out.append(f'  <key id="n_{f.name}" for="node" attr.name="{f.name}" attr.type="{_GML_OUT[f.type]}"/>')
+    for f in ef:
+        out.append(f'  <key id="e_{f.name}" for="edge" attr.name="{f.name}" attr.type="{_GML_OUT[f.type]}"/>')
+    out.append('  <graph edgedefault="undirected">')
+    for n in graph._nodes_list():
+        out.append(f"    <node id={quoteattr(n._name)}>")
+        for f in nf:
+            v = f.get(n)
+            if v is not None:
+                out.append(f'      <data key="n_{f.name}">{escape(_xml_val(v))}</data>')
+        out.append("    </node>")
+    for e in graph._edges_list():
+        d = ' directed="true"' if e._directed else ""
+        out.append(f"    <edge source={quoteattr(e._n1._name)} target={quoteattr(e._n2._name)}{d}>")
+        for f in ef:
+            v = f.get(e)
+            if v is not None:
+                out.append(f'      <data key="e_{f.name}">{escape(_xml_val(v))}</data>')
+        out.append("    </edge>")
+    out += ["  </graph>", "</graphml>"]
+    return "\n".join(out) + "\n"
+
+
+def _xml_val(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    return str(v)
+
+
+# --------------------------------------------------------------------------
+# UCINET DL (fullmatrix, edgelist1, nodelist1)
+# --------------------------------------------------------------------------
+
+def read_dl(graph, text):
+    m = re.search(r"\bdata\s*:", text, re.I)
+    if not text.lstrip().lower().startswith("dl") or not m:
+        raise GuessError("not a DL file (needs 'dl' header and 'data:' section)")
+    head, body = text[:m.start()], text[m.end():]
+    nm = re.search(r"\bn\s*=\s*(\d+)", head, re.I)
+    if not nm:
+        raise GuessError("DL file must declare n=")
+    n = int(nm.group(1))
+    fm = re.search(r"\bformat\s*=\s*(\w+)", head, re.I)
+    fmt = fm.group(1).lower() if fm else "fullmatrix"
+    lm = re.search(r"\blabels\s*:(.*)", head, re.I | re.S)
+    labels = lm.group(1).replace(",", " ").split() if lm else []
+    if len(labels) < n:
+        labels = [f"n{k + 1}" for k in range(n)]
+    nodes = []
+    for lab in labels[:n]:
+        nd = graph.addNode(_ident(lab))
+        nd.label = lab
+        nd.x = random.random() * 500
+        nd.y = random.random() * 500
+        nodes.append(nd)
+    by_label = dict(zip(labels, nodes))
+
+    def node_for(tok):
+        if tok in by_label:
+            return by_label[tok]
+        return nodes[int(tok) - 1]
+
+    edges = 0
+    if fmt == "fullmatrix":
+        vals = body.replace(",", " ").split()
+        for k, v in enumerate(vals[: n * n]):
+            if float(v) != 0:
+                graph.addEdge(nodes[k // n], nodes[k % n], True, weight=float(v))
+                edges += 1
+    elif fmt == "edgelist1":
+        for line in body.splitlines():
+            toks = line.replace(",", " ").split()
+            if len(toks) >= 2:
+                w = float(toks[2]) if len(toks) > 2 else 1.0
+                graph.addEdge(node_for(toks[0]), node_for(toks[1]), True, weight=w)
+                edges += 1
+    elif fmt == "nodelist1":
+        for line in body.splitlines():
+            toks = line.replace(",", " ").split()
+            for t in toks[1:]:
+                graph.addEdge(node_for(toks[0]), node_for(t), True)
+                edges += 1
+    else:
+        raise GuessError(f"unsupported DL format: {fmt}")
+    return n, edges

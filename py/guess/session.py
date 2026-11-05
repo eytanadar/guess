@@ -1,0 +1,690 @@
+"""An interactive GUESS session: namespace, execution, output and render patches.
+
+The session talks to the front end only through ``emit(message: dict)``.
+Message types:
+
+  {"type": "scene", "nodes": [...], "edges": [...]}            full redraw
+  {"type": "patch", "nodes": [...], "edges": [...],
+                    "removedNodes": [...], "removedEdges": [...]}
+  {"type": "out",   "segs": [...]}     structured interpreter output
+  {"type": "text",  "text": "..."}     plain stdout
+  {"type": "error", "text": "..."}
+  {"type": "center", "nodes": [...], "edges": [...]}  (empty lists = everything)
+
+Output segments: a str, or {"n": id, "t": text} (node), {"e": id, "t": text}
+(edge), or {"g": [segs...], "a": annotation} (a group).
+"""
+import keyword
+import sys
+import time
+import traceback
+
+from . import colors, compiler, runtime
+from .model import (EDGE, NODE, Edge, Field, FieldNamespace, Graph, GSet, GuessError, Journal, Node)
+
+MAX_ITEMS = 500
+_MISSING = object()
+
+
+class _Writer:
+    def __init__(self, session):
+        self.session = session
+
+    def write(self, s):
+        if s:
+            self.session.emit({"type": "text", "text": s})
+        return len(s)
+
+    def flush(self):
+        pass
+
+
+class Session:
+    def __init__(self, emit=None):
+        self.emit = emit or (lambda msg: None)
+        self.graph = Graph()
+        self.graph.listeners.append(self)
+        self.ns = {"__name__": "__console__", "__builtins__": __builtins__}
+        self.system = {}          # name -> object for protected bindings
+        self.ns.update(runtime.HELPERS)
+        self.ns["__display__"] = self.display
+        self.ns["print"] = self._print
+        from . import commands
+        commands.install(self)
+        from . import algorithms, analysis, charts, gui, layouts, persist, ranges, states, visuals
+        gui.install(self)
+        charts.install(self)
+        persist.install(self)
+        from . import sqlquery
+        sqlquery.install(self)
+        layouts.install(self)
+        algorithms.install(self)
+        analysis.install(self)
+        visuals.install(self)
+        states.install(self)
+        ranges.install(self)
+        self.pending_morph = None
+        self.revision = 0         # bumps whenever the display changes (for autosave)
+        self.log_lines = None     # list while log() is recording
+        self.executed = []        # every console command, in order (history())
+        self.undo_stack = []
+        self.redo_stack = []
+        self._run_depth = 0
+        self._history_op = False
+
+        def undo():
+            """undo() reverses the most recent command that changed the graph, its
+            fields, states, hulls, legends or display settings (Ctrl/Cmd+Z outside
+            the code cell). Repeat to go further back (up to 50 steps); redo()
+            re-applies. Variables and downloaded files are not undone."""
+            self.undo()
+
+        def redo():
+            """redo() re-applies the last command undone with undo()."""
+            self.redo()
+
+        def history():
+            """history() lists every command run this session, in order."""
+            self.history()
+
+        def saveHistory(filename="history.py"):
+            """saveHistory("work.py") downloads every command run this session as a
+            script (run it again with execfile)."""
+            import os
+            text = "\n".join(src.rstrip() for src in self.executed) + "\n"
+            with open(filename, "w", encoding="utf-8") as fh:
+                fh.write(text)
+            self.emit({"type": "download", "name": os.path.basename(filename), "text": text})
+
+        for fn in (undo, redo, history, saveHistory):
+            self.register_command(fn.__name__, fn)
+
+        def log(filename="session.py"):
+            """Start recording every successful command (save with stoplog())."""
+            self.log_lines = []
+            self._log_file = filename
+
+        def stoplog():
+            """Stop recording and save the log (offered as a download); replay with execfile."""
+            if self.log_lines is None:
+                raise GuessError("not logging; start with log('file.py')")
+            lines = [l for l in self.log_lines if not l.lstrip().startswith(("log(", "stoplog"))]
+            text = "\n".join(lines) + "\n"
+            self.log_lines = None
+            with open(self._log_file, "w", encoding="utf-8") as fh:
+                fh.write(text)
+            import os
+            self.emit({"type": "download", "name": os.path.basename(self._log_file), "text": text})
+
+        self.register_command("log", log)
+        self.register_command("stoplog", stoplog)
+        self._images = {}         # image source -> key already sent to the front end
+        for name in colors.COLORS:
+            if name.isidentifier() and not keyword.iskeyword(name):
+                self._bind(name, colors.Color(name), kind="color")
+        self._bind("g", self.graph, kind="graph")
+        self._bind("Node", FieldNamespace(self.graph, NODE), kind="graph")
+        self._bind("Edge", FieldNamespace(self.graph, EDGE), kind="graph")
+        for f in self.graph.node_schema.values():
+            self.on_field_added(f)
+        for f in self.graph.edge_schema.values():
+            self.on_field_added(f)
+
+    # ---- namespace ------------------------------------------------------
+    _PRIORITY = {"command": 4, "graph": 4, "field": 3, "node": 2, "color": 1}
+
+    def _bind(self, name, obj, kind):
+        cur = self.system.get(name)
+        if cur is not None and self._PRIORITY[cur[1]] > self._PRIORITY[kind]:
+            return False
+        if cur is None and name in self.ns and not name.startswith("__"):
+            # a user variable with this name exists; system binding wins
+            pass
+        self.system[name] = (obj, kind)
+        self.ns[name] = obj
+        return True
+
+    def _unbind(self, name, obj):
+        cur = self.system.get(name)
+        if cur is not None and cur[0] is obj:
+            del self.system[name]
+            self.ns.pop(name, None)
+
+    def is_protected(self, name):
+        return name in self.system
+
+    def register_command(self, name, fn):
+        runtime.command(fn)
+        self._bind(name, fn, kind="command")
+
+    # graph listener callbacks
+    def on_node_added(self, node):
+        name = node._name
+        if name.isidentifier() and not keyword.iskeyword(name):
+            self._bind(name, node, kind="node")
+
+    def on_node_removed(self, node):
+        self._unbind(node._name, node)
+
+    def on_field_removed(self, field):
+        self._unbind(field.name, field)
+
+    def on_field_added(self, field):
+        if field.kind == EDGE and field.name in self.graph.node_schema:
+            return  # node field wins; use Edge.<name>
+        self._bind(field.name, field, kind="field")
+
+    def _restore_system(self):
+        for name, (obj, _kind) in self.system.items():
+            if self.ns.get(name) is not obj:
+                self.ns[name] = obj
+
+    # ---- execution --------------------------------------------------------
+    def run(self, source, *, interactive=True, filename="<console>"):
+        """Compile and run Gython source. Returns True on success. The outermost
+        run records an undo entry for whatever the code changed."""
+        if self._run_depth:
+            return self._run(source, interactive, filename)
+        g = self.graph
+        before = self._undo_snapshot()
+        g.journal = Journal()
+        self._history_op = False
+        self._run_depth += 1
+        try:
+            ok = self._run(source, interactive, filename)
+        finally:
+            self._run_depth -= 1
+            j, g.journal = g.journal, None
+            if interactive:
+                self.executed.append(source)
+            if not self._history_op:
+                self._record_undo(source, j, before)
+        return ok
+
+    def _run(self, source, interactive, filename):
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = sys.stderr = _Writer(self)
+        ok = True
+        try:
+            names = set()
+            code = compiler.compile_gython(source, is_protected=self.is_protected,
+                                           interactive=interactive, filename=filename, names=names)
+            self._prepare_fields(names)
+            exec(code, self.ns)
+            if self.log_lines is not None and interactive:
+                self.log_lines.append(source)
+        except SyntaxError as e:
+            ok = False
+            self.emit({"type": "error", "text": _format_syntax_error(e)})
+        except BaseException as e:  # noqa: BLE001 - includes KeyboardInterrupt from interrupts
+            ok = False
+            self.emit({"type": "error", "text": _format_exception(e)})
+        finally:
+            sys.stdout, sys.stderr = old_out, old_err
+            self._restore_system()
+            self.flush()
+        return ok
+
+    # ---- undo / redo --------------------------------------------------------
+    UNDO_LIMIT = 50
+    UNDO_BUDGET = 3_000_000     # recorded values/ops kept across the whole stack
+
+    def _undo_snapshot(self):
+        g = self.graph
+        return {"view": self.view.capture(), "view_version": self.view.version,
+                "states": dict(g.states),
+                "ranges": {k: list(v) for k, v in g.ranges.items()}}
+
+    def _record_undo(self, label, journal, before):
+        g = self.graph
+        entry = {"label": label, "journal": journal}
+        if self.view.version != before["view_version"]:
+            entry["view"] = before["view"]
+        if g.states != before["states"]:
+            entry["states"] = before["states"]
+        if {k: list(v) for k, v in g.ranges.items()} != before["ranges"]:
+            entry["ranges"] = before["ranges"]
+        if not journal and len(entry) == 2:
+            return                      # nothing changed (a query, print, help, ...)
+        self.undo_stack.append(entry)
+        self.redo_stack.clear()
+        total = sum(e["journal"].size() for e in self.undo_stack)
+        while self.undo_stack and (len(self.undo_stack) > self.UNDO_LIMIT or total > self.UNDO_BUDGET):
+            total -= self.undo_stack.pop(0)["journal"].size()
+
+    def _revert(self, entry):
+        g = self.graph
+        inv = {"label": entry["label"], "journal": g.revert(entry["journal"])}
+        if "view" in entry:
+            inv["view"] = self.view.capture()
+            self.view.restore(entry["view"])
+        if "states" in entry:
+            inv["states"] = dict(g.states)
+            g.states.clear()
+            g.states.update(entry["states"])
+        if "ranges" in entry:
+            inv["ranges"] = {k: list(v) for k, v in g.ranges.items()}
+            g.ranges.clear()
+            g.ranges.update(entry["ranges"])
+        return inv
+
+    def undo(self):
+        """Reverse the most recent command that changed the graph or display."""
+        self._history_op = True
+        if not self.undo_stack:
+            print("nothing to undo")
+            return
+        entry = self.undo_stack.pop()
+        self.redo_stack.append(self._revert(entry))
+        print(f"undid: {_first_line(entry['label'])}")
+
+    def redo(self):
+        """Re-apply the last command undone with undo()."""
+        self._history_op = True
+        if not self.redo_stack:
+            print("nothing to redo")
+            return
+        entry = self.redo_stack.pop()
+        self.undo_stack.append(self._revert(entry))
+        print(f"redid: {_first_line(entry['label'])}")
+
+    def move_nodes(self, moves):
+        """Nodes dragged on the display: [(id, x, y), ...], one undo step."""
+        g = self.graph
+        before = self._undo_snapshot()
+        g.journal = Journal()
+        try:
+            for ident, x, y in moves:
+                n = g.node_by_id(ident)
+                if n is not None:
+                    n.x, n.y = x, y
+        finally:
+            j, g.journal = g.journal, None
+        label = f"move {g.node_by_id(moves[0][0])._name}" if len(moves) == 1 and g.node_by_id(moves[0][0]) else f"move {len(moves)} nodes"
+        self._record_undo(label, j, before)
+        g.reset_dirty()     # the display already shows the new positions
+        self.revision += 1
+
+    def history(self):
+        """Every command run in this session, in order (including Run again)."""
+        for i, src in enumerate(self.executed, 1):
+            lines = src.splitlines() or [""]
+            print(f"[{i}] {lines[0]}")
+            for line in lines[1:]:
+                print(" " * (len(str(i)) + 3) + line)
+
+    def set_selection(self, ids):
+        """The display's selection (box/lasso/shift-click) as the variable `sel`."""
+        g = self.graph
+        self.ns["sel"] = GSet((n for n in map(g.node_by_id, ids) if n is not None), "selection")
+        return len(self.ns["sel"])
+
+    def _prepare_fields(self, names):
+        """Compute fields such as pagerank or closeness that the code names but
+        that have not been used yet, so `sizeBy(pagerank, 5, 20)` just works."""
+        g = self.graph
+        for name in names:
+            if name in self.ns or name in g.node_schema or name in g.edge_schema:
+                continue
+            for kind in (NODE, EDGE):
+                if (kind, name) in g.lazy_fields:
+                    g._lazy_field(kind, name)
+                    break
+
+    # ---- introspection for the console ----------------------------------------------
+    def completions(self, text):
+        """Tab completion for the identifier (or dotted path) ending `text`."""
+        import builtins
+        import re
+        m = re.search(r"([A-Za-z_][\w]*(?:\.[A-Za-z_]\w*)*)?\.?$", text)
+        token = m.group(0) if m else ""
+        if "." in token:
+            path, prefix = token.rsplit(".", 1)
+            obj = self._resolve_path(path)
+            if obj is _MISSING:
+                return {"prefix": prefix, "items": []}
+            try:
+                names = dir(obj)
+            except Exception:  # noqa: BLE001
+                names = []
+            if isinstance(obj, GSet) and obj:
+                try:
+                    names = sorted(set(names) | set(dir(obj[0])))
+                except Exception:  # noqa: BLE001
+                    pass
+        else:
+            prefix = token
+            names = set(self.ns) | set(dir(builtins)) | set(keyword.kwlist)
+        items = sorted(n for n in names if n.startswith(prefix) and not n.startswith("__")
+                       and (prefix.startswith("_") or not n.startswith("_")))
+        return {"prefix": prefix, "items": items[:200]}
+
+    def _resolve_path(self, path):
+        import builtins
+        parts = path.split(".")
+        obj = self.ns.get(parts[0], getattr(builtins, parts[0], _MISSING))
+        for p in parts[1:]:
+            if obj is _MISSING:
+                break
+            # never trigger lazy computations (e.g. betweenness) from completion
+            if isinstance(obj, (Node, Edge)):
+                return _MISSING
+            obj = getattr(obj, p, _MISSING)
+        return obj
+
+    def command_docs(self):
+        """name -> 'signature\ndoc' for every system command (for hover help)."""
+        import inspect
+        out = {}
+        for name, (obj, kind) in self.system.items():
+            if kind != "command" or not callable(obj):
+                continue
+            try:
+                sig = str(inspect.signature(obj))
+            except (TypeError, ValueError):
+                sig = "(...)"
+            out[name] = f"{name}{sig}\n{inspect.getdoc(obj) or ''}".strip()
+        return out
+
+    def dispatch(self, target, name, value=None):
+        """Run the Python handler for a front-end event (widget, timer, graph mouse)."""
+        from .gui import call_flexibly
+        fn, args = self.gui.handler_for(target, name, value)
+        if fn is None:
+            return False
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = sys.stderr = _Writer(self)
+        try:
+            call_flexibly(fn, args)
+        except BaseException as e:  # noqa: BLE001
+            self.emit({"type": "error", "text": _format_exception(e)})
+            # a timer whose handler fails is stopped, so errors don't repeat forever
+            t = self.gui.timers.get(target)
+            if t is not None:
+                t.stop()
+        finally:
+            sys.stdout, sys.stderr = old_out, old_err
+            self._restore_system()
+            self.flush()
+        return True
+
+    def run_script(self, source, filename="<script>"):
+        """Execute Gython source non-interactively in the session namespace."""
+        code = compiler.compile_gython(source, is_protected=self.is_protected,
+                                       interactive=False, filename=filename)
+        exec(code, self.ns)
+
+    def save_state_json(self, since=-1):
+        """Serialized session for autosave (a JSON string), or None if nothing
+        visible has changed since revision `since`. Returns [revision, json]."""
+        import json
+        from . import persist
+        if self.revision == since:
+            return None
+        return [self.revision, json.dumps(persist.serialize(self))]
+
+    def is_complete(self, source):
+        """True if source is a complete statement (used for multi-line entry)."""
+        try:
+            compiler.transform(source + "\n", is_protected=None)
+        except SyntaxError as e:
+            msg = str(e.msg or "")
+            if "unexpected EOF" in msg or "was never closed" in msg or "expected an indented block" in msg:
+                return False
+            return True
+        lines = source.split("\n")
+        if len(lines) > 1:
+            return lines[-1].strip() == ""   # a blank line ends a block
+        return not lines[0].rstrip().endswith(":")
+
+    # ---- output -----------------------------------------------------------
+    def _print(self, *args, sep=" ", end="\n", file=None, flush=False):
+        """print(), except that nodes, edges and sets of them come out as linked
+        output (hover to highlight, click to select) like displayed values."""
+        import builtins
+        if (file is not None or end != "\n" or not isinstance(sep, str)
+                or not any(isinstance(a, (Node, Edge)) or (isinstance(a, (GSet, list, tuple)) and _contains_elements(a))
+                           for a in args)):
+            return builtins.print(*args, sep=sep, end=end, file=file, flush=flush)
+        segs = []
+        for i, a in enumerate(args):
+            if i:
+                segs.append(sep)
+            linked = isinstance(a, (Node, Edge)) or (isinstance(a, (GSet, list, tuple)) and _contains_elements(a))
+            segs.append(segment(a) if linked else str(a))
+        self.emit({"type": "out", "segs": segs})
+
+    def display(self, value):
+        if value is None:
+            return
+        self.ns["_"] = value
+        self.emit({"type": "out", "segs": [segment(value)]})
+
+    # ---- render state ---------------------------------------------------------
+    def node_record(self, n):
+        v = n._vals
+        d = self.graph.node_schema
+        def val(name):
+            return v.get(name, d[name].default)
+        color, alpha = colors.to_rgba_int(val("color"), (100, 149, 237, 255))
+        stroke = val("strokecolor")
+        lc = val("labelcolor")
+        return {
+            "i": n._id, "name": n._name,
+            "x": val("x"), "y": val("y"), "w": val("width"), "h": val("height"),
+            "c": color, "a": alpha, "s": val("style"),
+            "sc": colors.to_rgba_int(stroke)[0] if stroke else -1,
+            "l": val("label") if val("label") is not None else n._name,
+            "lv": bool(val("labelvisible")),
+            "lc": colors.to_rgba_int(lc)[0] if lc else -1,
+            "v": bool(val("visible")),
+            "img": self._image_key(val("image")),
+        }
+
+    def _image_key(self, source):
+        """Register an image with the front end once; node records carry the key."""
+        if not source:
+            return None
+        key = self._images.get(source)
+        if key is None:
+            import os
+            from .visuals import _data_url
+            try:
+                url = _data_url(source) if os.path.exists(source) else source
+            except OSError:
+                url = source
+            key = f"img{len(self._images) + 1}"
+            self._images[source] = key
+            self.emit({"type": "image", "key": key, "url": url})
+        return key
+
+    def edge_record(self, e):
+        v = e._vals
+        d = self.graph.edge_schema
+        def val(name):
+            return v.get(name, d[name].default)
+        color, alpha = colors.to_rgba_int(val("color"), (252, 216, 112, 255))
+        lc = val("labelcolor")
+        return {
+            "i": e._id, "s": e._n1._id, "t": e._n2._id, "d": e._directed,
+            "c": color, "a": alpha, "w": val("width"), "v": bool(val("visible")),
+            "l": val("label") if val("label") is not None else "",
+            "lv": bool(val("labelvisible")),
+            "lc": colors.to_rgba_int(lc)[0] if lc else -1,
+            "b": [c for p in self.graph.bends.get(e, ()) for c in p] or None,
+        }
+
+    def scene(self):
+        g = self.graph
+        g.reset_dirty()
+        self.emit({"type": "scene",
+                   "nodes": [self.node_record(n) for n in g._nodes_list()],
+                   "edges": [self.edge_record(e) for e in g._edges_list()]})
+        self.view.dirty = True
+        self._flush_overlay()
+
+    def _flush_overlay(self):
+        if self.view.dirty:
+            self.revision += 1
+            self.view.dirty = False
+            self.emit(self.view.record())
+
+    def tick_due(self):
+        """True when tick() would actually send an update now."""
+        return time.monotonic() - getattr(self, "_last_tick", 0.0) >= 1 / 30
+
+    def tick(self, force=False):
+        """Send pending visual changes now (at most ~30 times a second).
+
+        Long-running commands (iterative layouts, animations) call this so the
+        display updates while they run.
+        """
+        now = time.monotonic()
+        if force or now - getattr(self, "_last_tick", 0.0) >= 1 / 30:
+            self._last_tick = now
+            self.flush()
+
+    def flush(self):
+        g = self.graph
+        if not (g.dirty_nodes or g.dirty_edges or g.removed_nodes or g.removed_edges or g.moved_nodes):
+            self._flush_overlay()
+            return
+        nodes = [self.node_record(g._node_ids[i]) for i in sorted(g.dirty_nodes) if i in g._node_ids]
+        # nodes whose only change is position: a flat [id, x, y, ...] array
+        pos = []
+        for i in g.moved_nodes - g.dirty_nodes:
+            n = g._node_ids.get(i)
+            if n is not None:
+                pos += [i, n._vals.get("x", 500.0), n._vals.get("y", 500.0)]
+        edges = [self.edge_record(g._edges[i]) for i in sorted(g.dirty_edges) if i in g._edges]
+        msg = {"type": "patch", "nodes": nodes, "edges": edges,
+               "removedNodes": sorted(g.removed_nodes), "removedEdges": sorted(g.removed_edges)}
+        if pos:
+            msg["pos"] = pos
+        if self.pending_morph:
+            msg["morph"] = self.pending_morph
+            self.pending_morph = None
+        g.reset_dirty()
+        self.revision += 1
+        self.emit(msg)
+        if msg["removedNodes"]:
+            self.view.dirty = True   # hull membership may have changed
+        self._flush_overlay()
+
+    # ---- queries from the front end ------------------------------------------
+    def describe(self, kind, ident):
+        """Tooltip/info text for a node or edge id."""
+        g = self.graph
+        elem = g.node_by_id(ident) if kind == "n" else g.edge_by_id(ident)
+        if elem is None:
+            return None
+        schema = g.node_schema if kind == "n" else g.edge_schema
+        rows = []
+        for name, f in schema.items():
+            try:
+                rows.append([name, _short(f.get(elem))])
+            except Exception as ex:  # noqa: BLE001
+                rows.append([name, f"<{type(ex).__name__}>"])
+        return {"title": repr(elem), "rows": rows}
+
+    def assign(self, varname, kind_ids):
+        """Bind a user variable to the given elements (context menu "assign to")."""
+        if not varname.isidentifier() or keyword.iskeyword(varname):
+            raise GuessError(f"invalid variable name: {varname!r}")
+        if self.is_protected(varname):
+            raise GuessError(f"'{varname}' is a system name")
+        g = self.graph
+        items = GSet()
+        for kind, ident in kind_ids:
+            elem = g.node_by_id(ident) if kind == "n" else g.edge_by_id(ident)
+            if elem is not None:
+                items.append(elem)
+        self.ns[varname] = items[0] if len(items) == 1 else items
+        return len(items)
+
+
+def _short(v):
+    if isinstance(v, float):
+        return f"{v:.4g}"
+    return "" if v is None else str(v)
+
+
+# --------------------------------------------------------------------------
+# Structured output
+# --------------------------------------------------------------------------
+
+def segment(value, depth=0):
+    if isinstance(value, Node):
+        return {"n": value._id, "t": value._name}
+    if isinstance(value, Edge):
+        return {"e": value._id, "t": repr(value)}
+    if isinstance(value, Field):
+        return f"{value.name}"
+    if isinstance(value, (GSet, list, tuple)) and _contains_elements(value) and depth < 20:
+        open_, close = ("(", ")") if isinstance(value, tuple) else ("[", "]")
+        parts = [open_]
+        for i, x in enumerate(value):
+            if i:
+                parts.append(", ")
+            if i >= MAX_ITEMS:
+                parts.append(f"... {len(value) - MAX_ITEMS} more")
+                break
+            parts.append(segment(x, depth + 1))
+        if isinstance(value, tuple) and len(value) == 1:
+            parts.append(",")
+        parts.append(close)
+        out = {"g": parts}
+        ann = getattr(value, "annotation", None)
+        if ann:
+            out["a"] = ann
+        return out
+    if isinstance(value, GSet):
+        out = {"g": ["[]"]}
+        if value.annotation:
+            out["a"] = value.annotation
+        return out
+    try:
+        text = repr(value)
+    except Exception as ex:  # noqa: BLE001
+        text = f"<unprintable {type(value).__name__}: {ex}>"
+    if len(text) > 20000:
+        text = text[:20000] + " ..."
+    return text
+
+
+def _contains_elements(seq):
+    for x in seq:
+        if isinstance(x, (Node, Edge)):
+            return True
+        if isinstance(x, (GSet, list, tuple)) and _contains_elements(x):
+            return True
+    return False
+
+
+# --------------------------------------------------------------------------
+# Error formatting
+# --------------------------------------------------------------------------
+
+def _format_syntax_error(e):
+    if isinstance(e, compiler.GythonSyntaxError) and not e.text:
+        loc = f" (line {e.lineno})" if e.lineno else ""
+        return f"Error: {e.msg}{loc}"
+    return "".join(traceback.format_exception_only(type(e), e)).rstrip()
+
+
+def _format_exception(e):
+    if isinstance(e, GuessError):
+        return f"Error: {e}"
+    if isinstance(e, KeyboardInterrupt):
+        return "Interrupted"
+    tb = e.__traceback__
+    # drop frames that belong to the session machinery itself
+    while tb is not None and tb.tb_frame.f_code.co_filename == __file__:
+        tb = tb.tb_next
+    lines = traceback.format_exception(type(e), e, tb)
+    return "".join(lines).rstrip()
+
+
+def _first_line(src):
+    lines = src.strip().splitlines() or [""]
+    return lines[0] + (" ..." if len(lines) > 1 else "")
