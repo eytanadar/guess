@@ -137,7 +137,8 @@ class View:
                 "background": self.background, "image": self.image, "arrow": dict(self.arrow),
                 "curvature": self.curvature, "edge_color": self.edge_color, "labels": dict(self.labels),
                 "styles": {k: list(v) for k, v in self.styles.items()},
-                "pie": self.pie, "border_width": self.border_width}
+                "pie": self.pie, "border_width": self.border_width,
+                "slides": [dict(s) for s in getattr(self, "slides", [])]}
 
     def restore(self, snap):
         self.hulls = {}
@@ -154,6 +155,8 @@ class View:
         self.edge_color, self.labels = snap["edge_color"], dict(snap["labels"])
         self.styles = {k: list(v) for k, v in snap.get("styles", {}).items()}
         self.pie, self.border_width = snap.get("pie"), snap.get("border_width", 0.75)
+        self.slides = [dict(s) for s in snap.get("slides", [])]
+        self.session.emit({"type": "slides", "slides": [{"note": s["note"]} for s in self.slides], "index": None})
         for n in self.session.graph._nodes_list():
             self.session.graph._mark(n)
         self.changed()

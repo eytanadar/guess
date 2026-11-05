@@ -2097,6 +2097,59 @@ def _fa2_gen(snap, iters, rng, scaling=None, gravity=1.0, strong=False, linlog=F
         yield C + origin - half
 
 
+_JS_FA2_MIN = 1000   # in the browser, ForceAtlas2 on larger graphs runs in JS (Barnes-Hut)
+
+
+def _js_fa2():
+    """The JS ForceAtlas2 class when running in Pyodide's worker, else None."""
+    try:
+        import js
+        from pyodide.ffi import to_js
+    except ImportError:
+        return None
+    cls = getattr(js, "GuessFA2", None)
+    return (cls, to_js) if cls is not None else None
+
+
+def _fa2_js_gen(snap, iters, rng, scaling=None, gravity=1.0, strong=False, linlog=False,
+                dissuade=False, overlap=False, weight_influence=1.0, jitter=None, engine=None):
+    """ForceAtlas2 with Barnes-Hut repulsion in JS (web/src/fa2.ts), stepped a few
+    iterations per call so the display animates and Stop works between calls."""
+    import json
+    cls, to_js = engine
+    n = snap.n
+    half = snap.size / 2
+    mov = ~snap.fixed
+    C = _jitter_coincident(snap.pos + half, rng, 1.0, mov)
+    origin = C.mean(0)
+    C = C - origin
+    keep = snap.src != snap.dst
+    a, b = snap.src[keep], snap.dst[keep]
+    w = np.abs(snap.weight[keep])
+    if weight_influence == 0:
+        w = np.ones_like(w)
+    elif weight_influence != 1:
+        w = w ** float(weight_influence)
+    mass = 1.0 + np.bincount(a, minlength=n) + np.bincount(b, minlength=n)
+    opts = {"scaling": float(scaling) if scaling is not None else (2.0 if n >= 100 else 10.0),
+            "gravity": float(gravity), "strong": bool(strong), "linlog": bool(linlog),
+            "dissuade": bool(dissuade), "overlap": bool(overlap), "theta": 1.2,
+            "jitter": float(jitter) if jitter is not None else (10.0 if n >= 50000 else 1.0)}
+    sim = cls.new(to_js(C.ravel().tolist()), to_js(mass.tolist()), to_js((snap.size.max(1) / 2).tolist()),
+                  to_js(snap.fixed.astype(int).tolist()), to_js(a.tolist()), to_js(b.tolist()),
+                  to_js(w.tolist()), json.dumps(opts))
+    done, chunk = 0, 1
+    while done < iters:
+        k = min(chunk, iters - done)
+        t0 = time.monotonic()
+        out = sim.step(k)
+        P = np.frombuffer(out.to_py(), dtype=np.float64).reshape(-1, 2).copy()
+        done += k
+        dt = time.monotonic() - t0
+        chunk = max(1, min(50, int(k * 0.06 / max(dt, 1e-4))))   # about 60 ms per call
+        yield P + origin - half
+
+
 def _noverlap_gen(snap, rng, margin=5.0, ratio=1.2, max_iter=1000):
     """Gephi's Noverlap: push overlapping nodes apart (nodes as circles of
     ratio * size / 2 plus margin) until no two overlap. Fixed nodes stay put."""
@@ -2498,6 +2551,13 @@ def install(session):
           edgeWeightInfluence  0 ignores weights, 1 uses them, >1 exaggerates
         E.g. forceAtlas2Layout(linLog=true, preventOverlap=true)"""
         s = lay.snap()
+        js = _js_fa2() if s.n >= _JS_FA2_MIN else None
+        if js:
+            # Barnes-Hut in JS is ~20x faster than the numpy version at this size
+            k = _iters(iterations, _scaled(500, s.n) * 3)
+            lay.run(s, _fa2_js_gen(s, k, rng(0), scaling, float(gravity), bool(strongGravity), bool(linLog),
+                                   bool(dissuadeHubs), bool(preventOverlap), float(edgeWeightInfluence), engine=js))
+            return
         k = _iters(iterations, _scaled(500, s.n))
         lay.run(s, _fa2_gen(s, k, rng(0), scaling, float(gravity), bool(strongGravity), bool(linLog),
                             bool(dissuadeHubs), bool(preventOverlap), float(edgeWeightInfluence)))

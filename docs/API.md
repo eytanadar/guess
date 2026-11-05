@@ -13,9 +13,15 @@ Commands can be called without parentheses when they take no arguments
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
-- [Layouts](#layouts) (28)
+- [Layouts](#layouts) (30)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (22)
 - [Styles and visual mappings](#styles-and-visual-mappings) (8)
+- [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
+- [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
+- [Several graphs: subgraphs and tabs](#several-graphs-subgraphs-and-tabs) (6)
+- [Time: ranges, years and the timeline](#time-ranges-years-and-the-timeline) (1)
+- [Presentations (slides)](#presentations-slides) (6)
+- [Data from the web: URLs, SPARQL, NDEx, Neo4j, packages](#data-from-the-web-urls-sparql-ndex-neo4j-packages) (6)
 - [States and morphing](#states-and-morphing) (12)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
 - [Charts](#charts) (4)
@@ -515,6 +521,11 @@ kkLayout() runs Kamada-Kawai on each connected component, starting from
 a circle, then fits the result into 1000 x 1000; kkLayout(width, height)
 uses that area instead.
 
+### `labelAdjustLayout(margin=2)`
+
+labelAdjustLayout() moves nodes just enough that nodes and their
+visible labels stop overlapping (Gephi's Label Adjust).
+
 ### `mdsLayout()`
 
 mdsLayout() places nodes by classical multidimensional scaling of the
@@ -586,6 +597,13 @@ node given horizontal room in proportion to its children.
 ### `translateLayout(newX, newY)`
 
 translateLayout(dx, dy) moves every node by (dx, dy).
+
+### `treeLayout(root=None, horizontal=False, spacing=None)`
+
+treeLayout() draws each connected component as a tidy tree (a
+breadth-first spanning tree from its best-connected node, or from root),
+parents centred over their children; horizontal=true grows it left to
+right; spacing sets the distance between neighbouring leaves.
 
 ### `weightedKKLayout()`
 
@@ -745,6 +763,164 @@ square, rounded square, repeating), the most common value first.
 
 table() opens the data table of all nodes; table(seq) shows just those
 nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)).
+
+## Pie nodes, borders and edge bundling
+
+### `borderBy(fld, width=2.5)`
+
+borderBy(field) gives node borders a distinct colour per value of a
+field (as colorize does for fills) and widens them.
+
+### `bundleEdges(fld, strength=0.85)`
+
+bundleEdges(field) routes each edge between two groups (values of a node
+field, e.g. modularity_class) through the groups' centres, so edges
+between the same groups merge into bundles. strength 0..1 (0 = straight).
+Layouts and unbundleEdges() straighten them again.
+
+### `pieChart(fields, palette=None)`
+
+pieChart([f1, f2, ...]) draws each node as a pie whose slices are the
+node's values of those numeric fields; palette=[colors] sets slice colours.
+
+### `pieNeighbors(fld)`
+
+pieNeighbors(field) draws each node as a pie of its neighbours' values of
+a categorical field (the most common values; the rest as "other").
+
+### `pieOff()`
+
+Draw nodes normally again (after pieChart / pieNeighbors).
+
+### `unbundleEdges()`
+
+Draw edges straight again after bundleEdges.
+
+## Grouping: collapse and expand
+
+### `collapse(seq, name=None)`
+
+collapse(seq) replaces those nodes with one meta-node (see module help);
+collapse(seq, "name") names it. Returns the meta-node.
+
+### `collapseBy(field, minimum=2)`
+
+collapseBy(field) collapses each group of nodes sharing a value of field
+(with at least `minimum` members) into a meta-node named after the value.
+
+### `expand(meta)`
+
+expand(metaNode) brings back the nodes a meta-node stands for (also:
+double-click it). Returns them.
+
+### `expandAll()`
+
+Expand every collapsed group (repeatedly, for nested groups).
+
+### `isGroup(node)`
+
+True if node is a collapsed group (meta-node).
+
+## Several graphs: subgraphs and tabs
+
+### `closeGraph(name)`
+
+closeGraph(name) discards a graph that isn't the current one.
+
+### `graphNames()`
+
+The graphs in this session; the current one first.
+
+### `newGraph(name='untitled')`
+
+newGraph(name) starts an empty graph and switches to it.
+
+### `renameGraph(name)`
+
+renameGraph(name) renames the current graph.
+
+### `subgraph(seq=None, name=None)`
+
+subgraph(seq) makes a new graph from those nodes (edges select their
+endpoints) and the edges among them, keeping fields, positions and look,
+and switches to it; subgraph(seq, "name") names it. Use use(name) to go back.
+
+### `use(name)`
+
+use(name) switches to another graph of this session (see graphNames()).
+
+## Time: ranges, years and the timeline
+
+### `showTime(t, field=None, window=None)`
+
+showTime(t) shows only the nodes and edges whose ranges contain time t
+(elements without ranges stay visible); showTime(t, field) shows those
+whose numeric field is <= t (window=w: only within the last w).
+Edges are shown only when both ends are.
+
+## Presentations (slides)
+
+### `addSlide(note='', camera=None, at=None)`
+
+addSlide(note) saves the current graph (as a state) and view as a slide;
+camera=[x, y, zoom] is filled in by the page; at=k inserts it at k.
+
+### `moveSlide(index, to)`
+
+moveSlide(k, j) moves slide k to position j.
+
+### `noteSlide(index, note)`
+
+noteSlide(k, text) changes slide k's note.
+
+### `removeSlide(index)`
+
+removeSlide(k) deletes slide k.
+
+### `showSlide(index, duration=1200)`
+
+showSlide(k) morphs the graph to slide k's state and moves the camera.
+
+### `slides()`
+
+The slides' notes, in order.
+
+## Data from the web: URLs, SPARQL, NDEx, Neo4j, packages
+
+### `installPackage(name)`
+
+installPackage("name") installs a Python package into this session
+(pure-Python wheels from PyPI, or Pyodide's own packages such as scipy),
+in the background; a note appears when it's ready to import.
+
+### `makeFromCypher(query, url='http://localhost:7474', user=None, password=None, database='neo4j')`
+
+makeFromCypher(query, url, user, password) runs a Cypher query on a
+Neo4j server's HTTP API and builds the graph from the nodes and
+relationships it returns (properties become fields).
+
+### `makeFromNDEx(uuid, server='https://www.ndexbio.org')`
+
+makeFromNDEx(uuid) opens a public network from the NDEx repository
+(Cytoscape's network commons), with its attributes and layout.
+
+### `makeFromSPARQL(query, endpoint='https://query.wikidata.org/sparql', directed=True)`
+
+makeFromSPARQL(query) builds a graph from a SPARQL query whose rows bind
+?source and ?target (optionally ?sourceLabel / ?targetLabel, used as
+labels; any other variables become edge fields). E.g. a Wikidata query
+for "influenced by" links.
+
+### `makeFromURL(url, format=None)`
+
+makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, Pajek, DL, CSV, a
+.guess session or a .py script) and opens it; format=".gexf" etc. when
+the URL doesn't end in the extension.
+
+### `sparql(query, endpoint='https://query.wikidata.org/sparql')`
+
+sparql(query[, endpoint]) runs a SPARQL query (Wikidata by default) and
+returns the rows as a list of {variable: value} dicts.
 
 ## States and morphing
 

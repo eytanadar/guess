@@ -51,7 +51,11 @@ export class Console {
   private history: string[] = [];
   private hpos = 0;
   private draft = "";
-  private busy = false;
+  private _busy = false;
+  /** a cell is running */
+  get busy() {
+    return this._busy;
+  }
   private queue: Promise<unknown> = Promise.resolve();
   private cellCount = 0;
   /** where output goes while a cell runs (null: loose output, e.g. from timers) */
@@ -647,7 +651,7 @@ export class Console {
   }
 
   private setBusy(busy: boolean, cell?: Cell) {
-    this.busy = busy;
+    this._busy = busy;
     this.inputBox.classList.toggle("busy", busy);
     cell?.root.classList.toggle("running", busy);
   }

@@ -1,6 +1,10 @@
 /// <reference lib="webworker" />
 // Runs Pyodide and the `guess` Python package. The graph model lives here.
 import type { FromWorker, ToWorker } from "./protocol";
+import { GuessFA2 } from "./fa2";
+
+// fast layouts implemented in JS, called synchronously from Python (layouts.py)
+(self as unknown as { GuessFA2: typeof GuessFA2 }).GuessFA2 = GuessFA2;
 
 // Where Pyodide comes from: jsDelivr by default; `npm run bundle -- --offline` builds
 // with VITE_PYODIDE_URL=../pyodide/ (resolved against this worker script) so a

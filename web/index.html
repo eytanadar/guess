@@ -28,6 +28,8 @@
             <hr />
             <button role="menuitem" id="save" title="Download a .guess session file (graph, fields, states, hulls, legends)">Save session<kbd>⌘S</kbd></button>
             <button role="menuitem" data-run='saveHistory("history.py")'>Save commands as script</button>
+            <button role="menuitem" id="share-link" title="A link that opens this graph and view (the data is in the link itself)">Copy share link</button>
+            <button role="menuitem" id="share-viewer" title="A link that opens this graph as a read-only viewer (no console)">Copy viewer link</button>
             <hr />
             <div class="menu-label">Export</div>
             <button role="menuitem" id="png">Image (PNG)</button>
@@ -66,6 +68,8 @@
             <button role="menuitemcheckbox" id="btn-style" aria-pressed="false" title="Map fields to colours, sizes, labels and shapes; saved styles">Style panel</button>
             <button role="menuitemcheckbox" id="btn-filter" aria-pressed="false" title="Filter what is shown with live sliders">Filter panel</button>
             <button role="menuitemcheckbox" id="btn-vars" aria-pressed="false" title="Your variables, saved states and styles">Variables</button>
+            <button role="menuitemcheckbox" id="btn-present" aria-pressed="false" title="Step through saved views with notes (← →)">Presentation</button>
+            <button role="menuitemcheckbox" id="btn-timeline" aria-pressed="false" title="Scrub or play through time (ranges or a field such as year)">Timeline</button>
             <hr />
             <button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges())">Curved edges</button>
             <button role="menuitemcheckbox" id="label-outlines" aria-pressed="false">Label outlines</button>
@@ -157,9 +161,23 @@
             <div id="side-filter" class="sidebar-body" hidden></div>
             <div id="side-vars" class="sidebar-body" hidden></div>
           </aside>
-          <div id="graph" class="graph"><div id="legends" class="legends"></div></div>
+          <div id="graph" class="graph"><div id="legends" class="legends"></div>
+            <div id="present" class="present" hidden>
+              <button id="slide-prev" title="Previous slide (←)">◀</button>
+              <span id="slide-pos" class="slide-pos"></span>
+              <button id="slide-next" title="Next slide (→)">▶</button>
+              <span id="slide-note" class="slide-note"></span>
+              <span class="present-edit">
+                <input id="slide-new-note" placeholder="note for a new slide" />
+                <button id="slide-add" title="Save the current graph and view as a slide">Add slide</button>
+                <button id="slide-remove" title="Delete the current slide">Delete</button>
+              </span>
+              <button id="present-close" title="Leave presentation mode">✕</button>
+            </div>
+          </div>
           <aside id="dock-right" class="dock dock-right" hidden></aside>
         </div>
+        <div id="timeline" hidden></div>
         <section id="table-pane" class="table-pane" hidden>
           <div class="table-resize" title="Drag to resize"></div>
           <button class="table-close" title="Close the table" aria-label="Close the table">✕</button>

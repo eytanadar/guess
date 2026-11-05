@@ -51,7 +51,7 @@ class Session:
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
-        from . import algorithms, analysis, charts, connectors, glyphs, groups, gui, layouts, persist, ranges, states, styles, timeline, visuals, workspaces
+        from . import algorithms, analysis, charts, connectors, glyphs, groups, gui, layouts, persist, ranges, slides, states, styles, timeline, visuals, workspaces
         gui.install(self)
         charts.install(self)
         persist.install(self)
@@ -67,6 +67,7 @@ class Session:
         glyphs.install(self)
         connectors.install(self)
         timeline.install(self)
+        slides.install(self)
         states.install(self)
         ranges.install(self)
         self.pending_morph = None
@@ -497,7 +498,7 @@ class Session:
                 rec["items"] = [["n" if isinstance(x, Node) else "e", x._id] for x in items[:2000]]
             out.append(rec)
         out.sort(key=lambda r: (r["type"] == "function", r["name"].lower()))
-        return {"vars": out, "states": [str(k) for k in self.graph.states],
+        return {"vars": out, "states": [str(k) for k in self.graph.states if not str(k).startswith("slide:")],
                 "styles": list(self.view.styles)}
 
     def panel_data(self, what, kind="n", ids=None):
@@ -627,9 +628,10 @@ class Session:
         pie = self.view.pie
         if pie["mode"] == "fields":
             out = []
+            schema = self.graph.node_schema
             for f in pie["fields"]:
                 try:
-                    v = float(n._vals.get(f) or 0)
+                    v = float(schema[f].get(n) or 0) if f in schema else 0.0
                 except (TypeError, ValueError):
                     v = 0.0
                 out.append(max(v, 0.0) if v == v else 0.0)

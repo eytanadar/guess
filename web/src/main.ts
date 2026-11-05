@@ -6,6 +6,7 @@ import { Dock } from "./dock";
 import { HelpPanel, type HelpIndex } from "./help";
 import { Palette, type PaletteItem } from "./palette";
 import { DataTable, type TableData } from "./table";
+import { TimelineBar, type TimelineInfo } from "./timeline";
 import { FilterPanel, StylePanel, VarsPanel, pyLit, type FieldInfo, type PanelHost, type Workspace } from "./panels";
 import * as store from "./store";
 import sampleGdf from "../../guess-orig/sample.gdf?raw";
@@ -17,7 +18,10 @@ const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as
 
 // ?load=<url> opens a graph or session file; &app=1 hides the console (applet-style deployment)
 const params = new URLSearchParams(location.search);
-const appMode = params.get("app") === "1";
+// a shared link carries the session in the hash: #s=<gzip+base64url>[&app=1]
+const hashParams = new URLSearchParams(location.hash.slice(1));
+const sharedSession = hashParams.get("s");
+const appMode = params.get("app") === "1" || hashParams.get("app") === "1";
 const loadUrl = params.get("load");
 if (appMode) document.body.classList.add("app");
 
@@ -304,6 +308,14 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     case "graphs":
       renderGraphTabs(m.names, m.current);
+      break;
+    case "slides":
+      slideList = m.slides;
+      slideIndex = m.index;
+      renderSlides();
+      break;
+    case "camera":
+      renderer.setView(m.camera, m.ms);
       break;
     case "install":
       send({ type: "install", name: m.name });
@@ -798,6 +810,75 @@ async function exportView(format: "png" | "jpg" | "svg", name: string) {
   a.click();
 }
 
+// ---- timeline ------------------------------------------------------------------------
+const timeline = new TimelineBar($("#timeline"), {
+  info: (source) => request<TimelineInfo>((id) => ({ type: "query", id, what: "timeline", kind: source })),
+  fields: async () => {
+    const [nf, ef] = await Promise.all([loadFields("n"), loadFields("e")]);
+    const skip = new Set(["x", "y", "width", "height", "style", "indegree", "outdegree", "totaldegree", "weight"]);
+    return [...nf, ...ef].filter((f) => f.numeric && !skip.has(f.name)).map((f) => f.name).filter((v, i, a) => a.indexOf(v) === i);
+  },
+  quiet: async (code) => {
+    if (term.busy) return false;
+    return request<boolean>((id) => ({ type: "run", id, code, quiet: true }));
+  },
+  submit: (code) => void term.submit(code),
+});
+$("#btn-timeline").addEventListener("click", () => {
+  const bar = $("#timeline");
+  bar.hidden = !bar.hidden;
+  $("#btn-timeline").setAttribute("aria-pressed", String(!bar.hidden));
+  if (bar.hidden) timeline.hide();
+  else void timeline.show();
+});
+
+// ---- presentation (slides) ------------------------------------------------------------
+let slideList: { note: string }[] = [];
+let slideIndex: number | null = null;
+function renderSlides() {
+  const n = slideList.length;
+  $("#slide-pos").textContent = n ? `${slideIndex === null ? "–" : slideIndex + 1} / ${n}` : "no slides";
+  $("#slide-note").textContent = slideIndex !== null ? slideList[slideIndex]?.note ?? "" : n ? "← → to step through" : "Arrange the graph, then Add slide";
+  $<HTMLButtonElement>("#slide-prev").disabled = !n || slideIndex === 0;
+  $<HTMLButtonElement>("#slide-next").disabled = !n || slideIndex === n - 1;
+  $<HTMLButtonElement>("#slide-remove").disabled = slideIndex === null;
+}
+function gotoSlide(k: number) {
+  if (k < 0 || k >= slideList.length) return;
+  void term.submit(`showSlide(${k})`);
+}
+const presenting = () => !$("#present").hidden;
+function setPresenting(on: boolean) {
+  $("#present").hidden = !on;
+  $("#btn-present").setAttribute("aria-pressed", String(on));
+  renderSlides();
+}
+$("#btn-present").addEventListener("click", () => setPresenting(!presenting()));
+$("#present-close").addEventListener("click", () => setPresenting(false));
+$("#slide-prev").addEventListener("click", () => gotoSlide((slideIndex ?? 1) - 1));
+$("#slide-next").addEventListener("click", () => gotoSlide(slideIndex === null ? 0 : slideIndex + 1));
+$("#slide-add").addEventListener("click", () => {
+  const note = $<HTMLInputElement>("#slide-new-note").value.trim();
+  const cam = renderer.getView().map((v) => Math.round(v * 1000) / 1000);
+  void term.submit(`addSlide(${JSON.stringify(note)}, camera=[${cam.join(", ")}]${slideIndex !== null ? `, at=${slideIndex + 1}` : ""})`);
+  $<HTMLInputElement>("#slide-new-note").value = "";
+});
+$("#slide-remove").addEventListener("click", () => {
+  if (slideIndex !== null) void term.submit(`removeSlide(${slideIndex})`);
+});
+document.addEventListener("keydown", (ev) => {
+  if (!presenting() || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  const t = ev.target as HTMLElement | null;
+  if (t?.closest(".cm-editor, input, textarea, select")) return;
+  if (ev.key === "ArrowRight" || ev.key === "PageDown" || ev.key === " ") {
+    ev.preventDefault();
+    gotoSlide(slideIndex === null ? 0 : slideIndex + 1);
+  } else if (ev.key === "ArrowLeft" || ev.key === "PageUp") {
+    ev.preventDefault();
+    gotoSlide((slideIndex ?? 1) - 1);
+  }
+});
+
 // ---- getting data in: URL, pasted tables, NDEx, Wikidata ---------------------------------
 $("#open-url").addEventListener("click", () => {
   const url = prompt("Graph URL (GDF, GEXF, GraphML, Pajek, DL, CSV or .guess)", "https://");
@@ -854,6 +935,36 @@ function renderGraphTabs(names: string[], current: string) {
     bar.append(tab);
   }
 }
+
+// ---- share by link, publish a viewer ---------------------------------------------------
+const b64url = (bytes: Uint8Array) => {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+async function packSession(text: string): Promise<string> {
+  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
+  return b64url(new Uint8Array(await new Response(stream).arrayBuffer()));
+}
+async function unpackSession(data: string): Promise<string> {
+  const bin = atob(data.replace(/-/g, "+").replace(/_/g, "/"));
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+}
+async function shareLink(app: boolean) {
+  const snap = await request<[number, string] | null>((id) => ({ type: "snapshot", id, since: -1 }));
+  if (!snap) return;
+  const packed = await packSession(snap[1]);
+  const url = `${location.origin}${location.pathname}#s=${packed}${app ? "&app=1" : ""}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    term.note(`Link copied (${Math.round(url.length / 1024)} KB)${url.length > 64000 ? " — long links may be cut off by some apps; for big graphs share a saved .guess file instead" : ""}. It opens this graph${app ? " as a read-only viewer" : ""} for anyone with the link.`);
+  } catch {
+    term.note(`Copy this link: ${url}`);
+  }
+}
+$("#share-link").addEventListener("click", () => void shareLink(false));
+$("#share-viewer").addEventListener("click", () => void shareLink(true));
 
 // ---- notebook and report export ---------------------------------------------------------
 async function exportNotebook() {
@@ -1135,7 +1246,15 @@ document.addEventListener("keydown", (ev) => {
 // ---- start --------------------------------------------------------------------------
 async function onReady() {
   term.docs = await request<Record<string, string>>((id) => ({ type: "docs", id }));
-  if (loadUrl) {
+  if (sharedSession) {
+    try {
+      const text = await unpackSession(sharedSession);
+      await request((id) => ({ type: "writeFile", id, name: "shared.guess", data: new TextEncoder().encode(text) }));
+      await term.submit(`makeFromSession("shared.guess")`);
+    } catch (e) {
+      term.error(`Could not open the shared link: ${e}`);
+    }
+  } else if (loadUrl) {
     await openUrl(loadUrl);
   } else if (await restoreAutosave()) {
     term.note("Restored your previous session (variables are not restored). Sample graph starts over.");

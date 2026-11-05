@@ -79,6 +79,8 @@ export class Renderer {
   edges = new Map<number, EdgeRec>();
   private order: number[] = [];          // node draw order
   private dirty = true;
+  /** render on demand: only frames where something changed are drawn */
+  private needsRender = true;
   private labelsDirty = true;
   private hl = { nodes: new Set<number>(), edges: new Set<number>() };
   private tween: { from: number[]; to: number[]; t0: number; ms: number } | null = null;
@@ -111,7 +113,12 @@ export class Renderer {
     this.host.appendChild(this.app.canvas);
     installHaloFont();
     // the host also changes size when the console divider is dragged, not just with the window
-    new ResizeObserver(() => this.app.queueResize()).observe(this.host);
+    new ResizeObserver(() => {
+      this.app.queueResize();
+      this.needsRender = true;
+    }).observe(this.host);
+    // draw only when something changed (idle graphs cost nothing)
+    this.app.ticker.remove(this.app.render, this.app);
     this.world.addChild(this.backdrop, this.hullG, this.edgeG, this.nodeG, this.imageLayer, this.halos, this.labels, this.overlay);
     this.app.stage.addChild(this.world);
     this.app.ticker.add(() => this.frame());
@@ -270,6 +277,7 @@ export class Renderer {
           const sp = new Sprite(tex);
           sp.position.set(x, y);
           this.backdrop.addChild(sp);
+          this.needsRender = true;
         }).catch((e) => console.warn("background image failed", e));
       }
     }
@@ -286,6 +294,7 @@ export class Renderer {
 
   private invalidate(labels = false) {
     this.dirty = true;
+    this.needsRender = true;
     if (labels) this.labelsDirty = true;
   }
 
@@ -372,7 +381,21 @@ export class Renderer {
     this.tween = { from: [this.world.x, this.world.y, this.scale], to, t0: performance.now(), ms: 450 };
   }
 
+  /** The camera as [centre x, centre y, zoom] in graph coordinates. */
+  getView(): number[] {
+    const W = this.app.screen.width / 2, H = this.app.screen.height / 2;
+    return [(W - this.world.x) / this.scale, (H - this.world.y) / this.scale, this.scale];
+  }
+
+  setView([cx, cy, s]: number[], ms = 600) {
+    const W = this.app.screen.width / 2, H = this.app.screen.height / 2;
+    const to = [W - cx * s, H - cy * s, s];
+    if (ms <= 0) this.setCamera(to);
+    else this.tween = { from: [this.world.x, this.world.y, this.scale], to, t0: performance.now(), ms };
+  }
+
   private setCamera([x, y, s]: number[]) {
+    this.needsRender = true;
     this.world.position.set(x, y);
     this.world.scale.set(s);
     this.drawOverlay();
@@ -408,7 +431,14 @@ export class Renderer {
       this.drawOverlay();
     }
     if (this.labelCull && Math.abs(this.scale / (this.cullScale || 1) - 1) > 0.03) this.cullLabels();
+    if (this.needsRender || this.app.renderer.width !== this.lastSize[0] || this.app.renderer.height !== this.lastSize[1]) {
+      this.needsRender = false;
+      this.lastSize = [this.app.renderer.width, this.app.renderer.height];
+      this.app.render();
+    }
   }
+
+  private lastSize = [0, 0];
 
   private drawHulls() {
     const g = this.hullG;
@@ -434,17 +464,31 @@ export class Renderer {
     const g = this.edgeG;
     g.clear();
     if (this.curvesDirty) this.computeCurves();
+    // batch edges sharing colour, width and opacity into one stroke (one draw
+    // call per style instead of per edge: big graphs draw much faster)
+    const batches = new Map<string, { c: number; w: number; a: number; edges: [EdgeRec, NodeRec, NodeRec][] }>();
     for (const e of this.edges.values()) {
       const a = this.nodes.get(e.s), b = this.nodes.get(e.t);
       if (!e.v || !a || !b || !a.v || !b.v) continue;
-      this.edgePath(g, e, a, b);
       const c = this.edgeColor(e, a, b);
       const alpha = this.focus && !this.focus.edges.has(e.i) ? e.a * DIM_EDGE : e.a;
-      g.stroke({ width: Math.max(e.w, 0.1), color: c, alpha, cap: "round", join: "round" });
-      if (e.d && a !== b) {
-        this.arrow(g, e, a, b);
-        g.fill({ color: c, alpha });
+      const w = Math.max(e.w, 0.1);
+      const key = `${c}|${w.toFixed(2)}|${alpha.toFixed(3)}`;
+      let batch = batches.get(key);
+      if (!batch) batches.set(key, (batch = { c, w, a: alpha, edges: [] }));
+      batch.edges.push([e, a, b]);
+    }
+    for (const { c, w, a: alpha, edges } of batches.values()) {
+      for (const [e, a, b] of edges) this.edgePath(g, e, a, b);
+      g.stroke({ width: w, color: c, alpha, cap: "round", join: "round" });
+      let arrows = false;
+      for (const [e, a, b] of edges) {
+        if (e.d && a !== b) {
+          this.arrow(g, e, a, b);
+          arrows = true;
+        }
       }
+      if (arrows) g.fill({ color: c, alpha });
     }
   }
 
@@ -701,6 +745,7 @@ export class Renderer {
   }
 
   private drawOverlay() {
+    this.needsRender = true;
     const g = this.overlay;
     g.clear();
     const px = 1 / this.scale;
@@ -760,9 +805,17 @@ export class Renderer {
     }
     let best: Hit = null;
     let bestD = Infinity;
+    const tolMin = 4 / this.scale;
     for (const e of this.edges.values()) {
       const a = this.nodes.get(e.s), b = this.nodes.get(e.t);
       if (!e.v || !a || !b || !a.v || !b.v || a === b) continue;
+      if (!e.b) {
+        // quick reject: a curve bows at most half its length away from the chord
+        const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
+        const reach = (this.curvature > 0 || this.curveOffset.has(e.i) ? Math.hypot(bx - ax, by - ay) * 0.55 : 0) + Math.max(e.w / 2, tolMin);
+        if (x < Math.min(ax, bx) - reach || x > Math.max(ax, bx) + reach || y < Math.min(ay, by) - reach || y > Math.max(ay, by) + reach) continue;
+        if (!this.curvature && !this.curveOffset.has(e.i) && segDist(x, y, ax, ay, bx, by) > reach) continue;
+      }
       const p = this.edgePoints(e, a, b);
       let d = Infinity;
       for (let k = 0; k + 3 < p.length; k += 2) d = Math.min(d, segDist(x, y, p[k], p[k + 1], p[k + 2], p[k + 3]));
@@ -816,6 +869,7 @@ export class Renderer {
           this.drawOverlay();
         } else if (drag.mode === "pan") {
           this.world.position.set(this.world.x + dx, this.world.y + dy);
+          this.needsRender = true;
         } else {
           // dragging a selected node moves the whole selection
           const ids = this.selection.has(drag.id!) ? this.selection : [drag.id!];

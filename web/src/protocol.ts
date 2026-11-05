@@ -93,6 +93,9 @@ export type FromWorker =
   /** summary: one line (with a "did you mean" hint); line: the cell line it happened on */
   | { type: "error"; text: string; summary?: string; line?: number }
   | { type: "help"; topic: string | null }
+  | { type: "slides"; slides: { note: string }[]; index: number | null }
+  /** move the camera: [centre x, centre y, zoom] in graph coordinates */
+  | { type: "camera"; camera: number[]; ms: number }
   /** installPackage(): the page asks the worker to pip-install it */
   | { type: "install"; name: string }
   /** the session's graphs (tabs above the graph when there are several) */

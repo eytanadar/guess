@@ -285,7 +285,7 @@ body { display: flex; flex-direction: column; }
 .chart .pie-label { text-anchor: middle; dominant-baseline: central; fill: #222; font-size: 9px; pointer-events: none; }
 
 /* app mode (?app=1): an end-user view without the console */
-body.app #console, body.app #divider, body.app .menubar, body.app #search, body.app #stop { display: none; }
+body.app #console, body.app #divider, body.app .menubar, body.app #stop { display: none; }
 body.app .view-col { flex: 1 1 auto; }
 .cm-tooltip-autocomplete ul li[aria-selected] .cm-completionDetail { color: rgba(255, 255, 255, 0.8); }
 
@@ -495,3 +495,30 @@ body.app .view-col { flex: 1 1 auto; }
 .paste-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 .paste-actions button { font: inherit; padding: 4px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); cursor: pointer; }
 .paste-actions .primary { border-color: var(--accent); }
+
+/* timeline bar */
+.timeline { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-top: 1px solid var(--border); background: var(--panel); font-size: 12.5px; flex: none; flex-wrap: wrap; }
+.timeline[hidden] { display: none; }
+.timeline button, .timeline select, .timeline input[type=number] { font: inherit; padding: 2px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); }
+.timeline button { cursor: pointer; }
+.tl-play { min-width: 34px; }
+.tl-track { position: relative; flex: 1 1 260px; min-width: 200px; height: 34px; }
+.tl-spark { position: absolute; left: 6px; right: 6px; top: 0; width: calc(100% - 12px); height: 26px; }
+.tl-spark rect { fill: var(--link-node); opacity: 0.35; }
+.tl-slider { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; margin: 0; }
+.tl-time { font: 600 13px var(--mono); min-width: 5ch; }
+.tl-field { color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+.tl-window { width: 64px; }
+
+/* presentation bar */
+.present { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 6; display: flex; align-items: center; gap: 8px;
+  max-width: calc(100% - 24px); padding: 6px 10px; background: var(--legend-bg); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); font-size: 13px; flex-wrap: wrap; }
+.present[hidden] { display: none; }
+.present button, .present input { font: inherit; padding: 2px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); }
+.present button { cursor: pointer; }
+.present button:disabled { opacity: 0.4; cursor: default; }
+.slide-pos { font: 12px var(--mono); color: var(--muted); }
+.slide-note { font-weight: 500; max-width: 420px; }
+.present-edit { display: inline-flex; gap: 6px; margin-left: 8px; }
+.present-edit input { width: 170px; }
