@@ -246,6 +246,7 @@ def install(session):
         view.changed()
 
     def removeBackgroundImage():
+        """Remove the background image set with setBackgroundImage."""
         view.image = None
         view.changed()
 

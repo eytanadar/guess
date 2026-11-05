@@ -91,13 +91,15 @@ export type FromWorker =
   | { type: "image"; key: string; url: string }
   | { type: "download"; name: string; text: string }
   | { type: "select"; nodes: number[] }
+  /** undo()/redo() reversed or re-applied the command run in console cell `cell` */
+  | { type: "undone"; cell: number; undone: boolean }
   | { type: "export"; format: "png" | "jpg" | "svg"; name: string }
   | { type: "done"; id: number; ok: boolean }
   | { type: "reply"; id: number; value: unknown };
 
 export type ToWorker =
   | { type: "init"; files: Record<string, string>; data: Record<string, string>; interrupt?: SharedArrayBuffer }
-  | { type: "run"; id: number; code: string; echo?: boolean }
+  | { type: "run"; id: number; code: string; echo?: boolean; cell?: number }
   | { type: "complete"; id: number; code: string }
   | { type: "completions"; id: number; text: string }
   | { type: "docs"; id: number }

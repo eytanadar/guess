@@ -140,10 +140,12 @@ def install(session):
 
     @cmd
     def addUndirectedEdge(node1, node2, **attrs):
+        """Add an undirected edge between two nodes (by node or name)."""
         return g.addEdge(node1, node2, False, **attrs)
 
     @cmd
     def addDirectedEdge(node1, node2, **attrs):
+        """Add a directed edge from node1 to node2."""
         return g.addEdge(node1, node2, True, **attrs)
 
     @cmd
@@ -163,10 +165,12 @@ def install(session):
 
     @cmd
     def removeNode(n):
+        """Remove one node and its edges (undo with add(g.deleted) or undo())."""
         return g.removeNode(n)
 
     @cmd
     def removeEdge(e):
+        """Remove one edge."""
         return g.removeEdge(e)
 
     @cmd
@@ -331,6 +335,7 @@ def install(session):
 
     @cmd
     def density():
+        """Edges divided by the number of possible undirected node pairs."""
         n = len(g._nodes)
         return 0.0 if n < 2 else len(g._edges) / (n * (n - 1) / 2)
 
@@ -397,6 +402,7 @@ def install(session):
 
     @cmd
     def resizeRandom(field, start, end):
+        """Give each distinct value of field a random size (or edge width) between start and end."""
         field = _field(field)
         attr = "size" if field.kind == NODE else "width"
         for grp in group_by(field.elements(), field):

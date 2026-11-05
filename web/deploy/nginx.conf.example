@@ -1,0 +1,21 @@
+# nginx: serve the unpacked bundle from /var/www/guess (any sub-path works too).
+server {
+    listen 80;
+    server_name guess.example.org;
+    root /var/www/guess;
+
+    # cross-origin isolation (lets Stop / Esc interrupt Python)
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    add_header Cross-Origin-Embedder-Policy "require-corp" always;
+    add_header Cross-Origin-Resource-Policy "cross-origin" always;
+
+    types {
+        application/wasm wasm;
+        text/javascript  js mjs;
+    }
+    include /etc/nginx/mime.types;
+
+    # the hashed build assets and Pyodide never change for a given file name
+    location ~* ^/(assets|pyodide)/ { expires 30d; add_header Cache-Control "public, immutable"; }
+    location / { try_files $uri $uri/ /index.html; }
+}

@@ -10,3 +10,5 @@ gephi
 guess-orig
 output-md
 guess-chi2006.pdf
+web/bundle/
+web/.pyodide-cache/

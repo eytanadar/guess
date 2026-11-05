@@ -164,8 +164,8 @@ test("box and lasso selection, group drag, select()", async ({ page }) => {
   await run(page, "print(len(sel))");
   await expect(page.locator(".cell").last()).toContainText("402");
   // Esc clears
-  await page.locator("#graph canvas").focus().catch(() => {});
-  await page.mouse.click(...at(0.5, 0.02));   // background click also clears
+  await page.locator(".toolbar .brand").click();
+  await page.keyboard.press("Escape");
   await expect(status).not.toContainText("selected");
   // alt-drag lasso around the left half
   await page.keyboard.down("Alt");
@@ -201,12 +201,15 @@ test("undo / redo, clickable printed nodes, theme toggle", async ({ page }) => {
   await run(page, "v1.color = red");
   await page.click("#undo");
   await expect(page.locator(".cell").last()).toContainText("undid: v1.color = red");
+  const target = page.locator(".cell", { has: page.locator(".cell-code", { hasText: /^v1\.color = red$/ }) });
+  await expect(target).toHaveClass(/undone/);
   await run(page, "print(v1.color)");
   await expect(page.locator(".cell").last()).toContainText("cornflowerblue");
   // Ctrl/Cmd+Shift+Z outside the editor redoes
   await page.locator("#graph canvas").click({ position: { x: 5, y: 5 } });
   await page.keyboard.press("ControlOrMeta+Shift+z");
   await expect(page.locator(".cell").last()).toContainText("redid: v1.color = red");
+  await expect(target).not.toHaveClass(/undone/);
   // printed nodes are linked: clicking one selects it
   await run(page, "for n in [v1, v2]:\n    print('node', n)");
   await page.locator(".cell").last().locator(".obj.node", { hasText: "v2" }).click();

@@ -75,6 +75,7 @@ class Widget:
 
 
 class Label(Widget):
+    """Label(text): a line of text in a panel; set .text to change it."""
     kind = "label"
     _props = ("text",)
 
@@ -83,6 +84,7 @@ class Label(Widget):
 
 
 class Button(Widget):
+    """Button(text, onClick=fn): calls fn() when clicked; .enabled turns it on/off."""
     kind = "button"
     _props = ("text", "enabled")
     _events = ("onClick",)
@@ -110,6 +112,7 @@ class Slider(Widget):
 
 
 class Checkbox(Widget):
+    """Checkbox(text, checked=False, onChange=fn): calls fn(checked) when toggled."""
     kind = "checkbox"
     _props = ("text", "checked", "enabled")
     _events = ("onChange",)
@@ -119,6 +122,8 @@ class Checkbox(Widget):
 
 
 class Dropdown(Widget):
+    """Dropdown(options, value=None, label="", onChange=fn): a choice list; calls
+    fn(value) when the selection changes."""
     kind = "dropdown"
     _props = ("options", "value", "label", "enabled")
     _events = ("onChange",)

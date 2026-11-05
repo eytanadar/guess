@@ -17,7 +17,8 @@ import type { Seg } from "./protocol";
 export type Item = ["n" | "e", number];
 
 export interface ConsoleHost {
-  run(code: string): Promise<boolean>;
+  /** Run code; `cell` is the console cell number it belongs to. */
+  run(code: string, cell: number): Promise<boolean>;
   completions(text: string): Promise<{ prefix: string; items: string[] }>;
   /** Hovering a documented name in an executed cell. */
   doc(name: string | null, ev: MouseEvent | null): void;
@@ -35,6 +36,7 @@ const MAX_CELLS = 300;
 interface Cell {
   root: HTMLElement;
   out: HTMLElement;
+  n: number;
 }
 
 export class Console {
@@ -278,7 +280,7 @@ export class Console {
     const t0 = performance.now();
     let ok = false;
     try {
-      ok = await this.host.run(code);
+      ok = await this.host.run(code, cell.n);
       return ok;
     } finally {
       this.current = null;
@@ -299,6 +301,7 @@ export class Console {
   private newCell(code: string): Cell {
     const n = ++this.cellCount;
     const root = el("div", "cell");
+    root.dataset.n = String(n);
     const head = el("div", "cell-head");
     const num = el("button", "cell-num");
     num.textContent = `[${n}]`;
@@ -327,7 +330,15 @@ export class Console {
     this.out.append(root);
     while (this.out.childElementCount > MAX_CELLS) this.out.firstElementChild?.remove();
     this.scroll();
-    return { root, out };
+    return { root, out, n };
+  }
+
+  /** Strike through a cell whose effect undo() reversed (redo() clears it). */
+  markUndone(n: number, undone: boolean) {
+    const cell = this.out.querySelector<HTMLElement>(`.cell[data-n="${n}"]`);
+    if (!cell) return;
+    cell.classList.toggle("undone", undone);
+    cell.querySelector(".cell-num")?.setAttribute("title", undone ? "Undone (redo() re-applies it)" : "Collapse/expand output");
   }
 
   /** Syntax-highlighted source; documented command names become hoverable. */

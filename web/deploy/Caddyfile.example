@@ -1,0 +1,10 @@
+# Caddy: serve the unpacked bundle.
+guess.example.org {
+    root * /var/www/guess
+    file_server
+    header {
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Embedder-Policy "require-corp"
+        Cross-Origin-Resource-Policy "cross-origin"
+    }
+}

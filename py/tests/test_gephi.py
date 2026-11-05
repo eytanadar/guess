@@ -295,3 +295,17 @@ def test_select_binds_sel_and_tells_the_display(s):
     assert s.run("sel.color = red") and ev(s, "al_x.color") == "red"
     s.run("select()")
     assert s.rec.of("select")[-1]["nodes"] == [] and ev(s, "len(sel)") == 0
+
+
+def test_api_reference_is_up_to_date(tmp_path, monkeypatch):
+    """docs/API.md must match the docstrings: run py/tools/gen_api_docs.py."""
+    import importlib.util
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location("gen_api_docs", root / "py" / "tools" / "gen_api_docs.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    monkeypatch.setattr(mod, "OUT", tmp_path / "API.md")
+    mod.main()
+    assert (tmp_path / "API.md").read_text() == (root / "docs" / "API.md").read_text(), \
+        "docs/API.md is stale: cd py && .venv/bin/python tools/gen_api_docs.py"

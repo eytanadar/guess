@@ -70,6 +70,7 @@ class Session:
         self.undo_stack = []
         self.redo_stack = []
         self._run_depth = 0
+        self.current_cell = None  # console cell number of the next run (marks undone cells)
         self._history_op = False
 
         def undo():
@@ -186,6 +187,7 @@ class Session:
         if self._run_depth:
             return self._run(source, interactive, filename)
         g = self.graph
+        cell, self.current_cell = self.current_cell, None
         before = self._undo_snapshot()
         g.journal = Journal()
         self._history_op = False
@@ -198,7 +200,7 @@ class Session:
             self._run_depth -= 1
             j, g.journal = g.journal, None
             if not self._history_op:
-                self._record_undo(source, j, before)
+                self._record_undo(source, j, before, cell)
         return ok
 
     def _run(self, source, interactive, filename):
@@ -235,16 +237,16 @@ class Session:
                 "states": dict(g.states),
                 "ranges": {k: list(v) for k, v in g.ranges.items()}}
 
-    def _record_undo(self, label, journal, before):
+    def _record_undo(self, label, journal, before, cell=None):
         g = self.graph
-        entry = {"label": label, "journal": journal}
+        entry = {"label": label, "journal": journal, "cell": cell}
         if self.view.version != before["view_version"]:
             entry["view"] = before["view"]
         if g.states != before["states"]:
             entry["states"] = before["states"]
         if {k: list(v) for k, v in g.ranges.items()} != before["ranges"]:
             entry["ranges"] = before["ranges"]
-        if not journal and len(entry) == 2:
+        if not journal and len(entry) == 3:
             return                      # nothing changed (a query, print, help, ...)
         self.undo_stack.append(entry)
         self.redo_stack.clear()
@@ -254,7 +256,7 @@ class Session:
 
     def _revert(self, entry):
         g = self.graph
-        inv = {"label": entry["label"], "journal": g.revert(entry["journal"])}
+        inv = {"label": entry["label"], "journal": g.revert(entry["journal"]), "cell": entry.get("cell")}
         if "view" in entry:
             inv["view"] = self.view.capture()
             self.view.restore(entry["view"])
@@ -277,6 +279,8 @@ class Session:
         entry = self.undo_stack.pop()
         self.redo_stack.append(self._revert(entry))
         print(f"undid: {_first_line(entry['label'])}")
+        if entry.get("cell") is not None:
+            self.emit({"type": "undone", "cell": entry["cell"], "undone": True})
 
     def redo(self):
         """Re-apply the last command undone with undo()."""
@@ -287,6 +291,8 @@ class Session:
         entry = self.redo_stack.pop()
         self.undo_stack.append(self._revert(entry))
         print(f"redid: {_first_line(entry['label'])}")
+        if entry.get("cell") is not None:
+            self.emit({"type": "undone", "cell": entry["cell"], "undone": False})
 
     def move_nodes(self, moves):
         """Nodes dragged on the display: [(id, x, y), ...], one undo step."""

@@ -71,6 +71,7 @@ def to_rgba_int(value, default=(0, 0, 0, 255)):
 
 
 def randomColor(alpha=None):
+    """A random color "r,g,b"; randomColor(alpha) adds an alpha (0..255)."""
     r, g, b = (_random.randrange(255) for _ in range(3))
     if alpha is None:
         return f"{r},{g},{b}"
@@ -78,6 +79,7 @@ def randomColor(alpha=None):
 
 
 def averageColor(c1, c2):
+    """The color halfway between two colors."""
     a = parse(c1, (0, 0, 0, 255))
     b = parse(c2, (255, 255, 255, 255))
     return ",".join(str(int((x + y) / 2)) for x, y in zip(a, b))

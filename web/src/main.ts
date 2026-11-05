@@ -221,9 +221,9 @@ function clearTimer(id: string) {
 }
 
 const term = new Console($("#console"), {
-  run: async (code) => {
+  run: async (code, cell) => {
     if (interruptBuf) new Uint8Array(interruptBuf)[0] = 0;
-    const ok = await request<boolean>((id) => ({ type: "run", id, code }));
+    const ok = await request<boolean>((id) => ({ type: "run", id, code, cell }));
     scheduleAutosave();
     return ok;
   },
@@ -313,6 +313,9 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     case "download":
       download(m.name, new Blob([m.text], { type: "text/plain" }));
+      break;
+    case "undone":
+      term.markUndone(m.cell, m.undone);
       break;
     case "select":
       renderer.setSelection(m.nodes);

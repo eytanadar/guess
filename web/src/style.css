@@ -128,6 +128,10 @@ body { display: flex; flex-direction: column; }
 .cell + .cell, .log + .cell, .cell + .log { border-top: 1px solid var(--cell-sep); }
 .cell.running { border-left-color: #f0b429; background: var(--running-bg); }
 .cell.failed { border-left-color: var(--error); }
+.cell.undone { border-left-color: var(--hint); }
+.cell.undone .cell-code { text-decoration: line-through; text-decoration-color: var(--muted); opacity: 0.55; }
+.cell.undone .cell-out { opacity: 0.55; }
+.cell.undone .cell-num::after { content: " undone"; font: 10px system-ui, sans-serif; color: var(--muted); }
 .cell-head { display: flex; align-items: flex-start; gap: 6px; }
 .cell-num {
   flex: none; font: inherit; color: var(--muted); background: none; border: 0; padding: 0;

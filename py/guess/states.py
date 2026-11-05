@@ -128,6 +128,7 @@ def install(session):
         cap = key[0].upper() + key[1:]
         setter.__name__, getter.__name__ = f"set{cap}", f"get{cap}"
         setter.__doc__ = f"Fraction (0..1) of a morph by which {key} takes effect."
+        getter.__doc__ = f"The current {key} fraction (see set{cap})."
         return setter, getter
 
     for fn in (ss, ls, morph, getStates):

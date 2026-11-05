@@ -2,7 +2,11 @@
 // Runs Pyodide and the `guess` Python package. The graph model lives here.
 import type { FromWorker, ToWorker } from "./protocol";
 
-const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
+// Where Pyodide comes from: jsDelivr by default; `npm run bundle -- --offline` builds
+// with VITE_PYODIDE_URL=../pyodide/ (resolved against this worker script) so a
+// self-hosted copy is used instead.
+const PYODIDE_CDN = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
+const PYODIDE_URL = new URL(import.meta.env.VITE_PYODIDE_URL || PYODIDE_CDN, self.location.href).href;
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -76,6 +80,7 @@ function call(fn: string, ...args: unknown[]): unknown {
 function handle(msg: ToWorker) {
   switch (msg.type) {
     case "run": {
+      session.current_cell = msg.cell ?? null;
       const ok = call("run", msg.code) as boolean;
       post({ type: "done", id: msg.id, ok });
       break;
