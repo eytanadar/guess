@@ -58,6 +58,8 @@ class Legend:
         self._entries = []
 
     def add(self, obj, annotation):
+        if isinstance(obj, (list, tuple, GSet)) and len(obj) == 1:   # e.g. lg.add(v1 - v2, "…")
+            obj = obj[0]
         if isinstance(obj, Node):
             rgb, a = colors.to_rgba_int(obj.color)
             entry = {"k": "n", "c": rgb, "a": a, "s": obj.style, "t": str(annotation)}

@@ -15,3 +15,4 @@ web/bundle/
 web/.pyodide-cache/
 web/demo/out/
 web/demo/.cache/
+docs/manual/build/

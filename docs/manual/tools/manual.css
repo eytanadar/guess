@@ -1,0 +1,50 @@
+/* HTML and EPUB styling for the GUESS manual */
+:root {
+  --text: #1d1f23;
+  --muted: #5b616b;
+  --bg: #ffffff;
+  --code-bg: #f4f5f7;
+  --border: #dfe2e6;
+  --link: #1f4e8c;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #e4e6ea;
+    --muted: #a0a6b0;
+    --bg: #17181b;
+    --code-bg: #23252a;
+    --border: #3a3d44;
+    --link: #8ab4f8;
+  }
+}
+html { background: var(--bg); }
+body {
+  color: var(--text);
+  background: var(--bg);
+  font: 17px/1.6 Charter, "Iowan Old Style", Georgia, serif;
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 2rem 16px 4rem;
+}
+h1, h2, h3, h4, .title, .subtitle, nav#TOC { font-family: "Avenir Next", "Helvetica Neue", system-ui, sans-serif; }
+h1 { font-size: 1.7rem; margin-top: 3rem; border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; }
+h3 { font-size: 1.05rem; }
+header#title-block-header { margin-bottom: 2rem; }
+.title { font-size: 2.6rem; margin-bottom: 0; border: 0; }
+.subtitle { color: var(--muted); font-size: 1.2rem; margin-top: .2rem; }
+.author, .date { color: var(--muted); margin: .2rem 0; }
+a { color: var(--link); }
+code, pre { font-family: Menlo, "SF Mono", Consolas, monospace; font-size: .86em; }
+:not(pre) > code { background: var(--code-bg); padding: .1em .3em; border-radius: 4px; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: .8rem 1rem; overflow-x: auto; }
+table { border-collapse: collapse; margin: 1rem 0; font-size: .92em; display: block; overflow-x: auto; }
+th, td { border-bottom: 1px solid var(--border); padding: .35rem .7rem; text-align: left; vertical-align: top; }
+th { font-family: "Avenir Next", "Helvetica Neue", system-ui, sans-serif; }
+figure { margin: 1.5rem 0; }
+figure img, img { max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border); }
+figcaption { color: var(--muted); font-size: .9em; margin-top: .4rem; }
+nav#TOC ul { list-style: none; padding-left: 1rem; }
+nav#TOC > ul { padding-left: 0; }
+nav#TOC a { text-decoration: none; }

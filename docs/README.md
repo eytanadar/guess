@@ -2,6 +2,7 @@
 
 | document | for |
 |---|---|
+| [manual/MANUAL.md](manual/MANUAL.md) | **the GUESS manual**: the 2006 manual brought up to date (tutorial, data formats, queries, layouts, analysis, states, gestures, interface building, deployment); builds to PDF/HTML/EPUB/Word |
 | [USER_GUIDE.md](USER_GUIDE.md) | using the app: console, Gython basics, selection and tools, undo, layouts, analysis, display |
 | [API.md](API.md) | every Gython command and field (generated from the docstrings) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | how it works: Pyodide worker, Python package, protocol, renderer, undo |
