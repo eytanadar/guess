@@ -7,6 +7,7 @@
 | [ARCHITECTURE.md](ARCHITECTURE.md) | how it works: Pyodide worker, Python package, protocol, renderer, undo |
 | [DEVELOPER.md](DEVELOPER.md) | setting up, testing, adding commands/layouts/statistics, conventions |
 | [DEPLOY.md](DEPLOY.md) | bundling (`npm run bundle`), web server setup, headers, GitHub Pages, apps |
+| [MANUAL_COMPARISON.md](MANUAL_COMPARISON.md) | the 2006 GUESS manual vs. this implementation: what matches, what differs, what was fixed |
 | [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md) | comparison with Cytoscape, Gephi, Graphistry, notebooks and IDEs; prioritised suggestions |
 
 Also: [../README.md](../README.md) (quick start), [../PLAN.md](../PLAN.md)

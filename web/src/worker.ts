@@ -143,6 +143,9 @@ function handle(msg: ToWorker) {
     case "install":
       void installPackage(msg.name);
       break;
+    case "click":
+      py!.runPython(`session.last_click = (${Number(msg.x)}, ${Number(msg.y)})`);
+      break;
     case "select":
       py!.globals.set("__sel", JSON.stringify(msg.nodes));
       py!.runPython("session.set_selection(json.loads(__sel))");

@@ -130,7 +130,14 @@ def install(session):
     # ---- structure -----------------------------------------------------------
     @cmd
     def addNode(name, **attrs):
-        """Add a node (or return the existing one with that name)."""
+        """Add a node (or return the existing one with that name). addNode(vx)
+        with a removed node puts it back, with its field values."""
+        if isinstance(name, Node):
+            if g._nodes.get(name._name) is not name:
+                g.add([name])
+            for k, v in attrs.items():
+                setattr(name, k, v)
+            return name
         return g.addNode(name, **attrs)
 
     @cmd
@@ -150,8 +157,14 @@ def install(session):
 
     @cmd
     def remove(seq):
-        """Remove nodes and/or edges (a node takes its edges). Undo with add(...)."""
-        return g.remove(seq)
+        """Remove nodes and/or edges (a node takes its edges). Undo with add(...).
+        As in the original, a removed node's name still refers to it, so
+        add(name) or addNode(name) puts it back."""
+        g._keep_names = True
+        try:
+            return g.remove(seq)
+        finally:
+            g._keep_names = False
 
     @cmd
     def removeComplete(seq):
@@ -165,8 +178,13 @@ def install(session):
 
     @cmd
     def removeNode(n):
-        """Remove one node and its edges (undo with add(g.deleted) or undo())."""
-        return g.removeNode(n)
+        """Remove one node and its edges (undo with add(g.deleted) or undo()).
+        Its name still refers to it, so addNode(n) puts it back."""
+        g._keep_names = True
+        try:
+            return g.removeNode(n)
+        finally:
+            g._keep_names = False
 
     @cmd
     def removeEdge(e):

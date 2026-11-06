@@ -95,12 +95,15 @@ class Legend:
 
 
 class GradientLegend(Legend):
-    """A color ramp legend: GradientLegend(startColor, endColor, min, max)."""
+    """A color ramp legend: GradientLegend(startColor, endColor, min, max[, tickEvery])
+    shows the ramp from min to max, with a tick mark every tickEvery units."""
 
-    def __init__(self, view, lid, start, end, lo=0, hi=1):
+    def __init__(self, view, lid, start, end, lo=0, hi=1, ticks=None):
         super().__init__(view, lid)
         self._ramp = {"from": colors.to_rgba_int(start)[0], "to": colors.to_rgba_int(end)[0],
                       "min": lo, "max": hi}
+        if ticks:
+            self._ramp["ticks"] = float(ticks)
 
     def record(self):
         r = super().record()
@@ -281,8 +284,8 @@ def install(session):
     make_legend.__name__ = "Legend"
     make_legend.__doc__ = Legend.__doc__
 
-    def make_gradient(start, end, lo=0, hi=1):
-        lg = GradientLegend(view, view.next_id(), start, end, lo, hi)
+    def make_gradient(start, end, lo=0, hi=1, ticks=None):
+        lg = GradientLegend(view, view.next_id(), start, end, lo, hi, ticks)
         view.legends[lg._id] = lg
         view.changed()
         return lg
@@ -406,8 +409,23 @@ def install(session):
     reg("startMovie", startMovie)
     reg("stopMovie", stopMovie)
 
-    for fmt in ("png", "jpg", "svg"):
+    for fmt in ("png", "jpg", "svg", "gif", "pdf", "ps", "eps"):
         f = _export(fmt)
+        if fmt in ("gif", "pdf", "ps", "eps"):
+            f.__doc__ = (f"Save the display as {fmt.upper()} (downloaded by the browser): an image "
+                         "of the current view inside the file. For vector output use exportSVG.")
+        reg(f.__name__, f)
+
+    def _unsupported(fmt):
+        def fn(filename=None):
+            raise GuessError(f"{fmt.upper()} export isn't available in the browser; use exportSVG "
+                             "(vector), exportPDF or exportPNG")
+        fn.__name__ = f"export{fmt.upper()}"
+        fn.__doc__ = f"Not available in the browser (the Java version wrote {fmt.upper()}); use exportSVG or exportPDF."
+        return fn
+
+    for fmt in ("swf", "java", "cgm", "emf"):
+        f = _unsupported(fmt)
         reg(f.__name__, f)
 
     for fn in (createConvexHull, removeConvexHull, removeConvexHulls, getConvexHulls,

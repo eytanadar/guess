@@ -84,8 +84,24 @@ def _parse_def(defn, schema, add_field, kind):
     return cols
 
 
+def _applet_form(text):
+    """GDF as embedded in GUESS applets ends every line with ';' (HTML parameters
+    can't hold newlines, so GuessApplet.java turned each ';' into a newline).
+    Accept it: drop the trailing ';' of each line, or split a one-line file."""
+    lines = [l for l in text.splitlines() if l.strip()]
+    if not lines:
+        return text
+    first = lines[0].strip()
+    if not (first.lower().startswith("nodedef>") and first.endswith(";")):
+        return text
+    if len(lines) == 1:
+        return text.replace(";", "\n")
+    return "\n".join(l.rstrip()[:-1] if l.rstrip().endswith(";") else l for l in text.splitlines())
+
+
 def read(graph, text):
     """Load GDF text into graph. Returns (nodes_added, edges_added)."""
+    text = _applet_form(text)
     node_cols = edge_cols = None
     mode = None
     has_xy = False

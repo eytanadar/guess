@@ -36,6 +36,8 @@ export interface RendererEvents {
   selected(ids: number[]): void;
   /** double-click; return true if handled (otherwise it zooms) */
   dblclick?(hit: Hit): boolean;
+  /** any click on the graph, in graph coordinates */
+  clickedAt?(x: number, y: number): void;
   /** pointer down on a node: a semantic drag behaviour, or null for a plain move */
   dragBehaviour?(id: number, alt: boolean): DragBehaviour | null;
   /** hint text while dragging (null when done) */
@@ -123,6 +125,8 @@ export class Renderer {
   private curvesDirty = true;
   /** double-click zooms to the element under the pointer (vf.defaultNodeZooming) */
   zoomOnDoubleClick = true;
+  /** double-click on an edge zooms to it (vf.defaultEdgeZooming) */
+  zoomEdgesOnDoubleClick = true;
 
   constructor(private host: HTMLElement, private events: RendererEvents) {}
 
@@ -1050,14 +1054,21 @@ export class Renderer {
     }, { passive: false });
     el.addEventListener("dblclick", (ev) => {
       const { sx, sy } = local(ev);
-      if (!this.zoomOnDoubleClick) {
-        this.events.dblclick?.(this.hitTest(sx, sy));
+      const hit = this.hitTest(sx, sy);
+      const zoom = hit?.kind === "e" ? this.zoomEdgesOnDoubleClick : this.zoomOnDoubleClick;
+      if (!zoom) {
+        this.events.dblclick?.(hit);
         return;
       }
-      const hit = this.hitTest(sx, sy);
       if (this.events.dblclick?.(hit)) return;
       if (hit) this.center(hit.kind === "n" ? [hit.id] : [], hit.kind === "e" ? [hit.id] : []);
       else this.center();
+    });
+    // remember where the user last clicked (v.getLastClickedPosition())
+    el.addEventListener("click", (ev) => {
+      const { sx, sy } = local(ev);
+      const w = this.toWorld(sx, sy);
+      this.events.clickedAt?.(w.x, w.y);
     });
     el.addEventListener("contextmenu", (ev) => {
       ev.preventDefault();

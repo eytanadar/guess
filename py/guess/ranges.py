@@ -105,6 +105,25 @@ def query(lhs, op, spec):
         kind = NODE if isinstance(e, Node) else EDGE
         if kind in kinds and _alive(graph, e) and test(iv, q):
             out.append(e)
+    # elements without addRange(...) ranges: a text field holding ranges
+    # (default "range"; Node.setRangeField(field) chooses another), manual §11.2
+    for kind in kinds:
+        schema = graph.node_schema if kind == NODE else graph.edge_schema
+        f = schema.get(graph.range_fields.get(kind, "range"))
+        if f is None:
+            continue
+        for e in (graph._nodes_list() if kind == NODE else graph._edges_list()):
+            if e in graph.ranges:
+                continue
+            raw = f.get(e)
+            if raw in (None, ""):
+                continue
+            try:
+                iv = parse(raw)
+            except GuessError:
+                continue
+            if test(iv, q):
+                out.append(e)
     return out
 
 

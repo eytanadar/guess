@@ -32,7 +32,7 @@ def install(session):
     def build():
         db = sqlite3.connect(":memory:")
         nfields = [f for f in g.node_schema.values() if f.name != "name"]
-        efields = [f for f in g.edge_schema.values() if f.name not in ("node1", "node2", "directed")]
+        efields = [f for f in g.edge_schema.values() if f.name not in ("node1", "node2", "directed", "source", "destination")]
         db.execute("CREATE TABLE nodes (name TEXT PRIMARY KEY, "
                    + ", ".join(f"{_q(f.name)} {_SQL_TYPES.get(f.type, 'TEXT')}" for f in nfields) + ")")
         db.execute("CREATE TABLE edges (__edgeid INTEGER PRIMARY KEY, node1 TEXT, node2 TEXT, directed INTEGER, "

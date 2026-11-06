@@ -238,8 +238,18 @@ class VisFactory:
         self._gui.emit_events()
 
     def defaultNodeZooming(self, on):
-        """Turn double-click-to-zoom on or off."""
+        """Turn double-click-to-zoom on nodes (and the background) on or off."""
         self._gui.defaults["zoom"] = bool(on)
+        self._gui.emit_events()
+
+    def defaultEdgeHighlights(self, on):
+        """Turn the built-in hover highlight of edges on or off."""
+        self._gui.defaults["edgeHighlight"] = bool(on)
+        self._gui.emit_events()
+
+    def defaultEdgeZooming(self, on):
+        """Turn double-click-to-zoom on edges on or off."""
+        self._gui.defaults["edgeZoom"] = bool(on)
         self._gui.emit_events()
 
     def __repr__(self):
@@ -281,7 +291,7 @@ class Gui:
         self.widgets = {}
         self.docked = set()
         self.timers = {}
-        self.defaults = {"highlight": True, "zoom": True}
+        self.defaults = {"highlight": True, "zoom": True, "edgeHighlight": True, "edgeZoom": True}
         self._next = 0
         self.events = GraphEvents(self)
 

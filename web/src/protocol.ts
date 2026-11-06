@@ -34,7 +34,7 @@ export interface LegendEntry { k: "n" | "e" | "h"; c: number; a: number; s?: num
 export interface LegendRec {
   i: number;
   entries: LegendEntry[];
-  ramp?: { from: number; to: number; min: number; max: number };
+  ramp?: { from: number; to: number; min: number; max: number; ticks?: number };
 }
 
 export interface Overlay {
@@ -80,7 +80,9 @@ export type UiMsg =
   | { type: "ui"; op: "dock"; panel: PanelRec }
   | { type: "ui"; op: "update"; id: string; props: Record<string, unknown> }
   | { type: "ui"; op: "close"; id: string }
-  | { type: "ui"; op: "events"; enabled: string[]; defaults: { highlight: boolean; zoom: boolean } }
+  | { type: "ui"; op: "events"; enabled: string[]; defaults: { highlight: boolean; zoom: boolean; edgeHighlight?: boolean; edgeZoom?: boolean } }
+  /** context-menu items added from Python (NodeEditorPopup.addItem); scope n, e or ne */
+  | { type: "ui"; op: "menu"; items: { id: string; label: string; scope: "n" | "e" | "ne" }[] }
   | { type: "ui"; op: "timer"; id: string; ms: number; repeat: boolean }
   | { type: "ui"; op: "cancelTimer"; id: string }
   | { type: "ui"; op: "status"; text: string }
@@ -117,7 +119,7 @@ export type FromWorker =
   | { type: "select"; nodes: number[] }
   /** undo()/redo() reversed or re-applied the command run in console cell `cell` */
   | { type: "undone"; cell: number; undone: boolean }
-  | { type: "export"; format: "png" | "jpg" | "svg"; name: string }
+  | { type: "export"; format: "png" | "jpg" | "svg" | "gif" | "pdf" | "ps" | "eps"; name: string }
   | { type: "done"; id: number; ok: boolean }
   | { type: "reply"; id: number; value: unknown };
 
@@ -136,6 +138,8 @@ export type ToWorker =
   | { type: "move"; moves: number[] }
   | { type: "select"; nodes: number[] }
   | { type: "install"; name: string }
+  /** the last click on the graph, in graph coordinates */
+  | { type: "click"; x: number; y: number }
   | { type: "writeFile"; id: number; name: string; data: Uint8Array }
   /** help index, field summaries (filters/style panel) or data-table rows */
   | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace" | "timeline"; kind?: string; ids?: number[] | null };

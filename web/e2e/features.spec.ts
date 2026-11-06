@@ -427,3 +427,34 @@ test("gestures guide, one-time tips and modal dialogs", async ({ page }) => {
   await expect(page.locator(".console-out .note").last()).toContainText("mine = 1 item");
   expect(errors).toEqual([]);
 });
+
+test("2006 manual compatibility: custom menu items and old export formats", async ({ page }) => {
+  const errors = await boot(page);
+  // NodeEditorPopup.addItem (manual §15.5.2)
+  await run(page, [
+    "def paintIt(n):",
+    "    n.color = red",
+    "    print('painted ' + n.name)",
+    "item = NodeEditorPopup.addItem('Paint red')",
+    "item.menuEvent = paintIt",
+    "center(v1)",
+  ].join("\n"));
+  await page.waitForTimeout(700);
+  const box = (await page.locator("#graph canvas").boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: "right" });
+  await page.locator("#menu button", { hasText: "Paint red" }).click();
+  await expect(page.locator(".console-out")).toContainText("painted v1");
+  // exportPDF/PS/EPS/GIF (manual §9)
+  for (const [cmd, name, magic] of [["exportPDF('g.pdf')", "g.pdf", "%PDF-1.4"], ["exportPS('g.ps')", "g.ps", "%!PS-Adobe"],
+                                    ["exportEPS('g.eps')", "g.eps", "%!PS-Adobe-3.0 EPSF"], ["exportGIF('g.gif')", "g.gif", "GIF89a"]]) {
+    const download = page.waitForEvent("download");
+    await run(page, cmd);
+    const d = await download;
+    expect(d.suggestedFilename()).toBe(name);
+    const fs = await import("node:fs");
+    const head = fs.readFileSync((await d.path())!).subarray(0, magic.length).toString("latin1");
+    expect(head, cmd).toBe(magic);
+    if (process.env.GUESS_KEEP) fs.copyFileSync((await d.path())!, `${process.env.GUESS_KEEP}/${name}`);
+  }
+  expect(errors).toEqual([]);
+});

@@ -76,6 +76,8 @@ def install(session):
             v = _num(v)
             return v is not None and v <= t and (w is None or v > t - w)
 
+        if isinstance(field, str):            # showTime(1995, "year") as well as showTime(1995, year)
+            field = session.ns.get(field, field)
         if field is not None:
             if not isinstance(field, Field):
                 raise GuessError("showTime(t, field) needs a field, e.g. year")

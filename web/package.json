@@ -10,6 +10,7 @@
     "demo": "node demo/make-demo.mjs",
     "demo:script": "node demo/write-script.mjs",
     "help-shots": "node demo/gesture-shots.mjs",
+    "manual-shots": "node demo/manual-shots.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test"

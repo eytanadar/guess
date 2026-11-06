@@ -51,7 +51,7 @@ class Session:
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
-        from . import algorithms, analysis, charts, connectors, glyphs, groups, gui, layouts, persist, ranges, slides, states, styles, timeline, visuals, workspaces
+        from . import algorithms, analysis, charts, compat, connectors, glyphs, groups, gui, layouts, persist, ranges, slides, states, styles, timeline, visuals, workspaces
         gui.install(self)
         charts.install(self)
         persist.install(self)
@@ -68,6 +68,7 @@ class Session:
         connectors.install(self)
         timeline.install(self)
         slides.install(self)
+        compat.install(self)
         states.install(self)
         ranges.install(self)
         self.pending_morph = None
@@ -175,7 +176,11 @@ class Session:
             self._bind(name, node, kind="node")
 
     def on_node_removed(self, node):
-        self._unbind(node._name, node)
+        # as in the original, nodes removed with remove()/removeNode() keep their
+        # names (so removeNode(vx) … addNode(vx) works); undo, states and loading
+        # a graph drop the names of nodes that are gone
+        if not self.graph._keep_names:
+            self._unbind(node._name, node)
 
     def on_graph_cleared(self):
         view = getattr(self, "view", None)
@@ -550,7 +555,11 @@ class Session:
     def dispatch(self, target, name, value=None):
         """Run the Python handler for a front-end event (widget, timer, graph mouse)."""
         from .gui import call_flexibly
-        fn, args = self.gui.handler_for(target, name, value)
+        if name == "menuEvent":
+            from .compat import menu_handler
+            fn, args = menu_handler(self, target, value)
+        else:
+            fn, args = self.gui.handler_for(target, name, value)
         if fn is None:
             return False
         old_out, old_err = sys.stdout, sys.stderr

@@ -193,7 +193,7 @@ def test_add_and_remove(s):
     assert repr(ev(s, "zed<->bob")) == "zed-bob"
     s.rec.clear()
     s.run("remove(zed)")
-    assert "zed" not in s.ns
+    assert "zed" not in s.graph._nodes and s.ns["zed"]._name == "zed"   # name kept (manual §8)
     patch = s.rec.of("patch")[0]
     assert patch["removedNodes"] and patch["removedEdges"]
 

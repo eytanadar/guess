@@ -4,6 +4,7 @@ import type { DragContext, FromWorker, Info, LegendRec, ToWorker } from "./proto
 import { Renderer, type DragBehaviour, type DragFrame, type Hit } from "./renderer";
 import { Dock } from "./dock";
 import { ask } from "./dialog";
+import { toGIF, toPDF, toPS } from "./rasterexport";
 import { HelpPanel, type HelpIndex } from "./help";
 import { Palette, type PaletteItem } from "./palette";
 import { DataTable, type TableData } from "./table";
@@ -69,6 +70,7 @@ const renderer = new Renderer($("#graph"), {
   },
   click: (hit, shift) => onGraphClick(hit, shift),
   selected: (ids) => syncSelection(ids),
+  clickedAt: (x, y) => send({ type: "click", x, y }),
   dragBehaviour: (id, alt) => (tool === "select" ? dragBehaviour(id, alt) : null),
   dragHint: (text) => {
     status.textContent = text ?? "";
@@ -159,6 +161,9 @@ function onGraphClick(hit: Hit, shift: boolean) {
 // ---- Python-defined UI: panels, charts, timers, graph events ------------------------
 const graphEvents = new Set<string>();
 let defaultHighlight = true;
+let defaultEdgeHighlight = true;
+/** context-menu entries added from Python (NodeEditorPopup.addItem) */
+let customMenuItems: { id: string; label: string; scope: "n" | "e" | "ne" }[] = [];
 const timers = new Map<string, number>();
 const timerBusy = new Set<string>();
 
@@ -213,7 +218,12 @@ function onUi(m: Extract<FromWorker, { type: "ui" }>) {
       graphEvents.clear();
       m.enabled.forEach((e) => graphEvents.add(e));
       defaultHighlight = m.defaults.highlight;
+      defaultEdgeHighlight = m.defaults.edgeHighlight ?? true;
       renderer.zoomOnDoubleClick = m.defaults.zoom;
+      renderer.zoomEdgesOnDoubleClick = m.defaults.edgeZoom ?? true;
+      break;
+    case "menu":
+      customMenuItems = m.items;
       break;
     case "status": status.textContent = m.text; break;
     case "open": window.open(m.url, "_blank", "noopener"); break;
@@ -413,7 +423,7 @@ async function describeTip(kind: "n" | "e", ident: number, x: number, y: number)
   showTip(info.title, rows.map(([k, v]) => `${k}: ${v}`), x, y);
 }
 
-const HIDDEN_ROWS = new Set(["name", "image", "labelcolor", "strokecolor", "node1", "node2"]);
+const HIDDEN_ROWS = new Set(["name", "image", "labelcolor", "strokecolor", "node1", "node2", "source", "destination"]);
 
 let lastGraphHit = "";
 function onGraphHover(hit: Hit, x: number, y: number) {
@@ -433,7 +443,7 @@ function onGraphHover(hit: Hit, x: number, y: number) {
     return;
   }
   lastGraphHit = key;
-  if (defaultHighlight) highlightItems([[hit.kind, hit.id]]);
+  if (hit.kind === "n" ? defaultHighlight : defaultEdgeHighlight) highlightItems([[hit.kind, hit.id]]);
   else dock.highlight([[hit.kind, hit.id]]);
   const name = hit.kind === "n" ? renderer.nodes.get(hit.id)?.name : edgeName(hit.id);
   status.textContent = name ?? "";
@@ -555,6 +565,15 @@ function openMenu(items: Item[], x: number, y: number) {
   }
   act("Hide", runOn((t) => `${t}.visible = false`));
   act("Center on", runOn((t) => `center(${t})`));
+  // entries added from Python: NodeEditorPopup / EdgeEditorPopup / GraphElementPopup
+  const scope = nodes && edges ? "ne" : nodes ? "n" : "e";
+  const extra = customMenuItems.filter((i) => i.scope === scope);
+  if (extra.length) {
+    const sep = document.createElement("div");
+    sep.className = "menu-sep";
+    menu.append(sep);
+    for (const it of extra) act(it.label, () => uiEvent(it.id, "menuEvent", items));
+  }
   act("Assign to variable…", async () => {
     const name = await ask({ title: "Assign to a variable", note: `${items.length === 1 ? "This item" : `These ${items.length} items`} will be available in the console under this name.`, label: "Name", value: "foo", ok: "Assign" });
     if (!name) return;
@@ -628,6 +647,12 @@ document.addEventListener("drop", async (ev) => {
 // ---- legends ------------------------------------------------------------------------
 const hex = (c: number) => "#" + c.toString(16).padStart(6, "0");
 
+/** Numbers on a gradient legend: at most 4 significant digits (23104.45… → 23,100). */
+function legendNumber(v: number): string {
+  if (!Number.isFinite(v)) return String(v);
+  return Number(v.toPrecision(4)).toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
+
 function renderLegends(legends: LegendRec[]) {
   const host = $("#legends");
   host.replaceChildren();
@@ -642,9 +667,23 @@ function renderLegends(legends: LegendRec[]) {
       const ends = document.createElement("div");
       ends.className = "ramp-ends";
       ends.innerHTML = "<span></span><span></span>";
-      ends.children[0].textContent = String(lg.ramp.min);
-      ends.children[1].textContent = String(lg.ramp.max);
-      box.append(bar, ends);
+      ends.children[0].textContent = legendNumber(lg.ramp.min);
+      ends.children[1].textContent = legendNumber(lg.ramp.max);
+      box.append(bar);
+      // GradientLegend(…, min, max, tickEvery): tick marks along the ramp
+      const span = lg.ramp.max - lg.ramp.min;
+      if (lg.ramp.ticks && span > 0 && span / lg.ramp.ticks <= 50) {
+        const ticks = document.createElement("div");
+        ticks.className = "ramp-ticks";
+        const first = Math.ceil(lg.ramp.min / lg.ramp.ticks) * lg.ramp.ticks;
+        for (let v = first; v <= lg.ramp.max + 1e-9; v += lg.ramp.ticks) {
+          const t = document.createElement("span");
+          t.style.left = `${((v - lg.ramp.min) / span) * 100}%`;
+          ticks.append(t);
+        }
+        box.append(ticks);
+      }
+      box.append(ends);
     }
     for (const e of lg.entries) {
       const row = document.createElement("div");
@@ -806,11 +845,14 @@ $("#stop").addEventListener("click", () => {
 $("#png").addEventListener("click", () => exportView("png", "guess.png"));
 $("#svg").addEventListener("click", () => exportView("svg", "guess.svg"));
 
-async function exportView(format: "png" | "jpg" | "svg", name: string) {
+async function exportView(format: "png" | "jpg" | "svg" | "gif" | "pdf" | "ps" | "eps", name: string) {
   if (format === "svg") {
     download(name, new Blob([renderer.exportSVG()], { type: "image/svg+xml" }));
     return;
   }
+  if (format === "pdf") return download(name, await toPDF(await renderer.exportImage("jpg")));
+  if (format === "ps" || format === "eps") return download(name, await toPS(await renderer.exportImage("png"), format === "eps"));
+  if (format === "gif") return download(name, await toGIF(await renderer.exportImage("png")));
   const a = document.createElement("a");
   a.href = await renderer.exportImage(format);
   a.download = name;

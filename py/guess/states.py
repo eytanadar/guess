@@ -78,6 +78,12 @@ def install(session):
     session.morph_timing = timing
 
     def lookup(state):
+        if state == "_deleted":
+            # weight['_deleted'] > 5: values of removed elements (manual §8)
+            snap = Snapshot.__new__(Snapshot)
+            snap.nodes = {x: dict(x._vals) for x in g._deleted.values() if isinstance(x, Node)}
+            snap.edges = {x: dict(x._vals) for x in g._deleted.values() if not isinstance(x, Node)}
+            return snap
         snap = states.get(state)
         if snap is None:
             raise GuessError(f"no saved state {state!r} (saved: {', '.join(map(repr, states)) or 'none'})")

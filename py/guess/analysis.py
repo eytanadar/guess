@@ -211,6 +211,51 @@ def _components(graph, strong=False):
     return {n: i for i, c in enumerate(comps) for n in c}, INT
 
 
+def _degrank(graph):
+    """Degree rank (JUNG DegreeDistributionRanker): each node's share of all
+    edge ends, so the values sum to 1."""
+    deg = {n: len(n._inc) for n in graph._nodes_list()}
+    total = sum(deg.values()) or 1
+    return {n: d / total for n, d in deg.items()}
+
+
+def _rwbetweenness(graph):
+    """Random-walk (current-flow) betweenness, Newman 2005: the expected number
+    of times a random walk between two nodes passes through each node, averaged
+    over pairs, per connected component (direction and weights ignored)."""
+    snap = _csr(graph)
+    out = {n: 0.0 for n in snap.nodes}
+    pairs = snap.pairs
+    for comp in snap.components:
+        k = len(comp)
+        if k < 3:
+            continue
+        if k > 3000:
+            raise GuessError("rwbetweenness inverts an n x n matrix; this component has more than 3000 nodes")
+        pos = {v: i for i, v in enumerate(comp)}
+        inside = [(pos[a], pos[b]) for a, b in pairs.tolist() if a in pos and b in pos]
+        L = np.zeros((k, k))
+        for a, b in inside:
+            L[a, b] -= 1
+            L[b, a] -= 1
+            L[a, a] += 1
+            L[b, b] += 1
+        V = np.zeros((k, k))
+        V[:-1, :-1] = np.linalg.inv(L[:-1, :-1])     # potentials; the last node is ground
+        contrib = np.zeros(k)
+        for a, b in inside:
+            d = V[a] - V[b]                           # current on edge (a, b) for pair (s, t) = |d_s - d_t|
+            srt = np.sort(d)
+            total = float((srt * (2 * np.arange(k) - (k - 1))).sum())   # sum over all pairs s < t
+            for i in (a, b):
+                # pairs where i is an endpoint count separately (as 1)
+                contrib[i] += 0.5 * (total - float(np.abs(d[i] - d).sum()))
+        b = (contrib + (k - 1)) / (k * (k - 1) / 2)
+        for v, i in pos.items():
+            out[snap.nodes[v]] = float(b[i])
+    return out
+
+
 LAZY = {
     "pagerank": _pagerank,
     "hub": lambda g: _hits(g)[0],
@@ -226,6 +271,10 @@ LAZY = {
     "component": _components,
     "strongcomponent": lambda g: _components(g, strong=True),
     "betweenness": _betweenness_nodes,
+    # the 2006 manual's names
+    "degrank": _degrank,
+    "hits": lambda g: _hits(g)[1],             # JUNG's HITS ranker: authority scores
+    "rwbetweenness": _rwbetweenness,
 }
 
 

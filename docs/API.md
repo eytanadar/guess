@@ -9,12 +9,12 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (50)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (57)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
 - [Layouts](#layouts) (33)
-- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (22)
+- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (30)
 - [Styles and visual mappings](#styles-and-visual-mappings) (8)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
@@ -53,7 +53,8 @@ Create an edge field, e.g. addEdgeField("kind", VARCHAR, "").
 
 ### `addNode(name, **attrs)`
 
-Add a node (or return the existing one with that name).
+Add a node (or return the existing one with that name). addNode(vx)
+with a removed node puts it back, with its field values.
 
 ### `addNodeField(fieldName, sqlType='VARCHAR', defaultValue=None)`
 
@@ -66,6 +67,10 @@ Add an undirected edge between two nodes (by node or name).
 ### `averageEdgeColor(edges=None)`
 
 Color edges the average of their endpoint colors (all edges by default).
+
+### `biComponentCluster()`
+
+Same as biComponentClusters() (the manual's spelling).
 
 ### `center(*d)`
 
@@ -130,9 +135,21 @@ Write the graph as GEXF 1.3 for Gephi (offered as a download).
 
 Write the graph as GraphML (offered as a download in the browser).
 
+### `findEdges(seq)`
+
+The edges among the members of a (possibly mixed) set.
+
+### `findNodes(seq)`
+
+The nodes among the members of a (possibly mixed) set.
+
 ### `floatRange(a, b, inc)`
 
 Like range() but for floats.
+
+### `getAppletContext()`
+
+For old applet scripts: .showDocument(url) opens a browser window.
 
 ### `getEdgeSchema()`
 
@@ -159,6 +176,10 @@ command's documentation and shows it in the browser.
 ### `hideDisconnected()`
 
 Hide nodes with no edges other than self loops.
+
+### `infowindow()`
+
+Open the data table (the Jython version's information window).
 
 ### `makeFromCSV(filename, nodes=None, directed=False)`
 
@@ -199,9 +220,15 @@ Replace the current graph with a Pajek .net file (nodes are named pajek<id>).
 
 All nodes not in seq.
 
+### `readjustEdges()`
+
+Kept for old scripts: parallel edges are always drawn as separate curves.
+
 ### `remove(seq)`
 
 Remove nodes and/or edges (a node takes its edges). Undo with add(...).
+As in the original, a removed node's name still refers to it, so
+add(name) or addNode(name) puts it back.
 
 ### `removeComplete(seq)`
 
@@ -222,6 +249,7 @@ Repeatedly remove nodes of total degree <= 1. Returns what was removed.
 ### `removeNode(n)`
 
 Remove one node and its edges (undo with add(g.deleted) or undo()).
+Its name still refers to it, so addNode(n) puts it back.
 
 ### `removeSelfLoops()`
 
@@ -234,6 +262,10 @@ Size nodes (or edge widths) by rank of field value, from start to end.
 ### `resizeRandom(field, start, end)`
 
 Give each distinct value of field a random size (or edge width) between start and end.
+
+### `setSynchronous(state=True)`
+
+Kept for old scripts: layouts always run in order (animated, interruptible).
 
 ### `shortcutNodes()`
 
@@ -656,17 +688,49 @@ direction reads without arrows. curvedEdges(false) goes back to straight
 lines; curvedEdges(k) sets the curvature: the arc radius is edge length / k
 (default 1.2, as in Gephi; 2 gives semicircles).
 
+### `exportCGM(filename=None)`
+
+Not available in the browser (the Java version wrote CGM); use exportSVG or exportPDF.
+
+### `exportEMF(filename=None)`
+
+Not available in the browser (the Java version wrote EMF); use exportSVG or exportPDF.
+
+### `exportEPS(filename='guess.eps')`
+
+Save the display as EPS (downloaded by the browser): an image of the current view inside the file. For vector output use exportSVG.
+
+### `exportGIF(filename='guess.gif')`
+
+Save the display as GIF (downloaded by the browser): an image of the current view inside the file. For vector output use exportSVG.
+
+### `exportJAVA(filename=None)`
+
+Not available in the browser (the Java version wrote JAVA); use exportSVG or exportPDF.
+
 ### `exportJPG(filename='guess.jpg')`
 
 Save the display as JPG (downloaded by the browser).
+
+### `exportPDF(filename='guess.pdf')`
+
+Save the display as PDF (downloaded by the browser): an image of the current view inside the file. For vector output use exportSVG.
 
 ### `exportPNG(filename='guess.png')`
 
 Save the display as PNG (downloaded by the browser).
 
+### `exportPS(filename='guess.ps')`
+
+Save the display as PS (downloaded by the browser): an image of the current view inside the file. For vector output use exportSVG.
+
 ### `exportSVG(filename='guess.svg')`
 
 Save the display as SVG (downloaded by the browser). Vector: the whole graph, not just the visible area.
+
+### `exportSWF(filename=None)`
+
+Not available in the browser (the Java version wrote SWF); use exportSVG or exportPDF.
 
 ### `getConvexHulls()`
 
@@ -676,9 +740,10 @@ All hulls currently shown.
 
 The display background color, or None when it follows the light/dark theme.
 
-### `GradientLegend(start, end, lo=0, hi=1)`
+### `GradientLegend(start, end, lo=0, hi=1, ticks=None)`
 
-A color ramp legend: GradientLegend(startColor, endColor, min, max).
+A color ramp legend: GradientLegend(startColor, endColor, min, max[, tickEvery])
+shows the ramp from min to max, with a tick mark every tickEvery units.
 
 ### `hideOverlappingLabels(on=True)`
 
@@ -1584,6 +1649,8 @@ Built-in edge fields:
 | `node1` | VARCHAR | None (read-only) |
 | `node2` | VARCHAR | None (read-only) |
 | `directed` | BOOLEAN | False (read-only) |
+| `source` | VARCHAR | None (read-only) |
+| `destination` | VARCHAR | None (read-only) |
 | `color` | VARCHAR | 'dandelion' |
 | `labelcolor` | VARCHAR | None |
 | `visible` | BOOLEAN | True |
@@ -1593,7 +1660,7 @@ Built-in edge fields:
 | `labelvisible` | BOOLEAN | False |
 
 Computed node fields (calculated the first time they are used, by name or
-as `n.<field>`; `recompute()` after editing the graph): `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`, `harmonic`, `eccentricity`, `clustering`, `triangles`, `coreness`, `strength`, `component`, `strongcomponent`, `betweenness`; edge field `betweenness`.
+as `n.<field>`; `recompute()` after editing the graph): `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`, `harmonic`, `eccentricity`, `clustering`, `triangles`, `coreness`, `strength`, `component`, `strongcomponent`, `betweenness`, `degrank`, `hits`, `rwbetweenness`; edge field `betweenness`.
 
 ## Gython syntax
 

@@ -266,7 +266,10 @@ class Field:
         j = self.graph.journal
         if j is not None:
             j.note(elem, self.name)
+        was = elem._vals.get(self.name, self.default) if self.name == "visible" else None
         elem._vals[self.name] = v
+        if self.name == "visible" and bool(v) != bool(was):
+            self.graph._visibility_cascade(elem, bool(v))
         if self.visual:
             if self.name in ("x", "y") and isinstance(elem, Node):
                 self.graph.moved_nodes.add(elem._id)
@@ -427,9 +430,19 @@ class FieldNamespace:
     def __setattr__(self, name, value):
         raise GuessError(f"{'Node' if self._kind == NODE else 'Edge'} fields are read-only here")
 
+    def setRangeField(self, field):
+        """Node.setRangeField(span): the text field that holds existence ranges
+        for `Node rcontains …` etc. (default: a field called range)."""
+        if not isinstance(field, Field) or field.kind != self._kind:
+            raise GuessError(f"setRangeField needs a {self._kind} field")
+        self._graph.range_fields[self._kind] = field.name
+
+    def rebuildRangeIndex(self):
+        """Kept for old scripts: ranges are read when queried, so nothing to rebuild."""
+
     def __dir__(self):
         schema = self._graph.node_schema if self._kind == NODE else self._graph.edge_schema
-        return list(schema)
+        return list(schema) + ["setRangeField", "rebuildRangeIndex"]
 
     def __repr__(self):
         return "Node" if self._kind == NODE else "Edge"
@@ -516,28 +529,87 @@ class Node:
     neighbors = getNeighbors
 
     def unweightedShortestPath(self, other):
-        """Length (in edges) of the shortest undirected path to ``other``, or None."""
+        """The edges of a shortest path (fewest edges) to ``other``, following edge
+        direction, as in the original: (v291.unweightedShortestPath(v376)).color = blue.
+        Empty if there is no path; len(...) is the distance."""
+        return self._shortest_path(other, weighted=False)
+
+    def dijkstraShortestPath(self, other):
+        """The edges of the shortest path to ``other`` using edge weights as lengths."""
+        return self._shortest_path(other, weighted=True)
+
+    def _shortest_path(self, other, weighted):
+        import heapq
+        if not isinstance(other, Node):
+            raise GuessError("needs a target node")
+        out = GSet(annotation=f"path {self._name} to {other._name}")
         if other is self:
-            return 0
-        frontier = [self]
-        seen = {id(self)}
-        depth = 0
-        while frontier:
-            depth += 1
-            nxt = []
-            for n in frontier:
-                for m in n.getNeighbors():
-                    if m is other:
-                        return depth
-                    if id(m) not in seen:
-                        seen.add(id(m))
-                        nxt.append(m)
-            frontier = nxt
-        return None
+            return out
+        def steps(n):
+            for e in n._inc.values():
+                if e._directed and e._n1 is not n:
+                    continue
+                m = e.opposite(n)
+                if m is not n:
+                    yield e, m
+        prev = {id(self): None}
+        if weighted:
+            dist = {id(self): 0.0}
+            heap = [(0.0, 0, self)]
+            k = 1
+            while heap:
+                d, _k, n = heapq.heappop(heap)
+                if n is other:
+                    break
+                if d > dist[id(n)]:
+                    continue
+                for e, m in steps(n):
+                    try:
+                        w = abs(float(e._vals.get("weight", 1.0)))
+                    except (TypeError, ValueError):
+                        w = 1.0
+                    nd = d + w
+                    if nd < dist.get(id(m), float("inf")):
+                        dist[id(m)] = nd
+                        prev[id(m)] = (n, e)
+                        heapq.heappush(heap, (nd, k, m))
+                        k += 1
+        else:
+            frontier = [self]
+            while frontier and id(other) not in prev:
+                nxt = []
+                for n in frontier:
+                    for e, m in steps(n):
+                        if id(m) not in prev:
+                            prev[id(m)] = (n, e)
+                            nxt.append(m)
+                frontier = nxt
+        if id(other) not in prev:
+            return out
+        path, n = [], other
+        while prev[id(n)] is not None:
+            n, e = prev[id(n)]
+            path.append(e)
+        out.extend(reversed(path))
+        return out
+
+    # graph elements are handles: copying one (e.g. networkx deep-copying a
+    # graph that carries them as attributes) must give back the same element
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
 
 
 class Edge:
     __slots__ = ("_g", "_id", "_n1", "_n2", "_directed", "_vals", "__weakref__")
+
+    def __copy__(self):          # a handle, like Node
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
 
     def __init__(self, graph, eid, n1, n2, directed):
         object.__setattr__(self, "_g", graph)
@@ -618,7 +690,6 @@ _EDGE_BUILTINS = [
 
 _UNSET = object()
 
-
 class Journal:
     """What one command changed, so it can be undone: structural operations in
     order, each touched field value's previous value (first change only), and
@@ -662,6 +733,9 @@ class Graph:
         self.ranges = {}          # element -> [(lo, hi)], filled in by ranges.install
         self.bends = {}           # edge -> [(x, y), ...] route through these points
         self.journal = None       # Journal recording changes while a command runs (undo)
+        self.range_fields = {NODE: "range", EDGE: "range"}   # text fields holding ranges
+        self._clearing = False
+        self._keep_names = False      # set while remove()/removeNode() run (names stay bound)
         self.reset_dirty()
         for name, t, d, vis in _NODE_BUILTINS:
             self.node_schema[name] = Field(self, name, NODE, t, d, visual=vis, builtin=True,
@@ -678,6 +752,11 @@ class Graph:
                                           compute=lambda e: e._n2, builtin=True)
         self.edge_schema["directed"] = Field(self, "directed", EDGE, BOOL, False, readonly=True,
                                              compute=lambda e: e._directed, builtin=True)
+        # the manual's (bob->alice).source / .destination (None for undirected edges)
+        self.edge_schema["source"] = Field(self, "source", EDGE, STRING, readonly=True,
+                                           compute=lambda e: e._n1 if e._directed else None, builtin=True)
+        self.edge_schema["destination"] = Field(self, "destination", EDGE, STRING, readonly=True,
+                                                compute=lambda e: e._n2 if e._directed else None, builtin=True)
         for name, t, d, vis in _EDGE_BUILTINS:
             self.edge_schema[name] = Field(self, name, EDGE, t, d, visual=vis, builtin=True)
 
@@ -900,13 +979,48 @@ class Graph:
         return restored
 
     def clear(self):
-        for n in list(self._nodes.values()):
-            self.removeNode(n)
+        self._clearing = True
+        try:
+            for n in list(self._nodes.values()):
+                self.removeNode(n)
+        finally:
+            self._clearing = False
         self._touch("deleted")
         self._touch("bends")
         self._deleted.clear()
         self.bends.clear()
         self._emit("on_graph_cleared")
+
+    def _visibility_cascade(self, elem, visible):
+        """The visibility rules of the manual (§5), one step deep:
+        hiding a node hides its edges; showing a node shows its edges to other
+        visible nodes; showing an edge shows its endpoints."""
+        def put(x, value):
+            if bool(x._vals.get("visible", True)) == value:
+                return
+            if self.journal is not None:
+                self.journal.note(x, "visible")
+            x._vals["visible"] = value
+            self._mark(x)
+        if isinstance(elem, Node):
+            for e in elem._inc.values():
+                other = e.opposite(elem)
+                if not visible:
+                    put(e, False)
+                elif other is elem or other._vals.get("visible", True):
+                    put(e, True)
+        elif visible:
+            put(elem._n1, True)
+            put(elem._n2, True)
+
+    def __getattr__(self, name):
+        # g.gemLayout(), g.colorize(…): every command is also a Graph method (compat.py)
+        if not name.startswith("_"):
+            look = self.__dict__.get("command_lookup")
+            fn = look(name) if look else None
+            if fn is not None:
+                return fn
+        raise AttributeError(f"'Graph' object has no attribute {name!r}")
 
     # undo ------------------------------------------------------------------
     def _touch(self, what):

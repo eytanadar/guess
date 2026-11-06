@@ -19,7 +19,7 @@ export interface TableHost {
 
 const ROW_H = 22;
 // fields hidden unless "all fields" is ticked (display plumbing)
-const VISUAL = new Set(["x", "y", "visible", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "image", "labelvisible", "node1", "node2"]);
+const VISUAL = new Set(["x", "y", "visible", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "image", "labelvisible", "node1", "node2", "source", "destination"]);
 
 export class DataTable {
   private kind: "n" | "e" = "n";

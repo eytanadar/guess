@@ -560,3 +560,7 @@ body.app .view-col { flex: 1 1 auto; }
 /* keep the help tabs and search in view while scrolling */
 .help .help-tabs { position: sticky; top: -8px; z-index: 3; background: var(--panel); padding: 8px 0 6px; margin: -8px 0 0; }
 .help .help-search { position: sticky; top: 30px; z-index: 3; box-shadow: 0 6px 6px -6px rgba(0, 0, 0, 0.15); }
+
+.ramp-ticks { position: relative; width: 160px; height: 5px; }
+.ramp-ticks span { position: absolute; top: 0; width: 1px; height: 5px; background: var(--muted); }
+.menu-sep { border-top: 1px solid var(--border); margin: 4px 0; }
