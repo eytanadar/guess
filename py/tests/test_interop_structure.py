@@ -148,3 +148,24 @@ def test_export_dot_round_trip(s, tmp_path):
     assert ev(t, "(n0 - n1).weight") == 1.5
     assert ev(t, "(n0.x, n0.y)") == pytest.approx(ev(s, "(n0.x, n0.y)"), abs=1e-3)
     assert ev(t, "n0.cluster") == ev(s, "n0.modularity_class")
+
+
+def test_loading_a_graph_drops_the_old_fields_and_undo_brings_them_back(s, tmp_path):
+    run(s, "makeSample('karate')\nlouvainClusters()\nprint(pagerank.max)")
+    old = list(s.graph.node_schema)
+    assert {"club", "modularity_class", "pagerank"} <= set(old)
+    run(s, "makeSample('florentine')")
+    extra = [k for k, f in s.graph.node_schema.items() if not f.builtin]
+    assert extra == ["pagerank"] and "club" not in s.ns and "modularity_class" not in s.ns
+    # a computed field in use is computed again for the new graph, not left stale
+    pr = nx.pagerank(nx.florentine_families_graph())
+    assert ev(s, "Medici.pagerank") == pytest.approx(pr["Medici"], rel=1e-3)
+    run(s, "graphStats()")
+    assert "modularity" not in " ".join(m.get("text", "") for m in s.rec.msgs)
+    run(s, "undo()")
+    assert list(s.graph.node_schema) == old and ev(s, "n0.club") == "Mr. Hi"
+    # tabs: a new graph starts with no fields of its own; switching back restores them
+    run(s, "newGraph('empty')")
+    assert [k for k, f in s.graph.node_schema.items() if not f.builtin] == []
+    run(s, "use('main')")
+    assert "club" in s.graph.node_schema

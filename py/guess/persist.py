@@ -137,6 +137,7 @@ def load(session, data):
         raise GuessError("session file is from a newer version of GUESS")
     g = session.graph
     g.clear()
+    g._dropped_lazy.clear()   # a saved graph brings its own fields
     g.states.clear()
     g.ranges.clear()
     view = session.view

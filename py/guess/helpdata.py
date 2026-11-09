@@ -95,7 +95,7 @@ EXAMPLES = [
         ("Brokers", "sortBy(constraint)[:5]", "structural holes burt effective size"),
         ("Homophily", "assortativity(dept)\nmixingMatrix(dept)", "assortativity mixing"),
         ("Compare partitions", "louvainClusters()\ncompareClusters(modularity_class, dept)", "nmi ari rand"),
-        ("Any networkx algorithm", "import networkx as nx\nsetField(nx.average_neighbor_degree(toNetworkX()), 'nbrdeg')", "networkx nx bridge"),
+        ("Any networkx algorithm", "import networkx as nx\nsetField(nx.community.greedy_modularity_communities(toNetworkX()), 'greedy')\ncolorize(greedy)", "networkx nx bridge communities"),
         ("Classic networks", "makeSample('karate')\ncolorize(club)", "zachary les miserables florentine sample"),
     ]),
     ("Filtering and selection", [

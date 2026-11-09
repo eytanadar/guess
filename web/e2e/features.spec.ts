@@ -564,3 +564,21 @@ test("open GML and DOT files; delete selected nodes (key, menu, right-click)", a
   await expect(page.locator(".cell").last()).toContainText("2");
   expect(errors).toEqual([]);
 });
+
+test("networkx bridge, samples and structure commands run in the browser", async ({ page }) => {
+  const errors = await boot(page);
+  await run(page, "makeSample('karate')\nprint(len(g.nodes), n0.club)");
+  await expect(page.locator(".cell").last()).toContainText("34 Mr. Hi");
+  await run(page, "import networkx as nx\nG = toNetworkX()\nsetField(nx.community.label_propagation_communities(G), 'lpa')\nprint(type(G).__name__, lpa.max >= 1)");
+  await expect(page.locator(".cell").last()).toContainText("Graph True");
+  await run(page, "print(len(bridges()), len(cutNodes()), len(spanningTree()), round(assortativity(club), 2) > 0.5)");
+  await expect(page.locator(".cell").last()).toContainText("1 1 33 True");
+  await run(page, "louvainClusters()\nprint(compareClusters(modularity_class, club) > 0.3, sortBy(constraint)[0].name)");
+  await expect(page.locator(".cell").last()).toContainText("True");
+  await run(page, "fromNetworkX(nx.florentine_families_graph(), 'florence')\nprint(graphNames()[0], len(g.nodes))");
+  await expect(page.locator(".cell").last()).toContainText("florence 15");
+  await run(page, "exportDOT('f.dot')\nmakeFromDOT('f.dot')\nprint(len(g.edges))");
+  await expect(page.locator(".cell").last()).toContainText("20");
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});

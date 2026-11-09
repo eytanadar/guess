@@ -586,7 +586,8 @@ fromNetworkX(G) replaces the graph with networkx graph G: its node and
 edge attributes become fields (types from the values), `pos` or x/y give
 positions (otherwise a spring layout), and direction is kept. String keys
 become node names; other keys become n0, n1, ... with the original in
-`nxkey`. fromNetworkX(G, "name") opens it in a new tab instead.
+`nxkey`. fromNetworkX(G, "name") opens it in a new tab instead and
+switches to it (use("main") goes back).
 
 ### `makeSample(name=None)`
 
@@ -603,7 +604,7 @@ node pairs (a, b) to values gives an edge field; a list of node sets (as
 community algorithms return) gives each node its set's index, largest
 first. The type is taken from the values. Returns the field.
     setField(nx.core_number(toNetworkX()), "core")
-    setField(nx.community.label_propagation_communities(toNetworkX()), "lpa")
+    setField(nx.community.greedy_modularity_communities(toNetworkX()), "greedy")
 
 ### `toNetworkX(directed=None, visibleOnly=False)`
 
@@ -1693,7 +1694,8 @@ compareClusters(modularity_class, dept)
 
 ```python
 import networkx as nx
-setField(nx.average_neighbor_degree(toNetworkX()), 'nbrdeg')
+setField(nx.community.greedy_modularity_communities(toNetworkX()), 'greedy')
+colorize(greedy)
 ```
 
 **Classic networks**

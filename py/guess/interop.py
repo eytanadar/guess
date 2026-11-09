@@ -234,7 +234,8 @@ def install(session):
         edge attributes become fields (types from the values), `pos` or x/y give
         positions (otherwise a spring layout), and direction is kept. String keys
         become node names; other keys become n0, n1, ... with the original in
-        `nxkey`. fromNetworkX(G, "name") opens it in a new tab instead."""
+        `nxkey`. fromNetworkX(G, "name") opens it in a new tab instead and
+        switches to it (use("main") goes back)."""
         if not hasattr(G, "nodes") or not hasattr(G, "is_directed"):
             raise GuessError("fromNetworkX needs a networkx graph")
         if name is not None:
@@ -251,7 +252,7 @@ def install(session):
         community algorithms return) gives each node its set's index, largest
         first. The type is taken from the values. Returns the field.
             setField(nx.core_number(toNetworkX()), "core")
-            setField(nx.community.label_propagation_communities(toNetworkX()), "lpa")"""
+            setField(nx.community.greedy_modularity_communities(toNetworkX()), "greedy")"""
         gr = g()
         name = str(name)
         if not name.isidentifier():

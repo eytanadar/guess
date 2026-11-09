@@ -704,6 +704,12 @@ class Session:
 
     def scene(self):
         g = self.graph
+        # a new graph was loaded: computed fields the old one was using are
+        # computed again, so code that names them (pagerank, ...) still works
+        dropped, g._dropped_lazy = g._dropped_lazy, set()
+        for kind, name in sorted(dropped):
+            if name not in (g.node_schema if kind == NODE else g.edge_schema):
+                g._lazy_field(kind, name)
         g.reset_dirty()
         self.emit({"type": "scene",
                    "nodes": [self.node_record(n) for n in g._nodes_list()],

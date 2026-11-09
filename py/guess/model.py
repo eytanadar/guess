@@ -729,6 +729,7 @@ class Graph:
         self.edge_schema = {}
         self.listeners = []       # objects with optional on_* methods
         self.lazy_fields = {}     # (kind, name) -> callable(graph) -> {elem: value}
+        self._dropped_lazy = set()   # computed fields in use when the graph was cleared
         self.states = {}          # filled in by states.install
         self.ranges = {}          # element -> [(lo, hi)], filled in by ranges.install
         self.bends = {}           # edge -> [(x, y), ...] route through these points
@@ -979,12 +980,26 @@ class Graph:
         return restored
 
     def clear(self):
+        """Empty the graph for a new one: every node and edge, and every field
+        that isn't built in, so nothing of the old graph lingers. Computed
+        fields that were in use (pagerank, ...) are computed again for the new
+        graph once it is loaded (Session.scene). Undo restores all of it."""
         self._clearing = True
         try:
             for n in list(self._nodes.values()):
                 self.removeNode(n)
         finally:
             self._clearing = False
+        for schema in (self.node_schema, self.edge_schema):
+            for name, f in reversed(list(schema.items())):     # so undo re-adds them in order
+                if f.builtin:
+                    continue
+                del schema[name]
+                if (f.kind, name) in self.lazy_fields:
+                    self._dropped_lazy.add((f.kind, name))   # recomputed for the new graph
+                if self.journal is not None:
+                    self.journal.ops.append(("unfield", schema, name, f))
+                self._emit("on_field_removed", f)
         self._touch("deleted")
         self._touch("bends")
         self._deleted.clear()

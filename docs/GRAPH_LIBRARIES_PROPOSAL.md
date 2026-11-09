@@ -22,6 +22,11 @@ closeness, harmonic, eccentricity and distance statistics.
 
 ## Tier 1: cheap, high value (hours each)
 
+**Status (2026-11-09): done.** Commands are in `py/guess/interop.py`,
+`py/guess/structure.py`, `py/guess/dot.py` (writer and reader fixes) and
+`graphStats`. The networkx bridge needs no extra packages; `compareClusters`
+is plain numpy, not igraph.
+
 | # | Feature | From | What you get |
 |---|---|---|---|
 | 1 | `toNetworkX()`, `fromNetworkX(G)`, `setField(dict, name)` | networkx | Every networkx algorithm is one console line away, e.g. `setField(nx.katz_centrality(toNetworkX()), 'katz')`. Fields, positions, direction and multi-edges carry across. |

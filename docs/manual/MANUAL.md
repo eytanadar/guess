@@ -850,13 +850,20 @@ edge dictionary, or a list of communities.
 import networkx as nx
 G = toNetworkX()
 setField(nx.average_neighbor_degree(G), "nbrdeg")
-setField(nx.community.label_propagation_communities(G), "lpa")
-colorize(lpa)
-fromNetworkX(nx.karate_club_graph(), "karate")   # a networkx graph in a new tab
+setField(nx.community.greedy_modularity_communities(G), "greedy")
+colorize(greedy)
 ```
 
-`fromNetworkX` turns attributes into fields and uses `pos` (or `x` and `y`)
-for positions, with a spring layout when there are none.
+`fromNetworkX` goes the other way. It turns attributes into fields and uses
+`pos` (or `x` and `y`) for positions, with a spring layout when there are
+none. Given a name, it opens the graph in a new tab and switches to it; the
+tabs above the graph switch back.
+
+```python
+fromNetworkX(nx.karate_club_graph(), "karate")
+colorize(club)
+use("main")                                # back to the first graph
+```
 
 \newpage
 
