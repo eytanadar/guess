@@ -8,7 +8,7 @@ from guess import Session
 from guess.compiler import ProtectedNameError, rewrite_tokens, to_python
 from guess.model import GSet
 
-SAMPLE = pathlib.Path(__file__).resolve().parents[2] / "guess-orig" / "sample.gdf"
+SAMPLE = pathlib.Path(__file__).resolve().parents[2] / "gdfs" / "sample.gdf"
 
 SMALL_GDF = """\
 nodedef> name,jobfunc VARCHAR(32),dept VARCHAR(32)

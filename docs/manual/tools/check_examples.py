@@ -13,7 +13,7 @@ ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "py"))
 from guess import Session  # noqa: E402
 
-SAMPLE = ROOT / "web" / "public" / "examples" / "sample.gdf"
+SAMPLE = ROOT / "gdfs" / "sample.gdf"
 if not SAMPLE.exists():
     SAMPLE = next(ROOT.glob("**/sample.gdf"))
 

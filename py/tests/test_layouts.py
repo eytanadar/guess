@@ -8,7 +8,7 @@ import pytest
 
 from guess import Session, layouts
 
-SAMPLE = pathlib.Path(__file__).resolve().parents[2] / "guess-orig" / "sample.gdf"
+SAMPLE = pathlib.Path(__file__).resolve().parents[2] / "gdfs" / "sample.gdf"
 
 # every command with arguments valid on sample.gdf (v1 exists there)
 SAMPLE_COMMANDS = [

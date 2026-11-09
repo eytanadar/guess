@@ -11,7 +11,7 @@ import { DataTable, type TableData } from "./table";
 import { TimelineBar, type TimelineInfo } from "./timeline";
 import { FilterPanel, StylePanel, VarsPanel, pyLit, type FieldInfo, type PanelHost, type Workspace } from "./panels";
 import * as store from "./store";
-import sampleGdf from "../../guess-orig/sample.gdf?raw";
+import sampleGdf from "../../gdfs/sample.gdf?raw";
 
 // The Python package, shipped into the worker's virtual filesystem.
 const pyFiles = import.meta.glob("../../py/guess/*.py", { query: "?raw", import: "default", eager: true }) as Record<string, string>;

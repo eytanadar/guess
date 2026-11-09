@@ -59,7 +59,8 @@ web/public/        coi-serviceworker.js, examples/
 web/deploy/        server config templates copied into bundles
 web/scripts/       bundle.mjs (npm run bundle)
 docs/              this documentation
-guess-orig/        the original Java/Jython GUESS (reference; sample.gdf)
+gdfs/              sample.gdf (the built-in sample graph) and other GDF files
+guess-orig/        the original Java/Jython GUESS (reference only; not in git)
 ```
 
 ## Common tasks

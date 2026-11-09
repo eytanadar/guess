@@ -71,7 +71,8 @@ from the current docs, in the voice of the CHI paper. See
 - `py/guess/` — the Python package that runs inside Pyodide (compiler, model,
   commands). Pure Python; tested under CPython 3.14 (Pyodide's version).
 - `web/` — Vite + TypeScript front end: PixiJS renderer, console, worker.
-- `guess-orig/` — the original Java/Jython GUESS distribution (reference).
+- `gdfs/` — `sample.gdf` (the built-in sample graph) and other GDF files.
+- `guess-orig/` — the original Java/Jython GUESS distribution (reference only; not in git, not needed to build).
 
 ## Gython at a glance
 

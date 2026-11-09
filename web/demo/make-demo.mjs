@@ -78,7 +78,11 @@ async function narrate(written) {
 
 // ---- 2. the app ----------------------------------------------------------------------
 async function startServer() {
-  const proc = spawn("npx", ["vite", "--port", String(PORT), "--strictPort"], { cwd: web, stdio: "ignore" });
+  // own process group, so the whole server (npx and vite) goes when we exit, even on an error
+  const proc = spawn("npx", ["vite", "--port", String(PORT), "--strictPort"], { cwd: web, stdio: "ignore", detached: true });
+  const stop = () => { try { process.kill(-proc.pid); } catch { /* already gone */ } };
+  process.on("exit", stop);
+  for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => process.exit(130));
   for (let i = 0; i < 120; i++) {
     try {
       if ((await fetch(`http://localhost:${PORT}/`)).ok) return proc;
