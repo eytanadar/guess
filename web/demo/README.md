@@ -40,7 +40,7 @@ npm run demo -- --captions  #    rewrite only the .srt captions for the last rec
   update web/demo/script.json", then run steps 2–3.
 - **Voice:** set `"voice"` in `script.json`, or pass `--voice <id>` or set
   `ELEVENLABS_VOICE`. The current voice is Chris (American, `iP95p4xoKVk53GoZ742B`).
-- **Pronunciation:** `"pronounce": { "Gython": "Guy-thon" }` in `script.json`
+- **Pronunciation:** `"pronounce": { "Gython": "Guython" }` in `script.json`
   changes how a word is spoken; captions keep the written word.
 - **Length:** the run stops if the narration is over 5 minutes
   (`--max-seconds 300`; `--force` to override). The finished length is
