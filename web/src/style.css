@@ -243,12 +243,23 @@ body { display: flex; flex-direction: column; }
   background: var(--legend-bg); border: 1px solid var(--border); border-radius: 6px;
   padding: 6px 9px; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
+.legend { position: relative; }
+.legend-close {
+  position: absolute; top: 1px; right: 2px; pointer-events: auto;
+  border: 0; background: none; color: var(--muted); font-size: 14px; line-height: 1;
+  padding: 2px 4px; cursor: pointer; border-radius: 4px; opacity: 0.55;
+}
+.legend:hover .legend-close { opacity: 1; }
+.legend-close:hover { color: var(--text); background: rgba(127, 127, 127, 0.18); }
+.legend:has(.legend-close) { padding-right: 22px; }
 .legend-row { display: flex; align-items: center; gap: 7px; line-height: 1.6; }
 .sw { flex: none; display: inline-block; width: 12px; height: 12px; background: var(--c); border: 1px solid rgba(0, 0, 0, 0.35); }
 .sw.round { border-radius: 50%; }
 .sw-e { width: 18px; height: var(--w); border: 0; border-radius: 2px; }
 .sw-h { width: 16px; height: 12px; border-radius: 4px; }
 .sw-x { visibility: hidden; }
+.legend-row.live { pointer-events: auto; cursor: default; border-radius: 4px; margin: 0 -4px; padding: 0 4px; }
+.legend-row.live:hover { background: var(--hover, rgba(127, 127, 127, 0.15)); }
 .legend-row:has(.sw-x) { color: var(--muted); font-style: italic; }
 .ramp { width: 160px; height: 10px; border-radius: 2px; border: 1px solid rgba(0, 0, 0, 0.2); }
 .ramp-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }

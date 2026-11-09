@@ -56,32 +56,39 @@ def install(session):
     def legendFor(field, title=None):
         """legendFor(field) adds a legend explaining the current colours by field:
         one entry per value (for categories, as after colorize), or a gradient
-        from the lowest to the highest value (for numbers, as after colorBy)."""
+        from the lowest to the highest value (for numbers, as after colorBy).
+        The legend follows the colours: run colorize or colorBy again and it
+        updates (until you add or remove entries yourself)."""
         f = field_arg(field, "legendFor")
-        from .visuals import GradientLegend, Legend
-        elems = f.elements()
-        vals = [(x, f.get(x)) for x in elems if f.get(x) is not None]
-        if not vals:
+        from .visuals import Legend
+        if not [x for x in f.elements() if f.get(x) is not None]:
             raise GuessError(f"field '{f.name}' has no values")
-        numeric = all(isinstance(v, (int, float)) and not isinstance(v, bool) for _x, v in vals)
-        groups = group_by(elems, f)
-        if numeric and len(groups) > 12 and _looks_like_gradient(groups, f):
-            lo = min(vals, key=lambda p: p[1])
-            hi = max(vals, key=lambda p: p[1])
-            lg = GradientLegend(view, view.next_id(), lo[0].color, hi[0].color, _num(lo[1]), _num(hi[1]))
-        else:
-            # categories (e.g. after colorize): one entry per value, the biggest first
-            lg = Legend(view, view.next_id())
-            groups = sorted(groups, key=len, reverse=True)
-            shown = groups if len(groups) <= 16 else groups[:12]
-            for grp in shown:
-                lg.add(grp[0], f"{title + ': ' if title else ''}{f.get(grp[0])}")
-            if len(shown) < len(groups):
-                rest = groups[len(shown):]
-                lg.note(f"… {len(rest)} more ({sum(map(len, rest))} {'nodes' if f.kind == NODE else 'edges'})")
+        # one live legend per field: asking again replaces the earlier one
+        for prev in [x for x in view.legends.values() if x._auto and x._auto["field"] == f.name and x._auto["kind"] == f.kind]:
+            view.legends.pop(prev._id, None)
+        lg = Legend(view, view.next_id())
+        lg._auto = {"field": f.name, "kind": f.kind, "title": title}
+        fill_legend(lg, f, title)
         view.legends[lg._id] = lg
         view.changed()
         return lg
+
+    @cmd
+    def removeLegend(legend):
+        """removeLegend(lg) or removeLegend(2) removes one legend (the number is the
+        one shown as <legend 2: …>; the × on a legend runs this)."""
+        lid = getattr(legend, "_id", legend)
+        if lid not in view.legends:
+            raise GuessError(f"no legend {lid} (legends: {', '.join(map(str, view.legends)) or 'none'})")
+        view.legends.pop(lid)
+        view.changed()
+
+    @cmd
+    def removeLegends():
+        """removeLegends() removes every legend."""
+        if view.legends:
+            view.legends.clear()
+            view.changed()
 
     # ---- named styles ----------------------------------------------------------
     @cmd
@@ -142,6 +149,43 @@ def install(session):
 
 def _is_all(seq, g, kind):
     return isinstance(seq, GSet) and getattr(seq, "annotation", None) == ("g.nodes" if kind == NODE else "g.edges")
+
+
+def fill_legend(lg, f, title=None):
+    """(Re)build a legend's entries from the current colours of field f: a ramp
+    when the colours follow the values smoothly, otherwise one entry per value
+    (the 12 largest and "… N more" when there are many)."""
+    elems = f.elements()
+    vals = [(x, f.get(x)) for x in elems if f.get(x) is not None]
+    lg._entries, lg._ramp = [], None
+    if not vals:
+        return
+    numeric = all(isinstance(v, (int, float)) and not isinstance(v, bool) for _x, v in vals)
+    groups = [grp for grp in group_by(elems, f) if f.get(grp[0]) is not None]
+    if numeric and len(groups) > 12 and _looks_like_gradient(groups, f):
+        lo = min(vals, key=lambda p: p[1])
+        hi = max(vals, key=lambda p: p[1])
+        lg._ramp = {"from": colors.to_rgba_int(lo[0].color)[0], "to": colors.to_rgba_int(hi[0].color)[0],
+                    "min": _num(lo[1]), "max": _num(hi[1])}
+        return
+    groups = sorted(groups, key=len, reverse=True)
+    shown = groups if len(groups) <= 16 else groups[:12]
+    # the name that reaches this field in Gython (an edge field hidden by a node field: Edge.x)
+    name = f.name if f.kind == NODE or f.name not in _node_schema(f) else f"Edge.{f.name}"
+    ik = "n" if f.kind == NODE else "e"
+    for grp in shown:
+        v = f.get(grp[0])
+        lg._add(grp[0], f"{title + ': ' if title else ''}{v}", notify=False)
+        # live rows: hover highlights these elements, right-click acts on the expression
+        lg._entries[-1].update(ids=[x._id for x in grp], ik=ik, q=f"{name} == {v!r}")
+    if len(shown) < len(groups):
+        rest = groups[len(shown):]
+        lg._note(f"… {len(rest)} more ({sum(map(len, rest))} {'nodes' if f.kind == NODE else 'edges'})", notify=False)
+        lg._entries[-1].update(ids=[x._id for grp in rest for x in grp], ik=ik)
+
+
+def _node_schema(f):
+    return f.graph.node_schema if getattr(f, "graph", None) is not None else {}
 
 
 def _looks_like_gradient(groups, f):

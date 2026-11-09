@@ -514,13 +514,50 @@ def test_legend_for_tells_categories_from_gradients():
     run(s, "louvainClusters()\ncolorize(modularity_class)\nlg = legendFor(modularity_class)")
     lg = s.ns["lg"]
     groups = len({n.modularity_class for n in s.graph.nodes})
-    assert groups > 16 and not hasattr(lg, "_ramp")
+    assert groups > 16 and lg._ramp is None
     rows = lg.record()["entries"]
     assert len(rows) == 13 and rows[-1]["k"] == "x" and rows[-1]["t"].startswith(f"… {groups - 12} more")
     assert len({r["c"] for r in rows[:-1]}) == 12            # each community its own colour
     for scale, middle in (("linear", None), ("log", None), ("rank", "white")):
         extra = ", middle=white" if middle else ""
         run(s, f"colorBy(totaldegree, yellow, red, '{scale}'{extra})\nlg = legendFor(totaldegree)")
-        assert hasattr(s.ns["lg"], "_ramp"), scale
+        assert s.ns["lg"]._ramp, scale
     run(s, "colorize(totaldegree)\nlg = legendFor(totaldegree)")
-    assert not hasattr(s.ns["lg"], "_ramp")
+    assert s.ns["lg"]._ramp is None
+
+
+def test_legend_for_follows_the_colours():
+    """A legendFor legend rebuilds when the colours change (colorize again,
+    colorBy, undo, save/load), and stops once edited by hand."""
+    s = make_session()
+    run(s, f"makeFromGDF({str(SAMPLE)!r})")
+    run(s, "colorize(dept)\nlg = legendFor(dept)")
+    lg = s.ns["lg"]
+    first = [e["c"] for e in lg.record()["entries"]]
+    run(s, "colorize(dept, yellow, blue)")                       # same legend object, new colours
+    second = [e["c"] for e in lg.record()["entries"]]
+    assert second != first and s.view.legends[lg._id] is lg
+    from guess.colors import to_rgba_int
+    swatches = [e["c"] for e in lg.record()["entries"] if e["k"] != "x"]
+    assert set(swatches) <= {to_rgba_int(n.color)[0] for n in s.graph.nodes}
+    run(s, "undo()")
+    assert [e["c"] for e in lg.record()["entries"]] == first
+    run(s, "colorBy(totaldegree, white, red)\nl2 = legendFor(totaldegree)")
+    assert s.ns["l2"]._ramp and s.ns["l2"]._ramp["to"] == 0xFF0000
+    run(s, "colorize(totaldegree)")                               # ramp → categories
+    assert s.ns["l2"]._ramp is None and s.ns["l2"].record()["entries"]
+    run(s, "lg.add(red, 'mine')\ncolorize(dept)")                # edited: frozen
+    assert lg._auto is None and lg.record()["entries"][-1]["t"] == "mine"
+
+
+def test_legend_for_still_follows_after_save_and_load(tmp_path):
+    s = make_session()
+    run(s, f"makeFromGDF({str(SAMPLE)!r})")
+    path = tmp_path / "w.guess"
+    run(s, f"colorize(dept)\nlegendFor(dept)\nsaveSession({str(path)!r})")
+    t = make_session()
+    run(t, f"makeFromSession({str(path)!r})")
+    (lg,) = t.view.legends.values()
+    before = [e["c"] for e in lg.record()["entries"]]
+    run(t, "colorize(dept, yellow, blue)")
+    assert lg._auto and [e["c"] for e in lg.record()["entries"]] != before

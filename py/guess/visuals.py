@@ -10,7 +10,7 @@ import mimetypes
 import os
 
 from . import colors
-from .model import Edge, GSet, GuessError, Node, elements_of
+from .model import NODE, Edge, GSet, GuessError, Node, elements_of
 
 DEFAULT_CURVATURE = 1.2    # Gephi's default arc curviness (radius = length / curvature)
 
@@ -56,8 +56,16 @@ class Legend:
         self._view = view
         self._id = lid
         self._entries = []
+        self._ramp = None       # a colour ramp (GradientLegend, or legendFor on a gradient)
+        self._auto = None       # legendFor: {"field", "kind", "title"}; rebuilt when colours change
 
     def add(self, obj, annotation):
+        """add(node, edge, hull or colour, text) adds an entry. A legend made by
+        legendFor stops following the colours once you change it yourself."""
+        self._auto = None
+        self._add(obj, annotation)
+
+    def _add(self, obj, annotation, notify=True):
         if isinstance(obj, (list, tuple, GSet)) and len(obj) == 1:   # e.g. lg.add(v1 - v2, "…")
             obj = obj[0]
         if isinstance(obj, Node):
@@ -75,30 +83,60 @@ class Legend:
         else:
             raise GuessError("Legend.add needs a node, edge, convex hull or color")
         self._entries = [e for e in self._entries if e["t"] != entry["t"]] + [entry]
-        self._view.changed()
+        if notify:
+            self._view.changed()
 
     def note(self, text):
         """A line of text with no swatch, e.g. "… 32 more"."""
+        self._auto = None
+        self._note(text)
+
+    def _note(self, text, notify=True):
         self._entries = [e for e in self._entries if e["t"] != str(text)] + [{"k": "x", "c": 0, "a": 0, "t": str(text)}]
-        self._view.changed()
+        if notify:
+            self._view.changed()
 
     def remove(self, annotation=None):
         """remove(text) drops one entry; remove() deletes the whole legend."""
         if annotation is None:
             self._view.legends.pop(self._id, None)
         else:
+            self._auto = None
             self._entries = [e for e in self._entries if e["t"] != str(annotation)]
         self._view.changed()
 
     def removeAll(self):
+        self._auto = None
         self._entries = []
         self._view.changed()
 
     def __repr__(self):
+        if self._ramp:
+            return f"<gradient legend {self._id}: {self._ramp['min']} to {self._ramp['max']}>"
         return f"<legend {self._id}: {len(self._entries)} entries>"
 
     def record(self):
-        return {"i": self._id, "entries": self._entries}
+        r = {"i": self._id, "entries": self._entries}
+        if self._ramp:
+            r["ramp"] = self._ramp
+        if self._auto:
+            r["auto"] = self._auto
+        return r
+
+    def refresh(self):
+        """legendFor legends: rebuild from the field's current colours. True if
+        anything changed."""
+        if not self._auto:
+            return False
+        g = self._view.session.graph
+        schema = g.node_schema if self._auto["kind"] == NODE else g.edge_schema
+        f = schema.get(self._auto["field"])
+        if f is None:
+            return False
+        from .styles import fill_legend
+        before = (self._entries, self._ramp)
+        fill_legend(self, f, self._auto.get("title"))
+        return (self._entries, self._ramp) != before
 
 
 class GradientLegend(Legend):
@@ -112,13 +150,6 @@ class GradientLegend(Legend):
         if ticks:
             self._ramp["ticks"] = float(ticks)
 
-    def __repr__(self):
-        return f"<gradient legend {self._id}: {self._ramp['min']} to {self._ramp['max']}>"
-
-    def record(self):
-        r = super().record()
-        r["ramp"] = self._ramp
-        return r
 
 
 class View:
@@ -164,13 +195,19 @@ class View:
         if had:
             self.changed()
 
+    def refresh_legends(self):
+        """Bring legendFor legends up to date with the colours (after each command)."""
+        if any(lg._auto for lg in self.legends.values()):
+            if [lg.refresh() for lg in list(self.legends.values())].count(True):
+                self.changed()
+
     def _drag_record(self):
         return dict(self.drag)
 
     def capture(self):
         """Everything undo needs to put the view back as it is now."""
         return {"hulls": [(h, h._color, list(h._nodes)) for h in self.hulls.values()],
-                "legends": [(lg, list(lg._entries)) for lg in self.legends.values()],
+                "legends": [(lg, list(lg._entries), lg._ramp, lg._auto) for lg in self.legends.values()],
                 "background": self.background, "image": self.image, "arrow": dict(self.arrow),
                 "curvature": self.curvature, "edge_color": self.edge_color, "labels": dict(self.labels),
                 "styles": {k: list(v) for k, v in self.styles.items()},
@@ -185,8 +222,8 @@ class View:
             h._nodes[:] = nodes
             self.hulls[h._id] = h
         self.legends = {}
-        for lg, entries in snap["legends"]:
-            lg._entries = list(entries)
+        for lg, entries, ramp, auto in snap["legends"]:
+            lg._entries, lg._ramp, lg._auto = list(entries), ramp, auto
             self.legends[lg._id] = lg
         self.background, self.image = snap["background"], snap["image"]
         self.arrow, self.curvature = dict(snap["arrow"]), snap["curvature"]

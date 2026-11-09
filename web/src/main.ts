@@ -1,6 +1,6 @@
 import "./style.css";
 import { Console, groupTip, type Item } from "./console";
-import type { DragContext, FromWorker, Info, LegendRec, ToWorker } from "./protocol";
+import type { DragContext, FromWorker, Info, LegendEntry, LegendRec, ToWorker } from "./protocol";
 import { Renderer, type DragBehaviour, type DragFrame, type Hit } from "./renderer";
 import { Dock } from "./dock";
 import { ask } from "./dialog";
@@ -506,7 +506,10 @@ function onConsoleHover(items: Item[] | null, el: HTMLElement | null, ev: MouseE
 // ---- context menu -------------------------------------------------------------------
 const SWATCHES = ["red", "orange", "yellow", "green", "blue", "purple", "gray", "black", "cornflowerblue", "dandelion"];
 
+let menuExpr: string | null = null;   // the open menu acts on this expression (legend rows), not on ids
+
 async function targetExpr(items: Item[]): Promise<string> {
+  if (menuExpr) return menuExpr;
   const selIds = renderer.selection;
   if (items.length > 1 && items.length === selIds.size && items.every((i) => i[0] === "n" && selIds.has(i[1]))) return "sel";
   if (items.length === 1 && items[0][0] === "n") {
@@ -517,17 +520,20 @@ async function targetExpr(items: Item[]): Promise<string> {
   return "_sel";
 }
 
-function openMenu(items: Item[], x: number, y: number) {
+function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; title?: string } = {}) {
   if (!items.length) return;
   hideTip();
+  menuExpr = opts.expr ?? null;
   const nodes = items.filter((i) => i[0] === "n").length;
   const edges = items.length - nodes;
   menu.replaceChildren();
   const head = document.createElement("div");
   head.className = "menu-head";
-  head.textContent = items.length === 1
+  const count = [nodes && `${nodes} node${nodes === 1 ? "" : "s"}`, edges && `${edges} edge${edges === 1 ? "" : "s"}`].filter(Boolean).join(", ");
+  head.textContent = opts.title ? `${opts.title} (${count})`
+    : items.length === 1
     ? (nodes ? renderer.nodes.get(items[0][1])?.name ?? "" : edgeName(items[0][1]))
-    : [nodes && `${nodes} nodes`, edges && `${edges} edges`].filter(Boolean).join(", ");
+    : count;
   menu.append(head);
 
   const act = (label: string, fn: () => unknown) => {
@@ -660,6 +666,16 @@ function legendNumber(v: number): string {
   return Number(v.toPrecision(4)).toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
+/** What a legend row stands for: legendFor rows carry ids; rows added by hand
+ *  match the visible elements drawn in their colour; "… N more" the rest. */
+function legendItems(e: LegendEntry, lg: LegendRec): Item[] {
+  if (e.ids) return e.ids.filter((i) => (e.ik === "e" ? renderer.edges : renderer.nodes).has(i)).map((i) => [e.ik ?? "n", i] as Item);
+  if (e.k === "n") return [...renderer.nodes.values()].filter((n) => n.v && n.c === e.c).map((n) => ["n", n.i] as Item);
+  if (e.k === "e") return [...renderer.edges.values()].filter((x) => x.v && x.c === e.c).map((x) => ["e", x.i] as Item);
+  void lg;
+  return [];
+}
+
 function renderLegends(legends: LegendRec[]) {
   const host = $("#legends");
   host.replaceChildren();
@@ -667,6 +683,13 @@ function renderLegends(legends: LegendRec[]) {
     if (!lg.entries.length && !lg.ramp) continue;
     const box = document.createElement("div");
     box.className = "legend";
+    const close = document.createElement("button");
+    close.className = "legend-close";
+    close.textContent = "×";
+    close.title = `Remove this legend (removeLegend(${lg.i}))`;
+    close.setAttribute("aria-label", "Remove legend");
+    close.addEventListener("click", () => void term.submit(`removeLegend(${lg.i})`));
+    box.append(close);
     if (lg.ramp) {
       const bar = document.createElement("div");
       bar.className = "ramp";
@@ -703,6 +726,19 @@ function renderLegends(legends: LegendRec[]) {
       const t = document.createElement("span");
       t.textContent = e.t;
       row.append(sw, t);
+      // live rows: hover highlights what the row stands for; right-click acts on it
+      const items = legendItems(e, lg);
+      if (items.length) {
+        row.classList.add("live");
+        row.title = `${items.length} ${items[0][0] === "n" ? "node" : "edge"}${items.length === 1 ? "" : "s"} · right-click for actions`;
+        row.addEventListener("mouseenter", () => highlightItems(legendItems(e, lg)));
+        row.addEventListener("mouseleave", () => highlightItems(null));
+        row.addEventListener("contextmenu", (ev) => {
+          ev.preventDefault();
+          highlightItems(null);
+          openMenu(legendItems(e, lg), ev.clientX, ev.clientY, e.q ? { expr: `(${e.q})`, title: e.t } : { title: e.t });
+        });
+      }
       box.append(row);
     }
     host.append(box);
@@ -1195,7 +1231,9 @@ async function exportNotebook() {
 async function exportReport() {
   const png = await renderer.exportImage("png");
   const esc = (t: string) => t.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[ch]!);
-  const legends = $("#legends").innerHTML;
+  const legendCopy = $("#legends").cloneNode(true) as HTMLElement;
+  for (const b of legendCopy.querySelectorAll(".legend-close")) b.remove();   // no buttons in the report
+  const legends = legendCopy.innerHTML;
   const css = getComputedStyle(document.documentElement);
   const v = (n: string) => css.getPropertyValue(n).trim();
   const cells = term.cellsForExport().filter((c) => !c.undone && !c.hidden).map((c) => `<section class="cell${c.failed ? " failed" : ""}"><div class="n">[${c.n}]</div><pre class="code">${esc(c.code)}</pre>${c.output ? `<pre class="out">${esc(c.output)}</pre>` : ""}</section>`).join("\n");

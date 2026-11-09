@@ -481,3 +481,31 @@ test("Help menu: Manual and GitHub open in a new tab", async ({ page, context })
   await gh.close();
   expect(errors).toEqual([]);
 });
+
+test("legendFor: one live legend per field; rows highlight and have a menu", async ({ page }) => {
+  const errors = await boot(page);
+  await run(page, "colorize(dept)\nlegendFor(dept)");
+  await run(page, "colorize(dept)\nlegendFor(dept)");               // replaces, doesn't stack
+  await expect(page.locator("#legends .legend")).toHaveCount(1);
+  const row = page.locator("#legends .legend-row.live", { hasText: /^dept4$/ });
+  await row.hover();
+  const hl = await page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size);
+  await run(page, "print(len(dept == 'dept4'))");
+  await expect(page.locator(".cell").last()).toContainText(String(hl));
+  expect(hl).toBeGreaterThan(0);
+  await row.click({ button: "right" });
+  await expect(page.locator("#menu .menu-head")).toContainText(`dept4 (${hl} nodes)`);
+  await page.locator("#menu button", { hasText: "Hide labels" }).click();
+  await expect(page.locator(".cell").last()).toContainText("(dept == 'dept4').labelvisible = false");
+  // the legend follows colorize
+  const before = await page.locator("#legends .sw").first().evaluate((e) => getComputedStyle(e).backgroundColor);
+  await run(page, "colorize(dept, yellow, blue)");
+  await expect.poll(() => page.locator("#legends .sw").first().evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(before);
+  // × closes a legend with a command (undoable)
+  await page.locator("#legends .legend-close").click();
+  await expect(page.locator(".cell").last()).toContainText("removeLegend(");
+  await expect(page.locator("#legends .legend")).toHaveCount(0);
+  await run(page, "undo()");
+  await expect(page.locator("#legends .legend")).toHaveCount(1);
+  expect(errors).toEqual([]);
+});

@@ -182,18 +182,13 @@ def load(session, data):
         for mi, members, eds, centre in data.get("groups", []):
             session.groups[nodes[mi]._id] = {"members": [nodes[i] for i in members],
                                              "edges": [edges[i] for i in eds], "centre": tuple(centre)}
-    from .visuals import ConvexHull, GradientLegend, Legend
+    from .visuals import ConvexHull, Legend
     for h in data.get("hulls", []):
         hull = ConvexHull(view, view.next_id(), [nodes[i] for i in h["nodes"]], h["color"])
         view.hulls[hull._id] = hull
     for rec in data.get("legends", []):
-        if "ramp" in rec:
-            lg = GradientLegend.__new__(GradientLegend)
-            Legend.__init__(lg, view, view.next_id())
-            lg._ramp = rec["ramp"]
-        else:
-            lg = Legend(view, view.next_id())
-        lg._entries = rec["entries"]
+        lg = Legend(view, view.next_id())
+        lg._entries, lg._ramp, lg._auto = rec["entries"], rec.get("ramp"), rec.get("auto")
         view.legends[lg._id] = lg
     v = data.get("view", {})
     bg = v.get("background")

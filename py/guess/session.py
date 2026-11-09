@@ -250,6 +250,11 @@ class Session:
         finally:
             sys.stdout, sys.stderr = old_out, old_err
             self._restore_system()
+            if self._run_depth <= 1:
+                try:
+                    self.view.refresh_legends()     # legendFor legends follow the colours
+                except Exception:   # noqa: BLE001 - a stale legend must never break a command
+                    pass
             self.flush()
         return ok
 

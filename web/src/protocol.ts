@@ -30,7 +30,12 @@ export type Seg =
 export interface HullRec { i: number; nodes: number[]; c: number; a: number }
 
 /** k: node, edge or hull swatch; "x" a text-only line ("… 32 more") */
-export interface LegendEntry { k: "n" | "e" | "h" | "x"; c: number; a: number; s?: number; w?: number; t: string }
+export interface LegendEntry {
+  k: "n" | "e" | "h" | "x"; c: number; a: number; s?: number; w?: number; t: string;
+  /** legendFor rows: the elements the row stands for (ik: "n" nodes, "e" edges)
+   *  and a Gython expression for them (the right-click menu acts on it) */
+  ids?: number[]; ik?: "n" | "e"; q?: string;
+}
 
 export interface LegendRec {
   i: number;

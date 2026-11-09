@@ -15,7 +15,7 @@ Commands can be called without parentheses when they take no arguments
 - [Clustering and generators](#clustering-and-generators) (11)
 - [Layouts](#layouts) (33)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (30)
-- [Styles and visual mappings](#styles-and-visual-mappings) (8)
+- [Styles and visual mappings](#styles-and-visual-mappings) (10)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
 - [Several graphs: subgraphs and tabs](#several-graphs-subgraphs-and-tabs) (6)
@@ -839,6 +839,17 @@ and shows the labels; labelBy(field, false) sets them without showing.
 legendFor(field) adds a legend explaining the current colours by field:
 one entry per value (for categories, as after colorize), or a gradient
 from the lowest to the highest value (for numbers, as after colorBy).
+The legend follows the colours: run colorize or colorBy again and it
+updates (until you add or remove entries yourself).
+
+### `removeLegend(legend)`
+
+removeLegend(lg) or removeLegend(2) removes one legend (the number is the
+one shown as <legend 2: …>; the × on a legend runs this).
+
+### `removeLegends()`
+
+removeLegends() removes every legend.
 
 ### `removeStyle(name)`
 
