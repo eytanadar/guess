@@ -19,7 +19,7 @@
         <div class="menu-root">
           <button class="menu-title" aria-haspopup="menu" aria-expanded="false">File</button>
           <div class="menu-pop" role="menu" hidden>
-            <button role="menuitem" id="open" title="Open a graph (.gdf, .gexf, .graphml, .net, .dl, .csv), a .py script, or an image — or drop files on the page">Open…<kbd>⌘O</kbd></button>
+            <button role="menuitem" id="open" title="Open a graph (.gdf, .gexf, .graphml, .gml, .dot, .net, .dl, .csv), a .py script, or an image — or drop files on the page">Open…<kbd>⌘O</kbd></button>
             <button role="menuitem" id="sample">Sample graph</button>
             <button role="menuitem" id="open-url">Open from URL…</button>
             <button role="menuitem" id="paste-data" title="Paste an edge table, node table, adjacency matrix or list">Paste a table…</button>
@@ -36,6 +36,7 @@
             <button role="menuitem" id="svg">Vector image (SVG)</button>
             <button role="menuitem" data-run='exportGEXF("graph.gexf")'>GEXF for Gephi</button>
             <button role="menuitem" data-run='exportGraphML("graph.graphml")'>GraphML</button>
+            <button role="menuitem" data-run='exportGML("graph.gml")'>GML</button>
             <button role="menuitem" data-run='exportCSV("edges.csv"); exportCSV("nodes.csv", "nodes")'>CSV tables</button>
             <button role="menuitem" id="export-notebook" title="The console's cells as a Jupyter notebook, with a snapshot of the graph">Jupyter notebook (.ipynb)</button>
             <button role="menuitem" id="export-report" title="A self-contained HTML page: graph snapshot, legends and the cells you ran">Report (HTML)</button>
@@ -136,7 +137,7 @@
           </div>
         </div>
       </nav>
-      <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.dl,.csv,.tsv,.py,image/*" multiple hidden />
+      <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.gml,.dot,.gv,.dl,.csv,.tsv,.py,image/*" multiple hidden />
       <span class="toolgroup" role="group" aria-label="Click tool">
         <button data-tool="select" aria-pressed="true" title="Click a node to highlight its neighbourhood (again, or Esc, to clear); shift-drag box, alt-drag lasso">Select</button>
         <button data-tool="path" aria-pressed="false" title="Click two nodes to colour a shortest path between them">Path</button>

@@ -16,6 +16,7 @@ import base64
 import json
 import os
 import random
+import re
 import urllib.parse
 
 from .model import DOUBLE, INT, STRING, GuessError
@@ -47,8 +48,8 @@ def http(url, method="GET", body=None, headers=None):
         return resp.read().decode("utf-8", errors="replace")
 
 
-_LOADERS = [(".gdf", "makeFromGDF"), (".gexf", "makeFromGEXF"), (".graphml", "makeFromGML"),
-            (".xml", "makeFromGML"), (".net", "makeFromPajek"), (".paj", "makeFromPajek"),
+_LOADERS = [(".gdf", "makeFromGDF"), (".gexf", "makeFromGEXF"), (".graphml", "makeFromGraphML"),
+            (".xml", "makeFromGraphML"), (".gml", "makeFromGML"), (".dot", "makeFromDOT"), (".gv", "makeFromDOT"), (".net", "makeFromPajek"), (".paj", "makeFromPajek"),
             (".dl", "makeFromDL"), (".csv", "makeFromCSV"), (".tsv", "makeFromCSV"),
             (".guess", "makeFromSession"), (".py", "execfile")]
 
@@ -65,7 +66,7 @@ def install(session):
 
     @cmd
     def makeFromURL(url, format=None):
-        """makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, Pajek, DL, CSV, a
+        """makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV, a
         .guess session or a .py script) and opens it; format=".gexf" etc. when
         the URL doesn't end in the extension."""
         text = http(url)
@@ -77,6 +78,8 @@ def install(session):
             head = text.lstrip()[:200].lower()
             ext = (".gexf" if "<gexf" in head else ".graphml" if "<graphml" in head
                    else ".gdf" if head.startswith("nodedef") else ".net" if head.startswith("*vertices")
+                   else ".gml" if re.match(r"(#[^\n]*\n\s*)*(creator\s|version\s|graph\s*\[)", head)
+                   else ".dot" if re.match(r"(strict\s+)?(di)?graph\b[^{]*\{", head)
                    else ".guess" if '"guess-session"' in text[:400] else ".csv")
         name = os.path.basename(path) or "download"
         if not name.lower().endswith(ext):

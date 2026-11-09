@@ -36,10 +36,30 @@ def install(session):
 
     @cmd
     def makeFromGML(filename):
+        """Replace the current graph with a GML file (Graph Modelling Language, as
+        written by networkx, igraph, yEd and Cytoscape: labels, graphics x/y,
+        fill colour, size and shape, and every other attribute as a field). For
+        compatibility with GUESS 2006, a GraphML (XML) file works too."""
+        with open(filename, encoding="utf-8", errors="replace") as fh:
+            xml = fh.read(4096).lstrip().startswith("<")
+        if xml:
+            _load(filename, formats.read_graphml, "GraphML")
+        else:
+            _load(filename, formats.read_gml, "GML")
+
+    @cmd
+    def makeFromGraphML(filename):
         """Replace the current graph with a GraphML file."""
         _load(filename, formats.read_graphml, "GraphML")
 
-    cmd(makeFromGML, "makeFromGraphML")
+    @cmd
+    def makeFromDOT(filename):
+        """Replace the current graph with a Graphviz DOT file (.dot, .gv): node
+        and edge statements, subgraphs (cluster_* members get a `cluster` field),
+        default attributes; pos, color/fillcolor, label, width/height, shape,
+        penwidth and weight map to GUESS, other attributes become fields."""
+        from . import dot
+        _load(filename, dot.read_dot, "DOT")
 
     @cmd
     def makeFromDL(filename):
@@ -98,6 +118,15 @@ def install(session):
         if table not in ("edges", "nodes"):
             raise GuessError('table is "edges" or "nodes"')
         _offer(filename, gexf.write_csv(g, table))
+
+    @cmd
+    def exportGML(filename):
+        """Write the graph as GML (networkx, igraph, yEd, Cytoscape and Gephi read
+        it): fields, positions, colours and sizes. Offered as a download."""
+        text = formats.write_gml(g)
+        with open(filename, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        session.emit({"type": "download", "name": os.path.basename(filename), "text": text})
 
     @cmd
     def exportGraphML(filename):

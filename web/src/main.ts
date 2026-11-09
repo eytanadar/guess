@@ -633,7 +633,9 @@ $<HTMLInputElement>("#file").addEventListener("change", async (ev) => {
 const LOADERS: [RegExp, string][] = [
   [/\.gdf$/i, "makeFromGDF"],
   [/\.(net|paj)$/i, "makeFromPajek"],
-  [/\.(graphml|xml)$/i, "makeFromGML"],
+  [/\.(graphml|xml)$/i, "makeFromGraphML"],
+  [/\.gml$/i, "makeFromGML"],
+  [/\.(dot|gv)$/i, "makeFromDOT"],
   [/\.dl$/i, "makeFromDL"],
   [/\.gexf$/i, "makeFromGEXF"],
   [/\.(csv|tsv)$/i, "makeFromCSV"],
