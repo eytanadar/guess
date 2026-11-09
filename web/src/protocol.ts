@@ -29,7 +29,8 @@ export type Seg =
 
 export interface HullRec { i: number; nodes: number[]; c: number; a: number }
 
-export interface LegendEntry { k: "n" | "e" | "h"; c: number; a: number; s?: number; w?: number; t: string }
+/** k: node, edge or hull swatch; "x" a text-only line ("… 32 more") */
+export interface LegendEntry { k: "n" | "e" | "h" | "x"; c: number; a: number; s?: number; w?: number; t: string }
 
 export interface LegendRec {
   i: number;

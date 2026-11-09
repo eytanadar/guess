@@ -504,3 +504,23 @@ def test_kk_fast_path_edge_cases(monkeypatch, case):
         run(sess, cmd)
         assert np.isfinite(positions(sess)).all(), (case, cmd)
         assert [(n.x, n.y) for n in sess.graph._nodes_list() if n.fixed] == fixed_before, (case, cmd)
+
+
+def test_legend_for_tells_categories_from_gradients():
+    """legendFor on a numeric field: categories after colorize (e.g. 44
+    communities), a ramp after colorBy (any scale, with or without a middle)."""
+    s = make_session()
+    run(s, f"makeFromGDF({str(SAMPLE)!r})")
+    run(s, "louvainClusters()\ncolorize(modularity_class)\nlg = legendFor(modularity_class)")
+    lg = s.ns["lg"]
+    groups = len({n.modularity_class for n in s.graph.nodes})
+    assert groups > 16 and not hasattr(lg, "_ramp")
+    rows = lg.record()["entries"]
+    assert len(rows) == 13 and rows[-1]["k"] == "x" and rows[-1]["t"].startswith(f"… {groups - 12} more")
+    assert len({r["c"] for r in rows[:-1]}) == 12            # each community its own colour
+    for scale, middle in (("linear", None), ("log", None), ("rank", "white")):
+        extra = ", middle=white" if middle else ""
+        run(s, f"colorBy(totaldegree, yellow, red, '{scale}'{extra})\nlg = legendFor(totaldegree)")
+        assert hasattr(s.ns["lg"], "_ramp"), scale
+    run(s, "colorize(totaldegree)\nlg = legendFor(totaldegree)")
+    assert not hasattr(s.ns["lg"], "_ramp")

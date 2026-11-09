@@ -64,15 +64,21 @@ def install(session):
         if not vals:
             raise GuessError(f"field '{f.name}' has no values")
         numeric = all(isinstance(v, (int, float)) and not isinstance(v, bool) for _x, v in vals)
-        distinct = {v for _x, v in vals}
-        if numeric and len(distinct) > 12:
+        groups = group_by(elems, f)
+        if numeric and len(groups) > 12 and _looks_like_gradient(groups, f):
             lo = min(vals, key=lambda p: p[1])
             hi = max(vals, key=lambda p: p[1])
             lg = GradientLegend(view, view.next_id(), lo[0].color, hi[0].color, _num(lo[1]), _num(hi[1]))
         else:
+            # categories (e.g. after colorize): one entry per value, the biggest first
             lg = Legend(view, view.next_id())
-            for grp in sorted(group_by(elems, f), key=len, reverse=True)[:24]:
+            groups = sorted(groups, key=len, reverse=True)
+            shown = groups if len(groups) <= 16 else groups[:12]
+            for grp in shown:
                 lg.add(grp[0], f"{title + ': ' if title else ''}{f.get(grp[0])}")
+            if len(shown) < len(groups):
+                rest = groups[len(shown):]
+                lg.note(f"… {len(rest)} more ({sum(map(len, rest))} {'nodes' if f.kind == NODE else 'edges'})")
         view.legends[lg._id] = lg
         view.changed()
         return lg
@@ -136,6 +142,22 @@ def install(session):
 
 def _is_all(seq, g, kind):
     return isinstance(seq, GSet) and getattr(seq, "annotation", None) == ("g.nodes" if kind == NODE else "g.edges")
+
+
+def _looks_like_gradient(groups, f):
+    """Do the colours follow the values smoothly (colorBy) rather than jump
+    between unrelated colours (colorize)? Walking the values in order, a
+    gradient's colours trace a short path (lowest → [middle →] highest); one
+    colour per category zigzags all over the colour space."""
+    def rgb(x):
+        c, _a = colors.to_rgba_int(x.color)
+        return ((c >> 16) & 255, (c >> 8) & 255, c & 255)
+    pts = [rgb(grp[0]) for grp in sorted(groups, key=lambda grp: f.get(grp[0]))]
+    dist = lambda p, q: sum((a - b) ** 2 for a, b in zip(p, q)) ** 0.5
+    path = sum(dist(p, q) for p, q in zip(pts, pts[1:]))
+    lo, hi = pts[0], pts[-1]
+    direct = max(dist(lo, m) + dist(m, hi) for m in pts)   # allows one middle stop
+    return path <= 1.3 * direct + 10
 
 
 def _num(v):

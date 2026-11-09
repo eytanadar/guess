@@ -248,6 +248,8 @@ body { display: flex; flex-direction: column; }
 .sw.round { border-radius: 50%; }
 .sw-e { width: 18px; height: var(--w); border: 0; border-radius: 2px; }
 .sw-h { width: 16px; height: 12px; border-radius: 4px; }
+.sw-x { visibility: hidden; }
+.legend-row:has(.sw-x) { color: var(--muted); font-style: italic; }
 .ramp { width: 160px; height: 10px; border-radius: 2px; border: 1px solid rgba(0, 0, 0, 0.2); }
 .ramp-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
 .echo .fn { text-decoration: underline dotted var(--muted); text-underline-offset: 3px; cursor: help; }

@@ -77,6 +77,11 @@ class Legend:
         self._entries = [e for e in self._entries if e["t"] != entry["t"]] + [entry]
         self._view.changed()
 
+    def note(self, text):
+        """A line of text with no swatch, e.g. "… 32 more"."""
+        self._entries = [e for e in self._entries if e["t"] != str(text)] + [{"k": "x", "c": 0, "a": 0, "t": str(text)}]
+        self._view.changed()
+
     def remove(self, annotation=None):
         """remove(text) drops one entry; remove() deletes the whole legend."""
         if annotation is None:
@@ -106,6 +111,9 @@ class GradientLegend(Legend):
                       "min": lo, "max": hi}
         if ticks:
             self._ramp["ticks"] = float(ticks)
+
+    def __repr__(self):
+        return f"<gradient legend {self._id}: {self._ramp['min']} to {self._ramp['max']}>"
 
     def record(self):
         r = super().record()
