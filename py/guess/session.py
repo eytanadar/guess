@@ -60,6 +60,8 @@ class Session:
         layouts.install(self)
         algorithms.install(self)
         analysis.install(self)
+        structure.install(self)
+        interop.install(self)
         visuals.install(self)
         styles.install(self)
         groups.install(self)

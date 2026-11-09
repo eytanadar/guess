@@ -10,6 +10,7 @@
 | [DEPLOY.md](DEPLOY.md) | bundling (`npm run bundle`), web server setup, headers, GitHub Pages, apps |
 | [MANUAL_COMPARISON.md](MANUAL_COMPARISON.md) | the 2006 GUESS manual vs. this implementation: what matches, what differs, what was fixed |
 | [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md) | comparison with Cytoscape, Gephi, Graphistry, notebooks and IDEs; prioritised suggestions |
+| [GRAPH_LIBRARIES_PROPOSAL.md](GRAPH_LIBRARIES_PROPOSAL.md) | what GUESS could take from networkx, igraph and Graphviz: ranked proposal plus the full survey notes |
 
 Also: [../README.md](../README.md) (quick start), [../PLAN.md](../PLAN.md)
 (design decisions, progress log and deviations from the original GUESS), and

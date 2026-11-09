@@ -7,6 +7,8 @@ GROUPS = [
     ("session", "Undo, redo, history and logging"),
     ("analysis", "Statistics, communities, filters and paths"),
     ("algorithms", "Clustering and generators"),
+    ("structure", "Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions"),
+    ("interop", "networkx bridge and sample graphs"),
     ("layouts", "Layouts"),
     ("visuals", "Display: hulls, legends, background, edges, labels, selection, export"),
     ("styles", "Styles and visual mappings"),
