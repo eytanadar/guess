@@ -27,17 +27,6 @@ const nodeXY = (name) => page.evaluate((name) => {
   const c = r.app.canvas.getBoundingClientRect(), v = r.getView();
   return [c.left + c.width / 2 + (n.x + n.w / 2 - v[0]) * v[2], c.top + c.height / 2 + (n.y + n.h / 2 - v[1]) * v[2]];
 }, name);
-const groupXY = (name) => page.evaluate((name) => {
-  const r = window.__guess.renderer;
-  const nodes = [...r.nodes.values()].filter((m) => m.v);
-  const me = nodes.find((m) => m.name === name);
-  const by = new Map();
-  for (const m of nodes) if (m.c !== me.c) (by.get(m.c) ?? by.set(m.c, []).get(m.c)).push(m);
-  const grp = [...by.values()].sort((a, b) => b.length - a.length)[0];
-  const cx = grp.reduce((s, m) => s + m.x + m.w / 2, 0) / grp.length, cy = grp.reduce((s, m) => s + m.y + m.h / 2, 0) / grp.length;
-  const c = r.app.canvas.getBoundingClientRect(), v = r.getView();
-  return [c.left + c.width / 2 + (cx - v[0]) * v[2], c.top + c.height / 2 + (cy - v[1]) * v[2]];
-}, name);
 
 async function run(code) {
   const cells = page.locator(".cell");
@@ -147,11 +136,6 @@ const SHOTS = {
     await page.screenshot({ path: png, clip: { x: 360, y: 120, width: W - 360, height: 420 } });
     execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", "scale=560:-1", join(outDir, "output.png")]);
     console.log("  output.png");
-  },
-  "group-drop": async () => {
-    await run("colorize(dept)\ncenter()");
-    const from = await nodeXY("v128"), to = await groupXY("v128");
-    await midDrag(from, [to[0] + 6, to[1] + 6], () => shotGraph("group-drop"));
   },
   ring: async () => {
     await run("makeSimpleRandom(14, 18)\ncircleLayout()\ncolorize(totaldegree)\ng.nodes.size = 64\ng.nodes.labelvisible = true\ncenter()");

@@ -284,7 +284,7 @@ export class Console {
   }
 
   /** The executed cells, for notebook and report export. */
-  cellsForExport(): { n: number; code: string; output: string; failed: boolean; undone: boolean }[] {
+  cellsForExport(): { n: number; code: string; output: string; failed: boolean; undone: boolean; hidden: boolean }[] {
     const out = [];
     for (const c of this.out.querySelectorAll<HTMLElement>(".cell")) {
       const code = [...c.querySelectorAll(".cell-code .code-line")].map((l) => l.textContent ?? "").join("\n");
@@ -293,7 +293,8 @@ export class Console {
         const full = x.querySelector(".error-full");
         return full ? full.textContent : (x as HTMLElement).innerText ?? x.textContent;
       }).join("\n") : "";
-      out.push({ n: Number(c.dataset.n), code, output: output.replace(/\n+$/, ""), failed: c.classList.contains("failed"), undone: c.classList.contains("undone") });
+      out.push({ n: Number(c.dataset.n), code, output: output.replace(/\n+$/, ""), failed: c.classList.contains("failed"), undone: c.classList.contains("undone"),
+                hidden: c.classList.contains("hidden-move") && !this.out.classList.contains("show-moves") });
     }
     return out;
   }
@@ -311,6 +312,25 @@ export class Console {
   get vim(): boolean {
     try {
       return localStorage.getItem("guess.vim") === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  /** Show the cells recorded for node drags (hidden by default; remembered). */
+  setShowMoves(on: boolean) {
+    this.out.classList.toggle("show-moves", on);
+    this.scroll();
+    try {
+      localStorage.setItem("guess.showMoves", on ? "1" : "0");
+    } catch {
+      /* storage unavailable */
+    }
+  }
+
+  get showMoves(): boolean {
+    try {
+      return localStorage.getItem("guess.showMoves") === "1";
     } catch {
       return false;
     }
@@ -444,15 +464,18 @@ export class Console {
 
   // ---- executed cells ----------------------------------------------------------------
   /** Run code as a new cell (also used by menus and toolbar buttons). Cells run in order. */
-  submit(code: string): Promise<boolean> {
-    const run = this.queue.then(() => this.execute(code));
+  submit(code: string, opts: { hidden?: boolean } = {}): Promise<boolean> {
+    const run = this.queue.then(() => this.execute(code, opts.hidden ?? false));
     this.queue = run.catch(() => false);
     return run;
   }
 
-  private async execute(code: string): Promise<boolean> {
-    const cell = this.newCell(code);
-    this.remember(code);
+  /** A hidden cell (a node drag) is a normal command — history(), undo, logs and
+   * exports include it — but stays out of sight unless "Show node moves" is on,
+   * or it fails. */
+  private async execute(code: string, hidden = false): Promise<boolean> {
+    const cell = this.newCell(code, hidden);
+    if (!hidden) this.remember(code);
     this.current = cell.out;
     this.currentCell = cell.root;
     this.currentCode = code;
@@ -469,6 +492,7 @@ export class Console {
       this.lastText = null;
       this.setBusy(false, cell);
       cell.root.classList.add(ok ? "ok" : "failed");
+      if (!ok) cell.root.classList.remove("hidden-move");
       const secs = (performance.now() - t0) / 1000;
       if (secs >= 0.5) {
         const t = el("span", "cell-time");
@@ -477,13 +501,13 @@ export class Console {
       }
       if (!cell.out.childElementCount) cell.root.classList.add("empty");
       if (this.watched.size) await this.runWatched();
-      this.focus();
+      if (!hidden) this.focus();
     }
   }
 
-  private newCell(code: string): Cell {
+  private newCell(code: string, hidden = false): Cell {
     const n = ++this.cellCount;
-    const root = el("div", "cell");
+    const root = el("div", hidden ? "cell hidden-move" : "cell");
     root.dataset.n = String(n);
     const head = el("div", "cell-head");
     const num = el("button", "cell-num");

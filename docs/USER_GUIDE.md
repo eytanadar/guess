@@ -68,12 +68,12 @@ See [API.md](API.md) for every command and field.
 The app explains these itself: **Help → Mouse and gestures** (or the "Mouse &
 gestures" tab of the Help panel, F1) has a card with a screenshot for every
 gesture below, and a tip appears the first time a gesture becomes available
-(e.g. after `colorize(dept)`, dragging into groups).
+(e.g. after `circleLayout()`, sliding nodes around the ring).
 
 | gesture | does |
 |---|---|
 | drag background | pan; mouse wheel / pinch zooms; double-click fits |
-| drag a node | move it (and the whole selection, if it is selected) |
+| drag a node | move it (and the whole selection, if it is selected); recorded as a hidden command (View → Show node moves in the console) |
 | click a node (**Select** tool) | highlight it and its neighbours; click again or Esc to clear |
 | Shift-drag | box-select nodes |
 | Alt/Option-drag | lasso-select nodes |
@@ -83,8 +83,6 @@ gesture below, and a tip appears the first time a gesture becomes available
 | right-click | context menu (for the whole selection if you right-click a selected node) |
 
 **Dragging with meaning.**
-- After `colorize(dept)`, dragging a node into another department's cluster
-  changes its `dept` (a ring shows the target).
 - After `circleLayout()`, nodes slide around the circle and the others make room.
 - Alt-drag from one node to another adds an edge.
 - After `scatterLayout(x, y)`, dragging a node edits those two fields.

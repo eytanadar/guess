@@ -55,7 +55,8 @@ def test_undo_layout_view_states_and_load(s, tmp_path):
 
 def test_node_drags_are_one_undo_step(s):
     b, a = ev(s, "bob"), ev(s, "alice")
-    s.move_nodes([[b._id, 1.0, 2.0], [a._id, 3.0, 4.0]])
+    # what the display submits (as a hidden console cell) when a selection is dragged
+    s.run("bob.x = 1.0; bob.y = 2.0\nalice.x = 3.0; alice.y = 4.0")
     assert (b.x, a.y) == (1.0, 4.0)
     s.run("undo()")
     assert (b.x, a.y) != (1.0, 4.0)

@@ -61,10 +61,17 @@ const renderer = new Renderer($("#graph"), {
     } else if (hit) openMenu([[hit.kind, hit.id]], x, y);
   },
   moved: (ident, x, y) => {
-    // a group drag reports each node in turn; send them as one move (one undo step)
+    // a group drag reports each node in turn; run them as one cell (one undo step).
+    // The cell is hidden unless View → Show node moves is on, but it is in
+    // history(), saveHistory(), log() and exports like any other command.
     if (!pendingMoves.length) queueMicrotask(() => {
-      send({ type: "move", moves: pendingMoves.splice(0) });
-      scheduleAutosave();
+      const moves = pendingMoves.splice(0);
+      const lines: string[] = [];
+      for (let k = 0; k < moves.length; k += 3) {
+        const e = nodeExpr(moves[k]);
+        lines.push(`${e}.x = ${fmtNum(moves[k + 1], false)}; ${e}.y = ${fmtNum(moves[k + 2], false)}`);
+      }
+      void term.submit(lines.join("\n"), { hidden: true });
     });
     pendingMoves.push(ident, x, y);
   },
@@ -805,6 +812,13 @@ $("#vim-keys").addEventListener("click", () => {
   term.setVim(on);
   $("#vim-keys").setAttribute("aria-pressed", String(on));
 });
+term.setShowMoves(term.showMoves);
+$("#show-moves").setAttribute("aria-pressed", String(term.showMoves));
+$("#show-moves").addEventListener("click", () => {
+  const on = !term.showMoves;
+  term.setShowMoves(on);
+  $("#show-moves").setAttribute("aria-pressed", String(on));
+});
 document.addEventListener("keydown", (ev) => {
   if ((ev.metaKey || ev.ctrlKey) && ev.shiftKey && ev.key.toLowerCase() === "f") {
     ev.preventDefault();
@@ -886,7 +900,6 @@ $("#btn-timeline").addEventListener("click", () => {
 // through them (snapping, previewing other nodes), and on drop runs one Gython
 // command — visible in the console, undoable, reproducible.
 let dragCtx: DragContext = {};
-const hexColor = (c: number) => "#" + c.toString(16).padStart(6, "0");
 const fmtNum = (v: number, int: boolean) => (int ? String(Math.round(v)) : String(Math.round(v * 1000) / 1000));
 
 function dragBehaviour(id: number, alt: boolean): DragBehaviour | null {
@@ -971,53 +984,12 @@ function dragBehaviour(id: number, alt: boolean): DragBehaviour | null {
     };
   }
 
-  // a categorical colouring is active: drop a node on another group to change its value
-  const gr = dragCtx.groups;
-  if (gr) {
-    const own = gr.groups.find((g) => g.ids.includes(id));
-    const zones = gr.groups.map((g) => {
-      const pts = g.ids.map((i) => renderer.nodes.get(i)).filter((m): m is NonNullable<typeof m> => !!m && m.v && m.i !== id);
-      if (!pts.length) return null;
-      const cx = pts.reduce((s, m) => s + m.x + m.w / 2, 0) / pts.length;
-      const cy = pts.reduce((s, m) => s + m.y + m.h / 2, 0) / pts.length;
-      const ds = pts.map((m) => Math.hypot(m.x + m.w / 2 - cx, m.y + m.h / 2 - cy)).sort((a, b) => a - b);
-      const r = Math.max(30, ds[Math.floor(ds.length * 0.8)] ?? 0) + 10;   // most of the group
-      return { g, cx, cy, r };
-    }).filter((z): z is NonNullable<typeof z> => z !== null);
-    let target: (typeof zones)[number] | null = null;
-    return {
-      move(wx, wy): DragFrame {
-        const px = wx + n.w / 2, py = wy + n.h / 2;
-        target = null;
-        let best = Infinity;
-        for (const z of zones) {
-          const d = Math.hypot(px - z.cx, py - z.cy) / z.r;
-          if (d < 1 && d < best && z.g !== own) { best = d; target = z; }
-        }
-        return {
-          x: wx, y: wy,
-          ring: target ? { x: target.cx, y: target.cy, r: target.r, color: target.g.c } : undefined,
-          hint: target ? `release: ${n.name}.${gr.field} = ${String(target.g.v)}` : `drag into another ${gr.field} group to change it`,
-        };
-      },
-      drop(f) {
-        if (!target) {
-          send({ type: "move", moves: [id, f.x, f.y] });
-          scheduleAutosave();
-          return;
-        }
-        const lit = gr.type === "VARCHAR" ? JSON.stringify(String(target.g.v)) : pyLit(target.g.v);
-        void term.submit(`${expr}.${gr.field} = ${lit}; ${expr}.color = ${JSON.stringify(hexColor(target.g.c))}\n${expr}.x = ${fmtNum(f.x, false)}; ${expr}.y = ${fmtNum(f.y, false)}`);
-      },
-    };
-  }
   return null;
 }
 
 // ---- gesture guide and one-time tips -------------------------------------------------
 $("#btn-gestures").addEventListener("click", () => void openSide("help", "gestures"));
 const TIPS: Record<string, string> = {
-  "group-drop": "Tip: drag a node into another colour group to change its value.",
   ring: "Tip: drag a node around the circle to reorder it; the others make room.",
   scatter: "Tip: drag a node in the scatter plot to edit its two values.",
   box: "Tip: shift-drag to box-select, Alt-drag to lasso, click a node to see its neighbours.",
@@ -1053,12 +1025,11 @@ function offerTip(id: string) {
 $(".tipcard-close").addEventListener("click", () => ($("#tipcard").hidden = true));
 let lastDragKinds = "";
 function tipsForDragContext(ctx: DragContext) {
-  const kinds = [ctx.groups && "group-drop", ctx.ring && "ring", ctx.axes && "scatter"].filter(Boolean).join(",");
+  const kinds = [ctx.ring && "ring", ctx.axes && "scatter"].filter(Boolean).join(",");
   if (kinds === lastDragKinds) return;
   lastDragKinds = kinds;
   if (ctx.axes) offerTip("scatter");
   else if (ctx.ring) offerTip("ring");
-  else if (ctx.groups) offerTip("group-drop");
 }
 
 // ---- presentation (slides) ------------------------------------------------------------
@@ -1224,7 +1195,7 @@ async function exportReport() {
   const legends = $("#legends").innerHTML;
   const css = getComputedStyle(document.documentElement);
   const v = (n: string) => css.getPropertyValue(n).trim();
-  const cells = term.cellsForExport().filter((c) => !c.undone).map((c) => `<section class="cell${c.failed ? " failed" : ""}"><div class="n">[${c.n}]</div><pre class="code">${esc(c.code)}</pre>${c.output ? `<pre class="out">${esc(c.output)}</pre>` : ""}</section>`).join("\n");
+  const cells = term.cellsForExport().filter((c) => !c.undone && !c.hidden).map((c) => `<section class="cell${c.failed ? " failed" : ""}"><div class="n">[${c.n}]</div><pre class="code">${esc(c.code)}</pre>${c.output ? `<pre class="out">${esc(c.output)}</pre>` : ""}</section>`).join("\n");
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GUESS report</title>
 <style>body{font:15px system-ui,sans-serif;max-width:980px;margin:24px auto;padding:0 16px;color:${v("--text")};background:${v("--bg")}}
 h1{font-size:22px}figure{margin:0;position:relative;border:1px solid ${v("--border")};border-radius:8px;overflow:hidden}figure img{display:block;width:100%}

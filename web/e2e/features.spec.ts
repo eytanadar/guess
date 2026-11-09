@@ -354,7 +354,7 @@ test("graph tabs, groups, watched cells, timeline, slides, find, exports, variab
   expect(errors).toEqual([]);
 });
 
-test("declarative dragging: groups, ring, edges, scatter", async ({ page }) => {
+test("dragging: hidden moves, ring, edges, scatter", async ({ page }) => {
   const errors = await boot(page);
   const cells = page.locator(".cell");
   const screen = (name: string) => page.evaluate((name) => {
@@ -373,13 +373,25 @@ test("declarative dragging: groups, ring, edges, scatter", async ({ page }) => {
     await page.mouse.up();
     if (alt) await page.keyboard.up("Alt");
   };
-  // 1. drop a node into another department's group
-  await run(page, "makeSimpleRandom(3, 0)\naddNodeField('team', VARCHAR, 'a')\nnd0.x, nd0.y = 0, 0\nnd1.x, nd1.y = 400, 0\nnd2.x, nd2.y = 420, 30\nnd1.team = 'b'; nd2.team = 'b'\ncolorize(team)\ncenter()");
+  // 1. a plain drag runs a hidden cell (undoable, in history()); View shows it
+  await run(page, "makeSimpleRandom(3, 0)\nnd0.x, nd0.y = 0, 0\nnd1.x, nd1.y = 400, 0\nnd2.x, nd2.y = 420, 30\ncolorize(name)\ncenter()");
   await page.waitForTimeout(700);
-  const q1 = await screen("nd1"), q2 = await screen("nd2");
-  await drag(await screen("nd0"), [(q1[0] + q2[0]) / 2, (q1[1] + q2[1]) / 2 + 30]);
-  await expect(cells.last()).toContainText('nd0.team = "b"');
-  await expect(cells.last()).not.toHaveClass(/failed/);
+  const before = await cells.count();
+  const p0a = await screen("nd0"), q1 = await screen("nd1");
+  await drag(p0a, [(p0a[0] + q1[0]) / 2, p0a[1] + 60]);
+  await expect(cells).toHaveCount(before + 1);
+  const moved = cells.nth(before);
+  await expect(moved).toHaveClass(/hidden-move/);
+  await expect(moved).toBeHidden();
+  await expect(moved).toContainText("nd0.x = ");
+  await expect(moved).not.toContainText("name =");     // no group reassignment
+  await run(page, "print(nd0.y > 1)\nhistory()");
+  await expect(cells.last()).toContainText("True");
+  await expect(cells.last()).toContainText("nd0.x = ");
+  await menu(page, "View", "#show-moves");
+  await expect(moved).toBeVisible();
+  await menu(page, "View", "#show-moves");
+  await expect(moved).toBeHidden();
   // 2. alt-drag from a node to another: a new edge
   await drag(await screen("nd1"), await screen("nd2"), true);
   await expect(cells.last()).toContainText("addEdge(nd1, nd2)");
@@ -413,8 +425,8 @@ test("gestures guide, one-time tips and modal dialogs", async ({ page }) => {
   await page.locator(".help-tabs [data-tab=commands]").click();
   await expect(page.locator(".help-guide-link")).toBeVisible();
   // a tip appears once when a drag gesture becomes available
-  await run(page, "colorize(dept)");
-  await expect(page.locator(".tipcard-text")).toContainText("another colour group");
+  await run(page, "circleLayout()");
+  await expect(page.locator(".tipcard-text")).toContainText("around the circle");
   // modal dialog instead of prompt()
   await run(page, "center(v1)");
   await page.waitForTimeout(700);

@@ -136,10 +136,6 @@ function handle(msg: ToWorker) {
       post({ type: "reply", id: msg.id, value });
       break;
     }
-    case "move":
-      py!.globals.set("__mv", JSON.stringify(msg.moves));
-      py!.runPython("__m = json.loads(__mv)\nsession.move_nodes([__m[k:k + 3] for k in range(0, len(__m), 3)])");
-      break;
     case "install":
       void installPackage(msg.name);
       break;

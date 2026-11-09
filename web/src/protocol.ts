@@ -135,7 +135,6 @@ export type ToWorker =
   | { type: "describe"; id: number; kind: "n" | "e"; ident: number }
   | { type: "assign"; id: number; name: string; items: ["n" | "e", number][] }
   /** nodes dragged on the display, as [id, x, y, id, x, y, ...] (one undo step) */
-  | { type: "move"; moves: number[] }
   | { type: "select"; nodes: number[] }
   | { type: "install"; name: string }
   /** the last click on the graph, in graph coordinates */
@@ -145,8 +144,6 @@ export type ToWorker =
   | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace" | "timeline"; kind?: string; ids?: number[] | null };
 
 export interface DragContext {
-  /** the last categorical colouring: drop a node on another group to change its value */
-  groups?: { field: string; type: string; groups: { v: string | number | boolean; c: number; ids: number[] }[] };
   /** circleLayout(): nodes slide around the ring and reorder */
   ring?: { cx: number; cy: number; r: number; ids: number[] };
   /** scatterLayout(x, y): dragging edits the two fields */

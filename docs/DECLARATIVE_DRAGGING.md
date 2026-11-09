@@ -96,10 +96,14 @@ interface (`move(world x, y) → frame`, `drop(frame)`) is the reusable core.
 
 | gesture | when | on drop |
 |---|---|---|
-| drag a node into another group | after `colorize(field)` or `legendFor(field)` on a node field | `v.field = value; v.color = …; v.x = …; v.y = …` |
 | drag a node around the circle | after `circleLayout()` (others make room as you drag) | `ringMove(v, k)` |
 | Alt-drag from a node to another | always | `addEdge(a, b)` |
 | drag a node in a scatter plot | after `scatterLayout(xfield, yfield)` (editable fields only) | `v.x_field = …; v.y_field = …` |
+
+Dropping a node into another colour group to change its field (idea 1) was
+built and then removed (2026-11-09): it did not work as intended. A plain drag
+runs `v.x = …; v.y = …` as a console cell that is hidden unless *View → Show
+node moves in the console* is on.
 
 Dragging a node that belongs to a multi-node selection still moves the whole
 selection, and any other drag is a plain move. Not built: scrubbing between

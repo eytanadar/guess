@@ -70,16 +70,6 @@
       ]
     },
     {
-      "id": "dragging",
-      "narration": "Direct manipulation means something too. Because the colours come from communities, dragging a person into another community changes their community. The drop becomes a line of code we can see, and undo.",
-      "actions": [
-        { "dragIntoGroup": "v128" },
-        { "wait": 1500 },
-        { "menu": ["Edit", "#undo"] },
-        { "wait": 600 }
-      ]
-    },
-    {
       "id": "help",
       "narration": "There are over two hundred commands. Search finds commands, examples, nodes and values. Here we look for communities and pick an example.",
       "actions": [

@@ -330,23 +330,6 @@ class Session:
         if entry.get("cell") is not None:
             self.emit({"type": "undone", "cell": entry["cell"], "undone": False})
 
-    def move_nodes(self, moves):
-        """Nodes dragged on the display: [(id, x, y), ...], one undo step."""
-        g = self.graph
-        before = self._undo_snapshot()
-        g.journal = Journal()
-        try:
-            for ident, x, y in moves:
-                n = g.node_by_id(ident)
-                if n is not None:
-                    n.x, n.y = x, y
-        finally:
-            j, g.journal = g.journal, None
-        label = f"move {g.node_by_id(moves[0][0])._name}" if len(moves) == 1 and g.node_by_id(moves[0][0]) else f"move {len(moves)} nodes"
-        self._record_undo(label, j, before)
-        g.reset_dirty()     # the display already shows the new positions
-        self.revision += 1
-
     def history(self):
         """Every command run in this session, in order (including Run again)."""
         for i, src in enumerate(self.executed, 1):

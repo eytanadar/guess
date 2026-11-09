@@ -43,10 +43,7 @@ export const GESTURE_SECTIONS: { title: string; items: Gesture[] }[] = [
     title: "Dragging with meaning",
     items: [
       { id: "move", title: "Move nodes", how: "Drag a node · drag any node of a selection to move them all",
-        what: "Moves it (or the whole selection). Each drag is one undo step." },
-      { id: "group-drop", title: "Drag into another group", when: "after colorize(field) or legendFor(field)",
-        how: "Drag a node into a cluster of a different colour; a ring shows the group it will join",
-        what: "Changes the node's value of that field and gives it the group's colour, e.g. v12.dept = \"dept3\". Dropping elsewhere just moves it.", img: "group-drop" },
+        what: "Moves it (or the whole selection). Each drag is one undo step, recorded as a command (v12.x = …; v12.y = …) that history() and saved logs include; View → Show node moves in the console shows them." },
       { id: "ring", title: "Reorder a circle", when: "after circleLayout()",
         how: "Drag a node around the circle",
         what: "The node stays on the ring and the others make room; dropping it runs ringMove(node, position).", img: "ring" },

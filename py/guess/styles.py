@@ -70,8 +70,6 @@ def install(session):
             hi = max(vals, key=lambda p: p[1])
             lg = GradientLegend(view, view.next_id(), lo[0].color, hi[0].color, _num(lo[1]), _num(hi[1]))
         else:
-            if f.kind == NODE:
-                view.set_drag_groups(f)
             lg = Legend(view, view.next_id())
             for grp in sorted(group_by(elems, f), key=len, reverse=True)[:24]:
                 lg.add(grp[0], f"{title + ': ' if title else ''}{f.get(grp[0])}")

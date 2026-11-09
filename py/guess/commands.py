@@ -395,8 +395,6 @@ def install(session):
             groups = sorted(group_by(field.elements(), field), key=len, reverse=True)
             for grp, c in zip(groups, colors.distinctColors(len(groups))):
                 grp.color = c
-            if field.kind == NODE:
-                session.view.set_drag_groups(field)   # drag a node into another group to change it
             return
         if len(cs) not in (2, 3):
             raise TypeError("colorize(field[, start[, middle], end])")

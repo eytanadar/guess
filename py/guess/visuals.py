@@ -126,7 +126,7 @@ class View:
         self.labels = {"outline": False, "cull": False}
         self.styles = {}            # name -> [Gython lines] (defineStyle / applyStyle)
         self.pie = None             # pie-chart nodes (glyphs.py)
-        self.drag = {}              # declarative dragging context: groups, ring, axes
+        self.drag = {}              # declarative dragging context: ring, axes
         self.guides = []            # labelled lines drawn under the graph (hive plot axes)
         self.guides_note = ""
         self.border_width = 0.75
@@ -156,29 +156,8 @@ class View:
         if had:
             self.changed()
 
-    def set_drag_groups(self, field):
-        """Dragging a node onto another group of `field` will change its value."""
-        self.drag["groups"] = field.name
-        self.changed()
-
     def _drag_record(self):
-        out = {k: v for k, v in self.drag.items() if k != "groups"}
-        name = self.drag.get("groups")
-        g = self.session.graph
-        f = g.node_schema.get(name) if name else None
-        if f is not None:
-            from .model import group_by
-            groups = []
-            for grp in group_by(f.elements(), f):
-                v = f.get(grp[0])
-                if v is None or isinstance(v, float) and v != v:
-                    continue
-                c, _a = colors.to_rgba_int(grp[0].color)
-                groups.append({"v": v if isinstance(v, (str, int, float, bool)) else str(v),
-                               "c": c, "ids": [n._id for n in grp]})
-            if 1 < len(groups) <= 60:
-                out["groups"] = {"field": f.name, "type": f.type, "groups": groups}
-        return out
+        return dict(self.drag)
 
     def capture(self):
         """Everything undo needs to put the view back as it is now."""

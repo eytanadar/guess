@@ -26,8 +26,8 @@ This tool is/includes:
   between two departments. These are real Python expressions, so you can store
   them in variables, loop over them and write functions around them.
 - **A zoomable view** of the graph. You can pan, zoom, hover for details, and
-  select with clicks, boxes and lassos. Drags can mean something: dragging a
-  node into another colour group changes its group.
+  select with clicks, boxes and lassos. Drags can mean something: after a
+  circle layout, dragging a node reorders the ring.
 - **A console made of cells.** Every command you run stays on the screen and
   can be edited, re-run, undone and redone. Output that mentions nodes or edges
   is linked back to the graph.
@@ -1069,23 +1069,27 @@ the selection a name you can use in code.
 ## 13.3 Dragging with meaning
 
 Dragging a node moves it, and the selection moves with it if the node is
-selected. After some commands, a drag also *means* something. GUESS knows
+selected. Each drag is recorded as an ordinary command, such as
+`v12.x = 310.5; v12.y = -42`. It is one undo step, and `history()`,
+`saveHistory()`, `log()` and notebook export include it, so a saved
+script puts the nodes back where you left them. To keep the console readable,
+these commands are hidden. *View → Show node moves in the console* shows
+them.
+
+After some commands, a drag also *means* something. GUESS knows
 what the arrangement on the screen stands for, so it can turn your drag into
 the change you meant:
 
-- **Changing a group.** After `colorize(dept)`, drag a node into another
-  department's cluster. A ring shows the group you're over, and dropping
-  there changes the node's `dept`.
 - **Reordering a circle.** After `circleLayout()`, nodes slide around the
   circle and the others make room. Dropping runs `ringMove(node, position)`.
 - **Adding an edge.** Alt/Option-drag from one node to another adds an edge.
 - **Editing values.** After `scatterLayout(x, y)`, dragging a node changes its
   two fields.
 
-![Dragging a node into another department's cluster changes its dept.](../../web/public/help/group-drop.png){width=60%}
+![After circleLayout(), a dragged node slides around the ring and the others make room.](../../web/public/help/ring.png){width=60%}
 
-Every one of these drops shows up in the console as an ordinary command (for
-example `v128.dept = 'dept6'`). So you can see what happened, undo it, or
+Each of these drops appears in the console as a visible command (for
+example `ringMove(v128, 4)`). So you can see what happened, undo it, or
 copy it into a script.
 
 ## 13.4 The click tools
