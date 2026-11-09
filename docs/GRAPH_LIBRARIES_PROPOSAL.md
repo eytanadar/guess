@@ -39,6 +39,20 @@ is plain numpy, not igraph.
 
 ## Tier 2: igraph as the engine (about 2–3 days)
 
+**Status (2026-11-09): done**, in `py/guess/igr.py`. The page loads igraph in
+the background; the statistics fall back to networkx/numpy until then (and
+after `useIgraph(false)`). Differences from the plan:
+- `louvainClusters` stays on networkx so existing results don't change;
+  `leidenClusters` is the igraph alternative.
+- `similarTo` computes Jaccard/Dice itself: igraph's pairwise Jaccard
+  disagreed with the definition for linked nodes.
+- `maxMatching()` on a general graph uses networkx (this igraph has only
+  bipartite matching).
+- The C versions of `kkLayout`/`frLayout`, `mdsLayout(distances='paths')`,
+  `sugiyamaLayout(layers=)`, `treeLayout(circular=)`, `motifs()` and
+  `separators()` are not done; triad census and k-core already cover most
+  of that ground.
+
 **Bridge.** A cached `toIgraph(visibleOnly=True, weights='weight')` builds
 `igraph.Graph(n, edges, directed)` from GUESS node indices. It costs O(n+m),
 is cached per graph and cleared on change, like `recompute`.

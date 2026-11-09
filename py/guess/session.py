@@ -51,7 +51,7 @@ class Session:
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
-        from . import algorithms, analysis, charts, compat, connectors, glyphs, groups, gui, interop, layouts, persist, ranges, slides, states, structure, styles, timeline, visuals, workspaces
+        from . import algorithms, analysis, charts, compat, connectors, glyphs, groups, gui, igr, interop, layouts, persist, ranges, slides, states, structure, styles, timeline, visuals, workspaces
         gui.install(self)
         charts.install(self)
         persist.install(self)
@@ -62,6 +62,7 @@ class Session:
         analysis.install(self)
         structure.install(self)
         interop.install(self)
+        igr.install(self)
         visuals.install(self)
         styles.install(self)
         groups.install(self)
@@ -708,8 +709,11 @@ class Session:
         # computed again, so code that names them (pagerank, ...) still works
         dropped, g._dropped_lazy = g._dropped_lazy, set()
         for kind, name in sorted(dropped):
-            if name not in (g.node_schema if kind == NODE else g.edge_schema):
-                g._lazy_field(kind, name)
+            schema = g.node_schema if kind == NODE else g.edge_schema
+            if name not in schema:
+                f = g._lazy_field(kind, name)
+                if f is not None and g.journal is not None:
+                    g.journal.ops.append(("field", schema, name, f))   # undo takes it away again
         g.reset_dirty()
         self.emit({"type": "scene",
                    "nodes": [self.node_record(n) for n in g._nodes_list()],

@@ -582,3 +582,22 @@ test("networkx bridge, samples and structure commands run in the browser", async
   expect(await lastError(page)).toBeNull();
   expect(errors).toEqual([]);
 });
+
+test("igraph loads in the background and powers statistics, communities and layouts", async ({ page }) => {
+  const errors = await boot(page);
+  // wait for the background load (a few seconds at most)
+  await expect.poll(async () => {
+    await run(page, "import igraph\nprint('igraph', igraph.__version__)");
+    return page.locator(".cell").last().innerText();
+  }, { timeout: 60000, intervals: [1000] }).toContain("igraph 1.");
+  await run(page, "useIgraph()");
+  await expect(page.locator(".cell").last()).toContainText("engine: igraph");
+  await run(page, "leidenClusters()\ncolorize(leiden_class)");
+  await expect(page.locator(".cell").last()).toContainText(/modularity 0\.\d+: \d+ communities in leiden_class/);
+  await run(page, "print(round(sortBy(betweenness)[-1].betweenness), len(findPattern([('a','b'),('b','c'),('c','a')])) > 0)");
+  await expect(page.locator(".cell").last()).toContainText("True");
+  await run(page, "drlLayout()\nprint(len(similarTo(v1)), len(predictLinks(3, show=False)))");
+  await expect(page.locator(".cell").last()).toContainText("3");
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});

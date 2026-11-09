@@ -37,11 +37,17 @@ def _edge_values(graph, G, values):
 
 
 def _betweenness_nodes(graph):
+    from . import igr
+    if igr.module():
+        return igr.betweenness_nodes(graph)
     nx = _nx()
     return nx.betweenness_centrality(to_networkx(graph), normalized=False)
 
 
 def _betweenness_edges(graph):
+    from . import igr
+    if igr.module():
+        return igr.betweenness_edges(graph)
     nx = _nx()
     G = to_networkx(graph)
     return _edge_values(graph, G, nx.edge_betweenness_centrality(G, normalized=False))

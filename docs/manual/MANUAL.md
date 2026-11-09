@@ -288,6 +288,11 @@ There are three ways to get a graph into GUESS:
 | `.py` | a Gython script (it runs) | `execfile("s.py")` |
 | `.png`, `.jpg`, … | an image, for a background or node images | `setBackgroundImage("map.png")` |
 
+Opening a graph replaces the current one completely, its fields included,
+so nothing of the old graph lingers (`undo()` brings it back; to keep both,
+open the new one in another tab, section 10). Computed fields you were using,
+such as `pagerank`, are computed again for the new graph.
+
 An opened file is also copied into GUESS's own file space, so the command
 form works on it afterwards. If you dropped `office.gdf` on the window,
 `makeFromGDF("office.gdf")` reloads it. *File → Paste data…* takes a table
@@ -628,6 +633,9 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `hiveLayout(axis, position)` | a hive plot (below) |
 | `scatterLayout(xfield, yfield)` | a scatter plot of two fields |
 | `randomLayout()` | random positions |
+| `drlLayout()`, `lglLayout()`, `umapLayout()` | for large graphs (igraph, section 7.9): DrL (tens of thousands of nodes, clusters well apart), LGL (grown from a root), UMAP (tight islands) |
+| `dhLayout()` | Davidson–Harel: even spacing, few crossings; small graphs |
+| `bipartiteLayout(field)` | a two-mode network in two rows |
 | `binPackLayout()` | packs the connected components side by side |
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
 | `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(x, y)` | transform the current layout |
@@ -864,6 +872,46 @@ fromNetworkX(nx.karate_club_graph(), "karate")
 colorize(club)
 use("main")                                # back to the first graph
 ```
+
+## 7.9 igraph: faster statistics and more methods
+
+GUESS also loads igraph, a graph library written in C, a few seconds after
+it starts. Once it is there, betweenness, closeness, harmonic, eccentricity,
+diameter, clustering, triangles, coreness and components use it. The numbers
+are the same and large graphs are many times faster. `useIgraph(false)`
+switches back to the networkx and numpy versions, for comparison.
+
+igraph also adds community methods. Each stores its result in a field
+(`leiden_class`, `infomap_class`, ...; 0 is the largest community) and prints
+the modularity:
+
+| command | method |
+|---|---|
+| `leidenClusters(resolution=1)` | Leiden: like Louvain, but every community is connected; `objective="CPM"` avoids modularity's resolution limit |
+| `infomapClusters()` | Infomap: random-walk flow, best for directed graphs |
+| `walktrapClusters(count)`, `fastGreedyClusters(count)` | hierarchies; `cutDendrogram(n)` re-cuts them into n groups |
+| `labelPropagationClusters(field)` | very fast; given a field, spreads its values to the nodes without one |
+| `eigenvectorClusters()`, `fluidClusters(k)`, `voronoiClusters()` | spectral; exactly k groups; around central nodes |
+| `spinglassClusters()`, `optimalClusters()`, `cohesiveBlocks()` | small graphs: signed networks; the exact optimum; nested cohesive groups |
+
+```python
+makeFromGDF("sample.gdf")
+leidenClusters()
+colorize(leiden_class)
+compareClusters(leiden_class, dept)
+similarTo(v1)                              # nodes whose neighbours overlap v1's
+predictLinks(5)                            # likely missing edges
+findPattern([("a", "b"), ("b", "c"), ("c", "a")])   # every triangle
+minCut(v1, v14)                            # fewest edges separating two nodes
+personalizedPagerank(v1)                   # relevance to v1, in the field ppr
+largestCliques()
+```
+
+Also: `maxFlow(a, b)` (writes an edge field `flow`), `dominatorTree(root)`,
+`maxMatching()`, the node field `knn` (average degree of the neighbours),
+and two commands that don't need igraph: `simplify()` merges parallel edges,
+and `rewire()` makes a degree-preserving random copy in a new tab, to check
+whether a pattern is more than chance.
 
 \newpage
 

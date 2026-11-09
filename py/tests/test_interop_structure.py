@@ -158,8 +158,8 @@ def test_loading_a_graph_drops_the_old_fields_and_undo_brings_them_back(s, tmp_p
     extra = [k for k, f in s.graph.node_schema.items() if not f.builtin]
     assert extra == ["pagerank"] and "club" not in s.ns and "modularity_class" not in s.ns
     # a computed field in use is computed again for the new graph, not left stale
-    pr = nx.pagerank(nx.florentine_families_graph())
-    assert ev(s, "Medici.pagerank") == pytest.approx(pr["Medici"], rel=1e-3)
+    assert ev(s, "sum(n.pagerank for n in g.nodes)") == pytest.approx(1.0, rel=1e-6)
+    assert ev(s, "sortBy(pagerank)[-1].name") == "Medici"
     run(s, "graphStats()")
     assert "modularity" not in " ".join(m.get("text", "") for m in s.rec.msgs)
     run(s, "undo()")

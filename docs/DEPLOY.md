@@ -31,7 +31,7 @@ guess-web-<version>[-offline].tar.gz
 The online bundle downloads Pyodide, numpy and networkx (~25 MB, cached by the
 browser) from `cdn.jsdelivr.net` on first use. Use `--offline` for intranets,
 air-gapped machines, or to avoid depending on the CDN; offline downloads are
-cached in `web/.pyodide-cache/`.
+cached in `web/.pyodide-cache/`. igraph (about 1 MB) is included too; the page loads it in the background after start-up, and GUESS works without it (statistics fall back to networkx and numpy).
 
 The manual comes from `docs/manual/build/`. The bundle builds it first if it
 is missing (pandoc 3 and XeLaTeX); without it the site works but Help → Manual

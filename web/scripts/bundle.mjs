@@ -52,8 +52,8 @@ if (offline) {
   await fetchTo("pyodide-lock.json");
   const lock = JSON.parse(readFileSync(join(cache, "pyodide-lock.json"), "utf8"));
   const files = new Set(["pyodide.mjs", "pyodide.asm.mjs", "pyodide.asm.wasm", "python_stdlib.zip"]);
-  // numpy with its dependencies; networkx alone (the worker skips its matplotlib chain)
-  const want = ["numpy"];
+  // numpy and igraph with their dependencies; networkx alone (the worker skips its matplotlib chain)
+  const want = ["numpy", "igraph"];   // igraph (+ texttable) loads in the background
   const seen = new Set();
   while (want.length) {
     const p = want.pop();

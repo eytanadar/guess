@@ -19,7 +19,7 @@ import math
 
 import numpy as np
 
-from . import colors
+from . import colors, igr
 from .algorithms import _betweenness_edges, _betweenness_nodes, _nx, to_networkx
 from .model import EDGE, INT, NODE, Edge, Field, GSet, GuessError, Node, elements_of
 
@@ -134,6 +134,8 @@ def _csr(graph):
 
 def _distance_stats(graph):
     """Per node: eccentricity, reachable count, sum of distances, harmonic sum."""
+    if igr.module():
+        return igr.distance_stats(graph)
     from .layouts import _bfs_hops
     snap = _csr(graph)
     n = snap.n
@@ -176,16 +178,22 @@ def _eccentricity(graph):
 
 
 def _clustering(graph):
+    if igr.module():
+        return igr.clustering(graph)
     nx = _nx()
     return dict(nx.clustering(to_networkx(graph, directed=False)))
 
 
 def _triangles(graph):
+    if igr.module():
+        return igr.triangles(graph), INT
     nx = _nx()
     return dict(nx.triangles(to_networkx(graph, directed=False))), INT
 
 
 def _coreness(graph):
+    if igr.module():
+        return igr.coreness(graph), INT
     nx = _nx()
     G = to_networkx(graph, directed=False)
     G.remove_edges_from(list(nx.selfloop_edges(G)))
@@ -202,6 +210,8 @@ def _strength(graph):
 
 
 def _components(graph, strong=False):
+    if igr.module():
+        return igr.components(graph, strong), INT
     nx = _nx()
     if strong:
         comps = nx.strongly_connected_components(to_networkx(graph, directed=True))
@@ -275,6 +285,7 @@ LAZY = {
     "degrank": _degrank,
     "hits": lambda g: _hits(g)[1],             # JUNG's HITS ranker: authority scores
     "rwbetweenness": _rwbetweenness,
+    "knn": lambda g: igr.knn(g),
 }
 
 

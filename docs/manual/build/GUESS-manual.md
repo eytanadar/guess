@@ -288,6 +288,11 @@ There are three ways to get a graph into GUESS:
 | `.py` | a Gython script (it runs) | `execfile("s.py")` |
 | `.png`, `.jpg`, … | an image, for a background or node images | `setBackgroundImage("map.png")` |
 
+Opening a graph replaces the current one completely, its fields included,
+so nothing of the old graph lingers (`undo()` brings it back; to keep both,
+open the new one in another tab, section 10). Computed fields you were using,
+such as `pagerank`, are computed again for the new graph.
+
 An opened file is also copied into GUESS's own file space, so the command
 form works on it afterwards. If you dropped `office.gdf` on the window,
 `makeFromGDF("office.gdf")` reloads it. *File → Paste data…* takes a table
@@ -628,6 +633,9 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `hiveLayout(axis, position)` | a hive plot (below) |
 | `scatterLayout(xfield, yfield)` | a scatter plot of two fields |
 | `randomLayout()` | random positions |
+| `drlLayout()`, `lglLayout()`, `umapLayout()` | for large graphs (igraph, section 7.9): DrL (tens of thousands of nodes, clusters well apart), LGL (grown from a root), UMAP (tight islands) |
+| `dhLayout()` | Davidson–Harel: even spacing, few crossings; small graphs |
+| `bipartiteLayout(field)` | a two-mode network in two rows |
 | `binPackLayout()` | packs the connected components side by side |
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
 | `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(x, y)` | transform the current layout |
@@ -850,13 +858,60 @@ edge dictionary, or a list of communities.
 import networkx as nx
 G = toNetworkX()
 setField(nx.average_neighbor_degree(G), "nbrdeg")
-setField(nx.community.label_propagation_communities(G), "lpa")
-colorize(lpa)
-fromNetworkX(nx.karate_club_graph(), "karate")   # a networkx graph in a new tab
+setField(nx.community.greedy_modularity_communities(G), "greedy")
+colorize(greedy)
 ```
 
-`fromNetworkX` turns attributes into fields and uses `pos` (or `x` and `y`)
-for positions, with a spring layout when there are none.
+`fromNetworkX` goes the other way. It turns attributes into fields and uses
+`pos` (or `x` and `y`) for positions, with a spring layout when there are
+none. Given a name, it opens the graph in a new tab and switches to it; the
+tabs above the graph switch back.
+
+```python
+fromNetworkX(nx.karate_club_graph(), "karate")
+colorize(club)
+use("main")                                # back to the first graph
+```
+
+## 7.9 igraph: faster statistics and more methods
+
+GUESS also loads igraph, a graph library written in C, a few seconds after
+it starts. Once it is there, betweenness, closeness, harmonic, eccentricity,
+diameter, clustering, triangles, coreness and components use it. The numbers
+are the same and large graphs are many times faster. `useIgraph(false)`
+switches back to the networkx and numpy versions, for comparison.
+
+igraph also adds community methods. Each stores its result in a field
+(`leiden_class`, `infomap_class`, ...; 0 is the largest community) and prints
+the modularity:
+
+| command | method |
+|---|---|
+| `leidenClusters(resolution=1)` | Leiden: like Louvain, but every community is connected; `objective="CPM"` avoids modularity's resolution limit |
+| `infomapClusters()` | Infomap: random-walk flow, best for directed graphs |
+| `walktrapClusters(count)`, `fastGreedyClusters(count)` | hierarchies; `cutDendrogram(n)` re-cuts them into n groups |
+| `labelPropagationClusters(field)` | very fast; given a field, spreads its values to the nodes without one |
+| `eigenvectorClusters()`, `fluidClusters(k)`, `voronoiClusters()` | spectral; exactly k groups; around central nodes |
+| `spinglassClusters()`, `optimalClusters()`, `cohesiveBlocks()` | small graphs: signed networks; the exact optimum; nested cohesive groups |
+
+```python
+makeFromGDF("sample.gdf")
+leidenClusters()
+colorize(leiden_class)
+compareClusters(leiden_class, dept)
+similarTo(v1)                              # nodes whose neighbours overlap v1's
+predictLinks(5)                            # likely missing edges
+findPattern([("a", "b"), ("b", "c"), ("c", "a")])   # every triangle
+minCut(v1, v14)                            # fewest edges separating two nodes
+personalizedPagerank(v1)                   # relevance to v1, in the field ppr
+largestCliques()
+```
+
+Also: `maxFlow(a, b)` (writes an edge field `flow`), `dominatorTree(root)`,
+`maxMatching()`, the node field `knn` (average degree of the neighbours),
+and two commands that don't need igraph: `simplify()` merges parallel edges,
+and `rewire()` makes a degree-preserving random copy in a new tab, to check
+whether a pattern is more than chance.
 
 \newpage
 
@@ -2033,7 +2088,8 @@ fromNetworkX(G) replaces the graph with networkx graph G: its node and
 edge attributes become fields (types from the values), `pos` or x/y give
 positions (otherwise a spring layout), and direction is kept. String keys
 become node names; other keys become n0, n1, ... with the original in
-`nxkey`. fromNetworkX(G, "name") opens it in a new tab instead.
+`nxkey`. fromNetworkX(G, "name") opens it in a new tab instead and
+switches to it (use("main") goes back).
 
 ### `makeSample(name=None)`
 
@@ -2050,7 +2106,7 @@ node pairs (a, b) to values gives an edge field; a list of node sets (as
 community algorithms return) gives each node its set's index, largest
 first. The type is taken from the values. Returns the field.
     setField(nx.core_number(toNetworkX()), "core")
-    setField(nx.community.label_propagation_communities(toNetworkX()), "lpa")
+    setField(nx.community.greedy_modularity_communities(toNetworkX()), "greedy")
 
 ### `toNetworkX(directed=None, visibleOnly=False)`
 
@@ -2062,6 +2118,211 @@ undirected edges both ways); visibleOnly=True leaves out hidden elements.
 Bring results back with setField:
     import networkx as nx
     setField(nx.katz_centrality(toNetworkX()), "katz")
+
+## igraph: communities, large-graph layouts, similarity, patterns, cuts and flows
+
+### `bipartiteLayout(typeField, hgap=1, vgap=1)`
+
+bipartiteLayout(field) draws a two-mode network in two rows (by a field
+with two values, e.g. bipartite in makeSample("davis")), ordering each
+row to reduce edge crossings.
+
+### `cohesiveBlocks()`
+
+cohesiveBlocks() finds nested groups that stay connected after removing
+any k-1 nodes (Moody and White's cohesive blocking): a structural view
+that k-cores miss. Each node's highest cohesion is stored in `cohesion`;
+the blocks are returned, most cohesive last. Slow beyond a few thousand
+nodes.
+
+### `cutDendrogram(count)`
+
+cutDendrogram(n) re-cuts the hierarchy of the last walktrapClusters or
+fastGreedyClusters into n communities (same field), e.g. driven by a
+Slider to explore coarser and finer groupings.
+
+### `dhLayout(seed=0)`
+
+dhLayout() is the Davidson-Harel layout: simulated annealing that
+spreads nodes evenly and avoids edge crossings and nodes on edges. Slow
+but tidy: for figures of up to a few hundred nodes.
+
+### `dominatorTree(root)`
+
+dominatorTree(root) follows directed edges from root and finds, for
+every node it reaches, its immediate dominator: the last node every path
+from root must pass through (who controls access to whom). Stored in
+`idom` (a node name); returns the nodes root reaches.
+
+### `drlLayout(preset='default', seed=0)`
+
+drlLayout() is a force-directed layout for large graphs (DrL /
+OpenOrd): tens of thousands of nodes in seconds, with clusters pulled
+well apart. preset: "default", "coarsen" (more separated clusters),
+"coarsest", "refine" (polish an existing layout) or "final".
+
+### `eigenvectorClusters(count=None)`
+
+eigenvectorClusters() splits the graph by the leading eigenvector of
+the modularity matrix (Newman), repeatedly; count limits the number of
+communities. Stored in eigen_class.
+
+### `fastGreedyClusters(count=None)`
+
+fastGreedyClusters() merges communities greedily by modularity
+(Clauset-Newman-Moore), building a hierarchy; count as in
+walktrapClusters. Stored in fastgreedy_class; cutDendrogram(n) re-cuts.
+
+### `findPattern(pattern, induced=False, limit=100)`
+
+findPattern(pattern) finds every place where a small pattern occurs in
+the graph (subgraph isomorphism, LAD algorithm). The pattern is a list of
+pairs, e.g. findPattern([("a","b"), ("b","c"), ("c","a")]) for
+triangles, or a networkx graph (nx.cycle_graph(4), nx.star_graph(3)).
+induced=True requires no extra edges among the matched nodes. Returns
+up to `limit` matches, each a set of nodes; the same nodes matched in
+another order count once.
+
+### `fluidClusters(k, seed=0)`
+
+fluidClusters(k) splits a connected graph into exactly k communities
+(fluid communities). On a graph in pieces run it on one part, e.g. in
+subgraph(giantComponent()). Stored in fluid_class.
+
+### `infomapClusters(trials=10, seed=0)`
+
+infomapClusters() finds communities by Infomap (how a random walker's
+flow stays inside groups), following edge direction and weights; a good
+choice for directed networks such as citations or web links. Stored in
+infomap_class.
+
+### `labelPropagationClusters(seedField=None, seed=0)`
+
+labelPropagationClusters() finds communities very fast (linear time) by
+letting each node adopt its neighbours' most common label; good for very
+large graphs, rougher than Leiden. labelPropagationClusters(field)
+starts from the values of a field and keeps those nodes fixed, filling in
+the rest (semi-supervised). Stored in lpa_class.
+
+### `largestCliques()`
+
+largestCliques() returns the largest cliques (groups where everyone is
+linked to everyone), each a set of nodes. Exponential in the worst
+case, fast on sparse graphs.
+
+### `leidenClusters(resolution=1.0, objective='modularity', iterations=-1, seed=0)`
+
+leidenClusters() finds communities with the Leiden algorithm (better
+than Louvain: every community is internally connected) and stores them
+in leiden_class (0 = largest). resolution > 1 gives more, smaller
+communities. objective="CPM" (constant Potts model) avoids modularity's
+resolution limit; its resolution is a density, typically 0.001-0.1.
+iterations=-1 runs until stable; seed=None varies the result.
+
+### `lglLayout(root=None, seed=0)`
+
+lglLayout() is the Large Graph Layout: grows the drawing outward from
+a root node (default: a random one, or lglLayout(v1)), suited to big,
+tree-like networks.
+
+### `maxFlow(a, b, capacity='weight')`
+
+maxFlow(a, b) computes the maximum flow from a to b with edge weights
+as capacities (capacity=None: 1 per edge), following edge direction when
+the graph has directed edges. Each edge's flow is stored in the edge
+field `flow`; returns the total.
+
+### `maxMatching(typeField=None)`
+
+maxMatching() returns a largest set of edges with no node in two of
+them (pairs everyone it can); maxMatching(field) matches across the two
+values of a field in a two-mode network, using weights.
+
+### `minCut(a, b, capacity=None)`
+
+minCut(a, b) returns the fewest edges whose removal separates a from b
+(direction ignored); minCut(a, b, weight) the cut of least total
+weight. Prints the cut's size.
+
+### `optimalClusters()`
+
+optimalClusters() finds the partition with the highest possible
+modularity (exact, by integer programming): only for small graphs (up
+to about 100 nodes), as a baseline for the other methods. Stored in
+optimal_class.
+
+### `personalizedPagerank(seq, damping=0.85)`
+
+personalizedPagerank(seq) ranks every node by how easily a random walk
+restarting at the given nodes reaches it: relevance to a chosen set
+(e.g. personalizedPagerank(sel) or personalizedPagerank(v1)). Stored in
+the field `ppr`.
+
+### `predictLinks(top=20, method='adamic_adar', show=True)`
+
+predictLinks() lists likely missing edges: pairs of nodes that aren't
+linked but share neighbours, scored by "adamic_adar" (shared neighbours,
+rare ones counting more), "jaccard", "common" (count of shared
+neighbours) or "resource" (resource allocation). Returns the `top`
+pairs as (node, node, score), best first.
+
+### `rewire(times=None, name=None, seed=0)`
+
+rewire() makes a randomised copy of the graph in a new tab keeping
+every node's degree (repeated swaps of edge ends, 10 x edges by
+default): the null model for "is this structure more than chance?".
+Compare e.g. transitivity() or modularity here and there. Edge weights
+travel with the swapped ends.
+
+### `similarTo(n, method='jaccard', top=10)`
+
+similarTo(v1) scores every node by how much its neighbourhood overlaps
+v1's, stores the score in the field `similarity` and returns the `top`
+most similar nodes. method: "jaccard" (shared neighbours / all
+neighbours of either), "dice" (2 x shared / sum of degrees), or
+"adamic_adar" (shared neighbours, rare ones counting more). Direction
+is ignored.
+
+### `simplify(combine='sum', loops=True)`
+
+simplify() merges parallel edges between the same two nodes (and the
+same direction) into one, whose weight combines theirs: combine="sum"
+(default), "max", "min", "mean" or "first"; loops=True also removes
+self-loops. One undo step.
+
+### `spinglassClusters(spins=25, gamma=1.0, seed=0)`
+
+spinglassClusters() finds communities by simulated annealing of a spin
+model (Reichardt-Bornholdt); handles negative edge weights (signed
+networks). Slow: for graphs up to about 2,000 nodes. spins is the most
+communities allowed, gamma > 1 favours smaller ones. Stored in
+spinglass_class. Needs a connected graph.
+
+### `umapLayout(minDist=0.01, epochs=500, seed=0)`
+
+umapLayout() places nodes by UMAP on the graph's connections: tight,
+well-separated islands for clusters. Edge weights count as similarity.
+minDist (0..1) is how tightly points may pack; more epochs, more
+polish.
+
+### `useIgraph(on=True)`
+
+useIgraph(false) makes the statistics use networkx / numpy instead of
+igraph (to compare results or work around a problem); useIgraph() turns
+igraph back on. Prints which engine is active.
+
+### `voronoiClusters()`
+
+voronoiClusters() picks central "generator" nodes automatically and
+gives every other node to its nearest one (by weighted distance); the
+communities are stored in voronoi_class and the generators returned.
+
+### `walktrapClusters(count=None, steps=4)`
+
+walktrapClusters() groups nodes that short random walks (steps long)
+tend to stay among, building a hierarchy; count=None cuts it where
+modularity is highest, walktrapClusters(8) gives 8 communities.
+Stored in walktrap_class; cutDendrogram(n) re-cuts it.
 
 ## Layouts
 
@@ -3140,7 +3401,8 @@ compareClusters(modularity_class, dept)
 
 ```python
 import networkx as nx
-setField(nx.average_neighbor_degree(toNetworkX()), 'nbrdeg')
+setField(nx.community.greedy_modularity_communities(toNetworkX()), 'greedy')
+colorize(greedy)
 ```
 
 **Classic networks**
@@ -3148,6 +3410,44 @@ setField(nx.average_neighbor_degree(toNetworkX()), 'nbrdeg')
 ```python
 makeSample('karate')
 colorize(club)
+```
+
+**Leiden communities**
+
+```python
+leidenClusters()
+colorize(leiden_class)
+```
+
+**Communities in directed graphs**
+
+```python
+infomapClusters()
+colorize(infomap_class)
+```
+
+**Similar nodes**
+
+```python
+similarTo(v1).color = red
+```
+
+**Likely missing links**
+
+```python
+predictLinks(10)
+```
+
+**Find a pattern**
+
+```python
+findPattern([('a','b'), ('b','c'), ('c','a')])
+```
+
+**Large-graph layout**
+
+```python
+drlLayout()
 ```
 
 ### Filtering and selection
@@ -3316,7 +3616,7 @@ Built-in edge fields:
 | `labelvisible` | BOOLEAN | False |
 
 Computed node fields (calculated the first time they are used, by name or
-as `n.<field>`; `recompute()` after editing the graph): `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`, `harmonic`, `eccentricity`, `clustering`, `triangles`, `coreness`, `strength`, `component`, `strongcomponent`, `betweenness`, `degrank`, `hits`, `rwbetweenness`; edge field `betweenness`.
+as `n.<field>`; `recompute()` after editing the graph): `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`, `harmonic`, `eccentricity`, `clustering`, `triangles`, `coreness`, `strength`, `component`, `strongcomponent`, `betweenness`, `degrank`, `hits`, `rwbetweenness`, `knn`; edge field `betweenness`.
 
 ## Gython syntax
 

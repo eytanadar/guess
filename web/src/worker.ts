@@ -61,6 +61,12 @@ session = Session(lambda m: __js_emit(json.dumps(m)))
 `);
   session = py.globals.get("session");
   post({ type: "ready", interruptible });
+  // igraph (C core, about 1 MB) in the background: statistics use it once it is
+  // here (py/guess/igr.py), and nothing waits for it
+  const p = py;
+  p.loadPackage(["igraph"])
+    .then(() => p.runPython("import importlib; importlib.invalidate_caches()"))
+    .catch((e: unknown) => console.warn("igraph did not load; GUESS uses networkx/numpy instead", e));
 }
 
 // Pyodide's networkx recipe depends on matplotlib (and numpy, Pillow, ...).
