@@ -51,7 +51,7 @@ class Session:
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
-        from . import algorithms, analysis, charts, compat, connectors, glyphs, groups, gui, layouts, persist, ranges, slides, states, styles, timeline, visuals, workspaces
+        from . import algorithms, analysis, charts, compat, connectors, glyphs, groups, gui, interop, layouts, persist, ranges, slides, states, structure, styles, timeline, visuals, workspaces
         gui.install(self)
         charts.install(self)
         persist.install(self)
