@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (57)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (59)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -131,6 +131,11 @@ Write the graph to a GDF file (offered as a download in the browser).
 
 Write the graph as GEXF 1.3 for Gephi (offered as a download).
 
+### `exportGML(filename)`
+
+Write the graph as GML (networkx, igraph, yEd, Cytoscape and Gephi read
+it): fields, positions, colours and sizes. Offered as a download.
+
 ### `exportGraphML(filename)`
 
 Write the graph as GraphML (offered as a download in the browser).
@@ -195,6 +200,13 @@ directed.
 
 Replace the current graph with a UCINET DL file (fullmatrix, edgelist1, nodelist1).
 
+### `makeFromDOT(filename)`
+
+Replace the current graph with a Graphviz DOT file (.dot, .gv): node
+and edge statements, subgraphs (cluster_* members get a `cluster` field),
+default attributes; pos, color/fillcolor, label, width/height, shape,
+penwidth and weight map to GUESS, other attributes become fields.
+
 ### `makeFromGDF(filename)`
 
 Replace the current graph with the contents of a GDF file.
@@ -206,7 +218,10 @@ colours, positions, sizes, edge weights and thickness.
 
 ### `makeFromGML(filename)`
 
-Replace the current graph with a GraphML file.
+Replace the current graph with a GML file (Graph Modelling Language, as
+written by networkx, igraph, yEd and Cytoscape: labels, graphics x/y,
+fill colour, size and shape, and every other attribute as a field). For
+compatibility with GUESS 2006, a GraphML (XML) file works too.
 
 ### `makeFromGraphML(filename)`
 
@@ -1014,7 +1029,7 @@ for "influenced by" links.
 
 ### `makeFromURL(url, format=None)`
 
-makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, Pajek, DL, CSV, a
+makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV, a
 .guess session or a .py script) and opens it; format=".gexf" etc. when
 the URL doesn't end in the extension.
 

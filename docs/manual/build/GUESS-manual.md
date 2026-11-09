@@ -44,8 +44,8 @@ This tool is/includes:
   and *morph* smoothly between states. Ranges and a timeline let you look at
   graphs that change over time.
 - **Many formats in and out**: GDF (the GUESS format), GEXF (Gephi), GraphML,
-  Pajek, UCINET DL, CSV, URLs, SPARQL endpoints (e.g. Wikidata), NDEx and
-  Neo4j. Out: GDF, GEXF, GraphML, CSV, PNG, JPG, GIF, SVG, PDF, PostScript/EPS,
+  GML, Graphviz DOT, Pajek, UCINET DL, CSV, URLs, SPARQL endpoints (e.g.
+  Wikidata), NDEx and Neo4j. Out: GDF, GEXF, GraphML, GML, CSV, PNG, JPG, GIF, SVG, PDF, PostScript/EPS,
   WebM movies, notebooks and HTML reports.
 - **Interface building.** Panels, buttons, sliders and timers are a few lines
   of Gython. Package a graph and its interface as an *app*: a link that opens
@@ -278,7 +278,9 @@ There are three ways to get a graph into GUESS:
 |---|---|---|
 | `.gdf` | GUESS data file (section 4.2) | `makeFromGDF("f.gdf")` |
 | `.gexf` | Gephi | `makeFromGEXF("f.gexf")` |
-| `.graphml`, `.xml` | GraphML | `makeFromGML("f.graphml")` |
+| `.graphml`, `.xml` | GraphML | `makeFromGraphML("f.graphml")` |
+| `.gml` | GML (networkx, igraph, yEd, Cytoscape) | `makeFromGML("f.gml")` |
+| `.dot`, `.gv` | Graphviz DOT | `makeFromDOT("f.dot")` |
 | `.net` | Pajek | `makeFromPajek("f.net")` |
 | `.dl` | UCINET DL | `makeFromDL("f.dl")` |
 | `.csv`, `.tsv` | edge table, node table, adjacency matrix or list (as Gephi reads them) | `makeFromCSV("edges.csv", "nodes.csv")` |
@@ -290,6 +292,13 @@ An opened file is also copied into GUESS's own file space, so the command
 form works on it afterwards. If you dropped `office.gdf` on the window,
 `makeFromGDF("office.gdf")` reloads it. *File → Paste data…* takes a table
 copied from a spreadsheet.
+
+GML and DOT files bring their layout with them when they have one: GML
+`graphics [ x y w h fill type ]` and Graphviz `pos`, `width`, `height`,
+`color`/`fillcolor` and `shape` become positions, sizes, colours and shapes.
+Every other attribute becomes a field. Nodes in a Graphviz `cluster_*`
+subgraph get a `cluster` field, so `colorize(cluster)` shows the clusters.
+`makeFromGML` still opens GraphML too, as it did in GUESS 2006.
 
 Loading a graph replaces the current one. To keep several graphs at once,
 see section 10.
@@ -1062,6 +1071,7 @@ useful.
 | Shift-click a node | add it to (or remove it from) the selection |
 | Esc, or click the background | clear the selection |
 | right-click | a menu for the node, the edge, or the whole selection |
+| Delete or Backspace | remove the selected nodes (also *Edit → Delete selected nodes*, or *Delete* in the right-click menu); undo brings them back |
 
 ![A lasso selection (Alt/Option-drag).](../../web/public/help/lasso.png){width=60%}
 
@@ -1511,6 +1521,11 @@ Write the graph to a GDF file (offered as a download in the browser).
 
 Write the graph as GEXF 1.3 for Gephi (offered as a download).
 
+### `exportGML(filename)`
+
+Write the graph as GML (networkx, igraph, yEd, Cytoscape and Gephi read
+it): fields, positions, colours and sizes. Offered as a download.
+
 ### `exportGraphML(filename)`
 
 Write the graph as GraphML (offered as a download in the browser).
@@ -1575,6 +1590,13 @@ directed.
 
 Replace the current graph with a UCINET DL file (fullmatrix, edgelist1, nodelist1).
 
+### `makeFromDOT(filename)`
+
+Replace the current graph with a Graphviz DOT file (.dot, .gv): node
+and edge statements, subgraphs (cluster_* members get a `cluster` field),
+default attributes; pos, color/fillcolor, label, width/height, shape,
+penwidth and weight map to GUESS, other attributes become fields.
+
 ### `makeFromGDF(filename)`
 
 Replace the current graph with the contents of a GDF file.
@@ -1586,7 +1608,10 @@ colours, positions, sizes, edge weights and thickness.
 
 ### `makeFromGML(filename)`
 
-Replace the current graph with a GraphML file.
+Replace the current graph with a GML file (Graph Modelling Language, as
+written by networkx, igraph, yEd and Cytoscape: labels, graphics x/y,
+fill colour, size and shape, and every other attribute as a field). For
+compatibility with GUESS 2006, a GraphML (XML) file works too.
 
 ### `makeFromGraphML(filename)`
 
@@ -2219,6 +2244,17 @@ and shows the labels; labelBy(field, false) sets them without showing.
 legendFor(field) adds a legend explaining the current colours by field:
 one entry per value (for categories, as after colorize), or a gradient
 from the lowest to the highest value (for numbers, as after colorBy).
+The legend follows the colours: run colorize or colorBy again and it
+updates (until you add or remove entries yourself).
+
+### `removeLegend(legend)`
+
+removeLegend(lg) or removeLegend(2) removes one legend (the number is the
+one shown as <legend 2: …>; the × on a legend runs this).
+
+### `removeLegends()`
+
+removeLegends() removes every legend.
 
 ### `removeStyle(name)`
 
@@ -2383,7 +2419,7 @@ for "influenced by" links.
 
 ### `makeFromURL(url, format=None)`
 
-makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, Pajek, DL, CSV, a
+makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV, a
 .guess session or a .py script) and opens it; format=".gexf" etc. when
 the URL doesn't end in the extension.
 

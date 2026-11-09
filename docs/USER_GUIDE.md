@@ -8,7 +8,7 @@ screens; drag the divider to resize).
 ## Getting a graph in
 
 - **Sample graph** loads the bundled example (402 nodes).
-- **Open…** or drag and drop: `.gdf`, `.gexf` (Gephi), `.graphml`/`.xml`,
+- **Open…** or drag and drop: `.gdf`, `.gexf` (Gephi), `.graphml`/`.xml`, `.gml`, `.dot`/`.gv` (Graphviz),
   `.net` (Pajek), `.dl` (UCINET), `.csv`/`.tsv` (edge table, node table,
   adjacency matrix or list), `.guess` sessions, `.py` scripts (run), images
   (for `setBackgroundImage` or node images).
@@ -73,6 +73,7 @@ gesture below, and a tip appears the first time a gesture becomes available
 | gesture | does |
 |---|---|
 | drag background | pan; mouse wheel / pinch zooms; double-click fits |
+| Delete / Backspace | remove the selected nodes (Edit → Delete selected nodes; undoable) |
 | drag a node | move it (and the whole selection, if it is selected); recorded as a hidden command (View → Show node moves in the console) |
 | click a node (**Select** tool) | highlight it and its neighbours; click again or Esc to clear |
 | Shift-drag | box-select nodes |

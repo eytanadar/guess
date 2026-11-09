@@ -577,6 +577,13 @@ function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; ti
     });
   }
   act("Hide", runOn((t) => `${t}.visible = false`));
+  act("Delete", async () => {
+    const ok = await runOn((t) => `remove(${t})`)();
+    if (ok && items.some((i) => i[0] === "n" && renderer.selection.has(i[1]))) {
+      renderer.setSelection([]);
+      syncSelection([]);
+    }
+  });
   act("Center on", runOn((t) => `center(${t})`));
   // entries added from Python: NodeEditorPopup / EdgeEditorPopup / GraphElementPopup
   const scope = nodes && edges ? "ne" : nodes ? "n" : "e";
@@ -908,6 +915,26 @@ document.addEventListener("keydown", (ev) => {
   }
 });
 
+// Delete selected nodes: Edit menu, or Delete/Backspace when no text field has focus
+async function deleteSelection() {
+  if (!renderer.selection.size) {
+    status.textContent = "Nothing selected: shift-drag a box or Alt-drag a lasso first";
+    return;
+  }
+  if (await term.submit("remove(sel)")) {
+    renderer.setSelection([]);
+    syncSelection([]);
+  }
+}
+$("#delete-sel").addEventListener("click", () => void deleteSelection());
+document.addEventListener("keydown", (ev) => {
+  if ((ev.key !== "Delete" && ev.key !== "Backspace") || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  const t = ev.target as HTMLElement | null;
+  if (t?.closest(".cm-editor, input, textarea, select, [contenteditable=true], dialog")) return;
+  if (!renderer.selection.size) return;
+  ev.preventDefault();
+  void deleteSelection();
+});
 $("#undo").addEventListener("click", () => term.submit("undo()"));
 $("#redo").addEventListener("click", () => term.submit("redo()"));
 // Cmd/Ctrl+Z (and Shift+Cmd/Ctrl+Z or Ctrl+Y) undo commands when the code cell isn't focused

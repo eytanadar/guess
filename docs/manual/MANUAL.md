@@ -44,8 +44,8 @@ This tool is/includes:
   and *morph* smoothly between states. Ranges and a timeline let you look at
   graphs that change over time.
 - **Many formats in and out**: GDF (the GUESS format), GEXF (Gephi), GraphML,
-  Pajek, UCINET DL, CSV, URLs, SPARQL endpoints (e.g. Wikidata), NDEx and
-  Neo4j. Out: GDF, GEXF, GraphML, CSV, PNG, JPG, GIF, SVG, PDF, PostScript/EPS,
+  GML, Graphviz DOT, Pajek, UCINET DL, CSV, URLs, SPARQL endpoints (e.g.
+  Wikidata), NDEx and Neo4j. Out: GDF, GEXF, GraphML, GML, CSV, PNG, JPG, GIF, SVG, PDF, PostScript/EPS,
   WebM movies, notebooks and HTML reports.
 - **Interface building.** Panels, buttons, sliders and timers are a few lines
   of Gython. Package a graph and its interface as an *app*: a link that opens
@@ -278,7 +278,9 @@ There are three ways to get a graph into GUESS:
 |---|---|---|
 | `.gdf` | GUESS data file (section 4.2) | `makeFromGDF("f.gdf")` |
 | `.gexf` | Gephi | `makeFromGEXF("f.gexf")` |
-| `.graphml`, `.xml` | GraphML | `makeFromGML("f.graphml")` |
+| `.graphml`, `.xml` | GraphML | `makeFromGraphML("f.graphml")` |
+| `.gml` | GML (networkx, igraph, yEd, Cytoscape) | `makeFromGML("f.gml")` |
+| `.dot`, `.gv` | Graphviz DOT | `makeFromDOT("f.dot")` |
 | `.net` | Pajek | `makeFromPajek("f.net")` |
 | `.dl` | UCINET DL | `makeFromDL("f.dl")` |
 | `.csv`, `.tsv` | edge table, node table, adjacency matrix or list (as Gephi reads them) | `makeFromCSV("edges.csv", "nodes.csv")` |
@@ -290,6 +292,13 @@ An opened file is also copied into GUESS's own file space, so the command
 form works on it afterwards. If you dropped `office.gdf` on the window,
 `makeFromGDF("office.gdf")` reloads it. *File → Paste data…* takes a table
 copied from a spreadsheet.
+
+GML and DOT files bring their layout with them when they have one: GML
+`graphics [ x y w h fill type ]` and Graphviz `pos`, `width`, `height`,
+`color`/`fillcolor` and `shape` become positions, sizes, colours and shapes.
+Every other attribute becomes a field. Nodes in a Graphviz `cluster_*`
+subgraph get a `cluster` field, so `colorize(cluster)` shows the clusters.
+`makeFromGML` still opens GraphML too, as it did in GUESS 2006.
 
 Loading a graph replaces the current one. To keep several graphs at once,
 see section 10.
@@ -1062,6 +1071,7 @@ useful.
 | Shift-click a node | add it to (or remove it from) the selection |
 | Esc, or click the background | clear the selection |
 | right-click | a menu for the node, the edge, or the whole selection |
+| Delete or Backspace | remove the selected nodes (also *Edit → Delete selected nodes*, or *Delete* in the right-click menu); undo brings them back |
 
 ![A lasso selection (Alt/Option-drag).](../../web/public/help/lasso.png){width=60%}
 

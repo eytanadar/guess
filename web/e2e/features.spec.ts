@@ -522,3 +522,45 @@ test("legendFor: one live legend per field; rows highlight and have a menu", asy
   await expect(page.locator("#legends .legend")).toHaveCount(1);
   expect(errors).toEqual([]);
 });
+
+test("open GML and DOT files; delete selected nodes (key, menu, right-click)", async ({ page }) => {
+  const errors = await boot(page);
+  const gml = 'graph [ node [ id 1 label "a" ] node [ id 2 label "b" ] node [ id 3 label "c" ] edge [ source 1 target 2 ] edge [ source 2 target 3 ] ]';
+  await page.locator("#file").setInputFiles({ name: "t.gml", mimeType: "text/plain", buffer: Buffer.from(gml) });
+  await expect(page.locator(".cell").last()).toContainText('makeFromGML("t.gml")');
+  await expect(page.locator(".cell").last()).toContainText("loaded 3 nodes, 2 edges from t.gml (GML)");
+  const dot = "digraph { p -> q -> r; r -> w; w [color=red] }";
+  await page.locator("#file").setInputFiles({ name: "t.dot", mimeType: "text/plain", buffer: Buffer.from(dot) });
+  await expect(page.locator(".cell").last()).toContainText("loaded 4 nodes, 3 edges from t.dot (DOT)");
+  // Delete key removes the selection (one undoable command)
+  await run(page, "select(p)");
+  await page.locator("body").focus();
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press("Delete");
+  await expect(page.locator(".cell").last()).toContainText("remove(sel)");
+  await run(page, "print(len(g.nodes), len(g.edges))");
+  await expect(page.locator(".cell").last()).toContainText("3 2");
+  // Edit → Delete selected nodes
+  await run(page, "select(q)");
+  await menu(page, "Edit", "#delete-sel");
+  await run(page, "print(len(g.nodes))");
+  await expect(page.locator(".cell").last()).toContainText("2");
+  // right-click → Delete
+  await run(page, "center(w)");
+  await page.waitForTimeout(900);                         // camera tween
+  const at = await page.evaluate(() => {
+    const r = (window as any).__guess.renderer;
+    const n = [...r.nodes.values()].find((m: any) => m.name === "w");
+    const c = r.app.canvas.getBoundingClientRect(), v = r.getView();
+    return [c.left + c.width / 2 + (n.x + n.w / 2 - v[0]) * v[2], c.top + c.height / 2 + (n.y + n.h / 2 - v[1]) * v[2]];
+  });
+  await page.mouse.click(at[0], at[1], { button: "right" });
+  await page.locator("#menu button", { hasText: /^Delete$/ }).click();
+  await expect(page.locator(".cell").last()).toContainText("remove(w)");
+  await run(page, "print(sorted(n.name for n in g.nodes))");
+  await expect(page.locator(".cell").last()).toContainText("['r']");
+  await run(page, "undo()");
+  await run(page, "print(len(g.nodes))");
+  await expect(page.locator(".cell").last()).toContainText("2");
+  expect(errors).toEqual([]);
+});
