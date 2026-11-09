@@ -8,8 +8,8 @@ jobs:
   python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"   # same CPython as Pyodide 314.x
       - run: pip install -r py/requirements-dev.txt
@@ -22,8 +22,8 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -33,15 +33,17 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: playwright-results
           path: web/test-results
 
   deploy:
-    # Publish the static build to GitHub Pages from the main branch.
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Publish the static build to GitHub Pages from the main branch. Off unless
+    # the repository variable DEPLOY_PAGES is "true" (Settings → Secrets and
+    # variables → Actions → Variables) and Pages uses "GitHub Actions" as its source.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.DEPLOY_PAGES == 'true'
     needs: [python, web]
     runs-on: ubuntu-latest
     permissions:
@@ -51,15 +53,15 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: web/package-lock.json
       # the manual (docs/manual/build.py → web/dist/manuals): pandoc 3.9, XeLaTeX,
       # and the guess package for the generated appendices
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
       - run: pip install -r py/requirements-dev.txt
@@ -68,11 +70,12 @@ jobs:
           curl -sSL -o pandoc.deb https://github.com/jgm/pandoc/releases/download/3.9.0.2/pandoc-3.9.0.2-1-amd64.deb
           sudo apt-get update
           sudo apt-get install -y ./pandoc.deb texlive-xetex texlive-latex-extra texlive-fonts-recommended fonts-dejavu lmodern
-      - run: python docs/manual/build.py
+      # a fresh build; if it fails, the copy committed in docs/manual/build is deployed
+      - run: python docs/manual/build.py || echo "::warning::manual build failed; deploying the committed copy"
       - run: npm ci && npm run build
         working-directory: web
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: web/dist
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

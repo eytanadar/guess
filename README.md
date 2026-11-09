@@ -12,17 +12,16 @@ Documentation: [user guide](docs/USER_GUIDE.md), [API reference](docs/API.md),
 The GUESS manual (tutorial, data formats, queries, layouts, analysis, states,
 gestures, interface building, deployment, and the full command reference):
 
-- **Online:** [all formats](https://eytanadar.github.io/guess/manuals/) ·
-  [web page](https://eytanadar.github.io/guess/manuals/GUESS-manual.html) ·
-  [PDF](https://eytanadar.github.io/guess/manuals/GUESS-manual.pdf) ·
-  [EPUB](https://eytanadar.github.io/guess/manuals/GUESS-manual.epub) ·
-  [Word](https://eytanadar.github.io/guess/manuals/GUESS-manual.docx)
+- **Download:** [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/docs/manual/build/GUESS-manual.pdf) ·
+  [EPUB](https://raw.githubusercontent.com/eytanadar/guess/main/docs/manual/build/GUESS-manual.epub) ·
+  [Word](https://raw.githubusercontent.com/eytanadar/guess/main/docs/manual/build/GUESS-manual.docx) ·
+  [web page](https://raw.githubusercontent.com/eytanadar/guess/main/docs/manual/build/GUESS-manual.html) (save it and open it in a browser)
 - **Source:** [docs/manual/MANUAL.md](docs/manual/MANUAL.md) (readable here on GitHub)
 - **Build it yourself:** `python3 docs/manual/build.py` writes all formats and an
   index page to `docs/manual/build/` (needs pandoc 3 and XeLaTeX; see
   [docs/manual/README.md](docs/manual/README.md)).
 
-In the app, **Help → Manual** opens the same page.
+In a deployed copy of the app, **Help → Manual** opens the same manual.
 
 ## Run
 

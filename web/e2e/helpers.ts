@@ -39,3 +39,29 @@ export async function menu(page: Page, title: string, item: string) {
   const pop = page.locator(".menu-root", { has: page.locator(".menu-title", { hasText: title }) }).locator(".menu-pop");
   await (item.startsWith("#") || item.startsWith("[") ? pop.locator(item) : pop.getByRole("menuitem", { name: item })).click();
 }
+
+/** Click a node by name: waits for the camera to settle, then clicks a point
+ *  inside the node that the renderer's own hit test gives to that node (so a
+ *  bigger neighbour drawn on top can't steal the click). */
+export async function clickNode(page: Page, name: string) {
+  const at = await page.waitForFunction((name) => {
+    const g = (window as any).__guess;
+    const r = g.renderer;
+    if (r.tween) return null;                       // still moving
+    const n = [...r.nodes.values()].find((m: any) => m.name === name && m.v);
+    if (!n) return null;
+    const c = r.app.canvas.getBoundingClientRect();
+    const v = r.getView();
+    const s = v[2];
+    for (const fy of [0.5, 0.35, 0.65, 0.2, 0.8]) {
+      for (const fx of [0.5, 0.35, 0.65, 0.2, 0.8]) {
+        const sx = c.width / 2 + (n.x + n.w * fx - v[0]) * s, sy = c.height / 2 + (n.y + n.h * fy - v[1]) * s;
+        const hit = r.hitTest(sx, sy);
+        if (hit?.kind === "n" && hit.id === n.i && sx > 0 && sy > 0 && sx < c.width && sy < c.height) return [c.left + sx, c.top + sy];
+      }
+    }
+    return null;
+  }, name, { timeout: 15000 });
+  const [x, y] = (await at.jsonValue()) as number[];
+  await page.mouse.click(x, y);
+}

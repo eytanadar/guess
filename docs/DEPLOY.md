@@ -109,9 +109,12 @@ cd web/bundle && python3 -m http.server 8000
 
 ## GitHub Pages (CI)
 
-`.github/workflows/ci.yml` runs the Python and browser tests on every push and,
-on `main`, builds `web/dist` and publishes it with `actions/deploy-pages`.
-Enable Pages with "GitHub Actions" as the source in the repository settings.
+`.github/workflows/ci.yml` runs the Python and browser tests on every push.
+Publishing to GitHub Pages is off by default. To turn it on, set Pages'
+source to "GitHub Actions" in the repository settings and add a repository
+variable `DEPLOY_PAGES` = `true` (Settings → Secrets and variables → Actions →
+Variables). Pushes to `main` then build the manual and `web/dist` and publish
+them with `actions/deploy-pages`.
 
 ## Privacy and security notes
 

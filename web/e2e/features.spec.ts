@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { boot, lastError, menu, run } from "./helpers";
+import { boot, clickNode, lastError, menu, run } from "./helpers";
 
 test("layouts run without errors", async ({ page }) => {
   await boot(page);
@@ -99,26 +99,20 @@ test("gephi statistics, layouts, label options and click tools", async ({ page }
   await run(page, "labelOutlines(); hideOverlappingLabels(); g.nodes.labelvisible = true; sizeBy(pagerank, 6, 30, 'sqrt')");
   expect(await lastError(page)).toBeNull();
 
-  const canvas = page.locator("#graph canvas");
-  const box = (await canvas.boundingBox())!;
-  const clickCentre = async () => {
-    await page.waitForTimeout(700); // camera tween
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-  };
   // shortest path tool: two clicks write the command
   await page.click("[data-tool=path]");
   await run(page, "center(v1)");
-  await clickCentre();
+  await clickNode(page, "v1");
   await expect(page.locator("#status")).toContainText("Path from v1");
   await run(page, "center(v14)");
   const cells = page.locator(".cell");
   const before = await cells.count();
-  await clickCentre();
+  await clickNode(page, "v14");
   await expect(cells).toHaveCount(before + 1);
   await expect(cells.last()).toContainText("shortestPath(v1, v14).color");
   // heat map tool
   await page.click("[data-tool=heat]");
-  await clickCentre();
+  await clickNode(page, "v14");
   await expect(cells.last()).toContainText("heatMap(v14)");
   await expect(cells.last()).not.toHaveClass(/running/);
   expect(await lastError(page)).toBeNull();
@@ -126,7 +120,7 @@ test("gephi statistics, layouts, label options and click tools", async ({ page }
   await expect(page.locator("#status")).toHaveText("");
   // selecting a node focuses it (no console command)
   const n = await cells.count();
-  await clickCentre();
+  await clickNode(page, "v14");
   await page.waitForTimeout(200);
   expect(await cells.count()).toBe(n);
   expect(errors).toEqual([]);
