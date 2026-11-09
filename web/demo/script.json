@@ -1,7 +1,8 @@
 {
   "title": "GUESS for the web",
   "output": "guess-demo.mp4",
-  "voice": "JBFqnCBsd6RMkjVDRZzb",
+  "voice": "iP95p4xoKVk53GoZ742B",
+  "pronounce": { "Gython": "Guy-thon" },
   "ttsModel": "eleven_multilingual_v2",
   "theme": "light",
   "setup": [

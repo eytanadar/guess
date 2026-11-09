@@ -27,6 +27,7 @@ cd web
 npm run demo:script        # 1. Claude rewrites demo/script.json (old one kept as script.prev.json)
 npm run demo -- --dry-run  # 2. check the actions work and the pacing (silent, no narration cost)
 npm run demo               # 3. the real thing → demo/out/guess-demo.mp4
+npm run demo -- --captions  #    rewrite only the .srt captions for the last recording
 ```
 
 - **Steering a version:** `npm run demo:script -- --notes "feature the timeline
@@ -38,7 +39,9 @@ npm run demo               # 3. the real thing → demo/out/guess-demo.mp4
 - **Using Claude Code instead of step 1:** ask "follow web/demo/PROMPT.md to
   update web/demo/script.json", then run steps 2–3.
 - **Voice:** set `"voice"` in `script.json`, or pass `--voice <id>` or set
-  `ELEVENLABS_VOICE`. The default is a stock ElevenLabs voice.
+  `ELEVENLABS_VOICE`. The current voice is Chris (American, `iP95p4xoKVk53GoZ742B`).
+- **Pronunciation:** `"pronounce": { "Gython": "Guy-thon" }` in `script.json`
+  changes how a word is spoken; captions keep the written word.
 - **Length:** the run stops if the narration is over 5 minutes
   (`--max-seconds 300`; `--force` to override). The finished length is
   printed and written to `out/timing.json`.

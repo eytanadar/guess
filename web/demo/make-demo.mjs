@@ -9,7 +9,7 @@
 // browser records video, each scene's actions paced to its narration,
 // (3) ffmpeg lays the clips at the scene start times and muxes an MP4.
 // Needs ELEVENLABS_API (or ELEVENLABS_API_KEY) in the repo's .env, and ffmpeg.
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -51,7 +51,13 @@ mkdirSync(cacheDir, { recursive: true });
 // ---- 1. narration ---------------------------------------------------------------------
 const seconds = (file) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]).toString().trim());
 
-async function narrate(text) {
+// spoken spellings for words the voice gets wrong ("pronounce" in script.json);
+// captions keep the written form
+const spoken = (text) => Object.entries(script.pronounce ?? {})
+  .reduce((t, [word, say]) => t.replace(new RegExp(`\\b${word}\\b`, "g"), say), text);
+
+async function narrate(written) {
+  const text = spoken(written);
   if (dryRun) return { file: null, dur: Math.max(1.5, text.split(/\s+/).length / 2.6) };
   const key = process.env.ELEVENLABS_API || process.env.ELEVENLABS_API_KEY;
   if (!key) throw new Error("ELEVENLABS_API is not set (repo .env)");
@@ -296,6 +302,120 @@ function srtTime(s) {
   return `${p(Math.floor(ms / 3600000))}:${p(Math.floor(ms / 60000) % 60)}:${p(Math.floor(ms / 1000) % 60)},${p(ms % 1000, 3)}`;
 }
 
+// Captions: each scene's narration in short cues (at most two lines of ~42
+// characters, broken at sentences, then clauses, then words). A cue's time is
+// its share of the scene's characters, snapped to the nearest pause that
+// ffmpeg hears in the narration, so cues change where the voice breathes.
+const LINE = 42, CUE = 2 * LINE;
+
+function splitCues(text) {
+  const sentences = text.match(/[^.!?]+[.!?]+["')]*\s*|[^.!?]+$/g) ?? [text];
+  const cues = [];
+  // a clause too long for one cue: split it in two at the best break, repeatedly
+  const pushWords = (part) => {
+    if (fits(part)) { cues.push(part); return; }
+    const [x, y] = bestBreak(part, Infinity);
+    pushWords(x);
+    pushWords(y);
+  };
+  for (const sen of sentences.map((x) => x.trim()).filter(Boolean)) {
+    if (fits(sen)) { cues.push(sen); continue; }
+    // clauses: after , ; : — keeping the punctuation; merge small ones back up to CUE
+    const clauses = sen.split(/(?<=[,;:—])\s+/);
+    let cur = "";
+    for (const c of clauses) {
+      if (cur && !fits(cur + " " + c)) { cues.push(cur); cur = ""; }
+      if (!fits(c)) { pushWords(c); continue; }
+      cur = cur ? cur + " " + c : c;
+    }
+    if (cur) cues.push(cur);
+  }
+  // fold a dangling short cue into its neighbour when they fit together
+  for (let i = cues.length - 1; i > 0; i--) {
+    if (cues[i].length < 16 && fits(cues[i - 1] + " " + cues[i])) cues.splice(i - 1, 2, cues[i - 1] + " " + cues[i]);
+  }
+  return cues.map(twoLines);
+}
+
+// words a line or cue should not end on ("… with a / frequency")
+const WEAK = new Set("a an the of to in on at by for with and or but so that which who over one two its their our we".split(" "));
+
+/** Split text in two at the best word boundary: balanced, after punctuation if
+ *  possible, never after a weak word; each half at most `max` long if it can be. */
+function bestBreak(text, max) {
+  const words = text.split(" ");
+  let best = [text, ""], score = Infinity;
+  for (let k = 1; k < words.length; k++) {
+    const a = words.slice(0, k).join(" "), b = words.slice(k).join(" ");
+    const last = words[k - 1].toLowerCase().replace(/[^a-z]/g, "");
+    let sc = Math.abs(a.length - b.length);
+    if (/[,;:—.]$/.test(a)) sc -= 12;
+    if (WEAK.has(last)) sc += 25;
+    if (Math.max(a.length, b.length) > max) sc += 100;
+    if (sc < score) { score = sc; best = [a, b]; }
+  }
+  return best;
+}
+
+/** Does the text make a good cue: one line, or two lines of at most LINE
+ *  characters that don't break after a weak word? */
+function fits(text) {
+  if (text.length <= LINE) return true;
+  if (text.length > CUE) return false;
+  const [a, b] = bestBreak(text, LINE);
+  return a.length <= LINE && b.length <= LINE && !WEAK.has(a.split(" ").pop().toLowerCase().replace(/[^a-z]/g, ""));
+}
+
+/** Break a cue into at most two balanced lines. */
+function twoLines(cue) {
+  if (cue.length <= LINE) return cue;
+  return bestBreak(cue, LINE).join("\n");
+}
+
+/** Midpoints of the pauses in an audio file (seconds). */
+function pauses(file) {
+  if (!file) return [];
+  const r = spawnSync("ffmpeg", ["-hide_banner", "-i", file, "-af", "silencedetect=noise=-32dB:d=0.12", "-f", "null", "-"], { encoding: "utf8" });
+  const out = [];
+  let start = null;
+  for (const line of (r.stderr || "").split("\n")) {
+    const a = /silence_start: ([\d.]+)/.exec(line), b = /silence_end: ([\d.]+)/.exec(line);
+    if (a) start = Number(a[1]);
+    if (b && start !== null) { out.push((start + Number(b[1])) / 2); start = null; }
+  }
+  return out;
+}
+
+function sceneCues(sc) {
+  const cues = splitCues(sc.narration);
+  const dur = sc.audio.dur;
+  const total = cues.reduce((s, c) => s + c.length, 0);
+  const gaps = pauses(sc.audio.file);
+  const bounds = [0];
+  let acc = 0;
+  for (let i = 0; i < cues.length - 1; i++) {
+    acc += cues[i].length;
+    let t = (acc / total) * dur;
+    const near = gaps.filter((g) => Math.abs(g - t) < 0.9 && g > bounds[bounds.length - 1] + 0.6);
+    if (near.length) t = near.reduce((a, b) => (Math.abs(b - t) < Math.abs(a - t) ? b : a));
+    bounds.push(Math.max(t, bounds[bounds.length - 1] + 0.6));
+  }
+  bounds.push(dur);
+  return cues.map((text, i) => ({ start: bounds[i], end: bounds[i + 1], text }));
+}
+
+function writeCaptions(out, times, scenes, trim) {
+  const cues = [];
+  scenes.forEach((sc, i) => {
+    const t0 = times[i].start - trim;
+    const last = Math.min(times[i].end, times[i].start + sc.audio.dur + 0.3) - trim;
+    const sc_ = sceneCues(sc);
+    sc_.forEach((c, k) => cues.push({ start: t0 + c.start, end: k === sc_.length - 1 ? last : t0 + c.end, text: c.text }));
+  });
+  const srt = cues.map((c, k) => `${k + 1}\n${srtTime(c.start)} --> ${srtTime(c.end)}\n${c.text}\n`).join("\n");
+  writeFileSync(out.replace(/\.mp4$/, ".srt"), srt);
+}
+
 function mux(raw, times, scenes, trim) {
   const out = join(outDir, script.output || "guess-demo.mp4");
   const inputs = [], filters = [];
@@ -315,8 +435,7 @@ function mux(raw, times, scenes, trim) {
   }
   args.push("-c:v", "libx264", "-preset", "slow", "-crf", "20", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out);
   execFileSync("ffmpeg", args, { stdio: ["ignore", "ignore", "inherit"] });
-  const srt = scenes.map((sc, i) => `${i + 1}\n${srtTime(times[i].start - trim)} --> ${srtTime(Math.min(times[i].end, times[i].start + sc.audio.dur + 0.3) - trim)}\n${sc.narration}\n`).join("\n");
-  writeFileSync(out.replace(/\.mp4$/, ".srt"), srt);
+  writeCaptions(out, times, scenes, trim);
   return out;
 }
 
@@ -328,6 +447,17 @@ const talk = scenes.reduce((s, sc) => s + sc.audio.dur + (sc.pause ?? 600) / 100
 console.log(`narration ≈ ${Math.round(talk)} s`);
 if (talk > MAX_SECONDS && !args.includes("--force")) {
   throw new Error(`narration is ${Math.round(talk)} s, over the ${MAX_SECONDS} s limit: shorten the script (or --force)`);
+}
+if (args.includes("--captions")) {
+  // rewrite the .srt for the existing video from timing.json (no recording)
+  const { times, trim } = JSON.parse(readFileSync(join(outDir, "timing.json"), "utf8"));
+  if (times.length !== scenes.length || times.some((t, i) => t.id !== scenes[i].id)) {
+    throw new Error("script.json's scenes differ from the last recording (timing.json): run npm run demo");
+  }
+  const out = join(outDir, script.output || "guess-demo.mp4");
+  writeCaptions(out, times, scenes, trim);
+  console.log(`wrote ${out.replace(/\.mp4$/, ".srt")}`);
+  process.exit(0);
 }
 const { raw, times, trim } = await record(scenes);
 const total = times[times.length - 1].end - trim;

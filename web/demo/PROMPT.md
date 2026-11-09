@@ -62,6 +62,7 @@ Return only a JSON object, with no commentary, of the form:
   "output": "guess-demo.mp4",
   "voice": "<keep the existing value>",
   "ttsModel": "<keep the existing value>",
+  "pronounce": "<keep the existing value: spoken spellings, e.g. Gython → Guy-thon>",
   "theme": "light",
   "setup": [ { "title": "GUESS", "subtitle": "…" } ],
   "scenes": [

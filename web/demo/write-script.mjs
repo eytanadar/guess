@@ -109,6 +109,7 @@ if (errs.length) {
 }
 const old = JSON.parse(current);
 script.voice ??= old.voice;
+script.pronounce ??= old.pronounce;
 script.ttsModel ??= old.ttsModel;
 if (outFile) {
   writeFileSync(outFile, JSON.stringify(script, null, 2) + "\n");
