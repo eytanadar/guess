@@ -676,13 +676,23 @@ function legendItems(e: LegendEntry, lg: LegendRec): Item[] {
   return [];
 }
 
+// legends the user expanded ("… N more"), by id; kept across re-renders
+const expandedLegends = new Set<number>();
+let lastLegends: LegendRec[] = [];
+
 function renderLegends(legends: LegendRec[]) {
+  lastLegends = legends;
   const host = $("#legends");
+  // keep each legend's scroll position across re-renders
+  const scrolls = new Map([...host.querySelectorAll<HTMLElement>(".legend")].map((b) => [Number(b.dataset.i), b.scrollTop]));
   host.replaceChildren();
+  for (const id of [...expandedLegends]) if (!legends.some((lg) => lg.i === id)) expandedLegends.delete(id);
   for (const lg of legends) {
     if (!lg.entries.length && !lg.ramp) continue;
     const box = document.createElement("div");
     box.className = "legend";
+    box.dataset.i = String(lg.i);
+    const expanded = expandedLegends.has(lg.i);
     const close = document.createElement("button");
     close.className = "legend-close";
     close.textContent = "×";
@@ -716,6 +726,7 @@ function renderLegends(legends: LegendRec[]) {
       box.append(ends);
     }
     for (const e of lg.entries) {
+      if (e.hid && !expanded) continue;
       const row = document.createElement("div");
       row.className = "legend-row";
       const sw = document.createElement("span");
@@ -725,7 +736,24 @@ function renderLegends(legends: LegendRec[]) {
       if (e.k === "e") sw.style.setProperty("--w", `${Math.min(Math.max(e.w ?? 2, 1), 8)}px`);
       const t = document.createElement("span");
       t.textContent = e.t;
+      if (e.more && expanded) {
+        const listed = lg.entries.filter((x) => x.k !== "x").length;
+        const unlisted = lg.entries.some((x) => x.k === "x" && x.hid);    // over 300 groups
+        t.textContent = unlisted ? `${listed} largest shown` : `all ${listed} shown`;
+      }
       row.append(sw, t);
+      if (e.more) {
+        // "… N more": click to list every group (scrolls when long); again to collapse
+        const toggle = document.createElement("button");
+        toggle.className = "legend-more";
+        toggle.textContent = expanded ? "Show fewer" : "Show all";
+        toggle.addEventListener("click", () => {
+          if (expanded) expandedLegends.delete(lg.i);
+          else expandedLegends.add(lg.i);
+          renderLegends(lastLegends);
+        });
+        row.append(toggle);
+      }
       // live rows: hover highlights what the row stands for; right-click acts on it
       const items = legendItems(e, lg);
       if (items.length) {
@@ -742,6 +770,9 @@ function renderLegends(legends: LegendRec[]) {
       box.append(row);
     }
     host.append(box);
+    box.scrollTop = scrolls.get(lg.i) ?? 0;
+    // a legend taller than its share of the graph scrolls, so it must take the wheel
+    requestAnimationFrame(() => box.classList.toggle("scrolls", box.scrollHeight > box.clientHeight + 1));
   }
 }
 

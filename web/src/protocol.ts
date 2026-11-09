@@ -35,6 +35,8 @@ export interface LegendEntry {
   /** legendFor rows: the elements the row stands for (ik: "n" nodes, "e" edges)
    *  and a Gython expression for them (the right-click menu acts on it) */
   ids?: number[]; ik?: "n" | "e"; q?: string;
+  /** hid: shown only when the legend is expanded; more: the "… N more" row that expands it */
+  hid?: boolean; more?: boolean;
 }
 
 export interface LegendRec {

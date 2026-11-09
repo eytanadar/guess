@@ -237,15 +237,23 @@ body { display: flex; flex-direction: column; }
 
 .legends {
   position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; flex-direction: column;
-  gap: 8px; pointer-events: none; max-width: 40%;
+  gap: 8px; pointer-events: none; max-width: 40%; max-height: calc(100% - 20px);
 }
+/* long legends scroll inside the graph area (several share the height) */
+.legends .legend { min-height: 0; flex: 0 1 auto; overflow-y: auto; overscroll-behavior: contain; }
+.legends .legend:has(.legend-row.live), .legends .legend.scrolls { pointer-events: auto; }
+.legend-more {
+  margin-left: auto; padding: 0 6px; border: 1px solid var(--border); border-radius: 4px;
+  background: none; color: var(--text); font: inherit; font-style: normal; font-size: 11px; cursor: pointer;
+}
+.legend-more:hover { background: rgba(127, 127, 127, 0.18); }
 .legend {
   background: var(--legend-bg); border: 1px solid var(--border); border-radius: 6px;
   padding: 6px 9px; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .legend { position: relative; }
 .legend-close {
-  position: absolute; top: 1px; right: 2px; pointer-events: auto;
+  position: sticky; float: right; margin: -4px -18px 0 0; top: 1px; right: 2px; pointer-events: auto;
   border: 0; background: none; color: var(--muted); font-size: 14px; line-height: 1;
   padding: 2px 4px; cursor: pointer; border-radius: 4px; opacity: 0.55;
 }

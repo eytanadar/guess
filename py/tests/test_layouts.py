@@ -515,9 +515,12 @@ def test_legend_for_tells_categories_from_gradients():
     lg = s.ns["lg"]
     groups = len({n.modularity_class for n in s.graph.nodes})
     assert groups > 16 and lg._ramp is None
-    rows = lg.record()["entries"]
+    allrows = lg.record()["entries"]
+    rows = [r for r in allrows if not r.get("hid")]          # what shows before expanding
     assert len(rows) == 13 and rows[-1]["k"] == "x" and rows[-1]["t"].startswith(f"… {groups - 12} more")
     assert len({r["c"] for r in rows[:-1]}) == 12            # each community its own colour
+    assert len(allrows) == groups + 1 and rows[-1]["more"]   # expanding shows every community
+    assert sorted(i for r in allrows[12:-1] for i in r["ids"]) == sorted(rows[-1]["ids"])
     for scale, middle in (("linear", None), ("log", None), ("rank", "white")):
         extra = ", middle=white" if middle else ""
         run(s, f"colorBy(totaldegree, yellow, red, '{scale}'{extra})\nlg = legendFor(totaldegree)")

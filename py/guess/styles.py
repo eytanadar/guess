@@ -13,6 +13,8 @@ import math
 from . import colors
 from .model import EDGE, NODE, Edge, Field, GSet, GuessError, Node, elements_of, group_by
 
+LEGEND_MAX = 300   # rows a legendFor legend lists when expanded
+
 # node shapes cycled by shapeBy: circle, square, rounded square
 SHAPES = [2, 1, 3]
 
@@ -169,19 +171,28 @@ def fill_legend(lg, f, title=None):
                     "min": _num(lo[1]), "max": _num(hi[1])}
         return
     groups = sorted(groups, key=len, reverse=True)
-    shown = groups if len(groups) <= 16 else groups[:12]
+    # long legends: the 12 largest groups, then "… N more" which expands (in the
+    # page) to the rest, up to LEGEND_MAX rows; the extra rows carry hid=True
+    shown = len(groups) if len(groups) <= 16 else 12
     # the name that reaches this field in Gython (an edge field hidden by a node field: Edge.x)
     name = f.name if f.kind == NODE or f.name not in _node_schema(f) else f"Edge.{f.name}"
     ik = "n" if f.kind == NODE else "e"
-    for grp in shown:
+    for k, grp in enumerate(groups[:LEGEND_MAX]):
         v = f.get(grp[0])
         lg._add(grp[0], f"{title + ': ' if title else ''}{v}", notify=False)
         # live rows: hover highlights these elements, right-click acts on the expression
         lg._entries[-1].update(ids=[x._id for x in grp], ik=ik, q=f"{name} == {v!r}")
-    if len(shown) < len(groups):
-        rest = groups[len(shown):]
-        lg._note(f"… {len(rest)} more ({sum(map(len, rest))} {'nodes' if f.kind == NODE else 'edges'})", notify=False)
-        lg._entries[-1].update(ids=[x._id for grp in rest for x in grp], ik=ik)
+        if k >= shown:
+            lg._entries[-1]["hid"] = True
+    if shown < len(groups):
+        rest = groups[shown:]
+        what = "nodes" if f.kind == NODE else "edges"
+        lg._note(f"… {len(rest)} more ({sum(map(len, rest))} {what})", notify=False)
+        lg._entries[-1].update(ids=[x._id for grp in rest for x in grp], ik=ik, more=True)
+        if len(groups) > LEGEND_MAX:
+            unlisted = groups[LEGEND_MAX:]
+            lg._note(f"{len(unlisted)} smaller groups not listed ({sum(map(len, unlisted))} {what})", notify=False)
+            lg._entries[-1].update(ids=[x._id for grp in unlisted for x in grp], ik=ik, hid=True)
 
 
 def _node_schema(f):

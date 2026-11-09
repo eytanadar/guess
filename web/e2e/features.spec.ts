@@ -501,6 +501,19 @@ test("legendFor: one live legend per field; rows highlight and have a menu", asy
   const before = await page.locator("#legends .sw").first().evaluate((e) => getComputedStyle(e).backgroundColor);
   await run(page, "colorize(dept, yellow, blue)");
   await expect.poll(() => page.locator("#legends .sw").first().evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(before);
+  // a long legend: 12 rows and "… N more"; Show all lists every group and scrolls
+  await run(page, "louvainClusters()\ncolorize(modularity_class)\nlegendFor(modularity_class)");
+  const big = page.locator("#legends .legend").last();
+  await expect(big.locator(".legend-row")).toHaveCount(13);
+  await big.locator(".legend-more").click();
+  await run(page, "print(len(groupBy(modularity_class)))");
+  const total = Number((await page.locator(".cell").last().locator(".cell-out").innerText()).trim());
+  await expect(big.locator(".legend-row")).toHaveCount(total + 1);
+  await expect(big.locator(".legend-row").last()).toContainText(`all ${total} shown`);
+  await expect.poll(() => big.evaluate((b) => b.scrollHeight > b.clientHeight)).toBe(true);
+  await big.locator(".legend-more").click();
+  await expect(big.locator(".legend-row")).toHaveCount(13);
+  await run(page, "removeLegend(" + await big.getAttribute("data-i") + ")");
   // × closes a legend with a command (undoable)
   await page.locator("#legends .legend-close").click();
   await expect(page.locator(".cell").last()).toContainText("removeLegend(");
