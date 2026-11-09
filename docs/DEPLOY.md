@@ -19,6 +19,7 @@ Each run produces, under `web/bundle/`:
 ```
 guess-web-<version>[-offline]/          ← upload the contents of this folder
   index.html, assets/, coi-serviceworker.js, examples/
+  manuals/                              the manual (index, HTML, PDF, EPUB, Word): Help → Manual
   pyodide/                              (offline bundles only)
   .htaccess, _headers                   Apache / Netlify / Cloudflare Pages headers
   nginx.conf.example, Caddyfile.example server config templates
@@ -32,8 +33,13 @@ browser) from `cdn.jsdelivr.net` on first use. Use `--offline` for intranets,
 air-gapped machines, or to avoid depending on the CDN; offline downloads are
 cached in `web/.pyodide-cache/`.
 
-`npm run build` alone writes the site to `web/dist/` without the server files
-or archives (this is what CI publishes to GitHub Pages).
+The manual comes from `docs/manual/build/`. The bundle builds it first if it
+is missing (pandoc 3 and XeLaTeX); without it the site works but Help → Manual
+has nothing to open.
+
+`npm run build` alone writes the site to `web/dist/` (with `manuals/` if the
+manual has been built) without the server files or archives. This is what CI
+publishes to GitHub Pages; the deploy job builds the manual first.
 
 ## Put it on a server
 

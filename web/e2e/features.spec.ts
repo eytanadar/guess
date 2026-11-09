@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { boot, lastError, menu, run } from "./helpers";
 
@@ -468,5 +469,21 @@ test("2006 manual compatibility: custom menu items and old export formats", asyn
     expect(head, cmd).toBe(magic);
     if (process.env.GUESS_KEEP) fs.copyFileSync((await d.path())!, `${process.env.GUESS_KEEP}/${name}`);
   }
+  expect(errors).toEqual([]);
+});
+
+test("Help menu: Manual and GitHub open in a new tab", async ({ page, context }) => {
+  const errors = await boot(page);
+  const [manual] = await Promise.all([context.waitForEvent("page"), menu(page, "Help", "#btn-manual")]);
+  expect(new URL(manual.url()).pathname).toBe("/manuals/");
+  // the dev server serves docs/manual/build when the manual has been built
+  if (existsSync(new URL("../../docs/manual/build/index.html", import.meta.url))) {
+    await expect(manual).toHaveTitle("GUESS manual");
+    await expect(manual.locator("a", { hasText: "PDF" })).toHaveAttribute("href", "GUESS-manual.pdf");
+  }
+  await manual.close();
+  const [gh] = await Promise.all([context.waitForEvent("page"), menu(page, "Help", "#btn-github")]);
+  expect(gh.url()).toContain("github.com/eytanadar/guess");
+  await gh.close();
   expect(errors).toEqual([]);
 });

@@ -1,6 +1,7 @@
 // Build a deployable copy of GUESS: `npm run bundle [-- --offline] [-- --out DIR]`.
 //
 //   bundle/guess-web-<version>/        the site: upload its contents to any static web server
+//                                      (includes manuals/: the built manual, see docs/manual)
 //   bundle/guess-web-<version>.zip     the same, zipped (and .tar.gz)
 //
 // --offline also copies Pyodide (the Python runtime, numpy and networkx, ~25 MB)
@@ -10,6 +11,7 @@ import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { copyManuals } from "./copy-manuals.mjs";
 
 const web = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -29,6 +31,9 @@ run("npx", ["vite", "build", "--outDir", site, "--emptyOutDir"], offline ? { VIT
 for (const [src, dst] of [["htaccess", ".htaccess"], ["_headers", "_headers"], ["nginx.conf.example", "nginx.conf.example"], ["Caddyfile.example", "Caddyfile.example"]]) {
   cpSync(join(web, "deploy", src), join(site, dst));
 }
+
+// the manual (PDF, HTML, EPUB, Word) under manuals/, linked from Help → Manual
+copyManuals(site, { build: true });
 
 if (offline) {
   const cache = join(web, ".pyodide-cache");

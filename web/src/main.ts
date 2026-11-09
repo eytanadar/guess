@@ -989,6 +989,9 @@ function dragBehaviour(id: number, alt: boolean): DragBehaviour | null {
 
 // ---- gesture guide and one-time tips -------------------------------------------------
 $("#btn-gestures").addEventListener("click", () => void openSide("help", "gestures"));
+// the built manual is deployed next to the app (scripts/copy-manuals.mjs; the dev server serves it too)
+$("#btn-manual").addEventListener("click", () => window.open(new URL("manuals/", location.href).href, "_blank", "noopener"));
+$("#btn-github").addEventListener("click", () => window.open("https://github.com/eytanadar/guess", "_blank", "noopener"));
 const TIPS: Record<string, string> = {
   ring: "Tip: drag a node around the circle to reorder it; the others make room.",
   scatter: "Tip: drag a node in the scatter plot to edit its two values.",

@@ -109,7 +109,7 @@ options, or put it in a script.
 
 There are several ways in:
 
-- **Help → Help panel** (or **F1**) opens a panel with two tabs. *Commands &
+- **Help → Help and examples** (or **F1**) opens a panel with two tabs. *Commands &
   examples* is a searchable list of every command and a set of worked
   examples; click an example to put it in the console. *Mouse & gestures*
   explains, with pictures, everything the mouse does.
@@ -122,6 +122,9 @@ There are several ways in:
 - When something goes wrong, the error names the line and, for misspelled
   names, the name you probably meant. Click *details* for the full Python
   traceback.
+- **Help → Manual** opens this manual in a new tab, as a web page, PDF, EPUB
+  or Word file. **Help → GitHub** opens the project's page, with the source
+  code and issue tracker.
 
 ![The help panel, searching for "color". Commands come first, then examples.](img/help.png){width=85%}
 
@@ -1290,11 +1293,15 @@ the source:
 ```{.python .norun}
 cd web
 npm install
-npm run bundle        # writes dist/ and guess-web.zip
+npm run bundle             # web/bundle/guess-web-<version>/ and .zip, .tar.gz
+npm run bundle -- --offline   # the same, with the Python runtime included
 ```
 
-Copy `dist/` (or unzip `guess-web.zip`) to the server. The bundle includes the
-Python runtime, so it also works with no network. The server must send two
+Copy the contents of the `guess-web-<version>` folder (or unzip the archive)
+to the server. The site includes this manual under `manuals/`, which
+*Help → Manual* opens. A normal bundle loads the Python runtime from a CDN the
+first time it runs. An `--offline` bundle carries it (about 25 MB more), so it
+works with no internet access. The server must send two
 headers (`Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy`) for
 the *Stop* button to interrupt running code. The bundle includes a fallback
 for servers that can't. `docs/DEPLOY.md` has ready-made settings for Apache,

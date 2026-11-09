@@ -1,11 +1,28 @@
 # GUESS for the web
 
-A browser reimplementation of [GUESS](output-md/guess-chi2006/) (Adar, CHI 2006):
+A browser reimplementation of [GUESS](http://www.cond.org/chi2006-final2.pdf) (Adar, CHI 2006):
 graph exploration driven by **Gython**, Python 3 extended with graph operators.
 Everything runs client-side; Python runs in a Web Worker via Pyodide.
 Documentation: [user guide](docs/USER_GUIDE.md), [API reference](docs/API.md),
 [architecture](docs/ARCHITECTURE.md), [developer guide](docs/DEVELOPER.md),
 [deployment](docs/DEPLOY.md). [PLAN.md](PLAN.md) has the design log and roadmap.
+
+## Manual
+
+The GUESS manual (tutorial, data formats, queries, layouts, analysis, states,
+gestures, interface building, deployment, and the full command reference):
+
+- **Online:** [all formats](https://eytanadar.github.io/guess/manuals/) ·
+  [web page](https://eytanadar.github.io/guess/manuals/GUESS-manual.html) ·
+  [PDF](https://eytanadar.github.io/guess/manuals/GUESS-manual.pdf) ·
+  [EPUB](https://eytanadar.github.io/guess/manuals/GUESS-manual.epub) ·
+  [Word](https://eytanadar.github.io/guess/manuals/GUESS-manual.docx)
+- **Source:** [docs/manual/MANUAL.md](docs/manual/MANUAL.md) (readable here on GitHub)
+- **Build it yourself:** `python3 docs/manual/build.py` writes all formats and an
+  index page to `docs/manual/build/` (needs pandoc 3 and XeLaTeX; see
+  [docs/manual/README.md](docs/manual/README.md)).
+
+In the app, **Help → Manual** opens the same page.
 
 ## Run
 

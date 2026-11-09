@@ -9,7 +9,7 @@ and undo, and sharing/deploying.
 ## Building
 
 ```sh
-python3 docs/manual/build.py              # PDF, HTML, EPUB and Word into docs/manual/build/
+python3 docs/manual/build.py              # PDF, HTML, EPUB, Word and index.html into docs/manual/build/
 python3 docs/manual/build.py pdf html     # just these
 ```
 
@@ -17,6 +17,9 @@ Needs [pandoc](https://pandoc.org) 3 and, for the PDF, XeLaTeX (MacTeX or
 TeX Live). The build adds two generated appendices so they can't go stale:
 the colour table (from `py/guess/colors.py`) and the command reference
 (from `docs/API.md`; regenerate that with `py/tools/gen_api_docs.py`).
+The deploy scripts (`npm run build`, `npm run bundle`, CI's GitHub Pages job)
+copy the index and the four formats to `manuals/` on the site, which
+*Help → Manual* opens (`web/scripts/copy-manuals.mjs`).
 Any other pandoc output works from the assembled file,
 `docs/manual/build/GUESS-manual.md`.
 

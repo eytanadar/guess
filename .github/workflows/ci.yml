@@ -57,6 +57,18 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: web/package-lock.json
+      # the manual (docs/manual/build.py → web/dist/manuals): pandoc 3.9, XeLaTeX,
+      # and the guess package for the generated appendices
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install -r py/requirements-dev.txt
+      - name: Install pandoc and XeLaTeX
+        run: |
+          curl -sSL -o pandoc.deb https://github.com/jgm/pandoc/releases/download/3.9.0.2/pandoc-3.9.0.2-1-amd64.deb
+          sudo apt-get update
+          sudo apt-get install -y ./pandoc.deb texlive-xetex texlive-latex-extra texlive-fonts-recommended fonts-dejavu lmodern
+      - run: python docs/manual/build.py
       - run: npm ci && npm run build
         working-directory: web
       - uses: actions/upload-pages-artifact@v3
