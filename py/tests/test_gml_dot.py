@@ -96,3 +96,26 @@ def test_dot_undirected_and_errors(tmp_path):
     p = tmp_path / "bad.dot"
     p.write_text("digraph { a -> }")
     assert not t.run(f"makeFromDOT({str(p)!r})")
+
+
+def test_dot_reader_maps_more_attributes(tmp_path):
+    text = r'''digraph {
+      a [fillcolor=yellow, color=red, style=filled, fontcolor=blue, pos="10,20!"];
+      b [xlabel="Bee", style=invis];
+      r [shape=record, label="<p0> left | {mid | right}"];
+      a -> b [fontcolor=green, style=dashed];
+      b -> r [dir=back];
+      r -> a [dir=none, style=invis];
+      subgraph cluster_x { label="Group X"; c; d }
+    }'''
+    s = load(tmp_path, "m.dot", text, "makeFromDOT")
+    g = s.graph
+    a, b, r = (g.getNodeByName(k) for k in "abr")
+    assert a.color.lower() in ("yellow", "#ffff00", "255,255,0") and a.strokecolor.lower() in ("red", "#ff0000", "255,0,0")
+    assert a.labelcolor.lower() in ("blue", "#0000ff", "0,0,255") and a.fixed and (a.x, a.y) == (10.0, -20.0)
+    assert b.label == "Bee" and not b.visible and r.label == "left mid right"
+    es = {(e._n1._name, e._n2._name): e for e in g.edges}
+    assert es[("a", "b")].labelcolor.lower() in ("green", "#008000", "0,128,0") and es[("a", "b")].style == "dashed"
+    assert ("r", "b") in es and es[("r", "b")]._directed            # dir=back reverses
+    assert not es[("r", "a")]._directed and not es[("r", "a")].visible
+    assert g.getNodeByName("c").cluster == "x" and g.getNodeByName("c").clusterlabel == "Group X"

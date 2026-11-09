@@ -407,7 +407,8 @@ def install(session):
     @cmd
     def graphStats():
         """Print a summary: size, density, degree, components, diameter, average
-        path length, clustering and (if computed) modularity."""
+        path length, clustering, transitivity, degree assortativity, reciprocity
+        (directed edges) and (if computed) modularity."""
         nn, ne = len(g._nodes), len(g._edges)
         directed = sum(e._directed for e in g._edges_list())
         comps = _components(g)[0]
@@ -426,6 +427,15 @@ def install(session):
         ]
         if "modularity_class" in g.node_schema:
             lines.append(f"modularity       {modularity(g.node_schema['modularity_class']):.4f}")
+        if ne:
+            ns = session.ns
+            lines.append(f"transitivity     {ns['transitivity']():.4f}")
+            try:
+                lines.append(f"degree assort.   {ns['assortativity']():+.4f}")
+            except (GuessError, ValueError, ZeroDivisionError):
+                pass
+            if directed:
+                lines.append(f"reciprocity      {ns['reciprocity']():.4f}")
         print("\n".join(lines))
 
     # ---- structural filters ----------------------------------------------

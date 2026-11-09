@@ -18,6 +18,15 @@ if not SAMPLE.exists():
     SAMPLE = next(ROOT.glob("**/sample.gdf"))
 
 text = (HERE.parent / "MANUAL.md").read_text()
+
+# run in a scratch folder holding sample.gdf, as the app's file space does, so
+# examples can say makeFromGDF("sample.gdf") and write exports without litter
+import os  # noqa: E402
+import shutil  # noqa: E402
+import tempfile  # noqa: E402
+_work = tempfile.mkdtemp(prefix="guess-manual-")
+shutil.copy(SAMPLE, os.path.join(_work, "sample.gdf"))
+os.chdir(_work)
 chapters = re.split(r"^# ", text, flags=re.M)
 failures = 0
 total = 0

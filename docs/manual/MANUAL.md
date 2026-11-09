@@ -381,6 +381,11 @@ sometimes written on one line. Both forms load.
 - **Pajek** `.net` reads vertices (with their coordinates, shapes and colours),
   arcs (directed) and edges (undirected), with weights.
 - **UCINET DL** reads the edgelist and full-matrix forms, with labels.
+- **GML** (networkx, igraph, yEd, Cytoscape) and **Graphviz DOT** keep their
+  attributes and any layout they carry (section 4.1). `exportGML("g.gml")`
+  and `exportDOT("g.dot")` write them. `exportDOT` groups nodes into Graphviz
+  clusters by a field (`exportDOT("g.dot", clusters="modularity_class")`), and
+  `layout=False` leaves positions out so Graphviz lays the graph out itself.
 - **CSV** works as in Gephi. An edge table has `Source`, `Target`, and
   optionally `Type` (directed/undirected), `Weight` and `Label`; other columns
   become edge fields. A node table has `Id`, optionally `Label`, and other
@@ -424,6 +429,12 @@ ann.score = 4.5
 arguments set fields. A new field must be declared with `addNodeField` or
 `addEdgeField` (giving the type and default) before you assign to it. GUESS
 won't make a new field from a typo.
+
+Classic networks from the literature load with `makeSample(name)`:
+`karate` (Zachary's karate club, with each member's `club`), `lesmis` (Les
+Misérables co-appearances), `florentine`, `davis` (Southern Women, two-mode),
+`petersen`, `kite`, `tutte`, `dodecahedron` and `caveman`. `makeSample()`
+lists them.
 
 There are also random graph generators: `makeSimpleRandom(nodes, edges)`,
 `makeErdosRenyiRandom(n, p)`, `makeBarabasiAlbertRandom(start, add, steps)`,
@@ -742,6 +753,8 @@ other field:
 | `clustering`, `triangles` | local clustering coefficient, triangle count |
 | `coreness` | k-core number |
 | `component`, `strongcomponent` | which (strongly) connected component |
+| `constraint`, `effsize` | Burt's structural holes: low constraint and a large effective size mark brokers |
+| `generation` | the step in a directed hierarchy (0 = nothing points to it) |
 
 ```python
 (pagerank > 0.01).labelvisible = true
@@ -750,8 +763,9 @@ recompute()                         # after editing the graph
 ```
 
 Whole-graph measures are commands: `density()`, `diameter()`,
-`averagePathLength()`, `averageClustering()`, and `graphStats()` for a
-summary. `distance(v1, v2)` is the distance between two nodes on the screen.
+`averagePathLength()`, `averageClustering()`, `transitivity()`,
+`assortativity()` (do hubs link to hubs?), `reciprocity()` (directed edges),
+`triadCensus()`, and `graphStats()` for a summary. `distance(v1, v2)` is the distance between two nodes on the screen.
 
 ## 7.4 Paths and filters
 
@@ -798,6 +812,51 @@ with random networks of the same size:
 makeErdosRenyiRandom(400, 0.009)
 averageClustering()
 ```
+
+## 7.7 Structure, mixing and comparing partitions
+
+These commands return sets you can colour, hide or show, or a single number:
+
+```python
+makeFromGDF("sample.gdf")                 # back to the sample graph
+bridges().color = red                     # edges whose removal splits the graph
+cutNodes().size = 30                      # nodes whose removal splits it
+showOnly(spanningTree(maximum=True))      # the backbone of strongest ties
+showAll()
+sortBy(constraint)[:5]                    # brokers (structural holes)
+assortativity(dept)                       # 1: ties stay in a department; 0: random
+mixingMatrix(dept)                        # edges between each pair of departments
+louvainClusters()
+compareClusters(modularity_class, dept)   # do the communities match departments?
+```
+
+`compareClusters` gives normalized mutual information by default (0 to 1);
+`method="ari"` (adjusted Rand), `"rand"` and `"vi"` are the alternatives.
+
+For directed graphs such as citations or dependencies, `ancestors(n)` and
+`descendants(n)` follow the arrows, the `generation` field gives each node's
+step in the hierarchy, `transitiveReduction()` returns the edges that longer
+paths already imply (hide them to see the backbone), and `feedbackEdges()`
+returns edges that close cycles.
+
+## 7.8 networkx from the console
+
+networkx is loaded with GUESS, so any of its algorithms is one line away.
+`toNetworkX()` gives the graph with its fields as attributes (node keys are
+node names). `setField` stores a result as a field: a node dictionary, an
+edge dictionary, or a list of communities.
+
+```python
+import networkx as nx
+G = toNetworkX()
+setField(nx.average_neighbor_degree(G), "nbrdeg")
+setField(nx.community.label_propagation_communities(G), "lpa")
+colorize(lpa)
+fromNetworkX(nx.karate_club_graph(), "karate")   # a networkx graph in a new tab
+```
+
+`fromNetworkX` turns attributes into fields and uses `pos` (or `x` and `y`)
+for positions, with a spring layout when there are none.
 
 \newpage
 
@@ -867,7 +926,7 @@ expands it.
 | `exportPNG("g.png")`, `exportJPG(...)`, `exportGIF(...)` | an image of the view |
 | `exportPDF("g.pdf")`, `exportPS(...)`, `exportEPS(...)` | an image of the view in a PDF / PostScript page |
 | `exportSVG("g.svg")` | the whole graph as vector graphics |
-| `exportGDF("g.gdf")`, `exportGEXF(...)`, `exportGraphML(...)`, `exportCSV(...)` | the graph and its fields |
+| `exportGDF("g.gdf")`, `exportGEXF(...)`, `exportGraphML(...)`, `exportGML(...)`, `exportDOT(...)`, `exportCSV(...)` | the graph and its fields |
 | `saveSession("s.guess")` | everything: graph, fields, states, styles, legends, hulls, view, slides |
 | `saveHistory("work.py")` | every command you ran, as a script |
 | `startMovie(30, "m.webm")` … `stopMovie()` | a movie of the display |

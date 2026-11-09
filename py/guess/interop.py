@@ -149,6 +149,8 @@ def nx_into(graph, G, *, layout=True):
         else:
             have_pos = False
         _set_attrs(graph.node_schema, n, d, _SKIP_NODE | {"pos"})
+        if not n.label:
+            n.label = name
     edges = 0
     for *ends, d in G.edges(data=True):
         a, b = ends[0], ends[1]

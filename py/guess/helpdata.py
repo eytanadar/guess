@@ -90,6 +90,13 @@ EXAMPLES = [
         ("Groups as charts", "plotSizesPie(dept)", "pie chart"),
         ("Distribution chart", "plotHistogram(pagerank)", "histogram"),
         ("SQL over fields", "sql('select dept, count(*) from nodes group by dept')", "query table"),
+        ("Weak points", "bridges().color = red\ncutNodes().size = 30", "articulation cut vertex bridge"),
+        ("Backbone", "showOnly(spanningTree(maximum=True))", "spanning tree skeleton"),
+        ("Brokers", "sortBy(constraint)[:5]", "structural holes burt effective size"),
+        ("Homophily", "assortativity(dept)\nmixingMatrix(dept)", "assortativity mixing"),
+        ("Compare partitions", "louvainClusters()\ncompareClusters(modularity_class, dept)", "nmi ari rand"),
+        ("Any networkx algorithm", "import networkx as nx\nsetField(nx.average_neighbor_degree(toNetworkX()), 'nbrdeg')", "networkx nx bridge"),
+        ("Classic networks", "makeSample('karate')\ncolorize(club)", "zachary les miserables florentine sample"),
     ]),
     ("Filtering and selection", [
         ("Show only a core", "showOnly(kCore(3))", "filter hide"),

@@ -80,6 +80,7 @@ class _Parser:
         self.nodes = {}            # name -> attrs (insertion order)
         self.edges = []            # (a, b, attrs)
         self.graph_attrs = {}
+        self.cluster_labels = {}   # cluster name -> its label
 
     def peek(self, k=0):
         return self.t[self.i + k][0] if self.i + k < len(self.t) else None
@@ -170,7 +171,11 @@ class _Parser:
             if tok == ("kw", "graph") or tok == ("kw", "node") or tok == ("kw", "edge"):
                 self.take()
                 attrs = self.attr_list()
-                {"node": ndef, "edge": edef}.get(tok[1], self.graph_attrs if cluster is None else {}).update(attrs)
+                if tok[1] == "graph" and cluster is not None:
+                    if "label" in attrs:
+                        self.cluster_labels[cluster] = attrs["label"]
+                    continue
+                {"node": ndef, "edge": edef}.get(tok[1], self.graph_attrs).update(attrs)
                 continue
             if self.peek() == "id" and self.peek(1) == "=":
                 k = self.take("id")
@@ -178,8 +183,8 @@ class _Parser:
                 v = self.take("id")
                 if cluster is None:
                     self.graph_attrs[k] = v
-                elif k == "label":
-                    pass
+                elif k == "label" and cluster:
+                    self.cluster_labels[cluster] = v
                 continue
             ops = [self.operand(ndef, edef, cluster)]
             while self.peek() in ("->", "--"):
@@ -203,8 +208,8 @@ class _Parser:
 
 _SHAPES = {"box": 1, "rect": 1, "rectangle": 1, "square": 1, "ellipse": 2, "oval": 2, "circle": 2,
            "point": 2, "doublecircle": 2, "egg": 2, "triangle": 5, "diamond": 9, "Mrecord": 3, "record": 1}
-_NODE_DONE = {"pos", "color", "fillcolor", "label", "width", "height", "shape", "fontcolor", "style"}
-_EDGE_DONE = {"color", "label", "penwidth", "weight", "fontcolor", "pos", "style"}
+_NODE_DONE = {"pos", "color", "fillcolor", "label", "width", "height", "shape", "fontcolor"}
+_EDGE_DONE = {"color", "label", "penwidth", "weight", "guess_weight", "fontcolor", "pos", "dir"}
 _RESERVED_N = {"name", "x", "y", "visible", "color", "strokecolor", "labelcolor", "fixed", "style", "width",
                "height", "label", "image", "labelvisible", "indegree", "outdegree", "totaldegree"}
 _RESERVED_E = {"node1", "node2", "directed", "source", "destination", "color", "labelcolor", "visible",
@@ -238,7 +243,13 @@ def _type(values):
     return STRING
 
 
+def _styles(a):
+    return {x.strip() for x in a.get("style", "").split(",")}
+
+
 def _field_name(k, reserved):
+    if k.startswith("guess_"):          # written by exportDOT for names Graphviz uses
+        k = k[len("guess_"):]
     k = re.sub(r"\W", "_", k)
     if not k or k[0].isdigit():
         k = "_" + k
@@ -247,6 +258,16 @@ def _field_name(k, reserved):
 
 def read_dot(graph, text):
     p = _Parser(_tokens(text)).parse()
+    # style words GUESS maps itself (filled, invis) are applied, not kept as a field
+    styles_of = {}
+    for a in list(p.nodes.values()) + [a for _x, _y, a in p.edges]:
+        if "style" in a:
+            styles_of[id(a)] = _styles(a)
+            rest = [x for x in a["style"].split(",") if x.strip() and x.strip() not in ("filled", "invis")]
+            if rest:
+                a["style"] = ",".join(x.strip() for x in rest)
+            else:
+                del a["style"]
     # fields for the attributes GUESS has no equivalent for
     for recs, done, reserved, schema, add in (
             (list(p.nodes.values()), _NODE_DONE, _RESERVED_N, graph.node_schema, graph.addNodeField),
@@ -261,21 +282,41 @@ def read_dot(graph, text):
             if name not in schema:
                 t = _type(vals)
                 add(name, t, coerce(t, None))
+    if p.cluster_labels and "clusterlabel" not in graph.node_schema:
+        graph.addNodeField("clusterlabel", STRING, None)
     has_pos = False
     for name, a in p.nodes.items():
         n = graph.addNode(name)
-        if "label" in a and a["label"] not in ("\\N", ""):
-            n.label = a["label"].replace("\\N", name).replace("\\n", " ").replace("\\l", " ").replace("\\r", " ").strip()
-        m = re.match(r"\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)", a.get("pos", ""))
+        label = a.get("label")
+        if label in (None, "", "\\N") and a.get("xlabel"):
+            label = a["xlabel"]
+        if label not in (None, "", "\\N"):
+            if a.get("shape") in ("record", "Mrecord"):
+                label = re.sub(r"<[^>]*>", "", label)
+                label = re.sub(r"[{}|]+", " ", label)
+            label = label.replace("\\N", name)
+            n.label = re.sub(r"\s+", " ", re.sub(r"\\[nlr]", " ", label)).strip()
+        m = re.match(r"\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)(\s*!)?", a.get("pos", ""))
         if m:
             n.x, n.y = float(m.group(1)), -float(m.group(2))     # Graphviz y points up
             has_pos = True
-        filled = "filled" in a.get("style", "")
+            if m.group(3):
+                n.fixed = True
+        styles = styles_of.get(id(a), set())
+        filled = "filled" in styles
         c = _color(a["fillcolor"]) if "fillcolor" in a else None
         if c is None and "color" in a and (filled or "fillcolor" not in a):
             c = _color(a["color"])
         if c:
             n.color = c
+        if "color" in a and ("fillcolor" in a or filled) and _color(a["color"]):
+            n.strokecolor = _color(a["color"])      # with a fill, color is the outline
+        if "fontcolor" in a and _color(a["fontcolor"]):
+            n.labelcolor = _color(a["fontcolor"])
+        if "invis" in styles:
+            n.visible = False
+        if a.get("cluster") in p.cluster_labels:
+            n.clusterlabel = p.cluster_labels[a["cluster"]]
         for k, attr in (("width", "width"), ("height", "height")):
             try:
                 setattr(n, attr, max(1.0, float(a[k]) * 72 / 3))    # inches → a GUESS-sized node
@@ -286,12 +327,19 @@ def read_dot(graph, text):
         _fields(graph.node_schema, n, a, _NODE_DONE, _RESERVED_N)
     count = 0
     for x, y, a in p.edges:
-        e = graph.addEdge(x, y, p.directed)
+        d = a.get("dir", "forward" if p.directed else "none")
+        if d == "back":
+            x, y = y, x
+        e = graph.addEdge(x, y, p.directed and d != "none")
         if "color" in a and _color(a["color"]):
             e.color = _color(a["color"])
+        if "fontcolor" in a and _color(a["fontcolor"]):
+            e.labelcolor = _color(a["fontcolor"])
         if "label" in a:
             e.label = a["label"]
-        for k, attr in (("penwidth", "width"), ("weight", "weight")):
+        if "invis" in styles_of.get(id(a), set()):
+            e.visible = False
+        for k, attr in (("penwidth", "width"), ("weight", "weight"), ("guess_weight", "weight")):
             try:
                 setattr(e, attr, float(a[k]))
             except (KeyError, ValueError):
@@ -316,3 +364,124 @@ def _fields(schema, elem, attrs, done, reserved):
             f.set(elem, v)
         except (GuessError, TypeError, ValueError):
             pass
+
+
+# --------------------------------------------------------------------------
+# writer
+# --------------------------------------------------------------------------
+
+# attribute names Graphviz gives a meaning to: GUESS fields with these names
+# are written as guess_<name> (and read back without the prefix)
+_GV_ATTRS = {
+    "area", "arrowhead", "arrowsize", "arrowtail", "class", "cluster", "color", "colorscheme", "comment",
+    "constraint", "decorate", "dir", "distortion", "fillcolor", "fixedsize", "fontcolor", "fontname",
+    "fontsize", "gradientangle", "group", "headlabel", "headport", "height", "href", "id", "image",
+    "imagepos", "imagescale", "label", "labelangle", "labeldistance", "labelloc", "layer", "len", "lhead",
+    "ltail", "margin", "minlen", "nojustify", "ordering", "orientation", "penwidth", "peripheries", "pin",
+    "pos", "rank", "regular", "samehead", "sametail", "shape", "showboxes", "sides", "skew", "sortv",
+    "style", "tailhead", "taillabel", "tailport", "tooltip", "url", "vertices", "weight", "width",
+    "xlabel", "xlp", "z",
+}
+_SHAPE_OUT = {1: "box", 2: "ellipse", 3: "Mrecord", 5: "triangle", 9: "diamond"}
+
+
+def _q(v):
+    s = str(v).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    return f'"{s}"'
+
+
+def _hex(color):
+    from . import colors
+    rgb, a = colors.to_rgba_int(color)
+    out = f"#{rgb:06x}"
+    return out + (f"{round(a * 255):02x}" if a < 1 else "")
+
+
+def _attrs(pairs):
+    pairs = [(k, v) for k, v in pairs if v is not None and v != ""]
+    return " [" + ", ".join(f"{k}={_q(v)}" for k, v in pairs) + "]" if pairs else ""
+
+
+def _num(v):
+    return f"{float(v):.6g}"
+
+
+def write_dot(graph, clusters="cluster", layout=True):
+    """The graph as Graphviz DOT: positions (points, y up, ! when fixed),
+    sizes, shapes, colours, labels, visibility and every user field; nodes
+    grouped into cluster subgraphs by the `clusters` field when it exists."""
+    edges = graph._edges_list()
+    directed = any(e._directed for e in edges)
+    ns, es = graph.node_schema, graph.edge_schema
+    user_n = [f for f in ns.values() if not f.builtin and f.compute is None and f.name not in ("clusterlabel",)]
+    user_e = [f for f in es.values() if not f.builtin and f.compute is None]
+    cf = ns.get(clusters) if clusters else None
+
+    def fname(f):
+        return f"guess_{f.name}" if f.name.lower() in _GV_ATTRS else f.name
+
+    def node_line(n):
+        styles = ["filled"]
+        if not n.visible:
+            styles.append("invis")
+        pairs = [
+            ("label", n.label if n.label and n.label != n._name else None),
+            ("pos", f"{_num(n.x)},{_num(-n.y)}" + ("!" if n.fixed else "") if layout else None),
+            ("width", _num(float(n.width) * 3 / 72)), ("height", _num(float(n.height) * 3 / 72)),
+            ("shape", _SHAPE_OUT.get(int(n.style or 2), "ellipse")),
+            ("style", ",".join(styles)), ("fillcolor", _hex(n.color)),
+            ("color", _hex(n.strokecolor) if n.strokecolor else None),
+            ("fontcolor", _hex(n.labelcolor) if n.labelcolor else None),
+            ("image", n.image or None),
+        ]
+        for f in user_n:
+            if f is cf:
+                continue
+            v = f.get(n)
+            if v is not None and not (isinstance(v, float) and v != v):
+                pairs.append((fname(f), v))
+        return f"{_q(n._name)}{_attrs(pairs)};"
+
+    out = [f"{'digraph' if directed else 'graph'} {{"]
+    if directed and any(not e._directed for e in edges):
+        out.append("  // undirected edges are written with dir=none")
+    nodes = graph._nodes_list()
+    if cf is not None:
+        groups = {}
+        for n in nodes:
+            groups.setdefault(cf.get(n), []).append(n)
+        labels = {}
+        if "clusterlabel" in ns:
+            for n in nodes:
+                if n.clusterlabel:
+                    labels.setdefault(cf.get(n), n.clusterlabel)
+        for i, (val, members) in enumerate(groups.items()):
+            if val is None:
+                continue
+            out.append(f"  subgraph {_q(f'cluster_{val}')} {{")
+            out.append(f"    label={_q(labels.get(val, val))};")
+            out += [f"    {node_line(n)}" for n in members]
+            out.append("  }")
+        out += [f"  {node_line(n)}" for n in groups.get(None, [])]
+    else:
+        out += [f"  {node_line(n)}" for n in nodes]
+    arrow = "->" if directed else "--"
+    for e in edges:
+        w = e.weight
+        pairs = [("dir", "none" if directed and not e._directed else None),
+                 ("color", _hex(e.color)), ("penwidth", _num(e.width)),
+                 ("label", e.label or None),
+                 ("fontcolor", _hex(e.labelcolor) if e.labelcolor else None),
+                 ("style", "invis" if not e.visible else None)]
+        if w is not None:
+            w = float(w)
+            pairs.append(("weight", str(max(0, round(w)))))      # dot needs whole weights
+            if w != round(w) or w < 0:
+                pairs.append(("guess_weight", _num(w)))
+        for f in user_e:
+            v = f.get(e)
+            if v is not None and not (isinstance(v, float) and v != v):
+                pairs.append((fname(f), v))
+        out.append(f"  {_q(e._n1._name)} {arrow} {_q(e._n2._name)}{_attrs(pairs)};")
+    out.append("}")
+    return "\n".join(out) + "\n"

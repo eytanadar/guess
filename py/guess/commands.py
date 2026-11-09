@@ -129,6 +129,20 @@ def install(session):
         session.emit({"type": "download", "name": os.path.basename(filename), "text": text})
 
     @cmd
+    def exportDOT(filename="graph.dot", clusters="cluster", layout=True):
+        """exportDOT("graph.dot") writes the graph for Graphviz: positions (fixed
+        nodes pinned with !), sizes, shapes, colours, labels, hidden elements and
+        every user field; nodes are grouped into cluster subgraphs by the field
+        named by clusters= (default `cluster`, e.g. clusters="modularity_class").
+        layout=False leaves positions out so Graphviz lays the graph out itself.
+        makeFromDOT reads it back. Offered as a download."""
+        from . import dot
+        text = dot.write_dot(g, clusters=clusters, layout=layout)
+        with open(filename, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        session.emit({"type": "download", "name": os.path.basename(filename), "text": text})
+
+    @cmd
     def exportGraphML(filename):
         """Write the graph as GraphML (offered as a download in the browser)."""
         text = formats.write_graphml(g)
