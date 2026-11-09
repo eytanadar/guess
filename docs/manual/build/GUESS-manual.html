@@ -345,10 +345,10 @@ scatter plots by field, and overlap removal.</li>
 state, change things, and <em>morph</em> smoothly between states. Ranges
 and a timeline let you look at graphs that change over time.</li>
 <li><strong>Many formats in and out</strong>: GDF (the GUESS format),
-GEXF (Gephi), GraphML, Pajek, UCINET DL, CSV, URLs, SPARQL endpoints
-(e.g. Wikidata), NDEx and Neo4j. Out: GDF, GEXF, GraphML, CSV, PNG, JPG,
-GIF, SVG, PDF, PostScript/EPS, WebM movies, notebooks and HTML
-reports.</li>
+GEXF (Gephi), GraphML, GML, Graphviz DOT, Pajek, UCINET DL, CSV, URLs,
+SPARQL endpoints (e.g. Wikidata), NDEx and Neo4j. Out: GDF, GEXF,
+GraphML, GML, CSV, PNG, JPG, GIF, SVG, PDF, PostScript/EPS, WebM movies,
+notebooks and HTML reports.</li>
 <li><strong>Interface building.</strong> Panels, buttons, sliders and
 timers are a few lines of Gython. Package a graph and its interface as
 an <em>app</em>: a link that opens straight into your interactive
@@ -601,7 +601,17 @@ formats:</p>
 <tr>
 <td><code>.graphml</code>, <code>.xml</code></td>
 <td>GraphML</td>
-<td><code>makeFromGML(&quot;f.graphml&quot;)</code></td>
+<td><code>makeFromGraphML(&quot;f.graphml&quot;)</code></td>
+</tr>
+<tr>
+<td><code>.gml</code></td>
+<td>GML (networkx, igraph, yEd, Cytoscape)</td>
+<td><code>makeFromGML(&quot;f.gml&quot;)</code></td>
+</tr>
+<tr>
+<td><code>.dot</code>, <code>.gv</code></td>
+<td>Graphviz DOT</td>
+<td><code>makeFromDOT(&quot;f.dot&quot;)</code></td>
 </tr>
 <tr>
 <td><code>.net</code></td>
@@ -641,6 +651,15 @@ command form works on it afterwards. If you dropped
 <code>office.gdf</code> on the window,
 <code>makeFromGDF(&quot;office.gdf&quot;)</code> reloads it. <em>File → Paste
 data…</em> takes a table copied from a spreadsheet.</p>
+<p>GML and DOT files bring their layout with them when they have one:
+GML <code>graphics [ x y w h fill type ]</code> and Graphviz
+<code>pos</code>, <code>width</code>, <code>height</code>,
+<code>color</code>/<code>fillcolor</code> and <code>shape</code> become
+positions, sizes, colours and shapes. Every other attribute becomes a
+field. Nodes in a Graphviz <code>cluster_*</code> subgraph get a
+<code>cluster</code> field, so <code>colorize(cluster)</code> shows the
+clusters. <code>makeFromGML</code> still opens GraphML too, as it did in
+GUESS 2006.</p>
 <p>Loading a graph replaces the current one. To keep several graphs at
 once, see section 10.</p>
 <h2 id="the-guess-.gdf-format">4.2 The GUESS .gdf format</h2>
@@ -1570,6 +1589,10 @@ endpoints.</figcaption>
 </figure>
 <h2 id="selecting">13.2 Selecting</h2>
 <table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
 <thead>
 <tr>
 <th>gesture</th>
@@ -1600,6 +1623,12 @@ endpoints.</figcaption>
 <tr>
 <td>right-click</td>
 <td>a menu for the node, the edge, or the whole selection</td>
+</tr>
+<tr>
+<td>Delete or Backspace</td>
+<td>remove the selected nodes (also <em>Edit → Delete selected
+nodes</em>, or <em>Delete</em> in the right-click menu); undo brings
+them back</td>
 </tr>
 </tbody>
 </table>
@@ -2294,6 +2323,10 @@ table.</p>
 browser).</p>
 <h3 id="exportgexffilenamegraph.gexf"><code>exportGEXF(filename=&#39;graph.gexf&#39;)</code></h3>
 <p>Write the graph as GEXF 1.3 for Gephi (offered as a download).</p>
+<h3 id="exportgmlfilename"><code>exportGML(filename)</code></h3>
+<p>Write the graph as GML (networkx, igraph, yEd, Cytoscape and Gephi
+read it): fields, positions, colours and sizes. Offered as a
+download.</p>
 <h3 id="exportgraphmlfilename"><code>exportGraphML(filename)</code></h3>
 <p>Write the graph as GraphML (offered as a download in the
 browser).</p>
@@ -2334,13 +2367,22 @@ Type directed.</p>
 <h3 id="makefromdlfilename"><code>makeFromDL(filename)</code></h3>
 <p>Replace the current graph with a UCINET DL file (fullmatrix,
 edgelist1, nodelist1).</p>
+<h3 id="makefromdotfilename"><code>makeFromDOT(filename)</code></h3>
+<p>Replace the current graph with a Graphviz DOT file (.dot, .gv): node
+and edge statements, subgraphs (cluster_* members get a
+<code>cluster</code> field), default attributes; pos, color/fillcolor,
+label, width/height, shape, penwidth and weight map to GUESS, other
+attributes become fields.</p>
 <h3 id="makefromgdffilename"><code>makeFromGDF(filename)</code></h3>
 <p>Replace the current graph with the contents of a GDF file.</p>
 <h3 id="makefromgexffilename"><code>makeFromGEXF(filename)</code></h3>
 <p>Replace the current graph with a GEXF file (Gephi’s format):
 attributes, colours, positions, sizes, edge weights and thickness.</p>
 <h3 id="makefromgmlfilename"><code>makeFromGML(filename)</code></h3>
-<p>Replace the current graph with a GraphML file.</p>
+<p>Replace the current graph with a GML file (Graph Modelling Language,
+as written by networkx, igraph, yEd and Cytoscape: labels, graphics x/y,
+fill colour, size and shape, and every other attribute as a field). For
+compatibility with GUESS 2006, a GraphML (XML) file works too.</p>
 <h3 id="makefromgraphmlfilename"><code>makeFromGraphML(filename)</code></h3>
 <p>Replace the current graph with a GraphML file.</p>
 <h3 id="makefrompajekfilename"><code>makeFromPajek(filename)</code></h3>
@@ -2779,7 +2821,13 @@ showing.</p>
 <p>legendFor(field) adds a legend explaining the current colours by
 field: one entry per value (for categories, as after colorize), or a
 gradient from the lowest to the highest value (for numbers, as after
-colorBy).</p>
+colorBy). The legend follows the colours: run colorize or colorBy again
+and it updates (until you add or remove entries yourself).</p>
+<h3 id="removelegendlegend"><code>removeLegend(legend)</code></h3>
+<p>removeLegend(lg) or removeLegend(2) removes one legend (the number is
+the one shown as &lt;legend 2: …&gt;; the × on a legend runs this).</p>
+<h3 id="removelegends"><code>removeLegends()</code></h3>
+<p>removeLegends() removes every legend.</p>
 <h3 id="removestylename"><code>removeStyle(name)</code></h3>
 <p>removeStyle(name) deletes a saved style.</p>
 <h3 id="shapebyfield"><code>shapeBy(field)</code></h3>
@@ -2886,9 +2934,9 @@ bind ?source and ?target (optionally ?sourceLabel / ?targetLabel, used
 as labels; any other variables become edge fields). E.g. a Wikidata
 query for “influenced by” links.</p>
 <h3 id="makefromurlurl-formatnone"><code>makeFromURL(url, format=None)</code></h3>
-<p>makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, Pajek, DL,
-CSV, a .guess session or a .py script) and opens it; format=“.gexf” etc.
-when the URL doesn’t end in the extension.</p>
+<p>makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT,
+Pajek, DL, CSV, a .guess session or a .py script) and opens it;
+format=“.gexf” etc. when the URL doesn’t end in the extension.</p>
 <h3 id="sparqlquery-endpointhttpsquery.wikidata.orgsparql"><code>sparql(query, endpoint=&#39;https://query.wikidata.org/sparql&#39;)</code></h3>
 <p>sparql(query[, endpoint]) runs a SPARQL query (Wikidata by default)
 and returns the rows as a list of {variable: value} dicts.</p>
