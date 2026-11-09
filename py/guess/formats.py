@@ -1,9 +1,10 @@
-"""Readers for Pajek (.net), GraphML and UCINET DL, and a GraphML writer.
+"""Readers for Pajek (.net), GraphML, GML and UCINET DL, and a GraphML writer.
 
 Pajek handling follows com/hp/hpl/guess/pajek/GuessPajekReader.java
 (node names are "pajek<id>", label from the quoted name, coordinates scaled
 by 1000, ``ic``/``lc``/``x_fact``/``y_fact``/shape honoured).
 """
+import html
 import random
 import re
 import shlex
@@ -316,6 +317,202 @@ def _xml_val(v):
     if isinstance(v, bool):
         return "true" if v else "false"
     return str(v)
+
+
+# --------------------------------------------------------------------------
+# GML (Graph Modelling Language: networkx, igraph, yEd, Cytoscape, Gephi)
+#   graph [ directed 1  node [ id 1 label "a" graphics [ x 0 y 0 fill "#ff0000" ] ]
+#           edge [ source 1 target 2 weight 3 ] ]
+# --------------------------------------------------------------------------
+
+_GML_TOKEN = re.compile(r'\s+|#[^\n]*|"((?:[^"\\]|\\.)*)"|(\[)|(\])|([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\b|([A-Za-z_][\w.]*)|(\S)')
+
+
+def _gml_parse(text):
+    """GML text → nested lists of (key, value); a value is a number, a string
+    or such a list. Tolerant: duplicate keys, comments, any key names."""
+    stack = [[]]
+    key = None
+    for m in _GML_TOKEN.finditer(text):
+        string, opn, close, number, word, other = m.groups()
+        if string is None and not (opn or close or number or word or other):
+            continue        # whitespace or a # comment
+        if word is not None and key is None:
+            key = word
+            continue
+        if other is not None:
+            raise GuessError(f"GML: unexpected {other!r} near {text[max(0, m.start() - 20):m.start() + 20]!r}")
+        if close:
+            if len(stack) == 1:
+                raise GuessError("GML: unbalanced ']'")
+            done = stack.pop()
+            stack[-1][-1] = (stack[-1][-1][0], done)
+            continue
+        if key is None:
+            raise GuessError(f"GML: a value without a key near {text[max(0, m.start() - 20):m.start() + 20]!r}")
+        if opn:
+            stack[-1].append((key, None))
+            stack.append([])
+        elif string is not None:
+            stack[-1].append((key, html.unescape(string.replace('\\"', '"'))))
+        elif number is not None:
+            stack[-1].append((key, float(number) if re.search(r"[.eE]", number) else int(number)))
+        else:
+            stack[-1].append((key, word))      # a bare word as a value
+        key = None
+    if len(stack) != 1:
+        raise GuessError("GML: missing ']'")
+    return stack[0]
+
+
+_GML_SHAPES = {"ellipse": 2, "oval": 2, "circle": 2, "rectangle": 1, "rect": 1, "box": 1,
+               "roundrectangle": 3, "triangle": 5, "diamond": 9}
+
+
+def _gml_type(values):
+    vals = [v for v in values if v is not None]
+    if vals and all(isinstance(v, int) for v in vals):
+        return INT
+    if vals and all(isinstance(v, (int, float)) for v in vals):
+        return DOUBLE
+    return STRING
+
+
+def read_gml(graph, text):
+    top = _gml_parse(text)
+    gl = next((v for k, v in top if k.lower() == "graph" and isinstance(v, list)), None)
+    if gl is None:
+        raise GuessError("not a GML file (no 'graph [ ... ]')")
+    directed = any(k.lower() == "directed" and v == 1 for k, v in gl)
+    nodes = [dict(_flat(v)) for k, v in gl if k.lower() == "node" and isinstance(v, list)]
+    edges = [dict(_flat(v)) for k, v in gl if k.lower() == "edge" and isinstance(v, list)]
+    if not nodes and not edges:
+        raise GuessError("GML: no nodes or edges")
+    # names: unique labels when every node has one, else the ids ("n" + a numeric id)
+    labels = [n.get("label") for n in nodes]
+    use_labels = all(isinstance(lbl, str) and lbl for lbl in labels) and len(set(labels)) == len(labels)
+    def name_of(n):
+        if use_labels:
+            return n["label"]
+        i = n.get("id")
+        return f"n{i}" if isinstance(i, (int, float)) else str(i)
+    by_id = {}
+    STRUCT_N = {"id", "label", "graphics.x", "graphics.y", "graphics.w", "graphics.h", "graphics.fill",
+                "graphics.type", "graphics.outline"}
+    STRUCT_E = {"source", "target", "id", "graphics.fill", "graphics.width"}
+    _fields(graph, graph.node_schema, graph.addNodeField, nodes, STRUCT_N)
+    _fields(graph, graph.edge_schema, graph.addEdgeField, edges, STRUCT_E)
+    has_xy = False
+    for rec in nodes:
+        n = graph.addNode(name_of(rec))
+        by_id[rec.get("id")] = n
+        if isinstance(rec.get("label"), str):
+            n.label = rec["label"]
+        if isinstance(rec.get("graphics.x"), (int, float)) and isinstance(rec.get("graphics.y"), (int, float)):
+            n.x, n.y = float(rec["graphics.x"]), float(rec["graphics.y"])
+            has_xy = True
+        for k, attr in (("graphics.w", "width"), ("graphics.h", "height")):
+            if isinstance(rec.get(k), (int, float)) and rec[k] > 0:
+                setattr(n, attr, float(rec[k]))
+        if isinstance(rec.get("graphics.fill"), str) and _valid_color(rec["graphics.fill"]):
+            n.color = rec["graphics.fill"]
+        shape = _GML_SHAPES.get(str(rec.get("graphics.type", "")).lower())
+        if shape:
+            n.style = shape
+        _set_fields(graph.node_schema, n, rec, STRUCT_N)
+    count_e = 0
+    for rec in edges:
+        a, b = by_id.get(rec.get("source")), by_id.get(rec.get("target"))
+        if a is None or b is None:
+            continue
+        e = graph.addEdge(a._name, b._name, directed)
+        if isinstance(rec.get("graphics.fill"), str) and _valid_color(rec["graphics.fill"]):
+            e.color = rec["graphics.fill"]
+        if isinstance(rec.get("graphics.width"), (int, float)) and rec["graphics.width"] > 0:
+            e.width = float(rec["graphics.width"])
+        _set_fields(graph.edge_schema, e, rec, STRUCT_E)
+        count_e += 1
+    if not has_xy:
+        for n in graph._nodes_list():
+            n.x = random.random() * 500
+            n.y = random.random() * 500
+    return len(nodes), count_e
+
+
+def _flat(items, prefix=""):
+    """Node/edge attributes, with nested lists one level deep as "graphics.x"."""
+    for k, v in items:
+        if isinstance(v, list):
+            if not prefix:
+                yield from _flat(v, k + ".")
+        else:
+            yield prefix + k, v
+
+
+def _gml_field_name(key):
+    return _ident(key.replace(".", "_"))
+
+
+def _fields(graph, schema, add, recs, skip):
+    keys = {}
+    for r in recs:
+        for k, v in r.items():
+            if k not in skip:
+                keys.setdefault(k, []).append(v)
+    for k, vals in keys.items():
+        name = _gml_field_name(k)
+        if name not in schema:
+            ftype = _gml_type(vals)
+            add(name, ftype, coerce(ftype, None))
+
+
+def _set_fields(schema, elem, rec, skip):
+    for k, v in rec.items():
+        if k in skip:
+            continue
+        f = schema.get(_gml_field_name(k))
+        if f is None or f.readonly:
+            continue
+        try:
+            f.set(elem, v)
+        except (GuessError, TypeError, ValueError):
+            pass
+
+
+def write_gml(graph):
+    """The graph as GML (networkx/igraph/yEd/Cytoscape read it)."""
+    def val(v):
+        if isinstance(v, bool):
+            return "1" if v else "0"
+        if isinstance(v, (int, float)):
+            return repr(v)
+        return '"' + html.escape(str(v), quote=True) + '"'
+    nf = [f for f in graph.node_schema.values() if f.compute is None and f.name not in ("name", "x", "y", "width", "height", "color", "label")]
+    ef = [f for f in graph.edge_schema.values() if f.compute is None and f.name not in ("node1", "node2", "source", "destination", "directed", "color", "width")]
+    from . import colors
+    directed = any(e._directed for e in graph._edges_list())
+    out = ["graph [", f"  directed {1 if directed else 0}"]
+    ids = {}
+    for i, n in enumerate(graph._nodes_list()):
+        ids[n] = i
+        out += ["  node [", f"    id {i}", f"    label {val(n.label or n._name)}"]
+        for f in nf:
+            v = f.get(n)
+            if v is not None and not (isinstance(v, float) and v != v):
+                out.append(f"    {_gml_field_name(f.name)} {val(v)}")
+        rgb, _a = colors.to_rgba_int(n.color)
+        out += ["    graphics [", f"      x {n.x!r}", f"      y {n.y!r}", f"      w {float(n.width)!r}",
+                f"      h {float(n.height)!r}", f'      fill "#{rgb:06x}"', "    ]", "  ]"]
+    for e in graph._edges_list():
+        out += ["  edge [", f"    source {ids[e._n1]}", f"    target {ids[e._n2]}"]
+        for f in ef:
+            v = f.get(e)
+            if v is not None and not (isinstance(v, float) and v != v):
+                out.append(f"    {_gml_field_name(f.name)} {val(v)}")
+        rgb, _a = colors.to_rgba_int(e.color)
+        out += ["    graphics [", f'      fill "#{rgb:06x}"', f"      width {float(e.width)!r}", "    ]", "  ]"]
+    out.append("]")
+    return "\n".join(out) + "\n"
 
 
 # --------------------------------------------------------------------------
