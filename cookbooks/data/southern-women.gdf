@@ -1,0 +1,123 @@
+nodedef> name,x DOUBLE,y DOUBLE,visible BOOLEAN,color VARCHAR(256),strokecolor VARCHAR(256),labelcolor VARCHAR(256),fixed BOOLEAN,style INT,width DOUBLE,height DOUBLE,label VARCHAR(256),image VARCHAR(256),labelvisible BOOLEAN,labelpos VARCHAR(256),labelsize DOUBLE,kind VARCHAR(256)
+Evelyn,308.21960470630455,663.5343182675775,true,cornflowerblue,,,false,2,10.0,10.0,Evelyn Jefferson,,false,right,1.0,woman
+Laura,340.1217027285679,719.4958400853758,true,cornflowerblue,,,false,2,10.0,10.0,Laura Mandeville,,false,right,1.0,woman
+Theresa,358.77065946837206,631.3601445057402,true,cornflowerblue,,,false,2,10.0,10.0,Theresa Anderson,,false,right,1.0,woman
+Brenda,427.58710020314294,771.2483180153683,true,cornflowerblue,,,false,2,10.0,10.0,Brenda Rogers,,false,right,1.0,woman
+Charlotte,477.8165746347593,871.9837092962222,true,cornflowerblue,,,false,2,10.0,10.0,Charlotte McDowd,,false,right,1.0,woman
+Frances,546.834980689952,773.3894424938333,true,cornflowerblue,,,false,2,10.0,10.0,Frances Anderson,,false,right,1.0,woman
+Eleanor,611.3043581840171,682.3572277546425,true,cornflowerblue,,,false,2,10.0,10.0,Eleanor Nye,,false,right,1.0,woman
+Pearl,329.1587306536276,437.2745653931606,true,cornflowerblue,,,false,2,10.0,10.0,Pearl Oglethorpe,,false,right,1.0,woman
+Ruth,380.33950527536166,520.849490313496,true,cornflowerblue,,,false,2,10.0,10.0,Ruth DeSand,,false,right,1.0,woman
+Verne,463.36695014323556,316.4767922541027,true,cornflowerblue,,,false,2,10.0,10.0,Verne Sanderson,,false,right,1.0,woman
+Myra,643.9673519152944,426.7233031081733,true,cornflowerblue,,,false,2,10.0,10.0,Myra Liddel,,false,right,1.0,woman
+Katherina,718.7610844934727,308.2505136357346,true,cornflowerblue,,,false,2,10.0,10.0,Katherina Rogers,,false,right,1.0,woman
+Sylvia,711.2805257122407,402.5800442765226,true,cornflowerblue,,,false,2,10.0,10.0,Sylvia Avondale,,false,right,1.0,woman
+Nora,662.4213846925431,353.74255331255995,true,cornflowerblue,,,false,2,10.0,10.0,Nora Fayette,,false,right,1.0,woman
+Helen,594.3794891130316,328.348862193096,true,cornflowerblue,,,false,2,10.0,10.0,Helen Lloyd,,false,right,1.0,woman
+Dorothy,292.69925601643354,315.6698968417627,true,cornflowerblue,,,false,2,10.0,10.0,Dorothy Murchison,,false,right,1.0,woman
+Olivia,483.98161052699476,50.0,true,cornflowerblue,,,false,2,10.0,10.0,Olivia Carleton,,false,right,1.0,woman
+Flora,402.1080184280312,87.7399549955075,true,cornflowerblue,,,false,2,10.0,10.0,Flora Price,,false,right,1.0,woman
+E1,240.82117732602626,884.0869516496102,true,cornflowerblue,,,false,2,10.0,10.0,E1,,false,right,1.0,event
+E2,152.03280647280218,709.8979397046944,true,cornflowerblue,,,false,2,10.0,10.0,E2,,false,right,1.0,event
+E3,380.3511297129962,846.3919822890957,true,cornflowerblue,,,false,2,10.0,10.0,E3,,false,right,1.0,event
+E4,294.7253438650436,836.852685024542,true,cornflowerblue,,,false,2,10.0,10.0,E4,,false,right,1.0,event
+E5,441.1563480641967,721.647533684308,true,cornflowerblue,,,false,2,10.0,10.0,E5,,false,right,1.0,event
+E6,473.9620527108468,614.8070166874493,true,cornflowerblue,,,false,2,10.0,10.0,E6,,false,right,1.0,event
+E7,531.9775846297579,566.2485382933862,true,cornflowerblue,,,false,2,10.0,10.0,E7,,false,right,1.0,event
+E8,489.09105980115663,514.0771871610426,true,cornflowerblue,,,false,2,10.0,10.0,E8,,false,right,1.0,event
+E9,468.6853363123584,366.5796053102671,true,cornflowerblue,,,false,2,10.0,10.0,E9,,false,right,1.0,event
+E10,805.4463514022807,374.498335971488,true,cornflowerblue,,,false,2,10.0,10.0,E10,,false,right,1.0,event
+E11,581.9787587248595,111.40060371910505,true,cornflowerblue,,,false,2,10.0,10.0,E11,,false,right,1.0,event
+E12,650.1688642190584,243.98248435784325,true,cornflowerblue,,,false,2,10.0,10.0,E12,,false,right,1.0,event
+E13,844.1804005140995,228.6609396681048,true,cornflowerblue,,,false,2,10.0,10.0,E13,,false,right,1.0,event
+E14,892.3038986591318,319.843219736188,true,cornflowerblue,,,false,2,10.0,10.0,E14,,false,right,1.0,event
+edgedef> node1,node2,directed BOOLEAN,color VARCHAR(256),labelcolor VARCHAR(256),visible BOOLEAN,width DOUBLE,weight DOUBLE,label VARCHAR(256),labelvisible BOOLEAN,labelsize DOUBLE
+Evelyn,E1,false,dandelion,,true,2.0,1.0,,false,1.0
+Evelyn,E2,false,dandelion,,true,2.0,1.0,,false,1.0
+Evelyn,E3,false,dandelion,,true,2.0,1.0,,false,1.0
+Evelyn,E4,false,dandelion,,true,2.0,1.0,,false,1.0
+Evelyn,E5,false,dandelion,,true,2.0,1.0,,false,1.0
+Evelyn,E6,false,dandelion,,true,2.0,1.0,,false,1.0
+Evelyn,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Evelyn,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Laura,E1,false,dandelion,,true,2.0,1.0,,false,1.0
+Laura,E2,false,dandelion,,true,2.0,1.0,,false,1.0
+Laura,E3,false,dandelion,,true,2.0,1.0,,false,1.0
+Laura,E5,false,dandelion,,true,2.0,1.0,,false,1.0
+Laura,E6,false,dandelion,,true,2.0,1.0,,false,1.0
+Laura,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Laura,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Theresa,E2,false,dandelion,,true,2.0,1.0,,false,1.0
+Theresa,E3,false,dandelion,,true,2.0,1.0,,false,1.0
+Theresa,E4,false,dandelion,,true,2.0,1.0,,false,1.0
+Theresa,E5,false,dandelion,,true,2.0,1.0,,false,1.0
+Theresa,E6,false,dandelion,,true,2.0,1.0,,false,1.0
+Theresa,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Theresa,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Theresa,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Brenda,E1,false,dandelion,,true,2.0,1.0,,false,1.0
+Brenda,E3,false,dandelion,,true,2.0,1.0,,false,1.0
+Brenda,E4,false,dandelion,,true,2.0,1.0,,false,1.0
+Brenda,E5,false,dandelion,,true,2.0,1.0,,false,1.0
+Brenda,E6,false,dandelion,,true,2.0,1.0,,false,1.0
+Brenda,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Brenda,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Charlotte,E3,false,dandelion,,true,2.0,1.0,,false,1.0
+Charlotte,E4,false,dandelion,,true,2.0,1.0,,false,1.0
+Charlotte,E5,false,dandelion,,true,2.0,1.0,,false,1.0
+Charlotte,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Frances,E3,false,dandelion,,true,2.0,1.0,,false,1.0
+Frances,E5,false,dandelion,,true,2.0,1.0,,false,1.0
+Frances,E6,false,dandelion,,true,2.0,1.0,,false,1.0
+Frances,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Eleanor,E5,false,dandelion,,true,2.0,1.0,,false,1.0
+Eleanor,E6,false,dandelion,,true,2.0,1.0,,false,1.0
+Eleanor,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Eleanor,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Pearl,E6,false,dandelion,,true,2.0,1.0,,false,1.0
+Pearl,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Pearl,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Ruth,E5,false,dandelion,,true,2.0,1.0,,false,1.0
+Ruth,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Ruth,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Ruth,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Verne,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Verne,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Verne,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Verne,E12,false,dandelion,,true,2.0,1.0,,false,1.0
+Myra,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Myra,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Myra,E10,false,dandelion,,true,2.0,1.0,,false,1.0
+Myra,E12,false,dandelion,,true,2.0,1.0,,false,1.0
+Katherina,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Katherina,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Katherina,E10,false,dandelion,,true,2.0,1.0,,false,1.0
+Katherina,E12,false,dandelion,,true,2.0,1.0,,false,1.0
+Katherina,E13,false,dandelion,,true,2.0,1.0,,false,1.0
+Katherina,E14,false,dandelion,,true,2.0,1.0,,false,1.0
+Sylvia,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Sylvia,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Sylvia,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Sylvia,E10,false,dandelion,,true,2.0,1.0,,false,1.0
+Sylvia,E12,false,dandelion,,true,2.0,1.0,,false,1.0
+Sylvia,E13,false,dandelion,,true,2.0,1.0,,false,1.0
+Sylvia,E14,false,dandelion,,true,2.0,1.0,,false,1.0
+Nora,E6,false,dandelion,,true,2.0,1.0,,false,1.0
+Nora,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Nora,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Nora,E10,false,dandelion,,true,2.0,1.0,,false,1.0
+Nora,E11,false,dandelion,,true,2.0,1.0,,false,1.0
+Nora,E12,false,dandelion,,true,2.0,1.0,,false,1.0
+Nora,E13,false,dandelion,,true,2.0,1.0,,false,1.0
+Nora,E14,false,dandelion,,true,2.0,1.0,,false,1.0
+Helen,E7,false,dandelion,,true,2.0,1.0,,false,1.0
+Helen,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Helen,E10,false,dandelion,,true,2.0,1.0,,false,1.0
+Helen,E11,false,dandelion,,true,2.0,1.0,,false,1.0
+Helen,E12,false,dandelion,,true,2.0,1.0,,false,1.0
+Dorothy,E8,false,dandelion,,true,2.0,1.0,,false,1.0
+Dorothy,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Olivia,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Olivia,E11,false,dandelion,,true,2.0,1.0,,false,1.0
+Flora,E9,false,dandelion,,true,2.0,1.0,,false,1.0
+Flora,E11,false,dandelion,,true,2.0,1.0,,false,1.0

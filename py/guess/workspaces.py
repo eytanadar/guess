@@ -65,6 +65,73 @@ def install(session):
         print(f"now in graph '{ws['current']}' ({len(ids)} nodes); use({persist_lit(ws['stored'] and next(iter(ws['stored'])) or 'main')}) to go back")
 
     @cmd
+    def project(kindField, keep, method="count", name=None):
+        """project(kind, "woman") turns a two-mode network (people and the
+        events, groups or papers they belong to) into a one-mode network of
+        just the nodes whose `kind` is "woman": two are linked when they share
+        a neighbour of the other kind. It opens as a new graph (the two-mode
+        one stays; use() goes back), keeping fields and positions. Each edge
+        gets `shared` (how many neighbours in common) and `weight`, by method:
+          "count"    the number shared (default)
+          "jaccard"  shared / neighbours of either (0..1; removes the size
+                     effect of very active nodes)
+          "newman"   each shared neighbour adds 1/(its degree - 1), so a
+                     small event counts more than a crowded one
+        Each kept node also gets `affiliations`: its number of other-kind
+        neighbours. E.g. project(kind, "event") gives the event network."""
+        from .model import Field
+        gr = session.graph
+        f = kindField if isinstance(kindField, Field) else gr.node_schema.get(str(kindField))
+        if f is None or f.kind != "node":
+            raise GuessError("project needs a node field that says which kind each node is")
+        if method not in ("count", "jaccard", "newman"):
+            raise GuessError('method should be "count", "jaccard" or "newman"')
+        kept = [n for n in gr._nodes_list() if f.get(n) == keep]
+        if not kept:
+            raise GuessError(f"no nodes have {f.name} == {keep!r} (values: {', '.join(map(repr, f.distinct))})")
+        kept_ids = {n._id for n in kept}
+        nbrs = {}        # kept node id -> set of other-kind neighbour ids
+        pairs = {}       # (id, id) -> [shared count, newman weight]
+        for o in gr._nodes_list():
+            if o._id in kept_ids:
+                continue
+            ks = sorted({x._id for e in o._inc.values() for x in (e._n1, e._n2)
+                         if x._id in kept_ids})
+            for k in ks:
+                nbrs.setdefault(k, set()).add(o._id)
+            if len(ks) < 2:
+                continue
+            w = 1.0 / (len(ks) - 1)
+            for i, a in enumerate(ks):
+                for b in ks[i + 1:]:
+                    p = pairs.setdefault((a, b), [0, 0.0])
+                    p[0] += 1
+                    p[1] += w
+        names = {n._id: n._name for n in kept}
+        data = persist.serialize(session, subset=kept_ids)
+        data["edges"] = []
+        came_from = ws["current"]
+        switch_to(fresh_name(str(name) if name else f"{keep} projection"), data)
+        g = session.graph
+        g.addEdgeField("shared", "INTEGER", 0)
+        if "weight" not in g.edge_schema:
+            g.addEdgeField("weight", "DOUBLE", 1.0)
+        g.addNodeField("affiliations", "INTEGER", 0)
+        for nid, nm in names.items():
+            g.getNodeByName(nm).affiliations = len(nbrs.get(nid, ()))
+        for (a, b), (count, newman) in pairs.items():
+            if method == "count":
+                w = float(count)
+            elif method == "newman":
+                w = newman
+            else:
+                w = count / len(nbrs[a] | nbrs[b])
+            g.addUndirectedEdge(names[a], names[b], shared=count, weight=w)
+        session.scene()
+        print(f"now in graph '{ws['current']}': {len(kept)} nodes, {len(pairs)} edges "
+              f"(weight = {method}); use({persist_lit(came_from)}) to go back")
+
+    @cmd
     def newGraph(name="untitled"):
         """newGraph(name) starts an empty graph and switches to it."""
         empty = {"format": "guess-session", "version": persist.VERSION, "nodes": [], "edges": []}

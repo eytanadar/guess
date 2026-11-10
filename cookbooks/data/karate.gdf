@@ -1,0 +1,114 @@
+nodedef> name,x DOUBLE,y DOUBLE,visible BOOLEAN,color VARCHAR(256),strokecolor VARCHAR(256),labelcolor VARCHAR(256),fixed BOOLEAN,style INT,width DOUBLE,height DOUBLE,label VARCHAR(256),image VARCHAR(256),labelvisible BOOLEAN,labelpos VARCHAR(256),labelsize DOUBLE,club VARCHAR(256)
+m1,402.0925553563411,639.9757010826565,true,cornflowerblue,,,false,2,10.0,10.0,1,,false,right,1.0,Mr Hi
+m2,404.8298793791306,563.9808469887445,true,cornflowerblue,,,false,2,10.0,10.0,2,,false,right,1.0,Mr Hi
+m3,446.968531303544,492.2777103177674,true,cornflowerblue,,,false,2,10.0,10.0,3,,false,right,1.0,Mr Hi
+m4,341.10884612216284,574.6420473138724,true,cornflowerblue,,,false,2,10.0,10.0,4,,false,right,1.0,Mr Hi
+m5,400.1726322697492,773.9620159951819,true,cornflowerblue,,,false,2,10.0,10.0,5,,false,right,1.0,Mr Hi
+m6,417.21928325410175,839.2295108147902,true,cornflowerblue,,,false,2,10.0,10.0,6,,false,right,1.0,Mr Hi
+m7,458.901106587287,822.9346552340728,true,cornflowerblue,,,false,2,10.0,10.0,7,,false,right,1.0,Mr Hi
+m8,344.69295778479704,530.9565792455687,true,cornflowerblue,,,false,2,10.0,10.0,8,,false,right,1.0,Mr Hi
+m9,537.4787967782913,486.80993230824595,true,cornflowerblue,,,false,2,10.0,10.0,9,,false,right,1.0,Mr Hi
+m10,431.547970600762,295.4109278291787,true,cornflowerblue,,,false,2,10.0,10.0,10,,false,right,1.0,Officer
+m11,351.311365378268,824.8035302979168,true,cornflowerblue,,,false,2,10.0,10.0,11,,false,right,1.0,Mr Hi
+m12,290.041691204753,759.1560220591399,true,cornflowerblue,,,false,2,10.0,10.0,12,,false,right,1.0,Mr Hi
+m13,202.5273033331478,608.7846447067402,true,cornflowerblue,,,false,2,10.0,10.0,13,,false,right,1.0,Mr Hi
+m14,469.6844085040137,540.6484642594223,true,cornflowerblue,,,false,2,10.0,10.0,14,,false,right,1.0,Mr Hi
+m15,757.0192828318245,425.6605567085847,true,cornflowerblue,,,false,2,10.0,10.0,15,,false,right,1.0,Officer
+m16,713.1894675162881,356.7093186330152,true,cornflowerblue,,,false,2,10.0,10.0,16,,false,right,1.0,Officer
+m17,458.2229755394992,950.0,true,cornflowerblue,,,false,2,10.0,10.0,17,,false,right,1.0,Mr Hi
+m18,260.8980907264747,694.3194403475679,true,cornflowerblue,,,false,2,10.0,10.0,18,,false,right,1.0,Mr Hi
+m19,804.9335927469131,372.41240681535055,true,cornflowerblue,,,false,2,10.0,10.0,19,,false,right,1.0,Officer
+m20,381.4566993059953,480.08846028973096,true,cornflowerblue,,,false,2,10.0,10.0,20,,false,right,1.0,Mr Hi
+m21,772.2727364518744,308.33132239324686,true,cornflowerblue,,,false,2,10.0,10.0,21,,false,right,1.0,Officer
+m22,272.24838501992735,621.291935070194,true,cornflowerblue,,,false,2,10.0,10.0,22,,false,right,1.0,Mr Hi
+m23,716.4962479967144,471.78882194687026,true,cornflowerblue,,,false,2,10.0,10.0,23,,false,right,1.0,Officer
+m24,610.671079974934,296.28036873154383,true,cornflowerblue,,,false,2,10.0,10.0,24,,false,right,1.0,Officer
+m25,490.2935934814132,204.2022623748275,true,cornflowerblue,,,false,2,10.0,10.0,25,,false,right,1.0,Officer
+m26,541.9336701078399,258.7254335374907,true,cornflowerblue,,,false,2,10.0,10.0,26,,false,right,1.0,Officer
+m27,710.9537275233982,207.83628417933824,true,cornflowerblue,,,false,2,10.0,10.0,27,,false,right,1.0,Officer
+m28,524.6083284346508,312.67698365594174,true,cornflowerblue,,,false,2,10.0,10.0,28,,false,right,1.0,Officer
+m29,447.520854918496,369.5378580215579,true,cornflowerblue,,,false,2,10.0,10.0,29,,false,right,1.0,Officer
+m30,683.8506435656814,275.11518911247657,true,cornflowerblue,,,false,2,10.0,10.0,30,,false,right,1.0,Officer
+m31,587.3649168179941,494.0631453519463,true,cornflowerblue,,,false,2,10.0,10.0,31,,false,right,1.0,Officer
+m32,520.9829760762292,373.60528603659634,true,cornflowerblue,,,false,2,10.0,10.0,32,,false,right,1.0,Officer
+m33,642.4482248757056,389.3715828110813,true,cornflowerblue,,,false,2,10.0,10.0,33,,false,right,1.0,Officer
+m34,604.0571782317963,384.41075552934257,true,cornflowerblue,,,false,2,10.0,10.0,34,,false,right,1.0,Officer
+edgedef> node1,node2,directed BOOLEAN,color VARCHAR(256),labelcolor VARCHAR(256),visible BOOLEAN,width DOUBLE,weight DOUBLE,label VARCHAR(256),labelvisible BOOLEAN,labelsize DOUBLE
+m1,m2,false,dandelion,,true,2.0,4.0,,false,1.0
+m1,m3,false,dandelion,,true,2.0,5.0,,false,1.0
+m1,m4,false,dandelion,,true,2.0,3.0,,false,1.0
+m1,m5,false,dandelion,,true,2.0,3.0,,false,1.0
+m1,m6,false,dandelion,,true,2.0,3.0,,false,1.0
+m1,m7,false,dandelion,,true,2.0,3.0,,false,1.0
+m1,m8,false,dandelion,,true,2.0,2.0,,false,1.0
+m1,m9,false,dandelion,,true,2.0,2.0,,false,1.0
+m1,m11,false,dandelion,,true,2.0,2.0,,false,1.0
+m1,m12,false,dandelion,,true,2.0,3.0,,false,1.0
+m1,m13,false,dandelion,,true,2.0,1.0,,false,1.0
+m1,m14,false,dandelion,,true,2.0,3.0,,false,1.0
+m1,m18,false,dandelion,,true,2.0,2.0,,false,1.0
+m1,m20,false,dandelion,,true,2.0,2.0,,false,1.0
+m1,m22,false,dandelion,,true,2.0,2.0,,false,1.0
+m1,m32,false,dandelion,,true,2.0,2.0,,false,1.0
+m2,m3,false,dandelion,,true,2.0,6.0,,false,1.0
+m2,m4,false,dandelion,,true,2.0,3.0,,false,1.0
+m2,m8,false,dandelion,,true,2.0,4.0,,false,1.0
+m2,m14,false,dandelion,,true,2.0,5.0,,false,1.0
+m2,m18,false,dandelion,,true,2.0,1.0,,false,1.0
+m2,m20,false,dandelion,,true,2.0,2.0,,false,1.0
+m2,m22,false,dandelion,,true,2.0,2.0,,false,1.0
+m2,m31,false,dandelion,,true,2.0,2.0,,false,1.0
+m3,m4,false,dandelion,,true,2.0,3.0,,false,1.0
+m3,m8,false,dandelion,,true,2.0,4.0,,false,1.0
+m3,m9,false,dandelion,,true,2.0,5.0,,false,1.0
+m3,m10,false,dandelion,,true,2.0,1.0,,false,1.0
+m3,m14,false,dandelion,,true,2.0,3.0,,false,1.0
+m3,m28,false,dandelion,,true,2.0,2.0,,false,1.0
+m3,m29,false,dandelion,,true,2.0,2.0,,false,1.0
+m3,m33,false,dandelion,,true,2.0,2.0,,false,1.0
+m4,m8,false,dandelion,,true,2.0,3.0,,false,1.0
+m4,m13,false,dandelion,,true,2.0,3.0,,false,1.0
+m4,m14,false,dandelion,,true,2.0,3.0,,false,1.0
+m5,m7,false,dandelion,,true,2.0,2.0,,false,1.0
+m5,m11,false,dandelion,,true,2.0,3.0,,false,1.0
+m6,m7,false,dandelion,,true,2.0,5.0,,false,1.0
+m6,m11,false,dandelion,,true,2.0,3.0,,false,1.0
+m6,m17,false,dandelion,,true,2.0,3.0,,false,1.0
+m7,m17,false,dandelion,,true,2.0,3.0,,false,1.0
+m9,m31,false,dandelion,,true,2.0,3.0,,false,1.0
+m9,m33,false,dandelion,,true,2.0,3.0,,false,1.0
+m9,m34,false,dandelion,,true,2.0,4.0,,false,1.0
+m10,m34,false,dandelion,,true,2.0,2.0,,false,1.0
+m14,m34,false,dandelion,,true,2.0,3.0,,false,1.0
+m15,m33,false,dandelion,,true,2.0,3.0,,false,1.0
+m15,m34,false,dandelion,,true,2.0,2.0,,false,1.0
+m16,m33,false,dandelion,,true,2.0,3.0,,false,1.0
+m16,m34,false,dandelion,,true,2.0,4.0,,false,1.0
+m19,m33,false,dandelion,,true,2.0,1.0,,false,1.0
+m19,m34,false,dandelion,,true,2.0,2.0,,false,1.0
+m20,m34,false,dandelion,,true,2.0,1.0,,false,1.0
+m21,m33,false,dandelion,,true,2.0,3.0,,false,1.0
+m21,m34,false,dandelion,,true,2.0,1.0,,false,1.0
+m23,m33,false,dandelion,,true,2.0,2.0,,false,1.0
+m23,m34,false,dandelion,,true,2.0,3.0,,false,1.0
+m24,m26,false,dandelion,,true,2.0,5.0,,false,1.0
+m24,m28,false,dandelion,,true,2.0,4.0,,false,1.0
+m24,m30,false,dandelion,,true,2.0,3.0,,false,1.0
+m24,m33,false,dandelion,,true,2.0,5.0,,false,1.0
+m24,m34,false,dandelion,,true,2.0,4.0,,false,1.0
+m25,m26,false,dandelion,,true,2.0,2.0,,false,1.0
+m25,m28,false,dandelion,,true,2.0,3.0,,false,1.0
+m25,m32,false,dandelion,,true,2.0,2.0,,false,1.0
+m26,m32,false,dandelion,,true,2.0,7.0,,false,1.0
+m27,m30,false,dandelion,,true,2.0,4.0,,false,1.0
+m27,m34,false,dandelion,,true,2.0,2.0,,false,1.0
+m28,m34,false,dandelion,,true,2.0,4.0,,false,1.0
+m29,m32,false,dandelion,,true,2.0,2.0,,false,1.0
+m29,m34,false,dandelion,,true,2.0,2.0,,false,1.0
+m30,m33,false,dandelion,,true,2.0,4.0,,false,1.0
+m30,m34,false,dandelion,,true,2.0,2.0,,false,1.0
+m31,m33,false,dandelion,,true,2.0,3.0,,false,1.0
+m31,m34,false,dandelion,,true,2.0,3.0,,false,1.0
+m32,m33,false,dandelion,,true,2.0,4.0,,false,1.0
+m32,m34,false,dandelion,,true,2.0,4.0,,false,1.0
+m33,m34,false,dandelion,,true,2.0,5.0,,false,1.0

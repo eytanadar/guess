@@ -1,3 +1,4 @@
+books
 .env
 COMPETITIVE_ANALYSIS.html
 node_modules/
@@ -19,7 +20,4 @@ web/demo/.cache/
 
 docs/COMPETITIVE_ANALYSIS.md
 
-# reference checkouts (not part of GUESS)
-/networkx/
-/python-igraph/
-/graphviz/
+

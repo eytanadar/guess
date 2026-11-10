@@ -13,7 +13,7 @@ Commands can be called without parentheses when they take no arguments
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
-- [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (13)
+- [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (14)
 - [networkx bridge and sample graphs](#networkx-bridge-and-sample-graphs) (4)
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
@@ -22,7 +22,7 @@ Commands can be called without parentheses when they take no arguments
 - [Styles and visual mappings](#styles-and-visual-mappings) (10)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
-- [Several graphs: subgraphs and tabs](#several-graphs-subgraphs-and-tabs) (6)
+- [Several graphs: subgraphs and tabs](#several-graphs-subgraphs-and-tabs) (7)
 - [Time: ranges, years and the timeline](#time-ranges-years-and-the-timeline) (1)
 - [Presentations (slides)](#presentations-slides) (6)
 - [Data from the web: URLs, SPARQL, NDEx, Neo4j, packages](#data-from-the-web-urls-sparql-ndex-neo4j-packages) (6)
@@ -527,6 +527,20 @@ hubs link to hubs, negative when hubs link to small nodes.
 assortativity(dept) measures homophily by a field: near 1 = ties stay
 within the same value, 0 = random mixing, negative = ties cross values.
 Numeric fields use the correlation of values across edges.
+
+### `blockmodel(k=4, show=True)`
+
+blockmodel(k) groups the nodes into k positions of structurally
+equivalent nodes: nodes tied to the same others (in the same
+directions), whether or not they're tied to each other, which is a
+role (teacher, broker, follower), not a community. Profiles are
+compared by correlation and merged by average-linkage clustering.
+Stores each node's position in `position` (0 = largest), prints the
+image matrix (the density of ties from each position to each other;
+a dense diagonal means cohesive positions, dense off-diagonals mean
+roles that serve each other) and returns the positions. Try
+colorize(position), then collapseBy(position) for the reduced graph.
+Fine up to a couple of thousand nodes.
 
 ### `bridges()`
 
@@ -1431,6 +1445,22 @@ The graphs in this session; the current one first.
 
 newGraph(name) starts an empty graph and switches to it.
 
+### `project(kindField, keep, method='count', name=None)`
+
+project(kind, "woman") turns a two-mode network (people and the
+events, groups or papers they belong to) into a one-mode network of
+just the nodes whose `kind` is "woman": two are linked when they share
+a neighbour of the other kind. It opens as a new graph (the two-mode
+one stays; use() goes back), keeping fields and positions. Each edge
+gets `shared` (how many neighbours in common) and `weight`, by method:
+  "count"    the number shared (default)
+  "jaccard"  shared / neighbours of either (0..1; removes the size
+             effect of very active nodes)
+  "newman"   each shared neighbour adds 1/(its degree - 1), so a
+             small event counts more than a crowded one
+Each kept node also gets `affiliations`: its number of other-kind
+neighbours. E.g. project(kind, "event") gives the event network.
+
 ### `renameGraph(name)`
 
 renameGraph(name) renames the current graph.
@@ -2317,6 +2347,7 @@ Built-in node fields:
 | `indegree` | INTEGER | 0 (read-only) |
 | `outdegree` | INTEGER | 0 (read-only) |
 | `totaldegree` | INTEGER | 0 (read-only) |
+| `degree` | INTEGER | 0 (read-only) |
 
 Built-in edge fields:
 

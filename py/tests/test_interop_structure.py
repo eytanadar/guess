@@ -169,3 +169,25 @@ def test_loading_a_graph_drops_the_old_fields_and_undo_brings_them_back(s, tmp_p
     assert [k for k, f in s.graph.node_schema.items() if not f.builtin] == []
     run(s, "use('main')")
     assert "club" in s.graph.node_schema
+
+
+def test_blockmodel_finds_structural_equivalence():
+    from tests.test_gython import Recorder
+    from guess import Session
+    rec = Recorder()
+    s = Session(rec)
+    # two "teachers" both tied to the same four "students", who aren't tied to each other:
+    # the teachers are equivalent (same ties) though not tied to each other
+    for t in ("t1", "t2"):
+        for st in ("s1", "s2", "s3", "s4"):
+            s.run(f"addEdge(addNode({t!r}), addNode({st!r}))")
+    rec.clear()
+    assert s.run("__r = blockmodel(2)"), rec.of("error")
+    groups = sorted(sorted(n.name for n in p) for p in s.ns["__r"])
+    assert groups == [["s1", "s2", "s3", "s4"], ["t1", "t2"]]
+    assert s.graph.getNodeByName("s1").position == 0          # largest position first
+    printed = "".join(m.get("text", "") for m in rec.msgs)
+    assert "1.00" in printed and "0.00" in printed           # students -> teachers dense, within empty
+    rec.clear()
+    assert not s.run("blockmodel(99)")
+    assert "1 <= k" in rec.of("error")[0]["text"]

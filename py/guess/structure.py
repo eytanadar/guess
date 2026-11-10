@@ -376,6 +376,95 @@ def install(session):
         return float(nx.transitivity(_undirected(g())))
 
     @cmd
+    def blockmodel(k=4, show=True):
+        """blockmodel(k) groups the nodes into k positions of structurally
+        equivalent nodes: nodes tied to the same others (in the same
+        directions), whether or not they're tied to each other, which is a
+        role (teacher, broker, follower), not a community. Profiles are
+        compared by correlation and merged by average-linkage clustering.
+        Stores each node's position in `position` (0 = largest), prints the
+        image matrix (the density of ties from each position to each other;
+        a dense diagonal means cohesive positions, dense off-diagonals mean
+        roles that serve each other) and returns the positions. Try
+        colorize(position), then collapseBy(position) for the reduced graph.
+        Fine up to a couple of thousand nodes."""
+        gr = g()
+        nodes = gr._nodes_list()
+        n = len(nodes)
+        k = int(k)
+        if n < 2 or not 1 <= k <= n:
+            raise GuessError(f"blockmodel needs 1 <= k <= the number of nodes ({n})")
+        idx = {x._id: i for i, x in enumerate(nodes)}
+        A = np.zeros((n, n))
+        for e in gr._edges_list():
+            a, b = idx[e._n1._id], idx[e._n2._id]
+            if a == b:
+                continue
+            A[a, b] = 1
+            if not e._directed:
+                A[b, a] = 1
+        # each node's profile: its row and its column (out- and in-ties). For
+        # a pair i, j the entries about i and j themselves are left out (they
+        # can't match: i isn't tied to itself); exact up to 400 nodes, then the
+        # whole-profile correlation, which is close on larger graphs
+        P = np.hstack([A, A.T])
+        if n <= 400:
+            C = np.empty((n, n))
+            for i in range(n):
+                for j in range(i, n):
+                    m = np.ones(2 * n, bool)
+                    m[[i, j, n + i, n + j]] = False
+                    x, y = P[i, m], P[j, m]
+                    sx, sy = x.std(), y.std()
+                    if sx == 0 or sy == 0:
+                        c = 1.0 if np.array_equal(x, y) else 0.0
+                    else:
+                        c = float(np.mean((x - x.mean()) * (y - y.mean())) / (sx * sy))
+                    C[i, j] = C[j, i] = c
+        else:
+            with np.errstate(invalid="ignore", divide="ignore"):
+                C = np.nan_to_num(np.corrcoef(P))
+        # average-linkage agglomeration down to k clusters
+        D = 1 - C
+        np.fill_diagonal(D, np.inf)
+        size = np.ones(n)
+        members = {i: [i] for i in range(n)}
+        for _ in range(n - k):
+            a, b = np.unravel_index(np.argmin(D), D.shape)
+            a, b = min(a, b), max(a, b)
+            merged = (size[a] * D[a] + size[b] * D[b]) / (size[a] + size[b])
+            D[a, :] = merged
+            D[:, a] = merged
+            D[a, a] = np.inf
+            D[b, :] = np.inf
+            D[:, b] = np.inf
+            size[a] += size[b]
+            members[a] += members.pop(b)
+        clusters = members
+        groups = sorted(clusters.values(), key=lambda c: (-len(c), min(c)))
+        f = gr.addNodeField("position", INT, -1)
+        pos = np.empty(n, int)
+        for p, members in enumerate(groups):
+            for i in members:
+                f.set(nodes[i], p)
+                pos[i] = p
+        image = np.zeros((k, k))
+        for p in range(k):
+            for q in range(k):
+                rows, cols = pos == p, pos == q
+                block = A[np.ix_(rows, cols)]
+                cells = rows.sum() * cols.sum() - (rows.sum() if p == q else 0)
+                image[p, q] = block.sum() / cells if cells else 0.0
+        if show:
+            head = "position  size  " + "  ".join(f"{q:>5}" for q in range(k))
+            print("tie density from each position (row) to each other (column)")
+            print(head)
+            for p in range(k):
+                print(f"{p:>8}  {len(groups[p]):>4}  " + "  ".join(f"{image[p, q]:5.2f}" for q in range(k)))
+        return GSet([GSet([nodes[i] for i in grp], annotation=f"position {p}")
+                     for p, grp in enumerate(groups)], annotation=f"{k} positions")
+
+    @cmd
     def compareClusters(field1, field2, method="nmi"):
         """compareClusters(modularity_class, dept) says how well two partitions of
         the nodes agree, over the nodes that have both values: method "nmi"

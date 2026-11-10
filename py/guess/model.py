@@ -761,7 +761,8 @@ class Graph:
                                            compute=(lambda n: n._name) if name == "name" else None)
         for name, fn in (("indegree", lambda n: len(n.getInEdges())),
                          ("outdegree", lambda n: len(n.getOutEdges())),
-                         ("totaldegree", lambda n: len(n._inc))):
+                         ("totaldegree", lambda n: len(n._inc)),
+                         ("degree", lambda n: len(n._inc))):     # the usual name for totaldegree
             self.node_schema[name] = Field(self, name, NODE, INT, 0, readonly=True,
                                            compute=fn, builtin=True)
         self.edge_schema["node1"] = Field(self, "node1", EDGE, STRING, readonly=True,

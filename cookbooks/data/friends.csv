@@ -1,0 +1,12 @@
+Source,Target,Weight
+ana,ben,1
+ana,cai,2
+ben,cai,1
+ben,ana,1
+cai,dev,3
+dev,eli,1
+eli,fay,2
+fay,dev,1
+fay,fay,1
+gus,hal,1
+ana,ben,2

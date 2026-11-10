@@ -1,0 +1,37 @@
+nodedef> name,x DOUBLE,y DOUBLE,visible BOOLEAN,color VARCHAR(256),strokecolor VARCHAR(256),labelcolor VARCHAR(256),fixed BOOLEAN,style INT,width DOUBLE,height DOUBLE,label VARCHAR(256),image VARCHAR(256),labelvisible BOOLEAN,labelpos VARCHAR(256),labelsize DOUBLE
+Acciaiuoli,391.2062216247857,799.1661087865114,true,cornflowerblue,,,false,2,10.0,10.0,Acciaiuoli,,false,right,1.0
+Medici,480.84687961504704,625.6877255553483,true,cornflowerblue,,,false,2,10.0,10.0,Medici,,false,right,1.0
+Castellani,195.28929751521127,305.8707594884727,true,cornflowerblue,,,false,2,10.0,10.0,Castellani,,false,right,1.0
+Peruzzi,279.0825960174494,159.4161633134193,true,cornflowerblue,,,false,2,10.0,10.0,Peruzzi,,false,right,1.0
+Strozzi,312.0196308366214,269.2273577359073,true,cornflowerblue,,,false,2,10.0,10.0,Strozzi,,false,right,1.0
+Barbadori,263.69563292424215,506.15461804668405,true,cornflowerblue,,,false,2,10.0,10.0,Barbadori,,false,right,1.0
+Ridolfi,379.93178153679986,451.3058502650159,true,cornflowerblue,,,false,2,10.0,10.0,Ridolfi,,false,right,1.0
+Tornabuoni,473.9069246920422,509.51567655963464,true,cornflowerblue,,,false,2,10.0,10.0,Tornabuoni,,false,right,1.0
+Albizzi,696.1222754384644,483.550778604737,true,cornflowerblue,,,false,2,10.0,10.0,Albizzi,,false,right,1.0
+Salviati,636.3589195814593,826.9617627012174,true,cornflowerblue,,,false,2,10.0,10.0,Salviati,,false,right,1.0
+Pazzi,782.8394731125047,950.0,true,cornflowerblue,,,false,2,10.0,10.0,Pazzi,,false,right,1.0
+Bischeri,441.36597546154763,220.28565942213334,true,cornflowerblue,,,false,2,10.0,10.0,Bischeri,,false,right,1.0
+Guadagni,586.831656492884,395.5047389771121,true,cornflowerblue,,,false,2,10.0,10.0,Guadagni,,false,right,1.0
+Ginori,890.7920451589048,436.8229130859317,true,cornflowerblue,,,false,2,10.0,10.0,Ginori,,false,right,1.0
+Lamberteschi,689.7106899920361,560.5298874578751,true,cornflowerblue,,,false,2,10.0,10.0,Lamberteschi,,false,right,1.0
+edgedef> node1,node2,directed BOOLEAN,color VARCHAR(256),labelcolor VARCHAR(256),visible BOOLEAN,width DOUBLE,weight DOUBLE,label VARCHAR(256),labelvisible BOOLEAN,labelsize DOUBLE
+Acciaiuoli,Medici,false,dandelion,,true,2.0,1.0,,false,1.0
+Medici,Barbadori,false,dandelion,,true,2.0,1.0,,false,1.0
+Medici,Ridolfi,false,dandelion,,true,2.0,1.0,,false,1.0
+Medici,Tornabuoni,false,dandelion,,true,2.0,1.0,,false,1.0
+Medici,Albizzi,false,dandelion,,true,2.0,1.0,,false,1.0
+Medici,Salviati,false,dandelion,,true,2.0,1.0,,false,1.0
+Castellani,Peruzzi,false,dandelion,,true,2.0,1.0,,false,1.0
+Castellani,Strozzi,false,dandelion,,true,2.0,1.0,,false,1.0
+Castellani,Barbadori,false,dandelion,,true,2.0,1.0,,false,1.0
+Peruzzi,Strozzi,false,dandelion,,true,2.0,1.0,,false,1.0
+Peruzzi,Bischeri,false,dandelion,,true,2.0,1.0,,false,1.0
+Strozzi,Ridolfi,false,dandelion,,true,2.0,1.0,,false,1.0
+Strozzi,Bischeri,false,dandelion,,true,2.0,1.0,,false,1.0
+Ridolfi,Tornabuoni,false,dandelion,,true,2.0,1.0,,false,1.0
+Tornabuoni,Guadagni,false,dandelion,,true,2.0,1.0,,false,1.0
+Albizzi,Ginori,false,dandelion,,true,2.0,1.0,,false,1.0
+Albizzi,Guadagni,false,dandelion,,true,2.0,1.0,,false,1.0
+Salviati,Pazzi,false,dandelion,,true,2.0,1.0,,false,1.0
+Bischeri,Guadagni,false,dandelion,,true,2.0,1.0,,false,1.0
+Guadagni,Lamberteschi,false,dandelion,,true,2.0,1.0,,false,1.0

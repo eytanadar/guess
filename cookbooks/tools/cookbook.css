@@ -1,0 +1,5 @@
+/* cookbook additions on top of the manual's stylesheet */
+h3 .level { font-size: .7em; font-weight: 600; color: var(--muted); margin-left: .5em; letter-spacing: .02em; }
+div.ingredients { font-size: .92em; color: var(--muted); }
+div.ingredients code { color: var(--text); }
+div.pitfall { border-left: 3px solid #d7191c; }
