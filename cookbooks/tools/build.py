@@ -47,7 +47,8 @@ COMMON = ["--from", "markdown+raw_tex", "--toc", "--toc-depth=2", "--syntax-high
           "--number-sections"]
 FORMATS = {
     "html": ["--standalone", "--embed-resources", "--css", str(MANUAL_TOOLS / "manual.css"),
-             "--css", str(HERE / "cookbook.css")],
+             "--css", str(HERE / "cookbook.css"),
+             "--include-after-body", str(MANUAL_TOOLS / "copy-code.html")],
     "pdf": ["--pdf-engine=xelatex", "-V", "geometry:margin=1in", "-V", "fontsize=11pt",
             "-V", "colorlinks=true", "-V", "linkcolor=[HTML]{1F4E8C}", "-V", "urlcolor=[HTML]{1F4E8C}",
             "-V", "documentclass=article", "-V", "papersize=letter",

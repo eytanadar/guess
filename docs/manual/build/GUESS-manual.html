@@ -2686,6 +2686,31 @@ download.</p>
 <h3 id="exportgraphmlfilename"><code>exportGraphML(filename)</code></h3>
 <p>Write the graph as GraphML (offered as a download in the
 browser).</p>
+<h3 id="extinctionsordersrandom-degree-trials10-seed0-showtrue"><code>extinctions(orders=(&#39;random&#39;, &#39;degree&#39;), trials=10, seed=0, show=True)</code></h3>
+<p>extinctions() simulates species loss in a food web: species are
+removed one at a time (“primary” extinctions) and any species left with
+nothing to eat dies out too (“secondary” extinctions; species that eat
+nothing in the web, the basal ones, never starve). orders: “random”
+(averaged over <code>trials</code>), “degree” (most connected first),
+“least” (least connected first), “basal” (producers first) or a node
+field (highest first). Plots the share of species surviving against the
+share removed, and prints R50, the share of primary removals that brings
+total losses to half the species (higher = more robust). The graph isn’t
+changed. Returns {order: [(removed, surviving)…]}.</p>
+<h3 id="findcyclesmaxlength5-amongnone-limit1000"><code>findCycles(maxLength=5, among=None, limit=1000)</code></h3>
+<p>findCycles(maxLength=5) finds directed cycles (A -&gt; B -&gt; …
+-&gt; A) of up to maxLength nodes, e.g. money sent round a ring of
+accounts back to where it started. among=nodes restricts the search.
+Each cycle is a set of its nodes and edges (shortest first); at most
+<code>limit</code> are returned. Undirected edges count both ways.</p>
+<h3 id="findduplicatesfieldnone-threshold0.85-amongnone-top50-showtrue"><code>findDuplicates(field=None, threshold=0.85, among=None, top=50, show=True)</code></h3>
+<p>findDuplicates(name) lists pairs of nodes whose values of a text
+field look like the same entity: compared after normalising (case,
+accents, punctuation, word order, company suffixes and titles like Ltd,
+Inc, Mr), scored 0..1 by string similarity, best first, at least
+<code>threshold</code>. among=nodes restricts the search (e.g. one kind
+of entity). Default field: label. Returns (node, node, score) for review
+and mergeNodes; it never merges anything itself.</p>
 <h3 id="findedgesseq"><code>findEdges(seq)</code></h3>
 <p>The edges among the members of a (possibly mixed) set.</p>
 <h3 id="findnodesseq"><code>findNodes(seq)</code></h3>
@@ -2698,6 +2723,25 @@ padding is the space around the text. Labels with line breaks
 (<code>\n</code>) make taller nodes.</p>
 <h3 id="floatrangea-b-inc"><code>floatRange(a, b, inc)</code></h3>
 <p>Like range() but for floats.</p>
+<h3 id="geodistancenamekm-latnone-lonnone"><code>geoDistance(name=&#39;km&#39;, lat=None, lon=None)</code></h3>
+<p>geoDistance() stores each edge’s great-circle length in kilometres
+(from its ends’ latitude and longitude fields, as geoLayout finds them)
+in the edge field <code>km</code> (or name=…). Use it as a cost: for e
+in g.edges: e.weight = e.km, then shortestPath(a, b, weighted=true) is
+the shortest route by distance. Returns the field.</p>
+<h3 id="geolayoutlatnone-lonnone-projectionmercator-mapauto-width1000-landnone-bordersnone-parallels29.5-45.5-center-96.0-37.5"><code>geoLayout(lat=None, lon=None, projection=&#39;mercator&#39;, map=&#39;auto&#39;, width=1000, land=None, borders=None, parallels=(29.5, 45.5), center=(-96.0, 37.5))</code></h3>
+<p>geoLayout() places nodes by their latitude and longitude fields
+(found by name: latitude/lat and longitude/lon/lng, or pass them:
+geoLayout(lat, lon)) and draws a map underneath. projection: “mercator”
+(default; shapes kept, high latitudes enlarged), “equirectangular”
+(longitude and latitude as x and y) or “albers” (equal-area conic; with
+parallels= and center=, US by default, which suits the lower 48 states).
+map: “world” (land outlines), “usa” (the states), None for no map, or
+“auto” (usa when every node is in the US, else world). land= and
+borders= set the map’s colours (default: light or dark grey to suit the
+theme). The layout fits nodes into <code>width</code> units across;
+nodes without coordinates are set in a row below. Outlines: Natural
+Earth 1:110m, public domain.</p>
 <h3 id="getappletcontext"><code>getAppletContext()</code></h3>
 <p>For old applet scripts: .showDocument(url) opens a browser
 window.</p>
@@ -2710,6 +2754,14 @@ window.</p>
 <h3 id="groupbyd"><code>groupBy(*d)</code></h3>
 <p>groupBy(field) or groupBy(seq, field): groups of elements sharing a
 value.</p>
+<h3 id="groupstatsfield-top12-showtrue"><code>groupStats(field, top=12, show=True)</code></h3>
+<p>groupStats(modularity_class) profiles each group of nodes sharing a
+value of a field: size, internal edges, density (internal edges /
+possible pairs), boundary edges (to the rest), conductance (boundary /
+all edges touching the group: low = well separated), and the group’s
+most connected member. Prints the largest <code>top</code> groups and
+returns a row per group, largest first; a dense, isolated group of
+entities that should be unrelated is a classic red flag.</p>
 <h3 id="helpobjnone"><code>help(obj=None)</code></h3>
 <p>help() opens the help browser (searchable commands and examples; also
 F1 or Cmd/Ctrl+K for the command palette); help(command) prints that
@@ -2723,6 +2775,16 @@ command’s documentation and shows it in the browser.</p>
 an edge field) in proportion to a numeric field: 1 is the normal size.
 Sets the labelsize field; scale as in sizeBy (“linear”, “log”, “sqrt”,
 “rank”).</p>
+<h3 id="makefromcallstarget"><code>makeFromCalls(target)</code></h3>
+<p>makeFromCalls(“package.module”) builds a call graph of a module (a
+module name or a .py file): a node per function and method, an edge from
+each to the functions it calls. Calls are matched by name (f(),
+self.f(), cls.f(), Class.f()), so it’s an approximation: calls through
+variables, other modules or dynamic dispatch are missed. Nodes get
+<code>function</code> (Class.name or name), <code>cls</code>,
+<code>lines</code>, <code>params</code> and <code>public</code> (no
+leading underscore); edges get <code>weight</code>, the number of call
+sites.</p>
 <h3 id="makefromcsvfilename-nodesnone-directedfalse"><code>makeFromCSV(filename, nodes=None, directed=False)</code></h3>
 <p>makeFromCSV(“edges.csv”) replaces the graph with a spreadsheet table
 as Gephi reads it: an edge table (Source, Target[, Type, Weight, Label,
@@ -2745,6 +2807,17 @@ attributes become fields.</p>
 <h3 id="makefromgexffilename"><code>makeFromGEXF(filename)</code></h3>
 <p>Replace the current graph with a GEXF file (Gephi’s format):
 attributes, colours, positions, sizes, edge weights and thickness.</p>
+<h3 id="makefromglobitaxa-interactioneats-limit500-serverhttpsapi.globalbioticinteractions.org"><code>makeFromGloBI(taxa, interaction=&#39;eats&#39;, limit=500, server=&#39;https://api.globalbioticinteractions.org&#39;)</code></h3>
+<p>makeFromGloBI([“Vulpes vulpes”, “Lynx lynx”]) opens observed species
+interactions from the Global Biotic Interactions database (GloBI): for
+each taxon, what it <code>interaction</code>s (eats, preysOn,
+pollinates, parasiteOf, visitsFlowersOf, …), up to <code>limit</code>
+records each. Feeding links run from food to eater, other kinds from the
+taxon to its partner. Edges get <code>weight</code> (records) and
+<code>interaction</code>; nodes <code>taxon</code> (the full name) and
+<code>query</code> (true for the taxa you asked for). GloBI aggregates
+many studies with their own licences: cite GloBI and the sources you
+use.</p>
 <h3 id="makefromgmlfilename"><code>makeFromGML(filename)</code></h3>
 <p>Replace the current graph with a GML file (Graph Modelling Language,
 as written by networkx, igraph, yEd and Cytoscape: labels, graphics x/y,
@@ -2752,6 +2825,20 @@ fill colour, size and shape, and every other attribute as a field). For
 compatibility with GUESS 2006, a GraphML (XML) file works too.</p>
 <h3 id="makefromgraphmlfilename"><code>makeFromGraphML(filename)</code></h3>
 <p>Replace the current graph with a GraphML file.</p>
+<h3 id="makefromimportstarget-externalfalse-testsfalse-levelnone"><code>makeFromImports(target, external=False, tests=False, level=None)</code></h3>
+<p>makeFromImports(“networkx”) builds the import graph of a Python
+package (an installed package’s name, or a folder or file of source): a
+node per module, an edge from each module to each module of the package
+it imports (importer -&gt; imported). Nodes get <code>module</code> (the
+dotted name), <code>package</code> (its parent package),
+<code>depth</code>, <code>lines</code>, <code>functions</code> and
+<code>classes</code>; edges get <code>weight</code> (import statements)
+and <code>toplevel</code> (false when every import between the two
+happens inside a function: a deferred import, often used to dodge an
+import cycle). external=true also adds the outside packages imported
+(<code>external</code> true). level=k merges modules below depth k into
+their parent (e.g. level=2 gives one node per subpackage). Test modules
+are skipped unless tests=true. The code is parsed, never run.</p>
 <h3 id="makefrompajekfilename"><code>makeFromPajek(filename)</code></h3>
 <p>Replace the current graph with a Pajek .net file (nodes are named
 pajek<id>).</p>
@@ -2790,6 +2877,31 @@ set to the column’s name, ready for bipartiteLayout(kind) or
 project(kind, “author”). a= and b= name the columns (default: the first
 two); weight= names a numeric column to use as edge weight. Repeated
 rows add to the weight.</p>
+<h3 id="makenichemodelspecies30-connectance0.15-seed0"><code>makeNicheModel(species=30, connectance=0.15, seed=0)</code></h3>
+<p>makeNicheModel(species, connectance) builds a food web with the niche
+model (Williams and Martinez 2000), which reproduces the structure of
+real food webs well: each species has a niche value (0..1) and eats
+every species whose niche falls in a range below its own. connectance
+(links / species^2) is typically 0.05-0.3. Edges run from food to eater;
+nodes get <code>niche</code> and <code>range</code>. Species left
+without any link are dropped. seed= gives a different web.</p>
+<h3 id="mergenodesnodes-namenone"><code>mergeNodes(*nodes, name=None)</code></h3>
+<p>mergeNodes(a, b, …) merges nodes that are the same entity into the
+first (or name=…): every edge of the others moves to it (parallel edges
+are combined, adding their weights; edges between the merged nodes
+disappear), empty fields of the kept node are filled from the others,
+<code>aliases</code> records the other names and labels, and
+<code>merged</code> counts the nodes it stands for. One undo step. Also
+takes a set or a list of pairs from findDuplicates (each pair
+merged).</p>
+<h3 id="nestednesskindfield-rowsnone"><code>nestedness(kindField, rows=None)</code></h3>
+<p>nestedness(kind) measures how nested a two-mode network is (NODF,
+Almeida-Neto et al. 2008; 0 = not at all, 100 = perfectly): in a nested
+plant-pollinator network, the specialists interact with subsets of the
+species the generalists interact with. kind is the field saying which
+side each node is on; rows= names one side (default: the first value).
+Returns (NODF, NODF of the rows, NODF of the columns). Compare with a
+randomised network (rewire()) to judge whether a value is high.</p>
 <h3 id="ninverseseq"><code>ninverse(seq)</code></h3>
 <p>All nodes not in seq.</p>
 <h3 id="readjustedges"><code>readjustEdges()</code></h3>
@@ -2814,6 +2926,9 @@ add(name) or addNode(name) puts it back.</p>
 <h3 id="removeleaves"><code>removeLeaves()</code></h3>
 <p>Repeatedly remove nodes of total degree &lt;= 1. Returns what was
 removed.</p>
+<h3 id="removemap"><code>removeMap()</code></h3>
+<p>removeMap() removes the map drawn by geoLayout (the positions
+stay).</p>
 <h3 id="removenoden"><code>removeNode(n)</code></h3>
 <p>Remove one node and its edges (undo with add(g.deleted) or undo()).
 Its name still refers to it, so addNode(n) puts it back.</p>
@@ -2841,6 +2956,13 @@ Compare resizeLinear, which spaces distinct values evenly.</p>
 outdegree.</p>
 <h3 id="sortbyd"><code>sortBy(*d)</code></h3>
 <p>sortBy(field) or sortBy(seq, field).</p>
+<h3 id="trophiclevels"><code>trophicLevels()</code></h3>
+<p>trophicLevels() computes each species’ prey-averaged trophic level
+(<code>trophic</code>: 1 for species that eat nothing in the web,
+otherwise 1 + the mean level of what it eats), <code>omnivory</code>
+(the spread of its food’s levels: 0 = eats on one level) and
+<code>role</code> (basal: eats nothing here; top: nothing eats it; else
+intermediate). Prints a summary.</p>
 <h2 id="undo-redo-history-and-logging">Undo, redo, history and
 logging</h2>
 <h3 id="history"><code>history()</code></h3>
@@ -3035,6 +3157,18 @@ values only the 20 most common are printed.</p>
 <h3 id="reciprocity"><code>reciprocity()</code></h3>
 <p>reciprocity(): the share of directed edges whose reverse edge also
 exists (1 = every tie returned). Undirected edges are left out.</p>
+<h3 id="robustnessordersrandom-degree-trials5-seed0-showtrue"><code>robustness(orders=(&#39;random&#39;, &#39;degree&#39;), trials=5, seed=0, show=True)</code></h3>
+<p>robustness() asks how the network falls apart as nodes fail: for each
+way of removing nodes it gives the share of nodes still in the largest
+connected piece after removing each share of them, and plots the curves.
+orders: “random” (failures; averaged over <code>trials</code> random
+orders), “degree” or “betweenness” (attacks on the biggest hubs or
+bridges first, ranked once at the start), “adaptive” (the current
+highest-degree node each time), or a node field (highest first). The
+graph isn’t changed. Returns {order: [(removed share, largest-piece
+share), …]} and prints the share removed at which the largest piece
+drops below half. Many real networks shrug off random failures but break
+quickly under attack.</p>
 <h3 id="spanningtreemaximumfalse-weightedtrue"><code>spanningTree(maximum=False, weighted=True)</code></h3>
 <p>spanningTree() returns the edges of a minimum spanning tree (a forest
 if the graph is in pieces) by edge weight: the cheapest backbone that
@@ -3197,12 +3331,15 @@ linked but share neighbours, scored by “adamic_adar” (shared neighbours,
 rare ones counting more), “jaccard”, “common” (count of shared
 neighbours) or “resource” (resource allocation). Returns the
 <code>top</code> pairs as (node, node, score), best first.</p>
-<h3 id="rewiretimesnone-namenone-seed0"><code>rewire(times=None, name=None, seed=0)</code></h3>
+<h3 id="rewiretimesnone-namenone-seed0-keepnone"><code>rewire(times=None, name=None, seed=0, keep=None)</code></h3>
 <p>rewire() makes a randomised copy of the graph in a new tab keeping
 every node’s degree (repeated swaps of edge ends, 10 x edges by
 default): the null model for “is this structure more than chance?”.
 Compare e.g. transitivity() or modularity here and there. Edge weights
-travel with the swapped ends.</p>
+travel with the swapped ends. keep=field only swaps ends that share that
+field’s value, so the edges between each pair of values stay the same in
+number: rewire(keep=kind) keeps a two-mode network two-mode (plants
+still only link to pollinators).</p>
 <h3 id="similarton-methodjaccard-top10"><code>similarTo(n, method=&#39;jaccard&#39;, top=10)</code></h3>
 <p>similarTo(v1) scores every node by how much its neighbourhood
 overlaps v1’s, stores the score in the field <code>similarity</code> and
@@ -4349,5 +4486,69 @@ paper):</p>
 </tr>
 </tbody>
 </table>
+<!-- a Copy button on every code block (included after the body of the HTML manual and cookbooks) -->
+<style>
+div.sourceCode, pre { position: relative; }
+.copy-code {
+position: absolute; top: 6px; right: 6px; z-index: 2;
+font: 12px/1 system-ui, sans-serif; padding: 4px 8px; border-radius: 5px; cursor: pointer;
+color: var(--muted, #5b616b); background: var(--bg, #fff); border: 1px solid var(--border, #dfe2e6);
+opacity: 0; transition: opacity .15s;
+}
+div.sourceCode:hover .copy-code, pre:hover > .copy-code, .copy-code:focus-visible, .copy-code.done { opacity: 1; }
+@media (hover: none) { .copy-code { opacity: .85; } }
+.copy-code.done { color: #1a7f37; border-color: #1a7f37; }
+@media print { .copy-code { display: none; } }
+</style>
+<script>
+(() => {
+  const copy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // pages opened from disk, or browsers without the clipboard API
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+      document.body.append(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch { ok = false; }
+      ta.remove();
+      return ok;
+    }
+  };
+  const blocks = [...document.querySelectorAll("div.sourceCode")];
+  // plain <pre> blocks that pandoc didn't highlight
+  for (const pre of document.querySelectorAll("pre")) if (!pre.closest("div.sourceCode")) blocks.push(pre);
+  for (const block of blocks) {
+    const code = block.querySelector("code") || block;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy-code";
+    btn.textContent = "Copy";
+    btn.setAttribute("aria-label", "Copy this code");
+    btn.addEventListener("click", async () => {
+      // innerText of highlighted code keeps the lines but not pandoc's line anchors
+      const text = [...code.querySelectorAll(":scope > span")].length
+        ? [...code.querySelectorAll(":scope > span")].map((s) => s.textContent).join("\n")
+        : code.textContent;
+      const ok = await copy(text.replace(/\n+$/, "") + "\n");
+      btn.textContent = ok ? "Copied" : "Press Ctrl+C";
+      btn.classList.toggle("done", ok);
+      if (!ok) {
+        const r = document.createRange();
+        r.selectNodeContents(code);
+        getSelection().removeAllRanges();
+        getSelection().addRange(r);
+      }
+      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1500);
+    });
+    block.append(btn);
+  }
+})();
+</script>
 </body>
 </html>

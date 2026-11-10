@@ -91,6 +91,7 @@ FORMATS = {
             "-V", "documentclass=article", "-V", "papersize=letter",
             "--include-in-header", str(HERE / "tools" / "header.tex")],
     "html": ["--standalone", "--embed-resources", "--css", str(HERE / "tools" / "manual.css"),
+             "--include-after-body", str(HERE / "tools" / "copy-code.html"),
              "--metadata", "pagetitle=GUESS manual"],
     "epub": ["--css", str(HERE / "tools" / "manual.css"), "--split-level=1"],
     "docx": [],

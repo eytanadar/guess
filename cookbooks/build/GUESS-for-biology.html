@@ -677,5 +677,69 @@ label.</li>
 <p>As before, the expression values are <strong>simulated</strong>:
 substitute your own table, with an <code>Id</code> column of gene names,
 in the second line.</p>
+<!-- a Copy button on every code block (included after the body of the HTML manual and cookbooks) -->
+<style>
+div.sourceCode, pre { position: relative; }
+.copy-code {
+position: absolute; top: 6px; right: 6px; z-index: 2;
+font: 12px/1 system-ui, sans-serif; padding: 4px 8px; border-radius: 5px; cursor: pointer;
+color: var(--muted, #5b616b); background: var(--bg, #fff); border: 1px solid var(--border, #dfe2e6);
+opacity: 0; transition: opacity .15s;
+}
+div.sourceCode:hover .copy-code, pre:hover > .copy-code, .copy-code:focus-visible, .copy-code.done { opacity: 1; }
+@media (hover: none) { .copy-code { opacity: .85; } }
+.copy-code.done { color: #1a7f37; border-color: #1a7f37; }
+@media print { .copy-code { display: none; } }
+</style>
+<script>
+(() => {
+  const copy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // pages opened from disk, or browsers without the clipboard API
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+      document.body.append(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch { ok = false; }
+      ta.remove();
+      return ok;
+    }
+  };
+  const blocks = [...document.querySelectorAll("div.sourceCode")];
+  // plain <pre> blocks that pandoc didn't highlight
+  for (const pre of document.querySelectorAll("pre")) if (!pre.closest("div.sourceCode")) blocks.push(pre);
+  for (const block of blocks) {
+    const code = block.querySelector("code") || block;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy-code";
+    btn.textContent = "Copy";
+    btn.setAttribute("aria-label", "Copy this code");
+    btn.addEventListener("click", async () => {
+      // innerText of highlighted code keeps the lines but not pandoc's line anchors
+      const text = [...code.querySelectorAll(":scope > span")].length
+        ? [...code.querySelectorAll(":scope > span")].map((s) => s.textContent).join("\n")
+        : code.textContent;
+      const ok = await copy(text.replace(/\n+$/, "") + "\n");
+      btn.textContent = ok ? "Copied" : "Press Ctrl+C";
+      btn.classList.toggle("done", ok);
+      if (!ok) {
+        const r = document.createRange();
+        r.selectNodeContents(code);
+        getSelection().removeAllRanges();
+        getSelection().addRange(r);
+      }
+      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1500);
+    });
+    block.append(btn);
+  }
+})();
+</script>
 </body>
 </html>
