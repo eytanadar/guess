@@ -136,8 +136,6 @@ makeFromGDF("vis-papers.gdf")
 removeDisconnected()
 mp = mainPath()
 showOnly(mp)
-g.edges.visible = false
-mp.visible = true
 scatterLayout(year, generation)
 mp.color = red
 labelBy(label)
@@ -151,9 +149,9 @@ optimizeLabels()
 Doreian). For every citation it counts how many chains from the newest
 papers back to the oldest pass through it (its *search path count*,
 stored as `spc`, a share of all such chains). Then it follows the
-heaviest links. `showOnly(mp)` keeps the path's papers, and
-`mp.visible = true` (after hiding every edge) keeps only its citations.
-`scatterLayout(year, generation)` lays it out as a timeline: year across,
+heaviest links. `mp` holds the path's papers and citations, and
+`showOnly(mp)` shows exactly those (not the other citations among the same
+papers). `scatterLayout(year, generation)` lays it out as a timeline: year across,
 citation depth up. Here the path runs from Chiba et al. (1985) and Tamassia
 et al. (1988) through Kamada–Kawai (1989) and Fruchterman–Reingold (1991)
 to the multilevel methods of 2000–2006 (Walshaw, Harel and Koren,

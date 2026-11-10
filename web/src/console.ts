@@ -49,6 +49,8 @@ export class Console {
   private inputBox: HTMLElement;
   private view: EditorView;
   private history: string[] = [];
+  /** edits made to recalled commands while browsing history (cleared on run) */
+  private recalledEdits = new Map<number, string>();
   private hpos = 0;
   private draft = "";
   private _busy = false;
@@ -97,7 +99,7 @@ export class Console {
     gutter.title = "Run (Shift+Enter)";
     gutter.onclick = () => this.runEditor();
     const hint = el("div", "cell-hint");
-    hint.textContent = "Shift+Enter to run · Tab completes · Shift+↑↓ history · Esc interrupts";
+    hint.textContent = "Shift+Enter to run · Tab completes · ↑ on the first line for history · Esc interrupts";
     const editorBox = el("div", "cell-editor");
     this.inputBox.append(gutter, editorBox, hint);
     root.append(this.out, this.inputBox);
@@ -148,9 +150,20 @@ export class Console {
       this.host.interrupt();
       return true;
     };
-    // history is on Shift+Up / Shift+Down; plain arrows only move inside the editor
-    const up: Command = (v) => (completionStatus(v.state) ? false : this.recall(-1));
-    const down: Command = (v) => (completionStatus(v.state) ? false : this.recall(1));
+    // ↑ on the first line of the cell recalls the previous command; ↓ on the last
+    // line goes forward again, back to the unsaved cell (kept intact); at that
+    // cell ↓ does nothing. Inside a cell the arrows just move between lines.
+    const lineOf = (v: EditorView) => v.state.doc.lineAt(v.state.selection.main.head).number;
+    const up: Command = (v) => {
+      if (completionStatus(v.state) || !v.state.selection.main.empty || lineOf(v) > 1) return false;
+      this.recall(-1);
+      return true;
+    };
+    const down: Command = (v) => {
+      if (completionStatus(v.state) || !v.state.selection.main.empty || lineOf(v) < v.state.doc.lines) return false;
+      if (this.hpos < this.history.length) this.recall(1);
+      return true; // at the present cell: nothing
+    };
     const tab: Command = (v) => {
       if (completionStatus(v.state) === "active") return acceptCompletion(v);
       const sel = v.state.selection.main;
@@ -198,8 +211,8 @@ export class Console {
       ])),
       Prec.high(keymap.of([
         { key: "Tab", run: tab },
-        { key: "Shift-ArrowUp", run: up },
-        { key: "Shift-ArrowDown", run: down },
+        { key: "ArrowUp", run: up },
+        { key: "ArrowDown", run: down },
       ])),
       keymap.of([...closeBracketsKeymap, ...completionKeymap, ...historyKeymap, ...searchKeymap, indentWithTab, ...defaultKeymap]),
       this.signatureHelp(),
@@ -415,9 +428,14 @@ export class Console {
   private recall(dir: -1 | 1): boolean {
     const n = this.hpos + dir;
     if (n < 0 || n > this.history.length) return false;
+    // keep what's in the cell: the unsaved draft, or edits to a recalled command
     if (this.hpos === this.history.length) this.draft = this.code();
+    else if (this.code() !== this.history[this.hpos]) this.recalledEdits.set(this.hpos, this.code());
     this.hpos = n;
-    this.setCode(n === this.history.length ? this.draft : this.history[n], dir < 0 ? "end-of-first" : "end");
+    const text = n === this.history.length ? this.draft : (this.recalledEdits.get(n) ?? this.history[n]);
+    // going back, the caret lands on the first line (↑ again goes further back);
+    // going forward, on the last line (↓ again goes further forward)
+    this.setCode(text, dir < 0 ? "end-of-first" : "end");
     return true;
   }
 
@@ -676,6 +694,7 @@ export class Console {
   private remember(code: string) {
     if (this.history[this.history.length - 1] !== code) this.history.push(code);
     this.history = this.history.slice(-500);
+    this.recalledEdits.clear();
     this.hpos = this.history.length;
     this.draft = "";
     try {

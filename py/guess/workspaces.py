@@ -47,20 +47,26 @@ def install(session):
         return name
 
     @cmd
-    def subgraph(seq=None, name=None):
-        """subgraph(seq) makes a new graph from those nodes (edges select their
-        endpoints) and the edges among them, keeping fields, positions and look,
-        and switches to it; subgraph(seq, "name") names it. Use use(name) to go back."""
+    def subgraph(seq=None, name=None, induced=False):
+        """subgraph(seq) makes a new graph of exactly what seq selects, keeping
+        fields, positions and look, and switches to it: a set of nodes gives
+        those nodes and the edges among them (subgraph(dept == "dept3")); a
+        set with edges gives just those edges and their endpoints, plus any
+        nodes listed (subgraph(freq > 100) is the heavy-tie network;
+        subgraph(shortestPath(a, b)) is the path). induced=true keeps every
+        edge among the selected nodes instead. subgraph(seq, "name") names
+        the new graph; use(name) goes back. As showOnly does for the display."""
         items = list(elements_of(seq)) if seq is not None else list(session.ns.get("sel") or [])
-        ids = set()
+        ids, eids = set(), set()
         for x in items:
             if isinstance(x, Node):
                 ids.add(x._id)
             elif isinstance(x, Edge):
                 ids.update((x._n1._id, x._n2._id))
+                eids.add(x._id)
         if not ids:
             raise GuessError("subgraph needs some nodes (or select some first)")
-        data = persist.serialize(session, subset=ids)
+        data = persist.serialize(session, subset=ids, edge_subset=None if induced or not eids else eids)
         switch_to(fresh_name(str(name) if name else f"{ws['current']} part"), data)
         print(f"now in graph '{ws['current']}' ({len(ids)} nodes); use({persist_lit(ws['stored'] and next(iter(ws['stored'])) or 'main')}) to go back")
 

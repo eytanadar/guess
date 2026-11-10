@@ -64,14 +64,38 @@ test("cells: Enter adds a line, Shift+Enter runs, Edit and Run again reuse a cel
   await cells.last().locator(".cell-rerun").click();
   await expect(cells).toHaveCount(before + 3);
   await expect(cells.last().locator(".cell-out")).toHaveText("100");
-  // Shift+Up recalls history; plain Up only moves within the code
+  // history: ↑ on the first line goes back, ↓ on the last line forward, and the
+  // unsaved cell (and edits to recalled commands) survive the round trip
+  const lines = page.locator(".console-in .cm-line");
   await page.locator(input).click();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.type("a = 1");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("b = 2");
+  await page.keyboard.press("ArrowDown"); // last line of the present cell: nothing
+  await expect(lines).toHaveText(["a = 1", "b = 2"]);
+  await page.keyboard.press("ArrowUp"); // moves to line 1 within the cell
+  await expect(lines).toHaveText(["a = 1", "b = 2"]);
+  await page.keyboard.press("ArrowUp"); // first line: the last command
+  await expect(lines).toHaveText(["print(k * 50)"]);
   await page.keyboard.press("ArrowUp");
-  await expect(page.locator(input)).not.toContainText("print(k");
-  await page.keyboard.press("Shift+ArrowUp");
-  await expect(page.locator(input)).toHaveText("print(k * 50)");
-  await page.keyboard.press("Shift+ArrowDown");
-  await expect(page.locator(input)).not.toContainText("print(k");
+  await expect(lines).toHaveText(["k = 2", "print(k * 21)"]);
+  await page.keyboard.press("End");
+  await page.keyboard.type("  # edited");
+  await page.keyboard.press("ArrowDown"); // first line -> second line, still this command
+  await expect(lines).toHaveText(["k = 2  # edited", "print(k * 21)"]);
+  await page.keyboard.press("ArrowDown"); // last line: forward
+  await expect(lines).toHaveText(["print(k * 50)"]);
+  await page.keyboard.press("ArrowUp"); // back again: the edit was kept
+  await expect(lines).toHaveText(["k = 2  # edited", "print(k * 21)"]);
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown"); // ... and back to the unsaved cell, intact
+  await expect(lines).toHaveText(["a = 1", "b = 2"]);
+  await page.keyboard.press("ArrowDown");
+  await expect(lines).toHaveText(["a = 1", "b = 2"]);
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.press("Backspace");
   // an error marks the cell
   await run(page, "nosuchname");
   await expect(cells.last()).toHaveClass(/failed/);

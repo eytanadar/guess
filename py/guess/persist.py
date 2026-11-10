@@ -28,9 +28,10 @@ def _vals(d):
     return {k: _jsonable(v) for k, v in d.items()}
 
 
-def serialize(session, script=None, app=False, subset=None, workspaces=True):
+def serialize(session, script=None, app=False, subset=None, workspaces=True, edge_subset=None):
     """The session as JSON-able data. subset: node ids to keep (a subgraph:
-    those nodes, the edges among them, the view settings; no history)."""
+    those nodes, the edges among them, the view settings; no history);
+    edge_subset: if given, only these edge ids (among those nodes) are kept."""
     g = session.graph
     # every element we know about: current, deleted, and referenced by states
     nodes, edges = [], []
@@ -53,7 +54,7 @@ def serialize(session, script=None, app=False, subset=None, workspaces=True):
             if n._id in subset:
                 note_node(n)
         for e in g._edges_list():
-            if e._n1._id in subset and e._n2._id in subset:
+            if e._n1._id in subset and e._n2._id in subset and (edge_subset is None or e._id in edge_subset):
                 note_edge(e)
         return _data(session, g, nodes, edges, nidx, eidx, subset=True)
     for n in g._nodes_list():

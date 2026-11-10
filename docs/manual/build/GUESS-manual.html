@@ -1057,9 +1057,14 @@ queries. Two rules keep the picture consistent. Hiding a node hides its
 edges, and showing an edge shows its endpoints:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>).visible <span class="op">=</span> false      <span class="co"># their edges disappear too</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>(freq <span class="op">&gt;</span> <span class="dv">150</span>).visible <span class="op">=</span> true            <span class="co"># these edges and their endpoints reappear</span></span></code></pre></div>
-<p><code>showOnly(set)</code> hides everything except the set (nodes,
-edges, or both), and <code>showAll()</code> shows everything again. To
-take nodes out of the graph rather than hide them, see section 8.</p>
+<p><code>showOnly(set)</code> hides everything except the set, and
+<code>showAll()</code> shows everything again. A set of nodes keeps the
+edges among them. A set that includes edges keeps just those edges, so
+<code>showOnly(freq &gt; 100)</code> shows only the heavy ties and
+<code>showOnly(shortestPath(v1, v2))</code> only the path.
+<code>showOnly(set, induced=true)</code> keeps every edge among the
+shown nodes. To take nodes out of the graph rather than hide them, see
+section 8.</p>
 <h2 id="the-selection">5.4 The selection</h2>
 <p>What you select with the mouse (section 13) is the variable
 <code>sel</code> in the console, and <code>select(...)</code> selects
@@ -1682,12 +1687,13 @@ and <code>stoplog()</code> stops.</p>
 <p>Sometimes you want to look at part of a graph on its own, or compare
 two graphs. Each graph lives in a tab above the display:</p>
 <div class="sourceCode" id="cb42"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>subgraph(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>, <span class="st">&#39;dept3&#39;</span>)        <span class="co"># a copy of these nodes and their edges, in a new tab</span></span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>use(<span class="st">&#39;main&#39;</span>)                               <span class="co"># switch back to the first graph</span></span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>renameGraph(<span class="st">&#39;office&#39;</span>)                     <span class="co"># rename the current graph</span></span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>newGraph(<span class="st">&#39;scratch&#39;</span>)                       <span class="co"># an empty graph</span></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>graphNames()</span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>use(<span class="st">&#39;office&#39;</span>)</span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>closeGraph(<span class="st">&#39;scratch&#39;</span>)                     <span class="co"># (not the current one)</span></span></code></pre></div>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>subgraph(freq <span class="op">&gt;</span> <span class="dv">100</span>, <span class="st">&#39;heavy&#39;</span>)             <span class="co"># just these edges and the nodes they join</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>use(<span class="st">&#39;main&#39;</span>)                               <span class="co"># switch back to the first graph</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>renameGraph(<span class="st">&#39;office&#39;</span>)                     <span class="co"># rename the current graph</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>newGraph(<span class="st">&#39;scratch&#39;</span>)                       <span class="co"># an empty graph</span></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>graphNames()</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>use(<span class="st">&#39;office&#39;</span>)</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>closeGraph(<span class="st">&#39;scratch&#39;</span>)                     <span class="co"># (not the current one)</span></span></code></pre></div>
 <p>Clicking a tab switches to it as well. Commands always apply to the
 current graph, and <code>g</code> always refers to it.</p>
 <h1 id="states-and-animations">11. States and animations</h1>
@@ -2065,8 +2071,10 @@ undo</h1>
 <td>complete commands, fields, nodes and attributes</td>
 </tr>
 <tr>
-<td>Shift+↑ / Shift+↓</td>
-<td>earlier / later commands (plain ↑ / ↓ move within the code)</td>
+<td>↑ / ↓</td>
+<td>move between the lines of the code; ↑ on the first line recalls the
+previous command, ↓ on the last line goes forward again, back to your
+unsaved code (kept, as are edits to recalled commands)</td>
 </tr>
 <tr>
 <td>Esc, or <em>Stop</em></td>
@@ -2613,11 +2621,15 @@ default).</p>
 <h3 id="centerd"><code>center(*d)</code></h3>
 <p>center() fits the whole graph; center(seq) zooms to the given
 elements.</p>
-<h3 id="colorbyfield-start-end-scalelinear-middlenone"><code>colorBy(field, start, end, scale=&#39;linear&#39;, middle=None)</code></h3>
+<h3 id="colorbyfield-start-end-scalelinear-middlenone-centernone"><code>colorBy(field, start, end, scale=&#39;linear&#39;, middle=None, center=None)</code></h3>
 <p>colorBy(field, startColor, endColor) colours elements along a
 gradient in proportion to a numeric field’s value; scale may be
 “linear”, “log”, “sqrt” or “rank”; middle=color adds a midpoint colour.
-Compare colorize, which spaces distinct values evenly.</p>
+center=value makes a diverging gradient: that value gets the middle
+colour (white unless given) and the ends are equally far from it, so
+equal changes up and down look equally strong, e.g. colorBy(lfc, blue,
+red, center=0) for fold changes. Compare colorize, which spaces distinct
+values evenly.</p>
 <h3 id="colorizefield-cs"><code>colorize(field, *cs)</code></h3>
 <p>colorize(field) gives each value its own clearly different colour
 (the largest group first; see distinctColors); colorize(field, start,
@@ -2638,6 +2650,16 @@ shortcutNodes until nothing changes. Returns [removed, added].</p>
 <p>Euclidean distance between two nodes’ positions.</p>
 <h3 id="einverseseq"><code>einverse(seq)</code></h3>
 <p>All edges not in seq.</p>
+<h3 id="enrichmentseq-sets-backgroundnone-top10-minsize2-showtrue"><code>enrichment(seq, sets, background=None, top=10, minSize=2, show=True)</code></h3>
+<p>enrichment(nodes, sets) tests which sets (from readSets, or any
+{name: [node names]}) are over-represented among the nodes, against the
+background (default: every node in the graph that is in at least one
+set). For each set it gives the overlap k of n nodes, the set’s size K
+among the N background nodes, the fold enrichment (k/n)/(K/N), the
+hypergeometric p-value and the Benjamini-Hochberg q-value (the false
+discovery rate over all sets tested). Sets with fewer than minSize
+background members are skipped. Prints the <code>top</code> rows by
+p-value and returns all rows as dicts, best first.</p>
 <h3 id="execfilefilename"><code>execfile(filename)</code></h3>
 <p>Run a Gython script file in the current namespace.</p>
 <h3 id="exportcsvfilenameedges.csv-tableedges"><code>exportCSV(filename=&#39;edges.csv&#39;, table=&#39;edges&#39;)</code></h3>
@@ -2733,11 +2755,52 @@ compatibility with GUESS 2006, a GraphML (XML) file works too.</p>
 <h3 id="makefrompajekfilename"><code>makeFromPajek(filename)</code></h3>
 <p>Replace the current graph with a Pajek .net file (nodes are named
 pajek<id>).</p>
+<h3 id="makefromsimilarityfilename-k5-thresholdnone-methodcosine-idnone-columnsnone-featuresnone-valuesnone-mutualfalse"><code>makeFromSimilarity(filename, k=5, threshold=None, method=&#39;cosine&#39;, id=None, columns=None, features=None, values=None, mutual=False)</code></h3>
+<p>makeFromSimilarity(“profiles.csv”) links each row of a feature table
+to the k rows most similar to it (k=5), or, with threshold=t, every pair
+at least t similar. The table is wide (an id column, here the first or
+id=…, then numeric columns; columns=[…] picks them, and text columns
+become node fields) or long, one row per (id, feature, value):
+features=“keyword”, values=“score” (values default to 1). method:
+“cosine” (default; profiles pointing the same way), “correlation” (same
+ups and downs), “jaccard” (shared nonzero features) or “euclidean”
+(close values; 1/(1+distance)). mutual=true keeps only pairs that are in
+each other’s top k. Edges get <code>weight</code> = similarity. Typical
+uses: co-expression networks, documents by term profile, people by votes
+or answers.</p>
+<h3 id="makefromtextfilename-termsnone-byparagraph-windownone-mincount3-maxterms60-casesensitivefalse-stopwordsnone"><code>makeFromText(filename, terms=None, by=&#39;paragraph&#39;, window=None, minCount=3, maxTerms=60, caseSensitive=False, stopwords=None)</code></h3>
+<p>makeFromText(“story.txt”, terms) builds a co-occurrence network: one
+node per term, linked when two terms occur in the same paragraph
+(by=“sentence” or “line” for smaller units; window=k for within k words
+of each other, in the same paragraph). terms is a list of names, or a
+dict from each node’s name to its aliases, e.g. {“Holmes”: [“Holmes”,
+“Sherlock”], “Adler”: [“Irene Adler”, “Miss Adler”, “the woman”]}
+(matching ignores case unless caseSensitive=true). Without terms, the
+maxTerms most frequent words (at least minCount times, minus common
+words and stopwords=[…]) are used. Nodes get <code>count</code>
+(occurrences), <code>units</code> (paragraphs etc. containing them) and
+<code>first</code> (the first unit, for story order); edges get
+<code>weight</code>, the number of shared units (or windows).</p>
+<h3 id="makefromtwomodefilename-anone-bnone-weightnone"><code>makeFromTwoMode(filename, a=None, b=None, weight=None)</code></h3>
+<p>makeFromTwoMode(“paper-authors.csv”, “paper”, “author”) reads a table
+with one row per pair (a paper and one of its authors, a gene and one of
+its terms, a person and an event) as a two-mode network: a node for
+every value of each column, an edge for every row, and <code>kind</code>
+set to the column’s name, ready for bipartiteLayout(kind) or
+project(kind, “author”). a= and b= name the columns (default: the first
+two); weight= names a numeric column to use as edge weight. Repeated
+rows add to the weight.</p>
 <h3 id="ninverseseq"><code>ninverse(seq)</code></h3>
 <p>All nodes not in seq.</p>
 <h3 id="readjustedges"><code>readjustEdges()</code></h3>
 <p>Kept for old scripts: parallel edges are always drawn as separate
 curves.</p>
+<h3 id="readsetsfilename-itemnone-setnone-wherenone"><code>readSets(filename, item=None, set=None, where=None)</code></h3>
+<p>readSets(“go.csv”) reads a table with one row per (item, set) pair,
+e.g. gene,term, into {set: {items}} for enrichment(). item= and set=
+name the columns (default: the first two); where={“aspect”: “process”}
+keeps only matching rows. A row’s set may list several, separated by “;”
+or “|”.</p>
 <h3 id="removeseq"><code>remove(seq)</code></h3>
 <p>Remove nodes and/or edges (a node takes its edges). Undo with add(…).
 As in the original, a removed node’s name still refers to it, so
@@ -2867,10 +2930,12 @@ weighted=true uses edge weights as lengths. E.g. shortestPath(a,
 b).color = red</p>
 <h3 id="showall"><code>showAll()</code></h3>
 <p>Make every node and edge visible again.</p>
-<h3 id="showonlyseq"><code>showOnly(seq)</code></h3>
-<p>showOnly(seq) hides every node and edge not in seq (nodes in seq keep
-the edges between them; edges in seq keep their endpoints). Undo with
-showAll().</p>
+<h3 id="showonlyseq-inducedfalse"><code>showOnly(seq, induced=False)</code></h3>
+<p>showOnly(seq) hides every node and edge not in seq: a set of nodes
+keeps the edges among them; a set with edges keeps just those edges and
+their endpoints, plus any nodes listed (showOnly(shortestPath(a, b))
+shows the path and nothing else). induced=true keeps every edge among
+the shown nodes instead. Undo with showAll(). As subgraph does.</p>
 <h2 id="clustering-and-generators">Clustering and generators</h2>
 <h3 id="bicomponentclusters"><code>biComponentClusters()</code></h3>
 <p>Biconnected components (ignoring edge direction).</p>
@@ -2918,6 +2983,18 @@ when hubs link to hubs, negative when hubs link to small nodes.
 assortativity(dept) measures homophily by a field: near 1 = ties stay
 within the same value, 0 = random mixing, negative = ties cross values.
 Numeric fields use the correlation of values across edges.</p>
+<h3 id="blockmodelk4-showtrue"><code>blockmodel(k=4, show=True)</code></h3>
+<p>blockmodel(k) groups the nodes into k positions of structurally
+equivalent nodes: nodes tied to the same others (in the same
+directions), whether or not they’re tied to each other, which is a role
+(teacher, broker, follower), not a community. Profiles are compared by
+correlation and merged by average-linkage clustering. Stores each node’s
+position in <code>position</code> (0 = largest), prints the image matrix
+(the density of ties from each position to each other; a dense diagonal
+means cohesive positions, dense off-diagonals mean roles that serve each
+other) and returns the positions. Try colorize(position), then
+collapseBy(position) for the reduced graph. Fine up to a couple of
+thousand nodes.</p>
 <h3 id="bridges"><code>bridges()</code></h3>
 <p>bridges(): the edges whose removal would split a connected part of
 the graph in two (direction ignored; a pair joined by parallel edges is
@@ -2939,6 +3016,17 @@ the graph (articulation points; direction ignored).</p>
 depth-first search, plus self-loops); removing or reversing them leaves
 the directed part acyclic. A small set, not necessarily the
 smallest.</p>
+<h3 id="mainpath"><code>mainPath()</code></h3>
+<p>mainPath() finds the main path of a citation (or other flow) network:
+the chain of directed edges that the most source-to-sink paths run
+through (Hummon and Doreian’s main path analysis, key-route variant).
+Each directed edge gets <code>spc</code>, its search path count as a
+share of all source-to-sink paths (0..1). The path starts at the edge
+with the highest spc and extends both ways, always along the highest-spc
+edge, to a source and a sink. Edges closing cycles (feedbackEdges()) are
+ignored. Returns the path’s nodes and edges. In a citation network with
+edges citing -&gt; cited, it runs from recent work back to the field’s
+foundations.</p>
 <h3 id="mixingmatrixfield-showtrue"><code>mixingMatrix(field, show=True)</code></h3>
 <p>mixingMatrix(dept) counts the edges between each pair of values of a
 node field (dept1-dept1, dept1-dept2, …), printed as a table and
@@ -3563,13 +3651,30 @@ tabs</h2>
 <p>The graphs in this session; the current one first.</p>
 <h3 id="newgraphnameuntitled"><code>newGraph(name=&#39;untitled&#39;)</code></h3>
 <p>newGraph(name) starts an empty graph and switches to it.</p>
+<h3 id="projectkindfield-keep-methodcount-namenone"><code>project(kindField, keep, method=&#39;count&#39;, name=None)</code></h3>
+<p>project(kind, “woman”) turns a two-mode network (people and the
+events, groups or papers they belong to) into a one-mode network of just
+the nodes whose <code>kind</code> is “woman”: two are linked when they
+share a neighbour of the other kind. It opens as a new graph (the
+two-mode one stays; use() goes back), keeping fields and positions. Each
+edge gets <code>shared</code> (how many neighbours in common) and
+<code>weight</code>, by method: “count” the number shared (default)
+“jaccard” shared / neighbours of either (0..1; removes the size effect
+of very active nodes) “newman” each shared neighbour adds 1/(its degree
+- 1), so a small event counts more than a crowded one Each kept node
+also gets <code>affiliations</code>: its number of other-kind
+neighbours. E.g. project(kind, “event”) gives the event network.</p>
 <h3 id="renamegraphname"><code>renameGraph(name)</code></h3>
 <p>renameGraph(name) renames the current graph.</p>
-<h3 id="subgraphseqnone-namenone"><code>subgraph(seq=None, name=None)</code></h3>
-<p>subgraph(seq) makes a new graph from those nodes (edges select their
-endpoints) and the edges among them, keeping fields, positions and look,
-and switches to it; subgraph(seq, “name”) names it. Use use(name) to go
-back.</p>
+<h3 id="subgraphseqnone-namenone-inducedfalse"><code>subgraph(seq=None, name=None, induced=False)</code></h3>
+<p>subgraph(seq) makes a new graph of exactly what seq selects, keeping
+fields, positions and look, and switches to it: a set of nodes gives
+those nodes and the edges among them (subgraph(dept == “dept3”)); a set
+with edges gives just those edges and their endpoints, plus any nodes
+listed (subgraph(freq &gt; 100) is the heavy-tie network;
+subgraph(shortestPath(a, b)) is the path). induced=true keeps every edge
+among the selected nodes instead. subgraph(seq, “name”) names the new
+graph; use(name) goes back. As showOnly does for the display.</p>
 <h3 id="usename"><code>use(name)</code></h3>
 <p>use(name) switches to another graph of this session (see
 graphNames()).</p>
@@ -3614,6 +3719,21 @@ relationships it returns (properties become fields).</p>
 bind ?source and ?target (optionally ?sourceLabel / ?targetLabel, used
 as labels; any other variables become edge fields). E.g. a Wikidata
 query for “influenced by” links.</p>
+<h3 id="makefromstringgenes-species9606-score0.7-add0-serverhttpsstring-db.org"><code>makeFromSTRING(genes, species=9606, score=0.7, add=0, server=&#39;https://string-db.org&#39;)</code></h3>
+<p>makeFromSTRING([“TP53”, “MDM2”, “ATM”]) opens the protein
+interactions among those genes from the STRING database (string-db.org):
+species is an NCBI taxon (9606 human, 10090 mouse, 4932 yeast, 7227 fly,
+6239 worm, 3702 Arabidopsis, 511145 E. coli), score the minimum combined
+confidence (0.4 medium, 0.7 high, 0.9 highest), add=n also brings in the
+n proteins that interact most with the query. Genes may be a list or one
+string separated by spaces/commas. Nodes get <code>description</code>,
+<code>stringId</code> and <code>query</code> (true for the genes you
+asked for); edges get <code>score</code> (also <code>weight</code>) and
+the evidence behind it: <code>experiments</code>,
+<code>databases</code>, <code>textmining</code>,
+<code>coexpression</code>, <code>neighborhood</code>,
+<code>fusion</code>, <code>cooccurrence</code> (each 0..1). STRING data
+are CC BY 4.0: cite it.</p>
 <h3 id="makefromurlurl-formatnone"><code>makeFromURL(url, format=None)</code></h3>
 <p>makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT,
 Pajek, DL, CSV, a .guess session or a .py script) and opens it;
@@ -4067,6 +4187,11 @@ palette (Cmd/Ctrl+K).</p>
 </tr>
 <tr>
 <td><code>totaldegree</code></td>
+<td>INTEGER</td>
+<td>0 (read-only)</td>
+</tr>
+<tr>
+<td><code>degree</code></td>
 <td>INTEGER</td>
 <td>0 (read-only)</td>
 </tr>

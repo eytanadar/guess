@@ -569,28 +569,27 @@ workflow is:</p>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>leidenClusters()</span></code></pre></div>
 <p>The bundled network stands in for that result here:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;yeast-modules.gdf&quot;</span>)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>subgraph(g.nodes, <span class="st">&quot;physical&quot;</span>)</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>remove(experiments <span class="op">&lt;=</span> <span class="fl">0.5</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>leidenClusters()</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>go <span class="op">=</span> readSets(<span class="st">&quot;yeast-go-slim.csv&quot;</span>, item<span class="op">=</span><span class="st">&quot;gene&quot;</span>, <span class="bu">set</span><span class="op">=</span><span class="st">&quot;term&quot;</span>,</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>              where<span class="op">=</span>{<span class="st">&quot;aspect&quot;</span>: <span class="st">&quot;process&quot;</span>})</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> grp <span class="kw">in</span> groupBy(leiden_class)[:<span class="dv">5</span>]:</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> enrichment(grp, go, show<span class="op">=</span><span class="va">False</span>)[<span class="dv">0</span>]</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="bu">len</span>(grp), best[<span class="st">&quot;set&quot;</span>], <span class="st">&quot;q=%.0e&quot;</span> <span class="op">%</span> best[<span class="st">&quot;q&quot;</span>])</span></code></pre></div>
-<p><code>subgraph(g.nodes, &quot;physical&quot;)</code> copies the network into a
-graph of its own (<code>use(&quot;main&quot;)</code> goes back), and
-<code>remove</code> drops the edges without strong experimental
-evidence, 292 of 1,320. Communities are then re-found and named by their
-top term. Which modules survive with physical evidence alone, and which
-were held together by co-expression and text mining? Ask that of any
-network built from mixed evidence. Here all seven survive, each still
-enriched for the right process. With a real hit list, expect some
-modules to dissolve.</p>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>subgraph(experiments <span class="op">&gt;</span> <span class="fl">0.5</span>, <span class="st">&quot;physical&quot;</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>leidenClusters()</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>go <span class="op">=</span> readSets(<span class="st">&quot;yeast-go-slim.csv&quot;</span>, item<span class="op">=</span><span class="st">&quot;gene&quot;</span>, <span class="bu">set</span><span class="op">=</span><span class="st">&quot;term&quot;</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>              where<span class="op">=</span>{<span class="st">&quot;aspect&quot;</span>: <span class="st">&quot;process&quot;</span>})</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> grp <span class="kw">in</span> groupBy(leiden_class)[:<span class="dv">5</span>]:</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> enrichment(grp, go, show<span class="op">=</span><span class="va">False</span>)[<span class="dv">0</span>]</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="bu">len</span>(grp), best[<span class="st">&quot;set&quot;</span>], <span class="st">&quot;q=%.0e&quot;</span> <span class="op">%</span> best[<span class="st">&quot;q&quot;</span>])</span></code></pre></div>
+<p><code>subgraph(experiments &gt; 0.5, &quot;physical&quot;)</code> opens a graph
+of just the edges with strong experimental evidence (1,028 of 1,320) and
+the genes they join (<code>use(&quot;main&quot;)</code> goes back). Communities
+are then re-found and named by their top term. Which modules survive
+with physical evidence alone, and which were held together by
+co-expression and text mining? Ask that of any network built from mixed
+evidence. Here all seven survive, each still enriched for the right
+process. With a real hit list, expect some modules to dissolve.</p>
 <div class="pitfall">
-<p><strong>Pitfall.</strong> <code>subgraph(experiments &gt; 0.5)</code>
-would <em>not</em> do this: given edges, <code>subgraph</code> keeps
-their endpoints and every edge among them. To keep only certain edges,
-copy the graph and remove the rest, as above.</p>
+<p><strong>Pitfall.</strong> A subgraph of edges loses any gene left
+with no strong edge. <code>subgraph(experiments &gt; 0.5)</code> keeps
+134 genes here, but on noisier data count the nodes before and after,
+and treat those that drop out as “no physical evidence”, not “no
+interaction”.</p>
 </div>
 </body>
 </html>

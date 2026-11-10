@@ -569,8 +569,11 @@ showing an edge shows its endpoints:
 (freq > 150).visible = true            # these edges and their endpoints reappear
 ```
 
-`showOnly(set)` hides everything except the set (nodes, edges, or both), and
-`showAll()` shows everything again. To take nodes out of the graph rather than
+`showOnly(set)` hides everything except the set, and `showAll()` shows
+everything again. A set of nodes keeps the edges among them. A set that
+includes edges keeps just those edges, so `showOnly(freq > 100)` shows only
+the heavy ties and `showOnly(shortestPath(v1, v2))` only the path.
+`showOnly(set, induced=true)` keeps every edge among the shown nodes. To take nodes out of the graph rather than
 hide them, see section 8.
 
 ## 5.4 The selection
@@ -1046,6 +1049,7 @@ graphs. Each graph lives in a tab above the display:
 
 ```python
 subgraph(dept == 'dept3', 'dept3')        # a copy of these nodes and their edges, in a new tab
+subgraph(freq > 100, 'heavy')             # just these edges and the nodes they join
 use('main')                               # switch back to the first graph
 renameGraph('office')                     # rename the current graph
 newGraph('scratch')                       # an empty graph
@@ -1368,7 +1372,7 @@ several things are selected, the function receives the selection.
 | Shift+Enter, Cmd/Ctrl+Enter | run the cell |
 | Enter | a new line |
 | Tab | complete commands, fields, nodes and attributes |
-| Shift+↑ / Shift+↓ | earlier / later commands (plain ↑ / ↓ move within the code) |
+| ↑ / ↓ | move between the lines of the code; ↑ on the first line recalls the previous command, ↓ on the last line goes forward again, back to your unsaved code (kept, as are edits to recalled commands) |
 | Esc, or *Stop* | interrupt running code |
 | Ctrl+L | clear the output |
 | Shift+Cmd/Ctrl+F | find in the console output |
@@ -2122,10 +2126,13 @@ weighted=true uses edge weights as lengths. E.g. shortestPath(a, b).color = red
 
 Make every node and edge visible again.
 
-### `showOnly(seq)`
+### `showOnly(seq, induced=False)`
 
-showOnly(seq) hides every node and edge not in seq (nodes in seq keep the
-edges between them; edges in seq keep their endpoints). Undo with showAll().
+showOnly(seq) hides every node and edge not in seq: a set of nodes
+keeps the edges among them; a set with edges keeps just those edges
+and their endpoints, plus any nodes listed (showOnly(shortestPath(a, b))
+shows the path and nothing else). induced=true keeps every edge among
+the shown nodes instead. Undo with showAll(). As subgraph does.
 
 ## Clustering and generators
 
@@ -3138,11 +3145,16 @@ neighbours. E.g. project(kind, "event") gives the event network.
 
 renameGraph(name) renames the current graph.
 
-### `subgraph(seq=None, name=None)`
+### `subgraph(seq=None, name=None, induced=False)`
 
-subgraph(seq) makes a new graph from those nodes (edges select their
-endpoints) and the edges among them, keeping fields, positions and look,
-and switches to it; subgraph(seq, "name") names it. Use use(name) to go back.
+subgraph(seq) makes a new graph of exactly what seq selects, keeping
+fields, positions and look, and switches to it: a set of nodes gives
+those nodes and the edges among them (subgraph(dept == "dept3")); a
+set with edges gives just those edges and their endpoints, plus any
+nodes listed (subgraph(freq > 100) is the heavy-tie network;
+subgraph(shortestPath(a, b)) is the path). induced=true keeps every
+edge among the selected nodes instead. subgraph(seq, "name") names
+the new graph; use(name) goes back. As showOnly does for the display.
 
 ### `use(name)`
 

@@ -569,8 +569,11 @@ showing an edge shows its endpoints:
 (freq > 150).visible = true            # these edges and their endpoints reappear
 ```
 
-`showOnly(set)` hides everything except the set (nodes, edges, or both), and
-`showAll()` shows everything again. To take nodes out of the graph rather than
+`showOnly(set)` hides everything except the set, and `showAll()` shows
+everything again. A set of nodes keeps the edges among them. A set that
+includes edges keeps just those edges, so `showOnly(freq > 100)` shows only
+the heavy ties and `showOnly(shortestPath(v1, v2))` only the path.
+`showOnly(set, induced=true)` keeps every edge among the shown nodes. To take nodes out of the graph rather than
 hide them, see section 8.
 
 ## 5.4 The selection
@@ -1046,6 +1049,7 @@ graphs. Each graph lives in a tab above the display:
 
 ```python
 subgraph(dept == 'dept3', 'dept3')        # a copy of these nodes and their edges, in a new tab
+subgraph(freq > 100, 'heavy')             # just these edges and the nodes they join
 use('main')                               # switch back to the first graph
 renameGraph('office')                     # rename the current graph
 newGraph('scratch')                       # an empty graph
@@ -1368,7 +1372,7 @@ several things are selected, the function receives the selection.
 | Shift+Enter, Cmd/Ctrl+Enter | run the cell |
 | Enter | a new line |
 | Tab | complete commands, fields, nodes and attributes |
-| Shift+↑ / Shift+↓ | earlier / later commands (plain ↑ / ↓ move within the code) |
+| ↑ / ↓ | move between the lines of the code; ↑ on the first line recalls the previous command, ↓ on the last line goes forward again, back to your unsaved code (kept, as are edits to recalled commands) |
 | Esc, or *Stop* | interrupt running code |
 | Ctrl+L | clear the output |
 | Shift+Cmd/Ctrl+F | find in the console output |

@@ -521,9 +521,12 @@ def install(session):
                     f"{field.name} groups of size {smallest}+")
 
     @cmd
-    def showOnly(seq):
-        """showOnly(seq) hides every node and edge not in seq (nodes in seq keep the
-        edges between them; edges in seq keep their endpoints). Undo with showAll()."""
+    def showOnly(seq, induced=False):
+        """showOnly(seq) hides every node and edge not in seq: a set of nodes
+        keeps the edges among them; a set with edges keeps just those edges
+        and their endpoints, plus any nodes listed (showOnly(shortestPath(a, b))
+        shows the path and nothing else). induced=true keeps every edge among
+        the shown nodes instead. Undo with showAll(). As subgraph does."""
         keep_n, keep_e = set(), set()
         for x in elements_of(seq):
             if isinstance(x, Node):
@@ -531,11 +534,11 @@ def install(session):
             elif isinstance(x, Edge):
                 keep_e.add(x)
                 keep_n.update((x._n1, x._n2))
-        only_edges = not any(isinstance(x, Node) for x in elements_of(seq))
+        exact = bool(keep_e) and not induced
         for n in g._nodes_list():
             n.visible = n in keep_n
         for e in g._edges_list():
-            e.visible = e in keep_e if only_edges else (e in keep_e or (e._n1 in keep_n and e._n2 in keep_n))
+            e.visible = e in keep_e if exact else (e in keep_e or (e._n1 in keep_n and e._n2 in keep_n))
 
     @cmd
     def showAll():

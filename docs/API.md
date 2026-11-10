@@ -527,10 +527,13 @@ weighted=true uses edge weights as lengths. E.g. shortestPath(a, b).color = red
 
 Make every node and edge visible again.
 
-### `showOnly(seq)`
+### `showOnly(seq, induced=False)`
 
-showOnly(seq) hides every node and edge not in seq (nodes in seq keep the
-edges between them; edges in seq keep their endpoints). Undo with showAll().
+showOnly(seq) hides every node and edge not in seq: a set of nodes
+keeps the edges among them; a set with edges keeps just those edges
+and their endpoints, plus any nodes listed (showOnly(shortestPath(a, b))
+shows the path and nothing else). induced=true keeps every edge among
+the shown nodes instead. Undo with showAll(). As subgraph does.
 
 ## Clustering and generators
 
@@ -1543,11 +1546,16 @@ neighbours. E.g. project(kind, "event") gives the event network.
 
 renameGraph(name) renames the current graph.
 
-### `subgraph(seq=None, name=None)`
+### `subgraph(seq=None, name=None, induced=False)`
 
-subgraph(seq) makes a new graph from those nodes (edges select their
-endpoints) and the edges among them, keeping fields, positions and look,
-and switches to it; subgraph(seq, "name") names it. Use use(name) to go back.
+subgraph(seq) makes a new graph of exactly what seq selects, keeping
+fields, positions and look, and switches to it: a set of nodes gives
+those nodes and the edges among them (subgraph(dept == "dept3")); a
+set with edges gives just those edges and their endpoints, plus any
+nodes listed (subgraph(freq > 100) is the heavy-tie network;
+subgraph(shortestPath(a, b)) is the path). induced=true keeps every
+edge among the selected nodes instead. subgraph(seq, "name") names
+the new graph; use(name) goes back. As showOnly does for the display.
 
 ### `use(name)`
 

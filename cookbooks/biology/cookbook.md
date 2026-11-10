@@ -353,8 +353,7 @@ The bundled network stands in for that result here:
 
 ```python
 makeFromGDF("yeast-modules.gdf")
-subgraph(g.nodes, "physical")
-remove(experiments <= 0.5)
+subgraph(experiments > 0.5, "physical")
 leidenClusters()
 go = readSets("yeast-go-slim.csv", item="gene", set="term",
               where={"aspect": "process"})
@@ -363,9 +362,9 @@ for grp in groupBy(leiden_class)[:5]:
     print(len(grp), best["set"], "q=%.0e" % best["q"])
 ```
 
-`subgraph(g.nodes, "physical")` copies the network into a graph of its
-own (`use("main")` goes back), and `remove` drops the edges without strong
-experimental evidence, 292 of 1,320. Communities are then re-found and
+`subgraph(experiments > 0.5, "physical")` opens a graph of just the edges
+with strong experimental evidence (1,028 of 1,320) and the genes they join
+(`use("main")` goes back). Communities are then re-found and
 named by their top term. Which modules survive with physical evidence
 alone, and which were held together by co-expression and text mining? Ask
 that of any network built from mixed evidence. Here all seven survive,
@@ -373,7 +372,8 @@ each still enriched for the right process. With a real hit list, expect
 some modules to dissolve.
 
 ::: pitfall
-**Pitfall.** `subgraph(experiments > 0.5)` would *not* do this: given
-edges, `subgraph` keeps their endpoints and every edge among them. To
-keep only certain edges, copy the graph and remove the rest, as above.
+**Pitfall.** A subgraph of edges loses any gene left with no strong edge.
+`subgraph(experiments > 0.5)` keeps 134 genes here, but on noisier data
+count the nodes before and after, and treat those that drop out as "no
+physical evidence", not "no interaction".
 :::
