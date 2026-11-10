@@ -9,11 +9,11 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (64)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (67)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
-- [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (14)
+- [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (15)
 - [networkx bridge and sample graphs](#networkx-bridge-and-sample-graphs) (4)
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
@@ -80,12 +80,16 @@ Same as biComponentClusters() (the manual's spelling).
 
 center() fits the whole graph; center(seq) zooms to the given elements.
 
-### `colorBy(field, start, end, scale='linear', middle=None)`
+### `colorBy(field, start, end, scale='linear', middle=None, center=None)`
 
 colorBy(field, startColor, endColor) colours elements along a gradient in
 proportion to a numeric field's value; scale may be "linear", "log",
-"sqrt" or "rank"; middle=color adds a midpoint colour. Compare colorize,
-which spaces distinct values evenly.
+"sqrt" or "rank"; middle=color adds a midpoint colour. center=value
+makes a diverging gradient: that value gets the middle colour (white
+unless given) and the ends are equally far from it, so equal changes
+up and down look equally strong, e.g. colorBy(lfc, blue, red,
+center=0) for fold changes. Compare colorize, which spaces distinct
+values evenly.
 
 ### `colorize(field, *cs)`
 
@@ -269,6 +273,47 @@ Replace the current graph with a GraphML file.
 ### `makeFromPajek(filename)`
 
 Replace the current graph with a Pajek .net file (nodes are named pajek<id>).
+
+### `makeFromSimilarity(filename, k=5, threshold=None, method='cosine', id=None, columns=None, features=None, values=None, mutual=False)`
+
+makeFromSimilarity("profiles.csv") links each row of a feature table
+to the k rows most similar to it (k=5), or, with threshold=t, every
+pair at least t similar. The table is wide (an id column, here the
+first or id=..., then numeric columns; columns=[...] picks them, and
+text columns become node fields) or long, one row per (id, feature,
+value): features="keyword", values="score" (values default to 1).
+method: "cosine" (default; profiles pointing the same way),
+"correlation" (same ups and downs), "jaccard" (shared nonzero
+features) or "euclidean" (close values; 1/(1+distance)). mutual=true
+keeps only pairs that are in each other's top k. Edges get `weight`
+= similarity. Typical uses: co-expression networks, documents by
+term profile, people by votes or answers.
+
+### `makeFromText(filename, terms=None, by='paragraph', window=None, minCount=3, maxTerms=60, caseSensitive=False, stopwords=None)`
+
+makeFromText("story.txt", terms) builds a co-occurrence network: one
+node per term, linked when two terms occur in the same paragraph
+(by="sentence" or "line" for smaller units; window=k for within k
+words of each other, in the same paragraph). terms is a list of names, or a dict from each
+node's name to its aliases, e.g. {"Holmes": ["Holmes", "Sherlock"],
+"Adler": ["Irene Adler", "Miss Adler", "the woman"]} (matching ignores
+case unless caseSensitive=true). Without terms, the maxTerms most
+frequent words (at least minCount times, minus common words and
+stopwords=[...]) are used. Nodes get `count` (occurrences), `units`
+(paragraphs etc. containing them) and `first` (the first unit, for
+story order); edges get `weight`, the number of shared units (or
+windows).
+
+### `makeFromTwoMode(filename, a=None, b=None, weight=None)`
+
+makeFromTwoMode("paper-authors.csv", "paper", "author") reads a table
+with one row per pair (a paper and one of its authors, a gene and one
+of its terms, a person and an event) as a two-mode network: a node
+for every value of each column, an edge for every row, and `kind` set
+to the column's name, ready for bipartiteLayout(kind) or
+project(kind, "author"). a= and b= name the columns (default: the
+first two); weight= names a numeric column to use as edge weight.
+Repeated rows add to the weight.
 
 ### `ninverse(seq)`
 
@@ -591,6 +636,19 @@ descendants(n): every node reachable from n along directed edges
 feedbackEdges(): directed edges that close cycles (back edges of a
 depth-first search, plus self-loops); removing or reversing them leaves
 the directed part acyclic. A small set, not necessarily the smallest.
+
+### `mainPath()`
+
+mainPath() finds the main path of a citation (or other flow)
+network: the chain of directed edges that the most source-to-sink
+paths run through (Hummon and Doreian's main path analysis, key-route
+variant). Each directed edge gets `spc`, its search path count as a
+share of all source-to-sink paths (0..1). The path starts at the edge
+with the highest spc and extends both ways, always along the
+highest-spc edge, to a source and a sink. Edges closing cycles
+(feedbackEdges()) are ignored. Returns the path's nodes and edges.
+In a citation network with edges citing -> cited, it runs from recent
+work back to the field's foundations.
 
 ### `mixingMatrix(field, show=True)`
 

@@ -18,7 +18,7 @@ from collections import Counter, defaultdict
 import numpy as np
 
 from .algorithms import _nx
-from .model import BOOL, INT, NODE, Field, GSet, GuessError, Node
+from .model import BOOL, DOUBLE, INT, NODE, Field, GSet, GuessError, Node
 
 
 # ---- graphs for the algorithms (node keys are GUESS nodes) -----------------
@@ -251,6 +251,70 @@ def install(session):
                     stack.pop()
         uniq = {e._id: e for e in back}
         return GSet(sorted(uniq.values(), key=lambda e: e._id), "feedback edges")
+
+    @cmd
+    def mainPath():
+        """mainPath() finds the main path of a citation (or other flow)
+        network: the chain of directed edges that the most source-to-sink
+        paths run through (Hummon and Doreian's main path analysis, key-route
+        variant). Each directed edge gets `spc`, its search path count as a
+        share of all source-to-sink paths (0..1). The path starts at the edge
+        with the highest spc and extends both ways, always along the
+        highest-spc edge, to a source and a sink. Edges closing cycles
+        (feedbackEdges()) are ignored. Returns the path's nodes and edges.
+        In a citation network with edges citing -> cited, it runs from recent
+        work back to the field's foundations."""
+        gr = g()
+        back = {e._id for e in feedbackEdges()}
+        edges = [e for e in gr._edges_list() if e._directed and e._id not in back and e._n1 is not e._n2]
+        if not edges:
+            raise GuessError("mainPath needs directed edges (e.g. citing -> cited)")
+        out, inc = defaultdict(list), defaultdict(list)
+        nodes = set()
+        for e in edges:
+            out[e._n1].append(e)
+            inc[e._n2].append(e)
+            nodes.update((e._n1, e._n2))
+        # topological order (Kahn) of the acyclic part
+        indeg = {n: len(inc[n]) for n in nodes}
+        order = []
+        ready = sorted((n for n in nodes if indeg[n] == 0), key=lambda n: n._id)
+        while ready:
+            n = ready.pop()
+            order.append(n)
+            for e in out[n]:
+                indeg[e._n2] -= 1
+                if indeg[e._n2] == 0:
+                    ready.append(e._n2)
+        before = {}          # paths from any source to n
+        for n in order:
+            before[n] = 1 if not inc[n] else sum(before[e._n1] for e in inc[n])
+        after = {}           # paths from n to any sink
+        for n in reversed(order):
+            after[n] = 1 if not out[n] else sum(after[e._n2] for e in out[n])
+        total = sum(before[n] for n in nodes if not out[n]) or 1
+        f = gr.addEdgeField("spc", DOUBLE, 0.0)
+        spc = {}
+        for e in edges:
+            s = before[e._n1] * after[e._n2]
+            spc[e._id] = s
+            f.set(e, s / total)
+        best = max(edges, key=lambda e: (spc[e._id], -e._id))
+        path = [best]
+        n = best._n2
+        while out[n]:
+            e = max(out[n], key=lambda x: (spc[x._id], -x._id))
+            path.append(e)
+            n = e._n2
+        n = best._n1
+        while inc[n]:
+            e = max(inc[n], key=lambda x: (spc[x._id], -x._id))
+            path.insert(0, e)
+            n = e._n1
+        members = [path[0]._n1] + [e._n2 for e in path]
+        print(f"main path: {len(members)} nodes; its strongest link carries "
+              f"{spc[best._id] / total:.0%} of all source-to-sink paths")
+        return GSet(members + path, "main path")
 
     @cmd
     def transitiveReduction():

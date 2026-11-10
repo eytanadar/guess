@@ -58,11 +58,14 @@ def short(oa_id):
 def papers():
     sel = "id,title,publication_year,cited_by_count,referenced_works,keywords,authorships,primary_location,type"
     works, seen = [], set()
-    for query in ("graph drawing", "network visualization", "graph visualization"):
+    # the phrases must be in the title: a plain search also matches deep-learning
+    # papers that "visualize" neural networks
+    for query in ("graph drawing", "graph layout", "network visualization", "graph visualization",
+                  "force-directed", "visualizing networks", "visual analytics of graphs"):
         for page in (1, 2):
-            q = urllib.parse.urlencode({"search": query, "sort": "cited_by_count:desc", "per-page": 100,
+            q = urllib.parse.urlencode({"sort": "cited_by_count:desc", "per-page": 100,
                                         "page": page, "select": sel,
-                                        "filter": "publication_year:1980-2024"})
+                                        "filter": f"title.search:{query},publication_year:1980-2024"})
             for w in json.loads(get(f"https://api.openalex.org/works?{q}"))["results"]:
                 if w["id"] not in seen and w.get("title"):
                     seen.add(w["id"])
@@ -94,6 +97,11 @@ def papers():
     s.run("frLayout()")
     assert s.run(f"exportGDF({str(HERE / 'vis-papers.gdf')!r})")
     print(f"  vis-papers.gdf: {len(works)} papers, {edges} citations among them")
+    with open(HERE / "vis-papers-nodes.csv", "w", newline="") as fh:
+        wr = csv.writer(fh)
+        wr.writerow(["Id", "title", "year", "cites", "firstauthor", "venue"])
+        for n in g.nodes:
+            wr.writerow([n.name, n.title, n.year, n.cites, n.firstauthor, n.venue])
     with open(HERE / "vis-paper-authors.csv", "w", newline="") as fh:
         wr = csv.writer(fh)
         wr.writerow(["paper", "author"])

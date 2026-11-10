@@ -43,6 +43,8 @@ def http(url, method="GET", body=None, headers=None):
         return str(req.responseText)
     import urllib.request
     data = body.encode() if isinstance(body, str) else body
+    # outside the browser: some services (Wikidata) refuse urllib's default agent
+    headers.setdefault("User-Agent", "GUESS-graph-exploration-system/1.0 (+https://github.com/eytanadar/guess)")
     r = urllib.request.Request(url, data=data, method=method, headers=headers)
     with urllib.request.urlopen(r, timeout=60) as resp:  # noqa: S310 - user-supplied URL by design
         return resp.read().decode("utf-8", errors="replace")

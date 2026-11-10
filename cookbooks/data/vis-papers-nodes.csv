@@ -1,0 +1,1045 @@
+Id,title,year,cites,firstauthor,venue
+W2167482691,Graph drawing by force‐directed placement,1991,6598,Fruchterman,Software Practice and Experience
+W2075220720,An algorithm for drawing general undirected graphs,1989,2750,Kamada,Information Processing Letters
+W2102664288,Graph Drawing: Algorithms for the Visualization of Graphs,1998,1981,Battista,Iris (Roma Tre University)
+W3022981850,A Heuristic for Graph Drawing,1984,1158,Eades,Congressus Numerantium
+W1992709202,Algorithms for drawing graphs: an annotated bibliography,1994,871,Battista,Computational Geometry
+W1842847600,Graphviz— Open Source Graph Drawing Tools,2002,811,Ellson,Lecture notes in computer science
+W2126536832,A technique for drawing directed graphs,1993,700,Gansner,IEEE Transactions on Software Engineering
+W634834491,Handbook of Graph Drawing and Visualization,2013,563,Tamassia,Chapman & Hall/CRC eBooks
+W1600348603,Graph Drawing Software,2004,561,Jünger,Mathematics and visualization
+W2021053884,Drawing graphs nicely using simulated annealing,1996,493,Davidson,ACM Transactions on Graphics
+W38619841,"Efficient, High-Quality Force-Directed Graph Drawing",2006,482,Hu,The Mathematica Journal
+W241117969,Graphviz and Dynagraph — Static and Dynamic Graph Drawing Tools,2004,456,Ellson,Mathematics and visualization
+W1479963486,Graph Drawing by Stress Majorization,2005,414,Gansner,Lecture notes in computer science
+W1979740931,Automatic graph drawing and readability of diagrams,1988,382,Tamassia,IEEE Transactions on Systems Man and Cybernetics
+W2049335983,Metrics for Graph Drawing Aesthetics,2002,327,Purchase,Journal of Visual Languages & Computing
+W1931404780,Drawing graphs: methods and models,2001,326,Kaufmann,
+W1564519640,Drawing graphs with dot,2006,325,Gansner,
+W2096826541,Spring Embedders and Force Directed Graph Drawing Algorithms,2012,315,Kobourov,arXiv (Cornell University)
+W1972151695,Edge crossings in drawings of bipartite graphs,1994,303,Eades,Algorithmica
+W2045870980,Drawing Planar Graphs Using the Canonical Ordering,1996,295,Kant,Algorithmica
+W1504716054,Drawing Large Graphs with a Potential-Field-Based Multilevel Algorithm,2005,279,Hachul,Lecture notes in computer science
+W2060205664,Validating graph drawing aesthetics,1996,244,Purchase,Lecture notes in computer science
+W4253380179,Drawing Graphs,2001,243,?,Lecture notes in computer science
+W4240930434,Planar Graph Drawing,2004,226,Nishizeki,Lecture notes series on computing
+W2029706109,"Local Multidimensional Scaling for Nonlinear Dimension Reduction, Graph Drawing, and Proximity Analysis",2009,200,Chen,Journal of the American Statistical Association
+W2000856020,A Fast Multi-Scale Method for Drawing Large Graphs,2002,190,Harel,Journal of Graph Algorithms and Applications
+W2059985735,A Multilevel Algorithm for Force-Directed Graph Drawing,2001,190,Walshaw,Lecture notes in computer science
+W2005080287,An experimental comparison of four graph drawing algorithms,1997,184,Battista,Computational Geometry
+W2117205241,A better heuristic for orthogonal graph drawings,1998,183,Biedl,Computational Geometry
+W1964716955,Regular edge labeling of 4-connected plane graphs and its applications in graph drawing problems,1997,183,Kant,Theoretical Computer Science
+W2100112610,Online Dynamic Graph Drawing,2008,177,Frishman,IEEE Transactions on Visualization and Computer Graphics
+W2796841069,A Survey on Graph Drawing Beyond Planarity,2019,176,Didimo,ACM Computing Surveys
+W2038318850,A linear-time algorithm for drawing a planar graph on a grid,1995,173,Chrobák,Information Processing Letters
+W1883466813,"FADE: Graph Drawing, Clustering, and Visual Abstraction",2001,165,Quigley,Lecture notes in computer science
+W1530948733,On Spectral Graph Drawing,2003,164,Koren,Lecture notes in computer science
+W2138959470,A Multilevel Algorithm for Force-Directed Graph-Drawing,2003,158,Walshaw,Journal of Graph Algorithms and Applications
+W1569811863,Drawing high degree graphs with low bend numbers,1996,151,Fößmeier,Lecture notes in computer science
+W2102982861,Computing the aspect graph for line drawings of polyhedral objects,1990,150,Gigus,IEEE Transactions on Pattern Analysis and Machine Intelligence
+W1971240015,Drawing graphs by eigenvectors: theory and practice,2005,143,Koren,Computers & Mathematics with Applications
+W1970282908,Effective information visualisation: a study of graph drawing aesthetics and algorithms,2000,137,Purchase,Interacting with Computers
+W2060181055,A fast multi-scale method for drawing large graphs,2000,137,Harel,Working Conference on Advanced Visual Interfaces (AVI)
+W2142244001,ACE: a fast multiscale eigenvectors computation for drawing huge graphs,2003,136,Koren,IEEE Symposium on Information Visualization
+W2137439611,A graph layout algorithm for drawing metabolic pathways,2001,136,Becker,Bioinformatics
+W1594340659,Drawing Graphs with Right Angle Crossings,2009,135,Didimo,Lecture notes in computer science
+W2120892678,Convex Grid Drawings of 3-Connected Planar Graphs,1997,134,Chrobák,International Journal of Computational Geometry & Applications
+W1574212655,Convex Drawings of Planar Graphs and the Order Dimension of 3-Polytopes,2001,126,Felsner,Order
+W54026119,Graph Drawing and Applications for Software and Knowledge Engineers,2002,125,Sugiyama,Series on software engineering and knowledge engineering
+W2095011064,Graph Drawing by High-Dimensional Embedding,2002,122,Harel,Lecture notes in computer science
+W4205588752,Drawing graphs with right angle crossings,2011,121,Didimo,Theoretical Computer Science
+W2408539216,- The Open Graph Drawing Framework (OGDF),2013,114,Tamassia,Chapman & Hall/CRC eBooks
+W4231431925,Dynamic Drawing of Clustered Graphs,2005,107,Frishman,IEEE Symposium on Information Visualization
+W1590611232,An Experimental Study on Distance-Based Graph Drawing,2009,104,Brandes,Lecture notes in computer science
+W2594765389,Graph Drawing by High-Dimensional Embedding,2006,104,Harel,WORLD SCIENTIFIC eBooks
+W2055868719,An experimental study of the basis for graph drawing algorithms,1997,104,Purchase,ACM Journal of Experimental Algorithmics
+W2021813567,Drawing graphs in two layers,1994,100,Eades,Theoretical Computer Science
+W2111244106,Dynamic Graph Drawing,2001,99,Branke,Lecture notes in computer science
+W1573523614,DRAWING BY EAR: INTERPRETING SONIFIED LINE GRAPHS,2003,98,Brown,ENLIGHTEN (Jurnal Bimbingan dan Konseling Islam)
+W2086798689,A Fast Multi-scale Method for Drawing Large Graphs,2001,98,Harel,Lecture notes in computer science
+W2256067809,A Heuristics for Graph Drawing,1984,97,Eades,Congressus Numerantium
+W1805238228,A multi-scale algorithm for drawing graphs nicely,2001,96,Hadany,Discrete Applied Mathematics
+W1512096342,Straight-line drawing algorithms for hierarchical graphs and clustered graphs,1997,96,Eades,Lecture notes in computer science
+W1987886060,Drawings of planar graphs with few slopes and segments,2006,94,Dujmović,Computational Geometry
+W2134344894,Rectilinear drawings of graphs,1988,94,Thomassen,Journal of Graph Theory
+W2010758649,Drawing plane graphs nicely,1985,90,Chiba,Acta Informatica
+W1984244946,An interactive constraint-based system for drawing graphs,1997,89,Ryall,ACM Symposium on User Interface Software and Technology (UIST)
+W1591086553,An experimental comparison of force-directed and randomized graph drawing algorithms,1996,89,Brandenburg,Lecture notes in computer science
+W1531848040,An Experimental Comparison of Fast Algorithms for Drawing General Large Graphs,2006,87,Hachul,Lecture notes in computer science
+W1990750582,Straight-Line Drawing Algorithms for Hierarchical Graphs and Clustered Graphs,2005,87,Eades,Algorithmica
+W2121884935,Graph-based method for face identification from a single 2D line drawing,2001,87,Liu,IEEE Transactions on Pattern Analysis and Machine Intelligence
+W2066352890,Drawing graphs to convey proximity,1997,86,Cohen,ACM Transactions on Computer-Human Interaction
+W2028268419,Three-dimensional graph drawing,1997,85,Cohen,Algorithmica
+W1512962915,Algorithms for drawing planar graphs,1993,84,Kant,Utrecht University Repository (Utrecht University)
+W1578048103,Drawing Large Graphs with H3Viewer and Site Manager,1998,83,Munzner,Lecture notes in computer science
+W2144494841,Drawing planar graphs using the lmc-ordering,1992,83,Kant,Annual Symposium on Foundations of Computer Science
+W2797920702,Graph Drawing by Stochastic Gradient Descent,2018,82,Zheng,IEEE Transactions on Visualization and Computer Graphics
+W2058007714,Graph Drawing by the Magnetic Spring Model,1995,79,Sugiyama,Journal of Visual Languages & Computing
+W2170071395,Drawing Graphs in the Plane with High Resolution,1993,79,Formann,SIAM Journal on Computing
+W2156521678,Graph Drawing in Motion,2002,78,Friedrich,Journal of Graph Algorithms and Applications
+W2057600466,Convex Drawings of 3-Connected Plane Graphs,2007,74,Bonichon,Algorithmica
+W2525196242,Strictly convex drawings of planar graphs,2006,74,Bárány,Documenta Mathematica
+W1532755370,Graph drawing aesthetics and the comprehension of UML class diagrams: an empirical study,2001,74,Purchase,
+W2140063299,"Graph Drawing Aesthetics—Created by Users, Not Algorithms",2010,73,Purchase,IEEE Transactions on Visualization and Computer Graphics
+W2922321031,On the Parameterized Complexity of Layered Graph Drawing,2007,73,Dujmović,Algorithmica
+W2100083479,GRIP: Graph Drawing with Intelligent Placement,2002,73,Gajer,Journal of Graph Algorithms and Applications
+W1605390268,A new minimum cost flow algorithm with applications to graph drawing,1997,73,Garg,Lecture notes in computer science
+W1990921890,Orderly Spanning Trees with Applications to Graph Encoding and Graph Drawing,2001,72,Chiang,arXiv (Cornell University)
+W2129084377,GRIP: Graph dRawing with Intelligent Placement,2001,72,Gajer,Lecture notes in computer science
+W1592578767,Minimum-width grid drawings of plane graphs,1998,72,Chrobák,Computational Geometry
+W2060868888,Convex drawings of graphs in two and three dimensions (preliminary version),1996,72,Chrobák,Annual Symposium on Computational Geometry (SoCG)
+W2969225252,DeepDrawing: A Deep Learning Approach to Graph Drawing,2019,70,Wang,IEEE Transactions on Visualization and Computer Graphics
+W2001458422,Improving multiple aesthetics produces better graph drawings,2012,68,Huang,Journal of Visual Languages & Computing
+W2097677742,Algorithms for Cluster Busting in Anchored Graph Drawing,1998,65,Lyons,Journal of Graph Algorithms and Applications
+W2248326503,Recognizing and drawing IC-planar graphs,2016,63,Brandenburg,Theoretical Computer Science
+W1501486526,A better heuristic for orthogonal graph drawings,1994,63,Biedl,Lecture notes in computer science
+W1604233911,Selected Open Problems in Graph Drawing,2004,62,Brandenburg,Lecture notes in computer science
+W2132964407,Graph Drawing by High-Dimensional Embedding,2004,62,Harel,Journal of Graph Algorithms and Applications
+W1510438512,A simple and unified method for drawing graphs: Magnetic-spring algorithm,1995,61,Sugiyama,Lecture notes in computer science
+W1542976050,Succinct Greedy Graph Drawing in the Hyperbolic Plane,2009,60,Eppstein,Lecture notes in computer science
+W2087847745,Drawing graphs with non-uniform vertices,2002,60,Harel,Working Conference on Advanced Visual Interfaces (AVI)
+W1984127148,Fixed edge-length graph drawing is NP-hard,1990,60,Eades,Discrete Applied Mathematics
+W1981511815,A method for drawing graphs,1985,60,Lipton,Annual Symposium on Computational Geometry (SoCG)
+W1997702225,The “Map” in the mental map: Experimental results in dynamic graph drawing,2013,59,Archambault,International Journal of Human-Computer Studies
+W1993382237,Drawing Huge Graphs by Algebraic Multigrid Optimization,2003,59,Koren,Multiscale Modeling and Simulation
+W2125901667,Dynamic Graph Drawing of Sequences of Orthogonal and Hierarchical Graphs,2005,58,Görg,Lecture notes in computer science
+W1997530681,Lombardi Drawings of Graphs,2012,57,Duncan,Journal of Graph Algorithms and Applications
+W2488314452,Handbook of Graph Drawing and Visualization (Discrete Mathematics and Its Applications),2007,57,Tamassia,Chapman & Hall/CRC eBooks
+W2005387480,Curve-constrained drawings of planar graphs,2004,57,Giacomo,Computational Geometry
+W1809204768,Area-efficient static and incremental graph drawings,1997,57,Biedl,Lecture notes in computer science
+W2050492491,"Dynamic Graph Drawings: Trees, Series-Parallel Digraphs, and Planar $ST$-Digraphs",1995,57,Cohen,SIAM Journal on Computing
+W4281624973,Graph neural network-enabled manufacturing method classification from engineering drawings,2022,56,Xie,Computers in Industry
+W1966020295,"Bipartite graphs, upward drawings, and planarity",1990,56,Battista,Information Processing Letters
+W2091733471,Density of straight-line 1-planar graph drawings,2013,55,Didimo,Information Processing Letters
+W2169499674,A Quantitative Comparison of Stress-Minimization Approaches for Offline Dynamic Graph Drawing,2011,55,Brandes,Lecture notes in computer science
+W2077840726,A framework for dynamic graph drawing,1992,54,Cohen,Annual Symposium on Computational Geometry (SoCG)
+W1913975410,Are Crossings Important for Drawing Large Graphs?,2014,53,Kobourov,Lecture notes in computer science
+W1927931645,Orthogonal Graph Drawing,2001,53,Eiglsperger,Lecture notes in computer science
+W2564962834,Open graph drawing framework (OGDF),2013,52,Chimani,
+W2570807373,Drawing graphs for cartographic applications,2008,51,Mumford,TU/e Research Portal
+W2102102459,3D graph drawing with simulated annealing,1996,51,Cruz,Lecture notes in computer science
+W192589467,The Crossing-Angle Resolution in Graph Drawing,2012,50,Didimo,Springer eBooks
+W2063120809,Drawing colored graphs on colored points,2008,50,Badent,Theoretical Computer Science
+W2130659183,Curvilinear Graph Drawing Using the Force-Directed Method,2005,50,Finkel,Lecture notes in computer science
+W2147807119,Three-dimensional orthogonal graph drawing algorithms,2000,50,Eades,Discrete Applied Mathematics
+W2066705499,Rectangular grid drawings of plane graphs,1998,50,Rahman,Computational Geometry
+W1984666555,Drawing Planar Graphs of Bounded Degree with Few Slopes,2013,49,Keszegh,SIAM Journal on Discrete Mathematics
+W1595997489,Rapid Multipole Graph Drawing on the GPU,2009,49,Godiyal,Lecture notes in computer science
+W2137358130,Orthogonal Drawings of Plane Graphs Without Bends,2003,49,Rahman,Journal of Graph Algorithms and Applications
+W2143795190,Drawing planar graphs with circular arcs,2001,49,Cheng,Discrete & Computational Geometry
+W1515986906,Three-dimensional grid drawings of graphs,1997,49,Pach,Lecture notes in computer science
+W3199723057,Graph Neural Networks for Graph Drawing,2022,48,Tiezzi,IEEE Transactions on Neural Networks and Learning Systems
+W2603174436,Monotone drawings of planar graphs,2004,48,Pach,Journal of Graph Theory
+W2019611156,On the Parameterized Complexity of Layered Graph Drawing,2001,48,Dujmović,Lecture notes in computer science
+W2142363072,A Linear Algorithm for Bend-Optimal Orthogonal Drawings of Triconnected Cubic Plane Graphs,1999,48,Rahman,Journal of Graph Algorithms and Applications
+W2094244192,The techniques of Komolgorov and Bardzin for three-dimensional orthogonal graph drawings,1996,48,Eades,Information Processing Letters
+W1756322456,Three-dimensional graph drawing,1995,48,Cohen,Lecture notes in computer science
+W1868165216,Force-Directed Lombardi-Style Graph Drawing,2011,47,Chernobelskiy,Lecture notes in computer science
+W2057352080,"Area, Curve Complexity, and Crossing Resolution of Non-Planar Graph Drawings",2010,47,Giacomo,Theory of Computing Systems
+W2112136590,A Graph Drawing Based Spatial Mapping Algorithm for Coarse-Grained Reconfigurable Architectures,2009,47,Yoon,IEEE Transactions on Very Large Scale Integration (VLSI) Systems
+W2064902545,Characterizing Graph Drawing with Eigenvectors,2000,47,Pisanski,Journal of Chemical Information and Computer Sciences
+W165329068,Drawing planar graphs,1981,47,Woods,
+W2125358750,Drawing layered graphs with port constraints,2013,46,Schulze,Journal of Visual Languages & Computing
+W2761681115,Graphs that admit right angle crossing drawings,2011,46,Arikushi,Computational Geometry
+W2001019475,"Small Drawings of Outerplanar Graphs, Series-Parallel Graphs, and Other Planar Graphs",2010,46,Biedl,Discrete & Computational Geometry
+W2169547728,Drawing the AS Graph in 2.5 Dimensions,2005,46,Baur,Lecture notes in computer science
+W1554261912,Circular Drawings of Biconnected Graphs,1999,46,Six,Lecture notes in computer science
+W4322806521,Component segmentation of engineering drawings using Graph Convolutional Networks,2023,45,Zhang,Computers in Industry
+W1998148652,Graph drawings with few slopes,2006,45,Dujmović,Computational Geometry
+W4240494126,Graph Drawing,2002,45,Mutzel,Lecture notes in computer science
+W2013871179,Grid Drawings of 4-Connected Plane Graphs,2001,45,Miura,Discrete & Computational Geometry
+W2127330160,Drawing Clustered Graphs on an Orthogonal Grid,1999,45,Eades,Journal of Graph Algorithms and Applications
+W2156358318,Drawing Large Graphs by Low‐Rank Stress Majorization,2012,43,Khoury,Computer Graphics Forum
+W2001982792,Monotone Drawings of Graphs,2012,43,Angelini,Journal of Graph Algorithms and Applications
+W2100166969,Mental map preserving graph drawing using simulated annealing,2006,43,Lee,
+W2135992360,Force-Directed Graph Drawing Using Social Gravity and Scaling,2013,42,Bannister,Lecture notes in computer science
+W2085072732,Rectangular drawings of planar graphs,2003,42,Rahman,Journal of Algorithms
+W2154190940,A Numerical Optimization Approach to General Graph Drawing,1999,42,Tunkelang,
+W2103540189,AN ALGORITHM FOR DRAWING A HIERARCHICAL GRAPH,1996,42,Eades,International Journal of Computational Geometry & Applications
+W2067795681,Lower bounds for planar orthogonal drawings of graphs,1991,42,Tamassia,Information Processing Letters
+W3180152445,DeepGD: A Deep Learning Framework for Graph Drawing Using GNN,2021,41,Wang,IEEE Computer Graphics and Applications
+W2409547495,How to Morph Planar Graph Drawings,2017,41,Alamdari,SIAM Journal on Computing
+W1586795908,Graph drawing with no k pairwise crossing edges,1997,41,Valtr,Lecture notes in computer science
+W1596526435,2-Visibility drawings of planar graphs,1997,41,Fößmeier,Lecture notes in computer science
+W165147621,Straight-Line Grid Drawings of 3-Connected 1-Planar Graphs,2013,40,Alam,Lecture notes in computer science
+W2021729364,An Efficient Implementation of Sugiyama's Algorithm for Layered Graph Drawing,2005,40,Eiglsperger,Journal of Graph Algorithms and Applications
+W1972308905,Optimal three-dimensional orthogonal graph drawing in the general position model,2003,40,Wood,Theoretical Computer Science
+W2914136605,Proceedings of the 7th International Symposium on Graph Drawing,1999,40,Kratochvíl,
+W2216070837,"The Second Atlas of Breeding Birds in New York State.— Kevin J. McGowan and Kimberley Corwin , editors. 2008. Cornell University Press, Ithaca, New York. 696 pp, 25 paintings, 245 black and white draw",2010,39,Drilling,Ornithological Applications
+W2003783600,Simultaneous Graph Drawing: Layout Algorithms and Visualization Schemes,2004,39,Erten,Lecture notes in computer science
+W1502972208,Online Hierarchical Graph Drawing,2002,39,North,Lecture notes in computer science
+W1676982517,A Short Note on the History of Graph Drawing,2002,39,Kruja,Lecture notes in computer science
+W1853867519,Graph Drawing in Motion II,2002,39,Friedrich,Lecture notes in computer science
+W2069815120,Improved Approximations of Crossings in Graph Drawings and VLSI Layout Areas,2002,39,Even,SIAM Journal on Computing
+W1493030655,Online animated graph drawing for web navigation,1997,39,Eades,Lecture notes in computer science
+W1537570505,Drawing stressed planar graphs in three dimensions,1996,39,Eades,Lecture notes in computer science
+W2589925071,AN ALGORITHM FOR DRAWING GENERAL UNDIRECTED GRAPHS,1989,39,?,WORLD SCIENTIFIC eBooks
+W1986069861,Coherent Time-Varying Graph Drawing with Multifocus+Context Interaction,2011,38,Feng,IEEE Transactions on Visualization and Computer Graphics
+W1578313754,Spotting Symbols in Line Drawing Images Using Graph Representations,2008,38,Qureshi,Lecture notes in computer science
+W2054932997,Computing straight-line 3D grid drawings of graphs in linear volume,2005,38,Giacomo,Computational Geometry
+W1497860597,Two algorithms for three dimensional orthogonal graph drawing,1997,38,Eades,Lecture notes in computer science
+W2624658792,On RAC drawings of 1-planar graphs,2017,37,Bekos,Theoretical Computer Science
+W1541566670,On the Usability of Lombardi Graph Drawings,2013,37,Purchase,Lecture notes in computer science
+W2148317788,SPKM: A Novel Graph Drawing based Algorithm for Application Mapping onto Coarse-Grained Reconfigurable Architectures,2008,37,Yoon,
+W2017807009,Convex drawings of graphs with non-convex boundary constraints,2007,37,Hong,Discrete Applied Mathematics
+W2100810364,DRAWING DIRECTED ACYCLIC GRAPHS: AN EXPERIMENTAL STUDY,2000,37,Battista,International Journal of Computational Geometry & Applications
+W4200634330,"Multicriteria Scalable Graph Drawing via Stochastic Gradient Descent, (SGD)^2",2022,36,Ahmed,IEEE Transactions on Visualization and Computer Graphics
+W2031944610,A framework and algorithms for circular drawings of graphs,2005,36,Six,Journal of Discrete Algorithms
+W2166922389,"Queue Layouts, Tree-Width, and Three-Dimensional Graph Drawing",2002,36,Wood,Lecture notes in computer science
+W2146058249,Difference Metrics for Interactive Orthogonal Graph Drawing Algorithms,2000,36,Bridgeman,Journal of Graph Algorithms and Applications
+W2162553820,Difference Metrics for Interactive Orthogonal Graph Drawing Algorithms,1998,36,Bridgeman,Lecture notes in computer science
+W2088697577,Drawing graphs on rectangular grids,1995,36,Schäffter,Discrete Applied Mathematics
+W1598892764,Designing graph drawings by layout graph grammars,1995,36,Brandenburg,Lecture notes in computer science
+W2102717117,Using the Gestalt Principle of Closure to Alleviate the Edge Crossing Problem in Graph Drawings,2011,35,Rusu,International Conference on Information Visualisation (IV)
+W2058678665,Universal Sets of n Points for One-bend Drawings of Planar Graphs with n Vertices,2009,35,Everett,Discrete & Computational Geometry
+W2156458358,Combining hierarchy and energy for drawing directed graphs,2004,35,Carmel,IEEE Transactions on Visualization and Computer Graphics
+W1565714999,Constraints in Graph Drawing Algorithms,1998,35,Tamassia,Constraints
+W1984308317,An Algorithm for Straight-Line Drawing of Planar Graphs,1998,35,Harel,Algorithmica
+W1533075488,The three-phase method: A unified approach to orthogonal graph drawing,1997,35,Biedl,Lecture notes in computer science
+W1603931723,Finding the best viewpoints for three-dimensional graph drawings,1997,35,Eades,Lecture notes in computer science
+W2198202036,Graph Drawing for Security Visualization,2009,34,Tamassia,Lecture notes in computer science
+W2069342586,A User Study in Similarity Measures for Graph Drawing,2002,34,Bridgeman,Journal of Graph Algorithms and Applications
+W2028695285,"ForceAtlas2, a Continuous Graph Layout Algorithm for Handy Network Visualization Designed for the Gephi Software",2014,3143,Jacomy,PLoS ONE
+W2079966248,A survey of graph layout problems,2002,627,Dı́az,ACM Computing Surveys
+W2029282358,A framework for solving VLSI graph layout problems,1984,439,Bhatt,Journal of Computer and System Sciences
+W3107547765,House-GAN: Relational Generative Adversarial Networks for Graph-Constrained House Layout Generation,2020,387,Nauata,Lecture notes in computer science
+W2094176393,OpenOrd: an open-source toolbox for large graph layout,2011,303,Martin,"Proceedings of SPIE, the International Society for Optical Engineering/Proceedings of SPIE"
+W1997246534,Comparison of the two major classes of assembly algorithms: overlap-layout-consensus and de-bruijn-graph,2011,292,Li,Briefings in Functional Genomics
+W2082205964,Rectilinear planar layouts and bipolar orientations of planar graphs,1986,288,Rosenstiehl,Discrete & Computational Geometry
+W1967125711,Embedding Graphs in Books: A Layout Problem with Applications to VLSI Design,1987,275,Chung,SIAM Journal on Algebraic and Discrete Methods
+W2149977307,Area-Efficient Graph Layouts (for VLSI).,1980,260,Leiserson,Defense Technical Information Center (DTIC)
+W1503013560,A fast adaptive layout algorithm for undirected graphs,1994,226,Frick,Repository KITopen (Karlsruhe Institute of Technology)
+W2099166093,Animated exploration of dynamic graphs with radial layout,2005,221,Yee,IEEE Symposium on Information Visualization
+W2345215667,"A Study of Layout, Rendering, and Interaction Methods for Immersive Graph Visualization",2016,195,Kwon,IEEE Transactions on Visualization and Computer Graphics
+W1502938161,Empirical Evaluation of Aesthetics-based Graph Layout,2002,193,Purchase,Empirical Software Engineering
+W2026729066,A survey of two-dimensional graph layout techniques for information visualisation,2012,186,Gibson,Information Visualization
+W2007280161,Area-efficient graph layouts,1980,160,Leiserson,Annual Symposium on Foundations of Computer Science
+W1020953626,A fast adaptive layout algorithm for undirected graphs (extended abstract and system demonstration),1995,158,Frick,Lecture notes in computer science
+W2099645570,BioLayout—an automatic graph layout algorithm for similarity visualization,2001,156,Enright,Bioinformatics
+W2111781385,TopoLayout: Multilevel Graph Layout by Topological Features,2007,154,Archambault,IEEE Transactions on Visualization and Computer Graphics
+W1485295947,Graph Layout Problems Parameterized by Vertex Cover,2008,153,Fellows,Lecture notes in computer science
+W7042436,How Important Is the “Mental Map”? – An Empirical Investigation of a Dynamic Graph Layout Algorithm,2007,147,Purchase,Springer eBooks
+W1522840240,GraphAEL: Graph Animations with Evolving Layouts,2004,145,Erten,Lecture notes in computer science
+W2155493403,Using eye tracking to investigate graph layout effects,2007,138,Huang,International Asia-Pacific Symposium on Visualization
+W2153362081,Graph Problems Related to Gate Matrix Layout and PLA Folding,1990,137,Möhring,Computing. Supplementum
+W4385889052,Architectural layout generation using a graph-constrained conditional Generative Adversarial Network (GAN),2023,134,Aalaei,Automation in Construction
+W2143668983,On Linear Layouts of Graphs,2004,132,Dujmović,Discrete Mathematics & Theoretical Computer Science
+W2118004951,Complexity Issues in VLSI: Optimal Layouts for the Shuffle-Exchange Graph and Other Networks,2003,132,Leighton,
+W2124498152,Layout of Graphs with Bounded Tree-Width,2005,127,Dujmović,SIAM Journal on Computing
+W3091933103,ParaGraph: Layout Parasitics and Device Parameter Prediction using Graph Neural Networks,2020,119,Ren,ACM/IEEE Design Automation Conference (DAC)
+W1999897678,Stack and Queue Layouts of Directed Acyclic Graphs: Part I,1999,116,Heath,SIAM Journal on Computing
+W1900721122,Graph layout through the VCG tool,1995,116,Sander,Lecture notes in computer science
+W2150770193,Multi-Level Graph Layout on the GPU,2007,114,Frishman,IEEE Transactions on Visualization and Computer Graphics
+W3171472210,Hierarchical Layout-Aware Graph Convolutional Network for Unified Aesthetics Assessment,2021,113,She,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen
+W4317535178,Intelligent design of shear wall layout based on graph neural networks,2023,112,Zhao,Advanced Engineering Informatics
+W2732947513,Graph Layouts by t‐SNE,2017,110,Kruiger,Computer Graphics Forum
+W2158378644,IPSep-CoLa: An Incremental Procedure for Separation Constraint Layout of Graphs,2006,110,Dwyer,IEEE Transactions on Visualization and Computer Graphics
+W2140947746,A layout algorithm for undirected compound graphs,2008,107,Doğrusöz,Information Sciences
+W2132774043,Perceptual Organization in User-Generated Graph Layouts,2008,106,Ham,IEEE Transactions on Visualization and Computer Graphics
+W1479959009,A bayesian paradigm for dynamic graph layout,1997,103,Brandes,Lecture notes in computer science
+W2100108891,A Comparison of User-Generated and Automatic Graph Layouts,2009,102,Dwyer,IEEE Transactions on Visualization and Computer Graphics
+W4308203772,Intelligent beam layout design for frame structure based on graph neural networks,2022,100,Zhao,Journal of Building Engineering
+W2144394238,A multi-dimensional approach to force-directed layouts of large graphs,2004,99,Gajer,Computational Geometry
+W1553171563,yFiles: Visualization and Automatic Layout of Graphs,2002,98,Wiese,Lecture notes in computer science
+W3109621557,Generative Layout Modeling using Constraint Graphs,2021,97,Para,IEEE/CVF International Conference on Computer Vision (ICCV)
+W4385323777,Automated building layout generation using deep learning and graph algorithms,2023,96,Wang,Automation in Construction
+W2164381372,"Scalable, Versatile and Simple Constrained Graph Layout",2009,95,Dwyer,Computer Graphics Forum
+W2025027691,Aesthetics-based Graph Layout for Human Consumption,1996,95,Coleman,Software Practice and Experience
+W2148249409,Graph Layout Aesthetics in UML Diagrams: User Preferences,2002,86,Purchase,Journal of Graph Algorithms and Applications
+W2152422369,A Maxent-Stress Model for Graph Layout,2013,85,Gansner,IEEE Transactions on Visualization and Computer Graphics
+W2062148030,An interactive layout heuristic based on hexagonal adjacency graphs,1992,85,Goetschalckx,European Journal of Operational Research
+W2019683022,On a graph partition problem with application to VLSI layout,1992,85,Sen,Information Processing Letters
+W1967087646,A New Graph-Theoretic Heuristic for Facility Layout,1992,85,Leung,Management Science
+W2751731070,What Would a Graph Look Like in this Layout? A Machine Learning Approach to Large Graph Visualization,2017,83,Kwon,IEEE Transactions on Visualization and Computer Graphics
+W1584092895,The effect of graph layout on inference from social network data,1996,83,Blythe,Lecture notes in computer science
+W2100059185,Level-of-detail visualization of clustered graph layouts,2007,82,Balzer,International Asia-Pacific Symposium on Visualization
+W2042966559,Large-Graph Layout Algorithms at Work: An Experimental Study,2007,82,Hachul,Journal of Graph Algorithms and Applications
+W1831799535,Effective Temporal Graph Layout: A Comparative Study of Animation versus Static Display Methods,2011,79,Farrugia,Information Visualization
+W2015342663,Using constraints to achieve stability in automatic graph layout algorithms,1990,79,Böhringer,CHI Conference on Human Factors in Computing Systems
+W2102316858,"Floorplans, planar graphs, and layouts",1988,79,Wimer,IEEE Transactions on Circuits and Systems
+W1964524846,A review of graph theory application to the facilities layout problem,1987,79,HASSAN,Omega
+W2156308991,"Stacks, Queues and Tracks: Layouts of Graph Subdivisions",2005,78,Dujmović,Discrete Mathematics & Theoretical Computer Science
+W1997298427,Facilities Layout Adjacency Determination: An Experimental Comparison of Three Graph Theoretic Heuristics,1985,74,Foulds,Operations Research
+W2083802415,A hybrid evolutionary graph-based multi-objective algorithm for layout optimization of truss structures,2012,71,Kaveh,Acta Mechanica
+W1495967075,A Multi-dimensional Approach to Force-Directed Layouts of Large Graphs,2001,70,Gajer,Lecture notes in computer science
+W2018868256,"A new graph-theoretic, multi-objective layout decomposition framework for double patterning lithography",2010,68,Yang,
+W2941265453,A Deep Generative Model for Graph Layout,2019,67,Kwon,IEEE Transactions on Visualization and Computer Graphics
+W4232763292,Stack and Queue Layouts of Directed Acyclic Graphs: Part II,1999,67,Heath,SIAM Journal on Computing
+W2019635018,Approximating Layout Problems on Random Geometric Graphs,2001,66,Dı́az,Journal of Algorithms
+W1993528113,Graph-Optimization Techniques for IC Layout and Compaction,1984,66,Kedem,IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems
+W1534717118,User Preference of Graph Layout Aesthetics: A UML Study,2001,65,Purchase,Lecture notes in computer science
+W2122814890,Rapid Graph Layout Using Space Filling Curves,2008,64,Muelder,IEEE Transactions on Visualization and Computer Graphics
+W1549363509,Track Layouts of Graphs,2004,63,Dujmović,Discrete Mathematics & Theoretical Computer Science
+W1565931818,Graph layout adjustment strategies,1996,63,Storey,Lecture notes in computer science
+W2515800447,Probabilistic Graph Layout for Uncertain Network Visualization,2016,62,Schulz,IEEE Transactions on Visualization and Computer Graphics
+W2141695625,A divide-and-conquer algorithm for the automatic layout of large directed graphs,1991,62,Messinger,IEEE Transactions on Systems Man and Cybernetics
+W4387267013,Design-condition-informed shear wall layout design based on graph neural networks,2023,60,Zhao,Advanced Engineering Informatics
+W2131201461,A hybrid space-filling and force-directed layout method for visualizing multiple-category graphs,2009,60,Itoh,IEEE Pacific Visualization Symposium
+W1582841557,Self-Organizing Graphs — A Neural Network Perspective of Graph Layout,1998,60,Meyer,Lecture notes in computer science
+W1550427978,Comparing the Readability of Graph Layouts using Eyetracking and Task-oriented Analysis,2009,58,Mathias,Eurographics
+W1973624728,Rectangular layouts and contact graphs,2008,58,Buchsbaum,ACM Transactions on Algorithms
+W1912392752,AmbiguityVis: Visualization of Ambiguity in Graph Layouts,2015,56,Wang,IEEE Transactions on Visualization and Computer Graphics
+W4386892809,End‐to‐end generation of structural topology for complex architectural layouts with graph neural networks,2023,55,Zhang,Computer-Aided Civil and Infrastructure Engineering
+W4220984658,Generation of optimal (de)centralized layouts for urban drainage systems: A graph-theory-based combinatorial multi-objective optimization framework,2022,55,Hesarkazzazi,Sustainable Cities and Society
+W2205695184,Topology Preserving Constrained Graph Layout,2009,55,Dwyer,Lecture notes in computer science
+W2042677816,Graph theoretic heuristics for unequal-sized facility layout problems,1995,55,Kim,Omega
+W2074261090,Chemical plant layout via graph partitioning-1. Single level,1994,55,Jayakumar,Computers & Chemical Engineering
+W4243335066,yFiles — Visualization and Automatic Layout of Graphs,2004,54,Wiese,Mathematics and visualization
+W2098613931,Using Graph Layout to Visualize Train Interconnection Data,1998,51,Brandes,Lecture notes in computer science
+W2103042929,A neural-network algorithm for a graph layout problem,1996,50,Cimikowski,IEEE Transactions on Neural Networks
+W4377235251,Exploring Hierarchical Spatial Layout Cues for 3D Point Cloud Based Scene Graph Prediction,2023,49,Feng,IEEE Transactions on Multimedia
+W3108305122,DRGraph: An Efficient Graph Layout Algorithm for Large-scale Graphs by Dimensionality Reduction,2020,49,Zhu,IEEE Transactions on Visualization and Computer Graphics
+W1574363792,Circular layout in the Graph Layout toolkit,1997,49,Doğrusöz,Lecture notes in computer science
+W2169242520,Exploring the powers of stacks and queues via graph layouts,1992,49,Pemmarju,VTechWorks (Virginia Tech)
+W1499393492,Removing Node Overlapping in Graph Layout Using Constrained Optimization,2003,48,Marriott,Constraints
+W2156626376,Convergence Theorems for Some Layout Measures on Random Lattice and Random Geometric Graphs,2000,47,Dı́az,Combinatorics Probability Computing
+W2083431719,On constructing a block layout by graph theory,1991,47,HASSAN,International Journal of Production Research
+W2952574282,Evaluating the Readability of Force Directed Graph Layouts: A Deep Learning Approach,2019,46,Haleem,IEEE Computer Graphics and Applications
+W2019889838,A graph-pair representation and MIP-model-based heuristic for the unequal-area facility layout problem,2011,46,Bozer,European Journal of Operational Research
+W2061475072,Distributed Graph Layout for Sensor Networks,2005,46,Gotsman,Lecture notes in computer science
+W1513389131,Improving Layered Graph Layouts with Edge Bundling,2011,45,Pupyrev,Lecture notes in computer science
+W3150135088,"A new graph-theoretic, multi-objective layout decomposition framework for Double Patterning Lithography",2010,45,Yang,Asia and South Pacific Design Automation Conference (ASP-DAC)
+W2034612719,Interactive graph layout,1991,45,Henry,ACM Symposium on User Interface Software and Technology (UIST)
+W2937790267,Quantifying the Generality and Adaptability of Building Layouts Using Weighted Graphs: The SAGA Method,2019,43,Herthogs,Buildings
+W2065984865,Graph layout for applications in compiler construction,1999,43,Sander,Theoretical Computer Science
+W2090378910,Chemical plant layout via graph partitioning—II. Multiple levels,1996,43,Jayakumar,Computers & Chemical Engineering
+W1836832726,Constraint-based spring-model algorithm for graph layout,1996,43,Kamps,Lecture notes in computer science
+W4389417833,Beam layout design of shear wall structures based on graph neural networks,2023,42,Zhao,Automation in Construction
+W4226359142,Graph-Model-Based Generative Layout Optimization for Heterogeneous SiC Multichip Power Modules With Reduced and Balanced Parasitic Inductance,2022,42,Zhou,IEEE Transactions on Power Electronics
+W2954388973,Layout-Graph Reasoning for Fashion Landmark Detection,2019,42,Yu,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen
+W1821429470,Constrained Graph Layout,1998,42,He,Constraints
+W2126003552,DIG-COLA: Directed Graph Layout through Constrained Energy Minimization,2006,41,Dwyer,IEEE Symposium on Information Visualization
+W2083878823,A graph-theoretic heuristic for designing loop-layout manufacturing systems,1992,39,Leung,European Journal of Operational Research
+W3127378783,Layout Symmetry Annotation for Analog Circuits with Graph Neural Networks,2021,38,Gao,Asia and South Pacific Design Automation Conference (ASP-DAC)
+W1993765155,A Treemap Based Method for Rapid Layout of Large Graphs,2008,38,Muelder,IEEE Pacific Visualization Symposium
+W1889256802,Constrained graph layout,1997,38,He,Lecture notes in computer science
+W3132160714,GenFloor: Interactive generative space layout system via encoded tree graphs,2021,37,Keshavarzi,Frontiers of Architectural Research
+W2969302812,Persistent Homology Guided Force-Directed Graph Layouts,2019,37,Suh,IEEE Transactions on Visualization and Computer Graphics
+W3183955218,LayoutGMN: Neural Graph Matching for Structural Layout Similarity,2021,36,Patil,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen
+W1998703808,Intelligent Graph Layout Using Many Users' Input,2012,36,Yuan,IEEE Transactions on Visualization and Computer Graphics
+W2104297794,A Compound Graph Layout Algorithm for Biological Pathways,2005,36,Doğrusöz,Lecture notes in computer science
+W2857341988,The Perception of Graph Properties in Graph Layouts,2018,35,Soni,Computer Graphics Forum
+W4237288420,Graph-Optimization Techniques for IC Layout and Compaction,1983,35,Kedem,ACM/IEEE Design Automation Conference (DAC)
+W2030064263,New layouts for the shuffle-exchange graph(Extended Abstract),1981,35,Kleitman,ACM Symposium on Theory of Computing (STOC)
+W4396614324,Evaluating Graph Layout Algorithms: A Systematic Review of Methods and Best Practices,2024,34,Bartolomeo,Computer Graphics Forum
+W2104900626,Distributed Graph Layout for Sensor Networks,2005,33,Gotsman,Journal of Graph Algorithms and Applications
+W1837809818,Spherical layout and rendering methods for immersive graph visualization,2015,32,Kwon,IEEE Pacific Visualization Symposium
+W2001557365,A regularized graph layout framework for dynamic network visualization,2012,32,Xu,Data Mining and Knowledge Discovery
+W2018444845,LAYOUT FOR THE SHUFFLE-EXCHANGE GRAPH AND LOWER BOUND TECHNIQUES FOR VLSI,1982,32,Leighton,
+W2296035261,Automated Transplantation of Call Graph and Layout Features into Kate,2015,31,Marginean,Lecture notes in computer science
+W2339819452,Dr.L: Distributed Recursive (Graph) Layout,2007,31,Martin,OSTI OAI (U.S. Department of Energy Office of Scientific and Technical Information)
+W2079777133,"New graph bipartizations for double-exposure, bright field alternating phase-shift mask layout",2001,31,Kahng,Asia and South Pacific Design Automation Conference (ASP-DAC)
+W1600911945,A parallel simulated annealing algorithm for generating 3D layouts of undirected graphs,1996,31,Monien,Lecture notes in computer science
+W2026218375,Comparing and Evaluating Layout Algorithms within GraphEd,1995,31,Himsolt,Journal of Visual Languages & Computing
+W2805488309,SetCoLa: High‐Level Constraints for Graph Layout,2018,30,Hoffswell,Computer Graphics Forum
+W2146000778,An incremental approach to aesthetic graph layout,2002,30,Miriyala,International Workshop on Computer-Aided Software Engineering (CASE)
+W1503236619,A Fast Layout Algorithm for k-Level Graphs,2001,30,Buchheim,Lecture notes in computer science
+W1596884403,Layout of compound directed graphs,1996,30,Sander,
+W1998306675,On VLSI layouts of the star graph and related networks,1994,30,Sýkora,Integration
+W4390940330,Graph Transformer GANs With Graph Masked Modeling for Architectural Layout Generation,2024,29,Tang,IEEE Transactions on Pattern Analysis and Machine Intelligence
+W3106128014,Learning Structural Similarity of User Interface Layouts Using Graph Networks,2020,29,Manandhar,Lecture notes in computer science
+W125839471,Do You See What I Want You to See? The Effects of Motion and Spatial Layout on Viewers' Perceptions of Graph Structure.,2004,29,McGrath,Journal of Social Structure
+W1569036654,Logical Labeling of Document Images Using Layout Graph Matching with Adaptive Learning,2002,29,Liang,Lecture notes in computer science
+W1843075425,Disconnected Graph Layout and the Polyomino Packing Approach,2002,29,Freivalds,Lecture notes in computer science
+W1991701776,Evolutionary learning of graph layout constraints from examples,1994,29,Masui,ACM Symposium on User Interface Software and Technology (UIST)
+W2397851279,"Unified quality measures for clusterings, layouts, and orderings of graphs, and their application as software design criteria",2007,28,Noack,
+W2022627391,A space of layout styles for hierarchical graph models of software systems,2005,28,Noack,ACM Symposium on Software Visualization (SoftVis)
+W2128847701,Queue Layouts of Graph Products and Powers,2005,28,Wood,Discrete Mathematics & Theoretical Computer Science
+W2115703279,Tree-Partitions of k-Trees with Applications in Graph Layout,2003,28,Dujmović,Lecture notes in computer science
+W2145290099,On the Optimal Layout of Planar Graphs with Fixed Boundary,1987,28,Becker,SIAM Journal on Computing
+W3163894592,Layout graph model for semantic façade reconstruction using laser point clouds,2021,27,Fan,Geo-spatial Information Science
+W1975521444,A greedy approach combined with graph coloring for non-uniform beam layouts under antenna constraints in multibeam satellite systems,2014,27,Camino,Advanced Satellite Multimedia Systems Conference and the Signal Processing for Space Communications Workshop (ASMS/SPSC)
+W4256036414,Dig-CoLa: directed graph layout through constrained energy minimization,2005,27,Dwyer,IEEE Symposium on Information Visualization
+W2121671443,Onion graphs: aesthetics and layout,2002,27,Sindre,IEEE Symposium on Visual Languages and Human-Centric Computing (VL/HCC)
+W2109250725,Layout-independent fisheye views of nested graphs,2002,27,Noik,IEEE Symposium on Visual Languages and Human-Centric Computing (VL/HCC)
+W4388242131,An edge-weighted graph triumvirate to represent modular building layouts,2023,26,Lin,Automation in Construction
+W4328127348,Accelerating network layouts using graph neural networks,2023,26,Both,Nature Communications
+W4214591270,Transforming an Adjacency Graph into Dimensioned Floorplan Layouts,2022,26,Bisht,Computer Graphics Forum
+W2965471910,Stress-Plus-X (SPX) Graph Layout,2019,26,Devkota,Lecture notes in computer science
+W2752061732,Mixed Linear Layouts of Planar Graphs,2018,26,Pupyrev,Lecture notes in computer science
+W1602758852,Derivation of algorithms for cutwidth and related graph layout parameters,2008,26,Bodlaender,Journal of Computer and System Sciences
+W2467385561,Simultaneous Graph Drawing: Layout Algorithms and Visualization Schemes,2005,26,Erten,Journal of Graph Algorithms and Applications
+W1517753551,JIGGLE: Java Interactive Graph Layout Environment,1998,26,Tunkelang,Lecture notes in computer science
+W2142288412,On converting a dual graph into a block layout,1989,26,HASSAN,International Journal of Production Research
+W3048307787,Fast Spectral Graph Layout on Multicore Platforms,2020,25,Mishra,Proceedings of the International Conference on Parallel Processing
+W2134697945,Constrained graph layout by stress majorization and gradient projection,2008,25,Dwyer,Discrete Mathematics
+W2161411735,Multi-circular Layout of Micro/Macro Graphs,2008,25,Baur,Springer eBooks
+W2163819624,Key-Node-Separated Graph Clustering and Layouts for Human Relationship Graph Visualization,2015,24,Itoh,IEEE Computer Graphics and Applications
+W2144069000,Heuristics for connectivity-based brain parcellation of SMA/pre-SMA through force-directed graph layout,2010,24,Crippa,NeuroImage
+W1647803116,An Eye Tracking Study into the Effects of Graph Layout,2008,24,Huang,arXiv (Cornell University)
+W2129159815,Symmetry-aware placement with transitive closure graphs for analog layout design,2008,24,Zhang,Digital Scholarship - UNLV (University of Nevada Reno)
+W1603831708,Force-transfer: a new approach to removing overlapping nodes in graph layout,2003,24,Huang,Swinburne figshare (Swinburne University of Technology)
+W115636771,Stack and queue layouts of directed acyclic graphs,1993,24,Barrett,DIMACS series in discrete mathematics and theoretical computer science
+W1997409776,Two graph-theoretic procedures for an improved solution to the facilities layout problem,1991,24,Al‐Hakim,International Journal of Production Research
+W3178793612,fCoSE: A Fast Compound Graph Layout Algorithm with Constraint Support,2021,23,Balcı,IEEE Transactions on Visualization and Computer Graphics
+W3012216815,Implementation and Evaluation of Generative Layout Options Using the Graph Theoretical Approach for a Hospital Layout Problem,2020,23,Lather,Journal of Computing in Civil Engineering
+W2532002847,The effects of graph layout,2002,23,Purchase,Australian Conference on Computer-Human Interaction (OzCHI)
+W2143677925,Interactive graph layout: the exploration of large graphs,1992,23,Henry,UA Campus Repository (The University of Arizona)
+W3141792086,Information Extraction from Invoices: A Graph Neural Network Approach for Datasets with High Layout Variety,2021,22,Krieger,Lecture notes in information systems and organisation
+W3047912823,GLLPA: A Graph Layout based Label Propagation Algorithm for community detection,2020,22,Zhang,Knowledge-Based Systems
+W2955313235,A Random Sampling O(n) Force‐calculation Algorithm for Graph Layouts,2019,22,Gove,Computer Graphics Forum
+W4231006966,Using Graph Layout to Visualize Train Interconnection Data,2000,22,Brandes,Journal of Graph Algorithms and Applications
+W4380148549,An interactive approach for generating spatial architecture layout based on graph theory,2023,21,Xie,Frontiers of Architectural Research
+W1493120318,An automatic graph layout procedure to visualize correlated data,2006,21,Inostroza-Ponta,Springer eBooks
+W2129979616,"A framework of filtering, clustering and dynamic layout graphs for visualization",2005,21,Huang,Swinburne figshare (Swinburne University of Technology)
+W1501972328,Portable graph layout and editing,1996,21,Madden,Lecture notes in computer science
+W2005890990,Automatic layout of large directed graphs,1988,21,Messinger,
+W1970145436,Evaluation of an application of graph theory to the layout problem,1985,21,Hammouche,International Journal of Production Research
+W4362676904,Image generation models from scene graphs and layouts: A comparative analysis,2023,20,Hassan,Journal of King Saud University - Computer and Information Sciences
+W4317795276,Force-Directed Graph Layouts Revisited: A New Force Based on the T-Distribution,2023,20,Zhong,IEEE Transactions on Visualization and Computer Graphics
+W3000405401,"FLOW-MAP: a graph-based, force-directed layout algorithm for trajectory mapping in single-cell time course datasets",2020,20,Ko,Nature Protocols
+W1516414310,Graph drawing aesthetics in user-sketched graph layouts,2010,20,Purchase,ENLIGHTEN (Jurnal Bimbingan dan Konseling Islam)
+W2006729834,Linear layouts measuring neighbourhoods in graphs,2006,20,Gurski,Discrete Mathematics
+W61804575,Parameterized Complexity for Graph Layout Problems.,2005,20,Serna,Bulletin of the European Association for Theoretical Computer Science
+W4405096471,Enhancing Document AI Data Generation Through Graph-Based Synthetic Layouts,2024,19,Amit,arXiv (Cornell University)
+W4288855873,Optimizing graph layout by t-SNE perplexity estimation,2022,19,Xiao,International Journal of Data Science and Analytics
+W2032429631,Scalable Force Directed Graph Layout Algorithms Using Fast Multipole Methods,2012,19,Yunis,International Symposium on Parallel and Distributed Computing
+W1849277567,Visualizing and Understanding Convolutional Networks,2014,16211,Zeiler,Lecture notes in computer science
+W2162896254,qgraph : Network Visualizations of Relationships in Psychometric Data,2012,5127,Epskamp,Journal of Statistical Software
+W2155142785,Cytoscape 2.8: new features for data integration and network visualization,2010,4833,Smoot,Bioinformatics
+W2005821483,BrainNet Viewer: A Network Visualization Tool for Human Brain Connectomics,2013,4139,Xia,PLoS ONE
+W2741907166,Deep learning with convolutional neural networks for EEG decoding and visualization,2017,4044,Schirrmeister,Human Brain Mapping
+W150292108,Visualizing Bibliometric Networks,2014,3884,Eck,Springer eBooks
+W2294347342,The Network Data Repository with Interactive Graph Analytics and Visualization,2015,2660,Rossi,Proceedings of the AAAI Conference on Artificial Intelligence
+W2950764390,Cytoscape StringApp: Network Analysis and Visualization of Proteomics Data,2018,2339,Doncheva,Journal of Proteome Research
+W2097948046,Enrichment Map: A Network-Based Method for Gene-Set Enrichment Visualization and Interpretation,2010,2220,Merico,PLoS ONE
+W1825675169,Understanding Neural Networks Through Deep Visualization,2015,1918,Yosinski,arXiv (Cornell University)
+W2549766072,"OSMnx: New methods for acquiring, constructing, analyzing, and visualizing complex street networks",2017,1875,Boeing,Computers Environment and Urban Systems
+W1270834676,Cytoscape: Software for Visualization and Analysis of Biological Networks,2010,1548,Kohl,Methods in molecular biology
+W2240067561,Evaluating the Visualization of What a Deep Neural Network Has Learned,2016,1302,Samek,IEEE Transactions on Neural Networks and Learning Systems
+W2087451538,Ultramicroscopy: three-dimensional visualization of neuronal networks in the whole mouse brain,2007,1259,Dodt,Nature Methods
+W1951216520,Visualizing and Understanding Recurrent Networks,2015,1219,Karpathy,arXiv (Cornell University)
+W2952186574,Visualizing and Understanding Convolutional Networks,2013,1205,Zeiler,arXiv (Cornell University)
+W2168322240,"statnet : Software Tools for the Representation, Visualization, Analysis and Simulation of Network Data",2008,978,Handcock,Journal of Statistical Software
+W2138853264,Visualizing dendritic cell networks in vivo,2004,819,Lindquist,Nature Immunology
+W2094864959,CitNetExplorer: A new software tool for analyzing and visualizing citation networks,2014,738,Eck,Journal of Informetrics
+W1502432690,Pajek— Analysis and Visualization of Large Networks,2002,723,Batagelj,Lecture notes in computer science
+W2590082389,Visualizing Deep Neural Network Decisions: Prediction Difference Analysis,2017,671,Zintgraf,ENLIGHTEN (Jurnal Bimbingan dan Konseling Islam)
+W348384746,Visualizing Social Networks.,2000,655,Freeman,
+W2794869810,Deep normalized convolutional neural network for imbalanced fault classification of machinery and its understanding via visualization,2018,593,Jia,Mechanical Systems and Signal Processing
+W2111347866,NodeTrix: a Hybrid Visualization of Social Networks,2007,575,Henry,IEEE Transactions on Visualization and Computer Graphics
+W2027898754,Visualizing Hypothalamic Network Dynamics for Appetitive and Consummatory Behaviors,2015,570,Jennings,Cell
+W1546650522,Vizster: Visualizing Online Social Networks,2006,555,Heer,IEEE Symposium on Information Visualization
+W1946371345,VANTED: A system for advanced data analysis and visualization in the context of biological networks,2006,528,Junker,BMC Bioinformatics
+W2043570667,Topological analysis and interactive visualization of biological networks and protein structures,2012,511,Doncheva,Nature Protocols
+W21202130,Dynamic Network Visualization,2005,501,Moody,American Journal of Sociology
+W2190008860,Visualizing Deep Convolutional Neural Networks Using Natural Pre-images,2016,500,Mahendran,International Journal of Computer Vision
+W1977358834,"T-REX: a web server for inferring, validating and visualizing phylogenetic trees and networks",2012,487,Boc,Nucleic Acids Research
+W2113561798,Using Sequence Similarity Networks for Visualization of Relationships Across Diverse Protein Superfamilies,2009,472,Atkinson,PLoS ONE
+W2145889895,Osprey: a network visualization system,2003,468,Breitkreutz,Genome biology
+W2901107321,GAN Dissection: Visualizing and Understanding Generative Adversarial Networks,2018,458,Bau,arXiv (Cornell University)
+W2088412871,Network visualization and analysis of gene expression data using BioLayout Express3D,2009,455,Theocharidis,Nature Protocols
+W2964015781,"MetaInsight: An interactive web‐based tool for analyzing, interrogating, and visualizing network meta‐analyses using R‐shiny and netmeta",2019,452,Owen,Research Synthesis Methods
+W2096822173,MuxViz: a tool for multilayer analysis and visualization of networks,2014,443,Domenico,Journal of Complex Networks
+W2206858481,Visualizing and Understanding Convolutional Neural Networks,2013,442,Zeiler,arXiv (Cornell University)
+W2059942088,Visualizing network data,1995,392,Becker,IEEE Transactions on Visualization and Computer Graphics
+W2939788146,Efficient Deep Network Architectures for Fast Chest X-Ray Tuberculosis Screening and Visualization,2019,386,Pasa,Scientific Reports
+W67385939,Analysis and Visualization of Social Networks,2004,382,Brandes,Mathematics and visualization
+W2150190471,Visualizing Personal Networks: Working with Participant-aided Sociograms,2007,375,Hogan,Field Methods
+W2268041733,tcsBU: a tool to extend TCS network layout and visualization,2015,374,Santos,Bioinformatics
+W3021941048,CNN Explainer: Learning Convolutional Neural Networks with Interactive Visualization,2020,362,Wang,IEEE Transactions on Visualization and Computer Graphics
+W4229688471,Pajek — Analysis and Visualization of Large Networks,2004,352,Batagelj,Mathematics and visualization
+W1968069163,"Spontaneous network activity visualized by ultrasensitive Ca2+ indicators, yellow Cameleon-Nano",2010,341,Horikawa,Nature Methods
+W3005260862,A Visualized Botnet Detection System Based Deep Learning for the Internet of Things Networks of Smart Cities,2020,332,Vinayakumar,IEEE Transactions on Industry Applications
+W2965696320,Smooth Grad-CAM++: An Enhanced Inference Level Visualization Technique for Deep Convolutional Neural Network Models,2019,330,Omeiza,arXiv (Cornell University)
+W2891756914,Visualization and Interpretation of Convolutional Neural Network Predictions in Detecting Pneumonia in Pediatric Chest Radiographs,2018,328,Rajaraman,Applied Sciences
+W2152135248,"BisoGenet: a new tool for gene network building, visualization and analysis",2010,328,Martin,BMC Bioinformatics
+W2253993278,Multifaceted Feature Visualization: Uncovering the Different Types of Features Learned By Each Neuron in Deep Neural Networks,2016,325,Nguyen,arXiv (Cornell University)
+W2286344981,Visualizing Assumptions and Results in Network Meta-analysis: The Network Graphs Package,2015,325,Chaimani,The Stata Journal Promoting communications on statistics and Stata
+W2993219936,Classification and Visualization of Alzheimer’s Disease using Volumetric Convolutional Neural Network and Transfer Learning,2019,324,Oh,Scientific Reports
+W2130765618,HapStar: automated haplotype network layout and visualization,2010,312,Teacher,Molecular Ecology Resources
+W2118136127,Large scale networks fingerprinting and visualization using the k-core decomposition,2005,304,Alvarez-Hamelin,
+W2167306162,Network Visualization by Semantic Substrates,2006,300,Shneiderman,IEEE Transactions on Visualization and Computer Graphics
+W2890289205,Visualizing Psychological Networks: A Tutorial in R,2018,299,Jones,Frontiers in Psychology
+W2885307904,NeuralNetTools : Visualization and Analysis Tools for Neural Networks,2018,296,Beck,Journal of Statistical Software
+W2132068130,A Survey of Visualization Systems for Network Security,2011,296,Shiravi,IEEE Transactions on Visualization and Computer Graphics
+W2512304460,Visualizing the Hidden Activity of Artificial Neural Networks,2016,285,Rauber,IEEE Transactions on Visualization and Computer Graphics
+W2040007391,Criminal network analysis and visualization,2005,282,Xu,Communications of the ACM
+W2963039693,How convolutional neural networks see the world --- A survey of convolutional neural network visualization methods,2018,281,Qin,Mathematical Foundations of Computing
+W2581210481,Sparse network modeling and metscape-based visualization methods for the analysis of large-scale metabolomics data,2017,274,Basu,Bioinformatics
+W2167566248,"NAViGaTOR: Network Analysis, Visualization and Graphing Toronto",2009,272,Brown,Bioinformatics
+W105330602,Analysis and Visualization of Network Data using JUNG,2005,272,O’Madadhain,
+W3139058665,A machine learning method for defect detection and visualization in selective laser sintering based on convolutional neural networks,2021,258,Westphal,Additive manufacturing
+W1984695931,Analyzing and visualizing residue networks of protein structures,2011,257,Doncheva,Trends in Biochemical Sciences
+W2143992953,Dual-color visualization of trans-Golgi network to plasma membrane traffic along microtubules in living cells,1999,257,Toomre,Journal of Cell Science
+W2150298753,Visualization of wormholes in sensor networks,2004,250,Wang,Workshop on Wireless Security
+W4311275500,Cytoscape stringApp 2.0: Analysis and Visualization of Heterogeneous Biological Networks,2022,245,Doncheva,Journal of Proteome Research
+W2147418473,"DisGeNET: a Cytoscape plugin to visualize, integrate, search and analyze gene–disease networks",2010,243,Bauer‐Mehren,Bioinformatics
+W2753542351,Deep learning with convolutional neural networks for decoding and visualization of EEG pathology,2017,237,Schirrmeister,IEEE Signal Processing in Medicine and Biology Symposium
+W1635909395,k-core decomposition: a tool for the visualization of large scale networks,2005,233,Alvarez-Hamelin,arXiv (Cornell University)
+W2795577698,Data2Vis: Automatic Generation of Data Visualizations Using Sequence-to-Sequence Recurrent Neural Networks,2019,232,Dibia,IEEE Computer Graphics and Applications
+W2165944862,Metscape: a Cytoscape plug-in for visualizing and interpreting metabolomic data in the context of human metabolic networks,2010,232,Gao,Bioinformatics
+W2128965269,Hive plots--rational approach to visualizing networks,2011,229,Krzywinski,Briefings in Bioinformatics
+W2335008118,Analysis and visualization of large networks with program package Pajek,2016,225,Mrvar,Complex Adaptive Systems Modeling
+W2412593044,Matrix Reordering Methods for Table and Network Visualization,2016,224,Behrisch,Computer Graphics Forum
+W2115043726,LGL: Creating a Map of Protein Function with an Algorithm for Visualizing Very Large Biological Networks,2004,223,Adai,Journal of Molecular Biology
+W2153490111,A survey of visualization tools for biological network analysis,2008,221,Pavlopoulos,BioData Mining
+W4402137328,The SplitsTree App: interactive analysis and visualization using phylogenetic trees and networks,2024,219,Huson,Nature Methods
+W2166137283,Visualizing evolving networks: minimum spanning trees versus pathfinder networks,2004,218,Chen,IEEE Symposium on Information Visualization
+W2043646846,Analysis and Visualization of Citation Networks,2015,217,Zhao,"Synthesis lectures on information concepts, retrieval, and services"
+W2045207186,Review of speckle and phase variance optical coherence tomography to visualize microvascular networks,2013,216,Mahmud,Journal of Biomedical Optics
+W2987482449,Evolution of digital marketing communication: Bibliometric analysis and network visualization from key articles,2019,214,Kim,Journal of Business Research
+W2110254651,Cytoscape: the network visualization tool for GenomeSpace workflows,2014,209,Demchak,F1000Research
+W2121594817,Visualizing the flow of evidence in network meta‐analysis and characterizing mixed treatment comparisons,2013,207,König,Statistics in Medicine
+W2104075446,Multiscale visualization of small world networks,2003,207,Auber,IEEE Symposium on Information Visualization
+W3017357696,Transparency and accountability in AI decision support: Explaining and visualizing convolutional neural networks for text information,2020,204,Kim,Decision Support Systems
+W2017988846,Bankruptcy visualization and prediction using neural networks: A study of U.S. commercial banks,2014,204,López‐Iturriaga,Expert Systems with Applications
+W3144904622,Vizster: visualizing online social networks,2005,196,Heer,IEEE Symposium on Information Visualization
+W2091789479,"VisANT 3.5: multi-scale network visualization, analysis and inference based on the gene ontology",2009,188,Hu,Nucleic Acids Research
+W3173301173,Mastering Gephi Network Visualization,2015,186,Cherven,
+W3008502799,Deep learning and network analysis: Classifying and visualizing accident narratives in construction,2020,184,Zhong,Automation in Construction
+W2155821385,Visualizing plant metabolomic correlation networks using clique–metabolite matrices,2001,184,Kose,Bioinformatics
+W2345950567,DyNet: visualization and analysis of dynamic molecular interaction networks,2016,183,Goenawan,Bioinformatics
+W2108584774,Pajek Program for Analysis and Visualization of Large Networks,2007,181,Batagelj,
+W2940427603,Understanding Neural Networks via Feature Visualization: A Survey,2019,180,Nguyen,Lecture notes in computer science
+W2111613765,A Comparison of Social Network Mapping and Personal Network Visualization,2007,179,McCarty,Field Methods
+W2970852027,Full-Gradient Representation for Neural Network Visualization,2019,177,Srinivas,arXiv (Cornell University)
+W61646295,FlowScan: A Network Traffic Flow Reporting and Visualization Tool,2000,177,Plonka,
+W1557977305,MatLink: Enhanced Matrix Visualization for Analyzing Social Networks,2007,169,Henry,Lecture notes in computer science
+W1973370947,DiffCorr: An R package to analyze and visualize differential correlations in biological networks,2012,168,Fukushima,Gene
+W2093931563,Neural visualization of network traffic data for intrusion detection,2010,165,Corchado,Applied Soft Computing
+W2157311267,Using Consensus Networks to Visualize Contradictory Evidence for Species Phylogeny,2004,164,Holland,Molecular Biology and Evolution
+W1984570694,"Hydronephrosis: A new method to visualize vas afferens, efferens, and glomerular network",1983,164,Steinhausen,Kidney International
+W2956831428,The State of the Art in Visualizing Multivariate Networks,2019,163,Nobre,Computer Graphics Forum
+W1967939145,Visualizing patent statistics by means of social network analysis tools,2007,161,Sternitzke,World Patent Information
+W2237216255,Community Detection and Visualization of Networks with the Map Equation Framework,2014,157,Bohlin,Springer eBooks
+W1573473549,The Art and Science of Dynamic Network Visualization.,2006,156,Bender‐deMoll,
+W2725801042,"TomExpress, a unified tomato RNA‐Seq platform for visualization of expression data, clustering and correlation networks",2017,155,Zouine,The Plant Journal
+W2013225728,Elucidation of filler-to-filler and filler-to-rubber interactions in silica-reinforced natural rubber by TEM Network Visualization,2014,152,Sarkawi,European Polymer Journal
+W2005811057,Home-centric visualization of network traffic for security administration,2004,151,Ball,IEEE Symposium on Visualization for Cyber Security (VIZSEC)
+W2151043165,T-REX: reconstructing and visualizing phylogenetic trees and reticulation networks,2001,151,Makarenkov,Bioinformatics
+W2949573120,Systematic Functional Annotation and Visualization of Biological Networks,2016,150,Baryshnikova,Cell Systems
+W2141687535,Visualization of single-wall carbon nanotube (SWNT) networks in conductive polystyrene nanocomposites by charge contrast imaging,2005,150,Loos,Ultramicroscopy
+W1562333881,netview p : a network visualization tool to unravel complex population structure using genome‐wide SNP s,2015,148,Steinig,Molecular Ecology Resources
+W4211244701,Analysis and Visualization of Citation Networks,2015,148,Zhao,"Synthesis lectures on information concepts, retrieval, and services"
+W2030958512,NetView: A High-Definition Network-Visualization Approach to Detect Fine-Scale Population Structures from Genome-Wide Patterns of Variation,2012,147,Neuditschko,PLoS ONE
+W2883862371,Visualizing YouTube’s comment space: online hostility as a networked phenomena,2018,146,Murthy,New Media & Society
+W1974874717,Extracting Analyzing and Visualizing Triangle K-Core Motifs within Networks,2012,144,Zhang,IEEE International Conference on Data Engineering (ICDE)
+W4399650262,igraph: Network Analysis and Visualization,2006,143,Csárdi,
+W2545055460,Visualization in stylometry: Cluster analysis using networks,2015,142,Eder,Digital Scholarship in the Humanities
+W1983097963,Circular representation of human cortical networks for subject and population-level connectomic visualization,2012,142,A,NeuroImage
+W2767642053,Visualizing the GPCR Network: Classification and Evolution,2017,141,Hu,Scientific Reports
+W2096578372,"linkcomm: an R package for the generation, visualization, and analysis of link communities in networks of arbitrary size and type",2011,141,Kalinka,Bioinformatics
+W2163407858,Direct visualization of the dystrophin network on skeletal muscle fiber membrane.,1992,141,Straub,The Journal of Cell Biology
+W2039163945,Visualizing dynamic networks with matrix cubes,2014,139,Bach,CHI Conference on Human Factors in Computing Systems
+W2602530292,TheCellMap.org: A Web-Accessible Database for Visualizing and Mining the Global Yeast Genetic Interaction Network,2017,137,Ušaj,G3 Genes Genomes Genetics
+W243491447,Network Graph Analysis and Visualization with Gephi,2013,137,Cherven,CERN Document Server (European Organization for Nuclear Research)
+W2005168112,Evaluation and visualization of the percolating networks in multi-wall carbon nanotube/epoxy composites,2009,137,Chang,Journal of Materials Science
+W3048152616,Combined proximity labeling and affinity purification−mass spectrometry workflow for mapping and visualizing protein interaction networks,2020,136,Liu,Nature Protocols
+W2765887738,Supply chain vulnerability assessment: A network based visualization and clustering analysis approach,2017,136,Blackhurst,Journal of Purchasing and Supply Management
+W2752940157,CytoCluster: A Cytoscape Plugin for Cluster Analysis and Visualization of Biological Networks,2017,136,Li,International Journal of Molecular Sciences
+W2750068734,Direct-Manipulation Visualization of Deep Networks,2017,136,Smilkov,arXiv (Cornell University)
+W2964243445,The State of the Art in Multilayer Network Visualization,2019,134,McGee,Computer Graphics Forum
+W2900003150,Chest Radiographs in Congestive Heart Failure: Visualizing Neural Network Learning,2018,134,Seah,Radiology
+W3099026523,A Multi-Scale Fusion Convolutional Neural Network Based on Attention Mechanism for the Visualization Analysis of EEG Signals Decoding,2020,132,Li,IEEE Transactions on Neural Systems and Rehabilitation Engineering
+W2117354374,Explorations into the Visualization of Policy Networks,1999,132,Brandes,Journal of Theoretical Politics
+W2091626637,Visualization and quantification of vesicle trafficking on a three‐dimensional cytoskeleton network in living cells,2007,131,Racine,Journal of Microscopy
+W2963468488,DEEP MOTIF DASHBOARD: VISUALIZING AND UNDERSTANDING GENOMIC SEQUENCES USING DEEP NEURAL NETWORKS,2016,130,Lanchantin,Pacific Symposium on Biocomputing (PSB)
+W2067405352,"Streaming QSplat: a viewer for networked visualization of large, dense models",2001,129,Rusinkiewicz,ACM SIGGRAPH Symposium on Interactive 3D Graphics and Games (I3D)
+W2071332795,Visualization of Communication Patterns in Collaborative Innovation Networks - Analysis of Some W3C Working Groups,2003,128,Gloor,ACM International Conference on Information and Knowledge Management (CIKM)
+W2052968292,"IMP: a multi-species functional genomics portal for integration, visualization and prediction of protein functions and networks",2012,127,Wong,Nucleic Acids Research
+W2167144079,Mining and Visualizing the Evolution of Subgroups in Social Networks,2006,127,Falkowski,IEEE/WIC/ACM International Conference on Web Intelligence
+W2544038273,"PyBoolNet: a python package for the generation, analysis and visualization of boolean networks",2016,125,Klarner,Bioinformatics
+W4245403041,"Visualize omics data on networks with Omics Visualizer, a Cytoscape App",2020,124,Legeay,F1000Research
+W2951757951,IcyTree: rapid browser-based visualization for phylogenetic trees and networks,2017,124,Vaughan,Bioinformatics
+W4388486574,aPEAR : an R package for autonomous visualization of pathway enrichment networks,2023,123,Kerševičiūtė,Bioinformatics
+W1987107646,Liquid Metal Angiography for Mega Contrast X-Ray Visualization of Vascular Network in Reconstructing In-Vitro Organ Anatomy,2014,122,Wang,IEEE Transactions on Biomedical Engineering
+W2943425778,Visualizing Deep Networks by Optimizing with Integrated Gradients,2020,121,Qi,Proceedings of the AAAI Conference on Artificial Intelligence
+W2330998918,"Using biological networks to integrate, visualize and analyze genomics data",2016,121,Charitou,Genetics Selection Evolution
+W3206807243,3D visualization of tectonic coal microstructure and quantitative characterization on topological connectivity of pore-fracture networks by Micro-CT,2021,120,Zhang,Journal of Petroleum Science and Engineering
+W3088549904,Crack Tip Field of a Double-Network Gel: Visualization of Covalent Bond Scission through Mechanoradical Polymerization,2020,118,Matsuda,Macromolecules
+W2345874068,Three-Dimensional Visualization of the Tubular-Lamellar Transformation of the Internal Plastid Membrane Network during Runner Bean Chloroplast Biogenesis,2016,118,Kowalewska,The Plant Cell
+W2621343595,Network analysis for the visualization and analysis of qualitative data.,2017,117,Pokorny,Psychological Methods
+W2272649288,CoExpNetViz: Comparative Co-Expression Networks Construction and Visualization Tool,2016,117,Tzfadia,Frontiers in Plant Science
+W2295883547,An Interactive Node-Link Visualization of Convolutional Neural Networks,2015,117,Harley,Lecture notes in computer science
+W2048461097,Mapping the Knowledge Structure of Research on Patient Adherence: Knowledge Domain Visualization Based Co-Word Analysis and Social Network Analysis,2012,117,Zhang,PLoS ONE
+W2058834450,Brain Networks Affected by Synchronized Sleep Visualized by Positron Emission Tomography,1998,117,Andersson,Journal of Cerebral Blood Flow & Metabolism
+W2072119404,"Detecting, identifying and visualizing research groups in co-authorship networks",2009,114,Perianes‐Rodríguez,Scientometrics
+W2523314419,MINERVA—a platform for visualization and curation of molecular interaction networks,2016,113,Gawron,npj Systems Biology and Applications
+W1969487642,"Visualization, documentation, analysis, and communication of large-scale gene regulatory networks",2008,113,Longabaugh,Biochimica et Biophysica Acta (BBA) - Gene Regulatory Mechanisms
+W1971471239,Arena3D: visualization of biological networks in 3D,2008,111,Pavlopoulos,BMC Systems Biology
+W2066165316,Visualizing complex hypermedia networks through multiple hierarchical views,1995,110,Mukherjea,CHI Conference on Human Factors in Computing Systems
+W3136025486,Cargo sorting zones in the trans-Golgi network visualized by super-resolution confocal live imaging microscopy in plants,2021,109,Shimizu,Nature Communications
+W2071892440,TimeMatrix: Analyzing Temporal Social Networks Using Interactive Matrix-Based Visualizations,2010,108,Yi,International Journal of Human-Computer Interaction
+W3133565860,Scientometric analysis of literature on distributed vehicular networks : VOSViewer visualization techniques,2021,107,Sood,Artificial Intelligence Review
+W2535697194,"Correlation-Based Network Generation, Visualization, and Analysis as a Powerful Tool in Biological Studies: A Case Study in Cancer Cell Metabolism",2016,105,Batushansky,BioMed Research International
+W2411935323,Noninvasive Visualization and Analysis of the Human Parafoveal Capillary Network Using Swept Source OCT Optical Microangiography,2015,104,Kuehlewein,Investigative Ophthalmology & Visual Science
+W2117737004,GOlorize: a Cytoscape plug-in for network visualization with Gene Ontology-based layout and coloring,2006,104,Garcia,Bioinformatics
+W2069058593,Visualization of biochemical networks in living cells,2001,104,Remy,Proceedings of the National Academy of Sciences
+W3135185324,Malware detection employed by visualization and deep neural network,2021,103,Pinhero,Computers & Security
+W1964304165,Visualizing three-dimensional root networks using computed tomography,2006,103,Kaestner,Geoderma
+W4312224766,Visualizing chemical space networks with RDKit and NetworkX,2022,102,Scalfani,Journal of Cheminformatics
+W2501962940,Radial Peripapillary Capillary Network Visualized Using Wide-Field Montage Optical Coherence Tomography Angiography,2016,102,Mase,Investigative Ophthalmology & Visual Science
+W2112559724,Quantitative nanoscale visualization of heterogeneous electron transfer rates in 2D carbon nanotube networks,2012,102,Güell,Proceedings of the National Academy of Sciences
+W2058159611,Visualizing the Strain Field in Semiflexible Polymer Networks: Strain Fluctuations and Nonlinear Rheology of F -Actin Gels,2007,102,Liu,Physical Review Letters
+W4242127061,Opening the Black Box - Data Driven Visualization of Neural Networks,2006,102,Tzeng,Visualization
+W2004424343,Visualization of a Cytoskeleton-like Ftsz Network in Chloroplasts,2000,102,Kiessling,The Journal of Cell Biology
+W2086144884,Visualizing multi-omics data in metabolic networks with the software Omix—A case study,2011,101,Droste,Biosystems
+W3009833365,Visualization and molecular characterization of whole-brain vascular networks with capillary resolution,2020,100,Miyawaki,Nature Communications
+W2152868279,"CGLX: A Scalable, High-Performance Visualization Framework for Networked Display Environments",2010,100,Doerr,IEEE Transactions on Visualization and Computer Graphics
+W2016958746,Visualization of protein interaction networks: problems and solutions,2013,99,Agapito,BMC Bioinformatics
+W1542654261,Helium ion microscopy for high‐resolution visualization of the articular cartilage collagen network,2012,99,Berg-Foels,Journal of Microscopy
+W2151249461,On the Visualization of Social and other Scale-Free Networks,2008,99,Jia,IEEE Transactions on Visualization and Computer Graphics
+W4242978891,High Performance Visualization of Time-Varying Volume Data over a Wide-Area Network,2000,99,Ma,ACM/IEEE Conference on Supercomputing (SC)
+W2140975946,Effectively Visualizing Large Networks Through Sampling,2006,97,Rafiei,Visualization
+W2128824444,Visualization and simulation of bubble growth in pore networks,1995,97,Li,AIChE Journal
+W4283068693,A Transformer based neural network for emotion recognition and visualizations of crucial EEG channels,2022,96,Guo,Physica A Statistical Mechanics and its Applications
+W2885850791,Visualizing Convolutional Networks for MRI-Based Diagnosis of Alzheimer’s Disease,2018,96,Rieke,Lecture notes in computer science
+W2968094935,Convolutional neural networks for decoding of covert attention focus and saliency maps for EEG feature visualization,2019,95,Farahat,Journal of Neural Engineering
+W2096622545,Using High-Speed WANs and Network Data Caches to Enable Remote and Distributed Visualization,2000,95,Bethel,OSTI OAI (U.S. Department of Energy Office of Scientific and Technical Information)
+W3116048316,A visualization review analysis of the last two decades for environmental Kuznets curve “EKC” based on co-citation analysis theory and pathfinder network scaling algorithms,2021,94,Koondhar,Environmental Science and Pollution Research
+W2988910664,Visualization of Convolutional Neural Networks for Monocular Depth Estimation,2019,94,Hu,IEEE/CVF International Conference on Computer Vision (ICCV)
+W2794434752,Visualizing convolutional neural network protein-ligand scoring,2018,94,Hochuli,Journal of Molecular Graphics and Modelling
+W2123879653,Kinetic Assembly of a Thermally Stable Porous Coordination Network Based on Labile CuI Units and the Visualization of I 2 Sorption,2013,94,Kitagawa,Angewandte Chemie International Edition
+W2044938998,Visualization and simulation of non-aqueous phase liquids solubilization in pore networks,1999,94,Jia,Journal of Contaminant Hydrology
+W2009664208,Dynamic Network Visualization withExtended Massive Sequence Views,2014,93,Elzen,IEEE Transactions on Visualization and Computer Graphics
+W4388522045,SRplot: A free online platform for data visualization and graphing,2023,2739,Tang,PLoS ONE
+W2147468287,Graph visualization and navigation in information visualization: A survey,2000,1583,Herman,IEEE Transactions on Visualization and Computer Graphics
+W2001914359,An open graph visualization system and its applications to software engineering,2000,1289,Gansner,Software Practice and Experience
+W2117088188,Force‐Directed Edge Bundling for Graph Visualization,2009,548,Holten,Computer Graphics Forum
+W2107139603,Task taxonomy for graph visualization,2006,441,Lee,
+W108936587,"Spectral Analysis of Signed Graphs for Clustering, Prediction and Visualization",2010,393,Kunegis,SIAM International Conference on Data Mining
+W2287322623,A Taxonomy and Survey of Dynamic Graph Visualization,2016,362,Beck,Computer Graphics Forum
+W2753713840,Visualizing Dataflow Graphs of Deep Learning Models in TensorFlow,2017,342,Wongsuphasawat,IEEE Transactions on Visualization and Computer Graphics
+W2143167264,Visualizations in geometric morphometrics: How to read and how to make graphs showing shape changes,2013,324,Klingenberg,Bollettino del CILEA (CILEA)
+W1916339519,Tulip — A Huge Graph Visualization Framework,2004,305,Auber,Mathematics and visualization
+W2148056538,Geometry-Based Edge Clustering for Graph Visualization,2008,296,Cui,IEEE Transactions on Visualization and Computer Graphics
+W2131548207,ASK-GraphView: A Large Scale Graph Visualization System,2006,282,Abello,IEEE Transactions on Visualization and Computer Graphics
+W2107885267,Measuring Effectiveness of Graph Visualizations: A Cognitive Load Perspective,2009,239,Huang,Information Visualization
+W2059212462,A system for graph-based visualization of the evolution of software,2003,215,Collberg,ACM Symposium on Software Visualization (SoftVis)
+W1572701995,Multilevel visualization of clustered graphs,1997,215,Eades,Lecture notes in computer science
+W2126308485,Structure-activity maps for visualizing the graph variables arising in drug design,1993,214,Johnson,Journal of Biopharmaceutical Statistics
+W2255903209,The State of the Art in Visualizing Dynamic Graphs,2014,213,Beck,Eurographics
+W2149194035,Graph-based analysis and visualization of experimental results with ONDEX,2006,210,Köhler,Bioinformatics
+W4316494517,Cytoscape.js 2023 update: a graph theory library for visualization and analysis,2023,203,Franz,Bioinformatics
+W2047167450,Malware analysis using visualized images and entropy graphs,2014,188,Han,International Journal of Information Security
+W1997522225,ZAME: Interactive Large-Scale Graph Visualization,2008,182,Elmqvist,IEEE Pacific Visualization Symposium
+W2106268337,Parallel Edge Splatting for Scalable Dynamic Graph Visualization,2011,180,Burch,IEEE Transactions on Visualization and Computer Graphics
+W2114989451,Interactive Visualization of Small World Graphs,2005,176,Ham,IEEE Symposium on Information Visualization
+W1982799219,Multilevel agglomerative edge bundling for visualizing large graphs,2011,169,Gansner,IEEE Pacific Visualization Symposium
+W1970022459,Visualizing graphs in three dimensions,2008,169,Ware,ACM Transactions on Applied Perception
+W2172232043,Skeleton-Based Edge Bundling for Graph Visualization,2011,162,Ersoy,IEEE Transactions on Visualization and Computer Graphics
+W2036469730,NicheWorks: Interactive Visualization of Very Large Graphs,1999,149,Wills,Journal of Computational and Graphical Statistics
+W2034714661,From paragraph to graph: Latent semantic analysis for information visualization,2004,148,Landauer,Proceedings of the National Academy of Sciences
+W2022933870,Eye tracking for visualization evaluation: Reading values on linear versus radial graphs,2011,141,Goldberg,Information Visualization
+W2104706725,Topological Fisheye Views for Visualizing Large Graphs,2005,136,Gansner,IEEE Transactions on Visualization and Computer Graphics
+W3203626883,KG4Vis: A Knowledge Graph-Based Approach for Visualization Recommendation,2021,128,Li,IEEE Transactions on Visualization and Computer Graphics
+W1971132461,A user study on visualizing directed edges in graphs,2009,126,Holten,CHI Conference on Human Factors in Computing Systems
+W2089621285,GMap: Visualizing graphs and clusters as maps,2010,124,Gansner,IEEE Pacific Visualization Symposium
+W1516174417,The Aesthetics of Graph Visualization,2007,124,Chris,
+W2144084698,The Clustergram: A Graph for Visualizing Hierarchical and Nonhierarchical Cluster Analyses,2002,124,Schonlau,The Stata Journal Promoting communications on statistics and Stata
+W1930907635,Bitconeview: visualization of flows in the bitcoin transaction graph,2015,120,Battista,IEEE Symposium on Visualization for Cyber Security (VIZSEC)
+W2163220482,Image‐Based Edge Bundles: Simplified Visualization of Large Graphs,2010,115,Telea,Computer Graphics Forum
+W1574542371,Multifield-Graphs: An Approach to Visualizing Correlations in Multifield Scalar Data,2006,113,Sauber,IEEE Transactions on Visualization and Computer Graphics
+W10851831,Visualizing Agent Conversations: Using Enhanced Dooley Graphs for Agent Design and Analysis,1996,113,Parunak,
+W2136483157,CGV—An interactive graph visualization system,2009,109,Tominski,Computers & Graphics
+W2073082317,Reevaluating stereo and motion cues for visualizing graphs in three dimensions,2005,106,Ware,Symposium on Applied Perception in Graphics and Visualization (APGV)
+W2130218153,MoireGraphs: radial focus+context visualization and interaction for graphs with visual nodes,2004,104,Jankun-Kelly,IEEE Symposium on Information Visualization
+W2157348185,Cerebral: Visualizing Multiple Experimental Conditions on a Graph with Biological Context,2008,103,Barsky,IEEE Transactions on Visualization and Computer Graphics
+W2976615102,Layerwise Relevance Visualization in Convolutional Text Graph Classifiers,2019,100,Schwarzenberg,Workshop on Graph Based Methods for Natural Language Processing
+W2468929674,Visualizing Group Structures in Graphs: A Survey,2016,100,Vehlow,Computer Graphics Forum
+W2163449287,Fisheye Tree Views and Lenses for Graph Visualization,2006,97,Tominski,International Conference on Information Visualisation (IV)
+W2132781340,Us vs. Them: Understanding Social Dynamics in Wikipedia with Revert Graph Visualizations,2007,96,Suh,IEEE Conference on Visual Analytics Science and Technology (VAST)
+W2024389296,On-line Animated Visualization of Huge Graphs using a Modified Spring Algorithm,1998,95,Huang,Journal of Visual Languages & Computing
+W2104967324,Multi-resolution graph-based analysis of histopathological whole slide images: Application to mitotic cell extraction and visualization,2011,94,Roullier,Computerized Medical Imaging and Graphics
+W1901395146,Improving Attack Graph Visualization through Data Reduction and Attack Grouping,2008,92,Homer,Lecture notes in computer science
+W2032161135,DiffAni: Visualizing Dynamic Graphs with a Hybrid of Difference Maps and Animation,2013,90,Rufiange,IEEE Transactions on Visualization and Computer Graphics
+W2085724367,Visualization and characterization of non-covalent networks in molecular crystals: automated assignment of graph-set descriptors for asymmetric molecules,1999,88,Motherwell,Acta Crystallographica Section B Structural Science
+W2103573098,Stereoscopic Highlighting: 2D Graph Visualization on Stereo Displays,2011,87,Alper,IEEE Transactions on Visualization and Computer Graphics
+W1543287511,Visualizing Memory Graphs,2002,87,Zimmermann,Lecture notes in computer science
+W137863291,Interactive visualization of large graphs and networks,2000,86,Hanrahan,
+W2137624270,Automatic Heart Isolation for CT Coronary Visualization Using Graph-Cuts,2006,85,Funka-Lea,IEEE International Symposium on Biomedical Imaging (ISBI)
+W2945624265,A2G2V: Automatic Attack Graph Generation and Visualization and Its Applications to Computer and SCADA Networks,2019,84,Ghazo,IEEE Transactions on Systems Man and Cybernetics Systems
+W2831812383,Hierarchical visualization of materials space with graph convolutional neural networks,2018,84,Xie,The Journal of Chemical Physics
+W2015528223,Scalable graph exploration and visualization: Sensemaking challenges and opportunities,2015,84,Pienta,International Conference on Big Data and Smart Computing
+W3141038072,Visualizing large graphs,2015,84,Hu,Wiley Interdisciplinary Reviews Computational Statistics
+W2991279511,Prediction and Interpretable Visualization of Retrosynthetic Reactions Using Graph Convolutional Networks,2019,83,Ishida,Journal of Chemical Information and Modeling
+W2572557825,Line Graph or Scatter Plot? Automatic Selection of Methods for Visualizing Trends in Time Series,2017,83,Wang,IEEE Transactions on Visualization and Computer Graphics
+W2058495559,Visualizing call graphs,2011,83,LaToza,IEEE Symposium on Visual Languages and Human-Centric Computing (VL/HCC)
+W2250102788,The State of the Art in Visualizing Group Structures in Graphs,2015,82,Vehlow,Eurographics
+W2158529844,Graph Visualization Techniques for Web Clustering Engines,2007,81,Giacomo,IEEE Transactions on Visualization and Computer Graphics
+W1734878544,Graphsplatting: visualizing graphs as continuous fields,2003,81,Liere,IEEE Transactions on Visualization and Computer Graphics
+W4250018184,A system for graph-based visualization of the evolution of software,2003,81,Collberg,
+W3047315229,Generalized word shift graphs: a method for visualizing and explaining pairwise comparisons between texts,2021,80,Gallagher,EPJ Data Science
+W1555430809,Demonstration of the interactive graph visualization system da Vinci,1995,79,Fröhlich,Lecture notes in computer science
+W2166220529,A comparison of vertex ordering algorithms for large graph visualization,2007,78,Mueller,International Asia-Pacific Symposium on Visualization
+W1922066339,Visualizing the Evolution of Communities in Dynamic Graphs,2014,77,Vehlow,Computer Graphics Forum
+W2019048419,Exploring the computing literature using temporal graph visualization,2004,76,Erten,"Proceedings of SPIE, the International Society for Optical Engineering/Proceedings of SPIE"
+W2021014453,Visualization of Large Nested Graphs in 3D: Navigation and Interaction,1998,76,PARKER,Journal of Visual Languages & Computing
+W1867324358,Fast interactive 3-D graph visualization,1996,75,Bruß,Lecture notes in computer science
+W1168827964,A parallel Fruchterman–Reingold algorithm optimized for fast visualization of large graphs and swarms of data,2015,73,Gajdoš,Swarm and Evolutionary Computation
+W1519647413,Social Network Visualization: Can We Go Beyond the Graph?,2004,73,Viégas,
+W2111330212,Visualizing Graphs and Clusters as Maps,2010,72,Gansner,IEEE Computer Graphics and Applications
+W2264112144,A Survey of Multi-faceted Graph Visualization,2015,71,Hadlak,Fraunhofer-Publica (Fraunhofer-Gesellschaft)
+W2008196074,A User Study on Curved Edges in Graph Visualization,2012,71,Xu,IEEE Transactions on Visualization and Computer Graphics
+W2096814473,"Visual Analysis of Large Graphs Using (X,Y)-Clustering and Hybrid Visualizations",2010,71,Batagelj,IEEE Transactions on Visualization and Computer Graphics
+W1494411790,Partitioning Approach to Visualization of Large Graphs,1999,71,Batagelj,Lecture notes in computer science
+W2625112529,G ra S p : Combining Spatially‐aware Mobile Devices and a Display Wall for Graph Visualization and Interaction,2017,68,Kister,Computer Graphics Forum
+W105099695,Indented Tree or Graph? A Usability Study of Ontology Visualization Techniques in the Context of Class Mapping Evaluation,2013,66,Fu,Lecture notes in computer science
+W2073106850,Using Social Network Graphs as Visualization Tools to Influence Peer Selection Decision-Making Strategies to Access Information About Complex Socioscientific Issues,2011,66,Yoon,Journal of the Learning Sciences
+W2084132447,Clustering graphs for visualization via node similarities,2005,66,Huang,Journal of Visual Languages & Computing
+W1934205448,NicheWorks — Interactive visualization of very large graphs,1997,66,Wills,Lecture notes in computer science
+W2507350365,Evaluation of Graph Sampling: A Visualization Perspective,2016,65,Wu,IEEE Transactions on Visualization and Computer Graphics
+W2139786269,Visualizing Graphs - A Generalized View,2006,64,Schulz,International Conference on Information Visualisation (IV)
+W4401485792,From data to action in flood forecasting leveraging graph neural networks and digital twin visualization,2024,63,Roudbari,Scientific Reports
+W2753739056,Revisiting Stress Majorization as a Unified Framework for Interactive Constrained Graph Visualization,2017,62,Wang,IEEE Transactions on Visualization and Computer Graphics
+W2071593097,"Visualizing attack graphs, reachability, and trust relationships with NAVIGATOR",2010,62,Chu,IEEE Symposium on Visualization for Cyber Security (VIZSEC)
+W4221058759,"Music information visualization and classical composers discovery: an application of network graphs, multidimensional scaling, and support vector machines",2022,61,Georges,Scientometrics
+W2088806764,Centrality Based Visualization of Small World Graphs,2008,58,Ham,Computer Graphics Forum
+W4389764001,"Knowledge Graphs in Practice: Characterizing their Users, Challenges, and Visualization Opportunities",2023,57,Li,IEEE Transactions on Visualization and Computer Graphics
+W3110217478,Topological Feature Extraction and Visualization of Whole Slide Images using Graph Neural Networks,2020,57,Levy,Pacific Symposium on Biocomputing (PSB)
+W2910637413,nAPOLI: A Graph-Based Strategy to Detect and Visualize Conserved Protein-Ligand Interactions in Large-Scale,2019,57,Fassio,IEEE Transactions on Computational Biology and Bioinformatics
+W2591673659,Sclerenchymatous ring as a barrier to phloem feeding by Asian citrus psyllid: Evidence from electrical penetration graph and visualization of stylet pathways,2017,56,George,PLoS ONE
+W1966218348,Edge Compression Techniques for Visualization of Dense Directed Graphs,2013,56,Dwyer,IEEE Transactions on Visualization and Computer Graphics
+W2509947681,Annotation Graphs: A Graph-Based Visualization for Meta-Analysis of Data Based on User-Authored Annotations,2016,55,Zhao,IEEE Transactions on Visualization and Computer Graphics
+W4399650649,DiagrammeR: Graph/Network Visualization,2015,55,Iannone,
+W2031908202,A new algorithm for removing node overlapping in graph visualization,2007,55,Huang,Information Sciences
+W28414123,Visualizing Gene Interaction Graphs with Local Multidimensional Scaling,2006,55,Venna,
+W3118067634,The State of the Art in Empirical User Evaluation of Graph Visualizations,2020,54,Burch,IEEE Access
+W2162605417,Scalable Visualization of Semantic Nets using Power-Law Graphs,2013,51,Hussain,Applied Mathematics & Information Sciences
+W2168508499,Group-Level Graph Visualization Taxonomy,2014,50,Saket,arXiv (Cornell University)
+W2139562235,Visualization of Graphs with Associated Timeseries Data,2006,50,Saraiya,IEEE Symposium on Information Visualization
+W2248605503,TRAViz: A Visualization for Variant Graphs,2015,49,Jänicke,Digital Scholarship in the Humanities
+W2047784240,Overview on attack graph generation and visualization technology,2013,49,Yi,"IEEE International Conference on Anti-counterfeiting, Security, and Identification (ASID)"
+W4399494987,Digital Twin Smart City: Integrating IFC and CityGML with Semantic Graph for Advanced 3D City Model Visualization,2024,48,Lam,Sensors
+W2129717459,Interactive visualization tools for exploring the semantic graph of large knowledge spaces,2024,48,Christian,
+W2907319204,GfaViz : flexible and interactive visualization of GFA sequence graphs,2018,48,Gonnella,Bioinformatics
+W2900740637,Evaluating Navigation Techniques for 3D Graph Visualizations in Virtual Reality,2018,48,Drogemuller,Big Data Visual and Immersive Analytics
+W2949383950,Lineage: Visualizing Multivariate Clinical Data in Genealogy Graphs,2018,48,Nobre,IEEE Transactions on Visualization and Computer Graphics
+W2286125826,graphVizdb: A scalable platform for interactive large graph visualization,2016,48,Bikakis,IEEE International Conference on Data Engineering (ICDE)
+W2754135299,A gesture system for graph visualization in virtual reality environments,2017,47,Huang,IEEE Pacific Visualization Symposium
+W2474629035,Analysis and Visualization of Discrete Fracture Networks Using a Flow Topology Graph,2016,47,Aldrich,IEEE Transactions on Visualization and Computer Graphics
+W2045660323,Ambiguity-Free Edge-Bundling for Interactive Graph Visualization,2011,47,Luo,IEEE Transactions on Visualization and Computer Graphics
+W1985382122,Generalized lattice graphs for 2D-visualization of biological information,2009,47,González‐Díaz,Journal of Theoretical Biology
+W1520197059,Visualizing Large Graphs with Compound-Fisheye Views and Treemaps,2005,47,Abello,Lecture notes in computer science
+W2606586741,Using Graph-based Visualizations to Explore Key Performance Indicator Relationships for Manufacturing Production Systems,2017,46,Brundage,Procedia CIRP
+W2060720689,Rapid Serial Visual Presentation in dynamic graph visualization,2012,46,Beck,IEEE Symposium on Visual Languages and Human-Centric Computing (VL/HCC)
+W2160114475,The Effects of Data and Graph Type on Concepts and Visualizations of Variability,2010,46,Cooper,Journal of Statistics Education
+W1525673468,Visualizing Missing Data: Graph Interpretation User Study,2005,46,Eaton,Lecture notes in computer science
+W2576577998,Shape-Based Quality Metrics for Large Graph Visualization,2017,45,Eades,Journal of Graph Algorithms and Applications
+W4396806998,Knowledge mapping of graph neural networks for drug discovery: a bibliometric and visualized analysis,2024,44,Yao,Frontiers in Pharmacology
+W1748521661,"Clustering, Visualizing, and Navigating for Large Dynamic Graphs",2013,44,Sallaberry,Lecture notes in computer science
+W600319679,Graph-Based Clustering and Data Visualization Algorithms,2013,44,Vathy-Fogarassy,SpringerBriefs in computer science
+W2123270496,Adapting Graph Visualization Techniques for the Visualization of RDF Data,2006,44,Frăsincar,Springer eBooks
+W4243632115,Using augmented reality for visualizing complex graphs in three dimensions,2004,44,Belcher,"Proceedings - International Symposium on Mixed and Augmented Reality, ISMAR"
+W2797127638,Juniper: A Tree+Table Approach to Multivariate Graph Visualization,2018,43,Nobre,IEEE Transactions on Visualization and Computer Graphics
+W2100503625,"GMine: A System for Scalable, Interactive Graph Visualization and Mining",2015,43,Junior,arXiv (Cornell University)
+W2055796300,An object‐oriented design for graph visualization,2001,43,Marshall,Software Practice and Experience
+W2093514877,Event graph visualization for debugging large applications,1996,43,Kranzlmüller,
+W2281349958,Graphs in Scientific Visualization: A Survey,2016,42,Wang,Computer Graphics Forum
+W2115401750,Visualization of Power System Restoration Plans Using CPM/PERT Graphs,2007,42,Mota,IEEE Transactions on Power Systems
+W2928557799,A survey on visualization approaches for exploring association relationships in graph data,2019,41,Chen,Journal of Visualization
+W2098459721,Visualizing Carneades argument graphs,2007,41,Gordon,Law Probability and Risk
+W4310187180,A Scientometric Review of Grain Storage Technology in the Past 15 Years (2007–2022) Based on Knowledge Graph and Visualization,2022,40,Chen,Foods
+W4243589015,On the faithfulness of graph visualizations,2013,40,Nguyen,IEEE Pacific Visualization Symposium
+W1600303282,VCG - visualization of compiler graphs,1995,40,Sander,
+W2947475527,A graph mining-based methodology for discovering and visualizing high-level knowledge for building energy management,2019,39,Fan,Applied Energy
+W1976141321,On the Faithfulness of Graph Visualizations,2013,39,Nguyen,Lecture notes in computer science
+W2142453530,TreeMatrix: A Hybrid Visualization of Compound Graphs,2012,39,Rufiange,Computer Graphics Forum
+W1487602974,Interactive Visualization of Genealogical Graphs,2006,39,McGuffin,IEEE Symposium on Information Visualization
+W2100388549,Scene Graph and Frame Update Algorithms for Smooth and Scalable 3D Visualization of Simulated Construction Operations,2002,39,Kamat,Computer-Aided Civil and Infrastructure Engineering
+W2913598721,Augmented Reality Graph Visualizations,2019,38,Büschel,IEEE Computer Graphics and Applications
+W2399429828,Shape-Based Quality Metrics for Large Graph Visualization,2015,38,Eades,Lecture notes in computer science
+W35053053,A New Model of Graph and Visualization Usage,2001,38,Trafton,Defense Technical Information Center (DTIC)
+W4405934653,Real-Time Multi-Stability Risk Assessment and Visualization of Power Systems: A Graph Neural Network-Based Method,2024,37,Chen,IEEE Transactions on Power Systems
+W3133595242,NetV.js: A web-based library for high-efficiency visualization of large-scale graphs and networks,2021,37,Han,Visual Informatics
+W3035942805,Visualization for Histopathology Images using Graph Convolutional Neural Networks,2020,37,Sureka,IEEE International Conference on Bioinformatics and Bioengineering (BIBE)
+W2027556823,Using conceptual graphs for clinical guidelines representation and knowledge visualization,2012,37,Kamsu-Foguem,Information Systems Frontiers
+W2247773350,A General Introduction To Graph Visualization Techniques,2012,37,Tarawaneh,DROPS (Schloss Dagstuhl – Leibniz Center for Informatics)
+W169837298,Spring-Embedded Graphs for Semantic Visualization,2006,37,Golbeck,Springer eBooks
+W4311639999,High School and College Students’ Graph-Interpretation Competence in Scientific and Daily Contexts of Data Visualization,2022,36,Binali,Science & Education
+W2964869003,ALOHA: developing an interactive graph-based visualization for dietary supplement knowledge graph through user-centered design,2019,36,He,BMC Medical Informatics and Decision Making
+W2477194929,Prov Viewer: A Graph-Based Visualization Tool for Interactive Exploration of Provenance Data,2016,36,Kohwalter,Lecture notes in computer science
+W227419255,Net-Ray: Visualizing and Mining Billion-Scale Graphs,2014,36,Kang,Lecture notes in computer science
+W2171802227,Using augmented reality for visualizing complex graphs in three dimensions,2003,36,Belcher,
+W193490517,Applications of Graph Visualization,1994,36,North,
+W2995052800,Attack Graph Implementation and Visualization for Cyber Physical Systems,2019,35,Ibrahim,Processes
+W2188492872,Wavelet-based visualization of time-varying data on graphs,2015,35,Valdivia,IEEE Conference on Visual Analytics Science and Technology (VAST)
+W1998694168,Large-Scale Graph Visualization and Analytics,2013,35,Ma,Computer
+W2127169217,Finding and visualizing inter-site clan graphs,1998,35,Terveen,CHI Conference on Human Factors in Computing Systems
+W3198781804,Dynamic graph exploration by interactively linked node-link diagrams and matrix visualizations,2021,34,Burch,Visual Computing for Industry Biomedicine and Art
+W3149251932,Topological Fisheye Views for Visualizing Large Graphs,2005,34,Gansner,IEEE Symposium on Information Visualization
+W4400646372,Enhanced Data Mining and Visualization of Sensory-Graph-Modeled Datasets through Summarization,2024,33,Hashmi,Sensors
+W4226365456,Natural Language Processing Applied to Forensics Information Extraction With Transformers and Graph Visualization,2022,33,Rodrigues,IEEE Transactions on Computational Social Systems
+W4200037944,"From Trees to Clouds: PhageClouds for Fast Comparison of ∼640,000 Phage Genomic Sequences and Host-Centric Visualization Using Genomic Network Graphs",2021,33,Piñeros,PHAGE
+W2810596490,Visualizing large knowledge graphs: A performance analysis,2018,33,Gómez‐Romero,Future Generation Computer Systems
+W213060156,Evaluating overall quality of graph visualizations based on aesthetics aggregation,2015,33,Huang,Information Sciences
+W4234379025,Graph Analysis and Visualization,2015,33,?,Wiley eBooks
+W4399569280,"qgraph: Graph Plotting Methods, Psychometric Data Visualization and Graphical Model Estimation",2011,33,Epskamp,
+W2143759929,Graph-based Visualization of Requirements Relationships,2008,33,Heim,
+W2168162332,LogoBar: bar graph visualization of protein logos with gaps,2005,33,Pérez-Bercoff,Bioinformatics
+W2120607558,SpectralNET – an application for spectral graph analysis and visualization,2005,33,Forman,BMC Bioinformatics
+W3080158623,Isomorphism on generalized fuzzy graphs and image visualizations,2020,32,Samanta,Soft Computing
+W2344045089,Visualizing Dynamic Hierarchies in Graph Sequences,2015,32,Vehlow,IEEE Transactions on Visualization and Computer Graphics
+W2070804679,Estimates of the direct and indirect radiative forcing due to tropospheric aerosols: A review,2000,2211,Haywood,Reviews of Geophysics
+W2033636044,Direct measurement of colloidal forces using an atomic force microscope,1991,2092,Ducker,Nature
+W2066222663,An immersed boundary method with direct forcing for the simulation of particulate flows,2005,1737,Uhlmann,Journal of Computational Physics
+W2058416613,Directed Actin Polymerization Is the Driving Force for Epithelial Cell–Cell Adhesion,2000,1220,Vasioukhin,Cell
+W2092866358,"Evolution of ozone, particulates, and aerosol direct radiative forcing in the vicinity of Houston using a fully coupled meteorology‐chemistry‐aerosol model",2006,1207,Fast,Journal of Geophysical Research Atmospheres
+W2093842169,Force-directed scheduling for the behavioral synthesis of ASICs,1989,1066,Paulin,IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems
+W1979660112,Radiative forcing of the direct aerosol effect from AeroCom Phase II simulations,2013,1050,Myhre,Atmospheric chemistry and physics
+W2084676053,Asian summer monsoon anomalies induced by aerosol direct forcing: the role of the Tibetan Plateau,2006,1007,Lau,Climate Dynamics
+W2116527577,Force Fluctuations within Focal Adhesions Mediate ECM-Rigidity Sensing to Guide Directed Cell Migration,2012,892,Plotnikov,Cell
+W1993065427,A review of measurement-based assessments of the aerosol direct radiative effect and forcing,2006,839,Yu,Atmospheric chemistry and physics
+W2065515785,Direct radiative forcing by anthropogenic airborne mineral aerosols,1996,791,Sokolik,Nature
+W2095552990,An examination of forcing in direct numerical simulations of turbulence,1988,752,Eswaran,Computers & Fluids
+W2322146677,Markedly enhanced absorption and direct radiative forcing of black carbon under polluted urban environments,2016,751,Peng,Proceedings of the National Academy of Sciences
+W2508739522,Transcription upregulation via force-induced direct stretching of chromatin,2016,661,Tajik,Nature Materials
+W2167441750,Direct force measurements on DNA in a solid-state nanopore,2006,653,Keyser,Nature Physics
+W2067828198,Direct Visualization of Surfactant Hemimicelles by Force Microscopy of the Electrical Double Layer,1994,624,Manne,Langmuir
+W2148419405,Forna (force-directed RNA): Simple and effective online RNA secondary structure diagrams,2015,578,Kerpedjiev,Bioinformatics
+W2064838673,Direct Scaling of Primitive Valence Force Constants: An Alternative Approach to Scaled Quantum Mechanical Force Fields,1998,528,Baker,The Journal of Physical Chemistry A
+W2013703069,Global estimate of aerosol direct radiative forcing from satellite measurements,2005,518,Bellouin,Nature
+W1966085628,A physically‐based treatment of elemental carbon optics: Implications for global direct forcing of aerosols,2000,517,Jacobson,Geophysical Research Letters
+W2041548211,Proteus: a direct forcing method in the simulations of particulate flows,2004,482,Feng,Journal of Computational Physics
+W2168407306,Global direct radiative forcing due to multicomponent anthropogenic and natural aerosols,2001,476,Jacobson,Journal of Geophysical Research Atmospheres
+W2044296181,New direct observations of asphalts and asphalt binders by scanning electron microscopy and atomic force microscopy,1996,455,Loeber,Journal of Microscopy
+W2063087184,Global sensitivity studies of the direct radiative forcing due to anthropogenic sulfate and black carbon aerosols,1998,446,Haywood,Journal of Geophysical Research Atmospheres
+W2050766227,Direct measurements of the force between hydrophobic surfaces in water,2001,421,Christenson,Advances in Colloid and Interface Science
+W2072306011,Direct Observation of Enzyme Activity with the Atomic Force Microscope,1994,408,Radmacher,Science
+W1967503932,An improved immersed boundary method with direct forcing for the simulation of particle laden flows,2012,403,Kempe,Journal of Computational Physics
+W2036265613,Direct measurement of force generation by actin filament polymerization using an optical trap,2007,388,Footer,Proceedings of the National Academy of Sciences
+W2163271322,Satellite‐based estimate of the direct and indirect aerosol climate forcing,2008,375,Quaas,Journal of Geophysical Research Atmospheres
+W1972243647,Sensitivity of direct climate forcing by atmospheric aerosols to aerosol size and composition,1995,371,Pilinis,Journal of Geophysical Research Atmospheres
+W1971641092,A study of internal and external mixing scenarios and its effect on aerosol optical properties and direct radiative forcing,2002,358,Lesins,Journal of Geophysical Research Atmospheres
+W2085838226,Direct measurement of the lamellipodial protrusive force in a migrating cell,2006,349,Prass,The Journal of Cell Biology
+W1963381691,Improved isometric force endurance after transcranial direct current stimulation over the human motor cortical areas,2007,346,Cogiamanian,European Journal of Neuroscience
+W2144077151,Exploiting simultaneous observational constraints on mass and absorption to estimate the global direct radiative forcing of black carbon and brown carbon,2014,339,Wang,Atmospheric chemistry and physics
+W2151992962,Global anthropogenic aerosol direct forcing derived from satellite and ground‐based observations,2005,335,Chung,Journal of Geophysical Research Atmospheres
+W2063838158,A direct method to calculate tip–sample forces from frequency shifts in frequency-modulation atomic force microscopy,2001,327,Gießibl,Applied Physics Letters
+W1817473332,[7] Optical-trap force transducer that operates by direct measurement of light momentum,2003,316,Smith,Methods in enzymology on CD-ROM/Methods in enzymology
+W2000187063,"Toward a Minimal Representation of Aerosols in Climate Models: Comparative Decomposition of Aerosol Direct, Semidirect, and Indirect Radiative Forcing",2012,312,Ghan,Journal of Climate
+W2041006361,A global model simulation of present and future nitrate aerosols and their direct radiative forcing of climate,2014,308,Hauglustaine,Atmospheric chemistry and physics
+W2171180612,Overview of the Atmospheric Brown Cloud East Asian Regional Experiment 2005 and a study of the aerosol direct radiative forcing in east Asia,2007,305,Nakajima,Journal of Geophysical Research Atmospheres
+W2018729690,Combined multi-direct forcing and immersed boundary method for simulating flows with moving particles,2007,302,Wang,International Journal of Multiphase Flow
+W2106721747,Climate response of direct radiative forcing of anthropogenic black carbon,2005,294,Chung,Journal of Geophysical Research Atmospheres
+W3157455294,Small Exciton Binding Energies Enabling Direct Charge Photogeneration Towards Low‐Driving‐Force Organic Solar Cells,2021,278,Zhu,Angewandte Chemie International Edition
+W2047583926,Modularity clustering is force-directed layout,2009,269,Noack,Physical Review E
+W2055353954,Direct Radiative Forcing by Smoke from Biomass Burning,1997,269,Hobbs,Science
+W2023166885,"Solvation forces and liquid structure, as probed by direct force measurements",1987,269,Israelachvili,Accounts of Chemical Research
+W2160746816,A comparative study of direct‐forcing immersed boundary‐lattice Boltzmann methods for stationary complex boundaries,2010,268,Kang,International Journal for Numerical Methods in Fluids
+W2051710617,Electrokinetic and Direct Force Measurements between Silica and Mica Surfaces in Dilute Electrolyte Solutions,1997,267,Hartley,Langmuir
+W2110771795,Hereditary Cerebellar Ataxia Progressively Impairs Force Adaptation During Goal-Directed Arm Movements,2004,263,Maschke,Journal of Neurophysiology
+W2092319412,Enhancement of pinch force in the lower leg by anodal transcranial direct current stimulation,2009,259,Tanaka,Experimental Brain Research
+W2094571126,General circulation model assessment of direct radiative forcing by the sulfate‐nitrate‐ammonium‐water inorganic aerosol system,2001,259,Adams,Journal of Geophysical Research Atmospheres
+W1980425424,A direct-forcing fictitious domain method for particulate flows,2007,255,Yu,Journal of Computational Physics
+W2091559130,Global impacts of gas‐phase chemistry‐aerosol interactions on direct radiative forcing by anthropogenic aerosols and ozone,2005,254,Liao,Journal of Geophysical Research Atmospheres
+W2075609411,Tropospheric sulfur simulation and sulfate direct radiative forcing in the Goddard Institute for Space Studies general circulation model,1999,254,Koch,Journal of Geophysical Research Atmospheres
+W2052033120,Direct Imaging of Meniscus Formation in Atomic Force Microscopy Using Environmental Scanning Electron Microscopy,2005,253,Weeks,Langmuir
+W2151999876,Carbon nanotube atomic force microscopy tips: Direct growth by chemical vapor deposition and application to high-resolution imaging,2000,243,Cheung,Proceedings of the National Academy of Sciences
+W2116811039,Contrasting the direct radiative effect and direct radiative forcing of aerosols,2014,242,Heald,Atmospheric chemistry and physics
+W2020219874,Multi-spectral calculations of the direct radiative forcing of tropospheric sulphate and soot aerosols using a column model,1997,242,Haywood,Quarterly Journal of the Royal Meteorological Society
+W2342656843,Direct measurements of the extraordinary optical momentum and transverse spin-dependent force using a nano-cantilever,2016,240,Antognozzi,Nature Physics
+W3036803640,Direct Z-Scheme Heterojunction of Semicoherent FAPbBr 3 /Bi 2 WO 6 Interface for Photoredox Reaction with Large Driving Force,2020,239,Huang,ACS Nano
+W2084939820,Single-step direct measurement of amyloid fibrils stiffness by peak force quantitative nanomechanical atomic force microscopy,2011,237,Adamčík,Applied Physics Letters
+W2067131914,General Circulation Model Calculations of the Direct Radiative Forcing by Anthropogenic Sulfate and Fossil-Fuel Soot Aerosol,1997,236,Haywood,Journal of Climate
+W2029896116,Transport and direct radiative forcing of carbonaceous and sulfate aerosols in the GISS GCM,2001,235,Koch,Journal of Geophysical Research Atmospheres
+W2031138903,Direct force measurements between titanium dioxide surfaces,1993,227,Larson,Journal of the American Chemical Society
+W2040620579,General circulation model assessment of the sensitivity of direct climate forcing by anthropogenic sulfate aerosols to aerosol size and chemistry,1995,225,Boucher,Journal of Geophysical Research Atmospheres
+W2048751903,Direct measurement of hydrogen bonding in DNA nucleotide bases by atomic force microscopy.,1995,222,Boland,Proceedings of the National Academy of Sciences
+W2071817283,The Cohesive-Adhesive Balances in Dry Powder Inhaler Formulations I: Direct Quantification by Atomic Force Microscopy,2004,221,Begat,Pharmaceutical Research
+W2156417149,Force-directed scheduling in automatic data path synthesis,1987,221,Paulin,ACM/IEEE Design Automation Conference (DAC)
+W2022692571,A novel iterative direct-forcing immersed boundary method and its finite volume applications,2011,219,Ji,Journal of Computational Physics
+W2157558963,Efficient Thermal Placement of Standard Cells in 3D ICs using a Force Directed Approach,2003,219,Goplen,
+W2115109453,Direct and semi-direct radiative forcing of smoke aerosols over clouds,2012,216,Wilcox,Atmospheric chemistry and physics
+W2044523888,Effects of the physical state of tropospheric ammonium-sulfate-nitrate particles on global aerosol direct radiative forcing,2004,215,Martin,Atmospheric chemistry and physics
+W2167748134,Quantifying surface albedo and other direct biogeophysical climate forcings of forestry activities,2015,213,Bright,Global Change Biology
+W2146566905,Direct Observation of Inhomogeneous Solid Electrolyte Interphase on MnO Anode with Atomic Force Microscopy and Spectroscopy,2012,210,Zhang,Nano Letters
+W1969947193,Direct Force Measurements and Kinking under Elastic Deformation of Individual Multiwalled Boron Nitride Nanotubes,2007,209,Golberg,Nano Letters
+W2149404027,Recent oppositely directed trends in solar climate forcings and the global mean surface air temperature,2007,205,Lockwood,Proceedings of the Royal Society A Mathematical Physical and Engineering Sciences
+W2898021236,Escaping Atom Types in Force Fields Using Direct Chemical Perception,2018,201,Mobley,Journal of Chemical Theory and Computation
+W2019494737,Direct measurement of the relation between interlayer force and interlayer distance in the swelling of montmorillonite,1983,200,Viani,Journal of Colloid and Interface Science
+W2120129706,Kraftwerk2—A Fast Force-Directed Quadratic Placement Approach Using an Accurate Net Model,2008,196,Spindler,IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems
+W1996746141,Multilevel generalized force-directed method for circuit placement,2005,196,Chan,International Symposium on Physical Design
+W2008908542,Direct Force Measurements of Specific and Nonspecific Protein Interactions,1994,195,Leckband,Biochemistry
+W1985128151,Modelled radiative forcing of the direct aerosol effect with multi-observation evaluation,2009,193,Myhre,Atmospheric chemistry and physics
+W4256344903,Evaluation of aerosol direct radiative forcing in MIRAGE,2001,192,Ghan,Journal of Geophysical Research Atmospheres
+W2114894172,Interpreting muscle function from EMG: lessons learned from direct measurements of muscle force,2008,188,Roberts,Integrative and Comparative Biology
+W2099191357,Direct aerosol forcing: Calculation from observables and sensitivities to inputs,2008,188,McComiskey,Journal of Geophysical Research Atmospheres
+W1984856816,Direct force measurements of the streptavidin–biotin interaction,1999,188,Wong,Biomolecular Engineering
+W2077739882,Single Session of Transcranial Direct Current Stimulation Transiently Increases Knee Extensor Force in Patients With Hemiparetic Stroke,2011,187,Tanaka,Neurorehabilitation and neural repair
+W2093381698,Direct radiative forcing and regional climatic effects of anthropogenic aerosols over East Asia: A regional coupled climate‐chemistry/aerosol model study,2002,187,Giorgi,Journal of Geophysical Research Atmospheres
+W2006429114,Direct observations of aerosol radiative forcing over the tropical Indian Ocean during the January‐February 1996 pre‐INDOEX cruise,1998,185,Jayaraman,Journal of Geophysical Research Atmospheres
+W2784055540,Aerosol optical properties and direct radiative forcing based on measurements from the China Aerosol Remote Sensing Network (CARSNET) in eastern China,2018,182,Che,Atmospheric chemistry and physics
+W4239055271,Efficient thermal placement of standard cells in 3D ICs using a force directed approach,2004,182,Goplen,International Conference on Computer Aided Design
+W1993398220,Direct Measurement of Repulsive van der Waals Interactions Using an Atomic Force Microscope,1996,175,Milling,Journal of Colloid and Interface Science
+W2012968377,Direct Imaging of Lysozyme Adsorption onto Mica by Atomic Force Microscopy,2002,173,Kim,Langmuir
+W2096889830,Direct molecular force measurements of multiple adhesive interactions between cadherin ectodomains,1999,173,Sivasankar,Proceedings of the National Academy of Sciences
+W4401158079,Goal-directed osteoporosis treatment: ASBMR/BHOF task force position statement 2024,2024,170,Cosman,Journal of Bone and Mineral Research
+W2053742033,Direct Force Measurements at Polymer Brush Surfaces by Atomic Force Microscopy,1998,169,Kelley,Macromolecules
+W2065953131,Relative humidity dependence of aerosol optical properties and direct radiative forcing in the surface boundary layer at Xinken in Pearl River Delta of China: An observation based numerical study,2008,167,Cheng,Atmospheric Environment
+W3163857962,Accurate and scalable graph neural network force field and molecular dynamics with direct force architecture,2021,166,Park,npj Computational Materials
+W2099384156,"Atmospheric Circulation Trends, 1950–2000: The Relative Roles of Sea Surface Temperature Forcing and Direct Atmospheric Radiative Forcing",2008,165,Deser,Journal of Climate
+W2011794354,Atomic force microscopy and direct surface force measurements (IUPAC Technical Report),2005,165,Ralston,Pure and Applied Chemistry
+W2162655192,"Direct shortwave forcing of climate by the anthropogenic sulfate aerosol: Sensitivity to particle size, composition, and relative humidity",1995,165,Nemesure,Journal of Geophysical Research Atmospheres
+W2077889232,On the numerical oscillation of the direct-forcing immersed-boundary method for moving boundaries,2011,164,Luo,Computers & Fluids
+W1968054181,Direct Imaging of Lipid-Ion Network Formation under Physiological Conditions by Frequency Modulation Atomic Force Microscopy,2007,164,Fukuma,Physical Review Letters
+W2091472684,A simple and efficient direct forcing immersed boundary framework for fluid–structure interactions,2012,162,Yang,Journal of Computational Physics
+W2131904610,Updated estimate of aerosol direct radiative forcing from satellite observations and comparison against the Hadley Centre climate model,2008,162,Bellouin,Journal of Geophysical Research Atmospheres
+W2038775184,Radiative heating rates and direct radiative forcing by mineral dust in cloudy atmospheric conditions,2000,162,Quijano,Journal of Geophysical Research Atmospheres
+W2120866696,Significance of direct and indirect radiative forcings of aerosols in the East China Sea region,2003,160,Nakajima,Journal of Geophysical Research Atmospheres
+W2092714915,Direct measurement of interaction forces between colloidal particles using the scanning force microscope,1993,160,Li,Langmuir
+W2058517227,Intercomparison of models representing direct shortwave radiative forcing by sulfate aerosols,1998,158,Boucher,Journal of Geophysical Research Atmospheres
+W2054870949,Timing for effective application of anteriorly directed orthopedic force to the maxilla,1997,158,Merwin,American Journal of Orthodontics and Dentofacial Orthopedics
+W1679833810,How much can the vertical distribution of black carbon affect its global direct radiative forcing?,2010,155,Zarzycki,Geophysical Research Letters
+W2044623985,In-plane gates and nanostructures fabricated by direct oxidation of semiconductor heterostructures with an atomic force microscope,1998,154,Held,Applied Physics Letters
+W3024843225,Direct and semi-direct radiative forcing of biomass-burning aerosols over the southeast Atlantic (SEA) and its sensitivity to absorbing properties: a regional climate modeling study,2020,153,Mallet,Atmospheric chemistry and physics
+W2112471372,An “A-Train” Strategy for Quantifying Direct Climate Forcing by Anthropogenic Aerosols,2005,153,Anderson,Bulletin of the American Meteorological Society
+W2054229636,Probing Surface Charge Potentials of Clay Basal Planes and Edges by Direct Force Measurements,2008,152,Zhao,Langmuir
+W2006085671,Direct Measurements of Base Stacking Interactions in DNA by Single-Molecule Atomic-Force Spectroscopy,2007,152,Ke,Physical Review Letters
+W2151254558,An improved direct-forcing immersed-boundary method for finite difference applications,2006,152,Zhang,Journal of Computational Physics
+W2294297354,"Brown carbon aerosols from burning of boreal peatlands: microphysical properties, emission factors, and implications for direct radiative forcing",2016,151,Chakrabarty,Atmospheric chemistry and physics
+W2102607830,Clear-sky direct aerosol radiative forcing variations over mega-city Delhi,2010,151,Singh,Annales Geophysicae
+W1895375830,Overview of the Chemistry-Aerosol Mediterranean Experiment/Aerosol Direct Radiative Forcing on the Mediterranean Climate (ChArMEx/ADRIMED) summer 2013 campaign,2016,150,Mallet,Atmospheric chemistry and physics
+W1979377511,Direct Aerosol Radiative Forcing Uncertainty Based on a Radiative Perturbation Analysis,2010,149,Loeb,Journal of Climate
+W2397834228,- Force-Directed Drawing Algorithms,2013,148,Tamassia,Chapman & Hall/CRC eBooks
+W1979383751,Dynamic force-induced direct dissociation of protein complexes in a nuclear body in living cells,2012,147,Poh,Nature Communications
+W2108562317,Estimation of the direct radiative forcing due to sulfate and soot aerosols,1998,146,Myhre,Tellus B
+W2047920008,Direct measurement of the force between two lipid bilayers and observation of their fusion,1984,146,Horn,Biochimica et Biophysica Acta (BBA) - Biomembranes
+W1970595184,Black carbon aerosols over the Himalayas: direct and surface albedo forcing,2013,144,Nair,Tellus B
+W2083795965,Simulation of direct radiative forcing of aerosols and their effects on East Asian climate using an interactive AGCM-aerosol coupled system,2011,143,Zhang,Climate Dynamics
+W2009730120,Direct Visualization of Calcium Oxalate Monohydrate Crystallization and Dissolution with Atomic Force Microscopy and the Role of Polymeric Additives,2002,143,Guo,Langmuir
+W2000894878,Direct Measurements of the Interaction between Pyrene and Graphite in Aqueous Media by Single Molecule Force Spectroscopy: Understanding the π−π Interactions,2007,140,Zhang,Langmuir
+W3164053139,What Do We See When We Look at Networks. An Introduction to Visual Network Analysis and Force-Directed Layouts,2019,138,Venturini,Big Data & Society
+W2098985022,Direct Force Measurements between Silica and Alumina,1997,138,Larson,Langmuir
+W2055801681,Navigating Clustered Graphs Using Force-Directed Methods,2000,137,Eades,Journal of Graph Algorithms and Applications
+W2033422725,Soot superaggregates from flaming wildfires and their direct radiative forcing,2014,136,Chakrabarty,Scientific Reports
+W2105017541,Directed Self-Assembly at the 10 nm Scale by Using Capillary Force-Induced Nanocohesion,2010,135,Duan,Nano Letters
+W2080355418,Direct observation of layered structures at ionic liquid/solid interfaces by using frequency-modulation atomic force microscopy,2010,133,Yokota,Chemical Communications
+W1995721832,Influence of the vertical profile of Saharan dust on the visible direct radiative forcing,2004,133,Meloni,Journal of Quantitative Spectroscopy and Radiative Transfer
+W1972985561,Direct Measurement of the Depletion Force Using an Atomic Force Microscope,1995,133,Milling,Journal of Colloid and Interface Science
+W4311183432,Multi-angular polarimetric remote sensing to pinpoint global aerosol absorption and direct radiative forcing,2022,130,Chen,Nature Communications
+W2007374102,Direct observation of a force-induced switch in the anisotropic mechanical unfolding pathway of a protein,2012,130,Jagannathan,Proceedings of the National Academy of Sciences
+W2129725597,Direct force probe reveals the mechanics of nuclear homeostasis in the mammalian cell,2015,129,Neelam,Proceedings of the National Academy of Sciences
+W2558422651,Source attribution of black carbon and its direct radiative forcing in China,2017,128,Yang,Atmospheric chemistry and physics
+W1981401412,CO2 forcing induces semi‐direct effects with consequences for climate feedback interpretations,2008,128,Andrews,Geophysical Research Letters
+W1508940303,The direct observations of large aerosol radiative forcing in the Himalayan region,2004,128,Ramana,Geophysical Research Letters
+W2149227919,Reaction force control of a linear electrical generator for direct drive wave energy conversion,2007,127,Shek,IET Renewable Power Generation
+W2018364310,Direct Atmospheric Forcing of Geostrophic Eddies,1981,127,Müller,Journal of Physical Oceanography
+W2981386532,MT1-MMP directs force-producing proteolytic contacts that drive tumor cell invasion,2019,126,Ferrari,Nature Communications
+W2795034097,The Present and Future of Secondary Organic Aerosol Direct Forcing on Climate,2018,126,Tsigaridis,Current Climate Change Reports
+W2368182305,Estimation of global black carbon direct radiative forcing and its uncertainty constrained by observations,2016,126,Wang,Journal of Geophysical Research Atmospheres
+W1992191754,Direct observations of mineral fluid reactions using atomic force microscopy: the specific example of calcite,2012,126,Ruíz-Agudo,Mineralogical Magazine
+W2577456205,Combined Speed and Direct Thrust Force Control of Linear Permanent-Magnet Synchronous Motors With Sensorless Speed Estimation Using a Sliding-Mode Control With Integral Action,2017,123,Cheema,IEEE Transactions on Industrial Electronics
+W2164950503,Study of stress-induced velocity variation in concrete under direct tensile force and monitoring of the damage level by using thermally-compensated Coda Wave Interferometry,2012,122,Zhang,Ultrasonics
+W2079988322,Radiative characteristics of regional hazes dominated by smoke from biomass burning in Brazil: Closure tests and direct radiative forcing,1998,122,Ross,Journal of Geophysical Research Atmospheres
+W2121316434,Development and Analysis of a High Thrust Force Direct-Drive Linear Actuator,2009,121,Fujimoto,IEEE Transactions on Industrial Electronics
+W1973772321,Linking cause-related marketing to sales force responses and performance in a direct selling context,2007,119,Larson,Journal of the Academy of Marketing Science
+W2033845667,Direct observations of the growth of spherulites of poly(hydroxybutyrate-co-valerate) using atomic force microscopy,1998,119,Hobbs,Polymer
+W1853433777,The response of midlatitude jets to increased CO2: Distinguishing the roles of sea surface temperature and direct radiative forcing,2014,118,Grise,Geophysical Research Letters
+W2013187547,Spatial variability of the direct radiative forcing of biomass burning aerosols and the effects of land use change in Amazonia,2013,117,Sena,Atmospheric chemistry and physics
+W1572059244,Precursor protein translocation by the Escherichia coli translocase is directed by the protonmotive force.,1992,116,Driessen,The EMBO Journal
+W1972653661,Liquid structuring at solid interfaces as probed by direct force measurements: The transition from simple to complex liquids and polymer fluids,1988,116,Israelachvili,The Journal of Chemical Physics
+W2024821263,Direct Comparison of Muscle Force Predictions Using Linear and Nonlinear Programming,1987,115,Pedersen,Journal of Biomechanical Engineering
+W2065721784,Controlled deposition of lipid monolayers and bilayers onto mica and direct force measurements between galactolipid bilayers in aqueous solutions,1985,114,Marra,Journal of Colloid and Interface Science
+W2890509245,Changes in the aerosol direct radiative forcing from 2001 to 2015: observational constraints and regional mechanisms,2018,113,Paulot,Atmospheric chemistry and physics
+W2002893780,Direct Measurement of Glycosaminoglycan Intermolecular Interactions via High-Resolution Force Spectroscopy,2002,113,Seog,Macromolecules
+W1754839937,Modulation of internal model formation during force field‐induced motor learning by anodal transcranial direct current stimulation of primary motor cortex,2009,112,Hunter,The Journal of Physiology
+W2082863161,Direct method to study membrane rigidity of small vesicles based on atomic force microscope force spectroscopy,2006,112,Delorme,Physical Review E
+W2049836262,Direct Measurement of Infinitesimal Depletion Force in a Colloid-Polymer Mixture by Laser Radiation Pressure,1997,112,Ohshima,Physical Review Letters
+W2604780867,Global source attribution of sulfate concentration and direct and indirect radiative forcing,2017,111,Yang,Atmospheric chemistry and physics
+W1994729686,Attractive Forces between Charged Colloidal Particles Induced by Multivalent Ions Revealed by Confronting Aggregation and Direct Force Measurements,2013,111,Sinha,The Journal of Physical Chemistry Letters
+W2055865569,"Real-time, interferometrically measuring atomic force microscope for direct calibration of standards",1999,111,Gonda,Review of Scientific Instruments
+W2094521971,A new technique for membrane characterisation: direct measurement of the force of adhesion of a single particle using an atomic force microscope,1998,111,Bowen,Journal of Membrane Science
+W2797706882,Vinculin Force-Sensitive Dynamics at Focal Adhesions Enable Effective Directed Cell Migration,2018,110,Rothenberg,Biophysical Journal
+W2590428932,A direct characterization of interfacial interaction between asphalt binder and mineral fillers by atomic force microscopy,2017,110,Guo,Materials and Structures
+W2588483373,Respective roles of direct GHG radiative forcing and induced Arctic sea ice loss on the Northern Hemisphere atmospheric circulation,2017,109,Oudar,Climate Dynamics
+W1980371330,A direct-forcing embedded-boundary method with adaptive mesh refinement for fluid–structure interaction problems,2010,109,Vanella,Journal of Computational Physics
+W2006744690,A direct-forcing immersed boundary method for the thermal lattice Boltzmann method,2011,108,Kang,Computers & Fluids
+W2014757787,A new technique for direct measurement of the shear force necessary to detach a cell from a material,1998,108,Yamamoto,Biomaterials
+W2086690025,Direct measurement of the force of adhesion of a single biological cell using an atomic force microscope,1998,108,Bowen,Colloids and Surfaces A Physicochemical and Engineering Aspects
+W1482991201,Characterization of speciated aerosol direct radiative forcing over California,2012,107,Zhao,Journal of Geophysical Research Atmospheres
+W2147946596,Direct Forcing for Lagrangian Rigid-Fluid Coupling,2008,107,Becker,IEEE Transactions on Visualization and Computer Graphics
+W2146643949,"ACC/ACP/SCAI/SVMB/SVS clinical competence statement on vascular medicine and catheter-based peripheral vascular interventions11When citing this document, the American College of Cardiology, American C",2004,107,Creager,Journal of the American College of Cardiology
+W1542338415,Improved Force-Directed Layouts,1998,106,Gansner,Lecture notes in computer science
+W1942344706,Anthropogenic Weakening of the Tropical Circulation: The Relative Roles of Direct CO2 Forcing and Sea Surface Temperature Change,2015,105,He,Journal of Climate
+W2060558368,Direct Observation of Polyethylene Shish-Kebab Crystallization Using in-Situ Atomic Force Microscopy,2000,105,Hobbs,Macromolecules
+W1984470319,Quantifying above‐cloud aerosol using spaceborne lidar for improved understanding of cloudy‐sky direct climate forcing,2008,104,Chand,Journal of Geophysical Research Atmospheres
+W2158691396,Direct Force Measurements between Dissimilar Metal Oxides,1995,104,Larson,The Journal of Physical Chemistry
+W2596049170,Direct Measurement of the Nonconservative Force Field Generated by Optical Tweezers,2009,103,Wu,Physical Review Letters
+W2120910075,Direct Visualization of Dynamic Protein-DNA Interactions with a Dedicated Atomic Force Microscope,1998,103,Noort,Biophysical Journal
+W2994887143,Direct Force Feedback Control and Online Multi-Task Optimization for Aerial Manipulators,2019,102,Nava,IEEE Robotics and Automation Letters
+W2612210275,Direct quantitative measurement of the C═O⋅⋅⋅H–C bond by atomic force microscopy,2017,102,Kawai,Science Advances
+W1549515834,A modeling study of the effects of direct radiative forcing due to carbonaceous aerosol on the climate in East Asia,2009,102,Zhang,Advances in Atmospheric Sciences
+W2091277936,Easy and direct method for calibrating atomic force microscopy lateral force measurements,2007,102,Liu,Review of Scientific Instruments
+W1965981379,Trends in tropospheric aerosol loads and corresponding impact on direct radiative forcing between 1950 and 1990: A model study,2000,102,Tegen,Journal of Geophysical Research Atmospheres
+W2069691164,"Direct Observation of Doping Sites in Temperature‐Controlled, p‐Doped P3HT Thin Films by Conducting Atomic Force Microscopy",2014,101,Duong,Advanced Materials
+W1837204298,Nano-rheology of hydrogels using direct drive force modulation atomic force microscopy,2015,100,Nalam,Soft Matter
+W1927636871,TrajGraph: A Graph-Based Visual Analytics Approach to Studying Urban Network Centralities Using Taxi Trajectory Data,2015,186,Huang,IEEE Transactions on Visualization and Computer Graphics
+W4210513286,GNNLens : A Visual Analytics Approach for Prediction Error Diagnosis of Graph Neural Networks,2022,64,Jin,IEEE Transactions on Visualization and Computer Graphics
+W2907977958,Graph-based visual analytics for cyber threat intelligence,2018,50,Böhm,Cybersecurity
+W2066759267,"Visual Analytics for Epidemiologists: Understanding the Interactions Between Age, Time, and Disease with Multi-Panel Graphs",2011,47,Chui,PLoS ONE
+W2171380824,DIVE: A Graph-Based Visual-Analytics Framework for Big Data,2014,40,Rysavy,IEEE Computer Graphics and Applications
+W3091991901,CAVA: A Visual Analytics System for Exploratory Columnar Data Augmentation Using Knowledge Graphs,2020,37,Cashman,IEEE Transactions on Visualization and Computer Graphics
+W2128301892,Graph Signatures for Visual Analytics,2006,36,Wong,IEEE Transactions on Visualization and Computer Graphics
+W2023483176,A visual-analytic toolkit for dynamic interaction graphs,2008,34,Yang,ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD)
+W3202194199,FairRankVis: A Visual Analytics Framework for Exploring Algorithmic Fairness in Graph Mining Models,2021,31,Xie,IEEE Transactions on Visualization and Computer Graphics
+W4385819833,Cyberattack Graph Modeling for Visual Analytics,2023,26,Rabzelj,IEEE Access
+W2125415839,Interactive Visual Graph Analytics on the Web,2021,25,Ahmed,Proceedings of the International AAAI Conference on Web and Social Media
+W2130325741,Generating Graphs for Visual Analytics through Interactive Sketching,2006,25,Wong,IEEE Transactions on Visualization and Computer Graphics
+W2130943743,Edge Metrics for Visual Graph Analytics: A Comparative Study,2008,24,Mélançon,International Conference on Information Visualisation (IV)
+W2153431389,Have Green ¿ A Visual Analytics Framework for Large Semantic Graphs,2006,24,Wong,IEEE Conference on Visual Analytics Science and Technology (VAST)
+W2905052408,Topic Dependency Models: Graph-Based Visual Analytics for Communicating Assessment Data,2018,21,Khosravi,Journal of Learning Analytics
+W2060347402,iGraph: a graph-based technique for visual analytics of image and text collections,2015,19,Gu,"Proceedings of SPIE, the International Society for Optical Engineering/Proceedings of SPIE"
+W4388666148,Visual analytics and intelligent reasoning for smart manufacturing defect detection and judgement: A meta-learning approach with knowledge graph embedding case-based reasoning,2023,18,Wang,Journal of Industrial Information Integration
+W4387527042,Visual analytics of route recommendation for tourist evacuation based on graph neural network,2023,15,Zhang,Scientific Reports
+W2034427182,G-PARE: A visual analytic tool for comparative analysis of uncertain graphs,2011,14,Sharara,IEEE Conference on Visual Analytics Science and Technology (VAST)
+W4327966591,SocioPedia+: a visual analytics system for social knowledge graph-based event exploration,2023,13,Nguyen,PeerJ Computer Science
+W2907459601,Applying Graph Centrality Metrics in Visual Analytics of Scientific Standard Datasets,2019,13,Hua,Symmetry
+W3201818349,Enabling Visual Analytics via Alert-driven Attack Graphs,2021,12,Nadeem,ACM SIGSAC Conference on Computer and Communications Security (CCS)
+W3101763957,Novel Circular Graph Capabilities for Comprehensive Visual Analytics of Interconnected Data in Digital Humanities,2020,10,Ryabinin,Scientific Visualization
+W2560691277,ETGraph: A graph-based approach for visual analytics of eye-tracking data,2016,10,Gu,Computers & Graphics
+W3092613110,Auditing the Sensitivity of Graph-based Ranking with Visual Analytics,2020,9,Xie,IEEE Transactions on Visualization and Computer Graphics
+W2184562362,A visual analytics paradigm enabling trillion-edge graph exploration,2015,9,Wong,IEEE Symposium on Large Data Analysis and Visualization
+W2402654724,NetworkRepository: A Graph Data Repository with Visual Interactive Analytics.,2014,9,Rossi,arXiv (Cornell University)
+W2095510307,Cell phone mini challenge award: Intuitive social network graphs visual analytics of cell phone data using mobivis and ontovis,2008,7,Correa,IEEE Conference on Visual Analytics Science and Technology (VAST)
+W2948880107,Graphs are not enough: using interactive visual analytics in storage research,2019,6,Cao,USENIX conference on Hot topics in storage and file systems
+W2792367162,Visual analytics: designing flexible filtering in parallel coordinate graph,2018,6,Idrus,Journal of Fundamental and Applied Sciences
+W2461502418,The Graph Landscape: using visual analytics for graph set analysis,2016,6,Kennedy,Journal of Visualization
+W2889189281,Visual Analytics of Time Evolving Large-scale Graphs.,2015,6,Gottumukkala,
+W3183329373,A Visual Analytics Approach for Structural Differences Among Graphs via Deep Learning,2021,5,Han,IEEE Computer Graphics and Applications
+W2775727696,Interactive graph query language for multidimensional data in Collaboration Spotting visual analytics framework,2017,5,Agócs,arXiv (Cornell University)
+W2795156884,Spatial-Temporal Anomaly Detection Using Security Visual Analytics via Entropy Graph and Eigen Matrix,2017,5,Sinda,"IEEE Intl Conf on Dependable, Autonomic and Secure Computing, Intl Conf on Pervasive Intelligence and Computing, Intl Co"
+W2724390535,Towards Visual Analytics of Multilayer Graphs for Digital Cultural Heritage,2016,5,McGee,Open Repository and Bibliography (University of Luxembourg)
+W2473907494,MultiNode-Explorer: A Visual Analytics Framework for Generating Web-based Multimodal Graph Visualizations,2012,5,Ghani,
+W3181605133,I-CovidVis – A Visual Analytics Tool for Interoperable Healthcare Databases using Graphs,2021,4,Linhares,Proceedings - IEEE Symposium on Computer-Based Medical Systems
+W2802376702,Profiling distributed graph processing systems through visual analytics,2018,4,Arleo,Future Generation Computer Systems
+W2520539540,Visual Analytic Decision-Making Environments for Large-Scale Time-Evolving Graphs,2016,4,Venna,Handbook of statistics
+W1494967382,Graph-Based Visual Analytic Tools for Parallel Coordinates,2008,4,Chung,Lecture notes in computer science
+W3176890300,VAST 2020 Contest Challenge: GraphMatchMaker—Visual Analytics for Graph Comparison and Matching,2021,3,Tovanich,IEEE Computer Graphics and Applications
+W2785421060,Graph-Based Techniques for Visual Analytics of Scientific Data Sets,2018,3,Wang,Computing in Science & Engineering
+W2790775121,Visual Analytics of Happiness Index In Parallel Coordinate Graph,2018,3,Idrus,Advances in intelligent systems and computing
+W2583403188,PORGY : a Visual Analytics Platform for System Modelling and Analysis Based on Graph Rewriting,2017,3,Pinaud,ENLIGHTEN (Jurnal Bimbingan dan Konseling Islam)
+W2560134134,Visual Analytics Using Graph Sampling and Summarization on Multitouch Displays,2016,3,Lipari,Lecture notes in computer science
+W2278150767,OLAP Visual Analytics on Large Software Call Graphs with Hierarchical ChordMap,2015,3,Wang,IEEE ... International Conference on Data Mining workshops
+W2182445058,Visual analytics for inspecting the evolution of a graph over time: Pattern discovery in a communication network,2015,3,Schneider,IEEE Conference on Visual Analytics Science and Technology (VAST)
+W2121394381,A Graph Algebra for Scalable Visual Analytics,2012,3,Shaverdian,IEEE Computer Graphics and Applications
+W4385501563,GazeGraphVis: Visual analytics of gaze behaviors at multiple graph levels for path tracing tasks,2023,2,Yang,Advanced Engineering Informatics
+W4285181993,"Gragnostics: Evaluating Fast, Interpretable Structural Graph Features for Classification and Visual Analytics",2022,2,Gove,Studies in computational intelligence
+W3150846053,Methods of visual graph-analytical presentation and retrieval of scientific and technical texts,2021,2,Вениаминович,Scientific Visualization
+W3204824494,Towards Supporting Complex Retrieval Tasks Through Graph-Based Information Retrieval and Visual Analytics.,2021,2,Bobić,
+W2047607635,Visual displays: analytical study and applications to graphs and real data,2013,2,Fernández‐Aguirre,Quality & Quantity
+W1525781866,Visual Analytics of Large Weighted Directed Graphs and Two-Dimensional Time-Dependent Data,2010,2,Landesberger,Publikationsdatenbank der Fraunhofer-Gesellschaft (Fraunhofer-Gesellschaft)
+W4399307651,Graph-Neural-Network-Based User Intent Understanding for Visual Analytics,2024,1,Wang,IEEE Pacific Visualization Conference (PacificVis)
+W4400277361,FishHook: A Visual Analytics System for Tracing Suspicious Entities in the Fisheries Domain Using Knowledge Graphs,2023,1,Wu,
+W2991240555,"Rapid, Progressive Sub-Graph Explorations for Interactive Visual Analytics over Large-Scale Graph Datasets",2019,1,Armstrong,"IEEE/ACM International Conference on Big Data Computing, Applications and Technologies (BDCAT)"
+W2553429535,Big graph visual analytics,2016,1,Haglin,Information Visualization
+W7222138120,A Visual Analytics Method for Mining Traffic Congestion Propagation Patterns Based on Graph Representation Learning,2024,0,Dong,Journal of Computer-Aided Design & Computer Graphics
+W4404371171,FishEye Watcher: A Visual Analytics System for Knowledge Graph Bias Detection - IEEE VAST Challenge 2024 MC1 Honorable Mention for Effective Use of Coordinated Views to Interrogate Bias,2024,0,Qiu,
+W4360838409,"Peer Review #1 of ""SocioPedia+: a visual analytics system for social knowledge graph-based event exploration (v0.1)""",2023,0,?,PeerJ Computer Science
+W4360838414,"Peer Review #2 of ""SocioPedia+: a visual analytics system for social knowledge graph-based event exploration (v0.1)""",2023,0,?,PeerJ Computer Science
+W4360838427,"Peer Review #2 of ""SocioPedia+: a visual analytics system for social knowledge graph-based event exploration (v0.2)""",2023,0,?,PeerJ Computer Science
+W4414548703,A Survey on the Visual Analytics of Knowledge Graph,2023,0,Liu,Journal of Computer-Aided Design & Computer Graphics
+W3142686400,A Design Process of Visual Analytics Applications using Conceptual Graph,2021,0,Shi,arXiv (Cornell University)
+W3115359091,Graph-Based Visual Analytics Tools for Digital Humanities Research,2020,0,Ryabinin,Proceedings of the 30th International Conference on Computer Graphics and Machine Vision (GraphiCon 2020). Part 2
+W3095897952,GraphletMatchMaker: Visual Analytics Approaches to Graph Matching in Cybersecurity Communities,2020,0,Tovanich,HAL
+W4250109307,Visual Analytics via Graph Signal Processing,2019,0,Col,"SIBGRAPI Conference on Graphics, Patterns and Images (SIBGRAPI)"
+W2934865560,Empirical Evaluation of Visual Graph Analytic Techniques,2019,0,Tallat,"International Conference on Communication, Computing and Digital Systems (C-CODE)"
+W2902438117,Visual analytics via graph signal processing,2018,0,Col,Digital Library of Theses and Dissertations  (Universidade de São Paulo)
+W2605044561,Graph Sampling for Visual Analytics,2017,0,Zhang,Journal of Imaging Science and Technology
+W2798035711,Graph Centrality Visualisation of Power Interchange in Supergrids - A Study of Visual Analytic Challenges for Operational Control,2017,0,Hoffmann,IET International Conference on Resilience of Transmission and Distribution Networks (RTDN)
+W2768689022,USING GRAPH MODELING IN SEVERAL VISUAL ANALYTIC TASKS,2016,0,Huang,OhioLink ETD Center (Ohio Library and Information Network)
+W1569923641,A Web-based Interactive Visual Graph Analytics Platform,2015,0,Ahmed,arXiv (Cornell University)
+W3196969942,Visual analytics for dynamic network graph link anomalies,2014,0,Liao,
+W402244892,A Visual Analytic Framework for Graphs.,2012,0,Jagadish,Deep Blue (University of Michigan)
+W7119835423,Visual Analytics of Large Weighted Directed Graphs and Two-Dimensional Time-Dependent Data,2010,0,Landesberger,Eurographics
