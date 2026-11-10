@@ -725,3 +725,71 @@ test("label placement: candidates, particles, annealing and constant-size labels
   expect(await lastError(page)).toBeNull();
   expect(errors).toEqual([]);
 });
+
+test("excentric lens lists, filters and selects the nodes under it", async ({ page }) => {
+  const errors = await boot(page);
+  await run(page, "colorize(dept)\nexcentricLens(radius=70)\ncenter(egoNetwork(v128, 2))");
+  await page.waitForTimeout(800);
+  await expect(page.locator("button[data-tool=lens]")).toHaveAttribute("aria-pressed", "true");
+  const pos = await page.evaluate(() => {
+    const r = (window as any).__guess.renderer;
+    const n = [...r.nodes.values()].find((m: any) => m.name === "v128");
+    const c = r.app.canvas.getBoundingClientRect();
+    const s = r.toScreen(n.x + n.w / 2, n.y + n.h / 2);
+    return [c.left + s.sx + 4, c.top + s.sy + 4];
+  });
+  await page.mouse.move(pos[0], pos[1]);
+  const labels = page.locator(".lens-label");
+  await expect(labels.first()).toBeVisible();
+  const count = await labels.count();
+  expect(count).toBeGreaterThan(3);
+  await expect(page.locator(".lens-head")).toContainText(`${count} nodes`);
+  // the wheel resizes the lens (more nodes under a bigger one)
+  await page.mouse.wheel(0, -400);
+  await expect.poll(async () => labels.count()).toBeGreaterThan(count);
+  await page.mouse.wheel(0, 400);
+  await expect.poll(async () => labels.count()).toBe(count);
+  // clicking a label selects its node (sel in Python); shift-click adds
+  const first = (await labels.nth(0).innerText()).trim();
+  await labels.nth(0).click();
+  await run(page, "print([n.name for n in sel])");
+  await expect(page.locator(".cell").last()).toContainText(`['${first}']`);
+  // pin it: filter by a colour bar, then select what's shown
+  await page.mouse.move(pos[0], pos[1]);
+  await page.mouse.click(pos[0], pos[1]);
+  await expect(page.locator(".lens-panel.stuck")).toBeVisible();
+  await page.locator(".lens-bar").first().click();
+  await expect(page.locator(".lens-head")).toContainText("shown");
+  const shown = Number((await page.locator(".lens-head").innerText()).match(/(\d+) shown/)![1]);
+  expect(shown).toBeLessThan(count);
+  await expect(labels).toHaveCount(shown);
+  await page.locator(".lens-actions button", { hasText: "Select" }).click();
+  await run(page, "print(len(sel))");
+  await expect(page.locator(".cell").last()).toContainText(String(shown));
+  // Esc releases the lens, then leaves the tool
+  await page.locator("#graph canvas").focus().catch(() => {});
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".lens-panel.stuck")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("button[data-tool=select]")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".lens-layer")).toBeHidden();
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test("lens: L toggles it from the toolbar's Select, no hover popups while on", async ({ page }) => {
+  const errors = await boot(page);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press("l");
+  await expect(page.locator("button[data-tool=lens]")).toHaveAttribute("aria-pressed", "true");
+  const box = (await page.locator("#graph canvas").boundingBox())!;
+  for (let k = 0; k < 6; k++) await page.mouse.move(box.x + box.width * (0.3 + k * 0.08), box.y + box.height * 0.5);
+  await expect(page.locator("#tip")).toBeHidden();
+  await page.locator("button[data-tool=lens]").click();                 // the active Lens button: back to Select
+  await expect(page.locator("button[data-tool=select]")).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("l");
+  await page.keyboard.press("l");
+  await expect(page.locator("button[data-tool=select]")).toHaveAttribute("aria-pressed", "true");
+  expect(errors).toEqual([]);
+});

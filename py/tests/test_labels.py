@@ -92,3 +92,10 @@ def test_label_placement_options(s, tmp_path):
     run(s, "undo()")                                         # optimizeLabels changes nothing to undo
     run(s, "undo()")
     assert s.view.labels["placement"] == "candidates" and s.view.labels["screen"] is False
+
+
+def test_excentric_lens_command(s):
+    run(s, "excentricLens(radius=80, autoSize=true, maxLabels=10)")
+    assert s.rec.of("lens")[-1] == {"type": "lens", "on": True, "radius": 80.0, "auto": True, "max": 10}
+    run(s, "excentricLens(false)")
+    assert s.rec.of("lens")[-1] == {"type": "lens", "on": False}

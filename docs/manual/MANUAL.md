@@ -1309,6 +1309,18 @@ The tools next to the menus turn clicks into commands:
 - **Heat**: click a node for a heat map of the distance from it.
 - **Paint**: click nodes to paint them with the colour next to the tools.
   Shift-click paints the neighbours too.
+- **◎ Lens** (or press **L**, which switches between Select and Lens): an
+  excentric labelling lens. A circle follows the pointer, and
+  the labels of the nodes under it are listed beside it, each joined to its
+  node by a line, in their nodes' colours (Fekete and Plaisant 1999, extended
+  by Bertini, Rigamonti and Lalanne 2009). The wheel resizes it and
+  Shift+wheel scrolls long lists. A bar chart under it counts the nodes by
+  colour. Click to pin it: then click a label to select its node (Shift-click
+  adds or removes), click the bars to show only some colours, and *Select N*
+  selects everything shown. Esc releases it. Hover popups are off while the
+  lens is on. `excentricLens(radius=80,
+  autoSize=true)` turns it on from code; with `autoSize` it grows over sparse
+  areas and shrinks over dense ones.
 
 Each click runs a command in the console (`shortestPath(v1, v14)`,
 `heatMap(v3)`, `paint(v5, red)`), so you can edit it and run it again.

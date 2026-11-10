@@ -119,7 +119,7 @@ function setTool(t: Tool) {
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-tool]")) b.setAttribute("aria-pressed", String(b.dataset.tool === t));
   $("#graph").dataset.tool = t;
   status.textContent = { select: "", path: "Path: click the first node", heat: "Heat map: click a node", paint: "Paint: click nodes (shift-click: with neighbours)",
-    lens: "Lens: point at nodes to list them · wheel resizes · Shift+wheel scrolls · click pins it, then select or filter" }[t];
+    lens: "Lens: point at nodes to list them · wheel resizes · Shift+wheel scrolls · click pins it, then select or filter · L or Esc: back to Select" }[t];
   lens.setActive(t === "lens");
 }
 
@@ -139,7 +139,18 @@ const lensLoop = () => {
 };
 requestAnimationFrame(lensLoop);
 
-for (const b of document.querySelectorAll<HTMLButtonElement>("[data-tool]")) b.addEventListener("click", () => setTool(b.dataset.tool as Tool));
+for (const b of document.querySelectorAll<HTMLButtonElement>("[data-tool]")) {
+  // the active Lens button switches back to Select
+  b.addEventListener("click", () => setTool(b.dataset.tool === "lens" && tool === "lens" ? "select" : b.dataset.tool as Tool));
+}
+// L switches between plain selection and the excentric lens (outside text fields)
+document.addEventListener("keydown", (ev) => {
+  if (ev.key.toLowerCase() !== "l" || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  const t = ev.target as HTMLElement | null;
+  if (t?.closest(".cm-editor, input, textarea, select, [contenteditable=true], dialog")) return;
+  ev.preventDefault();
+  setTool(tool === "lens" ? "select" : "lens");
+});
 
 function onGraphClick(hit: Hit, shift: boolean) {
   if (tool === "lens") {
@@ -472,6 +483,11 @@ const HIDDEN_ROWS = new Set(["name", "image", "labelcolor", "strokecolor", "node
 
 let lastGraphHit = "";
 function onGraphHover(hit: Hit, x: number, y: number) {
+  // the lens shows the labels itself; a hover popup would cover them
+  if (tool === "lens") {
+    hideTip();
+    return;
+  }
   const key = hit ? `${hit.kind}${hit.id}` : "";
   if (key !== lastGraphHit) graphEnterLeave(lastGraphHit, key);
   if (!hit) {

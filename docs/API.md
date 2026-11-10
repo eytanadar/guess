@@ -18,7 +18,7 @@ Commands can be called without parentheses when they take no arguments
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
 - [Layouts](#layouts) (33)
-- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (34)
+- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (35)
 - [Styles and visual mappings](#styles-and-visual-mappings) (10)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
@@ -1138,6 +1138,18 @@ edgeLabelsAlong() turns edge labels to run along their edges (kept
 upright, so they read left to right); edgeLabelsAlong(false) keeps them
 horizontal (the default).
 
+### `excentricLens(on=True, radius=None, autoSize=None, maxLabels=None)`
+
+excentricLens() turns on the lens tool (the toolbar's Lens): a circle
+that follows the pointer and lists the labels of the nodes under it
+beside it, each joined to its node by a line (excentric labelling).
+The wheel resizes it, Shift+wheel scrolls long lists; a click pins it,
+and then clicking a label selects its node (Shift: add or remove),
+"Select" takes everything under the lens, and the colour bars filter
+the list. radius in pixels; autoSize=true sizes the lens to the
+density under it; maxLabels per side. excentricLens(false) turns it
+off.
+
 ### `exportCGM(filename=None)`
 
 Not available in the browser (the Java version wrote CGM); use exportSVG or exportPDF.
@@ -2118,6 +2130,12 @@ optimizeLabels(2)
 
 ```python
 constantLabelSize()
+```
+
+**Excentric labelling lens**
+
+```python
+excentricLens(radius=80)
 ```
 
 **Label size by a field**

@@ -113,6 +113,7 @@ EXAMPLES = [
         ("Labels off the edges", "g.nodes.labelpos = 'outside'\nlabelPlacement('particles')", "label placement particles leader"),
         ("Polish label positions", "optimizeLabels(2)", "label placement annealing optimize"),
         ("Labels that stay readable when zooming", "constantLabelSize()", "label zoom screen size"),
+        ("Excentric labelling lens", "excentricLens(radius=80)", "lens excentric labels select fekete plaisant"),
         ("Label size by a field", "labelSizeBy(pagerank, 0.8, 2)", "label size font"),
         ("Edge labels", "labelBy(freq)\nedgeLabelsAlong()", "edge label along"),
         ("Bundle edges", "bundleEdges()", "mingle edge bundling hairball"),

@@ -1975,6 +1975,19 @@ between them.</li>
 from it.</li>
 <li><strong>Paint</strong>: click nodes to paint them with the colour
 next to the tools. Shift-click paints the neighbours too.</li>
+<li><strong>◎ Lens</strong> (or press <strong>L</strong>, which switches
+between Select and Lens): an excentric labelling lens. A circle follows
+the pointer, and the labels of the nodes under it are listed beside it,
+each joined to its node by a line, in their nodes’ colours (Fekete and
+Plaisant 1999, extended by Bertini, Rigamonti and Lalanne 2009). The
+wheel resizes it and Shift+wheel scrolls long lists. A bar chart under
+it counts the nodes by colour. Click to pin it: then click a label to
+select its node (Shift-click adds or removes), click the bars to show
+only some colours, and <em>Select N</em> selects everything shown. Esc
+releases it. Hover popups are off while the lens is on.
+<code>excentricLens(radius=80, autoSize=true)</code> turns it on from
+code; with <code>autoSize</code> it grows over sparse areas and shrinks
+over dense ones.</li>
 </ul>
 <p>Each click runs a command in the console
 (<code>shortestPath(v1, v14)</code>, <code>heatMap(v3)</code>,
@@ -3335,6 +3348,15 @@ semicircles).</p>
 <p>edgeLabelsAlong() turns edge labels to run along their edges (kept
 upright, so they read left to right); edgeLabelsAlong(false) keeps them
 horizontal (the default).</p>
+<h3 id="excentriclensontrue-radiusnone-autosizenone-maxlabelsnone"><code>excentricLens(on=True, radius=None, autoSize=None, maxLabels=None)</code></h3>
+<p>excentricLens() turns on the lens tool (the toolbar’s Lens): a circle
+that follows the pointer and lists the labels of the nodes under it
+beside it, each joined to its node by a line (excentric labelling). The
+wheel resizes it, Shift+wheel scrolls long lists; a click pins it, and
+then clicking a label selects its node (Shift: add or remove), “Select”
+takes everything under the lens, and the colour bars filter the list.
+radius in pixels; autoSize=true sizes the lens to the density under it;
+maxLabels per side. excentricLens(false) turns it off.</p>
 <h3 id="exportcgmfilenamenone"><code>exportCGM(filename=None)</code></h3>
 <p>Not available in the browser (the Java version wrote CGM); use
 exportSVG or exportPDF.</p>
@@ -3860,64 +3882,66 @@ palette (Cmd/Ctrl+K).</p>
 <div class="sourceCode" id="cb121"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a>optimizeLabels(<span class="dv">2</span>)</span></code></pre></div>
 <p><strong>Labels that stay readable when zooming</strong></p>
 <div class="sourceCode" id="cb122"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a>constantLabelSize()</span></code></pre></div>
+<p><strong>Excentric labelling lens</strong></p>
+<div class="sourceCode" id="cb123"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a>excentricLens(radius<span class="op">=</span><span class="dv">80</span>)</span></code></pre></div>
 <p><strong>Label size by a field</strong></p>
-<div class="sourceCode" id="cb123"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a>labelSizeBy(pagerank, <span class="fl">0.8</span>, <span class="dv">2</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb124"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a>labelSizeBy(pagerank, <span class="fl">0.8</span>, <span class="dv">2</span>)</span></code></pre></div>
 <p><strong>Edge labels</strong></p>
-<div class="sourceCode" id="cb124"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a>labelBy(freq)</span>
-<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a>edgeLabelsAlong()</span></code></pre></div>
+<div class="sourceCode" id="cb125"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a>labelBy(freq)</span>
+<span id="cb125-2"><a href="#cb125-2" aria-hidden="true" tabindex="-1"></a>edgeLabelsAlong()</span></code></pre></div>
 <p><strong>Bundle edges</strong></p>
-<div class="sourceCode" id="cb125"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a>bundleEdges()</span></code></pre></div>
+<div class="sourceCode" id="cb126"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>bundleEdges()</span></code></pre></div>
 <p><strong>Force-directed edge bundling</strong></p>
-<div class="sourceCode" id="cb126"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>bundleEdges(method<span class="op">=</span><span class="st">&#39;fdeb&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb127"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a>bundleEdges(method<span class="op">=</span><span class="st">&#39;fdeb&#39;</span>)</span></code></pre></div>
 <h3 id="filtering-and-selection">Filtering and selection</h3>
 <p><strong>Show only a core</strong></p>
-<div class="sourceCode" id="cb127"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a>showOnly(kCore(<span class="dv">3</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb128"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>showOnly(kCore(<span class="dv">3</span>))</span></code></pre></div>
 <p><strong>Ego network</strong></p>
-<div class="sourceCode" id="cb128"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>showOnly(egoNetwork(v1, <span class="dv">2</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb129"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a>showOnly(egoNetwork(v1, <span class="dv">2</span>))</span></code></pre></div>
 <p><strong>Largest component</strong></p>
-<div class="sourceCode" id="cb129"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a>showOnly(giantComponent())</span></code></pre></div>
+<div class="sourceCode" id="cb130"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a>showOnly(giantComponent())</span></code></pre></div>
 <p><strong>Edges inside communities</strong></p>
-<div class="sourceCode" id="cb130"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a>showOnly(intraEdges(modularity_class))</span></code></pre></div>
+<div class="sourceCode" id="cb131"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a>showOnly(intraEdges(modularity_class))</span></code></pre></div>
 <p><strong>Show everything again</strong></p>
-<div class="sourceCode" id="cb131"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a>showAll()</span></code></pre></div>
+<div class="sourceCode" id="cb132"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>showAll()</span></code></pre></div>
 <p><strong>Select from code</strong></p>
-<div class="sourceCode" id="cb132"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>select(dept <span class="op">==</span> <span class="st">&#39;dept2&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb133"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a>select(dept <span class="op">==</span> <span class="st">&#39;dept2&#39;</span>)</span></code></pre></div>
 <p><strong>Act on the selection</strong></p>
-<div class="sourceCode" id="cb133"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a>sel.color <span class="op">=</span> orange</span>
-<span id="cb133-2"><a href="#cb133-2" aria-hidden="true" tabindex="-1"></a>center(sel)</span></code></pre></div>
+<div class="sourceCode" id="cb134"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a>sel.color <span class="op">=</span> orange</span>
+<span id="cb134-2"><a href="#cb134-2" aria-hidden="true" tabindex="-1"></a>center(sel)</span></code></pre></div>
 <p><strong>Table of a set</strong></p>
-<div class="sourceCode" id="cb134"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a>table(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb135"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a>table(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>)</span></code></pre></div>
 <h3 id="files-and-sessions">Files and sessions</h3>
 <p><strong>Load Gephi’s format</strong></p>
-<div class="sourceCode" id="cb135"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a>makeFromGEXF(<span class="st">&#39;graph.gexf&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb136"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a>makeFromGEXF(<span class="st">&#39;graph.gexf&#39;</span>)</span></code></pre></div>
 <p><strong>Load spreadsheets</strong></p>
-<div class="sourceCode" id="cb136"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a>makeFromCSV(<span class="st">&#39;edges.csv&#39;</span>, <span class="st">&#39;nodes.csv&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb137"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a>makeFromCSV(<span class="st">&#39;edges.csv&#39;</span>, <span class="st">&#39;nodes.csv&#39;</span>)</span></code></pre></div>
 <p><strong>Export for Gephi</strong></p>
-<div class="sourceCode" id="cb137"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a>exportGEXF(<span class="st">&#39;graph.gexf&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb138"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a>exportGEXF(<span class="st">&#39;graph.gexf&#39;</span>)</span></code></pre></div>
 <p><strong>Save a session</strong></p>
-<div class="sourceCode" id="cb138"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a>saveSession(<span class="st">&#39;work.guess&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb139"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a>saveSession(<span class="st">&#39;work.guess&#39;</span>)</span></code></pre></div>
 <p><strong>Save what you ran</strong></p>
-<div class="sourceCode" id="cb139"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a>saveHistory(<span class="st">&#39;work.py&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb140"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a>saveHistory(<span class="st">&#39;work.py&#39;</span>)</span></code></pre></div>
 <p><strong>Snapshot and morph</strong></p>
-<div class="sourceCode" id="cb140"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a>ss(<span class="st">&#39;before&#39;</span>)</span>
-<span id="cb140-2"><a href="#cb140-2" aria-hidden="true" tabindex="-1"></a>circleLayout()</span>
-<span id="cb140-3"><a href="#cb140-3" aria-hidden="true" tabindex="-1"></a>morph(<span class="st">&#39;before&#39;</span>, <span class="dv">2000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb141"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a>ss(<span class="st">&#39;before&#39;</span>)</span>
+<span id="cb141-2"><a href="#cb141-2" aria-hidden="true" tabindex="-1"></a>circleLayout()</span>
+<span id="cb141-3"><a href="#cb141-3" aria-hidden="true" tabindex="-1"></a>morph(<span class="st">&#39;before&#39;</span>, <span class="dv">2000</span>)</span></code></pre></div>
 <p><strong>Random graph</strong></p>
-<div class="sourceCode" id="cb141"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a>makeBarabasiAlbertRandom(<span class="dv">5</span>, <span class="dv">2</span>, <span class="dv">300</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb142"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a>makeBarabasiAlbertRandom(<span class="dv">5</span>, <span class="dv">2</span>, <span class="dv">300</span>)</span></code></pre></div>
 <h3 id="interface-building">Interface building</h3>
 <p><strong>A slider that filters</strong></p>
-<div class="sourceCode" id="cb142"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> Slider(freq.<span class="bu">min</span>, freq.<span class="bu">max</span>, label<span class="op">=</span><span class="st">&#39;min freq&#39;</span>)</span>
-<span id="cb142-2"><a href="#cb142-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> update(v):</span>
-<span id="cb142-3"><a href="#cb142-3" aria-hidden="true" tabindex="-1"></a>    (freq <span class="op">&lt;</span> v).visible <span class="op">=</span> false</span>
-<span id="cb142-4"><a href="#cb142-4" aria-hidden="true" tabindex="-1"></a>    (freq <span class="op">&gt;=</span> v).visible <span class="op">=</span> true</span>
-<span id="cb142-5"><a href="#cb142-5" aria-hidden="true" tabindex="-1"></a>s.onChange <span class="op">=</span> update</span>
-<span id="cb142-6"><a href="#cb142-6" aria-hidden="true" tabindex="-1"></a>ui.dock(Panel(<span class="st">&#39;Filter&#39;</span>, s))</span></code></pre></div>
+<div class="sourceCode" id="cb143"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> Slider(freq.<span class="bu">min</span>, freq.<span class="bu">max</span>, label<span class="op">=</span><span class="st">&#39;min freq&#39;</span>)</span>
+<span id="cb143-2"><a href="#cb143-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> update(v):</span>
+<span id="cb143-3"><a href="#cb143-3" aria-hidden="true" tabindex="-1"></a>    (freq <span class="op">&lt;</span> v).visible <span class="op">=</span> false</span>
+<span id="cb143-4"><a href="#cb143-4" aria-hidden="true" tabindex="-1"></a>    (freq <span class="op">&gt;=</span> v).visible <span class="op">=</span> true</span>
+<span id="cb143-5"><a href="#cb143-5" aria-hidden="true" tabindex="-1"></a>s.onChange <span class="op">=</span> update</span>
+<span id="cb143-6"><a href="#cb143-6" aria-hidden="true" tabindex="-1"></a>ui.dock(Panel(<span class="st">&#39;Filter&#39;</span>, s))</span></code></pre></div>
 <p><strong>React to clicks</strong></p>
-<div class="sourceCode" id="cb143"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a>graphevents.clickNode <span class="op">=</span> <span class="kw">lambda</span> n: center([n] <span class="op">+</span> n.getNeighbors())</span></code></pre></div>
+<div class="sourceCode" id="cb144"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb144-1"><a href="#cb144-1" aria-hidden="true" tabindex="-1"></a>graphevents.clickNode <span class="op">=</span> <span class="kw">lambda</span> n: center([n] <span class="op">+</span> n.getNeighbors())</span></code></pre></div>
 <p><strong>Record a movie</strong></p>
-<div class="sourceCode" id="cb144"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb144-1"><a href="#cb144-1" aria-hidden="true" tabindex="-1"></a>startMovie(<span class="dv">30</span>, <span class="st">&#39;run.webm&#39;</span>)</span>
-<span id="cb144-2"><a href="#cb144-2" aria-hidden="true" tabindex="-1"></a>gemLayout()</span>
-<span id="cb144-3"><a href="#cb144-3" aria-hidden="true" tabindex="-1"></a>stopMovie()</span></code></pre></div>
+<div class="sourceCode" id="cb145"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb145-1"><a href="#cb145-1" aria-hidden="true" tabindex="-1"></a>startMovie(<span class="dv">30</span>, <span class="st">&#39;run.webm&#39;</span>)</span>
+<span id="cb145-2"><a href="#cb145-2" aria-hidden="true" tabindex="-1"></a>gemLayout()</span>
+<span id="cb145-3"><a href="#cb145-3" aria-hidden="true" tabindex="-1"></a>stopMovie()</span></code></pre></div>
 <h2 id="fields">Fields</h2>
 <p>Built-in node fields:</p>
 <table>
