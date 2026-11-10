@@ -1,0 +1,3868 @@
+paper,keyword,score
+W2582743722,R programming language,0.894
+W2582743722,statistical computing,0.962
+W2582743722,S language,0.768
+W2582743722,S-PLUS,0.965
+W2582743722,statistical software,0.781
+W2159675211,Cytoscape,0.996
+W2159675211,protein-protein interaction,0.93
+W2159675211,protein-DNA interactions,0.906
+W2159675211,genetic interactions,0.918
+W2159675211,gene expression data integration,0.673
+W2159675211,network visualization,0.621
+W2159675211,plug-in architecture,0.869
+W2159675211,protein complexes,0.95
+W2159675211,Halobacterium,0.956
+W2963446712,DenseNet,0.905
+W2963446712,skip connections,0.528
+W2963446712,gradient vanishing,0.758
+W2963446712,feature reuse,0.882
+W2963446712,feature propagation,0.861
+W2963446712,parameter efficiency,0.732
+W2963446712,object recognition,0.853
+W2963446712,image classification,0.7
+W2963446712,network depth,0.433
+W2105846236,discriminant validity,1.0
+W2105846236,partial least squares,0.972
+W2105846236,cross-loadings,0.98
+W2105846236,multitrait-multimethod matrix,0.896
+W2105846236,latent variables,0.708
+W2105846236,measurement validity,0.512
+W3003257820,SciPy,0.982
+W3003257820,scientific computing,0.609
+W3003257820,Python,0.671
+W3003257820,open source software,0.939
+W3003257820,numerical algorithms,0.695
+W3003257820,software development practices,0.914
+W4327810158,GPT-4,1.0
+W4327810158,large language models,0.909
+W4327810158,multimodal models,0.954
+W4327810158,image-text models,0.636
+W4327810158,transformer pre-training,0.694
+W4327810158,post-training alignment,0.799
+W4327810158,factuality,0.792
+W4327810158,bar examination,0.509
+W4327810158,model scaling,0.389
+W3030163527,few-shot learning,0.928
+W3030163527,GPT-3,0.959
+W3030163527,large language models,0.749
+W3030163527,task-agnostic learning,0.595
+W3030163527,pre-training,0.343
+W3030163527,fine-tuning,0.576
+W3030163527,autoregressive language models,0.667
+W3030163527,domain adaptation,0.542
+W3030163527,text-to-text translation,0.448
+W3030163527,question answering,0.962
+W3030163527,cloze task,0.832
+W3030163527,text generation,0.475
+W3030163527,societal impact of AI,0.503
+W2150220236,VOSviewer,1.0
+W2150220236,science mapping,0.927
+W2150220236,scientific journals,0.735
+W2552465644,image-to-image translation,0.998
+W2552465644,conditional generative adversarial networks,0.957
+W2552465644,image colorization,0.991
+W1987971958,clustering,0.849
+W1987971958,cluster validation,0.609
+W1987971958,average silhouette width,0.885
+W1987971958,number of clusters selection,0.821
+W2593436234,SwissADME,0.99
+W2593436234,ADME prediction,0.818
+W2593436234,pharmacokinetics,0.969
+W2593436234,drug-likeness,0.992
+W2593436234,physicochemical properties,0.872
+W2593436234,small molecules,0.82
+W2593436234,boiled eggs,0.785
+W2593436234,web-based tool,0.67
+W2593436234,drug discovery,0.735
+W2148606196,complex networks,0.999
+W2148606196,small-world effect,0.874
+W2148606196,degree distribution,0.809
+W2148606196,clustering,0.766
+W2148606196,network correlation,0.985
+W2148606196,random graph models,0.999
+W2148606196,network growth models,0.811
+W2148606196,preferential attachment,1.0
+W2148606196,dynamical processes on networks,0.978
+W2148606196,social networks,0.738
+W2148606196,biological networks,0.981
+W2148606196,internet,0.879
+W2115098571,chained equations,0.716
+W2115098571,multiple imputation,0.966
+W2115098571,R package,0.571
+W2115098571,predictor selection,0.831
+W2115098571,pooling,0.503
+W2115098571,multilevel data,0.833
+W2115098571,model selection,0.631
+W1985749074,social network sites,1.0
+W1985749074,affordances,0.627
+W1985749074,social media,0.501
+W1985749074,future research directions,0.859
+W2900569176,STRING database,0.734
+W2900569176,protein-protein interaction network,0.885
+W2900569176,gene set enrichment analysis,0.943
+W2900569176,Gene Ontology,0.712
+W2900569176,KEGG,0.861
+W2900569176,hierarchical clustering,0.646
+W2900569176,network visualization,0.678
+W4390874575,image segmentation,0.951
+W4390874575,Segment Anything Model,0.925
+W4390874575,zero-shot segmentation,0.601
+W4390874575,foundation models,0.784
+W4390874575,mask generation,0.322
+W2058046532,automated anatomical labeling,0.983
+W2058046532,anatomical parcellation,0.897
+W2058046532,statistical parametric mapping,0.732
+W2058046532,Talairach atlas,0.735
+W2058046532,brain atlas,0.334
+W2058046532,neuroimaging software,0.682
+W1849277567,convolutional neural networks,0.965
+W1849277567,network visualization,0.779
+W1849277567,ImageNet classification,0.753
+W1849277567,model architecture design,0.635
+W1849277567,ablation study,0.899
+W1849277567,softmax classifier,0.565
+W1849277567,transfer learning,0.728
+W1849277567,Caltech-101,0.885
+W1849277567,Caltech-256,0.911
+W1849277567,generalization,0.485
+W2114843025,cBioPortal,0.898
+W2114843025,cancer genomics,0.93
+W2114843025,clinical outcomes,0.515
+W2114843025,gene expression profiling,0.615
+W2114843025,proteomics,0.751
+W2114843025,epigenetics,0.908
+W2114843025,network visualization,0.636
+W2114843025,survival analysis,0.991
+W2095293504,community structure,0.852
+W2095293504,network clustering,0.58
+W2095293504,edge deletion,0.754
+W2095293504,betweenness centrality,0.91
+W2095293504,number of communities,0.735
+W2095293504,network partitioning,0.513
+W2095293504,complex networks,0.617
+W2163922914,representation learning,0.999
+W2163922914,unsupervised feature learning,0.996
+W2163922914,deep learning,0.756
+W2163922914,autoencoder,0.842
+W2163922914,manifold learning,0.865
+W2163922914,probabilistic models,0.992
+W2163922914,density estimation,0.882
+W2751884637,global burden of disease,0.747
+W2751884637,years lived with disability,0.89
+W2751884637,disease incidence,0.76
+W2751884637,disease prevalence,0.967
+W2751884637,disability weights,0.721
+W2751884637,low back pain,0.699
+W2751884637,migraine,0.977
+W2751884637,hearing loss,0.891
+W2751884637,iron deficiency anemia,0.993
+W2751884637,major depressive disorder,0.964
+W2751884637,socio-demographic index,0.61
+W2751884637,disability-adjusted life years,0.517
+W2751884637,sequelae,0.345
+W2751884637,comorbidities,0.543
+W2623703952,Cronbach's alpha,0.987
+W2623703952,research instrument development,0.598
+W2623703952,reliability statistics,0.482
+W2623703952,scale development,0.508
+W2623703952,reporting quality,0.53
+W2623703952,unidimensionality,0.834
+W2623703952,science education research,0.692
+W2258584306,Pythia,0.844
+W2258584306,Monte Carlo event generators,0.798
+W2258584306,high-energy collisions,0.642
+W2258584306,strong interaction,0.717
+W2258584306,parton shower,0.79
+W2258584306,QCD,0.54
+W2258584306,underlying event,0.807
+W2258584306,hadron fragmentation,0.921
+W2258584306,particle decay,0.71
+W2258584306,event simulation,0.385
+W3023875755,aggregate productivity growth,0.579
+W3023875755,heterogeneous firms,0.753
+W3023875755,international trade,0.607
+W3023875755,export market entry,0.833
+W3023875755,firm exit,0.898
+W3023875755,monopolistic competition,0.618
+W3023875755,welfare gains from trade,0.666
+W3023875755,irreversible investment,0.695
+W2981731882,explainable AI,0.994
+W2981731882,explainability,0.722
+W2981731882,explainable machine learning,0.922
+W2981731882,data fusion,0.567
+W2981731882,responsible AI,0.92
+W2981731882,interpretability,0.746
+W2981731882,fairness and accountability,0.59
+W2125910575,Gephi,1.0
+W2125910575,network visualization,0.867
+W2125910575,graph analysis,0.7
+W2125910575,dynamic network visualization,0.759
+W2125910575,3D rendering,0.829
+W2125910575,network clustering,0.757
+W2125910575,network filtering,0.485
+W2125910575,open source software,0.626
+W1855539512,exploratory factor analysis,0.998
+W1855539512,best practices,0.956
+W1855539512,factor extraction,0.93
+W1855539512,rotation,0.709
+W1855539512,number of factors,0.969
+W1855539512,sample size,0.974
+W2169678694,Open Babel,1.0
+W2169678694,cheminformatics software,0.745
+W2169678694,SMILES,0.806
+W2169678694,Chemical Markup Language,0.823
+W2169678694,substructure searching,0.896
+W2169678694,similarity search,0.87
+W2169678694,open source software,0.839
+W2132914434,spectral clustering,1.0
+W2132914434,graph Laplacian,0.868
+W2132914434,clustering algorithms,0.791
+W2132914434,k-means comparison,0.922
+W2132914434,graph partitioning,0.539
+W2132914434,algorithm derivation,0.49
+W2132914434,linear algebra,0.484
+W229097380,igraph,0.972
+W229097380,complex networks,0.961
+W229097380,network analysis software,0.886
+W229097380,graph theory,0.686
+W229097380,network visualization,0.458
+W2056132907,extra trees,0.892
+W2056132907,tree-based ensemble methods,0.789
+W2056132907,supervised classification,0.704
+W2056132907,regression analysis,0.941
+W2056132907,computational efficiency,0.771
+W2056132907,bias-variance analysis,0.926
+W2056132907,kernel characterization,0.841
+W2056132907,geometric characterization,0.608
+W2056132907,parameter tuning,0.57
+W2995022099,federated learning,1.0
+W2995022099,decentralized data,0.675
+W2995022099,privacy-preserving machine learning,0.789
+W2995022099,data minimization,0.757
+W2995022099,open problems,0.58
+W2995022099,mobile devices,0.461
+W2995022099,data collection,0.335
+W2112042732,technology acceptance model,0.829
+W2112042732,information technology adoption,0.736
+W2112042732,information technology use,0.674
+W2112042732,perceived usefulness,0.667
+W2112042732,perceived ease of use,1.0
+W2112042732,management interventions,0.58
+W2112042732,IT implementation,0.883
+W2112042732,organizational decision-making,0.678
+W2112042732,nomological network,0.788
+W2117131162,genome visualization,0.936
+W2117131162,exploratory data analysis,0.52
+W2117131162,next-generation sequencing data,0.82
+W2117131162,integrative genomics,0.78
+W2117131162,open source software,0.751
+W2055298722,phylogenetic networks,1.0
+W2055298722,split networks,0.941
+W2055298722,hybridization,0.861
+W2055298722,horizontal gene transfer,1.0
+W2055298722,recombination,0.954
+W2055298722,gene duplication and loss,0.982
+W2800392236,single-cell RNA sequencing,0.82
+W2800392236,data preprocessing,0.743
+W2800392236,clustering,0.708
+W2800392236,pseudotime,0.835
+W2800392236,single-cell trajectory analysis,0.987
+W2800392236,differential gene expression,0.708
+W2800392236,AnnData,0.712
+W2800392236,Python,0.435
+W2560647685,catastrophic forgetting,1.0
+W2560647685,continual learning,0.768
+W2560647685,sequential learning,0.602
+W2560647685,artificial neural networks,0.63
+W2560647685,weight decay,0.372
+W2560647685,memory retention,0.356
+W2560647685,Atari 2600,0.879
+W2560647685,handwritten digit recognition,0.775
+W2560647685,connectionist models,0.498
+W3208645186,sample size,0.548
+W3208645186,saturation,0.804
+W3208645186,qualitative research,0.926
+W3208645186,focus groups,0.84
+W3208645186,sample size justification,0.537
+W3208645186,reporting transparency,0.617
+W2784874046,ArcFace,0.915
+W2784874046,deep face recognition,0.948
+W2784874046,softmax loss,0.642
+W2784874046,margin-based loss,0.502
+W2784874046,label noise,0.673
+W2784874046,class separability,0.582
+W2223470559,partial least squares path modeling,0.941
+W2223470559,composite materials,0.618
+W2463195069,quantitative proteomics,0.882
+W2463195069,mass spectrometry data analysis,0.846
+W2463195069,protein expression profiling,0.665
+W2463195069,post-translational modification,0.89
+W2463195069,protein-protein interaction data,0.831
+W2463195069,multiple comparisons,0.758
+W2463195069,machine learning classification,0.685
+W2463195069,plug-in architecture,0.696
+W2463195069,time series analysis,0.865
+W4226278401,instruction following,0.619
+W4226278401,human feedback,0.642
+W4226278401,reinforcement learning from human feedback,0.803
+W4226278401,supervised fine-tuning,0.92
+W4226278401,large language models,0.667
+W4226278401,model alignment,0.664
+W4226278401,honesty,0.723
+W4226278401,toxicity reduction,0.866
+W4226278401,GPT-3,0.906
+W2097308346,Laplacian eigenmaps,0.996
+W2097308346,dimensionality reduction,0.855
+W2097308346,manifold learning,0.799
+W2097308346,graph Laplacian,0.984
+W2097308346,Laplace-Beltrami operator,0.959
+W2097308346,heat equation,0.847
+W2097308346,nonlinear dimensionality reduction,0.795
+W2097308346,local structure preservation,0.948
+W2097308346,clustering,0.907
+W2097308346,data representation,0.916
+W4366208220,DINOv2,0.855
+W4366208220,self-supervised pre-training,0.771
+W4366208220,vision transformer,0.46
+W4366208220,foundation models,0.486
+W4366208220,knowledge distillation,0.863
+W4366208220,large-scale training,0.384
+W4366208220,image classification benchmark,0.335
+W2132022337,NetworkX,0.999
+W2132022337,network analysis,0.85
+W2132022337,graph data structures,0.882
+W2132022337,graph algorithms,0.888
+W2132022337,network characteristics,0.637
+W2132022337,graph generators,0.5
+W2132022337,Erdős-Rényi random graphs,0.855
+W2132022337,small-world networks,0.929
+W2132022337,Barabási-Albert model,0.949
+W2132022337,computational networks,0.647
+W2084310832,capital structure,0.986
+W2084310832,corporate leverage,0.847
+W2084310832,leverage determinants,0.914
+W2084310832,financing decisions,0.685
+W2084310832,public companies,0.779
+W2084310832,cross-national comparison,0.841
+W2084310832,G7 countries,0.919
+W2950354111,long-read genome assembly,0.872
+W2950354111,Canu,0.854
+W2950354111,nanopore sequencing,0.795
+W2950354111,PacBio long-read sequencing,0.871
+W2950354111,MinHash,0.653
+W2950354111,TF-IDF weighting,0.835
+W2950354111,haplotype phasing,0.907
+W2950354111,assembly graph,0.745
+W2950354111,scaffolding,0.526
+W2950354111,de novo genome assembly,0.656
+W2950354111,eukaryotic chromosomes,0.648
+W2950354111,microbial genomes,0.662
+W2015159529,scikit-image,1.0
+W2015159529,image processing,0.938
+W2015159529,Python library,0.826
+W2015159529,open source software,0.994
+W2015159529,image processing algorithms,0.594
+W2015159529,real-world applications,0.729
+W1641498739,brain tumor segmentation,0.978
+W1641498739,glioma,0.892
+W1641498739,multimodal MRI,0.937
+W1641498739,benchmark,0.336
+W1641498739,interobserver variability,0.794
+W1641498739,algorithm fusion,0.755
+W1641498739,majority voting,0.7
+W1641498739,manual annotation,0.417
+W4309674289,hallucinations,0.95
+W4309674289,natural language generation,0.995
+W4309674289,hallucination mitigation,0.998
+W4309674289,abstractive summarization,0.978
+W4309674289,dialogue generation,0.999
+W4309674289,generative question answering,0.986
+W4309674289,data-to-text generation,0.999
+W4309674289,machine translation,0.966
+W4309674289,large language models,0.733
+W4309674289,transformer models,0.549
+W2152240519,non-Abelian anyons,0.975
+W2152240519,topological quantum computation,0.996
+W2152240519,non-Abelian statistics,0.919
+W2152240519,fractional quantum Hall effect,0.796
+W2152240519,5/2 state,0.895
+W2152240519,topological degeneracy,0.988
+W2152240519,fault-tolerant quantum computing,0.835
+W2152240519,topological quantum memory,0.585
+W2152240519,ultracold atoms in optical lattices,0.894
+W2152240519,superconducting thin films,0.976
+W2024046085,boosting,0.997
+W2024046085,multi-class classification,0.779
+W2024046085,boosted decision trees,0.793
+W2024046085,weighted majority voting,0.643
+W2024046085,binary classification,0.63
+W1946252112,haplotype network,0.934
+W1946252112,phylogeography,0.798
+W1946252112,population genetics,0.467
+W1946252112,network-based methods,0.616
+W1946252112,open source software,0.6
+W4360620450,ChatGPT,0.955
+W4360620450,generative AI,0.846
+W4360620450,conversational AI,0.92
+W4360620450,AI ethics,0.613
+W4360620450,AI regulation,0.854
+W4360620450,digital transformation,0.585
+W4360620450,algorithmic bias,0.49
+W4360620450,misinformation,0.623
+W4360620450,privacy and security,0.857
+W4360620450,human-AI collaboration,0.888
+W4360620450,artificial intelligence in education,0.684
+W4360620450,artificial intelligence in research,0.816
+W4360620450,tourism and hospitality,0.795
+W4360620450,banking sector,0.51
+W4360620450,AI in publishing,0.354
+W3135028703,machine learning algorithms,0.987
+W3135028703,supervised learning,0.928
+W3135028703,unsupervised learning,1.0
+W3135028703,semi-supervised learning,0.993
+W3135028703,reinforcement learning,0.998
+W3135028703,deep learning,0.999
+W3135028703,Industry 4.0,0.873
+W3135028703,Internet of Things data,0.882
+W3135028703,cybersecurity,0.733
+W3135028703,smart cities,0.999
+W3135028703,medical applications,0.903
+W3135028703,business applications,0.857
+W2167482691,network visualization,0.951
+W2167482691,force-directed placement,0.901
+W2167482691,undirected graphs,0.969
+W2167482691,graph layout algorithms,0.562
+W2153791616,predictive processing,0.755
+W2153791616,top-down prediction,0.609
+W2153791616,prediction error,0.801
+W2153791616,generative models,0.808
+W2153791616,perception-action coupling,0.8
+W2153791616,attention,0.923
+W2153791616,cortical processing,0.737
+W2153791616,situated agents,0.524
+W2153791616,agency,0.82
+W2153791616,experience,0.424
+W2159182565,aggregation-induced emission,1.0
+W2159182565,AIE luminogens,0.895
+W2159182565,structure-property relationships,0.918
+W2159182565,photophysical mechanisms,0.945
+W2159182565,molecular design strategy,0.636
+W2159182565,optoelectronic applications,0.954
+W2159182565,biological applications,0.791
+W2159182565,luminescence,0.621
+W2169589032,Gene Ontology,0.963
+W2169589032,KEGG pathways,0.956
+W2169589032,gene function annotation,0.613
+W2169589032,pathway enrichment,0.522
+W2169589032,network visualization,0.472
+W1969353942,REVIGO,0.86
+W1969353942,Gene Ontology,0.884
+W1969353942,gene ontology enrichment,0.645
+W1969353942,semantic similarity,0.983
+W1969353942,multidimensional scaling,0.665
+W1969353942,treemaps,0.756
+W1969353942,word clouds,0.965
+W1969353942,network visualization,0.716
+W1969353942,web server,0.64
+W1966716734,class imbalance,0.854
+W1966716734,binary classification,0.764
+W1966716734,classifier evaluation,0.871
+W1966716734,specificity,0.649
+W1966716734,positive predictive value,0.969
+W1966716734,sensitivity,0.369
+W1966716734,bioinformatics classification,0.465
+W1966716734,visual interpretability,0.564
+W4402754006,real-time object detection,0.904
+W4402754006,RT-DETR,0.854
+W4402754006,multi-scale feature fusion,0.794
+W4402754006,query selection,0.763
+W4402754006,speed-accuracy trade-off,0.921
+W2530237102,psychological networks,0.987
+W2530237102,network estimation,0.755
+W2530237102,sampling variability,0.738
+W2530237102,bootstrapping,0.533
+W2530237102,centrality indices,0.838
+W2530237102,edge weights,0.652
+W2530237102,post-traumatic stress disorder,0.942
+W2530237102,network stability,0.476
+W2136850043,protein-protein interaction network,0.885
+W2136850043,graph clustering,0.876
+W2136850043,MCODE,0.67
+W2136850043,vertex weighting,0.555
+W2136850043,neighborhood density,0.825
+W2136850043,dense subgraph detection,0.525
+W2136850043,Saccharomyces cerevisiae,0.834
+W2136850043,high-throughput interaction data,0.751
+W2136850043,false positives,0.602
+W4206055706,dementia prevalence,0.826
+W4206055706,dementia risk factors,0.835
+W4206055706,body mass index,0.862
+W4206055706,fasting blood glucose,0.973
+W4206055706,smoking,0.99
+W4206055706,population aging,0.868
+W4206055706,population growth,0.902
+W4206055706,sex differences in dementia,0.811
+W4206055706,decomposition analysis,0.643
+W4206055706,Global Burden of Disease Study 2019,0.909
+W4206055706,public health planning,0.661
+W4206055706,resource prioritization,0.72
+W3027879771,retrieval-augmented generation,1.0
+W3027879771,Wikipedia,0.702
+W3027879771,open-domain question answering,0.727
+W3027879771,knowledge provenance,0.429
+W3027879771,fine-tuning,0.515
+W2015370254,social network analysis,0.996
+W2015370254,relational data,0.814
+W2015370254,network density,0.603
+W2015370254,centrality,0.908
+W2015370254,centralization,0.829
+W2015370254,network components,0.891
+W2015370254,cliques,0.799
+W2015370254,core network,0.484
+W2015370254,position,0.379
+W2015370254,roles,0.795
+W2015370254,network clusters,0.574
+W2015370254,network visualization,0.792
+W3126027997,system GMM,0.597
+W3126027997,weak instruments,0.695
+W3126027997,endogeneity,0.872
+W3126027997,assessment validity,0.527
+W3126027997,financial sector development,0.603
+W3126027997,income inequality,0.998
+W2038574100,genetic linkage map,0.864
+W2038574100,quantitative trait loci,0.984
+W2038574100,QTL mapping,0.882
+W2038574100,vector graphics,0.648
+W2038574100,metafiles,0.587
+W2038574100,linkage analysis,0.393
+W2038574100,Windows applications,0.372
+W2038574100,map printing,0.301
+W3168997536,convolutional neural networks,1.0
+W3168997536,multidimensional convolution,0.997
+W3168997536,convolutional neural network architecture,0.585
+W3168997536,hyperparameter optimization,0.988
+W3168997536,computer vision,0.816
+W3168997536,natural language processing,0.834
+W3168997536,open problems,0.412
+W2048679005,co-training,0.866
+W2048679005,semi-supervised learning,0.957
+W2048679005,unlabeled data,0.918
+W2048679005,label noise,0.515
+W2048679005,boosting,0.389
+W2048679005,active learning (machine learning),0.45
+W1481356306,sampling-based motion planning,0.858
+W1481356306,path planning,0.654
+W1481356306,probabilistic roadmaps,0.836
+W1481356306,rapidly-exploring random tree,0.942
+W1481356306,PRM,0.943
+W1481356306,RRT*,0.999
+W1481356306,asymptotic optimality,0.982
+W1481356306,almost sure convergence,0.704
+W1481356306,random geometric graphs,0.736
+W1481356306,computational complexity,0.699
+W1481356306,probabilistic completeness,0.683
+W2113537253,reliability statistics,0.957
+W2113537253,validity,1.0
+W2113537253,qualitative research,0.935
+W2113537253,triangulation,0.979
+W2113537253,naturalistic approach,0.707
+W2113537253,positivism,0.702
+W2113537253,epistemology,0.747
+W2113537253,truth claims,0.573
+W2113537253,research credibility,0.524
+W1888005072,lines,0.875
+W1888005072,graph embedding,0.831
+W1888005072,edge sampling,0.867
+W1888005072,stochastic gradient descent,0.837
+W1888005072,node classification,0.549
+W1888005072,link prediction,0.994
+W1888005072,network visualization,0.719
+W1888005072,social networks,0.736
+W1888005072,citation networks,0.936
+W1888005072,language network,0.997
+W4224308101,Arecaceae,0.862
+W4224308101,large language models,0.782
+W4224308101,model scaling,0.675
+W4224308101,few-shot learning,0.955
+W4224308101,pathways,0.499
+W4224308101,multi-step reasoning,0.801
+W4224308101,BIG-Bench,0.925
+W4224308101,code generation,0.93
+W4224308101,training data memorization,0.964
+W2547875792,categorical latent variables,0.739
+W2547875792,differentiable sampling,0.831
+W2547875792,gradient estimation,0.747
+W2547875792,annealing,0.509
+W2547875792,structured prediction,0.892
+W2547875792,semi-supervised classification,0.923
+W2547875792,stochastic neural networks,0.79
+W4403853618,Qwen2-VL,0.93
+W4403853618,vision-language models,0.934
+W4403853618,visual tokenization,0.814
+W4403853618,video processing,0.556
+W4403853618,large vision-language models,0.776
+W4403853618,scaling laws,0.939
+W4403853618,visual perception,0.585
+W4403853618,multimodal benchmark,0.425
+W2086561953,RNA secondary structure,0.858
+W2086561953,RNA folding,0.802
+W2086561953,thermodynamic parameters,0.585
+W2086561953,base pairing probability,0.819
+W2086561953,RNA-RNA interactions,0.822
+W2086561953,Z-score,0.755
+W2086561953,OpenMP parallel computing,0.683
+W2086561953,nucleic acid folding,0.678
+W2162896254,network visualization,0.971
+W2162896254,psychometric data,0.769
+W2162896254,correlation matrix,0.706
+W2162896254,network modeling,0.549
+W2162896254,exploratory factor analysis,0.938
+W2162896254,confirmatory factor analysis,1.0
+W2162896254,SEM,0.597
+W2162896254,lavaan,0.798
+W2162896254,NEO-PI-R,0.842
+W2162896254,personality tests,0.808
+W2162896254,factor loadings,0.689
+W2118745042,obesity,0.907
+W2118745042,social networks,0.649
+W2118745042,human-to-human transmission,0.666
+W2118745042,obesity epidemic,0.731
+W2118745042,body mass index,0.85
+W2118745042,social ties,0.569
+W2118745042,siblings,0.575
+W2118745042,spouses,0.865
+W2118745042,friends,0.794
+W2118745042,sex differences,0.514
+W2118745042,smoking cessation,0.758
+W2118745042,Framingham Heart Study,0.701
+W4223908421,reinforcement learning from human feedback,0.982
+W4223908421,preference modeling,0.959
+W4223908421,language model alignment,0.901
+W4223908421,Kullback-Leibler divergence,0.888
+W4223908421,calibration,0.751
+W4223908421,out-of-distribution detection,0.981
+W4223908421,code generation,0.54
+W4223908421,summarization,0.813
+W3121385028,program evaluation,0.994
+W3121385028,causal effects,0.882
+W3121385028,causal inference,0.732
+W3121385028,policy evaluation,0.676
+W3121385028,labor economics,0.606
+W3121385028,public finance,0.987
+W3121385028,development economics,0.948
+W3121385028,industrial organization,0.981
+W2136893259,research methodology,0.81
+W2136893259,quantitative research,0.707
+W2136893259,qualitative research,0.958
+W2136893259,research skills,0.679
+W2136893259,higher education research,0.714
+W4387164156,model error detection,0.524
+W4387164156,mutation analysis,0.747
+W4387164156,post-translational modification,0.953
+W4387164156,ligand binding,0.668
+W4387164156,molecular visualization software,0.64
+W2114367386,protein-ligand complex,0.966
+W2114367386,molecular topology,0.748
+W2114367386,energy minimization,0.883
+W2114367386,Cambridge Structural Database,0.742
+W2114367386,high-throughput crystallography,0.801
+W2114367386,ligand geometry,0.735
+W4287992231,LISA,0.852
+W4287992231,gravitational waves,0.97
+W4287992231,space-based gravitational wave detectors,0.698
+W4287992231,LISA Pathfinder,0.676
+W4287992231,event horizon,0.673
+W4287992231,early universe,0.426
+W1479807131,semi-supervised learning,1.0
+W1479807131,unlabeled data,0.974
+W1479807131,classification,0.923
+W1479807131,smoothness assumption,0.831
+W1479807131,cluster separation,0.605
+W1479807131,manifold structure,0.855
+W1479807131,transduction,0.909
+W1479807131,generative models,0.945
+W1479807131,graph-based methods,0.986
+W1479807131,benchmark tests,0.721
+W2022315563,scanning probe microscopy,0.863
+W2022315563,open source software,0.842
+W2022315563,software architecture,0.876
+W2022315563,modularity,0.844
+W2022315563,grain analysis,0.793
+W2022315563,particle analysis,0.997
+W2022315563,metrology,0.965
+W2156718197,Laplacian eigenmaps,0.994
+W2156718197,graph Laplacian,0.951
+W2156718197,Laplace-Beltrami operator,0.964
+W2156718197,manifold learning,0.762
+W2156718197,nonlinear dimensionality reduction,0.986
+W2156718197,clustering,0.761
+W2156718197,spectral methods,0.547
+W2156718197,heat equation,0.739
+W2156718197,high-dimensional data,0.643
+W1563636823,ecological data analysis,0.873
+W1563636823,community ecology,0.801
+W1563636823,landscape ecology,0.996
+W1563636823,species abundance,0.572
+W1563636823,species-environment relationships,0.823
+W1563636823,logistic regression,0.716
+W1563636823,canonical correspondence analysis,0.999
+W1563636823,kriging,0.916
+W1563636823,plant communities,0.805
+W1563636823,animal communities,0.999
+W2091143533,cognitive skills,0.778
+W2091143533,non-cognitive skills,0.994
+W2091143533,labor market outcomes,0.717
+W2091143533,educational decision-making,0.723
+W2091143533,wages,0.971
+W2091143533,employment,0.961
+W2091143533,work experience,0.979
+W2091143533,career choice,0.971
+W2091143533,risk-taking,0.838
+W2091143533,social behavior,0.755
+W2091143533,measurement error,0.774
+W2091143533,reverse causality,0.897
+W2091143533,ability assessment,0.314
+W2225156818,variational inference,1.0
+W2225156818,posterior approximation,0.745
+W2225156818,Kullback-Leibler divergence,0.832
+W2225156818,mean-field variational inference,0.951
+W2225156818,exponential family,0.951
+W2225156818,stochastic optimization,0.966
+W2225156818,scalable inference,0.578
+W2225156818,Markov chain Monte Carlo comparison,0.823
+W1990869665,Geant4,1.0
+W1990869665,particle transport simulation,0.963
+W1990869665,multithreading,0.864
+W1990869665,detector modeling,0.937
+W1990869665,biasing,0.937
+W1990869665,reverse Monte Carlo,0.989
+W1990869665,particle physics,0.737
+W1990869665,medical physics,0.7
+W1990869665,radiation protection,0.981
+W2139274755,Anthropocene,0.896
+W2139274755,Great Acceleration,0.997
+W2139274755,socio-economic trends,0.959
+W2139274755,economic growth,0.603
+W2139274755,OECD countries,0.631
+W2139274755,emerging markets,0.677
+W2139274755,global inequality,0.498
+W2139274755,population growth,0.755
+W2139274755,atmospheric methane,0.852
+W2139274755,stratospheric ozone depletion,0.895
+W2139274755,human impact on Earth systems,0.651
+W2117756735,randomized algorithms,0.852
+W2117756735,low-rank approximation,0.994
+W2117756735,singular value decomposition,0.885
+W2117756735,QR decomposition,0.783
+W2117756735,random sampling,0.719
+W2117756735,Krylov subspace methods,0.896
+W2117756735,sparse matrices,0.749
+W2117756735,out-of-core algorithms,0.624
+W2117756735,error analysis,0.712
+W2117756735,big data,0.548
+W2117756735,multiprocessor architecture,0.762
+W2107940314,circular layout,0.93
+W2107940314,genome visualization,0.853
+W2107940314,R package,0.91
+W2107940314,multidimensional data,0.637
+W1810943226,sequence generation,0.819
+W1810943226,long short-term memory,0.902
+W1810943226,recurrent neural networks,0.989
+W1810943226,text generation,0.819
+W1810943226,handwriting synthesis,0.726
+W1810943226,online handwriting,0.819
+W1810943226,cursive script,0.905
+W1810943226,long-range dependencies,0.71
+W621251951,Bland-Altman analysis,0.958
+W621251951,method comparison,0.869
+W621251951,agreement between measurement methods,0.865
+W621251951,limits of agreement,0.968
+W621251951,clinical laboratory testing,0.495
+W2139577967,matching,0.47
+W2139577967,causal inference,0.605
+W2139577967,model dependence,0.934
+W2139577967,parameter estimation,0.639
+W2139577967,model misspecification,0.607
+W2139577967,control variables,0.498
+W2139577967,functional form selection,0.44
+W2139577967,estimation bias,0.38
+W2139577967,mean squared error,0.576
+W2139577967,causal effect estimation,0.387
+W2805516822,graph networks,0.861
+W2805516822,combinatorial generalization,0.965
+W2805516822,relational reasoning,0.947
+W2805516822,structured representations,0.921
+W2805516822,structured knowledge,0.53
+W2805516822,graph neural networks,0.634
+W2805516822,open-source library,0.44
+W2159929956,human cerebral cortex,0.839
+W2159929956,structural connectivity,0.675
+W2159929956,cortico-cortical pathways,0.832
+W2159929956,structural core,0.671
+W2159929956,default mode network,0.726
+W2159929956,resting-state functional connectivity,0.693
+W2159929956,network centrality,0.584
+W2159929956,connector hubs,0.678
+W2159929956,posterior medial cortex,0.61
+W2159929956,parietal cortex,0.981
+W2159929956,functional integration,0.467
+W2159929956,diffusion spectrum imaging,0.822
+W2164030952,procrastination,1.0
+W2164030952,self-regulation,0.904
+W2164030952,self-control,0.681
+W2164030952,temporal motivation theory,0.762
+W2164030952,hyperbolic discounting,0.914
+W2164030952,expectancy theory,0.812
+W2164030952,impulsivity,0.644
+W2164030952,self-efficacy,0.962
+W2164030952,conscientiousness,0.842
+W2164030952,task aversiveness,0.768
+W2164030952,task delay,0.803
+W2164030952,distractibility,0.768
+W2164030952,achievement motivation,0.82
+W2164030952,neuroticism,0.877
+W2164030952,rebelliousness,0.865
+W2164030952,sensation seeking,1.0
+W1603903339,Bayesian model averaging,1.0
+W1603903339,model uncertainty,0.999
+W1603903339,model selection,0.992
+W1603903339,out-of-sample forecasting,0.84
+W1603903339,predictive performance,0.375
+W1536497620,prior distributions,0.863
+W1536497620,hierarchical models,0.817
+W1536497620,scale parameter,0.731
+W1536497620,non-informative priors,0.877
+W1536497620,weakly informative priors,0.983
+W1536497620,uniform prior,0.628
+W1536497620,analysis of variance,0.967
+W2088794999,gradient boosting,0.955
+W2088794999,ensemble learning,0.695
+W2088794999,loss functions,0.976
+W2088794999,model complexity,0.936
+W2088794999,machine learning modeling,0.554
+W2900619723,sample size justification,0.916
+W2900619723,qualitative health research,0.734
+W2900619723,saturation,0.754
+W2900619723,data adequacy,0.786
+W2900619723,sample size reporting,0.621
+W2900619723,generalizability,0.717
+W2900619723,validity,0.515
+W2900619723,research transparency,0.647
+W2900619723,peer review,0.439
+W2005821483,human brain connectome,0.693
+W2005821483,network visualization,0.843
+W2005821483,graph theory,0.789
+W2005821483,brain network topology,0.814
+W2005821483,ball-and-stick model,0.85
+W2005821483,graphical user interface,0.753
+W2005821483,neuroimaging data visualization,0.564
+W2005821483,software toolbox,0.393
+W2291288208,wicked problems,0.79
+W2291288208,design thinking,0.985
+W2291288208,Jean-Luc Godard,0.832
+W2291288208,Jacques Rancière,0.877
+W2291288208,politics of film,0.467
+W2163485494,BioGRID,0.963
+W2163485494,protein-protein interaction,0.913
+W2163485494,genetic interactions,0.998
+W2163485494,INTERACTION dataset,0.699
+W2163485494,biological networks,0.495
+W2163485494,Saccharomyces cerevisiae,0.877
+W2163485494,Caenorhabditis elegans,0.999
+W2163485494,Drosophila melanogaster,0.997
+W2163485494,human,0.995
+W2163485494,literature curation,0.807
+W2163485494,network visualization,0.745
+W2163485494,Pandion haliaetus,0.915
+W2146106266,arbuscular mycorrhizal fungi,0.984
+W2146106266,root colonization,0.718
+W2146106266,arbuscules,0.891
+W2146106266,vesicles,0.665
+W2146106266,fungal hyphae,0.92
+W2146106266,observer bias,0.755
+W1909320841,approximate Bayesian inference,0.873
+W1909320841,deep generative models,0.962
+W1909320841,recognition model,0.811
+W1909320841,variational inference,0.765
+W1909320841,missing data imputation,0.942
+W1909320841,scalable inference,0.783
+W1482241473,output fluctuations,0.762
+W1482241473,unemployment fluctuations,0.765
+W1482241473,dynamic effects,0.561
+W1482241473,variance decomposition,0.682
+W1482241473,business cycles,0.482
+W150292108,bibliometric networks,0.903
+W150292108,network visualization,0.949
+W150292108,citation networks,0.946
+W150292108,co-citation networks,0.912
+W150292108,bibliographic coupling,0.992
+W150292108,keyword co-occurrence,0.888
+W150292108,co-authorship networks,0.998
+W150292108,VOSviewer,0.909
+W2042492924,Boltzmann machine,0.994
+W2042492924,learning algorithms,0.759
+W2042492924,constraint satisfaction,0.713
+W2042492924,parallel search,0.85
+W2042492924,statistical mechanics,0.904
+W2042492924,internal representations,0.809
+W2042492924,constraint encoding,0.554
+W2035080386,sparse matrices,0.948
+W2035080386,sparse matrix algorithms,0.556
+W2035080386,performance evaluation,0.835
+W2035080386,real-world applications,0.569
+W2035080386,network visualization,0.757
+W2035080386,structural engineering,0.566
+W2035080386,computational fluid dynamics,0.957
+W2035080386,model reduction,0.821
+W2035080386,electromagnetic theory,0.744
+W2035080386,semiconductor devices,0.755
+W2035080386,thermodynamics,0.759
+W2035080386,materials,0.844
+W2035080386,acoustics,0.961
+W2035080386,computer graphics,0.719
+W2035080386,robotics,0.82
+W2035080386,optimization,0.658
+W2035080386,circuit simulation,0.986
+W2035080386,quantum chemistry,0.801
+W2035080386,power grid,0.804
+W1990100773,diagrammatic representation,0.825
+W1990100773,information processing model,0.643
+W1990100773,computational efficiency,0.884
+W1990100773,problem solving,0.624
+W1990100773,search control,0.562
+W1990100773,pattern recognition,0.816
+W1990100773,inference,0.531
+W1990100773,mathematical problem solving,0.564
+W1990100773,physics problem solving,0.994
+W2155263737,RECIST,0.68
+W2155263737,PERCIST,0.99
+W2155263737,18F-FDG PET,0.838
+W2155263737,tumor response assessment,0.789
+W2155263737,standardized uptake value,0.794
+W2155263737,WHO criteria,0.71
+W2155263737,RECIST 1.1,0.816
+W2155263737,region of interest,0.687
+W2155263737,treatment response assessment,0.457
+W2155263737,solid tumors,0.54
+W2155263737,lymphoma,0.662
+W2155263737,sarcoma,0.644
+W2155263737,hepatocellular carcinoma,0.896
+W2155263737,mesothelioma,0.967
+W2155263737,gastrointestinal stromal tumor,0.936
+W2155263737,test-retest variability,0.475
+W2144998676,protein structure alignment,0.852
+W2144998676,protein structure comparison,0.666
+W2144998676,graph matching,0.739
+W2144998676,alignment score,0.498
+W2144998676,RMSD,0.692
+W2144998676,structure recognition,0.488
+W2533508881,tumor microenvironment,0.745
+W2533508881,stromal cells,0.804
+W2533508881,immune cell subsets,0.466
+W2533508881,MCP-counter,0.736
+W2533508881,transcriptomic data,0.65
+W2533508881,gene expression,0.478
+W2533508881,tumor-infiltrating immune cells,0.628
+W2533508881,patient stratification,0.759
+W2533508881,lung adenocarcinoma,0.949
+W2533508881,colorectal cancer,0.986
+W2533508881,breast cancer,0.984
+W2533508881,overall survival,0.859
+W2100235918,collaborative filtering,1.0
+W2100235918,recommender systems,1.0
+W2100235918,data sparsity,0.937
+W2100235918,scalability,0.977
+W2100235918,synonymy,0.957
+W2100235918,shilling attacks,0.999
+W2100235918,privacy preservation,0.976
+W2100235918,model-based algorithms,0.997
+W2100235918,hybrid recommendation,0.715
+W2100235918,predictive performance,0.622
+W1990420052,B-splines,0.93
+W1990420052,penalized B-splines,0.916
+W1990420052,knot placement,0.705
+W1990420052,penalty parameter selection,0.624
+W1990420052,nonparametric smoothing,0.799
+W1990420052,penalized likelihood,0.883
+W1990420052,density estimation,0.977
+W1990420052,scatterplot smoothing,0.905
+W1985123706,MaxCut,0.83
+W1985123706,MaxSAT,0.813
+W1985123706,randomized approximation algorithms,0.8
+W1985123706,semidefinite programming,0.976
+W1985123706,eigenvalue minimization,0.844
+W1985123706,performance guarantees,0.623
+W1985123706,combinatorial optimization,0.745
+W2067267561,microglia,0.998
+W2067267561,resting microglia,0.906
+W2067267561,activated microglia,0.888
+W2067267561,microglial activation,0.884
+W2067267561,microglial motility,0.862
+W2067267561,microglial receptors,0.747
+W2067267561,cytokine receptors,0.848
+W2067267561,neurotransmitter receptors,0.887
+W2067267561,neuron-microglia communication,0.824
+W2067267561,phagocytosis,0.912
+W2067267561,neuroinflammation,0.808
+W2067267561,central nervous system,0.833
+W4211149818,nanocrystalline materials,0.972
+W4211149818,nanocrystals,0.769
+W4211149818,grain boundary engineering,0.498
+W4211149818,grain refinement,0.464
+W4211149818,mechanical properties,0.673
+W2212660284,two-sample test,0.788
+W2212660284,maximum mean discrepancy,0.916
+W2212660284,reproducing kernel Hilbert space,0.995
+W2212660284,distribution comparison,0.703
+W2212660284,large deviation bounds,0.832
+W2212660284,integral probability metrics,0.913
+W2212660284,kernel methods,0.59
+W2212660284,attribute matching,0.722
+W4226125322,text-to-image generation,0.827
+W4226125322,diffusion models,0.85
+W4226125322,classifier-free guidance,0.946
+W4226125322,image editing,0.616
+W4226125322,image inpainting,0.997
+W4226125322,photorealism,0.757
+W4226125322,glides,0.423
+W2128677857,coordination theory,0.952
+W2128677857,coordination mechanisms,0.612
+W2128677857,shared resource management,0.892
+W2128677857,producer-consumer relations,0.898
+W2128677857,task dependencies,0.713
+W2128677857,information technology and organizations,0.749
+W2037246595,MadGraph5_aMC@NLO,0.891
+W2037246595,event generation,0.595
+W2037246595,new physics models,0.619
+W2037246595,FeynRules,0.886
+W2037246595,PYTHIA8,0.775
+W2037246595,Lagrangian model,0.676
+W2037246595,Python,0.432
+W2037246595,high-energy physics simulation,0.623
+W2472329501,polylactic acid,0.995
+W2472329501,biodegradable polymers,0.813
+W2472329501,mechanical properties,0.91
+W2472329501,physical properties,0.835
+W2472329501,thermal degradation,0.73
+W2472329501,biodegradation,0.934
+W2472329501,polymer aging,0.474
+W2472329501,recyclability,0.728
+W2472329501,immiscibility,0.643
+W2472329501,plasticizers,0.683
+W2472329501,nucleating agents,0.89
+W2472329501,polymer blends,0.496
+W2472329501,polymer composites,0.68
+W2472329501,nanoformulations,0.718
+W2472329501,packaging,0.46
+W2472329501,sterilization,0.944
+W2472329501,weathering,0.751
+W2472329501,hygrothermal aging,0.721
+W2472329501,biodegradable biomaterials,0.68
+W1644641054,3D shape recognition,0.999
+W1644641054,multi-view convolutional neural network,0.95
+W1644641054,3D shape descriptors,0.799
+W1644641054,3D shape representation,0.718
+W2132881915,Lewy bodies,0.948
+W2132881915,Parkinson's disease,0.837
+W2132881915,pathogenesis,0.774
+W2132881915,neurofilaments,0.699
+W2132881915,substantia nigra,0.925
+W2132881915,incidental Lewy body disease,0.892
+W2132881915,age-related prevalence,0.828
+W2132881915,neuronal loss,0.678
+W2151020819,information systems theory,0.917
+W2151020819,nature of theory,0.77
+W2151020819,causality,0.748
+W2151020819,explanation,0.974
+W2151020819,prediction,0.999
+W2151020819,generalization,0.997
+W2151020819,epistemology,0.845
+W2151169308,IT investment,0.868
+W2151169308,organizational investment,0.674
+W2151169308,intangible capital,0.933
+W2151169308,firm performance,0.822
+W2151169308,organizational change,0.902
+W4399538195,multivariate analysis,0.898
+W4399538195,principal component analysis,0.815
+W4399538195,correspondence analysis,0.999
+W4399538195,multiple correspondence analysis,1.0
+W4399538195,factor analysis of mixed data,0.983
+W4399538195,multiple factor analysis,0.999
+W4399538195,clustering,0.788
+W4399538195,R package,0.377
+W4399538195,data visualization,0.561
+W4399538195,ggplot2,0.922
+W2594183968,molecular machine learning,0.904
+W2594183968,benchmark,0.559
+W2594183968,MoleculeNet,0.848
+W2594183968,molecular property prediction,0.742
+W2594183968,DeepChem,0.839
+W2594183968,open source software,0.573
+W2594183968,data scarcity,0.679
+W2594183968,imbalanced classification,0.958
+W2594183968,quantum mechanical properties,0.69
+W2594183968,biophysical properties,0.868
+W2256362396,single image dehazing,0.953
+W2256362396,atmospheric scattering model,0.914
+W2256362396,end-to-end neural network,0.665
+W2256362396,nonlinear activation functions,0.791
+W2950150251,MinHash,0.756
+W2950150251,sequence clustering,0.748
+W2950150251,sequence database searching,0.615
+W2950150251,dimensionality reduction,0.773
+W2077053002,effective population size,0.824
+W2077053002,population bottleneck,0.722
+W2077053002,population structure,0.391
+W2077053002,population genetics software,0.443
+W2091030812,draft genome assembly,0.59
+W2091030812,read coverage,0.504
+W2091030812,read mapping,0.483
+W2091030812,genome similarity,0.451
+W2091030812,graphical user interface,0.689
+W2099019320,socially interactive robots,0.972
+W2099019320,social robots,0.925
+W2099019320,human-robot interaction,0.985
+W2099019320,social impact of robots,0.67
+W2100805904,ensemble methods,0.918
+W2100805904,bagging,0.99
+W2100805904,boosting,1.0
+W2100805904,artificial neural networks,0.702
+W2100805904,decision tree,0.999
+W2100805904,classification accuracy,0.724
+W2100805904,overfitting,0.899
+W2100805904,noisy data,0.8
+W2100805904,ensemble size,0.504
+W2100805904,classifier combination,0.436
+W1549853756,coda,0.715
+W1549853756,MCMC convergence diagnostics,0.847
+W1549853756,Markov chain Monte Carlo,0.843
+W1549853756,Bayesian inference,0.716
+W1549853756,burn-in period,0.898
+W1549853756,R package,0.671
+W1549853756,graphical diagnostics,0.436
+W2951799803,single-cell transcriptomics,0.975
+W2951799803,stem cell differentiation,0.668
+W2951799803,developmental trajectories,0.525
+W2951799803,single-cell gene expression,0.735
+W2951799803,temporal gene expression dynamics,0.652
+W4396946025,risk factors,0.686
+W4396946025,attributable burden,0.526
+W4396946025,relative risk,0.611
+W4396946025,population attributable fraction,0.924
+W4396946025,disability-adjusted life years,0.96
+W4396946025,socio-demographic index,0.651
+W4396946025,health risk exposure,0.394
+W4396946025,disease burden,0.474
+W4396946025,Global Burden of Disease 2021,0.844
+W4396946025,subnational estimates,0.432
+W4396946025,age-standardized rates,0.481
+W2145126338,classifier evaluation,0.929
+W2145126338,receiver operating characteristic,0.936
+W2145126338,cost curves,0.999
+W2145126338,performance curves,0.609
+W2145126338,R package,0.565
+W2098005762,multilayer networks,0.999
+W2098005762,multiplex networks,0.92
+W2098005762,dynamic networks,0.723
+W2098005762,network dynamics,0.868
+W2098005762,network structure,0.655
+W2098005762,structural measures,0.929
+W2098005762,complex networks,0.678
+W2050345155,Venn diagrams,0.988
+W2050345155,Euler diagrams,1.0
+W2050345155,R package,0.805
+W2050345155,set visualization,0.647
+W2050345155,publication-quality figures,0.924
+W2050345155,bioinformatics visualization,0.647
+W4321499901,ChatGPT,1.0
+W4321499901,educational chatbots,0.953
+W4321499901,conversational AI,0.775
+W4321499901,early adopters,0.784
+W4321499901,public discourse on AI,0.537
+W4321499901,educational transformation,0.889
+W4321499901,response quality,0.847
+W4321499901,AI ethics,0.65
+W4321499901,user experience,0.66
+W4321499901,academic dishonesty,0.853
+W4321499901,privacy,0.514
+W4321499901,manipulation,0.908
+W4321499901,responsible AI adoption,0.81
+W2092194717,MultiNest,0.981
+W2092194717,nested sampling,0.985
+W2092194717,Bayesian inference,0.845
+W2092194717,multimodal posterior distributions,0.708
+W2092194717,evidence estimation,0.59
+W2092194717,posterior sampling,0.606
+W2092194717,cosmological parameter estimation,0.65
+W2092194717,spatial curvature,0.77
+W2092194717,dark energy equation of state,0.976
+W2062125287,covariance matrix estimation,0.886
+W2062125287,sample covariance matrix,0.937
+W2062125287,convex combination,0.695
+W2062125287,asymptotic optimality,0.827
+W2062125287,squared error loss,0.94
+W2112957339,participatory culture,0.995
+W2112957339,media literacy,0.945
+W2112957339,media education,0.995
+W2112957339,Henry Jenkins,0.691
+W2112957339,21st century media,0.715
+W4211160986,polymer:fullerene solar cells,0.923
+W4211160986,bulk heterojunction,0.833
+W4211160986,organic solar cells,0.938
+W4211160986,solution processing,0.821
+W4211160986,power conversion efficiency,0.895
+W4211160986,device lifetime,0.836
+W4211160986,low-cost photovoltaics,0.775
+W2028695285,force-directed layout,0.791
+W2028695285,network visualization,0.797
+W2028695285,Gephi,0.882
+W2028695285,graph layout algorithms,0.787
+W2028695285,spatialization,0.609
+W2028695285,scale-free networks,0.814
+W2165674132,KEGG,0.992
+W2165674132,chemical genomics,0.961
+W2165674132,KEGG pathways,0.913
+W2165674132,pathway reconstruction,0.72
+W2165674132,functional interpretation,0.449
+W2165674132,gene-environment interaction,0.811
+W2165674132,drug information,0.652
+W2165674132,knowledge base,0.384
+W2165674132,reaction networks,0.485
+W2165674132,interaction networks,0.514
+W2462099493,network modeling,0.711
+W2462099493,psychological factors,0.648
+W2462099493,regularization,0.697
+W2462099493,hyperparameter optimization,0.724
+W2462099493,non-normal data,0.885
+W2462099493,sample size determination,0.892
+W2462099493,post-traumatic stress disorder,0.939
+W2462099493,network structure estimation,0.642
+W2462099493,R implementation,0.567
+W2132083787,cross-entropy method,1.0
+W2132083787,combinatorial optimization,0.873
+W2132083787,rare event simulation,0.998
+W2132083787,optimization algorithms,0.695
+W2132083787,machine learning applications,0.79
+W2515300481,big data analytics,0.915
+W2515300481,big data analytics capability,0.881
+W2515300481,firm performance,0.948
+W2515300481,dynamic capabilities,0.889
+W2515300481,resource-based view,0.926
+W2515300481,information system success,0.848
+W2515300481,business value of IT,0.951
+W2515300481,mediating effect,0.761
+W2515300481,entanglement,0.673
+W3147387781,video classification,0.769
+W3147387781,vision transformer,0.878
+W3147387781,transfer learning,0.67
+W3147387781,regularization,0.429
+W3147387781,limited training data,0.666
+W3147387781,kinetics,0.534
+W3147387781,EPIC-KITCHENS,0.78
+W3147387781,Something-Something V2,0.828
+W2146577723,SWAT model,0.916
+W2146577723,watershed modeling,0.993
+W2146577723,streamflow calibration,0.749
+W2146577723,hydrological modeling,0.766
+W2146577723,climate change impacts on hydrology,0.983
+W2146577723,pollutant load assessment,0.982
+W2146577723,model sensitivity analysis,0.872
+W2146577723,Conservation Effects Assessment Project,0.965
+W2146577723,model development history,0.543
+W2548687046,international trade,0.815
+W2548687046,firm productivity,0.491
+W2548687046,heterogeneous firms,0.884
+W2548687046,export market entry,0.783
+W2548687046,firm exit,0.915
+W2548687046,aggregate productivity growth,0.719
+W2548687046,welfare effects of trade,0.791
+W2548687046,monopolistic competition,0.785
+W2548687046,irreversible investment,0.515
+W2548687046,entry costs,0.407
+W3154258817,ADMET prediction,0.795
+W3154258817,pharmacokinetics,0.895
+W3154258817,toxicity prediction,0.904
+W3154258817,web server,0.877
+W3154258817,graph attention networks,0.664
+W3154258817,multi-task learning,0.883
+W3154258817,physicochemical properties,0.91
+W3154258817,drug development,0.429
+W2153325555,de novo genome assembly,0.864
+W2153325555,interactive visualization,0.764
+W2153325555,BLAST search,0.599
+W2153325555,bandages,0.762
+W3183475563,protein structure prediction,0.976
+W3183475563,human proteome,0.836
+W3183475563,AlphaFold2,0.95
+W3183475563,structural coverage,0.852
+W3183475563,intrinsically disordered regions,0.924
+W3183475563,multidomain proteins,0.951
+W3183475563,protein structure database,0.324
+W2798434869,quantum machine learning,0.783
+W2798434869,support vector machine,0.947
+W2798434869,quantum state space,0.423
+W2798434869,superconducting quantum processors,0.663
+W2798434869,noisy intermediate-scale quantum computing,0.792
+W2798434869,quantum advantage,0.786
+W2798434869,classification,0.331
+W2798434869,variational quantum circuits,0.764
+W2159449603,FeynRules,0.911
+W2159449603,Feynman rules,0.895
+W2159449603,two-component fermions,0.725
+W2159449603,spin-3/2 fields,0.886
+W2159449603,spin-2 fields,0.956
+W2159449603,FeynArts,0.756
+W2159449603,WHIZARD,0.932
+W2159449603,MadGraph,0.862
+W2159449603,Sherpa,0.992
+W2159449603,Monte Carlo event generators,0.804
+W2159449603,Mathematica package,0.666
+W2159449603,model validation,0.346
+W2948978827,variational autoencoder,1.0
+W2948978827,latent variable models,0.954
+W2948978827,variational inference,0.712
+W2948978827,deep generative models,0.829
+W2948978827,probabilistic inference,0.441
+W2519132385,mclust,0.961
+W2519132385,clustering,0.947
+W2519132385,classification,0.991
+W2519132385,density estimation,1.0
+W2519132385,covariance structure,0.969
+W2519132385,dimensionality reduction,0.838
+W2519132385,model selection,0.801
+W2519132385,R package,0.897
+W1981501248,bias in observational studies,0.636
+W1981501248,internal validity,0.605
+W1981501248,quality assessment tools,0.926
+W1981501248,risk adjustment,0.884
+W1981501248,residual confounding,0.901
+W1981501248,propensity score methods,0.725
+W1981501248,meta-epidemiology,0.833
+W1981501248,treatment effect estimation,0.487
+W1981501248,prognostic factors,0.732
+W1981501248,selection bias,0.493
+W1981501248,confounding,0.428
+W1981501248,reporting bias,0.46
+W1981501248,reporting quality,0.375
+W1981501248,randomized controlled trials,0.398
+W1568998819,language assessment,0.995
+W1568998819,classroom assessment,0.668
+W1568998819,test design,0.627
+W1568998819,test reliability,0.649
+W1568998819,test validity,0.99
+W1568998819,washback,0.787
+W1568998819,standards-based assessment,0.746
+W1568998819,standardized testing,0.709
+W1568998819,performance-based assessment,0.84
+W1568998819,self-assessment,0.732
+W1568998819,peer assessment,0.973
+W1568998819,listening assessment,0.795
+W1568998819,speaking assessment,0.983
+W1568998819,writing assessment,0.793
+W1568998819,computer-based testing,0.743
+W1568998819,alternative assessment,0.679
+W1568998819,test bias,0.582
+W1568998819,critical language testing,0.764
+W1568998819,English language proficiency testing,0.539
+W4396821501,Kolmogorov-Arnold networks,0.983
+W4396821501,Kolmogorov-Arnold representation theorem,0.987
+W4396821501,learnable activation functions,0.913
+W4396821501,neural scaling laws,0.609
+W4396821501,interpretability,0.732
+W4396821501,data fitting,0.868
+W4396821501,scientific discovery,0.442
+W2139236032,neighborhood effects on health,0.855
+W2139236032,residential environment,0.891
+W2139236032,health disparities,0.811
+W2139236032,racial and ethnic health disparities,0.867
+W2139236032,obesity,0.825
+W2139236032,chronic disease,0.819
+W2139236032,depression,0.814
+W2139236032,depressive symptoms,0.925
+W2139236032,mental health,0.708
+W2139236032,methodological issues,0.769
+W3122014499,academic engagement,0.99
+W3122014499,commercialization,0.625
+W3122014499,university-industry relations,0.987
+W3122014499,knowledge transfer,0.93
+W3122014499,research collaboration,0.938
+W3122014499,contract research,0.973
+W3122014499,academic consulting,0.797
+W3122014499,informal relationships,0.66
+W3122014499,intellectual property,0.909
+W3122014499,university entrepreneurship,0.992
+W3122014499,antecedents and consequences,0.765
+W2904383797,occupancy networks,0.967
+W2904383797,3D reconstruction,0.933
+W2904383797,implicit 3D representation,0.813
+W2904383797,neural radiance fields,0.581
+W2904383797,single-image 3D reconstruction,0.777
+W2904383797,point cloud reconstruction,0.851
+W2126650951,cortical hubs,0.966
+W2126650951,intrinsic functional connectivity,0.98
+W2126650951,default mode network,0.756
+W2126650951,association cortex,0.784
+W2126650951,posterior cingulate cortex,0.832
+W2126650951,prefrontal cortex,0.898
+W2126650951,parietal cortex,0.709
+W2126650951,temporal cortex,0.884
+W2126650951,network stability,0.551
+W2126650951,Alzheimer's disease,0.779
+W2126650951,amyloid-beta deposition,0.983
+W2126650951,brain network architecture,0.541
+W1484750607,composite index,0.999
+W1484750607,country performance ranking,0.514
+W1484750607,industrial competitiveness,0.823
+W1484750607,sustainable development,0.983
+W1484750607,globalization,0.991
+W1484750607,innovation,0.979
+W1484750607,knowledge economy indicators,0.93
+W3037819556,dynamic networks,0.999
+W3037819556,dynamic graphs,0.851
+W3037819556,network topology,0.679
+W3037819556,dynamical systems on networks,0.83
+W3037819556,information dissemination,0.996
+W3037819556,transitivity,0.389
+W2953494151,invariant risk minimization,0.982
+W2953494151,invariance,0.525
+W2953494151,out-of-distribution generalization,0.846
+W2953494151,causal structure,0.489
+W2953494151,representation learning,0.724
+W2953494151,distribution shift robustness,0.472
+W2024424774,linear regression,0.904
+W2024424774,simple linear regression,0.794
+W2024424774,multiple linear regression,0.866
+W2024424774,scatter plots,0.761
+W2024424774,analysis of variance,0.743
+W2024424774,R-squared,0.706
+W2024424774,hypothesis testing,0.572
+W2024424774,confidence intervals,0.79
+W2024424774,prediction,0.644
+W2024424774,residual analysis,0.401
+W2024424774,matrix notation,0.595
+W2024424774,model selection,0.458
+W2024424774,transformation,0.368
+W2024424774,rank deficiency,0.579
+W2024424774,overparameterized models,0.625
+W2024424774,statistical power,0.549
+W2024424774,p-values,0.524
+W2024424774,goodness of fit,0.446
+W2393319904,graph embedding,0.993
+W2393319904,semi-supervised deep learning,0.672
+W2393319904,sparse networks,0.801
+W2393319904,network inference,0.647
+W2393319904,multi-label classification,0.894
+W2393319904,link prediction,0.979
+W2393319904,network visualization,0.607
+W2328078142,human-like learning,0.535
+W2328078142,artificial intelligence,0.543
+W2328078142,causal models,0.734
+W2328078142,explanation and understanding,0.69
+W2328078142,intuitive theories,0.686
+W2328078142,compositionality,0.939
+W2328078142,meta-learning,0.913
+W2328078142,knowledge generalization,0.761
+W2328078142,cognitive models,0.623
+W2328078142,deep neural network,0.709
+W1979104937,link prediction,1.0
+W1979104937,complex networks,1.0
+W1979104937,maximum likelihood estimation,0.839
+W1979104937,network inference,0.986
+W1979104937,network evolution,0.743
+W1969293769,hierarchical materials,0.939
+W1969293769,biological materials,0.906
+W1969293769,fiber-reinforced composites,0.923
+W1969293769,wood,0.622
+W1969293769,bone,1.0
+W1969293769,tendons,0.985
+W1969293769,Hexactinellida,0.993
+W1969293769,cellular architecture,0.874
+W1969293769,composite architecture,0.892
+W1969293769,adaptive growth,0.949
+W1969293769,tissue remodeling,0.803
+W1969293769,mechanical properties,0.878
+W1969293769,biomimetic design,0.612
+W3016970897,shortcut learning,1.0
+W3016970897,deep neural network,0.862
+W3016970897,transferability,0.616
+W3016970897,robustness,0.864
+W3016970897,model interpretability,0.693
+W3016970897,benchmarking,0.954
+W3016970897,biological learning,0.489
+W3016970897,field deployment,0.403
+W2913688336,parameterized complexity,0.99
+W2913688336,independent sets,0.964
+W2913688336,vertex cover,1.0
+W2913688336,dominating sets,0.808
+W2913688336,fixed-parameter tractability,0.814
+W7155906632,prompt engineering,0.991
+W7155906632,ChatGPT,0.825
+W7155906632,large language models,0.988
+W7155906632,pattern language,0.595
+W7155906632,knowledge transfer,0.698
+W7155906632,software development automation,0.645
+W2022625505,OpenSesame,1.0
+W2022625505,graphical user interface,0.89
+W2022625505,open source software,0.949
+W2022625505,Python scripting,0.682
+W2022625505,eye tracking,0.584
+W2022625505,input devices,0.886
+W2022625505,video playback,0.981
+W2022625505,plug-ins,0.807
+W2022625505,cross-platform software,0.726
+W1972098965,groupware,1.0
+W1972098965,groves,0.812
+W1972098965,computer-mediated collaboration,0.673
+W1972098965,human-computer interaction,0.767
+W1972098965,computer-supported cooperative work,0.704
+W1972098965,collaborative editing,0.384
+W4415796023,VMamba,0.861
+W4415796023,state-space model,0.773
+W4415796023,Mamba,0.791
+W4415796023,selective scanning,0.695
+W4415796023,linear time complexity,0.947
+W4415796023,computational efficiency,0.542
+W4415796023,contextual information,0.443
+W1950113648,chronic obstructive pulmonary disease,0.899
+W1950113648,pulmonary rehabilitation,1.0
+W1950113648,health-related quality of life,0.892
+W1950113648,exercise capacity,0.906
+W1950113648,maximal exercise capacity,0.843
+W1950113648,functional exercise capacity,0.907
+W1950113648,usual care,0.611
+W1950113648,exercise training,0.8
+W1950113648,patient education,0.586
+W1950113648,psychological support,0.851
+W1950113648,FEV1,0.622
+W1950113648,COPD exacerbations,0.436
+W1950113648,hospital readmission,0.451
+W1950113648,mortality,0.364
+W1950113648,hospital costs,0.313
+W1950113648,community-based rehabilitation,0.516
+W1950113648,inpatient rehabilitation,0.563
+W1950113648,COPD self-management,0.445
+W1950113648,COPD screening,0.31
+W2075220720,network visualization,0.816
+W2075220720,undirected graphs,0.943
+W2075220720,graph layout algorithms,0.743
+W2075220720,automatic diagram generation,0.737
+W2075220720,state diagrams,0.879
+W2075220720,data flow graphs,0.994
+W2075220720,Petri nets,0.999
+W2075220720,entity relationship diagram,1.0
+W1972145956,recombination detection,0.829
+W1972145956,phylogenetic inference,0.849
+W1972145956,horizontal gene transfer,0.914
+W1972145956,maximum likelihood phylogeny,0.913
+W1972145956,bacterial evolution,0.609
+W1972145956,outbreak analysis,0.477
+W4403370767,large multimodal models,0.91
+W4403370767,cross-modal transfer learning,0.705
+W4403370767,video understanding,0.785
+W4403370767,visual representation,0.6
+W4403370767,open-source models,0.455
+W4388522045,web-based data visualization,0.736
+W4388522045,graphing software,0.655
+W4388522045,scientific graphics,0.636
+W4388522045,publication-quality figures,0.765
+W1676820704,error-correcting output codes,0.993
+W1676820704,C4.5,0.856
+W1676820704,CART,0.823
+W1676820704,backpropagation,0.861
+W1676820704,generalization performance,0.731
+W1676820704,decision tree pruning,0.872
+W1676820704,overfitting avoidance,0.84
+W1676820704,class probability estimation,0.952
+W1676820704,inductive learning,0.787
+W2949520286,MediaPipe,0.99
+W2949520286,computer vision,0.513
+W2949520286,machine learning model integration,0.507
+W2949520286,cross-platform software,0.832
+W2949520286,resource consumption,0.824
+W2949520286,performance measurement,0.694
+W2949520286,reproducibility,0.743
+W2949520286,open source software,0.587
+W2949520286,prototype development,0.371
+W2154241726,RNA folding,0.763
+W2154241726,RNA design,0.657
+W2154241726,RNA-RNA interactions,0.816
+W2154241726,RNA secondary structure prediction,0.648
+W2154241726,web server,0.773
+W2125481562,trade and growth,0.827
+W2125481562,trade policy,0.702
+W2125481562,NAFTA,0.899
+W2125481562,Uruguay Round,0.756
+W2125481562,World Trade Organization,0.938
+W2125481562,global warming,0.8
+W2125481562,industrial pollution,0.823
+W2125481562,species extinction,0.655
+W2125481562,environmental policy evaluation,0.602
+W4288083516,image classification,0.814
+W4288083516,object detection,1.0
+W4288083516,visual relationship detection,0.966
+W4288083516,Flickr images,0.749
+W4288083516,Creative Commons Attribution License,0.624
+W4288083516,image-level labels,0.638
+W4288083516,bounding boxes,0.916
+W4288083516,annotation quality,0.634
+W4288083516,scene understanding,0.327
+W2888728157,classification evaluation metrics,0.833
+W2888728157,confusion matrix,0.997
+W2888728157,binary classification,0.916
+W2888728157,multi-class classification,0.99
+W2888728157,class imbalance,0.878
+W2888728157,precision,0.395
+W2888728157,memory retrieval,0.998
+W2888728157,F1 score,0.754
+W2888728157,receiver operating characteristic,0.779
+W2888728157,precision-recall curve,0.948
+W1686810756,network depth,0.922
+W1686810756,image classification,0.806
+W1686810756,object localization,0.815
+W3128646645,global cancer burden,0.838
+W3128646645,cancer incidence,0.992
+W3128646645,cancer mortality,1.0
+W3128646645,female breast cancer,0.889
+W3128646645,lung cancer,0.999
+W3128646645,colorectal cancer,0.924
+W3128646645,prostate cancer,0.906
+W3128646645,gastric cancer,0.887
+W3128646645,cervical cancer,0.874
+W3128646645,global cancer control,0.767
+W639708223,Faster R-CNN,0.944
+W639708223,region proposal network,0.851
+W639708223,real-time object detection,0.884
+W639708223,Fast R-CNN,0.79
+W639708223,bounding box regression,0.81
+W639708223,VGG16,0.78
+W639708223,attention mechanism,0.648
+W639708223,end-to-end learning,0.684
+W639708223,Pascal VOC,0.688
+W639708223,MS COCO,0.791
+W2896457183,BERT,0.98
+W2896457183,bidirectional transformer,0.859
+W2896457183,pre-training,0.744
+W2896457183,language comprehension,0.55
+W2896457183,fine-tuning,0.813
+W2896457183,question answering,0.914
+W2896457183,natural language inference,0.856
+W2896457183,GLUE benchmark,0.812
+W2896457183,SQuAD,0.87
+W2117692326,cancer hallmarks,0.964
+W2117692326,replicative immortality,0.994
+W2117692326,angiogenesis,0.933
+W2117692326,invasion and metastasis,0.964
+W2117692326,genomic instability,0.991
+W2117692326,inflammation,0.967
+W2117692326,energy metabolism reprogramming,0.921
+W2117692326,immune evasion,0.816
+W2117692326,tumor microenvironment,0.976
+W2117692326,cancer therapy,0.429
+W3177828909,protein structure prediction,0.949
+W3177828909,AlphaFold,0.997
+W3177828909,protein folding problem,0.669
+W3177828909,multi-sequence alignment,0.784
+W3177828909,deep learning,0.703
+W3177828909,CASP14,0.819
+W3177828909,structural bioinformatics,0.702
+W3177828909,knowledge-based machine learning,0.396
+W2014935324,graphene,1.0
+W2014935324,two-dimensional materials,0.997
+W2014935324,low-dimensional physics,0.805
+W2014935324,Dirac cones,0.667
+W2014935324,electronic spectra,0.553
+W2014935324,graphene applications,0.609
+W1959608418,autoencoder,0.883
+W1959608418,variational inference,0.96
+W1959608418,stochastic variational inference,0.684
+W1959608418,variational lower bound,0.817
+W1959608418,reparameterization,0.798
+W1959608418,continuous latent variables,0.798
+W1959608418,recognition model,0.75
+W1959608418,large-scale machine learning,0.483
+W1959608418,stochastic gradient optimization,0.552
+W2970971581,PyTorch,1.0
+W2970971581,deep learning framework,0.877
+W2970971581,imperative programming,0.93
+W2970971581,Python,0.545
+W2970971581,GPU acceleration,0.741
+W2970971581,runtime performance,0.614
+W2970971581,debugging,0.634
+W2970971581,software architecture,0.538
+W2970971581,hardware accelerators,0.572
+W2519887557,semi-supervised classification,0.917
+W2519887557,graph convolutional networks,0.987
+W2519887557,graph-structured data,0.919
+W2519887557,spectral graph convolution,0.821
+W2519887557,first-order approximation,0.86
+W2519887557,linear scalability,0.588
+W2519887557,citation networks,0.845
+W2519887557,knowledge graphs,0.905
+W2519887557,node representation learning,0.64
+W2102605133,object detection,0.983
+W2102605133,semantic segmentation,0.997
+W2102605133,R-CNN,0.844
+W2102605133,region proposal,0.861
+W2102605133,convolutional neural networks,0.934
+W2102605133,feature hierarchy,0.794
+W2102605133,transfer learning,0.689
+W2102605133,fine-tuning,0.887
+W2102605133,Pascal VOC 2012,0.763
+W2102605133,mean average precision,0.517
+W1678356000,gradient boosting,0.969
+W1678356000,gradient descent,0.789
+W1678356000,regression trees,0.796
+W1678356000,least absolute deviation,0.671
+W1678356000,Huber loss,0.979
+W1678356000,logistic regression,0.613
+W1678356000,classification,0.639
+W1678356000,robust regression,0.664
+W1678356000,interpretable models,0.743
+W1678356000,noisy data,0.42
+W1678356000,boosting,0.407
+W2963163009,MobileNetV2,1.0
+W2963163009,depthwise convolution,0.726
+W2963163009,object detection,0.826
+W2963163009,ImageNet classification,0.828
+W2963163009,model efficiency,0.565
+W2963163009,accuracy-latency trade-off,0.609
+W2963163009,parameter reduction,0.349
+W2120145199,Quantum ESPRESSO,0.998
+W2120145199,electronic structure calculations,0.808
+W2120145199,material modeling,0.903
+W2120145199,density functional theory,0.954
+W2120145199,plane waves,0.921
+W2120145199,pseudopotentials,0.94
+W2120145199,norm-conserving pseudopotentials,0.914
+W2120145199,ultrasoft pseudopotentials,0.998
+W2120145199,projector augmented wave,0.895
+W2120145199,open source software,0.852
+W2120145199,massively parallel computing,0.879
+W3035965352,array programming,0.792
+W3035965352,NumPy,1.0
+W3035965352,Python,0.725
+W3035965352,scientific computing,0.487
+W3035965352,multidimensional arrays,0.721
+W3035965352,matrix-vector operations,0.643
+W3035965352,scientific data analysis,0.777
+W3035965352,scientific Python ecosystem,0.666
+W3035965352,gravitational waves,0.527
+W3035965352,black hole imaging,0.99
+W2560438049,Rayyan,0.998
+W2560438049,systematic review screening,0.671
+W2560438049,semi-automation,0.681
+W2560438049,mobile application,0.504
+W2560438049,web application,0.631
+W2560438049,usability,0.775
+W2560438049,prediction model,0.715
+W2560438049,user feedback,0.525
+W2560438049,collaborative review,0.515
+W2560438049,time savings,0.573
+W2560438049,randomized controlled trials,0.801
+W2908510526,weight decay regularization,0.899
+W2908510526,Tikhonov regularization,0.925
+W2908510526,Adam optimizer,0.962
+W2908510526,AdamW,0.739
+W2908510526,stochastic gradient descent,0.801
+W2908510526,learning rate,0.527
+W2908510526,generalization,0.686
+W2908510526,image classification,0.786
+W2908510526,momentum SGD,0.458
+W1966327575,weighted gene co-expression network analysis,0.92
+W1966327575,gene co-expression network,0.874
+W1966327575,module detection,0.75
+W1966327575,module eigengenes,0.888
+W1966327575,hub genes,0.678
+W1966327575,module membership,0.919
+W1966327575,gene expression data,0.619
+W1966327575,R package,0.64
+W1966327575,biomarker discovery,0.787
+W1966327575,drug target identification,0.61
+W1966327575,network topology,0.623
+W2962858109,Grad-CAM,0.993
+W2962858109,visual explanations,0.787
+W2962858109,class activation mapping,0.795
+W2962858109,convolutional neural networks,0.804
+W2962858109,explainable AI,0.741
+W2962858109,image classification,0.666
+W2962858109,image captioning,0.988
+W2962858109,visual question answering,1.0
+W2962858109,weakly supervised localization,0.895
+W2962858109,data bias,0.712
+W2962858109,human subjects research,0.306
+W2133564696,neural machine translation,1.0
+W2133564696,encoder-decoder architecture,0.686
+W2133564696,English-French translation,0.824
+W2963276645,QIIME2,0.998
+W2963276645,reproducibility,0.829
+W2963276645,interactive data analysis,0.482
+W2963276645,scalability,0.627
+W2963276645,extensibility,0.872
+W2963276645,bioinformatics software,0.6
+W2193145675,object detection,0.823
+W2193145675,Single Shot MultiBox Detector,0.663
+W2193145675,bounding box regression,0.837
+W2193145675,multi-scale feature maps,0.867
+W2193145675,aspect ratio,0.753
+W2193145675,object proposals,0.566
+W2193145675,real-time detection,0.599
+W2193145675,one-stage object detection,0.548
+W2193145675,volatile organic compounds,0.42
+W2193145675,COCO,0.874
+W4401306886,Llama 3,0.999
+W4401306886,foundation models,0.659
+W4401306886,multilingual language models,0.745
+W4401306886,tool use,0.768
+W4401306886,multimodal integration,0.613
+W4401306886,image recognition,0.742
+W4401306886,video recognition,0.981
+W4401306886,speech recognition,0.866
+W4401306886,large language models,0.804
+W2180229411,PHENIX,0.963
+W2180229411,X-ray crystallography,0.848
+W2180229411,Python,0.518
+W2180229411,structure refinement,0.325
+W2180229411,3D graphics,0.599
+W2412782625,semantic segmentation,0.988
+W2412782625,dilated convolution,0.991
+W2412782625,atrous spatial pyramid pooling,0.996
+W2412782625,conditional random fields,0.842
+W2412782625,dense prediction,0.801
+W2412782625,boundary localization,0.841
+W2412782625,Pascal VOC 2012,0.755
+W2412782625,Pascal Context,0.739
+W2412782625,cityscape,0.863
+W2412782625,probabilistic graphical models,0.597
+W2131681506,community detection,0.97
+W2131681506,modularity optimization,0.976
+W2131681506,large-scale networks,0.711
+W2131681506,mobile phone networks,0.727
+W2131681506,language communities,0.788
+W2131681506,web graph,0.954
+W2131681506,modular networks,0.653
+W2131681506,computational efficiency,0.78
+W2056279562,phyloseq,0.996
+W2056279562,microbial community analysis,0.807
+W2056279562,R package,0.741
+W2056279562,reproducible research,0.971
+W2056279562,diversity analysis,0.638
+W2056279562,ordination,0.927
+W2056279562,publication-quality graphics,0.619
+W2056279562,open source software,0.711
+W2964309882,semantic segmentation,0.94
+W2964309882,DeepLabV3+,0.869
+W2964309882,atrous spatial pyramid pooling,0.871
+W2964309882,encoder-decoder architecture,0.841
+W2964309882,depthwise separable convolution,0.981
+W2964309882,Xception,0.849
+W2964309882,object boundary refinement,0.816
+W2964309882,multi-scale contextual information,0.674
+W2964309882,Pascal VOC 2012,0.924
+W2964309882,cityscape,1.0
+W1677182931,PReLU,0.648
+W1677182931,neural network initialization,0.829
+W1677182931,image classification,0.915
+W1677182931,ImageNet,0.725
+W1677182931,overfitting,0.83
+W1677182931,network depth,0.481
+W1910657905,SegNet,0.975
+W1910657905,semantic segmentation,0.66
+W1910657905,pixel classification,0.844
+W1910657905,encoder-decoder architecture,0.918
+W1910657905,fully convolutional network,0.814
+W1910657905,VGG16,0.732
+W1910657905,memory-efficient inference,0.537
+W1910657905,scene understanding,0.66
+W1910657905,road scene segmentation,0.897
+W1910657905,indoor scene segmentation,0.804
+W1910657905,SUN RGB-D,0.571
+W2128880918,sequence data analysis,0.649
+W2128880918,molecular sequences,0.614
+W2128880918,application programming interfaces,0.932
+W2128880918,software extensibility,0.705
+W2128880918,interactive visualization,0.58
+W2128880918,Java,0.47
+W2766453196,graph attention networks,0.999
+W2766453196,graph neural networks,0.916
+W2766453196,self-attention,0.807
+W2766453196,graph-structured data,0.777
+W2766453196,inductive learning,0.758
+W2766453196,transductive learning,0.995
+W2766453196,citation networks,0.701
+W2766453196,protein-protein interaction network,0.95
+W2766453196,spectral graph neural networks,0.738
+W3030520226,object detection,0.925
+W3030520226,DETR,0.676
+W3030520226,set prediction,0.672
+W3030520226,bipartite matching,0.807
+W3030520226,transformer encoder-decoder,0.903
+W3030520226,object queries,0.823
+W3030520226,anchor-free detection,0.667
+W3030520226,panoptic segmentation,0.811
+W3030520226,COCO,0.564
+W3030520226,Faster R-CNN comparison,0.761
+W4384918448,Llama 2,0.999
+W4384918448,large language models,0.868
+W4384918448,open-source language models,0.667
+W4384918448,fine-tuning,0.792
+W4384918448,dialogue systems,0.668
+W4384918448,safety improvement,0.498
+W4384918448,helpfulness,0.773
+W4384918448,pre-trained models,0.393
+W3135367836,natural language supervision,0.638
+W3135367836,zero-shot transfer,0.736
+W3135367836,image representation learning,0.598
+W3135367836,image captioning,0.627
+W3135367836,visual concept learning,0.425
+W3135367836,cross-modal learning,0.41
+W3135367836,human action recognition,0.707
+W3135367836,geolocation,0.743
+W3135367836,optical character recognition,0.764
+W3135367836,CLIP,0.848
+W1945616565,adversarial examples,1.0
+W1945616565,adversarial perturbations,0.908
+W1945616565,neural network vulnerabilities,0.853
+W1945616565,linearization,0.334
+W1945616565,adversarial training,0.874
+W1945616565,MNIST,0.627
+W1945616565,robustness,0.419
+W2130942839,sequence-to-sequence learning,0.986
+W2130942839,long short-term memory,0.889
+W2130942839,English-French translation,0.945
+W2130942839,sequence representation,0.311
+W2130942839,phrase-based statistical machine translation,0.846
+W2130942839,word order,0.623
+W2130942839,out-of-vocabulary words,0.71
+W2130942839,word order reversal,0.65
+W2259938310,ENCODE,0.879
+W2259938310,transcription,0.481
+W2259938310,transcription factor binding,0.857
+W2259938310,chromatin structure,0.999
+W2259938310,histone modifications,0.969
+W2259938310,regulatory elements,0.791
+W2259938310,gene expression regulation,0.814
+W2259938310,non-coding DNA,0.739
+W2259938310,genetic variants,0.612
+W2259938310,genome-wide association study,0.866
+W2259938310,disease association,0.47
+W2133990480,WEKA,0.997
+W2133990480,data mining tools,0.965
+W2133990480,software release history,0.615
+W2133990480,open source software,0.702
+W4396721167,AlphaFold3,0.998
+W4396721167,protein structure prediction,0.754
+W4396721167,biomolecular interactions,0.767
+W4396721167,protein-ligand interactions,0.689
+W4396721167,protein-nucleic acid interactions,0.993
+W4396721167,protein complexes,0.464
+W4396721167,deep learning,0.425
+W2149441684,cancer genomics data,0.936
+W2149441684,interactive data exploration,0.753
+W2149441684,tumor molecular profiles,0.774
+W2149441684,clinical features,0.9
+W2149441684,cancer research resources,0.471
+W2402144811,TensorFlow,1.0
+W2402144811,data flow graphs,0.774
+W2402144811,distributed learning,0.866
+W2402144811,heterogeneous computing,0.581
+W2402144811,tensor processing units,0.803
+W2402144811,GPU acceleration,0.765
+W2402144811,deep neural network training,0.82
+W2402144811,inference,0.428
+W2402144811,parameter server,0.605
+W2592929672,deep learning,0.959
+W2592929672,convolutional neural networks,0.993
+W2592929672,image classification,0.887
+W2592929672,object detection,0.998
+W2592929672,image segmentation,0.86
+W2592929672,image registration,0.932
+W2592929672,neuroimaging,0.957
+W2592929672,retinal imaging,0.967
+W2592929672,lung imaging,0.971
+W2592929672,digital pathology,1.0
+W2592929672,breast imaging,0.974
+W2592929672,cardiac imaging,0.997
+W2592929672,abdominal imaging,0.999
+W2592929672,musculoskeletal imaging,1.0
+W2252795400,gravitational waves,0.954
+W2252795400,binary black hole mergers,0.966
+W2252795400,LIGO,0.444
+W2252795400,gravitational wave detection,0.563
+W2252795400,black hole inspiral,0.739
+W2252795400,ringdown,0.824
+W2252795400,black hole mass,0.769
+W2252795400,stellar-mass black holes,0.78
+W2252795400,tests of general relativity,0.559
+W2580767461,IFT20,0.989
+W2580767461,intraflagellar transport,0.936
+W2580767461,tumor invasion,0.704
+W2580767461,invadopodia,0.954
+W2580767461,Golgi ribbon,0.667
+W2580767461,polarized secretion,0.827
+W2580767461,Golgi transport,0.849
+W2580767461,primary cilia,0.653
+W2580767461,cell migration,0.837
+W2096733369,FaceNet,0.966
+W2096733369,face recognition,0.948
+W2096733369,face verification,0.967
+W2096733369,face clustering,0.984
+W2096733369,embedding space,0.506
+W2096733369,triplet loss,0.65
+W2096733369,deep convolutional neural networks,0.773
+W2096733369,face similarity,0.764
+W2096733369,Labeled Faces in the Wild,0.807
+W2159707944,gene set variation analysis,0.875
+W2159707944,gene set enrichment analysis,0.977
+W2159707944,survival analysis,0.841
+W2159707944,microarray data,0.897
+W2159707944,RNA-seq data,0.98
+W2173520492,unsupervised feature learning,0.948
+W2173520492,DCGAN,0.988
+W2173520492,generative adversarial networks,0.849
+W2173520492,hierarchical representation,0.632
+W2173520492,image representation,0.49
+W2395611524,fully convolutional network,0.869
+W2395611524,semantic segmentation,0.999
+W2395611524,skip connections,0.777
+W2395611524,fine-tuning,0.59
+W2395611524,representation transfer,0.648
+W2395611524,AlexNet,0.765
+W2395611524,VGG,0.827
+W2395611524,GoogLeNet,0.994
+W2395611524,inference efficiency,0.6
+W2395611524,Pascal VOC,0.727
+W2395611524,SIFT flow,0.854
+W2395611524,Pascal Context,0.882
+W3210383951,partial least squares structural equation modeling,0.994
+W3210383951,PLS-SEM,0.929
+W3210383951,R programming language,0.736
+W3210383951,structural equation modeling,0.616
+W3210383951,case studies,0.335
+W4297808394,contrastive predictive coding,0.933
+W4297808394,unsupervised feature learning,0.863
+W4297808394,autoregressive models,0.875
+W4297808394,negative sampling,0.999
+W4297808394,high-dimensional data,0.753
+W4297808394,speech representation,0.559
+W4297808394,image representation,0.977
+W4297808394,text representation,0.993
+W2928665623,functional enrichment,0.541
+W2928665623,protein complexes,0.63
+W2928665623,interactome analysis,0.914
+W2928665623,genome annotation,0.911
+W2928665623,pathway enrichment,0.658
+W2928665623,multi-omics integration,0.619
+W2954996726,image augmentation,0.99
+W2954996726,overfitting,0.722
+W2954996726,limited training data,0.907
+W2954996726,geometric transformations,0.831
+W2954996726,random erasing,0.854
+W2954996726,feature space augmentation,0.797
+W2954996726,adversarial training,0.991
+W2954996726,generative adversarial networks,0.999
+W2954996726,neural style transfer,0.987
+W2954996726,meta-learning,0.993
+W2954996726,test-time augmentation,0.976
+W2954996726,curriculum learning,0.871
+W2954996726,medical image analysis,0.776
+W2954996726,convolutional neural networks,0.889
+W3168867926,low-rank adaptation,0.919
+W3168867926,LoRa,0.954
+W3168867926,large language models,0.966
+W3168867926,parameter-efficient fine-tuning,0.869
+W3168867926,rank decomposition,0.66
+W3168867926,transformer layers,0.422
+W3168867926,GPU memory efficiency,0.895
+W3168867926,rank deficiency,0.627
+W3168867926,GPT-3,0.808
+W3168867926,RoBERTa,0.958
+W3168867926,DeBERTa,0.985
+W3168867926,GPT-2,0.931
+W3168867926,adapters,0.427
+W1757796397,deep reinforcement learning,0.926
+W1757796397,Atari 2600,0.959
+W1757796397,convolutional neural networks,0.798
+W1757796397,Q-learning,0.918
+W1757796397,value function estimation,0.789
+W1757796397,game-playing agents,0.643
+W1757796397,Arcade Learning Environment,0.877
+W2125065061,cause-specific mortality,0.88
+W2125065061,causes of death,0.778
+W2125065061,global burden of disease,0.69
+W2125065061,mortality trends,0.761
+W2125065061,age and sex differences in mortality,0.628
+W2125065061,cause of death estimation,0.578
+W2125065061,verbal autopsy,0.542
+W2125065061,natural history model,0.686
+W2125065061,uncertainty intervals,0.585
+W3035524453,momentum contrast,0.898
+W3035524453,contrastive learning,0.997
+W3035524453,dynamic dictionaries,0.727
+W3035524453,ImageNet classification,0.746
+W3035524453,transfer learning,0.843
+W3035524453,object detection,0.962
+W3035524453,semantic segmentation,0.951
+W2133465414,gene set enrichment analysis,0.812
+W2133465414,genome annotation,0.797
+W2133465414,tool classification,0.78
+W2133465414,high-throughput genomic data,0.736
+W2006617902,PROC,0.731
+W2006617902,ROC curve,0.76
+W2006617902,receiver operating characteristic,0.917
+W2006617902,area under the curve,0.805
+W2006617902,partial AUC,0.648
+W2006617902,ROC curve comparison,0.689
+W2006617902,confidence intervals,0.746
+W2006617902,classifier evaluation,0.775
+W2006617902,biomarker data,0.567
+W2006617902,R package,0.578
+W2154714625,MolProbity,0.997
+W2154714625,structural validation,0.808
+W2154714625,macromolecular crystallography,0.843
+W2154714625,model quality assessment,0.741
+W2154714625,dihedral angle,0.888
+W2154714625,sugar pucker,0.732
+W2154714625,web services,0.431
+W1992419399,clustering,0.973
+W1992419399,unsupervised classification,0.898
+W1992419399,pattern clustering,0.773
+W1992419399,statistical pattern recognition,0.804
+W1992419399,image segmentation,0.754
+W1992419399,object recognition,1.0
+W1992419399,information retrieval,0.947
+W1992419399,exploratory data analysis,0.985
+W2214074259,Hallmark gene sets,0.822
+W2214074259,gene set enrichment analysis,0.98
+W2214074259,biological processes,0.602
+W2214074259,cancer hallmarks,0.609
+W1673923490,deep neural network,0.884
+W1673923490,interpretability,0.64
+W1673923490,unit analysis,0.704
+W1673923490,adversarial perturbations,0.956
+W1673923490,imperceptible perturbations,0.855
+W3123893780,PRISMA 2020,0.992
+W3123893780,systematic review reporting,0.855
+W3123893780,reporting guidelines,0.877
+W3123893780,transparency,0.385
+W3123893780,reproducibility,0.702
+W3123893780,health interventions,0.608
+W3123893780,meta-analysis,0.69
+W3123893780,reporting checklist,0.319
+W2963470893,single image super-resolution,0.986
+W2963470893,generative adversarial networks,0.86
+W2963470893,SRGAN,0.92
+W2963470893,perceptual loss,0.861
+W2963470893,adversarial loss,0.92
+W2963470893,content loss,0.995
+W2963470893,perceptual similarity,0.607
+W2963470893,texture detail recovery,0.694
+W2963470893,mean opinion score,0.677
+W2963470893,image quality assessment,0.49
+W3201073812,LAMMPS,0.994
+W3201073812,molecular dynamics,0.758
+W3201073812,interatomic potentials,0.724
+W3201073812,parallel FFT,0.789
+W3201073812,long-range Coulomb interaction,0.896
+W3201073812,dynamic load balancing,0.927
+W3201073812,machine learning interatomic potentials,0.809
+W3201073812,open-source simulation software,0.605
+W3201073812,multiscale materials modeling,0.816
+W2981852735,transfer learning,0.996
+W2981852735,text-to-text transformers,0.751
+W2981852735,pre-training objectives,0.775
+W2981852735,pre-trained language models,0.723
+W2981852735,language understanding tasks,0.602
+W2981852735,summarization,0.705
+W2981852735,question answering,0.998
+W2981852735,text classification,0.987
+W2981852735,fine-tuning,0.679
+W2981852735,unlabeled data,0.615
+W2787560479,contextualized word representations,0.816
+W2787560479,word embeddings,0.959
+W2787560479,word sense disambiguation,0.663
+W2804822363,homology modeling,0.873
+W2804822363,protein structure prediction,0.86
+W2804822363,protein complexes,0.855
+W2804822363,model quality assessment,0.847
+W2804822363,heteromeric complexes,0.687
+W2111619626,Internet of Things,1.0
+W2111619626,wireless sensor networks,0.991
+W2111619626,ubiquitous sensing,0.708
+W2111619626,cloud computing,0.711
+W2111619626,RFID,0.656
+W2111619626,sensor-actuator networks,0.79
+W2111619626,common operational picture,0.686
+W2111619626,Web3,0.636
+W2111619626,distributed computing,0.598
+W2111619626,IoT architecture,0.564
+W2549139847,ResNeXt,0.9
+W2549139847,cardinality,0.831
+W2549139847,image classification,0.85
+W2549139847,network depth and width,0.715
+W2549139847,model capacity,0.655
+W2549139847,object detection,0.665
+W2143485490,prodigals,0.948
+W2143485490,gene prediction,0.844
+W2143485490,prokaryotic genomes,0.898
+W2143485490,translation initiation sites,0.853
+W2143485490,gene structure prediction,0.806
+W2143485490,false positive reduction,0.743
+W2143485490,microbial genome annotation,0.802
+W2143485490,open source software,0.567
+W2099085143,PLINK,0.947
+W2099085143,genome-wide association study,0.904
+W2099085143,population genetics,0.84
+W2099085143,Hardy-Weinberg equilibrium,0.871
+W2099085143,Fisher's exact test,0.997
+W2099085143,linkage disequilibrium,0.814
+W2099085143,genomic distance,0.737
+W2099085143,genotype likelihoods,0.942
+W2099085143,phase information,0.551
+W2099085143,imputed data,0.606
+W2099085143,logistic regression,0.477
+W2904367110,generative adversarial networks,0.979
+W2904367110,generator architecture,0.956
+W2904367110,style transfer,0.903
+W2904367110,disentangled representations,0.669
+W2904367110,face synthesis,0.541
+W2432481613,3D medical image segmentation,0.901
+W2432481613,fully convolutional network,0.909
+W2432481613,prostate MRI segmentation,0.685
+W2432481613,class imbalance,0.932
+W2432481613,data augmentation,0.911
+W2432481613,histogram matching,0.988
+W2432481613,end-to-end learning,0.742
+W3122877168,partial least squares path modeling,0.999
+W3122877168,international marketing,0.849
+W3122877168,marketing research methodology,0.553
+W2271840356,TensorFlow,1.0
+W2271840356,machine learning framework,0.77
+W2271840356,heterogeneous distributed systems,0.738
+W2271840356,GPU computing,0.711
+W2271840356,deep neural network,0.878
+W2271840356,large-scale machine learning,0.749
+W2271840356,mobile devices,0.566
+W2271840356,open source software,0.684
+W2271840356,distributed training,0.433
+W1532325895,information retrieval,0.995
+W1532325895,web search,0.971
+W1532325895,text classification,0.942
+W1532325895,document clustering,1.0
+W1532325895,document indexing,0.818
+W1532325895,document retrieval systems,0.575
+W1532325895,information retrieval evaluation,0.722
+W4301159569,breast cancer,0.939
+W4301159569,molecular subtypes,0.937
+W4301159569,tumor heterogeneity,0.809
+W4301159569,somatic mutations,0.717
+W4301159569,TP53,0.981
+W4301159569,PIK3CA,1.0
+W4301159569,GATA3,0.999
+W4301159569,MAP3K1,0.981
+W4301159569,luminal A,0.829
+W4301159569,HER2-enriched breast cancer,0.888
+W4301159569,basal-like breast cancer,0.947
+W4301159569,high-grade serous ovarian cancer,0.868
+W4301159569,DNA methylation,0.725
+W4301159569,copy number variation,0.941
+W4301159569,gene expression signatures,0.628
+W4301159569,signaling pathways,0.648
+W4301159569,tumor microenvironment,0.73
+W4301159569,multi-omics integration,0.563
+W2160697532,Bioconductor,0.999
+W2160697532,open source software,0.866
+W2160697532,computational biology,0.603
+W2160697532,bioinformatics software,0.956
+W2160697532,collaborative software development,0.911
+W2160697532,reproducibility of research,0.807
+W2160697532,software extensibility,0.656
+W2981863007,artificial intelligence in education,0.998
+W2981863007,higher education,0.964
+W2981863007,academic support,0.886
+W2981863007,assessment and evaluation,0.851
+W2981863007,adaptive learning systems,0.938
+W2981863007,personalization,0.906
+W2981863007,intelligent tutoring systems,1.0
+W2981863007,ethical challenges of AI,0.643
+W2981863007,conceptions of teaching,0.71
+W2981863007,research gaps,0.349
+W2110052313,risk factors,0.792
+W2110052313,risk factor clustering,0.838
+W2110052313,attributable burden,0.57
+W2110052313,disability-adjusted life years,0.884
+W2110052313,years of life lost,0.818
+W2110052313,years lived with disability,0.89
+W2110052313,hypertension,0.791
+W2110052313,smoking,0.985
+W2110052313,alcohol consumption,0.876
+W2110052313,household air pollution,0.896
+W2110052313,solid fuels,0.842
+W2110052313,underweight children,0.839
+W2110052313,dietary risk factors,0.826
+W2110052313,physical inactivity,0.943
+W2110052313,sodium intake,0.634
+W2110052313,water and sanitation,0.572
+W2110052313,child mortality,0.359
+W2110052313,global burden of disease,0.379
+W2110052313,relative risk,0.372
+W2110052313,exposure distribution,0.417
+W2128769815,human microbiome,0.998
+W2128769815,healthy individuals,0.668
+W2128769815,microbial diversity,0.697
+W2128769815,gut microbiota,0.933
+W2128769815,skin microbiome,0.962
+W2128769815,vaginal microbiota,0.997
+W2128769815,ecological specialization,0.696
+W2128769815,metabolic pathways,0.593
+W2128769815,Human Microbiome Project,0.854
+W2128769815,metagenomics,0.742
+W2128769815,microbial ecology,0.419
+W2125826054,human gut microbiome,0.975
+W2125826054,metagenome,0.543
+W2125826054,fecal microbiota,0.62
+W2125826054,bacterial species diversity,0.53
+W2125826054,obesity,0.532
+W2125826054,inflammatory bowel disease,0.974
+W3005680577,contrastive learning,0.908
+W3005680577,self-supervised learning,0.812
+W3005680577,visual representation learning,0.84
+W3005680577,SimCLR,0.991
+W3005680577,batch size,0.564
+W3005680577,semi-supervised learning,0.946
+W3005680577,ImageNet,0.725
+W2962756421,node2vec,0.999
+W2962756421,node representation learning,0.807
+W2962756421,graph representation learning,0.632
+W2962756421,biased random walk,0.766
+W2962756421,node embeddings,0.555
+W2962756421,graph neural networks,0.555
+W2962756421,edge prediction,0.769
+W2999615587,explainable AI,0.96
+W2999615587,tree-based models,0.936
+W2999615587,local explanations,0.69
+W2999615587,mortality risk,0.68
+W2999615587,chronic kidney disease,0.984
+W2999615587,model monitoring,0.533
+W2999615587,machine learning in medicine,0.551
+W2963091558,non-local operations,0.807
+W2963091558,long-range dependencies,0.995
+W2963091558,non-local means,0.958
+W2963091558,video classification,0.963
+W2963091558,object detection,0.743
+W2963091558,image segmentation,0.782
+W2963091558,pose estimation,0.99
+W2963091558,COCO,0.461
+W2963091558,kinetics,0.94
+W2963091558,charades,0.997
+W2096420865,median-joining network,0.905
+W2096420865,intraspecific phylogeny,0.873
+W2096420865,phylogenetic networks,0.798
+W2096420865,maximum parsimony,0.697
+W2096420865,homoplasy,0.782
+W2096420865,multistate characters,0.776
+W2096420865,mitochondrial DNA,0.759
+W2096420865,Kruskal's algorithm,0.685
+W3014974815,nnU-Net,0.98
+W3014974815,medical image segmentation,0.863
+W3014974815,semantic segmentation,0.956
+W3014974815,image preprocessing,0.566
+W3014974815,post-processing,0.682
+W3014974815,diagnostic imaging,0.514
+W2295107390,global average pooling,0.918
+W2295107390,object localization,0.749
+W2295107390,implicit attention,0.692
+W2295107390,image-level labels,0.569
+W2295107390,bounding box regression,0.504
+W2295107390,image classification,0.507
+W2127048411,community detection,0.998
+W2127048411,community structure,0.744
+W2127048411,clustering,0.477
+W2127048411,complex networks,0.923
+W2127048411,statistical physics methods,0.739
+W2127048411,network analysis,0.556
+W2127048411,real-world networks,0.547
+W2331128040,perceptual loss,0.876
+W2331128040,image style transfer,0.918
+W2331128040,single image super-resolution,0.959
+W2331128040,image optimization,0.303
+W3210904070,GSM8K,0.91
+W3210904070,LoRa,0.599
+W3210904070,solution verification,0.57
+W3210904070,large language models,0.646
+W3210904070,multi-choice question answering,0.336
+W2801159594,tracers,0.867
+W2801159594,Bayesian phylogenetics,0.934
+W2801159594,kernel density estimation,0.938
+W2801159594,multivariate data visualization,0.808
+W2801159594,open source software,0.642
+W2884436604,U-Net,0.99
+W2884436604,nested U-Net,0.841
+W2884436604,medical image segmentation,0.958
+W2884436604,skip connections,0.664
+W2884436604,deep supervision,0.828
+W2884436604,encoder-decoder architecture,0.875
+W2884436604,nodule segmentation,0.796
+W2884436604,nuclei segmentation,0.808
+W2884436604,liver segmentation,0.995
+W2884436604,polyp segmentation,0.83
+W2884436604,low-dose CT,0.842
+W2884436604,colonoscopy video,0.829
+W3156458251,tree annotation,0.95
+W2158804744,Circos,0.867
+W2158804744,comparative genomics,0.774
+W2158804744,genome visualization,0.71
+W2158804744,sequence alignment,0.567
+W2158804744,genome mapping,0.937
+W2158804744,genotyping,0.961
+W2158804744,information aesthetics,0.454
+W3036167779,denoising diffusion probabilistic models,0.885
+W3036167779,acute myeloid leukemia,0.797
+W3036167779,myelodysplastic syndrome,0.999
+W3036167779,whole-genome bisulfite sequencing,0.813
+W3036167779,reduced representation bisulfite sequencing,0.963
+W3036167779,long-range interactions,0.566
+W3036167779,single-cell bisulfite sequencing,0.679
+W3036167779,HepG2 cells,0.796
+W3036167779,CD34+ cells,0.787
+W3036167779,glioblastoma,0.734
+W3036167779,breast cancer,0.96
+W3036167779,Docker deployment,0.509
+W3036167779,GPU acceleration,0.55
+W2028046413,Avogadro,0.979
+W2028046413,molecular editor,0.711
+W2028046413,molecular visualization,0.792
+W2028046413,chemical data interoperability,0.695
+W2028046413,plug-in architecture,0.925
+W2028046413,3D rendering,0.642
+W2028046413,crystal structure prediction,0.63
+W2028046413,genetic algorithm,0.762
+W2028046413,molecular dynamics simulation,0.529
+W2028046413,open source software,0.719
+W2157795344,protein-protein interaction,0.907
+W2157795344,macrophages,0.818
+W2157795344,Mycobacterium tuberculosis infection,0.948
+W2157795344,host immune response,0.843
+W2157795344,apoptosis regulation,0.846
+W2157795344,network enrichment analysis,0.344
+W2345356016,gene set enrichment analysis,0.998
+W2345356016,web server,0.617
+W2640329709,adversarial robustness,0.964
+W2640329709,adversarial attacks,0.835
+W2640329709,adversarial examples,0.866
+W2640329709,robust optimization,0.944
+W2640329709,deep neural network,0.71
+W2640329709,security guarantees,0.66
+W2640329709,adversarial training,0.783
+W2640329709,image classification,0.565
+W2949650786,residual learning,0.683
+W2949650786,ResNet,0.893
+W2949650786,deep neural network,0.704
+W2949650786,image recognition,0.709
+W2949650786,network depth,0.576
+W2949650786,ImageNet classification,0.806
+W2949650786,object detection,0.67
+W2949650786,semantic segmentation,0.731
+W2949650786,localization,0.555
+W2949650786,CIFAR-10,0.839
+W2949650786,COCO,0.65
+W2949650786,ensemble learning,0.431
+W2749069611,Bayesian hierarchical model,0.942
+W2749069611,BRM,0.869
+W2749069611,Stan,0.905
+W2749069611,probabilistic programming,0.917
+W2749069611,R package,0.787
+W2749069611,prior specification,0.668
+W2749069611,model comparison,0.733
+W2749069611,leave-one-out cross-validation,0.865
+W2749069611,zero-inflated models,0.86
+W2749069611,hurdle models,0.913
+W2749069611,ordinal models,0.67
+W2749069611,survival models,0.864
+W2749069611,autocorrelation,0.684
+W2765081049,GW170817,1.0
+W2765081049,binary neutron star inspirals,0.854
+W2765081049,gravitational waves,0.716
+W2765081049,neutron star mergers,0.78
+W2765081049,short gamma-ray bursts,0.988
+W2765081049,GRB 170817A,0.941
+W2765081049,multi-messenger astronomy,0.832
+W2765081049,electromagnetic counterparts,0.763
+W2765081049,sky localization,0.719
+W2765081049,luminosity distance,0.876
+W2765081049,neutron star mass,0.807
+W2765081049,neutron star spin,0.668
+W2765081049,dense matter,0.705
+W2765081049,Advanced LIGO,0.681
+W2765081049,Advanced Virgo,0.998
+W2166073443,FieldTrip,0.986
+W2166073443,open source software,0.86
+W2166073443,magnetoencephalography,0.879
+W2166073443,EEG,0.995
+W2166073443,invasive electrophysiology,0.816
+W2166073443,MATLAB toolbox,0.889
+W2166073443,time-frequency analysis,0.947
+W2166073443,multitaper spectral analysis,0.724
+W2166073443,source localization,0.917
+W2166073443,dipole modeling,0.696
+W2166073443,distributed sources,0.671
+W2166073443,beamforming,0.815
+W2166073443,connectivity analysis,0.727
+W2166073443,permutation tests,0.844
+W2166073443,nonparametric statistics,0.68
+W2122122381,augmented reality,0.999
+W2122122381,3D virtual objects,0.824
+W2122122381,real-time rendering,0.73
+W2122122381,registration error,0.868
+W2122122381,sensing errors,0.891
+W2122122381,medical applications,0.944
+W2122122381,manufacturing applications,0.944
+W2122122381,visualization,0.883
+W2122122381,path planning,0.997
+W2122122381,entertainment applications,0.725
+W2122122381,military applications,1.0
+W3009506062,COVID-19 pandemic,0.85
+W3009506062,psychological impact,0.88
+W3009506062,anxiety,0.918
+W3009506062,depression,0.99
+W3009506062,stress,0.969
+W3009506062,mental health,0.674
+W3009506062,general population,0.607
+W3009506062,Impact of Event Scale-Revised,0.725
+W3009506062,DASS-21,0.964
+W3009506062,health information,0.511
+W3009506062,precautionary measures,0.958
+W3009506062,somatic symptoms,0.544
+W3009506062,gender differences,0.641
+W3009506062,self-rated health,0.648
+W3009506062,home confinement,0.473
+W3009506062,China,0.483
+W3009506062,2020 outbreak,0.75
+W3009506062,hand hygiene,0.551
+W3009506062,masking,0.83
+W4390041933,Gemini,0.726
+W4390041933,multimodal large language models,0.876
+W4390041933,cross-modal reasoning,0.864
+W4390041933,image understanding,0.772
+W4390041933,audio understanding,0.953
+W4390041933,video understanding,0.995
+W4390041933,text understanding,0.948
+W4390041933,MMLU benchmark,0.85
+W4390041933,on-device deployment,0.563
+W4390041933,post-training,0.712
+W4390041933,responsible AI deployment,0.561
+W4390041933,Vertex AI,0.837
+W2096173332,protein-protein interaction network,0.868
+W2096173332,STRING database,0.925
+W2096173332,enrichment analysis,0.592
+W2096173332,tree of life,0.636
+W2096173332,R API,0.509
+W2963857746,path aggregation network,0.966
+W2963857746,instance segmentation,0.999
+W2963857746,information flow,0.497
+W2963857746,feature hierarchy,0.665
+W2963857746,mask prediction,0.67
+W2963857746,multi-view feature fusion,0.593
+W2963857746,object detection,0.621
+W2888532099,astropy,0.828
+W2888532099,open source software,0.84
+W2888532099,Python library,0.703
+W2888532099,astronomy software,0.716
+W2888532099,open science,0.724
+W2888532099,software infrastructure,0.635
+W2888532099,software ecosystems,0.38
+W2131222241,dengue,0.98
+W2131222241,global burden of disease,0.766
+W2131222241,dengue incidence,0.639
+W2131222241,dengue risk mapping,0.815
+W2131222241,Aedes,0.8
+W2131222241,mosquito-borne viral disease,0.736
+W2131222241,temperature and precipitation effects,0.645
+W2131222241,urbanization,0.959
+W2131222241,dengue prevention,0.434
+W2131222241,dengue control,0.465
+W2131222241,tropical and subtropical regions,0.744
+W2131222241,dengue vaccine,0.394
+W4308834893,STRING database,0.991
+W4308834893,protein-protein interaction,0.968
+W4308834893,functional association,0.744
+W4308834893,interaction networks,0.75
+W4308834893,functional enrichment,0.804
+W4308834893,variational autoencoder,0.955
+W4308834893,single-cell RNA sequencing,0.905
+W4308834893,proteomics,0.782
+W4226002507,masked autoencoder,0.999
+W4226002507,self-supervised learning,0.977
+W4226002507,image reconstruction,0.496
+W4226002507,encoder-decoder architecture,0.88
+W4226002507,vision transformer,0.45
+W4226002507,training efficiency,0.717
+W4226002507,transfer learning,0.749
+W4226002507,model scaling,0.476
+W3034552520,channel attention,0.813
+W3034552520,efficient channel attention,0.834
+W3034552520,SENet,0.746
+W3034552520,one-dimensional convolution,0.777
+W3034552520,cross-channel interaction,0.804
+W3034552520,dimensionality reduction,0.809
+W3034552520,model efficiency,0.64
+W3034552520,performance-efficiency trade-off,0.714
+W3034552520,image classification,0.907
+W3034552520,object detection,1.0
+W3034552520,instance segmentation,1.0
+W3163993681,physics-informed machine learning,0.981
+W3163993681,physics-informed neural networks,0.916
+W3163993681,inverse problems,0.707
+W3163993681,parameterized partial differential equations,0.792
+W3163993681,noisy data,0.711
+W3163993681,high-dimensional problems,0.646
+W3163993681,kernel regression,0.694
+W3163993681,physical invariants,0.667
+W3163993681,forward problem,0.618
+W3163993681,multiphysics simulation,0.703
+W2624503621,PointNet,0.952
+W2624503621,hierarchical neural networks,0.895
+W2624503621,metric spaces,0.637
+W2624503621,local feature learning,0.541
+W2624503621,recursive partitioning,0.588
+W2624503621,3D point clouds,0.836
+W2624503621,point cloud classification,0.592
+W2624503621,point cloud segmentation,0.6
+W2750384547,Fashion-MNIST,0.987
+W2750384547,fashion products,0.762
+W2750384547,grayscale images,0.823
+W2750384547,image classification,0.616
+W2750384547,data availability,0.398
+W2406250479,genome visualization,0.831
+W2406250479,multidimensional data,0.71
+W2406250479,Bioconductor package,0.735
+W2406250479,correlation patterns,0.541
+W2630837129,dilated convolution,0.999
+W2630837129,semantic segmentation,0.979
+W2630837129,DeepLabV3+,0.851
+W2630837129,atrous spatial pyramid pooling,0.918
+W2630837129,multi-scale context,0.846
+W2630837129,global context,0.785
+W2630837129,multi-scale feature extraction,0.425
+W2979826702,transformer models,0.595
+W2979826702,natural language processing,0.784
+W2979826702,Hugging Face,0.496
+W3001279689,scaling laws,0.733
+W3001279689,neural language models,0.884
+W3001279689,cross-entropy loss,0.98
+W3001279689,power-law scaling,0.801
+W3001279689,model size,0.801
+W3001279689,dataset size,0.802
+W3001279689,overfitting,0.921
+W3001279689,training speed,0.935
+W3001279689,sample efficiency,0.887
+W3195577433,foundation models,0.999
+W3195577433,large language models,0.87
+W3195577433,large vision models,0.697
+W3195577433,transfer learning,0.654
+W3195577433,emergent capabilities,0.723
+W3195577433,homogenization,0.807
+W3195577433,AI risks,0.586
+W3195577433,societal impact of AI,0.812
+W3195577433,AI ethics,0.611
+W3195577433,AI security,0.606
+W3195577433,artificial intelligence in healthcare,0.512
+W3195577433,artificial intelligence in law,0.821
+W3195577433,artificial intelligence in education,0.893
+W3195577433,environmental impact of AI,0.681
+W3195577433,economic impact of AI,0.798
+W3195577433,AI failure modes,0.418
+W3195577433,interdisciplinary collaboration,0.624
+W2607129810,gene expression profiling,0.94
+W2607129810,cancer gene expression,0.795
+W2607129810,RNA sequencing data,0.683
+W2607129810,TCGA,0.947
+W2607129810,GTEx,1.0
+W2607129810,differential expression analysis,0.941
+W2607129810,dimensionality reduction,0.835
+W2607129810,web-based analysis tool,0.614
+W1522734439,spatiotemporal feature learning,0.983
+W1522734439,3D convolutional networks,0.985
+W1522734439,C3d,0.931
+W1522734439,video classification,0.722
+W1522734439,compact feature representation,0.443
+W1522734439,UCF101,0.803
+W1522734439,human action recognition,0.46
+W1522734439,linear classifiers,0.416
+W2950635152,statistical machine translation,0.849
+W2950635152,phrase representation,0.603
+W2950635152,recurrent neural networks,0.805
+W2950635152,encoder-decoder architecture,0.751
+W2950635152,log-linear models,0.6
+W2950635152,joint training,0.549
+W2152061559,mutational signatures,0.993
+W2152061559,somatic mutations,0.992
+W2152061559,cancer genome,0.499
+W2152061559,APOBEC cytidine deaminases,0.983
+W2152061559,kataegis,0.941
+W2152061559,hypermutation,0.752
+W2152061559,patient age,0.6
+W2152061559,cancer etiology,0.881
+W2152061559,cancer types,0.37
+W1803102843,Phyre2,0.998
+W1803102843,protein structure prediction,0.947
+W1803102843,remote homology detection,0.811
+W1803102843,protein modeling,0.436
+W1803102843,ligand binding site prediction,0.967
+W1803102843,amino acid variants,0.792
+W1803102843,non-synonymous SNPs,0.982
+W1803102843,protein function prediction,0.765
+W1803102843,protein domains,0.705
+W1803102843,web server,0.704
+W1803102843,model quality assessment,0.514
+W4298289240,generative adversarial networks,0.995
+W4298289240,generative models,0.952
+W4298289240,minimax game,0.704
+W4298289240,discriminator,0.554
+W4298289240,generative model training,0.762
+W4298289240,multilayer perceptron,0.808
+W4298289240,backpropagation,0.836
+W4298289240,sample generation,0.782
+W4298289240,data distribution estimation,0.706
+W2026616100,3D Slicer,1.0
+W2026616100,medical image computing,0.679
+W2026616100,open source software,0.887
+W2026616100,automatic segmentation,0.621
+W2026616100,image registration,0.978
+W2026616100,imaging biomarkers,0.76
+W2026616100,clinical research tools,0.588
+W2026616100,software platform,0.401
+W2026616100,treatment response assessment,0.623
+W2026616100,personalized treatment,0.561
+W4281790889,protein structure prediction,0.93
+W4281790889,protein complex prediction,0.705
+W4281790889,homology search,0.792
+W4281790889,MMseqs2,0.982
+W4281790889,AlphaFold2,0.989
+W4281790889,RoseTTAFold,0.994
+W4281790889,Google Colaboratory,0.781
+W4281790889,GPU acceleration,0.818
+W4281790889,open source software,0.846
+W4281790889,environmental databases,0.588
+W4281790889,ColabFold,0.511
+W2952481429,QuPath,1.0
+W2952481429,digital pathology,0.96
+W2952481429,whole slide image analysis,0.855
+W2952481429,open source software,0.941
+W2952481429,tumor detection,0.967
+W2952481429,biomarker analysis,0.912
+W2952481429,batch processing,0.871
+W2952481429,scripting,0.789
+W2952481429,tissue image analysis,0.897
+W2134295053,Internet of Things,1.0
+W2134295053,IoT protocols,0.755
+W2134295053,RFID,0.787
+W2134295053,smart sensors,0.999
+W2134295053,machine-to-machine communication,0.96
+W2134295053,enabling technologies,0.692
+W2134295053,IoT applications,0.86
+W2134295053,big data analytics,0.921
+W2134295053,cloud computing,0.918
+W2134295053,fog computing,1.0
+W2134295053,intelligent decision-making,0.662
+W2110300022,PICRUSt,0.971
+W2110300022,16S rRNA,0.841
+W2110300022,ancestral state reconstruction,0.859
+W2110300022,Human Microbiome Project,0.884
+W2110300022,reference genome,0.645
+W2110300022,host-associated microbiota,0.613
+W2110300022,environmental microbiota,0.956
+W2149961401,z-Tree,0.981
+W2149961401,experimental design,0.612
+W2149961401,online experiment platform,0.503
+W2149961401,software design principles,0.673
+W2286929393,semantic segmentation,0.898
+W2286929393,dilated convolution,0.971
+W2286929393,multi-scale context aggregation,0.932
+W2286929393,dense prediction,0.764
+W2286929393,receptive field expansion,0.837
+W2286929393,network simplification,0.618
+W2138621811,link analysis,0.679
+W2138621811,link structure,0.725
+W2138621811,World Wide Web,0.713
+W2138621811,eigenvector centrality,0.732
+W2138621811,link graphs,0.573
+W3140854437,deep learning,0.993
+W3140854437,convolutional neural networks,0.979
+W3140854437,convolutional neural network architecture,0.981
+W3140854437,AlexNet,0.991
+W3140854437,HRNet,0.844
+W3140854437,deep learning applications,0.842
+W3140854437,FPGA,0.525
+W3140854437,graphics processing units,0.701
+W3140854437,CPU,0.667
+W3140854437,benchmark dataset,0.948
+W2518108298,stochastic gradient descent,0.888
+W2518108298,deep neural network training,0.836
+W2518108298,convergence rate,0.568
+W2518108298,multimodal optimization,0.658
+W2518108298,EEG classification,0.526
+W2518108298,ImageNet,0.758
+W4224035735,text-to-image generation,0.908
+W4224035735,diffusion models,0.504
+W4224035735,image priors,0.344
+W4224035735,image variation,0.403
+W4224035735,photorealism,0.647
+W3132661792,intercellular communication,0.964
+W3132661792,CellChat,0.87
+W3132661792,ligand-receptor interactions,0.861
+W3132661792,signaling pathway inference,0.734
+W3132661792,single-cell RNA sequencing,0.798
+W3132661792,manifold learning,0.736
+W3132661792,skin,0.543
+W2127435093,emerging infectious diseases,1.0
+W2127435093,disease hotspots,0.842
+W2127435093,zoonoses,0.957
+W2127435093,socioeconomic factors,0.654
+W2127435093,drug-resistant bacteria,0.823
+W2127435093,antibiotic resistance,0.588
+W2127435093,HIV/AIDS epidemic,0.636
+W2127435093,disease surveillance,0.558
+W2127435093,reporting bias,0.713
+W2127435093,vector-borne diseases,0.75
+W2964199361,neural machine translation,1.0
+W2964199361,encoder-decoder architecture,0.967
+W2964199361,recurrent neural networks,0.748
+W2964199361,out-of-vocabulary words,0.685
+W2964199361,sentence length,0.849
+W2964199361,statistical machine translation,0.809
+W1902237438,attention mechanism,0.741
+W1902237438,neural machine translation,0.998
+W1902237438,local attention,0.818
+W1902237438,global attention,1.0
+W1902237438,English-German translation,0.869
+W1902237438,ensemble learning,0.702
+W1902237438,dropout,0.502
+W2978346165,digital transformation,1.0
+W2978346165,business model innovation,0.924
+W2978346165,digitization,0.93
+W2978346165,digitalization,0.999
+W2978346165,digital companies,0.806
+W2978346165,growth strategy,0.908
+W2978346165,organizational capabilities,0.909
+W2978346165,organizational structure,0.961
+W2978346165,performance indicators,0.926
+W2978346165,customer expectations,0.75
+W2978346165,market disruption,0.848
+W4249896096,cardiac chamber quantification,0.996
+W4249896096,reference values,0.71
+W4249896096,left ventricle,0.885
+W4249896096,right ventricle,0.932
+W4249896096,left atrium,0.975
+W4249896096,right atrium,1.0
+W4249896096,three-dimensional echocardiography,0.973
+W4249896096,myocardial deformation,0.994
+W1514535095,image captioning,0.89
+W1514535095,visual attention,0.958
+W1514535095,attention-based neural networks,0.578
+W1514535095,variational lower bound,0.813
+W1514535095,stochastic training,0.615
+W1514535095,salient object detection,0.664
+W1514535095,gaze visualization,0.625
+W1514535095,Flickr8k,0.911
+W1514535095,Flickr30k,0.998
+W1514535095,MS COCO,0.954
+W2523246573,gradient descent,0.984
+W2523246573,optimization algorithms,0.946
+W2523246573,black-box optimization,0.779
+W2523246573,parallel optimization,0.568
+W2523246573,distributed optimization,0.991
+W2523246573,optimization methods,0.509
+W2111684210,exploratory data analysis,0.985
+W2111684210,statistical assumptions,0.736
+W2111684210,type I and type II errors,0.744
+W2111684210,outliers,0.845
+W2111684210,heteroscedasticity,0.986
+W2111684210,multicollinearity,0.974
+W2111684210,autocorrelation,0.748
+W2111684210,interaction effects,0.732
+W2111684210,double zeros,0.746
+W2111684210,zero-inflated data,0.815
+W2111684210,generalized linear models,0.838
+W2111684210,normality,0.823
+W2111684210,data transformation,0.834
+W2111684210,applied ecology,0.785
+W2111684210,statistical misconceptions,0.704
+W1904365287,dropout,0.938
+W1904365287,co-adaptation,0.816
+W1904365287,feature detectors,0.951
+W1904365287,overfitting,0.959
+W1904365287,feedforward neural networks,0.806
+W1904365287,limited training data,0.751
+W1904365287,generalization,0.595
+W1904365287,speech recognition,0.801
+W1904365287,object recognition,0.999
+W2108344016,years lived with disability,0.994
+W2108344016,disability weights,0.677
+W2108344016,prevalence estimation,0.567
+W2108344016,disability incidence,0.457
+W2108344016,excess mortality,0.945
+W2108344016,comorbidities,0.624
+W2108344016,mental and behavioral disorders,0.704
+W2108344016,musculoskeletal disorders,0.999
+W2108344016,diabetes mellitus,0.82
+W2108344016,endocrine disorders,0.625
+W2108344016,Global Burden of Disease Study 2010,0.795
+W2108344016,uncertainty estimation,0.494
+W2108344016,natural history model,0.536
+W2105397247,acute coronary syndrome,0.913
+W2105397247,non-ST-segment elevation,0.827
+W2105397247,clinical decision-making,0.662
+W2105397247,risk-benefit assessment,0.715
+W2105397247,revascularization,0.739
+W2105397247,cardiac troponin,0.756
+W2105397247,myocardial ischemia,0.88
+W2105397247,hemodynamic instability,0.851
+W2105397247,electrical instability,0.802
+W2144985796,peripheral arterial disease,0.999
+W2144985796,vascular care,0.613
+W2102201073,multivariate adaptive regression splines,0.996
+W2102201073,high-dimensional regression,0.608
+W2102201073,recursive partitioning,0.734
+W2102201073,knot selection,0.466
+W2102201073,interaction modeling,0.375
+W2102201073,additive models,0.78
+W2102201073,nonparametric regression,0.6
+W3004227146,re-epithelialization,0.863
+W3004227146,wound healing,0.859
+W3004227146,ex vivo skin model,0.874
+W3004227146,negative pressure wound therapy,0.941
+W3004227146,epidermal regeneration,0.823
+W3004227146,keratinocyte proliferation and migration,0.849
+W3004227146,T cells,0.782
+W3004227146,suction blister fluid,0.725
+W3004227146,basement membrane integrity,0.824
+W3004227146,epidermal differentiation markers,0.877
+W2594475271,model interpretability,0.985
+W2594475271,explainability,0.595
+W2594475271,evaluation metrics,0.609
+W2594475271,algorithmic fairness,0.452
+W3107527779,STRING database,0.991
+W3107527779,protein-protein interaction,0.954
+W3107527779,protein-protein interaction network,0.691
+W3107527779,functional association,0.79
+W3107527779,literature mining,0.846
+W3107527779,physical interaction,0.639
+W3107527779,co-expression,0.509
+W3107527779,interaction prediction,0.529
+W3107527779,protein complexes,0.466
+W3107527779,pathway annotation,0.531
+W2169393322,image classification,0.702
+W2169393322,saliency maps,0.858
+W2169393322,class activation maps,0.561
+W2169393322,deconvolutional networks,0.958
+W2616247523,Grad-CAM,0.99
+W2616247523,visual explanations,0.662
+W2616247523,explainable AI,0.681
+W2616247523,class activation mapping,0.84
+W2616247523,convolutional neural networks,0.797
+W2616247523,image classification,0.775
+W2616247523,image captioning,0.992
+W2616247523,visual question answering,1.0
+W2616247523,weakly supervised localization,0.861
+W2616247523,adversarial robustness,0.883
+W2616247523,data bias,0.749
+W2616247523,neuron importance,0.476
+W2616247523,textual explanations,0.736
+W2616247523,human subjects research,0.579
+W2616247523,model transparency,0.335
+W2616247523,Guided Grad-CAM,0.693
+W2616247523,ResNet,0.525
+W2616247523,VGG,0.532
+W2759190050,heart rate variability,1.0
+W2759190050,RR interval,0.748
+W2759190050,short-term HRV,0.985
+W2759190050,optimal performance,0.633
+W2759190050,homeostasis,0.531
+W2759190050,chaos theory,0.468
+W2519091744,WaveNet,0.997
+W2519091744,autoregressive models,0.704
+W2519091744,probabilistic generative models,0.78
+W2519091744,text-to-speech,0.919
+W2519091744,music generation,0.916
+W2519091744,phoneme recognition,0.932
+W2519091744,Mandarin speech synthesis,0.604
+W2341539131,read normalization,0.599
+W2341539131,read quality control,0.753
+W2341539131,read clustering,0.527
+W2341539131,data visualization,0.84
+W2070050178,gene set enrichment analysis,0.894
+W2070050178,web-based bioinformatics tool,0.761
+W2070050178,cancer cell lines,0.828
+W2070050178,Toll-like receptor signaling,0.99
+W2070050178,interleukin signaling,0.963
+W2070050178,K562 cells,0.906
+W2070050178,differentially expressed genes,0.723
+W3152893301,graph neural networks,1.0
+W3152893301,graph convolutional networks,0.741
+W3152893301,graph attention networks,0.999
+W3152893301,message passing,0.986
+W3152893301,graph reasoning,0.732
+W3152893301,molecular fingerprints,0.648
+W3152893301,protein interface prediction,0.98
+W3152893301,disease classification,0.622
+W3152893301,dependency trees,0.658
+W3152893301,scene graph,0.959
+W2260756217,deep reinforcement learning,0.94
+W2260756217,actor-critic,0.805
+W2260756217,neural network controller,0.805
+W2260756217,Atari,0.688
+W2260756217,visual input,0.727
+W2260756217,training stability,0.593
+W2151512268,CMS detector,0.943
+W2151512268,Large Hadron Collider,0.979
+W2151512268,proton-proton collisions,0.904
+W2151512268,Pb-Pb collisions,0.986
+W2151512268,superconducting solenoid,0.871
+W2151512268,silicon pixel tracker,0.768
+W2151512268,silicon strip tracker,0.931
+W2151512268,muon detector,0.848
+W2151512268,detector geometry,0.439
+W2161289668,glioblastoma,0.98
+W2161289668,molecular subtypes,0.888
+W2161289668,proneural subtype,0.941
+W2161289668,mesenchymal subtype,0.873
+W2161289668,classical subtype,0.886
+W2161289668,PDGFRA,0.869
+W2161289668,IDH1,0.986
+W2161289668,EGFR,0.998
+W2161289668,neurofibromatosis type 1,0.979
+W2161289668,somatic mutations,0.969
+W2161289668,gene expression signatures,0.835
+W2161289668,neural lineage,0.675
+W2161289668,treatment response,0.797
+W2161289668,molecular stratification,0.796
+W2171165037,acute ischemic stroke,1.0
+W2171165037,early management,0.724
+W2171165037,stroke systems of care,0.918
+W2171165037,prehospital care,0.831
+W2171165037,emergency medical services activation,0.851
+W2171165037,stroke triage,0.772
+W2171165037,emergency department care,0.716
+W2171165037,stroke unit,0.895
+W2171165037,reperfusion therapy,0.842
+W2171165037,cerebral resuscitation,0.96
+W2171165037,stroke detection,0.522
+W2171165037,stroke mortality and morbidity,0.838
+W2476548250,single image super-resolution,0.978
+W2476548250,video super-resolution,0.997
+W2476548250,sub-pixel convolution,0.916
+W2476548250,bicubic interpolation,0.807
+W2476548250,computational efficiency,0.798
+W2476548250,GPU acceleration,0.621
+W3136918052,protein sequence databases,0.549
+W3136918052,protein annotation,0.913
+W3136918052,reference proteomes,0.762
+W3136918052,viral proteome,0.83
+W3136918052,subcellular localization,0.916
+W3136918052,protein structure,0.838
+W3136918052,protein-protein interaction,0.867
+W3136918052,data visualization,0.704
+W3136918052,expert curation,0.592
+W3136918052,rule-based annotation,0.715
+W2065769502,error tolerance,0.882
+W2065769502,attack vulnerability,0.952
+W2065769502,scale-free networks,0.903
+W2065769502,network robustness,0.827
+W2065769502,complex networks,0.548
+W2065769502,node removal,0.48
+W2065769502,network connectivity,0.608
+W2065769502,redundancy,0.56
+W2065769502,communication networks,0.787
+W2065769502,metabolic networks,0.666
+W2065769502,social networks,0.618
+W2065769502,World Wide Web,0.834
+W2091257550,computing grid,0.569
+W2091257550,distributed supercomputing,0.914
+W2091257550,data-intensive computing,0.935
+W2091257550,software development tools,0.684
+W2091257550,Globus Toolkit,0.954
+W2091257550,resource management,0.996
+W2091257550,performance evaluation,0.637
+W2091257550,network protocols,0.67
+W2091257550,network quality of service,0.865
+W2091257550,operating systems,0.84
+W2091257550,network infrastructure,0.855
+W2091257550,testbed,0.806
+W2091257550,grid infrastructure,0.576
+W2883780447,ShuffleNetV2,0.992
+W2883780447,speed-accuracy trade-off,0.835
+W2883780447,inference speed,0.488
+W2883780447,memory access cost,0.918
+W2883780447,lightweight neural networks,0.562
+W2101357408,schizophrenia,0.999
+W2101357408,genetic susceptibility loci,0.941
+W2101357408,genome-wide association study,0.833
+W2101357408,polygenic inheritance,0.752
+W2101357408,brain-expressed genes,0.91
+W2101357408,glutamatergic neurotransmission,0.959
+W2101357408,DRD2,0.942
+W2101357408,immune system,0.694
+W2101357408,etiology of schizophrenia,0.776
+W2101357408,therapeutic target,0.629
+W2087484885,statistical power analysis,0.998
+W2087484885,effect size estimation,0.701
+W2087484885,t-test,0.869
+W2087484885,F-test,0.996
+W2087484885,chi-square test,0.987
+W2087484885,Z-test,0.987
+W2087484885,exact tests,0.989
+W2160378127,MAFFT,0.999
+W2160378127,multiple sequence alignment,0.999
+W2160378127,DNA sequence alignment,0.706
+W2160378127,parallel computing,0.91
+W2160378127,alignment errors,0.522
+W2160378127,alignment software,0.534
+W2132525235,wave function analysis,0.825
+W2132525235,electron localization function,0.851
+W2132525235,electrostatic potential,0.932
+W2132525235,population analysis,0.899
+W2132525235,bond order analysis,0.953
+W2132525235,orbital composition,0.866
+W2132525235,density of states,0.969
+W2132525235,electron density topology,0.894
+W2132525235,open source software,0.614
+W2132525235,parallel computing,0.475
+W4254687493,ggplot2,0.999
+W4254687493,data visualization,0.939
+W4254687493,R package,0.681
+W4254687493,knitr,0.57
+W4254687493,RStudio,0.962
+W2187089797,t-SNE,1.0
+W2187089797,dimensionality reduction,0.866
+W2187089797,high-dimensional data visualization,0.874
+W2187089797,stochastic neighbor embedding,0.918
+W2187089797,manifold learning,0.706
+W2187089797,Sammon mapping,0.638
+W2187089797,Isomap,0.99
+W2187089797,locally linear embedding,0.792
+W2187089797,multiscale structure,0.41
+W2034285706,SILVA database,0.852
+W2034285706,ribosomal RNA gene sequences,0.915
+W2034285706,small subunit rRNA,0.902
+W2034285706,large subunit rRNA,1.0
+W2034285706,sequencing quality control,0.838
+W2034285706,bacterial classification,0.455
+W2034285706,web-based tool,0.493
+W2148698435,MrBayes,0.944
+W2148698435,Bayesian phylogenetics,0.997
+W2148698435,Markov chain Monte Carlo,0.939
+W2148698435,model selection,0.654
+W2148698435,convergence diagnostics,0.854
+W2148698435,parallel MCMC,0.724
+W2148698435,likelihood computation,0.353
+W2148698435,beagle dogs,0.818
+W2148698435,GPU acceleration,0.847
+W2148698435,relaxed molecular clock,0.679
+W2148698435,divergence time estimation,0.538
+W2148698435,model averaging,0.898
+W2148698435,species tree estimation,0.654
+W2148698435,stepping stone method,0.815
+W2148698435,Bayes factor,0.809
+W2148698435,ancestral state reconstruction,0.825
+W2148698435,codon models,0.618
+W2124026197,coots,0.934
+W2124026197,molecular graphics software,0.877
+W2124026197,model development,0.816
+W2124026197,model validation,0.919
+W2124026197,biological macromolecules,0.882
+W2124026197,electron density maps,0.971
+W2124026197,real-space refinement,0.75
+W2124026197,rotamers,0.796
+W2124026197,scripting interface,0.677
+W2124026197,user interface design,0.593
+W2158698691,receiver operating characteristic,0.973
+W2158698691,ROC curve,0.782
+W2158698691,classifier evaluation,0.792
+W2158698691,binary classification,0.835
+W2158698691,clinical decision-making,0.934
+W2158698691,machine learning,0.452
+W2158698691,data mining,0.835
+W2158698691,common misconceptions,0.541
+W1587026990,ggplot2,0.999
+W1587026990,data visualization,0.904
+W1587026990,R graphics,0.743
+W1587026990,smoothing,0.332
+W1587026990,knitr,0.52
+W1587026990,tidy data,0.433
+W2047968138,3D visualization,0.796
+W2047968138,post-processing,0.769
+W2047968138,molecular dynamics,0.913
+W2047968138,Monte Carlo simulation,0.852
+W2047968138,simulation animation,0.437
+W2047968138,open source software,0.702
+W2047968138,plug-in architecture,0.658
+W2047968138,Python scripting,0.87
+W3036319615,bioinformatics software,0.805
+W3036319615,high-throughput sequencing data analysis,0.758
+W3036319615,interactive data visualization,0.873
+W3036319615,user-friendly interface,0.563
+W3036319615,standalone software,0.658
+W3036319615,plant genomics,0.457
+W2118898434,local indicators of spatial association,0.996
+W2118898434,LISA,0.792
+W2118898434,local Moran's I,0.865
+W2118898434,spatial autocorrelation,0.725
+W2118898434,hot spots,0.643
+W2118898434,non-stationarity,0.881
+W2118898434,spatial outliers,0.569
+W2118898434,African countries,0.461
+W2786672974,UMAP,0.972
+W2786672974,dimensionality reduction,0.833
+W2786672974,manifold learning,0.999
+W2786672974,Riemannian geometry,0.837
+W2786672974,algebraic topology,1.0
+W2786672974,data visualization,0.673
+W2786672974,global structure preservation,0.763
+W2786672974,scalable algorithms,0.681
+W3003217347,SARS-CoV-2,0.976
+W3003217347,novel coronavirus,0.632
+W3003217347,SARS-like coronaviruses,0.713
+W3003217347,Betacoronavirus,0.705
+W3003217347,Sarbecovirus,0.989
+W3003217347,SARS,0.738
+W3003217347,animal-to-human transmission,0.788
+W3003217347,Wuhan,0.71
+W3003217347,phylogenetic analysis,0.858
+W3003217347,viral genome,0.584
+W3003217347,emerging infectious diseases,0.826
+W2106578986,SnpEff,0.986
+W2106578986,single nucleotide polymorphisms,0.989
+W2106578986,variant annotation,0.958
+W2106578986,5' untranslated region,0.764
+W2106578986,3' untranslated region,0.852
+W2106578986,splice sites,0.653
+W2106578986,recombination frequency,0.776
+W2106578986,Drosophila melanogaster,0.963
+W2164154943,Blast2GO,0.999
+W2164154943,gene ontology annotation,0.983
+W2164154943,sequence annotation,0.533
+W2164154943,similarity search,0.607
+W2164154943,functional genomics,0.827
+W2164154943,non-model organisms,0.897
+W2164154943,directed acyclic graphs,0.885
+W2164154943,annotation visualization,0.782
+W2164154943,Java Web Start,0.477
+W2118258530,Gene Expression Omnibus,0.995
+W2118258530,GEO,0.636
+W2118258530,microarray data,0.756
+W2118258530,next-generation sequencing,0.812
+W2118258530,public data repositories,0.672
+W2118258530,R web applications,0.779
+W2118258530,data archiving,0.785
+W2118258530,metadata,0.373
+W2118258530,data visualization tools,0.64
+W2229412420,marching cubes,0.985
+W2229412420,3D surface reconstruction,0.893
+W2229412420,triangular mesh generation,0.714
+W2229412420,isosurface extraction,0.812
+W2229412420,medical image processing,0.462
+W2229412420,computed tomography,0.758
+W2229412420,magnetic resonance imaging,0.986
+W2229412420,single photon emission computed tomography,0.913
+W2229412420,solid modeling,0.964
+W2170488209,pro-environmental behavior,1.0
+W2170488209,environmental knowledge,0.557
+W2170488209,environmental awareness,0.943
+W2170488209,sociological models,0.795
+W2170488209,motivation,0.445
+W2170488209,attitudes,0.362
+W2170488209,values,0.761
+W2170488209,locus of control,0.83
+W2170488209,demographic factors,0.722
+W2170488209,institutional factors,0.681
+W2170488209,behavior change models,0.485
+W2751583588,MAFFT,0.982
+W2751583588,multiple sequence alignment,0.993
+W2751583588,sequence visualization,0.64
+W2751583588,web interface,0.697
+W1982855075,Pilon,0.988
+W1982855075,genome assembly improvement,0.728
+W1982855075,variant calling,0.866
+W1982855075,bacterial genomes,0.833
+W1982855075,gap filling,0.51
+W1982855075,paired-end sequencing,0.782
+W1982855075,diploid genome,0.781
+W1982855075,haploid genome,0.826
+W1982855075,clinical bacterial strains,0.557
+W1982855075,open source software,0.548
+W2952167528,Unicycler,0.96
+W2952167528,bacterial genome assembly,0.946
+W2952167528,hybrid genome assembly,0.831
+W2952167528,long-read sequencing,0.799
+W2952167528,short-read sequencing,0.952
+W2952167528,semi-global alignment,0.944
+W2952167528,Spades,0.683
+W2952167528,contig length,0.463
+W2112311198,Gmsh,1.0
+W2112311198,finite element mesh generation,0.903
+W2112311198,mesh preprocessing,0.591
+W2112311198,mesh visualization,0.957
+W2112311198,open source software,0.973
+W3128261063,seaborn,0.968
+W3128261063,statistical graphics,0.934
+W3128261063,Python library,0.609
+W3128261063,exploratory data analysis,0.802
+W3128261063,data visualization,0.531
+W3128261063,publication-quality figures,0.714
+W2158489424,population structure inference,0.931
+W2158489424,linked loci,0.865
+W2158489424,admixture mapping,0.811
+W2158489424,African Americans,0.553
+W2110035718,tassels,0.948
+W2110035718,association mapping,0.909
+W2110035718,complex traits,0.977
+W2110035718,population structure,0.83
+W2110035718,family structure,0.958
+W2110035718,linear mixed models,0.851
+W2110035718,general linear model,0.891
+W2110035718,linkage disequilibrium,0.997
+W2110035718,indels,0.772
+W2110035718,missing data imputation,0.796
+W2110035718,principal components,0.867
+W2110035718,maize genetics,0.704
+W2110035718,genetic diversity,0.425
+W2020134788,synteny,0.86
+W2020134788,multicollinearity,0.728
+W2020134788,gene family expansion,0.666
+W2020134788,gene duplication,0.925
+W2020134788,chromosome structural changes,0.784
+W2020134788,plant genome,0.66
+W2020134788,comparative genomics,0.742
+W2988396470,OrthoFinder,0.929
+W2988396470,orthogroups,0.79
+W2988396470,phylogenetic inference,0.837
+W2988396470,gene trees,0.723
+W2988396470,gene duplication,0.909
+W2988396470,comparative genomics,0.958
+W2988396470,benchmarking,0.416
+W4200150166,neural radiance fields,0.972
+W4200150166,view synthesis,0.918
+W4200150166,novel view synthesis,0.681
+W4200150166,neural rendering,0.595
+W4200150166,volume rendering,0.687
+W4200150166,differentiable rendering,0.936
+W4200150166,photorealistic rendering,0.714
+W4200150166,scene representation,0.318
+W2047940964,community detection,0.866
+W2047940964,large-scale networks,0.832
+W2047940964,sparse networks,0.635
+W2047940964,dendrogram,0.632
+W2047940964,linear-time algorithms,0.731
+W2047940964,customer purchasing patterns,0.677
+W2979750740,point clouds,0.853
+W2979750740,dynamic graph convolution,0.702
+W2979750740,graph neural networks,0.803
+W2979750740,3D shape classification,0.765
+W2979750740,3D shape segmentation,0.788
+W2979750740,point cloud topology,0.471
+W2979750740,local neighborhood information,0.713
+W2979750740,3D object recognition,0.499
+W4309506674,protein sequence annotation,0.768
+W4309506674,reference proteomes,0.685
+W4309506674,machine learning annotation,0.742
+W4309506674,AlphaFold protein structure,0.668
+W4309506674,subcellular localization,0.94
+W4309506674,data pipelines,0.655
+W2133371793,survival estimation,0.76
+W2133371793,recapture,0.656
+W2133371793,encounter history,0.684
+W2133371793,link functions,0.629
+W2133371793,maximum likelihood estimation,0.669
+W2133371793,overdispersion,0.841
+W2133371793,deviance residuals,0.721
+W2133371793,wildlife population monitoring,0.34
+W2955058313,scene segmentation,0.989
+W2955058313,self-attention,0.794
+W2955058313,dual attention network,0.705
+W2955058313,position attention,0.956
+W2955058313,channel attention,1.0
+W2955058313,semantic segmentation,0.604
+W2955058313,cityscape,0.755
+W2955058313,Pascal Context,0.718
+W2955058313,COCO-Stuff,0.974
+W2114622716,PHENIX,0.954
+W2114622716,X-ray crystallography,0.858
+W2114622716,automated structure determination,0.569
+W2114622716,Python,0.674
+W2114622716,3D graphics,0.487
+W2114622716,software integration,0.425
+W3041133507,transfer learning,1.0
+W3041133507,domain adaptation,0.672
+W3041133507,Amazon reviews,0.666
+W3041133507,Reuters-21578,0.977
+W3041133507,Office-31,0.989
+W4385318467,3D Gaussian Splatting,0.885
+W4385318467,radiance fields,0.908
+W4385318467,real-time rendering,0.891
+W4385318467,novel view synthesis,0.984
+W4385318467,anisotropic covariance,0.836
+W4385318467,density control,0.566
+W4385318467,camera calibration,0.65
+W4385318467,volumetric scene representation,0.701
+W2766527293,generative adversarial networks,0.996
+W2766527293,GAN training stability,0.736
+W2766527293,image generation quality,0.579
+W2766527293,image variation,0.607
+W2766527293,GAN evaluation metrics,0.729
+W2766527293,CIFAR-10,0.826
+W4313531093,hallmarks of aging,0.982
+W4313531093,genomic instability,0.776
+W4313531093,telomere shortening,0.999
+W4313531093,epigenetic modifications,0.996
+W4313531093,macroautophagy,0.756
+W4313531093,nutrient sensing,0.875
+W4313531093,mitochondrial dysfunction,1.0
+W4313531093,cellular senescence,1.0
+W4313531093,stem cell exhaustion,1.0
+W4313531093,intercellular communication,0.997
+W4313531093,chronic inflammation,0.997
+W4313531093,dysbiosis,0.939
+W4313531093,aging interventions,0.402
+W2127847431,bootstrap support,0.622
+W2127847431,RAxML,0.973
+W2127847431,maximum likelihood phylogeny,0.836
+W2127847431,web server,0.472
+W2127847431,high-performance computing,0.681
+W2127847431,Robinson-Foulds distance,0.802
+W2127847431,consensus trees,0.523
+W3005212621,remdesivir,0.885
+W3005212621,chloroquine,0.997
+W3005212621,SARS-CoV-2,0.962
+W3005212621,antiviral activity,0.835
+W3005212621,drug repurposing,0.712
+W3005212621,favipiravir,0.763
+W3005212621,nafamostat,0.88
+W3005212621,nitazoxanide,0.914
+W3005212621,penciclovir,0.98
+W3005212621,ribavirin,0.995
+W3005212621,Vero E6 cells,0.814
+W3005212621,cytotoxicity,0.734
+W3005212621,viral replication inhibition,0.622
+W2123768693,GROMACS,0.972
+W2123768693,molecular dynamics simulation,0.879
+W2123768693,trajectory analysis,0.901
+W2123768693,parallel computing,0.594
+W2123768693,periodic boundary conditions,0.992
+W2123768693,SSE,0.533
+W2123768693,x86 processors,0.586
+W2123768693,workstation performance,0.451
+W2123768693,trajectory visualization,0.569
+W1565377632,data mining,0.994
+W1565377632,classification,0.892
+W1565377632,association rule mining,0.794
+W1565377632,clustering,0.639
+W1565377632,dimensionality reduction,0.643
+W1565377632,anomaly detection,0.556
+W1565377632,data preprocessing,0.441
+W1565377632,similarity measures,0.694
+W1565377632,ensemble methods,0.678
+W1565377632,support vector machine,0.766
+W1565377632,nearest neighbor classification,0.684
+W1565377632,frequent itemset mining,0.687
+W1565377632,FP-Growth algorithm,0.782
+W1565377632,class imbalance,0.466
+W1565377632,sequential patterns,0.46
+W1565377632,subgraph patterns,0.575
+W1565377632,concept hierarchy,0.434
+W1565377632,OLAP,0.471
+W1565377632,data visualization,0.491
+W1565377632,model evaluation,0.469
+W1565377632,overfitting,0.672
+W1565377632,rule-based classifiers,0.585
+W2962949934,convolutional neural networks,1.0
+W2962949934,activation functions,1.0
+W2962949934,loss functions,0.999
+W2962949934,regularization,0.99
+W2962949934,optimization,0.865
+W2962949934,GPU acceleration,0.589
+W2962949934,computer vision,0.773
+W2962949934,speech recognition,0.974
+W2962949934,natural language processing,1.0
+W2952230511,part-of-speech tagging,0.869
+W2952230511,chunking,0.934
+W2952230511,named entity recognition,1.0
+W2952230511,semantic role labeling,0.999
+W2952230511,unsupervised learning,0.688
+W2952230511,internal representations,0.655
+W2952230511,unlabeled training data,0.681
+W2973457155,macromolecular structure determination,0.998
+W2973457155,X-ray crystallography,0.924
+W2973457155,neutron diffraction,0.835
+W2973457155,electron diffraction,0.912
+W2973457155,cryo-electron microscopy,0.962
+W2973457155,data quality assessment,0.76
+W2973457155,model development,0.96
+W2124651399,DSDV,0.852
+W2124651399,mobile ad hoc networks,0.836
+W2124651399,mobile nodes,0.698
+W2124651399,RIP,0.6
+W2124651399,routing loops,0.669
+W2124651399,link failure,0.468
+W2124651399,dynamic topology,0.562
+W2091922579,SILVA,0.742
+W2091922579,ribosomal RNA sequences,0.827
+W2091922579,angiotensin receptor blockers,0.533
+W2091922579,sequencing quality control,0.778
+W2091922579,sequence alignment,0.764
+W2091922579,small subunit rRNA,0.811
+W2091922579,large subunit rRNA,1.0
+W2091922579,bacterial taxonomy,0.598
+W2091922579,archaeal taxonomy,0.783
+W2091922579,eukaryotic taxonomy,0.913
+W2091922579,reference sequences,0.605
+W2091922579,microbial diversity,0.525
+W2091922579,phylogenetic analysis,0.653
+W2091922579,probe design,0.667
+W2995327724,StyleGAN,0.998
+W2995327724,image quality,0.659
+W2995327724,unconditional image generation,0.717
+W2995327724,model capacity,0.56
+W2155806125,ribosomal RNA sequences,0.871
+W2155806125,sequence alignment,0.75
+W2155806125,phylogenetic tree visualization,0.957
+W2155806125,graphical user interface,0.763
+W2103912979,protein-protein interaction network,0.8
+W2103912979,network centrality,0.694
+W2103912979,Cytoscape plugin,0.773
+W2103912979,essential protein prediction,0.76
+W2103912979,yeast interactome,0.886
+W2103912979,betweenness centrality,0.754
+W2103912979,drug target identification,0.487
+W2135695572,boosted regression trees,0.999
+W2135695572,ensemble methods,0.939
+W2135695572,regression trees,0.813
+W2135695572,boosting,0.886
+W2135695572,nonlinear relationship,0.587
+W2135695572,interaction effects,0.9
+W2135695572,ecological modeling,0.58
+W2135695572,Anguilla australis,0.999
+W2135695572,freshwater fish distribution,0.777
+W2135695572,model interpretation,0.541
+W2135695572,missing data,0.538
+W2439568532,model interpretability,0.961
+W2439568532,explainable AI,0.675
+W2439568532,machine learning models,0.569
+W2149933564,feature transferability,0.878
+W2149933564,deep convolutional neural networks,0.779
+W2149933564,task transfer,0.316
+W2149933564,network partitioning,0.438
+W2149933564,network initialization,0.594
+W2149933564,generalization,0.824
+W2149933564,fine-tuning,0.779
+W2149933564,ImageNet,0.489
+W2137813581,factor graphs,0.996
+W2137813581,sum-product algorithm,1.0
+W2137813581,message passing,0.951
+W2137813581,belief propagation,0.729
+W2137813581,Bayesian networks,0.877
+W2137813581,Viterbi algorithm,0.955
+W2137813581,turbo decoding,0.834
+W2137813581,Kalman filter,0.945
+W2137813581,forward-backward algorithm,0.692
+W2137813581,fast Fourier transform,0.605
+W2936695845,BERTScore,0.982
+W2936695845,automatic evaluation metrics,0.839
+W2936695845,text generation,0.803
+W2936695845,contextual embeddings,0.986
+W2936695845,machine translation,0.91
+W2936695845,image captioning,1.0
+W2936695845,paraphrase detection,0.927
+W2936695845,model selection,0.555
+W2936695845,human judgment correlation,0.819
+W4389984066,retrieval-augmented generation,0.999
+W4389984066,large language models,1.0
+W4389984066,hallucinations,0.76
+W4389984066,external knowledge retrieval,0.587
+W4389984066,knowledge updating,0.384
+W4389984066,external databases,0.33
+W3112376646,protein sequence annotation,0.693
+W3112376646,automatic annotation,0.602
+W3112376646,expert curation,0.792
+W3112376646,COVID-19 pandemic,0.86
+W3112376646,protein databases,0.386
+W2980282514,transformer models,0.756
+W2980282514,pre-trained language models,0.784
+W2980282514,unified API,0.756
+W2980282514,model extensibility,0.677
+W2980282514,industrial deployment,0.779
+W2980282514,natural language processing,0.859
+W2962730651,part affinity fields,0.846
+W2962730651,real-time pose detection,0.778
+W2962730651,bottom-up pose estimation,0.8
+W2962730651,hand keypoint detection,0.871
+W2962730651,facial keypoint detection,0.965
+W2962730651,inference latency reduction,0.365
+W4378212544,dictionary learning,0.762
+W4378212544,single-cell data integration,0.79
+W4378212544,chromatin accessibility,0.742
+W4378212544,histone modifications,0.993
+W4378212544,DNA methylation,1.0
+W4378212544,protein abundance,0.74
+W4378212544,sketching,0.78
+W4378212544,mass cytometry,0.891
+W4378212544,immune cell profiles,0.676
+W2756203131,traffic prediction,0.891
+W2756203131,spatio-temporal graph convolutional network,0.96
+W2756203131,graph convolutional networks,0.728
+W2756203131,traffic flow prediction,0.777
+W2756203131,spatiotemporal dependencies,0.82
+W2756203131,urban traffic control,0.747
+W2756203131,time series forecasting,0.716
+W2786715987,explainable AI,0.705
+W2786715987,black-box models,0.914
+W2786715987,interpretability,0.745
+W2786715987,decision support system,0.747
+W2786715987,explanation methods,0.605
+W2786715987,model transparency,0.354
+W2927961455,phylogenetic tree visualization,0.872
+W2927961455,tree annotation,0.92
+W2927961455,open source software,0.608
+W2135621733,profile hidden Markov models,0.983
+W2135621733,Pfam,0.783
+W2135621733,multiple sequence alignment,0.699
+W2135621733,REST API,0.925
+W2135621733,batch query processing,0.571
+W2135621733,search result visualization,0.668
+W2135621733,protein database searching,0.527
+W2796207838,tumor immune microenvironment,0.917
+W2796207838,immunogenomics,0.686
+W2796207838,lymphocyte depletion,0.622
+W2796207838,wound healing,0.62
+W2796207838,Th1/Th2 balance,0.796
+W2796207838,intratumoral heterogeneity,0.932
+W2796207838,neoantigen load,0.82
+W2796207838,aneuploidy,0.835
+W2796207838,immunomodulatory genes,0.87
+W2796207838,driver mutations,0.886
+W2796207838,CTNNB1,0.729
+W2796207838,NRAS,0.924
+W2796207838,IDH1,0.947
+W2796207838,BRAF,0.99
+W2796207838,TP53,0.981
+W2796207838,caspase-8,0.991
+W2796207838,tumor-immune cell interactions,0.805
+W2796207838,microRNA,0.677
+W2796207838,copy number alterations,0.632
+W2796207838,epigenetics,0.884
+W2796207838,prognosis,0.411
+W2884367402,object detection,0.999
+W2884367402,deep learning,0.885
+W2884367402,convolutional neural networks,0.993
+W2884367402,salient object detection,0.956
+W2884367402,face detection,1.0
+W2884367402,pedestrian detection,0.999
+W2884367402,training strategies,0.64
+W2884367402,optimization functions,0.578
+W2884367402,image understanding,0.467
+W4394671432,ShapeNet,0.836
+W4394671432,3D model repositories,0.837
+W4394671432,CAD models,0.785
+W4394671432,semantic annotation,0.698
+W4394671432,rigid alignment,0.834
+W4394671432,bilateral symmetry,0.733
+W4394671432,object parts,0.508
+W4394671432,physical size,0.477
+W4394671432,benchmark dataset,0.661
+W4394671432,3D object classification,0.535
+W4394671432,geometric analysis,0.633
+W2553303224,neural architecture search,0.997
+W2553303224,reinforcement learning,0.895
+W2553303224,recurrent neural networks,0.878
+W2553303224,CIFAR-10,0.688
+W2553303224,Penn Treebank,0.824
+W2553303224,perplexity,0.376
+W2124351162,foreground-background segmentation,0.796
+W2124351162,GrabCut,0.858
+W2124351162,graph cuts,0.841
+W2124351162,interactive segmentation,0.759
+W2124351162,alpha matte estimation,0.898
+W2124351162,image editing,0.78
+W2124351162,iterative optimization,0.606
+W2124351162,user interaction,0.607
+W2162143298,causal network inference,0.73
+W2162143298,gene expression data interpretation,0.762
+W2162143298,Ingenuity Pathway Analysis,0.879
+W2162143298,mechanistic hypotheses,0.712
+W2162143298,disease prediction,0.966
+W2162143298,regulatory networks,0.434
+W2082138120,parton distribution functions,0.997
+W2082138120,global QCD analysis,0.877
+W2082138120,gluon distribution,0.857
+W2082138120,Tevatron Run II,0.916
+W2082138120,LHC,0.963
+W2082138120,error propagation,0.486
+W205310263,integrative review,0.999
+W205310263,review methodology,0.591
+W205310263,evidence-based practice,0.654
+W205310263,evidence synthesis,0.642
+W205310263,literature searching,0.462
+W205310263,critical appraisal of studies,0.841
+W205310263,research question formulation,0.526
+W1989277387,Reactome,0.817
+W1989277387,signal transduction,0.751
+W1989277387,metabolic maps,0.686
+W1989277387,cardiovascular disease,0.816
+W1989277387,disease annotation,0.626
+W1989277387,gene expression profiles,0.645
+W1989277387,somatic mutations,0.861
+W2177317049,PubChem,0.999
+W2177317049,chemical compound database,0.883
+W2177317049,Resource Description Framework,0.739
+W2177317049,chemical information resources,0.723
+W2177317049,molecular libraries,0.428
+W2089458547,community detection,0.829
+W2089458547,network clustering,0.505
+W2089458547,fast algorithms,0.835
+W2089458547,computational complexity,0.589
+W2089458547,collaboration networks,0.832
+W2089458547,complex networks,0.606
+W2171468534,collective mood,0.812
+W2171468534,Twitter,0.617
+W2171468534,stock market prediction,0.901
+W2171468534,Dow Jones Industrial Average,0.991
+W2171468534,sentiment analysis,0.633
+W2171468534,Granger causality,0.815
+W2171468534,self-organizing fuzzy neural network,0.9
+W2171468534,presidential elections,0.575
+W2171468534,thanksgiving,0.926
+W2277195237,object relations,0.814
+W2277195237,picture description,0.487
+W2277195237,question answering,0.727
+W2277195237,object properties,0.685
+W2277195237,WordNet synsets,0.75
+W2277195237,visual cognition,0.423
+W2277195237,crowdsourced annotation,0.677
+W1882958252,unsupervised domain adaptation,0.978
+W1882958252,gradient reversal layer,0.854
+W1882958252,domain shift,0.729
+W1882958252,deep feature learning,0.6
+W1882958252,domain invariance,0.679
+W1882958252,unlabeled target data,0.741
+W1882958252,image classification,0.761
+W1882958252,synthetic data,0.354
+W2154197653,automated refinement,0.747
+W2154197653,model parameterization,0.676
+W2154197653,refinement strategy,0.609
+W2154197653,X-ray diffraction,0.742
+W2154197653,neutron diffraction,0.997
+W2154197653,structural validation,0.657
+W2154197653,model development,0.647
+W2745461083,bottom-up attention,0.943
+W2745461083,top-down attention,1.0
+W2745461083,visual attention,0.535
+W2745461083,image captioning,0.995
+W2745461083,visual question answering,1.0
+W2745461083,Faster R-CNN,0.924
+W2745461083,feature weighting,0.574
+W2745461083,multi-step reasoning,0.527
+W2040340473,software-defined networking,1.0
+W2040340473,control plane separation,0.612
+W2040340473,SDN controller,0.724
+W2040340473,northbound API,1.0
+W2040340473,network virtualization,0.954
+W2040340473,network operating systems,0.813
+W2040340473,network programming languages,0.915
+W2040340473,network applications,0.737
+W2040340473,network security,0.654
+W2040340473,cloud networking,0.817
+W2040340473,network management,0.683
+W1934094702,colorectal cancer,0.996
+W1934094702,consensus molecular subtypes,0.999
+W1934094702,molecular classification,0.66
+W1934094702,gene expression signatures,0.599
+W1934094702,microsatellite instability,0.933
+W1934094702,hypermutated tumors,0.607
+W1934094702,Wnt signaling,0.717
+W1934094702,MYC signaling,0.88
+W1934094702,metabolic dysfunction,0.958
+W1934094702,TGF-beta,0.711
+W1934094702,stromal invasion,0.834
+W1934094702,angiogenesis,0.874
+W1934094702,intratumoral heterogeneity,0.85
+W1934094702,immune activation,0.607
+W1934094702,patient stratification,0.615
+W2884430236,machine learning,0.911
+W2884430236,artificial intelligence,0.786
+W2884430236,molecular design,0.841
+W2884430236,materials design,0.954
+W2884430236,chemical synthesis,0.512
+W2884430236,material characterization,0.786
+W2884430236,computational chemistry,0.501
+W2116634113,Affymetrix GeneChip,0.997
+W2116634113,oligonucleotide microarrays,0.856
+W2116634113,microarray data processing,0.803
+W2116634113,bioinformatics software,0.622
+W4384071683,large language models,0.986
+W4384071683,clinical knowledge,0.697
+W4384071683,medical question answering,0.967
+W4384071683,human evaluation,0.632
+W4384071683,Arecaceae,0.809
+W4384071683,MedQA,0.672
+W4384071683,MedMCQA,0.717
+W4384071683,PubMedQA,0.935
+W4384071683,MMLU,0.762
+W4384071683,clinical reasoning,0.303
+W1950118853,organotropic metastasis,0.827
+W1950118853,integrins,0.7
+W1950118853,exosome uptake,0.571
+W1950118853,pre-metastatic niche,0.923
+W1950118853,alpha6beta4 integrin,0.766
+W1950118853,integrin αvβ5,0.913
+W1950118853,alpha6beta1 integrin,0.873
+W1950118853,extracellular vesicles,0.823
+W1950118853,lung metastasis,0.819
+W1950118853,liver metastasis,1.0
+W1950118853,brain metastases,0.977
+W1950118853,Src phosphorylation,0.835
+W1950118853,integrin-targeted therapy,0.652
+W1950118853,metastasis prediction,0.853
+W2804846127,lipid-based nanocarriers,0.893
+W2804846127,particle size,0.985
+W2804846127,polydispersity index,1.0
+W2804846127,liposomes,0.838
+W2804846127,nanoliposomes,0.985
+W2804846127,solid lipid nanoparticles,1.0
+W2804846127,transfersomes,0.967
+W2804846127,drug delivery systems,0.443
+W2266175888,wearable sensors,0.718
+W2266175888,sweat analysis,0.886
+W2266175888,sweat electrolytes,0.467
+W2266175888,glucose,0.594
+W2266175888,lactate,1.0
+W2266175888,sodium,0.961
+W2266175888,potassium,0.999
+W2266175888,skin temperature,0.856
+W2266175888,flexible electronics,0.691
+W2266175888,silicon integrated circuits,0.882
+W2266175888,multiplexed biosensing,0.786
+W2266175888,wireless transmission,0.641
+W2266175888,real-time physiological monitoring,0.707
+W2266175888,non-invasive monitoring,0.67
+W2266175888,wearable biosensors,0.418
+W2266175888,physical activity monitoring,0.491
+W2266175888,personalized medicine,0.556
+W2266175888,drug abuse detection,0.587
+W2266175888,athletic performance,0.648
+W2944545583,g:Profiler,0.992
+W2944545583,functional enrichment,0.941
+W2944545583,ortholog mapping,0.789
+W2944545583,gene identifiers,0.681
+W2944545583,Ensembl,0.702
+W2944545583,web server,0.696
+W2944545583,reproducibility,0.475
+W2944545583,interactive visualization,0.5
+W2734356283,molecular visualization,0.851
+W2734356283,density maps,0.821
+W2734356283,3D microscopy,0.896
+W2734356283,software extensibility,0.842
+W2734356283,software usability,0.517
+W2734356283,software performance,0.5
+W2734356283,open-source visualization software,0.608
+W2170776626,label-free quantification,0.963
+W2170776626,MaxQuant,0.546

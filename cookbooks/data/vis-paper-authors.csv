@@ -1,0 +1,3451 @@
+paper,author
+W2582743722,R Core Team
+W2159675211,Paul T. Shannon
+W2159675211,Andrew Markiel
+W2159675211,Owen W. Ozier
+W2159675211,Nitin S. Baliga
+W2159675211,Jonathan T. Wang
+W2159675211,Daniel Ramage
+W2159675211,Nada Amin
+W2159675211,Benno Schwikowski
+W2159675211,Trey Ideker
+W2963446712,Gao Ming Huang
+W2963446712,Zhuang Liu
+W2963446712,Laurens J. P. van der Maaten
+W2963446712,Kilian Q. Weinberger
+W2105846236,Jörg Henseler
+W2105846236,Christian M. Ringle
+W2105846236,Marko Sarstedt
+W3003257820,Pauli Virtanen
+W3003257820,Ralf Gommers
+W3003257820,Travis E. Oliphant
+W3003257820,Matt Haberland
+W3003257820,Tyler Reddy
+W3003257820,David Cournapeau
+W3003257820,Evgeni Burovski
+W3003257820,Pearu Peterson
+W3003257820,Warren Weckesser
+W3003257820,Jonathan Bright
+W3003257820,Stéfan J. van der Walt
+W3003257820,Matthew Brett
+W3003257820,Joshua Wilson
+W3003257820,K. Jarrod Millman
+W3003257820,Nikolay Mayorov
+W3003257820,Andrew R. J. Nelson
+W3003257820,Eric Jones
+W3003257820,Robert Kern
+W3003257820,Eric Larson
+W3003257820,C J Carey
+W3003257820,İlhan Polat
+W3003257820,Yu Feng
+W3003257820,Eric W. Moore
+W3003257820,Jake VanderPlas
+W3003257820,Denis Laxalde
+W4327810158,OpenAI
+W4327810158,"Achiam, Josh"
+W4327810158,"Adler, Steven"
+W4327810158,"Agarwal, Sandhini"
+W4327810158,"Ahmad, Lama"
+W4327810158,"Akkaya, Ilge"
+W4327810158,"Aleman, Florencia Leoni"
+W4327810158,"Almeida, Diogo"
+W4327810158,"Altenschmidt, Janko"
+W4327810158,"Altman, Sam"
+W4327810158,"Anadkat, Shyamal"
+W4327810158,"Avila, Red"
+W4327810158,I. Babuschkin
+W4327810158,"Balaji, Suchir"
+W4327810158,"Balcom, Valerie"
+W4327810158,"Baltescu, Paul"
+W4327810158,"Bao, Haiming"
+W4327810158,Mohammad Bavarian
+W4327810158,"Belgum, Jeff"
+W4327810158,"Bello, Irwan"
+W4327810158,"Berdine, Jake"
+W4327810158,"Bernadett-Shapiro, Gabriel"
+W4327810158,"Berner, Christopher"
+W4327810158,"Bogdonoff, Lenny"
+W4327810158,"Boiko, Oleg"
+W3030163527,"Brown, Tom B."
+W3030163527,Benjamin Mann
+W3030163527,Nick Ryder
+W3030163527,Melanie Subbiah
+W3030163527,Jared Kaplan A
+W3030163527,Prafulla Dhariwal
+W3030163527,Arvind Neelakantan
+W3030163527,Pranav Shyam
+W3030163527,Girish Sastry
+W3030163527,Amanda Askell
+W3030163527,Sandhini Agarwal
+W3030163527,Ariel Herbert-Voss
+W3030163527,Gretchen Marie Krueger
+W3030163527,Tom Henighan
+W3030163527,Rewon Child
+W3030163527,"Ramesh, Aditya"
+W3030163527,"Ziegler, Daniel M."
+W3030163527,Jeffrey Wu
+W3030163527,Clemens Winter
+W3030163527,Christopher Hesse
+W3030163527,Mark I-Cheng Chen
+W3030163527,"Sigler, Eric"
+W3030163527,Mateusz Litwin
+W3030163527,Scott Gray
+W3030163527,Benjamin Chess
+W2150220236,Nees Jan van Eck
+W2150220236,Ludo Waltman
+W2552465644,Phillip Isola
+W2552465644,Jun-Yan Zhu
+W2552465644,Tinghui Zhou
+W2552465644,Alexei A. Efros
+W1987971958,Peter J. Rousseeuw
+W2593436234,Antoine Daina
+W2593436234,Olivier Alain Michielin
+W2593436234,Vincent Zoete
+W2148606196,Mark E. J. Newman
+W2115098571,Stef van Buuren
+W2115098571,Catharina G. M. Groothuis‐Oudshoorn
+W1985749074,danah boyd
+W1985749074,Nicole B. Ellison
+W2900569176,Damian Szklarczyk
+W2900569176,Annika L. Gable
+W2900569176,David Lyon
+W2900569176,Alexander Junge
+W2900569176,Stefan Wyder
+W2900569176,Jaime Huerta‐Cepas
+W2900569176,Milan Simonovic
+W2900569176,Nadezhda T. Doncheva
+W2900569176,John H Morris
+W2900569176,Peer Bork
+W2900569176,Lars Juhl Jensen
+W2900569176,Christian von Mering
+W4390874575,Alexander Kirillov
+W4390874575,Eric Mintun
+W4390874575,Nikhila Ravi
+W4390874575,Hanzi Mao
+W4390874575,Chloe Rolland
+W4390874575,Laura Gustafson
+W4390874575,Tete Xiao
+W4390874575,Spencer Whitehead
+W4390874575,Alexander C. Berg
+W4390874575,Wan‐Yen Lo
+W4390874575,Piotr Dollár
+W4390874575,Ross Girshick
+W2058046532,Nathalie Tzourio‐Mazoyer
+W2058046532,Brigitte Landeau
+W2058046532,Dimitri Papathanassiou
+W2058046532,Fabrice Crivello
+W2058046532,Olivier Etard
+W2058046532,Nicolas Delcroix
+W2058046532,Bernard M. Mazoyer
+W2058046532,Marc Joliot
+W1849277567,Matthew D. Zeiler
+W1849277567,Rob Fergus
+W2114843025,Jianjiong Gao
+W2114843025,Bülent Arman Aksoy
+W2114843025,Uğur Doğrusöz
+W2114843025,Gideon Dresdner
+W2114843025,Benjamin E Gross
+W2114843025,Selçuk Onur Sümer
+W2114843025,Yichao Sun
+W2114843025,Anders J. Skanderup
+W2114843025,Rileen Sinha
+W2114843025,Erik Larsson
+W2114843025,Ethan G Cerami
+W2114843025,Chris Sander
+W2114843025,Nikolaus D. Schultz
+W2095293504,Mark E. J. Newman
+W2095293504,Michelle Girvan
+W2163922914,Yoshua Bengio
+W2163922914,Aaron C. Courville
+W2163922914,Pascal Vincent
+W2751884637,Theo Vos
+W2751884637,Amanuel Alemu Abajobir
+W2751884637,Kalkidan Hassen Abate
+W2751884637,Cristiana Abbafati
+W2751884637,Kaja Abbas
+W2751884637,Foad Abd-Allah
+W2751884637,Rizwan Suliankatchi Abdulkader
+W2751884637,Abdishakur M Abdulle
+W2751884637,Teshome Abuka Abebo
+W2751884637,Semaw Ferede Abera
+W2751884637,Victor Aboyans
+W2751884637,Laith Jamal Abu-Raddad
+W2751884637,Ilana N. Ackerman
+W2751884637,Abdu A. Adamu
+W2751884637,Olatunji Adetokunboh
+W2751884637,Mohsen Afarideh
+W2751884637,Ashkan Afshin
+W2751884637,Sanjay Agarwal
+W2751884637,Rakesh Aggarwal
+W2751884637,Anurag Agrawal
+W2751884637,Sutapa Agrawal
+W2751884637,Hamid Ahmadieh
+W2751884637,Muktar Beshir Ahmed
+W2751884637,Miloud Taki Eddine Aichour
+W2751884637,Amani Nidhal Aichour
+W2623703952,Keith S. Taber
+W2258584306,Torbjörn Sjöstrand
+W2258584306,S. Mrenna
+W2258584306,Peter Z. Skands
+W3023875755,Marc J. Melitz
+W2981731882,Alejandro Barredo Arrieta
+W2981731882,Natalia Díaz-Rodríguez
+W2981731882,Javier Del Ser
+W2981731882,Adrien Bennetot
+W2981731882,Siham Tabik
+W2981731882,Alberto Barbado
+W2981731882,Salvador García
+W2981731882,Sergio Gil-López
+W2981731882,Daniel Molina
+W2981731882,Richard Benjamins
+W2981731882,Raja Chatila
+W2981731882,Francisco Herrera
+W2125910575,Mathieu Bastian
+W2125910575,Sébastien Heymann
+W2125910575,Mathieu Jacomy
+W1855539512,Anna B. Costello
+W1855539512,Jason Osborne
+W2169678694,Noel M. O’Boyle
+W2169678694,Michael Banck
+W2169678694,Craig A James
+W2169678694,Chris Morley
+W2169678694,Tim Vandermeersch
+W2169678694,Geoffrey Hutchison
+W2132914434,Ulrike Von Luxburg A
+W229097380,Gábor Csárdi
+W229097380,Tamás Nepusz
+W2056132907,Pierre Geurts
+W2056132907,Damien Ernst
+W2056132907,Louis A. Wehenkel
+W2995022099,Peter Kairouz
+W2995022099,H. Brendan McMahan
+W2995022099,Brendan Avent
+W2995022099,Aurélien Bellet
+W2995022099,Mehdi Bennis
+W2995022099,Arjun Nitin Bhagoji
+W2995022099,Kallista Bonawitz
+W2995022099,Zachary Charles
+W2995022099,Graham Cormode
+W2995022099,Rachel Cummings
+W2995022099,Rafael G. L. D’Oliveira
+W2995022099,Hubert Eichner
+W2995022099,Salim El Rouayheb
+W2995022099,David Evans
+W2995022099,Joshua Gardner
+W2995022099,Zachary Garrett
+W2995022099,Adrià Gascón
+W2995022099,Badih Ghazi
+W2995022099,Phillip B. Gibbons
+W2995022099,Marco Gruteser
+W2995022099,Zaïd Harchaoui
+W2995022099,Chaoyang He
+W2995022099,Lie He
+W2995022099,Zhouyuan Huo
+W2995022099,Ben Hutchinson
+W2112042732,Viswanath Venkatesh
+W2112042732,Hillol Bala
+W2117131162,Helga Thorvaldsdóttir
+W2117131162,J. T. Robinson
+W2117131162,Jill P. Mesirov
+W2055298722,Daniel H. Huson
+W2055298722,David Bryant
+W2800392236,F. Alexander Wolf
+W2800392236,Philipp Angerer
+W2800392236,Fabian Joachim Theis
+W2560647685,James Kirkpatrick
+W2560647685,Razvan Pascanu
+W2560647685,Neil C. Rabinowitz
+W2560647685,Joel Veness
+W2560647685,Guillaume Desjardins
+W2560647685,Andrei A. Rusu
+W2560647685,Kieran Milan
+W2560647685,John Quan
+W2560647685,Tiago Ramalho
+W2560647685,Agnieszka Grabska‐Barwińska
+W2560647685,Demis Hassabis
+W2560647685,Claudia Clopath
+W2560647685,Dharshan Kumaran
+W2560647685,Raia T. Hadsell
+W3208645186,Monique M. Hennink
+W3208645186,Bonnie N. Kaiser
+W2784874046,Jiankang Deng
+W2784874046,Jia Guo
+W2784874046,Jing Yang
+W2784874046,Niannan Xue
+W2784874046,Irene Kotsia
+W2784874046,Stefanos P. Zafeiriou
+W2223470559,Jörg Henseler
+W2223470559,Geoffrey S. Hubona
+W2223470559,Pauline Ash Ray
+W2463195069,Stefka Tyanova
+W2463195069,Tikira Temu
+W2463195069,Pavel G. Sinitcyn
+W2463195069,Arthur Carlson
+W2463195069,Marco Y. Hein
+W2463195069,Tamar Geiger
+W2463195069,Matthias Mann
+W2463195069,Jürgen Cox
+W4226278401,Long Ouyang
+W4226278401,Jeff Wu
+W4226278401,Xu Jiang
+W4226278401,Diogo Almeida
+W4226278401,Carroll L. Wainwright
+W4226278401,Pamela Mishkin
+W4226278401,Chong Zhang
+W4226278401,Sandhini Agarwal
+W4226278401,Katarina Slama
+W4226278401,"Ray, Alex"
+W4226278401,John Schulman
+W4226278401,Jacob K. Hilton
+W4226278401,Fraser Kelton
+W4226278401,"Miller, Luke"
+W4226278401,Maddie Simens
+W4226278401,Amanda Askell
+W4226278401,Peter Welinder
+W4226278401,"Christiano, Paul"
+W4226278401,Jan Leike
+W4226278401,"Lowe, Ryan"
+W2097308346,Mikhail Belkin
+W2097308346,Partha Niyogi
+W4366208220,Maxime Oquab
+W4366208220,Timothée Darcet
+W4366208220,Théo Moutakanni
+W4366208220,Huy V. Vo
+W4366208220,Marc Szafraniec
+W4366208220,Vasil Khalidov
+W4366208220,Pierre Fernandez
+W4366208220,Daniel Haziza
+W4366208220,Francisco Massa
+W4366208220,Alaaeldin El-Nouby
+W4366208220,Mahmoud Assran
+W4366208220,Nicolas Ballas
+W4366208220,Wojciech Galuba
+W4366208220,Russell Howes
+W4366208220,Po-Yao Huang
+W4366208220,Shang-Wen Daniel Li
+W4366208220,Ishan Misra
+W4366208220,Michael Rabbat
+W4366208220,Vasu Sharma
+W4366208220,Gabriel Synnaeve
+W4366208220,Hu Xu
+W4366208220,Hervé Jeǵou
+W4366208220,Julien Mairal
+W4366208220,Patrick Labatut
+W4366208220,Armand Joulin
+W2132022337,Aric A. Hagberg
+W2132022337,Dan Schult
+W2132022337,Pieter J. Swart
+W2084310832,Raghuram G. Rajan
+W2084310832,Luigi Zingales
+W2950354111,Sergey Koren
+W2950354111,Brian P. Walenz
+W2950354111,Konstantin Berlin
+W2950354111,Jason Rafe Miller
+W2950354111,Nicholas H. Bergman
+W2950354111,Adam M. Phillippy
+W2015159529,Stéfan van der Walt
+W2015159529,Johannes L. Schönberger
+W2015159529,Juan Nunez-Iglesias
+W2015159529,François Boulogne
+W2015159529,Joshua Warner
+W2015159529,Neil Yager
+W2015159529,Emmanuelle Gouillart
+W2015159529,Tony Yu
+W2015159529,the scikit-image contributors
+W1641498739,Bjoern H. Menze
+W1641498739,Jakab András
+W1641498739,Stefan Bauer
+W1641498739,Jayashree Kalpathy–Cramer
+W1641498739,Keyvan Farahani
+W1641498739,Justin Kirby
+W1641498739,Yuliya Burren
+W1641498739,Nicole Porz
+W1641498739,Johannes Slotboom
+W1641498739,Roland Wiest
+W1641498739,Levente Lánczi
+W1641498739,Elizabeth Robins Gerstner
+W1641498739,Marc‐An﻿dré Weber
+W1641498739,Tal Arbel
+W1641498739,Brian Avants
+W1641498739,Nicholas Ayache
+W1641498739,Patricia Buendia
+W1641498739,D. Louis Collins
+W1641498739,Nicolas Cordier
+W1641498739,Jason J. Corso
+W1641498739,Antonio Criminisi
+W1641498739,Tilak Das
+W1641498739,Hervé Delingette
+W1641498739,Çağatay Demiralp
+W1641498739,Christopher R. Durst
+W4309674289,Ziwei Ji
+W4309674289,Nayeon Lee
+W4309674289,Rita Frieske
+W4309674289,Tiezheng Yu
+W4309674289,Dan Su
+W4309674289,Yan Xu
+W4309674289,Etsuko Ishii
+W4309674289,Ye Jin Bang
+W4309674289,Andrea Madotto
+W4309674289,Pascale Fung
+W2152240519,Chetan Nayak
+W2152240519,Steven H. Simon
+W2152240519,Ady Stern
+W2152240519,Michael Hartley Freedman
+W2152240519,S. Das Sarma
+W2024046085,Jerome H. Friedman
+W2024046085,Trevor J. Hastie
+W2024046085,Robert John Tibshirani
+W1946252112,Jessica Leigh
+W1946252112,David Bryant
+W4360620450,Yogesh Kumar Dwivedi
+W4360620450,Nir Kshetri
+W4360620450,Laurie Hughes
+W4360620450,Emma Louise Slade
+W4360620450,Anand Jeyaraj
+W4360620450,Arpan Kumar Kar
+W4360620450,Abdullah Mohammed Baabdullah
+W4360620450,Alex A. Koohang
+W4360620450,Vishnupriya Raghavan
+W4360620450,Manju K. Ahuja
+W4360620450,Hanaa Albanna
+W4360620450,Mousa Ahmad Albashrawi
+W4360620450,Adil S. Al-Busaidi
+W4360620450,Janarthanan Balakrishnan
+W4360620450,Yves Barlette
+W4360620450,Sriparna Basu
+W4360620450,Indranil Bose
+W4360620450,Laurence Brooks
+W4360620450,Dimitrios Buhalis
+W4360620450,Lemuria D. Carter
+W4360620450,Soumyadeb Chowdhury
+W4360620450,Tom Crick
+W4360620450,Scott W. Cunningham
+W4360620450,Gareth H. Davies
+W4360620450,Robert M. Davison
+W3135028703,Iqbal Hasan Sarker
+W2167482691,Thomas M. J. Fruchterman
+W2167482691,Edward M. Reingold
+W2153791616,Andy Clark
+W2159182565,Yuning Hong
+W2159182565,Jacky W. Y. Lam
+W2159182565,Ben Zhong Tang
+W2169589032,Gabriela Bindea
+W2169589032,Bernhard Mlecnik
+W2169589032,Hubert Hackl
+W2169589032,Pornpimol Charoentong
+W2169589032,Marie Tosolini
+W2169589032,Amos Kirilovsky
+W2169589032,Wolf H. Fridman
+W2169589032,Franck Pagès
+W2169589032,Zlatko Trajanoski
+W2169589032,Jérôme Galon
+W1969353942,Fran Supek
+W1969353942,Matko Bošnjak
+W1969353942,Nives Škunca
+W1969353942,Tomislav Šmuc
+W1966716734,Takaya Saito
+W1966716734,Marc Rehmsmeier
+W4402754006,Y. Zhao
+W4402754006,Wenyu Lv
+W4402754006,Shangliang Xu
+W4402754006,Jinman Wei
+W4402754006,Guanzhong Wang
+W4402754006,Qingqing Dang
+W4402754006,Yi Liu
+W4402754006,Jie Chen
+W2530237102,Sacha Epskamp
+W2530237102,Denny Borsboom
+W2530237102,Eiko I. Fried
+W2136850043,Gary D. Bader
+W2136850043,Christopher W.V. Hogue
+W4206055706,Emma Nichols
+W4206055706,Jaimie D Steinmetz
+W4206055706,Stein Emil Vollset
+W4206055706,Kai Glenn Fukutaki
+W4206055706,Julian Chalek
+W4206055706,Foad Abd-Allah
+W4206055706,Amir Abdoli
+W4206055706,Ahmed Abualhasan
+W4206055706,Eman Abu‐Gharbieh
+W4206055706,Tayyaba Akram
+W4206055706,Hanadi Khamis Al Hamad
+W4206055706,Fares Alahdab
+W4206055706,Fahad Alanezi
+W4206055706,Vahid Alipour
+W4206055706,Sami Almustanyir
+W4206055706,Hubert Amu
+W4206055706,Iman Ansari
+W4206055706,Jalal Arabloo
+W4206055706,Tahira Ashraf
+W4206055706,Thomas Astell‐Burt
+W4206055706,Getinet Ayano
+W4206055706,José Luís Ayuso‐Mateos
+W4206055706,Atif Amin Baig
+W4206055706,Anthony H Barnett
+W4206055706,Amadou Barrow
+W3027879771,Patrick Lewis
+W3027879771,Ethan Perez
+W3027879771,Aleksandra Piktus
+W3027879771,Fabio Petroni
+W3027879771,Vladimir Karpukhin
+W3027879771,Naman Goyal
+W3027879771,Heinrich Küttler
+W3027879771,Mike Lewis
+W3027879771,Wen-tau Yih
+W3027879771,Tim Rocktäschel
+W3027879771,Sebastian Riedel
+W3027879771,Douwe Kiela
+W2015370254,Franz Urban Pappi
+W2015370254,John P. Scott
+W3126027997,David Malin Roodman
+W2038574100,Roeland E. Voorrips
+W3168997536,Zewen Li
+W3168997536,Fan Liu
+W3168997536,Wenjie Yang
+W3168997536,Shouheng Peng
+W3168997536,Jun Wei Zhou
+W2048679005,Avrim L. Blum
+W2048679005,Tom M. Mitchell
+W1481356306,Sertaç Karaman
+W1481356306,Emilio Frazzoli
+W2113537253,Nahid Golafshani
+W1888005072,Jian Tang
+W1888005072,Meng Qu
+W1888005072,Mingzhe Wang
+W1888005072,Ming Zhang
+W1888005072,Jun Yan
+W1888005072,Qiaozhu Mei
+W4224308101,Aakanksha Chowdhery
+W4224308101,Sharan Narang
+W4224308101,Jacob Devlin
+W4224308101,Maarten Bosma
+W4224308101,Gaurav Mishra
+W4224308101,Adam Roberts
+W4224308101,Paul Barham
+W4224308101,Hyung Won Chung
+W4224308101,Charles A. Sutton
+W4224308101,Sebastian Gehrmann
+W4224308101,Parker Schuh
+W4224308101,Kensen Shi
+W4224308101,Sasha Tsvyashchenko
+W4224308101,Joshua Maynez
+W4224308101,"Rao, Abhishek"
+W4224308101,Parker Barnes
+W4224308101,Yi Tay
+W4224308101,Noam Shazeer
+W4224308101,Vinodkumar Prabhakaran
+W4224308101,Emily Reif
+W4224308101,Nan Du
+W4224308101,"Hutchinson, Ben"
+W4224308101,Reiner Pope
+W4224308101,"Bradbury, James"
+W4224308101,Jacob Austin
+W2547875792,Eric Jang
+W2547875792,Shixiang Gu
+W2547875792,Ben Poole
+W4403853618,Peng Wang
+W4403853618,Shuai Bai
+W4403853618,Sinan Tan
+W4403853618,Shijie Wang
+W4403853618,Zhihao Fan
+W4403853618,Jinze Bai
+W4403853618,Keqin Chen
+W4403853618,Xuejing Liu
+W4403853618,Jialin Wang
+W4403853618,Ge Wen-bin
+W4403853618,Yang Fan
+W4403853618,Kai Dang
+W4403853618,Mengfei Du
+W4403853618,Xuancheng Ren
+W4403853618,Rui Men
+W4403853618,Dayiheng Liu
+W4403853618,Chang Zhou
+W4403853618,Jingren Zhou
+W4403853618,Junyang Lin
+W2086561953,Ronny Lorenz
+W2086561953,Stephan H. Bernhart
+W2086561953,Christian Höner zu Siederdissen
+W2086561953,Hakim Tafer
+W2086561953,Christoph Flamm
+W2086561953,Peter Florian Stadler
+W2086561953,Ivo L. Hofacker
+W2162896254,Sacha Epskamp
+W2162896254,Angélique O. J. Cramer
+W2162896254,Lourens Waldorp
+W2162896254,Verena D. Schmittmann
+W2162896254,Denny Borsboom
+W2118745042,Nicholas A. Christakis
+W2118745042,James H. Fowler
+W4223908421,Yuntao Bai
+W4223908421,"Jones, Andy"
+W4223908421,Kamal Ndousse
+W4223908421,Amanda Askell
+W4223908421,"Chen, Anna"
+W4223908421,Nova DasSarma
+W4223908421,Dawn Drain
+W4223908421,Stanislav Fort
+W4223908421,Deep Ganguli
+W4223908421,Tom Henighan
+W4223908421,Nicholas C. Joseph
+W4223908421,Saurav Kadavath
+W4223908421,Jackson Kernion
+W4223908421,Tom Conerly
+W4223908421,Sheer El-Showk
+W4223908421,Nelson Elhage
+W4223908421,Zac Hatfield-Dodds
+W4223908421,Danny Hernandez
+W4223908421,Tristan Hume
+W4223908421,"Johnston, Scott"
+W4223908421,Shauna Kravec
+W4223908421,Liane Lovitt
+W4223908421,Neel Nanda
+W4223908421,Catherine Olsson
+W4223908421,Dario Amodei
+W3121385028,Guido W. Imbens
+W3121385028,Jeffrey M. Wooldridge
+W2136893259,Durk Gorter
+W2136893259,Jasone Cenoz
+W4387164156,Elaine C. Meng
+W4387164156,Thomas D. Goddard
+W4387164156,Eric F. Pettersen
+W4387164156,Gregory S. Couch
+W4387164156,Zachary Pearson
+W4387164156,John H. Morris
+W4387164156,Thomas E. Ferrin
+W2114367386,Alexander W. Schüttelkopf
+W2114367386,Daan M. F. van Aalten
+W4287992231,Pau Amaro‐Seoane
+W4287992231,H. Audley
+W4287992231,S. Babak
+W4287992231,"Baker, John"
+W4287992231,Enrico Barausse
+W4287992231,"Bender, Peter"
+W4287992231,Emanuele Berti
+W4287992231,Pierre Binétruy
+W4287992231,M. Born
+W4287992231,D. Bortoluzzi
+W4287992231,Jordan Camp
+W4287992231,Chiara Caprini
+W4287992231,Vítor Cardoso
+W4287992231,Monica Colpi
+W4287992231,John Conklin
+W4287992231,Neil J. Cornish
+W4287992231,Curt Cutler
+W4287992231,K. Danzmann
+W4287992231,R. Dolesi
+W4287992231,L. Ferraioli
+W4287992231,V. Ferroni
+W4287992231,Ewan D. Fitzsimons
+W4287992231,Jonathan R. Gair
+W4287992231,"Bote, Lluis Gesa"
+W4287992231,Domenico Giardini
+W1479807131,Olivier Chapelle
+W1479807131,Bernhard Schölkopf
+W1479807131,Alexander Zien
+W2022315563,David Nečas
+W2022315563,Petr Klapetek
+W2156718197,Mikhail Belkin
+W2156718197,Partha Niyogi
+W1563636823,R.H.G. Jongman
+W1563636823,Cajo J. F. ter Braak
+W1563636823,Onno F. R. van Tongeren
+W2091143533,James J. Heckman
+W2091143533,Jora Stixrud
+W2091143533,Sergio Urzúa
+W2225156818,David M. Blei
+W2225156818,Alp Kucukelbir
+W2225156818,Jon D. McAuliffe
+W1990869665,J. Allison
+W1990869665,K. Amako
+W1990869665,J. Apostolakis
+W1990869665,Pedro E. Arce
+W1990869665,Makoto Asai
+W1990869665,Tsukasa Aso
+W1990869665,E. Bagli
+W1990869665,A. Bagulya
+W1990869665,S. Banerjee
+W1990869665,Guy Barrand
+W1990869665,B.R. Beck
+W1990869665,Aleksei Bogdanov
+W1990869665,D. Brandt
+W1990869665,Jeremy M. C. Brown
+W1990869665,H. Burkhardt
+W1990869665,Philippe Canal
+W1990869665,Daniel Cano-Ott
+W1990869665,Stéphane Chauvie
+W1990869665,K. Cho
+W1990869665,G.A.P. Cirrone
+W1990869665,Gene D. Cooperman
+W1990869665,Miguel Antonio Cortés-Giraldo
+W1990869665,G. Cosmo
+W1990869665,G. Cuttone
+W1990869665,Gerardo O. Depaola
+W2139274755,Will Steffen
+W2139274755,Wendy J. Broadgate
+W2139274755,Lisa Deutsch
+W2139274755,Owen Gaffney
+W2139274755,Cornelia Ludwig
+W2117756735,Nathan Halko
+W2117756735,Per‐Gunnar Martinsson
+W2117756735,Joel A. Tropp
+W2107940314,Zuguang Gu
+W2107940314,Lei Gu
+W2107940314,Roland Eils
+W2107940314,Matthias Schlesner
+W2107940314,Benedikt Brors
+W1810943226,Alex Graves
+W621251951,Davide Giavarina
+W2139577967,Daniel E. Ho
+W2139577967,Kosuke Imai
+W2139577967,Gary King
+W2139577967,Elizabeth A. Stuart
+W2805516822,Peter Battaglia
+W2805516822,"Hamrick, Jessica B."
+W2805516822,Victor Bapst
+W2805516822,Álvaro Sánchez‐González
+W2805516822,Vinícius Zambaldi
+W2805516822,Mateusz Malinowski
+W2805516822,Andrea Tacchetti
+W2805516822,David Chillón Raposo
+W2805516822,Adam Santoro
+W2805516822,Ryan Faulkner
+W2805516822,Çağlar Gülçehre
+W2805516822,H. Francis Song
+W2805516822,Andrew J. Ballard
+W2805516822,Justin Gilmer
+W2805516822,George E. Dahl
+W2805516822,Ashish Vaswani
+W2805516822,Kelsey Rebecca Allen
+W2805516822,"Nash, Charles"
+W2805516822,"Langston, Victoria"
+W2805516822,Chris Dyer
+W2805516822,Nicolas Heess
+W2805516822,Daan Wierstra
+W2805516822,Pushmeet Kohli
+W2805516822,Matthew Botvinick
+W2805516822,Oriol Vinyals
+W2159929956,Patric Hagmann
+W2159929956,Leila Cammoun
+W2159929956,Xavier Gigandet
+W2159929956,Reto Antoine Meuli
+W2159929956,Christopher John Honey
+W2159929956,Van Jay Wedeen
+W2159929956,Olaf Sporns
+W2164030952,Piers Steel
+W1603903339,Jennifer A. Hoeting
+W1603903339,David Madigan
+W1603903339,Adrian E. Raftery
+W1603903339,Chris T. Volinsky
+W1536497620,Andrew Gelman
+W2088794999,Alexey Natekin
+W2088794999,Alois Knoll
+W2900619723,Konstantina Vasileiou
+W2900619723,Julie C. Barnett
+W2900619723,Susan Thorpe
+W2900619723,Terry P. Young
+W2005821483,Mingrui Xia
+W2005821483,Jinhui Wang
+W2005821483,Yong He A
+W2291288208,Richard Buchanan
+W2163485494,C. Stark
+W2146106266,Terence P. McGonigle
+W2146106266,M. H. Miller
+W2146106266,D. G. Evans
+W2146106266,G. L. FAIRCHILD
+W2146106266,J. A. SWAN
+W1909320841,Danilo Jimenez Rezende
+W1909320841,Shakir Mohamed
+W1909320841,Daan Wierstra
+W1482241473,Olivier Jean Blanchard
+W1482241473,Danny T. Quah
+W150292108,Nees Jan van Eck
+W150292108,Ludo Waltman
+W2042492924,David H. Ackley
+W2042492924,Geoffrey E. Hinton
+W2042492924,Terrence J. Sejnowski A B
+W2035080386,Timothy A. Davis
+W2035080386,Yifan Hu
+W1990100773,Jill H. Larkin
+W1990100773,Herbert A. Simon
+W2155263737,Richard L. Wahl
+W2155263737,Heather A. Jacene
+W2155263737,Yvette L. Kasamon
+W2155263737,Martin A. Lodge
+W2144998676,Eugene Krissinel
+W2144998676,K. Henrick
+W2533508881,Étienne Becht
+W2533508881,Nicolás A. Giraldo
+W2533508881,Laetitia Lacroix
+W2533508881,Bénédicte Buttard
+W2533508881,Nabila Elarouci
+W2533508881,Florent Petitprez
+W2533508881,Janick Sèlves
+W2533508881,Pierre Laurent‐Puig
+W2533508881,Catherine Sautès‐Fridman
+W2533508881,Wolf H. Fridman
+W2533508881,Aurélien de Reyniès
+W2100235918,Xiaoyuan Su
+W2100235918,Taghi M. Khoshgoftaar
+W1990420052,Paul H.C. Eilers
+W1990420052,Brian D. Marx
+W1985123706,Michel X. Goemans
+W1985123706,David P. Williamson
+W2067267561,Helmut Kettenmann
+W2067267561,Uwe‐Karsten Hanisch
+W2067267561,Mami Noda
+W2067267561,Alexei Verkhratsky
+W4211149818,H. Gleiter
+W2212660284,Arthur Gretton
+W2212660284,Karsten Michael Borgwardt
+W2212660284,Malte J. Rasch
+W2212660284,Bernhard Schölkopf
+W2212660284,Alexander Johannes Smola
+W4226125322,Alex Nichol
+W4226125322,Prafulla Dhariwal
+W4226125322,"Ramesh, Aditya"
+W4226125322,Pranav Shyam
+W4226125322,Pamela Mishkin
+W4226125322,Bob McGrew
+W4226125322,Ilya Sutskever
+W4226125322,Mark I-Cheng Chen
+W2128677857,Thomas W. Malone
+W2128677857,Kevin Crowston
+W2037246595,Johan Alwall
+W2037246595,Michel Herquet
+W2037246595,Fabio Maltoni
+W2037246595,Olivier Mattelaer
+W2037246595,Tim Stelzer
+W2472329501,Shady Farah
+W2472329501,Daniel G. Anderson
+W2472329501,Róbert Langer
+W1644641054,Hang Su
+W1644641054,Subhransu Maji
+W1644641054,Evangelos Kalogerakis
+W1644641054,Erik G. Miller
+W2132881915,William R G Gibb
+W2132881915,Andrew J. Lees
+W2151020819,Shirley Diane Gregor
+W2151169308,Erik Brynjolfsson
+W2151169308,Lorin M. Hitt
+W4399538195,Alboukadel Kassambara
+W4399538195,Fabian Mundt
+W2594183968,Zhenqin Wu
+W2594183968,Bharath Ramsundar
+W2594183968,Evan N. Feinberg
+W2594183968,Joseph Gomes
+W2594183968,Caleb Geniesse
+W2594183968,Aneesh Pappu
+W2594183968,Karl Leswing
+W2594183968,Vijay S. Pande
+W2256362396,Bolun Cai
+W2256362396,Xiangmin Xu
+W2256362396,Kui Jia
+W2256362396,Chunmei Qing
+W2256362396,Dacheng Tao
+W2950150251,Brian Ondov
+W2950150251,Todd J. Treangen
+W2950150251,Páll Melsted
+W2950150251,Adam B. Mallonee
+W2950150251,Nicholas H. Bergman
+W2950150251,Sergey Koren
+W2950150251,Adam M. Phillippy
+W2077053002,Sylvain Piry
+W2077053002,Gordon Luikart
+W2077053002,Jean‐Marie Cornuet
+W2091030812,Nabil-Fareed Alikhan
+W2091030812,Nicola K. Petty
+W2091030812,Nouri L. Ben Zakour
+W2091030812,Scott A. Beatson
+W2099019320,Terrence Fong
+W2099019320,Illah Nourbakhsh
+W2099019320,Kerstin Dautenhahn
+W2100805904,David W. Opitz
+W2100805904,Richard Maclin
+W1549853756,Martyn Plummer
+W1549853756,Nicky Best
+W1549853756,Kate Cowles
+W1549853756,Karen Vines
+W2951799803,Kelly Street
+W2951799803,Davide Risso
+W2951799803,Russell B. Fletcher
+W2951799803,Diya Das
+W2951799803,John Ngai
+W2951799803,Nir Yosef
+W2951799803,Elizabeth A. Purdom
+W2951799803,Sandrine Dudoit
+W4396946025,Michael D Brauer
+W4396946025,Gregory A. Roth
+W4396946025,Aleksandr Y. Aravkin
+W4396946025,Peng Zheng
+W4396946025,Kalkidan Hassen Abate
+W4396946025,Yohannes Habtegiorgis Abate
+W4396946025,Cristiana Abbafati
+W4396946025,Rouzbeh Abbasgholizadeh
+W4396946025,Madineh Akram Abbasi
+W4396946025,Mohammadreza Abbasian
+W4396946025,Mitra Abbasifard
+W4396946025,Mohsen Abbasi‐Kangevari
+W4396946025,Samar Abd ElHafeez
+W4396946025,Sherief Mohamed Abd-Elsalam
+W4396946025,Parsa Abdi
+W4396946025,Mohammad Reza Abdollahi
+W4396946025,Meriem Abdoun
+W4396946025,Deldar Morad Abdulah
+W4396946025,Auwal Abdullahi
+W4396946025,Mesfin Abebe
+W4396946025,Aidin Abedi
+W4396946025,Armita Abedi
+W4396946025,Tadesse Melaku Abegaz
+W4396946025,Roberto Ariel Abeldaño Zúñiga
+W4396946025,Olumide A Abiodun
+W2145126338,Tobias Sing
+W2145126338,O. Sander
+W2145126338,Niko Beerenwinkel
+W2145126338,Thomas Lengauer
+W2098005762,S. Boccaletti
+W2098005762,Ginestra Bianconi
+W2098005762,Regino Criado
+W2098005762,Charo I. del Genio
+W2098005762,Jesús Gómez‐Gardeñes
+W2098005762,Miguel Romance
+W2098005762,I. Sendiña–Nadal
+W2098005762,Z. Wang
+W2098005762,Massimiliano Zanin
+W2050345155,Hanbo Chen
+W2050345155,Paul Christopher Boutros
+W4321499901,Ahmed Tlili
+W4321499901,Boulus Shehata
+W4321499901,Michael Agyemang Adarkwah
+W4321499901,Aras Bozkurt
+W4321499901,Daniel Thomas Hickey
+W4321499901,Ronghuai Huang
+W4321499901,Brighter Agyemang
+W2092194717,F. Feroz
+W2092194717,M. Hobson
+W2092194717,M. Bridges
+W2062125287,Olivier Ledoit
+W2062125287,Michael Wolf
+W2112957339,Henry Jenkins
+W2112957339,Ravi Purushotma
+W4211160986,Gilles Dennler
+W4211160986,Markus Clark Scharber
+W4211160986,Christoph Josef Brabec
+W2028695285,Mathieu Jacomy
+W2028695285,Tommaso Venturini
+W2028695285,Sébastien Heymann
+W2028695285,Mathieu Bastian
+W2165674132,Minoru I. Kanehisa
+W2462099493,Sacha Epskamp
+W2462099493,Eiko I. Fried
+W2132083787,Pieter-Tjerk de Boer
+W2132083787,Dirk P. Kroese
+W2132083787,Shie Mannor
+W2132083787,Reuven Y. Rubinstein
+W2515300481,Samuel Fosso Wamba
+W2515300481,Angappa Gunasekaran
+W2515300481,Shahriar Akter
+W2515300481,Steven Ji-Fan Ren
+W2515300481,Rameshwar Dubey
+W2515300481,Stephen J. Childe
+W3147387781,Anurag Arnab
+W3147387781,Mostafa Dehghani
+W3147387781,Georg Heigold
+W3147387781,Chen Sun
+W3147387781,Mario Lučić
+W3147387781,Cordelia Schmid
+W2146577723,Philip Walter Gassman
+W2146577723,Manuel R. Reyes
+W2146577723,Colleen H.M. Green
+W2146577723,Jeffery G. Arnold
+W2548687046,Mark Melitz
+W3154258817,Guo‐Li Xiong
+W3154258817,Zhenxing Wu
+W3154258817,Jiacai Yi
+W3154258817,Li Fu
+W3154258817,Zhijiang Yang
+W3154258817,Chang‐Yu Hsieh
+W3154258817,Mingzhu Yin
+W3154258817,Xiangxiang Zeng
+W3154258817,Chengkun Wu
+W3154258817,Aiping Lü
+W3154258817,Xiang Chen
+W3154258817,Tingjun Hou
+W3154258817,Dongsheng Cao
+W2153325555,Ryan R. Wick
+W2153325555,Mark B. Schultz
+W2153325555,Justin Zobel
+W2153325555,Kathryn E. Holt
+W3183475563,Kathryn Tunyasuvunakool
+W3183475563,Jonas Adler
+W3183475563,Zachary Wu
+W3183475563,Tim Green
+W3183475563,Michal Zielinski
+W3183475563,Augustin Žídek
+W3183475563,Alex Bridgland
+W3183475563,Andrew Cowie
+W3183475563,Clemens Meyer
+W3183475563,Agata Laydon
+W3183475563,Sameer S Velankar
+W3183475563,Gerard J. Kleywegt
+W3183475563,Alex G. Bateman
+W3183475563,Richard Evans
+W3183475563,Alexander Pritzel
+W3183475563,Michael Figurnov
+W3183475563,Olaf Ronneberger
+W3183475563,Russ Bates
+W3183475563,Simon Köhl
+W3183475563,Anna Potapenko
+W3183475563,Andrew J. Ballard
+W3183475563,Bernardino Romera‐Paredes
+W3183475563,Stanislav Nikolov
+W3183475563,Rishub Jain
+W3183475563,Ellen Clancy
+W2798434869,Vojtěch Havlíček
+W2798434869,Antonio D. Corcoles
+W2798434869,Kristan Temme
+W2798434869,Aram W. Harrow
+W2798434869,Abhinav Kandala
+W2798434869,Jerry M. Chow
+W2798434869,Jay Gambetta
+W2159449603,Adam Alloul
+W2159449603,Neil D. Christensen
+W2159449603,Celine Catherine Degrande
+W2159449603,Claude Duhr
+W2159449603,Benjamin Fuks
+W2948978827,Diederik P. Kingma
+W2948978827,Max Welling
+W2519132385,Luca Scrucca
+W2519132385,Michael Fop
+W2519132385,Thomas Brendan Murphy
+W2519132385,"Adrian,E. Raftery"
+W1981501248,Jonathan James Deeks
+W1981501248,Jacqueline Dinnes
+W1981501248,Roberto D’Amico
+W1981501248,Amanda J. Sowden
+W1981501248,Charlotte Sakarovitch
+W1981501248,Fengyu Song
+W1981501248,Mark Patrick Petticrew
+W1981501248,Douglas G. Altman
+W1568998819,H. Douglas Brown
+W1568998819,Priyanvada Abeywickrama
+W4396821501,Ziming Liu
+W4396821501,Yixuan Wang
+W4396821501,Sachin Vaidya
+W4396821501,Fabian Ruehle
+W4396821501,James Halverson
+W4396821501,Marin Soljacic A
+W4396821501,Thomas Y. Hou
+W4396821501,Max Tegmark
+W2139236032,Ana Victoria Diez Roux
+W2139236032,Christina Mair
+W3122014499,Markus Perkmann
+W3122014499,Valentina Tartari
+W3122014499,Maureen McKelvey
+W3122014499,Erkko Autio
+W3122014499,Anders Broström
+W3122014499,Pablo D’Este
+W3122014499,Riccardo Fini
+W3122014499,Aldo Geuna
+W3122014499,Rosa Grimaldi
+W3122014499,Alan Hughes
+W3122014499,Stefan Krabel
+W3122014499,Michael Kitson
+W3122014499,Patrick Llerena
+W3122014499,Francesco Lissoni
+W3122014499,Ammon J. Salter
+W3122014499,Maurizio Sobrero
+W2904383797,Lars Mescheder
+W2904383797,Michael Oechsle
+W2904383797,Michael Niemeyer
+W2904383797,Sebastian Nowozin
+W2904383797,Andreas Geiger
+W2126650951,Randy L. Buckner
+W2126650951,Jorge Sepulcre
+W2126650951,Tanveer Talukdar
+W2126650951,Fenna M. Krienen
+W2126650951,Hesheng Liu
+W2126650951,Trey Hedden
+W2126650951,Jessica R. Andrews‐Hanna
+W2126650951,Reisa Anne Sperling
+W2126650951,Keith A. Johnson
+W1484750607,Michela Nardo
+W1484750607,Michaela Saisana
+W1484750607,Andrea Saltelli
+W1484750607,Stefano Tarantola
+W1484750607,Anders N. Hoffmann
+W1484750607,Enrico Giovannini
+W3037819556,Petter Holme
+W3037819556,Jari Saramäki
+W2953494151,Martín Arjovsky
+W2953494151,Léon Bottou
+W2953494151,Ishaan Gulrajani
+W2953494151,David López-Paz
+W2024424774,Richard J. Beckman
+W2024424774,Sanford Weisberg
+W2393319904,Daixin Wang
+W2393319904,Peng Cui
+W2393319904,Wenwu Zhu
+W2328078142,Brenden M. Lake
+W2328078142,Tomer David Ullman
+W2328078142,Joshua B. Tenenbaum
+W2328078142,Samuel Joseph Gershman
+W1979104937,Linyuan Lü
+W1979104937,Tao Zhou
+W1969293769,Peter Fratzl
+W1969293769,Richard Weinkamer
+W3016970897,Robert Geirhos
+W3016970897,Jörn-Henrik Jacobsen
+W3016970897,Claudio Michaelis
+W3016970897,Richard S. Zemel
+W3016970897,Wieland Brendel
+W3016970897,Matthias Bethge
+W3016970897,Felix A. Wichmann
+W2913688336,Michael R. Fellows
+W7155906632,Jules White
+W7155906632,Quchen Fu
+W7155906632,Sam Hays
+W7155906632,Michael Sandborn
+W7155906632,Carlos Olea
+W7155906632,Henry Gilbert
+W7155906632,Ashraf Elnashar
+W7155906632,Jesse B. Spencer-Smith
+W7155906632,Douglas C. Schmidt
+W2022625505,Sebastiaan Mathôt
+W2022625505,Daniël Schreij
+W2022625505,Jan Theeuwes
+W1972098965,Clarence A. Ellis
+W1972098965,Simon J. Gibbs
+W1972098965,Gail L. Rein
+W4415796023,Yue Liu
+W4415796023,Yunjie Tian
+W4415796023,Yuzhong Zhao
+W4415796023,Hongtian Yu
+W4415796023,Lingxi Xie
+W4415796023,Yaowei Wang
+W4415796023,Qixiang Ye
+W4415796023,Jianbin Jiao
+W4415796023,Yunfan Liu
+W1950113648,Bernard McCarthy
+W1950113648,Dympna Casey
+W1950113648,Declan Devane
+W1950113648,Kathy Murphy
+W1950113648,Edel Murphy
+W1950113648,Yves Lacasse
+W2075220720,Tomihisa Kamada
+W2075220720,Satoru Kawai
+W1972145956,Nicholas J. Croucher
+W1972145956,Andrew J. Page
+W1972145956,Thomas R. Connor
+W1972145956,Aidan J. Delaney
+W1972145956,Jacqueline A. Keane
+W1972145956,Stephen D. Bentley
+W1972145956,Julian Parkhill
+W1972145956,Simon R. Harris
+W4403370767,Bo Li
+W4403370767,Yuanhan Zhang
+W4403370767,"Guo, Dong"
+W4403370767,Renrui Zhang
+W4403370767,Feng Li
+W4403370767,Hao Zhang
+W4403370767,Kaichen Zhang
+W4403370767,"Zhang, Peiyuan"
+W4403370767,Yanwei Li
+W4403370767,Ziwei Liu
+W4403370767,Chunyuan Li
+W4388522045,Doudou Tang
+W4388522045,Mingjie Chen
+W4388522045,Xinhua Huang
+W4388522045,Guicheng Zhang
+W4388522045,Lin Zeng
+W4388522045,Guangsen Zhang
+W4388522045,Shangjie Wu
+W4388522045,Yewei Wang
+W1676820704,Thomas G. Dietterich
+W1676820704,Ghulum Bakiri
+W2949520286,Camillo Lugaresi
+W2949520286,Jiuqiang Tang
+W2949520286,Hadon Nash
+W2949520286,Chris McClanahan
+W2949520286,Esha Uboweja
+W2949520286,Michael Hays
+W2949520286,Fan Zhang
+W2949520286,Chuo-Ling Chang
+W2949520286,Ming Yong
+W2949520286,Juhyun Lee
+W2949520286,Wan-Teh Chang
+W2949520286,"Hua, Wei"
+W2949520286,Manfred Georg
+W2949520286,"Grundmann, Matthias"
+W2154241726,Andreas R. Gruber
+W2154241726,Ronny Lorenz
+W2154241726,Stephan H. Bernhart
+W2154241726,Richard Neuböck
+W2154241726,Ivo L. Hofacker
+W2125481562,Brian R. Copeland
+W2125481562,Michael Scott Taylor
+W4288083516,Alina Kuznetsova
+W4288083516,Hassan Rom
+W4288083516,Neil Alldrin
+W4288083516,Jasper Uijlings
+W4288083516,Ivan Krasin
+W4288083516,Jordi Pont-Tuset
+W4288083516,Shahab Kamali
+W4288083516,Stefan Popov
+W4288083516,Matteo Malloci
+W4288083516,Alexander Kolesnikov
+W4288083516,Tom Duerig
+W4288083516,Vittorio Ferrari
+W2888728157,Alaa Tharwat
+W1686810756,Karen Simonyan
+W1686810756,Andrew Zisserman
+W3128646645,Hyuna Sung
+W3128646645,Adalberto M. Filho
+W3128646645,Mathieu Laversanne
+W3128646645,Jacques Ferlay
+W3128646645,Rebecca L. Siegel
+W3128646645,Isabelle Soerjomataram
+W3128646645,Ahmedin Jemal
+W3128646645,Freddie Bray
+W639708223,Shaoqing Ren
+W639708223,Kaiming He
+W639708223,Ross Girshick
+W639708223,Jian Sun
+W2896457183,Jacob Devlin
+W2896457183,Ming-Wei Chang
+W2896457183,Kenton Lee
+W2896457183,Kristina Toutanova
+W2117692326,Douglas Hanahan
+W2117692326,Robert A. Weinberg
+W3177828909,John Jumper
+W3177828909,Richard Evans
+W3177828909,Alexander Pritzel
+W3177828909,Tim Green
+W3177828909,Michael Figurnov
+W3177828909,Olaf Ronneberger
+W3177828909,Kathryn Tunyasuvunakool
+W3177828909,Russ Bates
+W3177828909,Augustin Žídek
+W3177828909,Anna Potapenko
+W3177828909,Alex Bridgland
+W3177828909,Clemens Meyer
+W3177828909,Simon Köhl
+W3177828909,Andrew J. Ballard
+W3177828909,Andrew Cowie
+W3177828909,Bernardino Romera‐Paredes
+W3177828909,Stanislav Nikolov
+W3177828909,Rishub Jain
+W3177828909,Jonas Adler
+W3177828909,Trevor Back
+W3177828909,Stig Petersen
+W3177828909,David Reiman
+W3177828909,Ellen Clancy
+W3177828909,Michał Zieliński
+W3177828909,Martin Steinegger
+W2014935324,Andre K. Geim
+W2014935324,Kostya S. Novoselov
+W1959608418,Diederik P. Kingma
+W1959608418,Max Welling
+W2970971581,Adam Paszke
+W2970971581,Sam Gross
+W2970971581,Francisco Massa
+W2970971581,Adam K. Lerer
+W2970971581,James Bradbury
+W2970971581,Gregory Chanan
+W2970971581,Trevor Killeen
+W2970971581,Zeming Lin
+W2970971581,Natalia E. Gimelshein
+W2970971581,Luca Antiga
+W2970971581,Alban Desmaison
+W2970971581,"Köpf, Andreas"
+W2970971581,Edward Z. Yang
+W2970971581,Zachary DeVito
+W2970971581,Martin Raison
+W2970971581,Alykhan Tejani
+W2970971581,Sasank Chilamkurthy
+W2970971581,Benoit Steiner
+W2970971581,Lu Fang
+W2970971581,Junjie Bai
+W2970971581,Soumith Chintala
+W2519887557,Thomas Kipf
+W2519887557,Max Welling
+W2102605133,Ross Girshick
+W2102605133,Jeff Donahue
+W2102605133,Trevor Darrell
+W2102605133,Jitendra Malik
+W1678356000,Jerome H. Friedman
+W2963163009,Mark Sandler
+W2963163009,Andrew Howard
+W2963163009,Menglong Zhu
+W2963163009,Andrey Zhmoginov
+W2963163009,Liang-Chieh Chen
+W2120145199,Paolo Giannozzi
+W2120145199,Stefano Baroni
+W2120145199,Nicola Bonini
+W2120145199,Matteo Calandra
+W2120145199,Roberto Car
+W2120145199,Carlo Cavazzoni
+W2120145199,Davide Ceresoli
+W2120145199,G. Chiarotti
+W2120145199,Matteo Cococcioni
+W2120145199,Ismaïla Dabo
+W2120145199,Andrea Dal Corso
+W2120145199,Stefano de Gironcoli
+W2120145199,Stefano Fabris
+W2120145199,Guido Fratesi
+W2120145199,Ralph Gebauer
+W2120145199,U. Gerstmann
+W2120145199,Christos Gougoussis
+W2120145199,Anton Kokalj
+W2120145199,Michele Lazzeri
+W2120145199,Layla Martin‐Samos
+W2120145199,Nicola Marzari
+W2120145199,Francesco Mauri
+W2120145199,Riccardo Mazzarello
+W2120145199,Stefano Paolini
+W2120145199,Alfredo Pasquarello
+W3035965352,Charles R. Harris
+W3035965352,K. Jarrod Millman
+W3035965352,Stéfan J. van der Walt
+W3035965352,Ralf Gommers
+W3035965352,Pauli Virtanen
+W3035965352,David Cournapeau
+W3035965352,Eric Wieser
+W3035965352,Julian Taylor
+W3035965352,Sebastian Berg
+W3035965352,Nathaniel J. Smith
+W3035965352,Robert Kern
+W3035965352,Matti Picus
+W3035965352,Stephan Hoyer
+W3035965352,M. H. van Kerkwijk
+W3035965352,Matthew Brett
+W3035965352,Allan Haldane
+W3035965352,Jaime Fernández del Río
+W3035965352,Mark Wiebe
+W3035965352,Pearu Peterson
+W3035965352,Pierre Gérard-Marchant
+W3035965352,Kevin Sheppard
+W3035965352,Tyler Reddy
+W3035965352,Warren Weckesser
+W3035965352,Hameer Abbasi
+W3035965352,Christoph Gohlke
+W2560438049,Mourad Ouzzani
+W2560438049,Hossam M. Hammady
+W2560438049,Zbys Fedorowicz
+W2560438049,Ahmed K. Elmagarmid
+W2908510526,Ilya Loshchilov
+W2908510526,Frank Hutter
+W1966327575,Peter Langfelder
+W1966327575,Steve Horvath
+W2962858109,Ramprasaath R. Selvaraju
+W2962858109,Michael Cogswell
+W2962858109,Abhishek Das
+W2962858109,Ramakrishna Vedantam
+W2962858109,Devi Parikh
+W2962858109,Dhruv Batra
+W2133564696,Dzmitry Bahdanau
+W2133564696,Kyunghyun Cho
+W2133564696,Yoshua Bengio
+W2963276645,Evan K Bolyen
+W2963276645,Jai Ram Rideout
+W2963276645,Matthew R. Dillon
+W2963276645,Nicholas A. Bokulich
+W2963276645,Christian C. Abnet
+W2963276645,Gabriel A. Al‐Ghalith
+W2963276645,Harriet Alexander
+W2963276645,Eric J. Alm
+W2963276645,Manimozhiyan Arumugam
+W2963276645,Francesco Asnicar
+W2963276645,Yang Bai
+W2963276645,Jordan E. Bisanz
+W2963276645,Kyle L. Bittinger
+W2963276645,Asker Brejnrod
+W2963276645,Colin Brislawn
+W2963276645,C. Titus Brown
+W2963276645,Benjamin J. Callahan
+W2963276645,Andrés Mauricio Caraballo‐Rodríguez
+W2963276645,John Chase
+W2963276645,Emily K. Cope
+W2963276645,Ricardo Silva
+W2963276645,Christian Diener
+W2963276645,Pieter C. Dorrestein
+W2963276645,Gavin M. Douglas
+W2963276645,Daniel M. Durall
+W2193145675,Wei Liu
+W2193145675,Dragomir Anguelov
+W2193145675,Dumitru Erhan
+W2193145675,Christian Szegedy
+W2193145675,Scott Reed
+W2193145675,Cheng-Yang Fu
+W2193145675,Alexander C. Berg
+W4401306886,"Grattafiori, Aaron"
+W4401306886,Abhimanyu Dubey
+W4401306886,"Jauhri, Abhinav"
+W4401306886,"Pandey, Abhinav"
+W4401306886,"Kadian, Abhishek"
+W4401306886,"Al-Dahle, Ahmad"
+W4401306886,"Letman, Aiesha"
+W4401306886,Akhil Mathur
+W4401306886,"Schelten, Alan"
+W4401306886,"Vaughan, Alex"
+W4401306886,"Yang, Amy"
+W4401306886,Angela Fan
+W4401306886,Anirudh Goyal
+W4401306886,"Hartshorn, Anthony"
+W4401306886,"Yang, Aobo"
+W4401306886,"Mitra, Archi"
+W4401306886,"Sravankumar, Archie"
+W4401306886,"Korenev, Artem"
+W4401306886,"Hinsvark, Arthur"
+W4401306886,"Rao, Arun"
+W4401306886,"Zhang, Aston"
+W4401306886,"Rodriguez, Aurelien"
+W4401306886,"Gregerson, Austen"
+W4401306886,"Spataru, Ava"
+W4401306886,"Roziere, Baptiste"
+W2180229411,Paul D. Adams
+W2180229411,Pavel V. Afonine
+W2180229411,Gàbor Bunkòczi
+W2180229411,Vincent B. Chen
+W2180229411,Ian Davis
+W2180229411,Nathaniel Echols
+W2180229411,Jeffrey J. Headd
+W2180229411,Li‐Wei Hung
+W2180229411,Gary J. Kapral
+W2180229411,Ralf W. Grosse‐Kunstleve
+W2180229411,Airlie J. McCoy
+W2180229411,Nigel W. Moriarty
+W2180229411,Robert D. Oeffner
+W2180229411,Randy J. Read
+W2180229411,David C. Richardson
+W2180229411,Jane S. Richardson
+W2180229411,Thomas C. Terwilliger
+W2180229411,Peter H. Zwart
+W2412782625,Liang-Chieh Chen
+W2412782625,George Papandreou
+W2412782625,Iasonas Kokkinos
+W2412782625,Kevin P. Murphy
+W2412782625,Alan Yuille
+W2131681506,Vincent D. Blondel
+W2131681506,Jean‐Loup Guillaume
+W2131681506,Renaud Lambiotte
+W2131681506,Etienne Lefebvre
+W2056279562,Paul J. McMurdie
+W2056279562,Susan Holmes
+W2964309882,Liang-Chieh Chen
+W2964309882,Yukun Zhu
+W2964309882,George Papandreou
+W2964309882,Florian Schroff
+W2964309882,Hartwig Adam
+W1677182931,Kaiming He
+W1677182931,Xiangyu Zhang
+W1677182931,Shaoqing Ren
+W1677182931,Jian Sun
+W1910657905,Vijay Badrinarayanan
+W1910657905,Alex Kendall
+W1910657905,Roberto Cipolla
+W2128880918,Matthew D. Kearse
+W2128880918,Richard Moir
+W2128880918,Amy Wilson
+W2128880918,Steven Stones-Havas
+W2128880918,Matthew Cheung
+W2128880918,Shane S. Sturrock
+W2128880918,Simon Buxton
+W2128880918,Alex Cooper
+W2128880918,Sidney Markowitz
+W2128880918,Chris Duran
+W2128880918,Tobias Thierer
+W2128880918,Bruce Ashton
+W2128880918,Peter Meintjes
+W2128880918,Alexei J. Drummond
+W2766453196,Petar Veličković
+W2766453196,"Casanova, A"
+W2766453196,P Liò
+W2766453196,Guillem Cucurull
+W2766453196,Adriana Romero
+W2766453196,Yoshua Bengio
+W3030520226,Nicolas Carion
+W3030520226,Francisco Massa
+W3030520226,Gabriel Synnaeve
+W3030520226,Nicolas Usunier
+W3030520226,Alexander Kirillov
+W3030520226,Sergey Zagoruyko
+W4384918448,Hugo Touvron
+W4384918448,"Martin, Louis"
+W4384918448,"Stone, Kevin"
+W4384918448,"Albert, Peter"
+W4384918448,Amjad Almahairi
+W4384918448,Yasmine Babaei
+W4384918448,Nikolay Bashlykov
+W4384918448,Soumya Batra
+W4384918448,Prajjwal Bhargava
+W4384918448,Shruti Bhosale
+W4384918448,Dan Bikel
+W4384918448,Lukas Blecher
+W4384918448,Cristian Canton Ferrer
+W4384918448,Moya Chen
+W4384918448,Guillem Cucurull
+W4384918448,David Esiobu
+W4384918448,Jude Fernandes
+W4384918448,Jeremy Fu
+W4384918448,Wenyin Fu
+W4384918448,"Fuller, Brian"
+W4384918448,Cynthia Gao
+W4384918448,Vedanuj Goswami
+W4384918448,Naman Goyal
+W4384918448,"Hartshorn, Anthony"
+W4384918448,Saghar Hosseini
+W3135367836,Alec Radford
+W3135367836,Jong Wook Kim
+W3135367836,Chris Hallacy
+W3135367836,"Ramesh, Aditya"
+W3135367836,Gabriel Goh
+W3135367836,Sandhini Agarwal
+W3135367836,Girish Sastry
+W3135367836,Amanda Askell
+W3135367836,Pamela Mishkin
+W3135367836,Jack Clark
+W3135367836,Gretchen Marie Krueger
+W3135367836,Ilya Sutskever
+W1945616565,Ian Goodfellow
+W1945616565,Jonathon Shlens
+W1945616565,Christian Szegedy
+W2130942839,Ilya Sutskever
+W2130942839,Oriol Vinyals
+W2130942839,Quoc Viet Le
+W2259938310,Ian Dunham
+W2259938310,Ewan Birney
+W2259938310,Javier Herrero
+W2259938310,Steven P. Wilder
+W2259938310,Damian Keefe
+W2259938310,Kathryn Beal
+W2259938310,Paul Flicek
+W2259938310,Nathan Johnson
+W2259938310,Daniel Sobral
+W2259938310,Anshul Bharat Kundaje
+W2259938310,Serafim Batzoglou
+W2259938310,Nadine Hussami
+W2259938310,Sofia Kyriazopoulou-Panagiotopoulou
+W2259938310,Maxwell W. Libbrecht
+W2259938310,Marc A. Schaub
+W2259938310,Shelley Force Aldred
+W2259938310,Patrick J. Collins
+W2259938310,Nathan D. Trinklein
+W2259938310,Carrie A. Davis
+W2259938310,Felix J. Schlesinger
+W2259938310,T Gingeras
+W2259938310,Alexander Dobin
+W2259938310,Wei Lin
+W2259938310,Chenghai Xue
+W2259938310,Chris Zaleski
+W2133990480,Mark Hall
+W2133990480,Eibe Frank
+W2133990480,Geoffrey Holmes
+W2133990480,Bernhard Pfahringer
+W2133990480,Peter Reutemann
+W2133990480,Ian H. Witten
+W4396721167,Josh Abramson
+W4396721167,Jonas Adler
+W4396721167,Jack Dunger
+W4396721167,Richard Evans
+W4396721167,Tim Green
+W4396721167,Alexander Pritzel
+W4396721167,Olaf Ronneberger
+W4396721167,Lindsay Willmore
+W4396721167,Andrew J. Ballard
+W4396721167,Joshua Bambrick
+W4396721167,Sebastian W. Bodenstein
+W4396721167,David A. Evans
+W4396721167,Chia-Chun Hung
+W4396721167,Michael O’Neill
+W4396721167,David Reiman
+W4396721167,Kathryn Tunyasuvunakool
+W4396721167,Zachary Wu
+W4396721167,Akvilė Žemgulytė
+W4396721167,Eirini Arvaniti
+W4396721167,Charles Beattie
+W4396721167,Ottavia Bertolli
+W4396721167,Alex Bridgland
+W4396721167,Alexey Cherepanov
+W4396721167,Miles Congreve
+W4396721167,Alexander I. Cowen-Rivers
+W2149441684,Ethan G Cerami
+W2149441684,Jianjiong Gao
+W2149441684,Uğur Doğrusöz
+W2149441684,Benjamin E Gross
+W2149441684,Selçuk Onur Sümer
+W2149441684,Bülent Arman Aksoy
+W2149441684,Anders Jacobsen
+W2149441684,Caitlin J. Byrne
+W2149441684,Michael Heuer
+W2149441684,Erik Larsson
+W2149441684,Yevgeniy Antipin
+W2149441684,Boris A. Reva
+W2149441684,Arthur P. Goldberg
+W2149441684,Chris Sander
+W2149441684,Nikolaus D. Schultz
+W2402144811,Martı́n Abadi
+W2402144811,Paul Barham
+W2402144811,"Chen, Jianmin"
+W2402144811,Zhifeng Chen
+W2402144811,Andy Davis
+W2402144811,"Dean, Jeffrey"
+W2402144811,Matthieu Devin
+W2402144811,Sanjay Ghemawat
+W2402144811,Geoffrey Irving
+W2402144811,Michael Isard
+W2402144811,Manjunath Kudlur
+W2402144811,Josh Levenberg
+W2402144811,Rajat Monga
+W2402144811,Sherry Moore
+W2402144811,Derek Gordon Murray
+W2402144811,Benoit Steiner
+W2402144811,"Tucker, Paul"
+W2402144811,Vijay Vasudevan
+W2402144811,Pete Warden
+W2402144811,Martin Wicke
+W2402144811,Yuan Yu
+W2402144811,Xiaoqiang Zheng
+W2592929672,Geert J. S. Litjens
+W2592929672,Thijs Kooi
+W2592929672,Babak Ehteshami Bejnordi
+W2592929672,Arnaud A. A. Setio
+W2592929672,Francesco Ciompi
+W2592929672,Mohsen Ghafoorian
+W2592929672,Jeroen A. W. M. van der Laak
+W2592929672,Bram van Ginneken
+W2592929672,Clara I. Sá‎nchez
+W2252795400,B. P. Abbott
+W2252795400,R. Abbott
+W2252795400,T. D. Abbott
+W2252795400,M. R. Abernathy
+W2252795400,F. Acernese
+W2252795400,K. Ackley
+W2252795400,C. Adams
+W2252795400,Thomas Adams
+W2252795400,Paolo Addesso
+W2252795400,R. X. Adhikari
+W2252795400,V. B. Adya
+W2252795400,C. Affeldt
+W2252795400,M. Agathos
+W2252795400,K. Agatsuma
+W2252795400,Nancy Aggarwal
+W2252795400,O. D. Aguiar
+W2252795400,L. Aiello
+W2252795400,A. Ain
+W2252795400,P. Ajith
+W2252795400,B. Allen
+W2252795400,A. Allocca
+W2252795400,P. A. Altin
+W2252795400,S. B. Anderson
+W2252795400,Warren G. Anderson
+W2252795400,Koji Arai
+W2580767461,Michiru Nishita
+W2580767461,Seung‐Yeol Park
+W2580767461,Tadashi Nishio
+W2580767461,Koki Kamizaki
+W2580767461,Zhichao Wang
+W2580767461,Kota Tamada
+W2580767461,Toru Takumi
+W2580767461,Ryuju Hashimoto
+W2580767461,Hiroki Otani
+W2580767461,Gregory J. Pazour
+W2580767461,Victor W. Hsu
+W2580767461,Yasuhiro Minami
+W2096733369,Florian Schroff
+W2096733369,Dmitry Kalenichenko
+W2096733369,James Philbin
+W2159707944,Sonja Hänzelmann
+W2159707944,Robert Castelo
+W2159707944,Justin Guinney
+W2173520492,Alec Radford
+W2173520492,Luke Metz
+W2173520492,Soumith Chintala
+W2395611524,Evan Shelhamer
+W2395611524,Jonathan Long
+W2395611524,Trevor Darrell
+W3210383951,Joseph F. Hair
+W3210383951,G. Tomas M. Hult
+W3210383951,Christian M. Ringle
+W3210383951,Marko Sarstedt
+W3210383951,Nicholas Patrick Danks
+W3210383951,Soumya Ray
+W4297808394,Aäron van den Oord
+W4297808394,Yazhe Li
+W4297808394,Oriol Vinyals
+W2928665623,Yingyao Zhou
+W2928665623,Bin Zhou
+W2928665623,Lars Pache
+W2928665623,Max W. Chang
+W2928665623,Alireza Hadj Khodabakhshi
+W2928665623,Olga Tanaseichuk
+W2928665623,Christopher W. Benner
+W2928665623,Sumit K. Chanda
+W2954996726,Connor Shorten
+W2954996726,Taghi M. Khoshgoftaar
+W3168867926,J. Edward Hu
+W3168867926,Yelong Shen
+W3168867926,Phillip Wallis
+W3168867926,Zeyuan Allen-Zhu
+W3168867926,Yuanzhi Li
+W3168867926,Shean Wang
+W3168867926,"Wang, Lu"
+W3168867926,"Chen, Weizhu"
+W1757796397,Volodymyr Mnih
+W1757796397,Koray Kavukcuoglu
+W1757796397,David Silver
+W1757796397,Alex Graves
+W1757796397,Ioannis Antonoglou
+W1757796397,Daan Wierstra
+W1757796397,Martin Riedmiller
+W2125065061,Rafael Lozano
+W2125065061,Mohsen Naghavi
+W2125065061,Kyle J Foreman
+W2125065061,Stephen S Lim
+W2125065061,Kenji Shibuya
+W2125065061,Victor Aboyans
+W2125065061,Jerry Puthenpurakal Abraham
+W2125065061,Tim Adair
+W2125065061,Rakesh Aggarwal
+W2125065061,Stephanie Y Ahn
+W2125065061,Mohammad AbdulAziz AlMazroa
+W2125065061,Miriam Alvarado
+W2125065061,H Ross Anderson
+W2125065061,Laurie M. Anderson
+W2125065061,Kathryn Gilman Andrews
+W2125065061,Charles Atkinson
+W2125065061,Larry M. Baddour
+W2125065061,Suzanne Lyn Barker-Collo
+W2125065061,David H Bartels
+W2125065061,Michelle Lee Bell
+W2125065061,Emelia J. Benjamin
+W2125065061,Derrick Bennett
+W2125065061,Kavi Bhalla
+W2125065061,Boris T. Bikbov
+W2125065061,Aref A. Bin Abdulhak
+W3035524453,Kaiming He
+W3035524453,Haoqi Fan
+W3035524453,Yuxin Wu
+W3035524453,Saining Xie
+W3035524453,Ross Girshick
+W2133465414,Da Wei Huang
+W2133465414,Brad T. Sherman
+W2133465414,Richard A. Lempicki
+W2006617902,Xavier Robin
+W2006617902,Natacha Turck
+W2006617902,Alexandre Hainard
+W2006617902,Natalia Tiberti
+W2006617902,Frédérique Lisacek
+W2006617902,Jean‐Charles Sanchez
+W2006617902,Markus Müller
+W2154714625,Vincent B. Chen
+W2154714625,W.B. Arendall
+W2154714625,Jeffrey J. Headd
+W2154714625,D.A. Keedy
+W2154714625,Robert M. Immormino
+W2154714625,Gary J. Kapral
+W2154714625,Laura W. Murray
+W2154714625,Jane S. Richardson
+W2154714625,David C. Richardson
+W1992419399,Anil K. Jain
+W1992419399,Musti Narasimha Murty
+W1992419399,Patrick J. Flynn
+W2214074259,Arthur Liberzon
+W2214074259,Chet Birger
+W2214074259,Helga Thorvaldsdóttir
+W2214074259,Mahmoud Ghandi
+W2214074259,Jill P. Mesirov
+W2214074259,Pablo Tamayo
+W1673923490,Christian Szegedy
+W1673923490,Wojciech Zaremba
+W1673923490,Ilya Sutskever
+W1673923490,Joan Bruna
+W1673923490,Dumitru Erhan
+W1673923490,Ian Goodfellow
+W1673923490,Rob Fergus
+W3123893780,Matthew James Page
+W3123893780,David Moher
+W3123893780,Patrick M. Bossuyt
+W3123893780,Isabelle Boutron
+W3123893780,Tammy Hoffmann
+W3123893780,Cynthia D. Mulrow
+W3123893780,Larissa Shamseer
+W3123893780,Jennifer Tetzlaff
+W3123893780,Elie A. Akl
+W3123893780,Sue Brennan
+W3123893780,Roger Chou
+W3123893780,Julie Glanville
+W3123893780,Jeremy Grimshaw
+W3123893780,Asbjørn Hróbjartsson
+W3123893780,Manoj Mathew Lalu
+W3123893780,Tianjing Li
+W3123893780,Elizabeth Loder
+W3123893780,Evan Mayo‐Wilson
+W3123893780,Steve J McDonald
+W3123893780,Luke A. McGuinness
+W3123893780,Lesley A. Stewart
+W3123893780,James Thomas
+W3123893780,Andrea C. Tricco
+W3123893780,Vivian Andrea Welch
+W3123893780,Penny F. Whiting
+W2963470893,Christian Ledig
+W2963470893,Lucas Theis
+W2963470893,Ferenc Huszár
+W2963470893,José Caballero
+W2963470893,Andrew Cunningham
+W2963470893,Alejandro Acosta
+W2963470893,Andrew P. Aitken
+W2963470893,Alykhan Tejani
+W2963470893,Johannes Totz
+W2963470893,Zehan Wang
+W2963470893,Wenzhe Shi
+W3201073812,Aidan P. Thompson
+W3201073812,Hasan Metin Aktulga
+W3201073812,Richard A. Berger
+W3201073812,Dan Bolintineanu
+W3201073812,W. Michael Brown
+W3201073812,Paul Crozier
+W3201073812,Pieter J. in ’t Veld
+W3201073812,Axel Kohlmeyer
+W3201073812,Stan Moore
+W3201073812,Trung Dac Nguyen
+W3201073812,Ray Shan
+W3201073812,Mark J. Stevens
+W3201073812,Julien Tranchida
+W3201073812,Christian Robert Trott
+W3201073812,Steven J. Plimpton
+W2981852735,Colin Raffel
+W2981852735,Noam Shazeer
+W2981852735,"Roberts, Adam"
+W2981852735,Katherine Lee
+W2981852735,Sharan Narang
+W2981852735,Michael S Matena
+W2981852735,Yanqi Zhou
+W2981852735,Wei Li
+W2981852735,Peter J. Liu
+W2787560479,Matthew E. Peters
+W2787560479,Mark Neumann
+W2787560479,Mohit Iyyer
+W2787560479,Matt Gardner
+W2787560479,Christopher Clark
+W2787560479,Kenton Lee
+W2787560479,Luke Zettlemoyer
+W2804822363,Andrew Mark Waterhouse
+W2804822363,Martino Bertoni
+W2804822363,Stefan Bienert
+W2804822363,Gabriel Studer
+W2804822363,Gerardo Tauriello
+W2804822363,Rafal Gumienny
+W2804822363,Florian T. Heer
+W2804822363,Tjaart de Beer
+W2804822363,Christine Rempfer
+W2804822363,Lorenza Bordoli
+W2804822363,Rosalba Lepore
+W2804822363,Torsten F. Schwede
+W2111619626,Jayavardhana Gubbi
+W2111619626,Rajkumar Buyya
+W2111619626,Slaven Marusic
+W2111619626,Marimuthu Swami Palaniswami
+W2549139847,Saining Xie
+W2549139847,Ross Girshick
+W2549139847,Piotr Dollár
+W2549139847,Zhuowen Tu
+W2549139847,Kaiming He
+W2143485490,Doug Hyatt
+W2143485490,Gwo-Liang Chen
+W2143485490,Philip F. LoCascio
+W2143485490,Miriam Land
+W2143485490,Frank W. Larimer
+W2143485490,Loren Hauser
+W2099085143,Christopher C. Chang
+W2099085143,Carson C. Chow
+W2099085143,Laurent C. A. M. Tellier
+W2099085143,Shashaank Vattikuti
+W2099085143,Shaun Purcell
+W2099085143,James J. Lee
+W2904367110,Tero Karras
+W2904367110,Samuli Laine
+W2904367110,Timo Aila
+W2432481613,Fausto Milletarì
+W2432481613,Nassir Navab
+W2432481613,Seyed‐Ahmad Ahmadi
+W3122877168,Jörg Henseler
+W3122877168,Christian M. Ringle
+W3122877168,Rudolf R. Sinkovics
+W2271840356,Martı́n Abadi
+W2271840356,"Agarwal, Ashish"
+W2271840356,Paul Barham
+W2271840356,Eugene Brevdo
+W2271840356,Zhifeng Chen
+W2271840356,Craig Citro
+W2271840356,Greg S. Corrado
+W2271840356,Andy Davis
+W2271840356,"Dean, Jeffrey"
+W2271840356,Matthieu Devin
+W2271840356,Sanjay Ghemawat
+W2271840356,Ian Goodfellow
+W2271840356,"Harp, Andrew"
+W2271840356,Geoffrey Irving
+W2271840356,Michael Isard
+W2271840356,Yangqing Jia
+W2271840356,Rafał Józefowicz
+W2271840356,Łukasz Kaiser
+W2271840356,Manjunath Kudlur
+W2271840356,Josh Levenberg
+W2271840356,Dan Mané
+W2271840356,Rajat Monga
+W2271840356,Sherry Moore
+W2271840356,Derek Gordon Murray
+W2271840356,Chris Olah
+W1532325895,Christopher D. Manning
+W1532325895,Prabhakar Raghavan
+W1532325895,Hinrich Schütze
+W4301159569,The Cancer Genome Atlas Network
+W2160697532,Robert C. Gentleman
+W2160697532,Vincent J. Carey
+W2160697532,Douglas M. Bates
+W2160697532,Ben Bolstad
+W2160697532,Marcel Dettling
+W2160697532,Sandrine Dudoit
+W2160697532,Byron Ellis
+W2160697532,Laurent Gautier
+W2160697532,Yongchao Ge
+W2160697532,Jeff Gentry
+W2160697532,Kurt Hornik
+W2160697532,Torsten Hothorn
+W2160697532,Wolfgang K. Huber
+W2160697532,Stefano Maria Iacus
+W2160697532,Rafael A. Irizarry
+W2160697532,Friedrich Leisch
+W2160697532,Cheng Li
+W2160697532,Martin Maechler
+W2160697532,Anthony J. Rossini
+W2160697532,Günther Sawitzki
+W2160697532,Colin A. Smith
+W2160697532,Gordon K. Smyth
+W2160697532,Luke Tierney
+W2160697532,Jean Yee Hwa Yang
+W2160697532,Jianhua Zhang
+W2981863007,Olaf Zawacki‐Richter
+W2981863007,Victoria I. Marín
+W2981863007,Melissa Bond
+W2981863007,Franziska Gouverneur
+W2110052313,Stephen S Lim
+W2110052313,Theo Vos
+W2110052313,Abraham D Flaxman
+W2110052313,Goodarz Danaei
+W2110052313,Kenji Shibuya
+W2110052313,Heather Adair‐Rohani
+W2110052313,Mohammad AbdulAziz AlMazroa
+W2110052313,Markus Christian Amann
+W2110052313,H Ross Anderson
+W2110052313,Kathryn Gilman Andrews
+W2110052313,Martin J. Aryee
+W2110052313,Charles Atkinson
+W2110052313,Loraine Bacchus
+W2110052313,Adil N Bahalim
+W2110052313,Kalpana Balakrishnan
+W2110052313,John Randolph Balmes
+W2110052313,Suzanne Lyn Barker-Collo
+W2110052313,Amanda J. Baxter
+W2110052313,Michelle Lee Bell
+W2110052313,Jed D Blore
+W2110052313,Fiona Blyth
+W2110052313,Carissa Bonner
+W2110052313,Guilherme Luiz Guimaraes Borges
+W2110052313,Rupert Bourne
+W2110052313,Michel Boussinesq
+W2128769815,Curtis Huttenhower
+W2128769815,J. Fah Sathirapongsasuti
+W2128769815,Nicola Segata
+W2128769815,Dirk Gevers
+W2128769815,Ashlee M. Earl
+W2128769815,Michael G. FitzGerald
+W2128769815,Sarah Young
+W2128769815,Qiandong Zeng
+W2128769815,Eric J. Alm
+W2128769815,Lucia Alvarado
+W2128769815,Scott T. Anderson
+W2128769815,Harindra Arachchi
+W2128769815,Toby Bloom
+W2128769815,Dawn Ciulla
+W2128769815,Rachel Erlich
+W2128769815,Michael Feldgarden
+W2128769815,Sheila Fisher
+W2128769815,Dennis C. Friedrich
+W2128769815,Georgia Giannoukos
+W2128769815,Jonathan M. Goldberg
+W2128769815,Allison D. Griggs
+W2128769815,Sharvari Gujja
+W2128769815,Brian J. Haas
+W2128769815,Theresa A. Hepburn
+W2128769815,Clinton Howarth
+W2125826054,Junjie Qin
+W2125826054,Ruiqiang Li
+W2125826054,Jeroen Raes
+W2125826054,Manimozhiyan Arumugam
+W2125826054,Kristoffer Sølvsten Burgdorf
+W2125826054,Chaysavanh Manichanh
+W2125826054,Trine Nielsen
+W2125826054,Nicolas Pons
+W2125826054,Florence Levenez
+W2125826054,Takuji Yamada
+W2125826054,Daniel R. Mende
+W2125826054,Junhua Li
+W2125826054,Junming Xu
+W2125826054,Shaochuan Li
+W2125826054,Dongfang Li
+W2125826054,Jianjun Cao
+W2125826054,Bo Wang
+W2125826054,Huiqing Liang
+W2125826054,Huisong Zheng
+W2125826054,Yinlong Xie
+W2125826054,Julien Tap
+W2125826054,Patricia Lepage
+W2125826054,Marcelo Bertalan
+W2125826054,Jean-Michel Batto
+W2125826054,Torben F. Hansen
+W3005680577,Ting Chen
+W3005680577,Simon Kornblith
+W3005680577,Mohammad Norouzi
+W3005680577,Geoffrey E. Hinton
+W2962756421,Aditya Grover
+W2962756421,Jure Leskovec
+W2999615587,Scott Lundberg
+W2999615587,Gabriel Erion
+W2999615587,Hugh Chen
+W2999615587,Alex J. DeGrave
+W2999615587,Jordan M. Prutkin
+W2999615587,Bala G. Nair
+W2999615587,Ronit Katz
+W2999615587,Jonathan Himmelfarb
+W2999615587,Nisha Bansal
+W2999615587,Su‐In Lee
+W2963091558,Xiaolong Wang
+W2963091558,Ross Girshick
+W2963091558,Abhinav Gupta
+W2963091558,Kaiming He
+W2096420865,H. -J. Bandelt
+W2096420865,P. Forster
+W2096420865,A. Rohl
+W3014974815,Fabian Isensee
+W3014974815,Paul F. Jaeger
+W3014974815,Simon A. A. Kohl
+W3014974815,Jens Petersen
+W3014974815,Klaus H. Maier-Hein
+W2295107390,Bolei Zhou
+W2295107390,Aditya Khosla
+W2295107390,Àgata Lapedriza
+W2295107390,Aude Oliva
+W2295107390,Antonio B. Torralba
+W2127048411,Santo Fortunato
+W2331128040,Justin Johnson
+W2331128040,Alexandre Alahi
+W2331128040,Li Fei-Fei
+W3210904070,Karl Cobbe
+W3210904070,Vineet Kosaraju
+W3210904070,Mohammad Bavarian
+W3210904070,"Chen, Mark"
+W3210904070,"Jun, Heewoo"
+W3210904070,Łukasz Kaiser
+W3210904070,"Plappert, Matthias"
+W3210904070,"Tworek, Jerry"
+W3210904070,"Hilton, Jacob"
+W3210904070,"Nakano, Reiichiro"
+W3210904070,"Hesse, Christopher"
+W3210904070,"Schulman, John"
+W2801159594,Andrew Rambaut
+W2801159594,Alexei J. Drummond
+W2801159594,Dong Xie
+W2801159594,Guy Baele
+W2801159594,Marc A. Suchard
+W2884436604,Zongwei Zhou
+W2884436604,Md Mahfuzur Rahman Siddiquee
+W2884436604,Nima Tajbakhsh
+W2884436604,Jianming Liang
+W3156458251,Ivica Letunić
+W3156458251,Peer Bork
+W2158804744,Martin I. Krzywinski
+W2158804744,Jacqueline E. Schein
+W2158804744,İnanç Birol
+W2158804744,Joseph Michael Connors
+W2158804744,Randy D. Gascoyne
+W2158804744,Doug E. Horsman
+W2158804744,Steven J.M. Jones
+W2158804744,Marco A. Marra
+W3036167779,Jonathan Ho
+W3036167779,"Jain, Ajay"
+W3036167779,Pieter Abbeel
+W2028046413,Marcus D. Hanwell
+W2028046413,Donald E Curtis
+W2028046413,David C. Lonie
+W2028046413,Tim Vandermeersch
+W2028046413,Eva Zurek
+W2028046413,Geoffrey Hutchison
+W2157795344,Oussema Souiai
+W2157795344,Fatma Zahra Guerfali
+W2157795344,Slimane Ben Miled
+W2157795344,Christine Brun
+W2157795344,Alia Benkahla
+W2345356016,Maxim V. Kuleshov
+W2345356016,Matthew R. Jones
+W2345356016,Andrew D. Rouillard
+W2345356016,Nicolas Fernandez
+W2345356016,Qiaonan Duan
+W2345356016,Zichen Wang
+W2345356016,Simon Koplev
+W2345356016,Sherry L. Jenkins
+W2345356016,Kathleen M. Jagodnik
+W2345356016,Alexander Lachmann
+W2345356016,Michael G. McDermott
+W2345356016,Caroline D. Monteiro
+W2345356016,Gregory W. Gundersen
+W2345356016,Avi Ma’ayan
+W2640329709,Aleksander Mądry
+W2640329709,Aleksandar Makelov
+W2640329709,Ludwig Schmidt
+W2640329709,Dimitris Tsipras
+W2640329709,Adrian Vladu
+W2949650786,Kaiming He
+W2949650786,Xiangyu Zhang
+W2949650786,Shaoqing Ren
+W2949650786,Jian Sun
+W2749069611,Paul‐Christian Bürkner
+W2765081049,B. P. Abbott
+W2765081049,R. Abbott
+W2765081049,T. D. Abbott
+W2765081049,F. Acernese
+W2765081049,K. Ackley
+W2765081049,C. Adams
+W2765081049,Thomas Adams
+W2765081049,Paolo Addesso
+W2765081049,R. X. Adhikari
+W2765081049,V. B. Adya
+W2765081049,C. Affeldt
+W2765081049,M. Afrough
+W2765081049,Bhanu Agarwal
+W2765081049,M. Agathos
+W2765081049,K. Agatsuma
+W2765081049,Nancy Aggarwal
+W2765081049,O. D. Aguiar
+W2765081049,L. Aiello
+W2765081049,A. Ain
+W2765081049,P. Ajith
+W2765081049,B. Allen
+W2765081049,G. Allen
+W2765081049,A. Allocca
+W2765081049,P. A. Altin
+W2765081049,A. Amato
+W2166073443,Robert Oostenveld
+W2166073443,Pascal Fries
+W2166073443,Eric Maris
+W2166073443,Jan‐Mathijs Schoffelen
+W2122122381,Ronald T. Azuma
+W3009506062,Cuiyan Wang
+W3009506062,Riyu Pan
+W3009506062,Xiaoyang Wan
+W3009506062,Yilin Tan
+W3009506062,Linkang Xu
+W3009506062,Cyrus S. H. Ho
+W3009506062,Roger Ho
+W4390041933,Gemini Robotics Team
+W4390041933,Rohan Anil
+W4390041933,Sebastian Borgeaud
+W4390041933,Jean-Baptiste Alayrac
+W4390041933,Jiahui Yu
+W4390041933,Radu Soricut
+W4390041933,Johan Schalkwyk
+W4390041933,Andrew M. Dai
+W4390041933,Anja Hauth
+W4390041933,Katie Millican
+W4390041933,David Silver
+W4390041933,Melvin Johnson
+W4390041933,Ioannis Antonoglou
+W4390041933,Julian Schrittwieser
+W4390041933,Amelia Glaese
+W4390041933,Jilin Chen
+W4390041933,Emily Pitler
+W4390041933,Timothy Lillicrap
+W4390041933,Angeliki Lazaridou
+W4390041933,Orhan Fırat
+W4390041933,James Molloy
+W4390041933,Michael Isard
+W4390041933,Paul Barham
+W4390041933,"Hennigan, Tom"
+W4390041933,Benjamin Lee
+W2096173332,Damian Szklarczyk
+W2096173332,Andrea Franceschini
+W2096173332,Stefan Wyder
+W2096173332,Sofia Kirke Forslund
+W2096173332,Davide Heller
+W2096173332,Jaime Huerta‐Cepas
+W2096173332,Milan Simonovic
+W2096173332,Alexander C. Roth
+W2096173332,Alberto Santos
+W2096173332,Kalliopi P. Tsafou
+W2096173332,Michael Kuhn
+W2096173332,Peer Bork
+W2096173332,Lars Juhl Jensen
+W2096173332,Christian von Mering
+W2963857746,Shu Liu
+W2963857746,Lu Qi
+W2963857746,Haifang Qin
+W2963857746,Jianping Shi
+W2963857746,Jiaya Jia
+W2888532099,Adrian M. Price-Whelan
+W2888532099,Brigitta Sipőcz
+W2888532099,Hans Moritz Günther
+W2888532099,Pey Lian Lim
+W2888532099,Steven M. Crawford
+W2888532099,Simon Conseil
+W2888532099,David L. Shupe
+W2888532099,Matthew Craig
+W2888532099,Nadia Dencheva
+W2888532099,Adam G. Ginsburg
+W2888532099,Jake Vanderplas
+W2888532099,Larry Bradley
+W2888532099,David Pérez–Suárez
+W2888532099,M. de Val-Borro
+W2888532099,(Primary Paper Contributors)
+W2888532099,Thomas L. Aldcroft
+W2888532099,Kelle L. Cruz
+W2888532099,Thomas Robitaille
+W2888532099,Erik J. Tollerud
+W2888532099,C. Ardelean
+W2888532099,Tomáš Babej
+W2888532099,Yoonsoo P. Bach
+W2888532099,Matteo Bachetti
+W2888532099,A. V. Bakanov
+W2888532099,S. P. Bamford
+W2131222241,Samir Bhatt
+W2131222241,Peter W. Gething
+W2131222241,Oliver J. Brady
+W2131222241,Jane P. Messina
+W2131222241,Andrew W. K. Farlow
+W2131222241,Catherine L. Moyes
+W2131222241,John M. Drake
+W2131222241,John S. Brownstein
+W2131222241,Anne Gatewood Hoen
+W2131222241,Osman A. Sankoh
+W2131222241,Monica F. Myers
+W2131222241,Dylan B. George
+W2131222241,Thomas Jaenisch
+W2131222241,William Wint
+W2131222241,Cameron Paul Simmons
+W2131222241,Thomas W. Scott
+W2131222241,Jeremy Farrar
+W2131222241,Simon Iain Hay
+W4308834893,Damian Szklarczyk
+W4308834893,Rebecca L. Kirsch
+W4308834893,Mikaela Koutrouli
+W4308834893,Katerina C. Nastou
+W4308834893,Farrokh Mehryary
+W4308834893,Radja Hachilif
+W4308834893,Annika L. Gable
+W4308834893,Tao Fang
+W4308834893,Nadezhda T. Doncheva
+W4308834893,Sampo Pyysalo
+W4308834893,Peer Bork
+W4308834893,Lars Juhl Jensen
+W4308834893,Christian von Mering
+W4226002507,Kaiming He
+W4226002507,Xinlei Chen
+W4226002507,Saining Xie
+W4226002507,Yanghao Li
+W4226002507,Piotr Dollár
+W4226002507,Ross Girshick
+W3034552520,Qilong Wang
+W3034552520,Banggu Wu
+W3034552520,Pengfei Zhu
+W3034552520,Peihua Li
+W3034552520,Wangmeng Zuo
+W3034552520,Qinghua Hu
+W3163993681,George Em Karniadakis
+W3163993681,Ioannis G. Kevrekidis
+W3163993681,Lu Lu
+W3163993681,Paris G. Perdikaris
+W3163993681,Sifan Wang
+W3163993681,Liu Yang
+W2624503621,Charles R. Qi
+W2624503621,Li Yi
+W2624503621,Hao Su
+W2624503621,Leonidas J. Guibas
+W2750384547,"Xiao, Han"
+W2750384547,Kashif Rasul
+W2750384547,Roland Vollgraf
+W2406250479,Zuguang Gu
+W2406250479,Roland Eils
+W2406250479,Matthias Schlesner
+W2630837129,Liang-Chieh Chen
+W2630837129,George Papandreou
+W2630837129,Florian Schroff
+W2630837129,Hartwig Adam
+W2979826702,Thomas Wolf
+W2979826702,Lysandre Debut
+W2979826702,Victor Sanh
+W2979826702,Julien Chaumond
+W2979826702,Clément Delangue
+W2979826702,Anthony Moi
+W2979826702,Pierric Cistac
+W2979826702,Tim Rault
+W2979826702,Rémi Louf
+W2979826702,Morgan Funtowicz
+W2979826702,Joe Davison
+W2979826702,Sam Shleifer
+W2979826702,Patrick von Platen
+W2979826702,Clara Ma
+W2979826702,Yacine Jernite
+W2979826702,Julien Plu
+W2979826702,Canwen Xu
+W2979826702,Teven Le Scao
+W2979826702,Sylvain Gugger
+W2979826702,Mariama Drame
+W2979826702,Quentin Lhoest
+W2979826702,Alexander M. Rush
+W3001279689,Jared Kaplan A
+W3001279689,Sam McCandlish
+W3001279689,Tom Henighan
+W3001279689,"Brown, Tom B."
+W3001279689,Benjamin Chess
+W3001279689,Rewon Child
+W3001279689,Scott Gray
+W3001279689,Alec Radford
+W3001279689,Jeffrey Wu
+W3001279689,Dario Amodei
+W3195577433,Rishi Bommasani
+W3195577433,Drew A. Hudson
+W3195577433,Ehsan Adeli
+W3195577433,Russ Biagio Altman
+W3195577433,Simran Arora
+W3195577433,Sydney von Arx
+W3195577433,Michael S. Bernstein
+W3195577433,Jeannette Bohg
+W3195577433,Antoine Bosselut
+W3195577433,Emma Brunskill
+W3195577433,Erik Brynjolfsson
+W3195577433,Shyamal Buch
+W3195577433,Dallas Card
+W3195577433,Rodrigo Castellon
+W3195577433,Niladri S. Chatterji
+W3195577433,Annie Chen
+W3195577433,Kathleen Creel
+W3195577433,Jared Quincy Davis
+W3195577433,Dorottya Demszky
+W3195577433,Chris Donahue
+W3195577433,Moussa Doumbouya
+W3195577433,Esin Durmus
+W3195577433,Stefano Ermon
+W3195577433,John Etchemendy
+W3195577433,Kawin Ethayarajh
+W2607129810,Zefang Tang
+W2607129810,Chenwei Li
+W2607129810,Boxi Kang
+W2607129810,Ge Gao
+W2607129810,Cheng Li
+W2607129810,Zemin Zhang
+W1522734439,Du Tran
+W1522734439,Lubomir D. Bourdev
+W1522734439,Rob Fergus
+W1522734439,Lorenzo Torresani
+W1522734439,Manohar Paluri
+W2950635152,Kyunghyun Cho
+W2950635152,Bart van Merriënboer
+W2950635152,Çağlar Gülçehre
+W2950635152,Dzmitry Bahdanau
+W2950635152,Fethi Bougares
+W2950635152,Holger Schwenk
+W2950635152,Yoshua Bengio
+W2152061559,Australian Pancreatic Cancer Genome Initiative
+W2152061559,Ludmil B. Alexandrov
+W2152061559,ICGC PedBrain
+W2152061559,Serena Nik‐Zainal
+W2152061559,David C. Wedge
+W2152061559,Samuel A. J. R. Aparicio
+W2152061559,Sam Behjati
+W2152061559,Andrew Victor Biankin
+W2152061559,Graham R. Bignell
+W2152061559,Niccolò Bolli
+W2152061559,Åke Borg
+W2152061559,Anne‐Lise Børresen‐Dale
+W2152061559,Sandrine Boyault
+W2152061559,Birgit Burkhardt
+W2152061559,Adam P. Butler
+W2152061559,Carlos Caldas
+W2152061559,Helen Ruth Davies
+W2152061559,Christine Desmedt
+W2152061559,Roland Eils
+W2152061559,Jorunn Erla Eyfjord
+W2152061559,John A. Foekens
+W2152061559,Melvyn F. Greaves
+W2152061559,Fumie Hosoda
+W2152061559,Barbara Hutter
+W2152061559,Tomislav Ilicic
+W1803102843,Lawrence A. Kelley
+W1803102843,Stefans Mezulis
+W1803102843,Christopher M Yates
+W1803102843,Mark N. Wass
+W1803102843,Michael J.E. Sternberg
+W4298289240,Ian Goodfellow
+W4298289240,Jean Pouget-Abadie
+W4298289240,Mehdi Mirza
+W4298289240,Bing Xu
+W4298289240,David Warde-Farley
+W4298289240,Sherjil Ozair
+W4298289240,Aaron C. Courville
+W4298289240,Yoshua Bengio
+W2026616100,Andriy Fedorov
+W2026616100,Reinhard Beichel
+W2026616100,Jayashree Kalpathy–Cramer
+W2026616100,Julien Finet
+W2026616100,Jean‐Christophe Fillion‐Robin
+W2026616100,Sonia Pujol
+W2026616100,Christian Bauer
+W2026616100,Dominique L. Jennings
+W2026616100,Fiona Fennessy
+W2026616100,Milan Sonka A
+W2026616100,John Michael Buatti
+W2026616100,Stephen Aylward
+W2026616100,James V. Miller
+W2026616100,Steve Pieper
+W2026616100,Ron Kikinis
+W4281790889,Milot Mirdita
+W4281790889,Konstantin Schütze
+W4281790889,Yoshitaka Moriwaki
+W4281790889,Lim Heo
+W4281790889,Sergey Ovchinnikov
+W4281790889,Martin Steinegger
+W2952481429,Peter Bankhead
+W2952481429,Maurice Bernard Loughrey
+W2952481429,José A. Fernández
+W2952481429,Yvonne Dombrowski
+W2952481429,Darragh G. McArt
+W2952481429,Philip D. Dunne
+W2952481429,Stephen McQuaid
+W2952481429,Ronan T. Gray
+W2952481429,Liam Murray
+W2952481429,Helen G. Coleman
+W2952481429,Jacqueline A. James
+W2952481429,Manuel Salto‐Tellez
+W2952481429,Peter W. Hamilton
+W2134295053,Ala Al‐Fuqaha
+W2134295053,Mohsen Guizani
+W2134295053,Mehdi Mohammadi
+W2134295053,Mohammed Aledhari
+W2134295053,Moussa Ayyash
+W2110300022,Morgan G. I. Langille
+W2110300022,Jesse Zaneveld
+W2110300022,J. Gregory Caporaso
+W2110300022,Daniel T. McDonald
+W2110300022,Dan Knights
+W2110300022,Joshua A Reyes
+W2110300022,José C. Clemente
+W2110300022,Deron E. Burkepile
+W2110300022,Rebecca L. Vega Thurber
+W2110300022,Rob D. Knight
+W2110300022,Robert Gerald Beiko
+W2110300022,Curtis Huttenhower
+W2149961401,Urs Fischbacher
+W2286929393,Fisher Yu
+W2286929393,Vladlen Koltun
+W2138621811,Jon Michael Kleinberg
+W3140854437,Laith Alzubaidi
+W3140854437,Jinglan Zhang
+W3140854437,Amjad J. Humaidi
+W3140854437,Ayad Q. Al-Dujaili
+W3140854437,Ye Duan
+W3140854437,Omran Al-Shamma
+W3140854437,José Santamaría
+W3140854437,Mohammed Abdulraheem Fadhel
+W3140854437,Muthana Al‐Amidie
+W3140854437,Laith Farhan
+W2518108298,Ilya Loshchilov
+W2518108298,Frank Hutter
+W4224035735,"Ramesh, Aditya"
+W4224035735,Prafulla Dhariwal
+W4224035735,Alex Nichol
+W4224035735,Casey Chu
+W4224035735,Mark I-Cheng Chen
+W3132661792,Suoqin Jin
+W3132661792,Christian Fernando Guerrero‐Juarez
+W3132661792,Lihua Zhang
+W3132661792,Ivan Chang
+W3132661792,Raúl Ramos
+W3132661792,Chen‐Hsiang Kuan
+W3132661792,Peggy S. Myung
+W3132661792,Maksim V. Plikus
+W3132661792,Qing Hua Nie
+W2127435093,Kate E. Jones
+W2127435093,Nikkita Patel
+W2127435093,Marc A. Levy
+W2127435093,Adam Storeygard
+W2127435093,Deborah L. Balk
+W2127435093,John L. Gittleman
+W2127435093,Peter Daszak
+W2964199361,Kyunghyun Cho
+W2964199361,Bart van Merriënboer
+W2964199361,Dzmitry Bahdanau
+W2964199361,Yoshua Bengio
+W1902237438,Minh-Thang Luong
+W1902237438,Hieu Pham
+W1902237438,Christopher D. Manning
+W2978346165,Peter C. Verhoef
+W2978346165,Thijs Broekhuizen
+W2978346165,Yakov Bart
+W2978346165,Abhi Bhattacharya
+W2978346165,John Qi Dong
+W2978346165,Nicolai Etienne Fabian
+W2978346165,Michael Haenlein
+W4249896096,Roberto Miguel Lang
+W4249896096,Luigi Paolo Badano
+W4249896096,Victor Mor‐Avi
+W4249896096,Jonathan Afilalo
+W4249896096,Anderson da Costa Armstrong
+W4249896096,Laura Ernande
+W4249896096,Frank Arnold Flachskampf
+W4249896096,Elyse Foster
+W4249896096,Steven A. Goldstein
+W4249896096,Tatiana Kuznetsova
+W4249896096,Patrizio Lancellotti
+W4249896096,Denisa Muraru
+W4249896096,Michael H. Picard
+W4249896096,Ernst R. Rietzschel
+W4249896096,Lawrence Rudski
+W4249896096,Kirk T. Spencer
+W4249896096,Wendy Tsang
+W4249896096,Jens‐Uwe Voigt
+W1514535095,Kelvin Xu
+W1514535095,Jimmy Lei Ba
+W1514535095,Ryan Kiros
+W1514535095,Kyunghyun Cho
+W1514535095,Aaron C. Courville
+W1514535095,Ruslan Salakhutdinov
+W1514535095,Rich Zemel
+W1514535095,Yoshua Bengio
+W2523246573,Sebastian Ruder
+W2111684210,Alain F. Zuur
+W2111684210,Elena N. Ieno
+W2111684210,Chris S. Elphick
+W1904365287,Geoffrey E. Hinton
+W1904365287,Nitish Srivastava
+W1904365287,Alex Krizhevsky
+W1904365287,Ilya Sutskever
+W1904365287,Ruslan Salakhutdinov
+W2108344016,Theo Vos
+W2108344016,Abraham D Flaxman
+W2108344016,Mohsen Naghavi
+W2108344016,Rafael Lozano
+W2108344016,Catherine Michaud
+W2108344016,Majid Ezzati
+W2108344016,Kenji Shibuya
+W2108344016,Joshua A. Salomon
+W2108344016,Safa I.A. Abdalla
+W2108344016,Victor Aboyans
+W2108344016,Jerry Puthenpurakal Abraham
+W2108344016,Ilana N. Ackerman
+W2108344016,Rakesh Aggarwal
+W2108344016,Stephanie Y Ahn
+W2108344016,Mohammed Kumail Ali
+W2108344016,Mohammad AbdulAziz AlMazroa
+W2108344016,Miriam Alvarado
+W2108344016,H Ross Anderson
+W2108344016,Laurie M. Anderson
+W2108344016,Kathryn Gilman Andrews
+W2108344016,Charles Atkinson
+W2108344016,Larry M. Baddour
+W2108344016,Adil N Bahalim
+W2108344016,Suzanne Lyn Barker-Collo
+W2108344016,Lope Hugo Barrero
+W2105397247,Marco Roffi
+W2105397247,Carlo Patrono
+W2105397247,Jean‐Philippe Collet
+W2105397247,Christian Eugen Mueller
+W2105397247,Marco Valgimigli
+W2105397247,Felicita Andreotti
+W2105397247,Jeroen Joost Bax
+W2105397247,Michael Andrew Borger
+W2105397247,Carlos Brotons
+W2105397247,Derek P. Chew
+W2105397247,Bariş Gencer
+W2105397247,Gerd P Hasenfuss
+W2105397247,Keld P. Kjeldsen
+W2105397247,Patrizio Lancellotti
+W2105397247,Ulf Landmesser
+W2105397247,Julinda Mehilli
+W2105397247,Debabrata Mukherjee
+W2105397247,Robert F. Storey
+W2105397247,Stephan Windecker
+W2105397247,ESC Scientific Document Group
+W2105397247,Helmut Baumgartner
+W2105397247,Oliver Gaemperli
+W2105397247,Stephan Achenbach
+W2105397247,Stefan Agewall
+W2105397247,Lina Badimón
+W2144985796,Lars Norgren
+W2144985796,William R. Hiatt
+W2144985796,John Dormandy
+W2144985796,Mark R. Nehler
+W2144985796,Kenneth A. Harris
+W2144985796,F.G.R. Fowkes
+W2102201073,Jerome H. Friedman
+W3004227146,Ana Rakita
+W3004227146,Nenad Nikolić
+W3004227146,Michael Mildner
+W3004227146,Johannes Matiasek
+W3004227146,Adelheid Elbe‐Bürger
+W2594475271,Finale Doshi‐Velez
+W2594475271,Been Kim
+W3107527779,Damian Szklarczyk
+W3107527779,Annika L Gable
+W3107527779,Katerina C. Nastou
+W3107527779,David Lyon
+W3107527779,Rebecca L. Kirsch
+W3107527779,Sampo Pyysalo
+W3107527779,Nadezhda T. Doncheva
+W3107527779,Marc Legeay
+W3107527779,Tao Fang
+W3107527779,Peer Bork
+W3107527779,Lars Juhl Jensen
+W3107527779,Christian von Mering
+W2169393322,Karen Simonyan
+W2169393322,Andrea Vedaldi
+W2169393322,Andrew Zisserman
+W2616247523,Ramprasaath R. Selvaraju
+W2616247523,Michael Cogswell
+W2616247523,Abhishek Das
+W2616247523,Ramakrishna Vedantam
+W2616247523,Devi Parikh
+W2616247523,Dhruv Batra
+W2759190050,Fred Shaffer
+W2759190050,Jay P. Ginsberg
+W2519091744,Aäron van den Oord
+W2519091744,Sander Dieleman
+W2519091744,Heiga Zen
+W2519091744,Karen Simonyan
+W2519091744,Oriol Vinyals
+W2519091744,Alexander Graves
+W2519091744,Nal Kalchbrenner
+W2519091744,Andrew Senior
+W2519091744,Koray Kavukcuoglu
+W2341539131,Fidel Ramírez
+W2341539131,Devon Patrick Ryan
+W2341539131,Björn Andreas Grüning
+W2341539131,Vivek Bhardwaj
+W2341539131,Fabian Kilpert
+W2341539131,Andreas S. Richter
+W2341539131,Steffen Heyne
+W2341539131,Friederike Dündar
+W2341539131,Thomas Manke
+W2070050178,Edward Y. Chen
+W2070050178,Christopher M. Tan
+W2070050178,Yan Kou
+W2070050178,Qiaonan Duan
+W2070050178,Zichen Wang
+W2070050178,Gabriela Vaz Meirelles
+W2070050178,Neil R. Clark
+W2070050178,Avi Ma’ayan
+W3152893301,Jie Zhou
+W3152893301,Ganqu Cui
+W3152893301,Shengding Hu
+W3152893301,Zhengyan Zhang
+W3152893301,Cheng Hong Yang
+W3152893301,Zhiyuan Liu
+W3152893301,Lifeng Wang
+W3152893301,Changcheng Li
+W3152893301,Maosong Sun
+W2260756217,Volodymyr Mnih
+W2260756217,Adrià Puigdomènech Badia
+W2260756217,Mehdi Mirza
+W2260756217,Alex Graves
+W2260756217,Timothy Lillicrap
+W2260756217,Tim Harley
+W2260756217,David Silver
+W2260756217,Koray Kavukcuoglu
+W2151512268,S. Chatrchyan
+W2151512268,G. Hmayakyan
+W2151512268,V. Khachatryan
+W2151512268,A. M. Sirunyan
+W2151512268,W. Adam
+W2151512268,T Bauer
+W2151512268,T. Bergauer
+W2151512268,H. Bergauer
+W2151512268,M. Dragicevic
+W2151512268,J. Erö
+W2151512268,M. Friedl
+W2151512268,Rudolf Konrad Fruhwirth
+W2151512268,V. M. Ghete
+W2151512268,P. Glaser
+W2151512268,Christoph Hartl
+W2151512268,N Hoermann
+W2151512268,J. Hrubec
+W2151512268,S. Hänsel
+W2151512268,M. Jeitler
+W2151512268,K. Kastner
+W2151512268,M. Krammer
+W2151512268,I. Magrans
+W2151512268,Manfred Markytan
+W2151512268,I. Mikulec
+W2151512268,B. Neuherz
+W2161289668,Roel G.W. Verhaak
+W2161289668,Katherine A. Hoadley
+W2161289668,Elizabeth A. Purdom
+W2161289668,Victoria Wang
+W2161289668,Yuan Qi
+W2161289668,Matthew D. Wilkerson
+W2161289668,C. Ryan Miller
+W2161289668,Li Ding
+W2161289668,Todd R. Golub
+W2161289668,Jill P. Mesirov
+W2161289668,Gabriele Alexe
+W2161289668,Michael S. Lawrence
+W2161289668,Michael O'Kelly
+W2161289668,Pablo Tamayo
+W2161289668,Barbara A. Weir
+W2161289668,Stacey Gabriel
+W2161289668,Wendy Winckler
+W2161289668,Supriya Gupta
+W2161289668,Lakshmi R. Jakkula
+W2161289668,Heidi S. Feiler
+W2161289668,John Hodgson
+W2161289668,Charles David James
+W2161289668,Jann Nagina Sarkaria
+W2161289668,Cameron Brennan
+W2161289668,A Kahn
+W2171165037,Edward C. Jauch
+W2171165037,Jeffrey L. Saver
+W2171165037,Harold P. Adams
+W2171165037,Askiel Bruno
+W2171165037,John J. “Buddy” Connors
+W2171165037,Bart M. Demaerschalk
+W2171165037,Pooja Khatri
+W2171165037,Paul W. McMullan
+W2171165037,Adnan Iqbal Qureshi
+W2171165037,Kenneth Rosenfield
+W2171165037,Phillip Scott
+W2171165037,Debbie Summers
+W2171165037,David Z. Wang
+W2171165037,Max Wintermark
+W2171165037,Howard Yonas
+W2476548250,Wenzhe Shi
+W2476548250,José Caballero
+W2476548250,Ferenc Huszár
+W2476548250,Johannes Totz
+W2476548250,Andrew P. Aitken
+W2476548250,Rob Bishop
+W2476548250,Daniel Rueckert
+W2476548250,Zehan Wang
+W3136918052,The UniProt Consortium
+W2065769502,Réka Albert
+W2065769502,Hawoong Jeong
+W2065769502,Albert-Ĺaszló Barabási
+W2091257550,Ian T Foster
+W2091257550,Carl Kesselman
+W2883780447,Ningning Ma
+W2883780447,Xiangyu Zhang
+W2883780447,Hai-Tao Zheng
+W2883780447,Jian Sun
+W2101357408,Stephan Ripke
+W2101357408,Benjamin M. Neale
+W2101357408,Kai-How Farh
+W2101357408,Phil Lee
+W2101357408,Brendan K Bulik-Sullivan
+W2101357408,Hailiang Huang
+W2101357408,Menachem Fromer
+W2101357408,Jacqueline I. Goldstein
+W2101357408,Mark J. Daly
+W2101357408,Richard A. Belliveau
+W2101357408,Sarah E. Bergen
+W2101357408,Elizabeth Bevilacqua
+W2101357408,Kimberly D. Chambert
+W2101357408,Giulio Genovese
+W2101357408,Colm T. O'Dushlaine
+W2101357408,Edward M. Scolnick
+W2101357408,Jordan W. Smoller
+W2101357408,Steven A. McCarroll
+W2101357408,Jennifer L. Moran
+W2101357408,Aarno V. Palotie
+W2101357408,Tracey L. Petryshen
+W2101357408,Tune H. Pers
+W2101357408,Joel N. Hirschhorn
+W2101357408,Alkes L. Price
+W2101357408,Eli Stahl
+W2087484885,Franz Faul
+W2087484885,Edgar Erdfelder
+W2087484885,Albert-Georg Lang
+W2087484885,Axel Buchner
+W2160378127,Kazutaka Katoh
+W2160378127,Daron M. Standley
+W2132525235,Tian Lu
+W2132525235,Feiwu Chen
+W4254687493,Hadley Wickham
+W2187089797,Laurens J. P. van der Maaten
+W2187089797,Geoffrey E. Hinton
+W2034285706,Christian Quast
+W2034285706,Elmar Pruesse
+W2034285706,Pelin Yilmaz
+W2034285706,Jan Gerken
+W2034285706,Timmy Schweer
+W2034285706,Pablo Yarza
+W2034285706,Jörg Peplies
+W2034285706,Frank Oliver Glöckner
+W2148698435,Fredrik Ronquist
+W2148698435,Maxim Teslenko
+W2148698435,Paul van der Mark
+W2148698435,Daniel L. Ayres
+W2148698435,Aaron E. Darling
+W2148698435,Sebastian Höhna
+W2148698435,Bret R. Larget
+W2148698435,Liang Liu
+W2148698435,Marc A. Suchard
+W2148698435,John P. Huelsenbeck
+W2124026197,Paul Emsley
+W2124026197,Bernhard Lohkamp
+W2124026197,W. G. Scott
+W2124026197,Kevin D. Cowtan
+W2158698691,Tom E. Fawcett
+W1587026990,Hadley Wickham
+W2047968138,Alexander Stukowski
+W3036319615,Chengjie Chen
+W3036319615,Hao Chen
+W3036319615,Yi Zhang
+W3036319615,Hannah Rae Thomas
+W3036319615,Margaret H. Frank
+W3036319615,Yehua He
+W3036319615,Rui Xia
+W2118898434,Luc Anselin
+W2786672974,Leland McInnes
+W2786672974,"Healy, John"
+W2786672974,"Melville, James"
+W3003217347,Fan Wu
+W3003217347,Zhao Su
+W3003217347,Bin Yu
+W3003217347,Yanmei Chen
+W3003217347,Wen Wang
+W3003217347,Zhi-Gang Song
+W3003217347,Yi Hu
+W3003217347,Zhao-Wu Tao
+W3003217347,Jun-Hua Tian
+W3003217347,Yuan-Yuan Pei
+W3003217347,Ming-Li Yuan
+W3003217347,Yu-Ling Zhang
+W3003217347,Fa-Hui Dai
+W3003217347,Yi Liu
+W3003217347,Qi-Min Wang
+W3003217347,Jiao-Jiao Zheng
+W3003217347,Lin Xu
+W3003217347,Edward Charles Holmes
+W3003217347,Yǒng-Zhèn Zhāng
+W2106578986,Pablo Cingolani
+W2106578986,Adrian E. Platts
+W2106578986,Le Lily Wang
+W2106578986,Melissa Coon
+W2106578986,Tung Thanh Nguyen
+W2106578986,Luan Wang
+W2106578986,Susan J. Land
+W2106578986,Xiangyi Lu
+W2106578986,Douglas Mark Ruden
+W2164154943,Ana Conesa
+W2164154943,Stefan Götz
+W2164154943,Juan Miguel Garcia-Gomez
+W2164154943,Javier Terol
+W2164154943,Manuel Talón
+W2164154943,Montserrat Robles
+W2118258530,Tanya Barrett
+W2118258530,Stephen E. Wilhite
+W2118258530,Pierre Ledoux
+W2118258530,Carlos C. Evangelista
+W2118258530,Irene F. Kim
+W2118258530,Maxim Tomashevsky
+W2118258530,Kimberly A. Marshall
+W2118258530,Katherine Phillippy
+W2118258530,Patti M. Sherman
+W2118258530,Michelle Holko
+W2118258530,Andrey Yefanov
+W2118258530,Hyeseung Lee
+W2118258530,Naigong Zhang
+W2118258530,C. Robertson
+W2118258530,Nadezhda Serova
+W2118258530,Sean R. Davis
+W2118258530,Alexandra Soboleva
+W2229412420,William E. Lorensen
+W2229412420,H. E. Cline
+W2170488209,Anja Kollmuss
+W2170488209,Julian Agyeman
+W2751583588,Kazutaka Katoh
+W2751583588,John Rozewicki
+W2751583588,Kazunori D. Yamada
+W1982855075,Bruce J. Walker
+W1982855075,Thomas Abeel
+W1982855075,Terrance Shea
+W1982855075,Margaret Priest
+W1982855075,Amr Abouelliel
+W1982855075,Sharadha Sakthikumar
+W1982855075,Christina A. Cuomo
+W1982855075,Qiandong Zeng
+W1982855075,Jennifer Russo Wortman
+W1982855075,Sarah Young
+W1982855075,Ashlee M. Earl
+W2952167528,Ryan R. Wick
+W2952167528,Louise M. Judd
+W2952167528,Claire L. Gorrie
+W2952167528,Kathryn E. Holt
+W2112311198,Christophe Geuzaine
+W2112311198,Jean‐François Remacle
+W3128261063,Michael Waskom
+W2158489424,Daniel Falush
+W2158489424,Matthew Stephens
+W2158489424,Jonathan K. Pritchard
+W2110035718,Peter J. Bradbury
+W2110035718,Zhiwu Zhang
+W2110035718,Dallas E. Kroon
+W2110035718,Terry M. Casstevens
+W2110035718,Yogesh Ramdoss
+W2110035718,Edward S. Buckler
+W2020134788,Yupeng Wang
+W2020134788,Haibao Tang
+W2020134788,Jeremy D. DeBarry
+W2020134788,X. Tan
+W2020134788,Jun Li
+W2020134788,Xuewen Wang
+W2020134788,Taeyoung Lee
+W2020134788,H. Jin
+W2020134788,Barry S. Marler
+W2020134788,Hui Guo
+W2020134788,Jessica C. Kissinger
+W2020134788,A. H. Paterson
+W2988396470,David Emms
+W2988396470,Steven L. Kelly
+W4200150166,Ben Mildenhall
+W4200150166,Pratul P. Srinivasan
+W4200150166,Matthew Tancik
+W4200150166,Jonathan T. Barron
+W4200150166,Ravi Ramamoorthi
+W4200150166,Ren Ng
+W2047940964,Aaron J. Clauset
+W2047940964,Mark E. J. Newman
+W2047940964,Cristopher Moore
+W2979750740,Yue Wang
+W2979750740,Yongbin Sun
+W2979750740,Ziwei Liu
+W2979750740,Sanjay Emani Sarma
+W2979750740,Michael M. Bronstein
+W2979750740,Justin Solomon
+W4309506674,Alex G. Bateman
+W4309506674,Maria Jesus Martin
+W4309506674,Sandra E. Orchard
+W4309506674,Michele Magrane
+W4309506674,Shadab Ahmad
+W4309506674,Emanuele Alpi
+W4309506674,Emily Bowler-Barnett
+W4309506674,Ramona Britto
+W4309506674,Hema Bye‐A‐Jee
+W4309506674,Austra Cukura
+W4309506674,Paul Denny
+W4309506674,Tunca Doğan
+W4309506674,ThankGod E. Ebenezer
+W4309506674,Jun Fan
+W4309506674,Penelope Garmiri
+W4309506674,Leonardo Jose da Costa Gonzales
+W4309506674,Emma Hatton-Ellis
+W4309506674,Abdulrahman Hussein
+W4309506674,Alexandr Ignatchenko
+W4309506674,Giuseppe Insana
+W4309506674,Rizwan Ishtiaq
+W4309506674,Vishal Joshi
+W4309506674,Dushyanth Jyothi
+W4309506674,Swaathi Kandasaamy
+W4309506674,Antonia Lock
+W2133371793,Gary C. White
+W2133371793,Kenneth P. Burnham
+W2955058313,Jun Fu
+W2955058313,Jing Liu
+W2955058313,Haijie Tian
+W2955058313,Yong Li
+W2955058313,Yongjun Bao
+W2955058313,Zhiwei Fang
+W2955058313,Hanqing Lu
+W2114622716,Paul D. Adams
+W2114622716,Pavel V. Afonine
+W2114622716,Gàbor Bunkòczi
+W2114622716,V. B. Chen
+W2114622716,Ian Davis
+W2114622716,N. Echols
+W2114622716,Jeffrey J. Headd
+W2114622716,Li‐Wei Hung
+W2114622716,Gary J. Kapral
+W2114622716,Ralf W. Grosse‐Kunstleve
+W2114622716,Airlie J. McCoy
+W2114622716,Nigel W. Moriarty
+W2114622716,Robert D. Oeffner
+W2114622716,Randy J. Read
+W2114622716,D. C. Richardson
+W2114622716,Jane S. Richardson
+W2114622716,Thomas C. Terwilliger
+W2114622716,Peter H. Zwart
+W3041133507,Fuzhen Zhuang
+W3041133507,Zhiyuan Qi
+W3041133507,Keyu Duan
+W3041133507,Dongbo Xi
+W3041133507,Yongchun Zhu
+W3041133507,Hengshu Zhu
+W3041133507,Hui Xiong
+W3041133507,Qing He
+W4385318467,Bernhard Kerbl
+W4385318467,Georgios Kopanas
+W4385318467,Thomas Leimkühler
+W4385318467,George Drettakis B
+W2766527293,Tero Karras
+W2766527293,Timo Aila
+W2766527293,Samuli Laine
+W2766527293,Jaakko Lehtinen
+W4313531093,Carlos López-Otín
+W4313531093,María A. Blasco
+W4313531093,Linda Partridge
+W4313531093,Manuel Serrano
+W4313531093,Guido Kroemer
+W2127847431,Alexandros Stamatakis
+W2127847431,Paul Hoover
+W2127847431,Jacques Rougemont
+W3005212621,Manli Wang
+W3005212621,Ruiyuan Cao
+W3005212621,Leike Zhang
+W3005212621,Xing‐Lou Yang
+W3005212621,Jia Liu
+W3005212621,Mingyue Xu
+W3005212621,Zhengli Shi
+W3005212621,Zhìhóng Hú
+W3005212621,Wu Zhong
+W3005212621,Gengfu Xiao
+W2123768693,Erik R. Lindahl
+W2123768693,Berk Hess
+W2123768693,David van der Spoel
+W1565377632,Susan Chiu
+W1565377632,Domingo Tavella
+W2962949934,Jiuxiang Gu
+W2962949934,Zhenhua Wang
+W2962949934,Jason Kuen
+W2962949934,Lianyang Ma
+W2962949934,Amir Shahroudy
+W2962949934,Bing Shuai
+W2962949934,Ting Liu
+W2962949934,Xingxing Wang
+W2962949934,Gang Wang
+W2962949934,Jianfei Cai
+W2962949934,Tsuhan Chen
+W2952230511,Ronan Collobert
+W2952230511,Jason Weston
+W2952230511,Léon Bottou
+W2952230511,Michael Karlen
+W2952230511,Koray Kavukcuoglu
+W2952230511,Pavel P. Kuksa
+W2973457155,Dorothee Claudia Liebschner
+W2973457155,Pavel V. Afonine
+W2973457155,Matthew L. Baker
+W2973457155,Gàbor Bunkòczi
+W2973457155,Vincent B. Chen
+W2973457155,Tristan Ian Croll
+W2973457155,Bradley J. Hintze
+W2973457155,Li‐Wei Hung
+W2973457155,Swati Jain
+W2973457155,Airlie J. McCoy
+W2973457155,Nigel W. Moriarty
+W2973457155,Robert D. Oeffner
+W2973457155,Billy K. Poon
+W2973457155,Michael G. Prisant
+W2973457155,Randy J. Read
+W2973457155,Jane S. Richardson
+W2973457155,David C. Richardson
+W2973457155,Massimo Domenico Sammito
+W2973457155,Oleg V. Sobolev
+W2973457155,Duncan H. Stockwell
+W2973457155,Thomas C. Terwilliger
+W2973457155,Alexandre Urzhumtsev
+W2973457155,Lizbeth L. Videau
+W2973457155,Christopher J. Williams
+W2973457155,Paul D. Adams
+W2124651399,Charles E. Perkins
+W2124651399,Pravin Bhagwat
+W2091922579,Elmar Pruesse
+W2091922579,Christian Quast
+W2091922579,Katrin Knittel
+W2091922579,Bernhard Maximilian Fuchs
+W2091922579,Wolfgang Ludwig
+W2091922579,Jörg Peplies
+W2091922579,Frank Oliver Glöckner
+W2995327724,Tero Karras
+W2995327724,Samuli Laine
+W2995327724,Miika Aittala
+W2995327724,Janne Hellsten
+W2995327724,Jaakko Lehtinen
+W2995327724,Timo Aila
+W2155806125,Wolfgang Ludwig
+W2103912979,Chia-Hao Chin
+W2103912979,Shu‐Hwa Chen
+W2103912979,Hsin-Hung Wu
+W2103912979,Chin-Wen Ho
+W2103912979,Ming‐Tat Ko
+W2103912979,Chung‐Yen Lin
+W2135695572,Jane Elith
+W2135695572,John R. Leathwick
+W2135695572,Trevor J. Hastie
+W2439568532,Zachary C. Lipton
+W2149933564,Jason Yosinski
+W2149933564,Jeff Clune
+W2149933564,Yoshua Bengio
+W2149933564,Hod Lipson
+W2137813581,Frank R. Kschischang
+W2137813581,Brendan J. Frey
+W2137813581,Hans‐Andrea Loeliger
+W2936695845,"Zhang, Tianyi"
+W2936695845,Varsha Kishore
+W2936695845,Felix Wu
+W2936695845,Kilian Q. Weinberger
+W2936695845,Yoav Artzi
+W4389984066,Yunfan Gao
+W4389984066,Yun Xiong
+W4389984066,Xinyu Gao
+W4389984066,Kangxiang Jia
+W4389984066,Jinliu Pan
+W4389984066,Yuxi Bi
+W4389984066,Yi Qi Dai
+W4389984066,Jiawei Sun
+W4389984066,"Wang, Meng"
+W4389984066,"Wang, Haofen"
+W3112376646,Alex G. Bateman
+W3112376646,Maria Jesus Martin
+W3112376646,Sandra E. Orchard
+W3112376646,Michele Magrane
+W3112376646,Rahat Agivetova
+W3112376646,Shadab Ahmad
+W3112376646,Emanuele Alpi
+W3112376646,Emily Bowler-Barnett
+W3112376646,Ramona Britto
+W3112376646,Borisas Bursteinas
+W3112376646,Hema Bye‐A‐Jee
+W3112376646,Ray Coetzee
+W3112376646,Austra Cukura
+W3112376646,Alan Da Silva
+W3112376646,Paul Denny
+W3112376646,Tunca Doğan
+W3112376646,ThankGod E. Ebenezer
+W3112376646,Jun Fan
+W3112376646,Leyla Jael Castro
+W3112376646,Penelope Garmiri
+W3112376646,George P. Georghiou
+W3112376646,Leonardo Jose da Costa Gonzales
+W3112376646,Emma Hatton-Ellis
+W3112376646,Abdulrahman Hussein
+W3112376646,Alexandr Ignatchenko
+W2980282514,Thomas Wolf
+W2980282514,Lysandre Debut
+W2980282514,Victor Sanh
+W2980282514,Julien Chaumond
+W2980282514,Clément Delangue
+W2980282514,Anthony Moi
+W2980282514,Pierric Cistac
+W2980282514,Tim Rault
+W2980282514,Rémi Louf
+W2980282514,Morgan Funtowicz
+W2980282514,"Davison, Joe"
+W2980282514,"Shleifer, Sam"
+W2980282514,"von Platen, Patrick"
+W2980282514,"Ma, Clara"
+W2980282514,"Jernite, Yacine"
+W2980282514,"Plu, Julien"
+W2980282514,"Xu, Canwen"
+W2980282514,"Scao, Teven Le"
+W2980282514,"Gugger, Sylvain"
+W2980282514,"Drame, Mariama"
+W2980282514,"Lhoest, Quentin"
+W2980282514,Alexander M. Rush
+W2962730651,Zhe Cao
+W2962730651,Gines Hidalgo
+W2962730651,Tomas Simon
+W2962730651,Shih-En Wei
+W2962730651,Yaser Ajmal Sheikh
+W4378212544,Yuhan Hao
+W4378212544,Tim Stuart
+W4378212544,Madeline H. Kowalski
+W4378212544,Saket Choudhary
+W4378212544,Paul Hoffman
+W4378212544,Austin Hartman
+W4378212544,Avi Srivastava
+W4378212544,Gesmira Molla
+W4378212544,Shaista Madad
+W4378212544,Carlos Fernandez‐Granda
+W4378212544,Rahul Satija
+W2756203131,Bing Yu
+W2756203131,Haoteng Yin
+W2756203131,Zhanxing Zhu
+W2786715987,Riccardo Guidotti
+W2786715987,Anna Monreale
+W2786715987,Salvatore Ruggieri
+W2786715987,Franco Turini
+W2786715987,Fosca Giannotti
+W2786715987,Dino Pedreschi
+W2927961455,Ivica Letunić
+W2927961455,Peer Bork
+W2135621733,Robert D. Finn
+W2135621733,Jody Clements
+W2135621733,Sean R. Eddy
+W2796207838,Vésteinn Thórsson
+W2796207838,David L. Gibbs
+W2796207838,Scott D. Brown
+W2796207838,Denise M. Wolf
+W2796207838,Dante S. Bortone
+W2796207838,Tai-Hsien Ou Yang
+W2796207838,Eduard Porta‐Pardo
+W2796207838,Galen F Gao
+W2796207838,Christopher L. Plaisier
+W2796207838,James A. Eddy
+W2796207838,Elad Ziv
+W2796207838,Aedín C. Culhane
+W2796207838,Evan Paull
+W2796207838,I.K. Ashok Sivakumar
+W2796207838,Andrew J. Gentles
+W2796207838,Raunaq Malhotra
+W2796207838,Farshad Farshidfar
+W2796207838,Antonio Colaprico
+W2796207838,Joel S. Parker
+W2796207838,Lisle E. Mose
+W2796207838,Nam Sy Vo
+W2796207838,Yuexin Liu
+W2796207838,Yuexin Liu
+W2796207838,Janet Sue Rader
+W2796207838,Varsha Dhankani
+W2884367402,Zhong‐Qiu Zhao
+W2884367402,Peng Zheng
+W2884367402,Shou-Tao Xu
+W2884367402,Xindong Wu
+W4394671432,"Chang, Angel X."
+W4394671432,Thomas A. Funkhouser
+W4394671432,Leonidas J. Guibas
+W4394671432,Pat Hanrahan
+W4394671432,Qixing Huang
+W4394671432,Zimo Li
+W4394671432,Silvio Savarese
+W4394671432,Manolis Savva
+W4394671432,Shuran Song
+W4394671432,Hao Su
+W4394671432,Jianxiong Xiao
+W4394671432,Li Yi
+W4394671432,Fisher Yu
+W2553303224,Barret Zoph
+W2553303224,Quoc Viet Le
+W2124351162,Carsten Rother
+W2124351162,Vladimir Kolmogorov
+W2124351162,Andrew Blake
+W2162143298,A. Krämer
+W2162143298,Jeff Green
+W2162143298,Jack Russella Pollard
+W2162143298,Stuart Tugendreich
+W2082138120,Jon Pumplin
+W2082138120,Daniel R. Stump
+W2082138120,Joey Huston
+W2082138120,Hung-Liang Lai
+W2082138120,Pavel Nadolsky
+W2082138120,Wu-Ki Tung
+W205310263,Marcela Tavares de Souza
+W205310263,Michelly Dias da Silva
+W205310263,Rachel de Carvalho
+W1989277387,Antonio Fabregat
+W1989277387,Konstantinos Sidiropoulos
+W1989277387,Phani V Garapati
+W1989277387,Marc E. Gillespie
+W1989277387,Kerstin Hausmann
+W1989277387,Robin Haw
+W1989277387,Bijay Jassal
+W1989277387,S Jupe
+W1989277387,Florian Korninger
+W1989277387,Sheldon McKay
+W1989277387,Lisa R. Matthews
+W1989277387,Bruce May
+W1989277387,Marija Orlic-Milacic
+W1989277387,Karen Rothfels
+W1989277387,Veronica Shamovsky
+W1989277387,Marissa Webber
+W1989277387,Joel Weiser
+W1989277387,Mark Williams
+W1989277387,Guanming Wu
+W1989277387,Lincoln David Stein
+W1989277387,Henning Hermjakob
+W1989277387,Peter D’Eustachio
+W2177317049,Sunghwan Kim
+W2177317049,Paul A Thiessen
+W2177317049,Evan Bolton
+W2177317049,Jie Chen
+W2177317049,Gang Fu
+W2177317049,Asta Gindulytė
+W2177317049,Lianyi Han
+W2177317049,Jane He
+W2177317049,Siqian He
+W2177317049,Benjamin A. Shoemaker
+W2177317049,Jiyao Wang
+W2177317049,Bo Yu
+W2177317049,Jian Zhang
+W2177317049,Stephen H. Bryant
+W2089458547,Mark E. J. Newman
+W2171468534,Johan Bollen
+W2171468534,Huina Mao
+W2171468534,Xiao‐Jun Zeng
+W2277195237,Ranjay Krishna
+W2277195237,Yuke Zhu
+W2277195237,Oliver Groth
+W2277195237,Justin Johnson
+W2277195237,Kenji Hata
+W2277195237,Joshua Kravitz
+W2277195237,Stephanie Chen
+W2277195237,Yannis Kalantidis
+W2277195237,Li-Jia Li
+W2277195237,David A. Shamma
+W2277195237,Michael S. Bernstein
+W2277195237,Li Fei-Fei
+W1882958252,Yaroslav Ganin
+W1882958252,Victor Lempitsky
+W2154197653,Pavel V. Afonine
+W2154197653,Ralf W. Grosse‐Kunstleve
+W2154197653,Nathaniel Echols
+W2154197653,Jeffrey J. Headd
+W2154197653,Nigel W. Moriarty
+W2154197653,Marat Mustyakimov
+W2154197653,Thomas C. Terwilliger
+W2154197653,Alexandre Urzhumtsev
+W2154197653,Peter H. Zwart
+W2154197653,Paul D. Adams
+W2745461083,Peter Anderson
+W2745461083,Xiaodong He
+W2745461083,Chris Buehler
+W2745461083,Damien Teney
+W2745461083,Mark Johnson
+W2745461083,Stephen Jay Gould
+W2745461083,Lei Zhang
+W2040340473,Diego Kreutz
+W2040340473,Fernando M. V. Ramos
+W2040340473,Paulo Esteves Veríssimo
+W2040340473,Christian Esteve Rothenberg
+W2040340473,Siamak Azodolmolky
+W2040340473,Steve Uhlig
+W1934094702,Justin Guinney
+W1934094702,Rodrigo Dienstmann
+W1934094702,Xin Wang
+W1934094702,Aurélien de Reyniès
+W1934094702,Andreas Schlicker
+W1934094702,Charlotte Soneson
+W1934094702,Laëtitia Marisa
+W1934094702,Paul Roepman
+W1934094702,Gift Nyamundanda
+W1934094702,Paolo Angelino
+W1934094702,Brian M. Bot
+W1934094702,Jeffrey S. Morris
+W1934094702,Iris Simón
+W1934094702,Sarah Gerster
+W1934094702,Evelyn Fessler
+W1934094702,Felipe de Sousa e Melo
+W1934094702,Edoardo Missiaglia
+W1934094702,Hena R. Ramay
+W1934094702,David Barras
+W1934094702,Krisztián Homicskó
+W1934094702,Dipen Maru
+W1934094702,Ganiraju C. Manyam
+W1934094702,Bradley McIntosh Broom
+W1934094702,Valérie Boige
+W1934094702,Beatriz Pérez‐Villamil
+W2884430236,Keith T. Butler
+W2884430236,Daniel W. Davies
+W2884430236,Hugh Cartwright
+W2884430236,Olexandr Isayev
+W2884430236,Aron Walsh
+W2116634113,Laurent Gautier
+W2116634113,Leslie Cope
+W2116634113,Benjamin Milo Bolstad
+W2116634113,Rafael A. Irizarry
+W4384071683,Karan Singhal
+W4384071683,Shekoofeh Azizi
+W4384071683,Tao Tu
+W4384071683,S. Sara Mahdavi
+W4384071683,Jason Wei
+W4384071683,Hyung Won Chung
+W4384071683,Nathan Scales
+W4384071683,Ajay Kumar Tanwani
+W4384071683,Heather J. Cole-Lewis
+W4384071683,Stephen Pfohl
+W4384071683,Perry W. Payne
+W4384071683,Martin G. Seneviratne
+W4384071683,Paul R Gamble
+W4384071683,Christopher J. Kelly
+W4384071683,Abubakr Babiker
+W4384071683,Nathanael Schärli
+W4384071683,Aakanksha Chowdhery
+W4384071683,Philip Mansfield
+W4384071683,Dina Demner‐Fushman
+W4384071683,Blaise Agüera y Arcas
+W4384071683,Dale R. Webster
+W4384071683,Greg S. Corrado
+W4384071683,Yossi Matias
+W4384071683,Katherine Chou
+W4384071683,Juraj Gottweis
+W1950118853,Ayuko Hoshino
+W1950118853,Bruno Costa‐Silva
+W1950118853,Tang‐Long Shen
+W1950118853,Gonçalo Rodrigues
+W1950118853,Ayako Hashimoto
+W1950118853,Milica Tešić Mark
+W1950118853,Henrik Molina
+W1950118853,Shinji Kohsaka
+W1950118853,Angela Di Giannatale
+W1950118853,Sophia Ceder
+W1950118853,Swarnima Singh
+W1950118853,Caitlin Williams
+W1950118853,Nadine H. Soplop
+W1950118853,Kunihiro Uryu
+W1950118853,Lindsay A. Pharmer
+W1950118853,Tari A. King
+W1950118853,Linda Bojmar
+W1950118853,Alexander E. Davies
+W1950118853,Yonathan Ararso
+W1950118853,Tuo Zhang
+W1950118853,Haiying Zhang
+W1950118853,Jonathan Matthew Hernandez
+W1950118853,Joshua M. Weiss
+W1950118853,Vanessa D Dumont-Cole
+W1950118853,Kimberly Kramer
+W2804846127,M. Danaei
+W2804846127,M. Dehghankhold
+W2804846127,Shahla Ataei
+W2804846127,Fatemeh Hasanzadeh Davarani
+W2804846127,R. Javanmard
+W2804846127,A. Dokhani
+W2804846127,Sepideh Khorasani
+W2804846127,Mohammad Reza Mozafari
+W2266175888,Wei Feng Gao
+W2266175888,Sam Emaminejad
+W2266175888,Hnin Yin Yin Nyein
+W2266175888,Samyuktha Challa
+W2266175888,Kevin Chen
+W2266175888,Austin J Peck
+W2266175888,Hossain Mohammad Fahad
+W2266175888,Hiroki Ota
+W2266175888,Hiroshi Shiraki
+W2266175888,Daisuke Kiriya
+W2266175888,Der‐Hsien Lien
+W2266175888,George A. Brooks
+W2266175888,Ronald Wayne Davis
+W2266175888,Ali Javey
+W2944545583,Uku Raudvere
+W2944545583,Liis Kolberg
+W2944545583,Ivan Kuzmin
+W2944545583,Tambet Arak
+W2944545583,Priit Adler
+W2944545583,Hedi Peterson
+W2944545583,Jaak Vilo
+W2734356283,Thomas D. Goddard
+W2734356283,Conrad C. Huang
+W2734356283,Elaine C. Meng
+W2734356283,Eric F. Pettersen
+W2734356283,Gregory S. Couch
+W2734356283,John H. Morris
+W2734356283,Thomas E. Ferrin
+W2170776626,Jürgen Cox
+W2170776626,Marco Y. Hein
+W2170776626,Christian A. Luber
+W2170776626,Igor Paron
+W2170776626,Nagarjuna Nagaraj
+W2170776626,Matthias Mann

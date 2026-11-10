@@ -1,0 +1,1444 @@
+nodedef> name,x DOUBLE,y DOUBLE,visible BOOLEAN,color VARCHAR(256),strokecolor VARCHAR(256),labelcolor VARCHAR(256),fixed BOOLEAN,style INT,width DOUBLE,height DOUBLE,label VARCHAR(256),image VARCHAR(256),labelvisible BOOLEAN,labelpos VARCHAR(256),labelsize DOUBLE,title VARCHAR(256),year INT,cites INT,venue VARCHAR(256),firstauthor VARCHAR(256)
+W2582743722,615.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Team 2000,,false,right,1.0,R: A Language and Environment for Statistical Computing,2000,355817,,Team
+W2159675211,540.0,270.0,true,cornflowerblue,,,false,2,10.0,10.0,Shannon 2003,,false,right,1.0,Cytoscape: A Software Environment for Integrated Models of Biomolecular Interaction Networks,2003,51987,Genome Research,Shannon
+W2963446712,360.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Huang 2017,,false,right,1.0,Densely Connected Convolutional Networks,2017,51039,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Huang
+W2105846236,525.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Henseler 2014,,false,right,1.0,A new criterion for assessing discriminant validity in variance-based structural equation modeling,2014,46464,Journal of the Academy of Marketing Science,Henseler
+W3003257820,390.0,420.0,true,cornflowerblue,,,false,2,10.0,10.0,Virtanen 2020,,false,right,1.0,SciPy 1.0: fundamental algorithms for scientific computing in Python,2020,46354,Nature Methods,Virtanen
+W4327810158,420.0,705.0,true,cornflowerblue,,,false,2,10.0,10.0,OpenAI 2023,,false,right,1.0,GPT-4 Technical Report,2023,38110,arXiv (Cornell University),OpenAI
+W3030163527,390.0,660.0,true,cornflowerblue,,,false,2,10.0,10.0,B. 2020,,false,right,1.0,Language Models are Few-Shot Learners,2020,33665,arXiv (Cornell University),B.
+W2150220236,720.0,390.0,true,cornflowerblue,,,false,2,10.0,10.0,Eck 2009,,false,right,1.0,'Software survey: VOSviewer, a computer program for bibliometric mapping',2009,24920,Scientometrics,Eck
+W2552465644,285.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Isola 2017,,false,right,1.0,Image-to-Image Translation with Conditional Adversarial Networks,2017,24215,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Isola
+W1987971958,780.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Rousseeuw 1987,,false,right,1.0,Silhouettes: A graphical aid to the interpretation and validation of cluster analysis,1987,22711,Journal of Computational and Applied Mathematics,Rousseeuw
+W2593436234,780.0,330.0,true,cornflowerblue,,,false,2,10.0,10.0,Daina 2017,,false,right,1.0,'SwissADME: a free web tool to evaluate pharmacokinetics, drug-likeness and medicinal chemistry friendliness of small molecules',2017,19436,Scientific Reports,Daina
+W2148606196,720.0,450.0,true,cornflowerblue,,,false,2,10.0,10.0,Newman 2003,,false,right,1.0,The Structure and Function of Complex Networks,2003,18762,SIAM Review,Newman
+W2115098571,45.0,375.0,true,cornflowerblue,,,false,2,10.0,10.0,Buuren 2011,,false,right,1.0,mice: Multivariate Imputation by Chained Equations inR,2011,18604,Journal of Statistical Software,Buuren
+W1985749074,480.0,960.0,true,cornflowerblue,,,false,2,10.0,10.0,boyd 2007,,false,right,1.0,'Social Network Sites: Definition, History, and Scholarship',2007,18044,Journal of Computer-Mediated Communication,boyd
+W2900569176,585.0,330.0,true,cornflowerblue,,,false,2,10.0,10.0,Szklarczyk 2018,,false,right,1.0,'STRING v11: protein–protein association networks with increased coverage, supporting functional discovery in genome-wide experimental datasets',2018,17702,Nucleic Acids Research,Szklarczyk
+W4390874575,360.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Kirillov 2023,,false,right,1.0,Segment Anything,2023,16856,IEEE/CVF International Conference on Computer Vision (ICCV),Kirillov
+W2058046532,930.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Tzourio‐Mazoyer 2002,,false,right,1.0,Automated Anatomical Labeling of Activations in SPM Using a Macroscopic Anatomical Parcellation of the MNI MRI Single-Subject Brain,2002,16544,NeuroImage,Tzourio‐Mazoyer
+W1849277567,390.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Zeiler 2014,,false,right,1.0,Visualizing and Understanding Convolutional Networks,2014,16211,Lecture notes in computer science,Zeiler
+W2114843025,345.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Gao 2013,,false,right,1.0,Integrative Analysis of Complex Cancer Genomics and Clinical Profiles Using the cBioPortal,2013,15251,Science Signaling,Gao
+W2095293504,765.0,465.0,true,cornflowerblue,,,false,2,10.0,10.0,Newman 2004,,false,right,1.0,Finding and evaluating community structure in networks,2004,14179,Physical Review E,Newman
+W2163922914,480.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Bengio 2013,,false,right,1.0,Representation Learning: A Review and New Perspectives,2013,13953,IEEE Transactions on Pattern Analysis and Machine Intelligence,Bengio
+W2751884637,900.0,270.0,true,cornflowerblue,,,false,2,10.0,10.0,Vos 2017,,false,right,1.0,'Global, regional, and national incidence, prevalence, and years lived with disability for 328 diseases and injuries for 195 countries, 1990–2016: a systematic analysis for the Global Burden of Disease',2017,13727,The Lancet,Vos
+W2623703952,405.0,960.0,true,cornflowerblue,,,false,2,10.0,10.0,Taber 2017,,false,right,1.0,The Use of Cronbach’s Alpha When Developing and Reporting Research Instruments in Science Education,2017,13668,Research in Science Education,Taber
+W2258584306,615.0,915.0,true,cornflowerblue,,,false,2,10.0,10.0,Sjöstrand 2006,,false,right,1.0,PYTHIA 6.4 physics and manual,2006,12552,Journal of High Energy Physics,Sjöstrand
+W3023875755,0.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Melitz 2003,,false,right,1.0,The Impact of Trade on Intra-Industry Reallocations and Aggregate Industry Productivity,2003,12550,Econometrica,Melitz
+W2981731882,390.0,600.0,true,cornflowerblue,,,false,2,10.0,10.0,Arrieta 2019,,false,right,1.0,'Explainable Artificial Intelligence (XAI): Concepts, taxonomies, opportunities and challenges toward responsible AI',2019,12387,Information Fusion,Arrieta
+W2125910575,675.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Bastian 2009,,false,right,1.0,Gephi: An Open Source Software for Exploring and Manipulating Networks,2009,11865,Proceedings of the International AAAI Conference on Web and Social Media,Bastian
+W1855539512,660.0,45.0,true,cornflowerblue,,,false,2,10.0,10.0,Costello 2020,,false,right,1.0,Best practices in exploratory factor analysis: four recommendations for getting the most from your analysis,2020,11824,,Costello
+W2169678694,795.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,O’Boyle 2011,,false,right,1.0,Open Babel: An open chemical toolbox,2011,11431,Journal of Cheminformatics,O’Boyle
+W2132914434,645.0,465.0,true,cornflowerblue,,,false,2,10.0,10.0,A 2007,,false,right,1.0,A tutorial on spectral clustering,2007,10787,Statistics and Computing,A
+W229097380,630.0,285.0,true,cornflowerblue,,,false,2,10.0,10.0,Csárdi 2006,,false,right,1.0,The igraph software package for complex network research,2006,9851,,Csárdi
+W2056132907,330.0,210.0,true,cornflowerblue,,,false,2,10.0,10.0,Geurts 2006,,false,right,1.0,Extremely randomized trees,2006,9835,Machine Learning,Geurts
+W2995022099,270.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Kairouz 2020,,false,right,1.0,Advances and Open Problems in Federated Learning,2020,9637,Foundations and Trends® in Machine Learning,Kairouz
+W2112042732,495.0,960.0,true,cornflowerblue,,,false,2,10.0,10.0,Venkatesh 2008,,false,right,1.0,Technology Acceptance Model 3 and a Research Agenda on Interventions,2008,9524,Decision Sciences,Venkatesh
+W2117131162,720.0,165.0,true,cornflowerblue,,,false,2,10.0,10.0,Thorvaldsdóttir 2012,,false,right,1.0,Integrative Genomics Viewer (IGV): high-performance genomics data visualization and exploration,2012,9055,Briefings in Bioinformatics,Thorvaldsdóttir
+W2055298722,195.0,795.0,true,cornflowerblue,,,false,2,10.0,10.0,Huson 2005,,false,right,1.0,Application of Phylogenetic Networks in Evolutionary Studies,2005,8895,Molecular Biology and Evolution,Huson
+W2800392236,660.0,375.0,true,cornflowerblue,,,false,2,10.0,10.0,Wolf 2018,,false,right,1.0,SCANPY: large-scale single-cell gene expression data analysis,2018,8862,Genome biology,Wolf
+W2560647685,330.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Kirkpatrick 2017,,false,right,1.0,Overcoming catastrophic forgetting in neural networks,2017,8816,Proceedings of the National Academy of Sciences,Kirkpatrick
+W3208645186,15.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Hennink 2021,,false,right,1.0,Sample sizes for saturation in qualitative research: A systematic review of empirical tests,2021,8467,Social Science & Medicine,Hennink
+W2784874046,375.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Deng 2019,,false,right,1.0,ArcFace: Additive Angular Margin Loss for Deep Face Recognition,2019,8309,IEEE Transactions on Pattern Analysis and Machine Intelligence,Deng
+W2223470559,450.0,360.0,true,cornflowerblue,,,false,2,10.0,10.0,Henseler 2016,,false,right,1.0,Using PLS path modeling in new technology research: updated guidelines,2016,8286,Industrial Management & Data Systems,Henseler
+W2463195069,510.0,270.0,true,cornflowerblue,,,false,2,10.0,10.0,Tyanova 2016,,false,right,1.0,The Perseus computational platform for comprehensive analysis of (prote)omics data,2016,8181,Nature Methods,Tyanova
+W4226278401,390.0,705.0,true,cornflowerblue,,,false,2,10.0,10.0,Ouyang 2022,,false,right,1.0,Training language models to follow instructions with human feedback,2022,8059,arXiv (Cornell University),Ouyang
+W2097308346,600.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Belkin 2003,,false,right,1.0,Laplacian Eigenmaps for Dimensionality Reduction and Data Representation,2003,7733,Neural Computation,Belkin
+W4366208220,375.0,630.0,true,cornflowerblue,,,false,2,10.0,10.0,Oquab 2023,,false,right,1.0,DINOv2: Learning Robust Visual Features without Supervision,2023,7722,arXiv (Cornell University),Oquab
+W2132022337,555.0,420.0,true,cornflowerblue,,,false,2,10.0,10.0,Hagberg 2008,,false,right,1.0,'Exploring Network Structure, Dynamics, and Function using NetworkX',2008,7713,Proceedings of the Python in Science Conferences,Hagberg
+W2084310832,60.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Rajan 1995,,false,right,1.0,What Do We Know about Capital Structure? Some Evidence from International Data,1995,7645,The Journal of Finance,Rajan
+W2950354111,630.0,120.0,true,cornflowerblue,,,false,2,10.0,10.0,Koren 2017,,false,right,1.0,Canu: scalable and accurate long-read assembly via adaptive k -mer weighting and repeat separation,2017,7296,Genome Research,Koren
+W2015159529,360.0,375.0,true,cornflowerblue,,,false,2,10.0,10.0,Walt 2014,,false,right,1.0,scikit-image: image processing in Python,2014,7215,PeerJ,Walt
+W1641498739,285.0,390.0,true,cornflowerblue,,,false,2,10.0,10.0,Menze 2014,,false,right,1.0,The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS),2014,7159,IEEE Transactions on Medical Imaging,Menze
+W4309674289,465.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Ji 2022,,false,right,1.0,Survey of Hallucination in Natural Language Generation,2022,7074,ACM Computing Surveys,Ji
+W2152240519,780.0,810.0,true,cornflowerblue,,,false,2,10.0,10.0,Nayak 2008,,false,right,1.0,Non-Abelian anyons and topological quantum computation,2008,7016,Reviews of Modern Physics,Nayak
+W2024046085,495.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Friedman 2000,,false,right,1.0,Additive logistic regression: a statistical view of boosting (With discussion and a rejoinder by the authors),2000,7000,The Annals of Statistics,Friedman
+W1946252112,195.0,750.0,true,cornflowerblue,,,false,2,10.0,10.0,Leigh 2015,,false,right,1.0,popart : full‐feature software for haplotype network construction,2015,6875,Methods in Ecology and Evolution,Leigh
+W4360620450,15.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Dwivedi 2023,,false,right,1.0,'Opinion Paper: “So what if ChatGPT wrote it?” Multidisciplinary perspectives on opportunities, challenges and implications of generative conversational AI for research, practice and policy',2023,6742,International Journal of Information Management,Dwivedi
+W3135028703,255.0,90.0,true,cornflowerblue,,,false,2,10.0,10.0,Sarker 2021,,false,right,1.0,'Machine Learning: Algorithms, Real-World Applications and Research Directions',2021,6598,SN Computer Science,Sarker
+W2167482691,705.0,330.0,true,cornflowerblue,,,false,2,10.0,10.0,Fruchterman 1991,,false,right,1.0,Graph drawing by force‐directed placement,1991,6598,Software Practice and Experience,Fruchterman
+W2153791616,885.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Clark 2013,,false,right,1.0,'Whatever next? Predictive brains, situated agents, and the future of cognitive science',2013,6428,Behavioral and Brain Sciences,Clark
+W2159182565,735.0,840.0,true,cornflowerblue,,,false,2,10.0,10.0,Hong 2011,,false,right,1.0,Aggregation-induced emission,2011,6410,Chemical Society Reviews,Hong
+W2169589032,540.0,165.0,true,cornflowerblue,,,false,2,10.0,10.0,Bindea 2009,,false,right,1.0,ClueGO: a Cytoscape plug-in to decipher functionally grouped gene ontology and pathway annotation networks,2009,6267,Bioinformatics,Bindea
+W1969353942,660.0,345.0,true,cornflowerblue,,,false,2,10.0,10.0,Supek 2011,,false,right,1.0,REVIGO Summarizes and Visualizes Long Lists of Gene Ontology Terms,2011,6258,PLoS ONE,Supek
+W1966716734,630.0,210.0,true,cornflowerblue,,,false,2,10.0,10.0,Saito 2015,,false,right,1.0,The Precision-Recall Plot Is More Informative than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets,2015,6233,PLoS ONE,Saito
+W4402754006,270.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Zhao 2024,,false,right,1.0,DETRs Beat YOLOs on Real-time Object Detection,2024,6171,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Zhao
+W2530237102,675.0,285.0,true,cornflowerblue,,,false,2,10.0,10.0,Epskamp 2017,,false,right,1.0,Estimating psychological networks and their accuracy: A tutorial paper,2017,6145,Behavior Research Methods,Epskamp
+W2136850043,630.0,330.0,true,cornflowerblue,,,false,2,10.0,10.0,Bader 2003,,false,right,1.0,An automated method for finding molecular complexes in large protein interaction networks,2003,6124,BMC Bioinformatics,Bader
+W4206055706,555.0,960.0,true,cornflowerblue,,,false,2,10.0,10.0,Nichols 2022,,false,right,1.0,Estimation of the global prevalence of dementia in 2019 and forecasted prevalence in 2050: an analysis for the Global Burden of Disease Study 2019,2022,6052,The Lancet Public Health,Nichols
+W3027879771,420.0,720.0,true,cornflowerblue,,,false,2,10.0,10.0,Lewis 2020,,false,right,1.0,Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks,2020,6018,arXiv (Cornell University),Lewis
+W2015370254,780.0,465.0,true,cornflowerblue,,,false,2,10.0,10.0,Pappi 1993,,false,right,1.0,Social Network Analysis: A Handbook.,1993,5967,Contemporary Sociology A Journal of Reviews,Pappi
+W3126027997,30.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Roodman 2009,,false,right,1.0,A Note on the Theme of Too Many Instruments *,2009,5894,Oxford Bulletin of Economics and Statistics,Roodman
+W2038574100,780.0,105.0,true,cornflowerblue,,,false,2,10.0,10.0,Voorrips 2002,,false,right,1.0,MapChart: Software for the Graphical Presentation of Linkage Maps and QTLs,2002,5773,Journal of Heredity,Voorrips
+W3168997536,390.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Li 2021,,false,right,1.0,'A Survey of Convolutional Neural Networks: Analysis, Applications, and Prospects',2021,5733,IEEE Transactions on Neural Networks and Learning Systems,Li
+W2048679005,570.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Blum 1998,,false,right,1.0,Combining labeled and unlabeled data with co-training,1998,5659,Conference on Learning Theory,Blum
+W1481356306,15.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Karaman 2011,,false,right,1.0,Sampling-based algorithms for optimal motion planning,2011,5596,The International Journal of Robotics Research,Karaman
+W2113537253,660.0,945.0,true,cornflowerblue,,,false,2,10.0,10.0,Golafshani 2015,,false,right,1.0,Understanding Reliability and Validity in Qualitative Research,2015,5524,The Qualitative Report,Golafshani
+W1888005072,570.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Tang 2015,,false,right,1.0,LINE,2015,5492,International World Wide Web Conference (WWW),Tang
+W4224308101,375.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Chowdhery 2022,,false,right,1.0,PaLM: Scaling Language Modeling with Pathways,2022,5404,arXiv (Cornell University),Chowdhery
+W2547875792,450.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Jang 2016,,false,right,1.0,Categorical Reparameterization with Gumbel-Softmax,2016,5226,arXiv (Cornell University),Jang
+W4403853618,420.0,780.0,true,cornflowerblue,,,false,2,10.0,10.0,Wang 2024,,false,right,1.0,'Qwen2-VL: Enhancing Vision-Language Models Perception of the World at Any Resolution',2024,5196,arXiv (Cornell University),Wang
+W2086561953,195.0,210.0,true,cornflowerblue,,,false,2,10.0,10.0,Lorenz 2011,,false,right,1.0,ViennaRNA Package 2.0,2011,5192,Algorithms for Molecular Biology,Lorenz
+W2162896254,660.0,330.0,true,cornflowerblue,,,false,2,10.0,10.0,Epskamp 2012,,false,right,1.0,qgraph : Network Visualizations of Relationships in Psychometric Data,2012,5127,Journal of Statistical Software,Epskamp
+W2118745042,780.0,405.0,true,cornflowerblue,,,false,2,10.0,10.0,Christakis 2007,,false,right,1.0,The Spread of Obesity in a Large Social Network over 32 Years,2007,5107,New England Journal of Medicine,Christakis
+W4223908421,405.0,765.0,true,cornflowerblue,,,false,2,10.0,10.0,Bai 2022,,false,right,1.0,Training a Helpful and Harmless Assistant with Reinforcement Learning from Human Feedback,2022,5100,arXiv (Cornell University),Bai
+W3121385028,555.0,0.0,true,cornflowerblue,,,false,2,10.0,10.0,Imbens 2009,,false,right,1.0,Recent Developments in the Econometrics of Program Evaluation,2009,5005,Journal of Economic Literature,Imbens
+W2136893259,15.0,420.0,true,cornflowerblue,,,false,2,10.0,10.0,Gorter 2023,,false,right,1.0,4 Research Methods: Quantitative and Qualitative Approaches,2023,4987,Multilingual Matters eBooks,Gorter
+W4387164156,390.0,285.0,true,cornflowerblue,,,false,2,10.0,10.0,Meng 2023,,false,right,1.0,UCSF ChimeraX : Tools for structure building and analysis,2023,4967,Protein Science,Meng
+W2114367386,840.0,810.0,true,cornflowerblue,,,false,2,10.0,10.0,Schüttelkopf 2004,,false,right,1.0,PRODRG: a tool for high-throughput crystallography of protein–ligand complexes,2004,4837,Acta Crystallographica Section D Biological Crystallography,Schüttelkopf
+W4287992231,945.0,420.0,true,cornflowerblue,,,false,2,10.0,10.0,Amaro‐Seoane 2017,,false,right,1.0,Laser Interferometer Space Antenna,2017,4675,arXiv (Cornell University),Amaro‐Seoane
+W1479807131,555.0,450.0,true,cornflowerblue,,,false,2,10.0,10.0,Chapelle 2006,,false,right,1.0,Semi-Supervised Learning,2006,4642,The MIT Press eBooks,Chapelle
+W2022315563,225.0,840.0,true,cornflowerblue,,,false,2,10.0,10.0,Nečas 2011,,false,right,1.0,Gwyddion: an open-source software for SPM data analysis,2011,4602,Open Physics,Nečas
+W2156718197,585.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Belkin 2002,,false,right,1.0,Laplacian Eigenmaps and Spectral Techniques for Embedding and Clustering,2002,4566,The MIT Press eBooks,Belkin
+W1563636823,510.0,15.0,true,cornflowerblue,,,false,2,10.0,10.0,Jongman 1995,,false,right,1.0,Data Analysis in Community and Landscape Ecology,1995,4530,Cambridge University Press eBooks,Jongman
+W2091143533,15.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Heckman 2006,,false,right,1.0,The Effects of Cognitive and Noncognitive Abilities on Labor Market Outcomes and Social Behavior,2006,4510,Journal of Labor Economics,Heckman
+W2225156818,420.0,435.0,true,cornflowerblue,,,false,2,10.0,10.0,Blei 2017,,false,right,1.0,Variational Inference: A Review for Statisticians,2017,4498,Journal of the American Statistical Association,Blei
+W1990869665,420.0,75.0,true,cornflowerblue,,,false,2,10.0,10.0,Allison 2016,,false,right,1.0,Recent developments in Geant4,2016,4493,Nuclear Instruments and Methods in Physics Research Section A Accelerators Spectrometers Detectors and Associated Equipm,Allison
+W2139274755,915.0,375.0,true,cornflowerblue,,,false,2,10.0,10.0,Steffen 2015,,false,right,1.0,The trajectory of the Anthropocene: The Great Acceleration,2015,4431,The Anthropocene Review,Steffen
+W2117756735,720.0,90.0,true,cornflowerblue,,,false,2,10.0,10.0,Halko 2011,,false,right,1.0,Finding Structure with Randomness: Probabilistic Algorithms for Constructing Approximate Matrix Decompositions,2011,4369,SIAM Review,Halko
+W2107940314,225.0,285.0,true,cornflowerblue,,,false,2,10.0,10.0,Gu 2014,,false,right,1.0,circlize implements and enhances circular visualization in R,2014,4308,Bioinformatics,Gu
+W1810943226,465.0,645.0,true,cornflowerblue,,,false,2,10.0,10.0,Graves 2013,,false,right,1.0,Generating Sequences With Recurrent Neural Networks,2013,4297,arXiv (Cornell University),Graves
+W621251951,270.0,105.0,true,cornflowerblue,,,false,2,10.0,10.0,Giavarina 2015,,false,right,1.0,Understanding Bland Altman analysis,2015,4294,Biochemia Medica,Giavarina
+W2139577967,840.0,630.0,true,cornflowerblue,,,false,2,10.0,10.0,Ho 2007,,false,right,1.0,Matching as Nonparametric Preprocessing for Reducing Model Dependence in Parametric Causal Inference,2007,4268,Political Analysis,Ho
+W2805516822,495.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Battaglia 2018,,false,right,1.0,'Relational inductive biases, deep learning, and graph networks',2018,4233,arXiv (Cornell University),Battaglia
+W2159929956,825.0,435.0,true,cornflowerblue,,,false,2,10.0,10.0,Hagmann 2008,,false,right,1.0,Mapping the Structural Core of Human Cerebral Cortex,2008,4230,PLoS Biology,Hagmann
+W2164030952,0.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Steel 2007,,false,right,1.0,The nature of procrastination: A meta-analytic and theoretical review of quintessential self-regulatory failure.,2007,4200,Psychological Bulletin,Steel
+W1603903339,795.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Hoeting 1999,,false,right,1.0,'Bayesian model averaging: a tutorial (with comments by M. Clyde, David Draper and E. I. George, and a rejoinder by the authors',1999,4196,Statistical Science,Hoeting
+W1536497620,840.0,285.0,true,cornflowerblue,,,false,2,10.0,10.0,Gelman 2006,,false,right,1.0,Prior distributions for variance parameters in hierarchical models (comment on article by Browne and Draper),2006,4172,Bayesian Analysis,Gelman
+W2088794999,600.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Natekin 2013,,false,right,1.0,'Gradient boosting machines, a tutorial',2013,4155,Frontiers in Neurorobotics,Natekin
+W2900619723,0.0,465.0,true,cornflowerblue,,,false,2,10.0,10.0,Vasileiou 2018,,false,right,1.0,Characterising and justifying sample size sufficiency in interview-based studies: systematic analysis of qualitative health research over a 15-year period,2018,4141,BMC Medical Research Methodology,Vasileiou
+W2005821483,885.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Xia 2013,,false,right,1.0,BrainNet Viewer: A Network Visualization Tool for Human Brain Connectomics,2013,4139,PLoS ONE,Xia
+W2291288208,165.0,825.0,true,cornflowerblue,,,false,2,10.0,10.0,Buchanan 1992,,false,right,1.0,Wicked Problems in Design Thinking,1992,3977,Design Issues,Buchanan
+W2163485494,150.0,795.0,true,cornflowerblue,,,false,2,10.0,10.0,Stark 2005,,false,right,1.0,BioGRID: a general repository for interaction datasets,2005,3954,Nucleic Acids Research,Stark
+W2146106266,15.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,McGonigle 1990,,false,right,1.0,A new method which gives an objective measure of colonization of roots by vesicular—arbuscular mycorrhizal fungi,1990,3945,New Phytologist,McGonigle
+W1909320841,405.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Rezende 2014,,false,right,1.0,Stochastic Backpropagation and Approximate Inference in Deep Generative Models,2014,3921,arXiv (Cornell University),Rezende
+W1482241473,705.0,885.0,true,cornflowerblue,,,false,2,10.0,10.0,Blanchard 1988,,false,right,1.0,The Dynamic Effects of Aggregate Demand and Supply Disturbances,1988,3898,National Bureau of Economic Research,Blanchard
+W150292108,750.0,375.0,true,cornflowerblue,,,false,2,10.0,10.0,Eck 2014,,false,right,1.0,Visualizing Bibliometric Networks,2014,3884,Springer eBooks,Eck
+W2042492924,315.0,780.0,true,cornflowerblue,,,false,2,10.0,10.0,Ackley 1985,,false,right,1.0,A Learning Algorithm for Boltzmann Machines*,1985,3883,Cognitive Science,Ackley
+W2035080386,780.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Davis 2011,,false,right,1.0,The university of Florida sparse matrix collection,2011,3882,ACM Transactions on Mathematical Software,Davis
+W1990100773,495.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Larkin 1987,,false,right,1.0,Why a Diagram is (Sometimes) Worth Ten Thousand Words,1987,3858,Cognitive Science,Larkin
+W2155263737,435.0,885.0,true,cornflowerblue,,,false,2,10.0,10.0,Wahl 2009,,false,right,1.0,From RECIST to PERCIST: Evolving Considerations for PET Response Criteria in Solid Tumors,2009,3824,Journal of Nuclear Medicine,Wahl
+W2144998676,180.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Krissinel 2004,,false,right,1.0,'Secondary-structure matching (SSM), a new tool for fast protein structure alignment in three dimensions',2004,3788,Acta Crystallographica Section D Biological Crystallography,Krissinel
+W2533508881,975.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Becht 2016,,false,right,1.0,Estimating the population abundance of tissue-infiltrating immune and stromal cell populations using gene expression,2016,3755,Genome biology,Becht
+W2100235918,810.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Su 2009,,false,right,1.0,A Survey of Collaborative Filtering Techniques,2009,3747,Advances in Artificial Intelligence,Su
+W1990420052,390.0,135.0,true,cornflowerblue,,,false,2,10.0,10.0,Eilers 1996,,false,right,1.0,Flexible smoothing with B-splines and penalties,1996,3746,Statistical Science,Eilers
+W1985123706,15.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Goemans 1995,,false,right,1.0,Improved approximation algorithms for maximum cut and satisfiability problems using semidefinite programming,1995,3729,Journal of the ACM,Goemans
+W2067267561,210.0,120.0,true,cornflowerblue,,,false,2,10.0,10.0,Kettenmann 2011,,false,right,1.0,Physiology of Microglia,2011,3703,Physiological Reviews,Kettenmann
+W4211149818,180.0,840.0,true,cornflowerblue,,,false,2,10.0,10.0,Gleiter 1989,,false,right,1.0,Nanocrystalline materials,1989,3694,Progress in Materials Science,Gleiter
+W2212660284,60.0,660.0,true,cornflowerblue,,,false,2,10.0,10.0,Gretton 2012,,false,right,1.0,A kernel two-sample test,2012,3688,MPG.PuRe (Max Planck Society),Gretton
+W4226125322,315.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Nichol 2021,,false,right,1.0,GLIDE: Towards Photorealistic Image Generation and Editing with Text-Guided Diffusion Models,2021,3650,arXiv (Cornell University),Nichol
+W2128677857,645.0,885.0,true,cornflowerblue,,,false,2,10.0,10.0,Malone 1994,,false,right,1.0,The interdisciplinary study of coordination,1994,3646,ACM Computing Surveys,Malone
+W2037246595,600.0,855.0,true,cornflowerblue,,,false,2,10.0,10.0,Alwall 2011,,false,right,1.0,MadGraph 5: going beyond,2011,3645,Journal of High Energy Physics,Alwall
+W2472329501,945.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Farah 2016,,false,right,1.0,'Physical and mechanical properties of PLA, and their functions in widespread applications — A comprehensive review',2016,3609,Advanced Drug Delivery Reviews,Farah
+W1644641054,420.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Su 2015,,false,right,1.0,Multi-view Convolutional Neural Networks for 3D Shape Recognition,2015,3608,IEEE/CVF International Conference on Computer Vision (ICCV),Su
+W2132881915,570.0,0.0,true,cornflowerblue,,,false,2,10.0,10.0,Gibb 1988,,false,right,1.0,'The relevance of the Lewy body to the pathogenesis of idiopathic Parkinsons disease.',1988,3521,Journal of Neurology Neurosurgery & Psychiatry,Gibb
+W2151020819,945.0,450.0,true,cornflowerblue,,,false,2,10.0,10.0,Gregor 2006,,false,right,1.0,The Nature of Theory in Information Systems1,2006,3498,MIS Quarterly,Gregor
+W2151169308,960.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Brynjolfsson 2000,,false,right,1.0,'Beyond Computation: Information Technology, Organizational Transformation and Business Performance',2000,3495,The Journal of Economic Perspectives,Brynjolfsson
+W4399538195,30.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Kassambara 2016,,false,right,1.0,factoextra: Extract and Visualize the Results of Multivariate Data Analyses,2016,3470,,Kassambara
+W2594183968,435.0,390.0,true,cornflowerblue,,,false,2,10.0,10.0,Wu 2017,,false,right,1.0,MoleculeNet: a benchmark for molecular machine learning,2017,3417,Chemical Science,Wu
+W2256362396,285.0,630.0,true,cornflowerblue,,,false,2,10.0,10.0,Cai 2016,,false,right,1.0,DehazeNet: An End-to-End System for Single Image Haze Removal,2016,3416,IEEE Transactions on Image Processing,Cai
+W2950150251,630.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Ondov 2016,,false,right,1.0,Mash: fast genome and metagenome distance estimation using MinHash,2016,3395,Genome biology,Ondov
+W2077053002,30.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Piry 1999,,false,right,1.0,Computer note. BOTTLENECK: a computer program for detecting recent reductions in the effective size using allele frequency data,1999,3356,Journal of Heredity,Piry
+W2091030812,225.0,375.0,true,cornflowerblue,,,false,2,10.0,10.0,Alikhan 2011,,false,right,1.0,BLAST Ring Image Generator (BRIG): simple prokaryote genome comparisons,2011,3340,BMC Genomics,Alikhan
+W2099019320,465.0,0.0,true,cornflowerblue,,,false,2,10.0,10.0,Fong 2003,,false,right,1.0,A survey of socially interactive robots,2003,3336,Robotics and Autonomous Systems,Fong
+W2100805904,480.0,210.0,true,cornflowerblue,,,false,2,10.0,10.0,Opitz 1999,,false,right,1.0,Popular Ensemble Methods: An Empirical Study,1999,3295,Journal of Artificial Intelligence Research,Opitz
+W1549853756,915.0,390.0,true,cornflowerblue,,,false,2,10.0,10.0,Plummer 2006,,false,right,1.0,CODA: convergence diagnosis and output analysis for MCMC,2006,3266,Open Research Online (The Open University),Plummer
+W2951799803,600.0,420.0,true,cornflowerblue,,,false,2,10.0,10.0,Street 2018,,false,right,1.0,Slingshot: cell lineage and pseudotime inference for single-cell transcriptomics,2018,3251,BMC Genomics,Street
+W4396946025,945.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Brauer 2024,,false,right,1.0,'Global burden and strength of evidence for 88 risk factors in 204 countries and 811 subnational locations, 1990–2021: a systematic analysis for the Global Burden of Disease Study 2021',2024,3227,The Lancet,Brauer
+W2145126338,690.0,180.0,true,cornflowerblue,,,false,2,10.0,10.0,Sing 2005,,false,right,1.0,ROCR: visualizing classifier performance in R,2005,3227,Computer applications in the biosciences,Sing
+W2098005762,780.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Boccaletti 2014,,false,right,1.0,The structure and dynamics of multilayer networks,2014,3225,Physics Reports,Boccaletti
+W2050345155,555.0,120.0,true,cornflowerblue,,,false,2,10.0,10.0,Chen 2011,,false,right,1.0,VennDiagram: a package for the generation of highly-customizable Venn and Euler diagrams in R,2011,3222,BMC Bioinformatics,Chen
+W4321499901,435.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Tlili 2023,,false,right,1.0,What if the devil is my guardian angel: ChatGPT as a case study of using chatbots in education,2023,3190,Smart Learning Environments,Tlili
+W2092194717,450.0,960.0,true,cornflowerblue,,,false,2,10.0,10.0,Feroz 2009,,false,right,1.0,MultiNest: an efficient and robust Bayesian inference tool for cosmology and particle physics,2009,3183,Monthly Notices of the Royal Astronomical Society,Feroz
+W2062125287,0.0,405.0,true,cornflowerblue,,,false,2,10.0,10.0,Ledoit 2003,,false,right,1.0,A well-conditioned estimator for large-dimensional covariance matrices,2003,3177,Journal of Multivariate Analysis,Ledoit
+W2112957339,810.0,135.0,true,cornflowerblue,,,false,2,10.0,10.0,Jenkins 2006,,false,right,1.0,Confronting the Challenges of Participatory Culture: Media Education for the 21st Century,2006,3169,BiblioBoard Library Catalog (Open Research Library),Jenkins
+W4211160986,165.0,135.0,true,cornflowerblue,,,false,2,10.0,10.0,Dennler 2009,,false,right,1.0,Polymer‐Fullerene Bulk‐Heterojunction Solar Cells,2009,3161,Advanced Materials,Dennler
+W2028695285,750.0,345.0,true,cornflowerblue,,,false,2,10.0,10.0,Jacomy 2014,,false,right,1.0,'ForceAtlas2, a Continuous Graph Layout Algorithm for Handy Network Visualization Designed for the Gephi Software',2014,3143,PLoS ONE,Jacomy
+W2165674132,360.0,945.0,true,cornflowerblue,,,false,2,10.0,10.0,Kanehisa 2005,,false,right,1.0,From genomics to chemical genomics: new developments in KEGG,2005,3135,Nucleic Acids Research,Kanehisa
+W2462099493,645.0,285.0,true,cornflowerblue,,,false,2,10.0,10.0,Epskamp 2018,,false,right,1.0,A tutorial on regularized partial correlation networks.,2018,3113,Psychological Methods,Epskamp
+W2132083787,30.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Boer 2005,,false,right,1.0,A Tutorial on the Cross-Entropy Method,2005,3110,Annals of Operations Research,Boer
+W2515300481,960.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Wamba 2016,,false,right,1.0,Big data analytics and firm performance: Effects of dynamic capabilities,2016,3102,Journal of Business Research,Wamba
+W3147387781,405.0,630.0,true,cornflowerblue,,,false,2,10.0,10.0,Arnab 2021,,false,right,1.0,ViViT: A Video Vision Transformer,2021,3099,IEEE/CVF International Conference on Computer Vision (ICCV),Arnab
+W2146577723,390.0,45.0,true,cornflowerblue,,,false,2,10.0,10.0,Gassman 2007,,false,right,1.0,'The Soil and Water Assessment Tool: Historical Development, Applications, and Future Research Directions',2007,3092,Transactions of the ASABE,Gassman
+W2548687046,300.0,930.0,true,cornflowerblue,,,false,2,10.0,10.0,Melitz 2002,,false,right,1.0,The Impact of Trade on Intra-Industry Reallocations and Aggregate Industry Productivity,2002,3064,National Bureau of Economic Research,Melitz
+W3154258817,690.0,420.0,true,cornflowerblue,,,false,2,10.0,10.0,Xiong 2021,,false,right,1.0,ADMETlab 2.0: an integrated online platform for accurate and comprehensive predictions of ADMET properties,2021,3049,Nucleic Acids Research,Xiong
+W2153325555,600.0,60.0,true,cornflowerblue,,,false,2,10.0,10.0,Wick 2015,,false,right,1.0,Bandage: interactive visualization of de novo genome assemblies,2015,3044,Bioinformatics,Wick
+W3183475563,495.0,360.0,true,cornflowerblue,,,false,2,10.0,10.0,Tunyasuvunakool 2021,,false,right,1.0,Highly accurate protein structure prediction for the human proteome,2021,3041,Nature,Tunyasuvunakool
+W2798434869,540.0,930.0,true,cornflowerblue,,,false,2,10.0,10.0,Havlíček 2019,,false,right,1.0,Supervised learning with quantum-enhanced feature spaces,2019,2996,Nature,Havlíček
+W2159449603,630.0,915.0,true,cornflowerblue,,,false,2,10.0,10.0,Alloul 2014,,false,right,1.0,FeynRules 2.0 — A complete toolbox for tree-level phenomenology,2014,2984,Computer Physics Communications,Alloul
+W2948978827,435.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Kingma 2019,,false,right,1.0,An Introduction to Variational Autoencoders,2019,2980,Foundations and Trends® in Machine Learning,Kingma
+W2519132385,645.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Scrucca 2016,,false,right,1.0,'mclust 5: Clustering, Classification and Density Estimation Using Gaussian Finite Mixture Models',2016,2965,The R Journal,Scrucca
+W1981501248,90.0,795.0,true,cornflowerblue,,,false,2,10.0,10.0,Deeks 2003,,false,right,1.0,Evaluating non-randomised intervention studies,2003,2937,Health Technology Assessment,Deeks
+W1568998819,900.0,720.0,true,cornflowerblue,,,false,2,10.0,10.0,Brown 2003,,false,right,1.0,Language Assessment: Principles and Classroom Practices,2003,2926,,Brown
+W4396821501,345.0,780.0,true,cornflowerblue,,,false,2,10.0,10.0,Liu 2024,,false,right,1.0,KAN: Kolmogorov-Arnold Networks,2024,2924,arXiv (Cornell University),Liu
+W2139236032,930.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Roux 2010,,false,right,1.0,Neighborhoods and health,2010,2922,Annals of the New York Academy of Sciences,Roux
+W3122014499,870.0,720.0,true,cornflowerblue,,,false,2,10.0,10.0,Perkmann 2012,,false,right,1.0,Academic engagement and commercialisation: A review of the literature on university–industry relations,2012,2893,Research Policy,Perkmann
+W2904383797,360.0,420.0,true,cornflowerblue,,,false,2,10.0,10.0,Mescheder 2019,,false,right,1.0,Occupancy Networks: Learning 3D Reconstruction in Function Space,2019,2884,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Mescheder
+W2126650951,810.0,450.0,true,cornflowerblue,,,false,2,10.0,10.0,Buckner 2009,,false,right,1.0,'Cortical Hubs Revealed by Intrinsic Functional Connectivity: Mapping, Assessment of Stability, and Relation to Alzheimers Disease',2009,2875,Journal of Neuroscience,Buckner
+W1484750607,930.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Nardo 2005,,false,right,1.0,Handbook on Constructing Composite Indicators,2005,2874,OECD statistics working papers,Nardo
+W3037819556,810.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Holme 2012,,false,right,1.0,Temporal networks,2012,2871,Physics Reports,Holme
+W2953494151,375.0,645.0,true,cornflowerblue,,,false,2,10.0,10.0,Arjovsky 2019,,false,right,1.0,Invariant Risk Minimization,2019,2870,arXiv (Cornell University),Arjovsky
+W2024424774,720.0,645.0,true,cornflowerblue,,,false,2,10.0,10.0,Beckman 1987,,false,right,1.0,Applied Linear Regression,1987,2868,Technometrics,Beckman
+W2393319904,555.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Wang 2016,,false,right,1.0,Structural Deep Network Embedding,2016,2864,ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD),Wang
+W2328078142,420.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Lake 2016,,false,right,1.0,Building machines that learn and think like people,2016,2852,Behavioral and Brain Sciences,Lake
+W1979104937,750.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Lü 2010,,false,right,1.0,Link prediction in complex networks: A survey,2010,2852,Physica A Statistical Mechanics and its Applications,Lü
+W1969293769,420.0,945.0,true,cornflowerblue,,,false,2,10.0,10.0,Fratzl 2007,,false,right,1.0,Nature’s hierarchical materials,2007,2852,Progress in Materials Science,Fratzl
+W3016970897,375.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Geirhos 2020,,false,right,1.0,Shortcut learning in deep neural networks,2020,2842,Nature Machine Intelligence,Geirhos
+W2913688336,945.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Fellows 2002,,false,right,1.0,Parameterized Complexity,2002,2837,Electronic Notes in Theoretical Computer Science,Fellows
+W7155906632,285.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,White 2024,,false,right,1.0,A Prompt Pattern Catalog to Enhance Prompt Engineering with ChatGPT,2024,2828,Conference on Pattern Languages of Programs,White
+W2022625505,480.0,0.0,true,cornflowerblue,,,false,2,10.0,10.0,Mathôt 2011,,false,right,1.0,'OpenSesame: An open-source, graphical experiment builder for the social sciences',2011,2826,Behavior Research Methods,Mathôt
+W1972098965,660.0,855.0,true,cornflowerblue,,,false,2,10.0,10.0,Ellis 1991,,false,right,1.0,Groupware: some issues and experiences,1991,2819,Communications of the ACM,Ellis
+W4415796023,405.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Liu 2024,,false,right,1.0,VMamba: Visual State Space Model,2024,2817,neural information processing systems,Liu
+W1950113648,945.0,360.0,true,cornflowerblue,,,false,2,10.0,10.0,McCarthy 2015,,false,right,1.0,Pulmonary rehabilitation for chronic obstructive pulmonary disease,2015,2756,Cochrane Database of Systematic Reviews,McCarthy
+W2075220720,735.0,360.0,true,cornflowerblue,,,false,2,10.0,10.0,Kamada 1989,,false,right,1.0,An algorithm for drawing general undirected graphs,1989,2750,Information Processing Letters,Kamada
+W1972145956,825.0,765.0,true,cornflowerblue,,,false,2,10.0,10.0,Croucher 2014,,false,right,1.0,Rapid phylogenetic analysis of large samples of recombinant bacterial whole genome sequences using Gubbins,2014,2749,Nucleic Acids Research,Croucher
+W4403370767,480.0,660.0,true,cornflowerblue,,,false,2,10.0,10.0,Li 2024,,false,right,1.0,LLaVA-OneVision: Easy Visual Task Transfer,2024,2747,arXiv (Cornell University),Li
+W4388522045,180.0,405.0,true,cornflowerblue,,,false,2,10.0,10.0,Tang 2023,,false,right,1.0,SRplot: A free online platform for data visualization and graphing,2023,2739,PLoS ONE,Tang
+W1676820704,135.0,270.0,true,cornflowerblue,,,false,2,10.0,10.0,Dietterich 1995,,false,right,1.0,Solving Multiclass Learning Problems via Error-Correcting Output Codes,1995,2739,Journal of Artificial Intelligence Research,Dietterich
+W2949520286,240.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Lugaresi 2019,,false,right,1.0,MediaPipe: A Framework for Building Perception Pipelines,2019,2738,arXiv (Cornell University),Lugaresi
+W2154241726,270.0,210.0,true,cornflowerblue,,,false,2,10.0,10.0,Gruber 2008,,false,right,1.0,The Vienna RNA Websuite,2008,2738,Nucleic Acids Research,Gruber
+W2125481562,480.0,945.0,true,cornflowerblue,,,false,2,10.0,10.0,Copeland 2004,,false,right,1.0,'Trade, Growth, and the Environment',2004,2724,Journal of Economic Literature,Copeland
+W4288083516,345.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Kuznetsova 2020,,false,right,1.0,The Open Images Dataset V4,2020,2706,International Journal of Computer Vision,Kuznetsova
+W2888728157,645.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Tharwat 2018,,false,right,1.0,Classification assessment methods,2018,2700,Applied Computing and Informatics,Tharwat
+W1686810756,375.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Simonyan 2014,,false,right,1.0,Very Deep Convolutional Networks for Large-Scale Image Recognition,2014,114148,arXiv (Cornell University),Simonyan
+W3128646645,915.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Sung 2021,,false,right,1.0,Global Cancer Statistics 2020: GLOBOCAN Estimates of Incidence and Mortality Worldwide for 36 Cancers in 185 Countries,2021,113049,CA A Cancer Journal for Clinicians,Sung
+W639708223,360.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Ren 2016,,false,right,1.0,Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks,2016,73472,IEEE Transactions on Pattern Analysis and Machine Intelligence,Ren
+W2896457183,405.0,645.0,true,cornflowerblue,,,false,2,10.0,10.0,Devlin 2018,,false,right,1.0,BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding,2018,73198,arXiv (Cornell University),Devlin
+W2117692326,690.0,135.0,true,cornflowerblue,,,false,2,10.0,10.0,Hanahan 2011,,false,right,1.0,Hallmarks of Cancer: The Next Generation,2011,69139,Cell,Hanahan
+W3177828909,435.0,360.0,true,cornflowerblue,,,false,2,10.0,10.0,Jumper 2021,,false,right,1.0,Highly accurate protein structure prediction with AlphaFold,2021,45602,Nature,Jumper
+W2014935324,30.0,345.0,true,cornflowerblue,,,false,2,10.0,10.0,Geim 2007,,false,right,1.0,The rise of graphene,2007,40260,Nature Materials,Geim
+W1959608418,420.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Kingma 2013,,false,right,1.0,Auto-Encoding Variational Bayes,2013,36797,UvA-DARE (University of Amsterdam),Kingma
+W2970971581,315.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Paszke 2019,,false,right,1.0,'PyTorch: An Imperative Style, High-Performance Deep Learning Library',2019,35626,arXiv (Cornell University),Paszke
+W2519887557,510.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Kipf 2016,,false,right,1.0,Semi-Supervised Classification with Graph Convolutional Networks,2016,35372,arXiv (Cornell University),Kipf
+W2102605133,375.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Girshick 2014,,false,right,1.0,Rich Feature Hierarchies for Accurate Object Detection and Semantic Segmentation,2014,33583,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Girshick
+W1678356000,495.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Friedman 2001,,false,right,1.0,Greedy function approximation: A gradient boosting machine.,2001,32337,The Annals of Statistics,Friedman
+W2963163009,330.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Sandler 2018,,false,right,1.0,MobileNetV2: Inverted Residuals and Linear Bottlenecks,2018,30908,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Sandler
+W2120145199,390.0,15.0,true,cornflowerblue,,,false,2,10.0,10.0,Giannozzi 2009,,false,right,1.0,QUANTUM ESPRESSO: a modular and open-source software project for quantum simulations of materials,2009,29793,Journal of Physics Condensed Matter,Giannozzi
+W3035965352,390.0,435.0,true,cornflowerblue,,,false,2,10.0,10.0,Harris 2020,,false,right,1.0,Array programming with NumPy,2020,29541,Nature,Harris
+W2560438049,0.0,450.0,true,cornflowerblue,,,false,2,10.0,10.0,Ouzzani 2016,,false,right,1.0,Rayyan—a web and mobile app for systematic reviews,2016,28898,Systematic Reviews,Ouzzani
+W2908510526,390.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Loshchilov 2017,,false,right,1.0,Decoupled Weight Decay Regularization,2017,28582,arXiv (Cornell University),Loshchilov
+W1966327575,615.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Langfelder 2008,,false,right,1.0,WGCNA: an R package for weighted correlation network analysis,2008,27292,BMC Bioinformatics,Langfelder
+W2962858109,435.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Selvaraju 2017,,false,right,1.0,Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based Localization,2017,25865,IEEE/CVF International Conference on Computer Vision (ICCV),Selvaraju
+W2133564696,465.0,630.0,true,cornflowerblue,,,false,2,10.0,10.0,Bahdanau 2014,,false,right,1.0,Neural Machine Translation by Jointly Learning to Align and Translate,2014,25584,arXiv (Cornell University),Bahdanau
+W2963276645,480.0,135.0,true,cornflowerblue,,,false,2,10.0,10.0,Bolyen 2019,,false,right,1.0,'Reproducible, interactive, scalable and extensible microbiome data science using QIIME 2',2019,24389,Nature Biotechnology,Bolyen
+W2193145675,315.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Liu 2016,,false,right,1.0,SSD: Single Shot MultiBox Detector,2016,23933,Lecture notes in computer science,Liu
+W4401306886,405.0,735.0,true,cornflowerblue,,,false,2,10.0,10.0,Aaron 2024,,false,right,1.0,The Llama 3 Herd of Models,2024,23674,arXiv (Cornell University),Aaron
+W2180229411,225.0,405.0,true,cornflowerblue,,,false,2,10.0,10.0,Adams 2010,,false,right,1.0,PHENIX : a comprehensive Python-based system for macromolecular structure solution,2010,23401,Acta Crystallographica Section D Biological Crystallography,Adams
+W2412782625,390.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Chen 2017,,false,right,1.0,'DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs',2017,23111,IEEE Transactions on Pattern Analysis and Machine Intelligence,Chen
+W2131681506,720.0,435.0,true,cornflowerblue,,,false,2,10.0,10.0,Blondel 2008,,false,right,1.0,Fast unfolding of communities in large networks,2008,22157,Journal of Statistical Mechanics Theory and Experiment,Blondel
+W2056279562,510.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,McMurdie 2013,,false,right,1.0,phyloseq: An R Package for Reproducible Interactive Analysis and Graphics of Microbiome Census Data,2013,21775,PLoS ONE,McMurdie
+W2964309882,345.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Chen 2018,,false,right,1.0,Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation,2018,21011,Lecture notes in computer science,Chen
+W1677182931,360.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,He 2015,,false,right,1.0,Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification,2015,20781,IEEE/CVF International Conference on Computer Vision (ICCV),He
+W1910657905,300.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Badrinarayanan 2017,,false,right,1.0,SegNet: A Deep Convolutional Encoder-Decoder Architecture for Image Segmentation,2017,20428,IEEE Transactions on Pattern Analysis and Machine Intelligence,Badrinarayanan
+W2128880918,255.0,885.0,true,cornflowerblue,,,false,2,10.0,10.0,Kearse 2012,,false,right,1.0,Geneious Basic: An integrated and extendable desktop software platform for the organization and analysis of sequence data,2012,20281,Bioinformatics,Kearse
+W2766453196,480.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Veličković 2017,,false,right,1.0,Graph Attention Networks,2017,19756,arXiv (Cornell University),Veličković
+W3030520226,345.0,600.0,true,cornflowerblue,,,false,2,10.0,10.0,Carion 2020,,false,right,1.0,End-to-End Object Detection with Transformers,2020,19659,Lecture notes in computer science,Carion
+W4384918448,390.0,735.0,true,cornflowerblue,,,false,2,10.0,10.0,Touvron 2023,,false,right,1.0,Llama 2: Open Foundation and Fine-Tuned Chat Models,2023,19595,arXiv (Cornell University),Touvron
+W3135367836,390.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Radford 2021,,false,right,1.0,Learning Transferable Visual Models From Natural Language Supervision,2021,19211,arXiv (Cornell University),Radford
+W1945616565,330.0,600.0,true,cornflowerblue,,,false,2,10.0,10.0,Goodfellow 2014,,false,right,1.0,Explaining and Harnessing Adversarial Examples,2014,18874,arXiv (Cornell University),Goodfellow
+W2130942839,435.0,600.0,true,cornflowerblue,,,false,2,10.0,10.0,Sutskever 2014,,false,right,1.0,Sequence to Sequence Learning with Neural Networks,2014,18336,arXiv (Cornell University),Sutskever
+W2259938310,705.0,165.0,true,cornflowerblue,,,false,2,10.0,10.0,Dunham 2012,,false,right,1.0,An integrated encyclopedia of DNA elements in the human genome,2012,18047,Nature,Dunham
+W2133990480,660.0,165.0,true,cornflowerblue,,,false,2,10.0,10.0,Hall 2009,,false,right,1.0,The WEKA data mining software,2009,17990,ACM SIGKDD Explorations Newsletter,Hall
+W4396721167,480.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Abramson 2024,,false,right,1.0,Accurate structure prediction of biomolecular interactions with AlphaFold 3,2024,17633,Nature,Abramson
+W2149441684,285.0,180.0,true,cornflowerblue,,,false,2,10.0,10.0,Cerami 2012,,false,right,1.0,The cBio Cancer Genomics Portal: An Open Platform for Exploring Multidimensional Cancer Genomics Data,2012,17536,Cancer Discovery,Cerami
+W2402144811,375.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Abadi 2016,,false,right,1.0,TensorFlow: A system for large-scale machine learning,2016,16551,arXiv (Cornell University),Abadi
+W2592929672,405.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Litjens 2017,,false,right,1.0,A survey on deep learning in medical image analysis,2017,16480,Medical Image Analysis,Litjens
+W2252795400,345.0,375.0,true,cornflowerblue,,,false,2,10.0,10.0,Abbott 2016,,false,right,1.0,Observation of Gravitational Waves from a Binary Black Hole Merger,2016,16207,Physical Review Letters,Abbott
+W2580767461,330.0,960.0,true,cornflowerblue,,,false,2,10.0,10.0,Nishita 2017,,false,right,1.0,Ror2 signaling regulates Golgi structure and transport through IFT20 for tumor invasiveness,2017,15930,Scientific Reports,Nishita
+W2096733369,420.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Schroff 2015,,false,right,1.0,FaceNet: A unified embedding for face recognition and clustering,2015,15915,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Schroff
+W2159707944,660.0,195.0,true,cornflowerblue,,,false,2,10.0,10.0,Hänzelmann 2013,,false,right,1.0,GSVA: gene set variation analysis for microarray and RNA-Seq data,2013,15528,BMC Bioinformatics,Hänzelmann
+W2173520492,345.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Radford 2015,,false,right,1.0,Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks,2015,15206,arXiv (Cornell University),Radford
+W2395611524,375.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Shelhamer 2016,,false,right,1.0,Fully Convolutional Networks for Semantic Segmentation,2016,15164,IEEE Transactions on Pattern Analysis and Machine Intelligence,Shelhamer
+W3210383951,555.0,195.0,true,cornflowerblue,,,false,2,10.0,10.0,Hair 2021,,false,right,1.0,Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R,2021,14772,Classroom companion: business,Hair
+W4297808394,420.0,600.0,true,cornflowerblue,,,false,2,10.0,10.0,Oord 2018,,false,right,1.0,Representation Learning with Contrastive Predictive Coding,2018,14547,arXiv (Cornell University),Oord
+W2928665623,525.0,285.0,true,cornflowerblue,,,false,2,10.0,10.0,Zhou 2019,,false,right,1.0,Metascape provides a biologist-oriented resource for the analysis of systems-level datasets,2019,14535,Nature Communications,Zhou
+W2954996726,405.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Shorten 2019,,false,right,1.0,A survey on Image Data Augmentation for Deep Learning,2019,14432,Journal Of Big Data,Shorten
+W3168867926,360.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Hu 2021,,false,right,1.0,LoRA: Low-Rank Adaptation of Large Language Models,2021,14411,arXiv (Cornell University),Hu
+W1757796397,285.0,735.0,true,cornflowerblue,,,false,2,10.0,10.0,Mnih 2013,,false,right,1.0,Playing Atari with Deep Reinforcement Learning,2013,14340,arXiv (Cornell University),Mnih
+W2125065061,855.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Lozano 2012,,false,right,1.0,Global and regional mortality from 235 causes of death for 20 age groups in 1990 and 2010: a systematic analysis for the Global Burden of Disease Study 2010,2012,14244,The Lancet,Lozano
+W3035524453,390.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,He 2020,,false,right,1.0,Momentum Contrast for Unsupervised Visual Representation Learning,2020,14187,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,He
+W2133465414,630.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Huang 2008,,false,right,1.0,Bioinformatics enrichment tools: paths toward the comprehensive functional analysis of large gene lists,2008,14140,Nucleic Acids Research,Huang
+W2006617902,645.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Robin 2011,,false,right,1.0,pROC: an open-source package for R and S+ to analyze and compare ROC curves,2011,14006,BMC Bioinformatics,Robin
+W2154714625,255.0,450.0,true,cornflowerblue,,,false,2,10.0,10.0,Chen 2009,,false,right,1.0,MolProbity : all-atom structure validation for macromolecular crystallography,2009,14003,Acta Crystallographica Section D Biological Crystallography,Chen
+W1992419399,750.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Jain 1999,,false,right,1.0,Data clustering,1999,13925,ACM Computing Surveys,Jain
+W2214074259,705.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Liberzon 2015,,false,right,1.0,The Molecular Signatures Database Hallmark Gene Set Collection,2015,13828,Cell Systems,Liberzon
+W1673923490,345.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Szegedy 2013,,false,right,1.0,Intriguing properties of neural networks,2013,13703,arXiv (Cornell University),Szegedy
+W3123893780,375.0,930.0,true,cornflowerblue,,,false,2,10.0,10.0,Page 2021,,false,right,1.0,PRISMA 2020 explanation and elaboration: updated guidance and exemplars for reporting systematic reviews,2021,13626,BMJ,Page
+W2963470893,330.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Ledig 2017,,false,right,1.0,Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network,2017,13474,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Ledig
+W3201073812,570.0,945.0,true,cornflowerblue,,,false,2,10.0,10.0,Thompson 2021,,false,right,1.0,'LAMMPS - a flexible simulation tool for particle-based materials modeling at the atomic, meso, and continuum scales',2021,13356,Computer Physics Communications,Thompson
+W2981852735,420.0,645.0,true,cornflowerblue,,,false,2,10.0,10.0,Raffel 2019,,false,right,1.0,Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer,2019,13348,arXiv (Cornell University),Raffel
+W2787560479,450.0,645.0,true,cornflowerblue,,,false,2,10.0,10.0,Peters 2018,,false,right,1.0,Deep Contextualized Word Representations,2018,13289,Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (,Peters
+W2804822363,540.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Waterhouse 2018,,false,right,1.0,SWISS-MODEL: homology modelling of protein structures and complexes,2018,13248,Nucleic Acids Research,Waterhouse
+W2111619626,540.0,15.0,true,cornflowerblue,,,false,2,10.0,10.0,Gubbi 2013,,false,right,1.0,'Internet of Things (IoT): A vision, architectural elements, and future directions',2013,13101,Future Generation Computer Systems,Gubbi
+W2549139847,405.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Xie 2017,,false,right,1.0,Aggregated Residual Transformations for Deep Neural Networks,2017,12748,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Xie
+W2143485490,825.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Hyatt 2010,,false,right,1.0,Prodigal: prokaryotic gene recognition and translation initiation site identification,2010,12697,BMC Bioinformatics,Hyatt
+W2099085143,0.0,630.0,true,cornflowerblue,,,false,2,10.0,10.0,Chang 2015,,false,right,1.0,Second-generation PLINK: rising to the challenge of larger and richer datasets,2015,12687,GigaScience,Chang
+W2904367110,345.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Karras 2019,,false,right,1.0,A Style-Based Generator Architecture for Generative Adversarial Networks,2019,12595,IEEE Transactions on Pattern Analysis and Machine Intelligence,Karras
+W2432481613,405.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Milletarì 2016,,false,right,1.0,V-Net: Fully Convolutional Neural Networks for Volumetric Medical Image Segmentation,2016,12547,International Conference on 3D Vision (3DV),Milletarì
+W3122877168,510.0,180.0,true,cornflowerblue,,,false,2,10.0,10.0,Henseler 2009,,false,right,1.0,\nThe use of partial least squares path modeling in international marketing,2009,12535,Radboud Repository (Radboud University),Henseler
+W2271840356,390.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Abadi 2016,,false,right,1.0,TensorFlow: Large-Scale Machine Learning on Heterogeneous Distributed Systems,2016,12478,arXiv (Cornell University),Abadi
+W1532325895,675.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Manning 2009,,false,right,1.0,Introduction to information retrieval,2009,12441,Choice Reviews Online,Manning
+W4301159569,240.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Network 2012,,false,right,1.0,Comprehensive molecular portraits of human breast tumours,2012,12325,Nature,Network
+W2160697532,600.0,180.0,true,cornflowerblue,,,false,2,10.0,10.0,Gentleman 2004,,false,right,1.0,Bioconductor: open software development for computational biology and bioinformatics,2004,12271,Genome biology,Gentleman
+W2981863007,105.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Zawacki‐Richter 2019,,false,right,1.0,Systematic review of research on artificial intelligence applications in higher education – where are the educators?,2019,12127,International Journal of Educational Technology in Higher Education,Zawacki‐Richter
+W2110052313,885.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Lim 2012,,false,right,1.0,'A comparative risk assessment of burden of disease and injury attributable to 67 risk factors and risk factor clusters in 21 regions, 1990–2010: a systematic analysis for the Global Burden of Disease ',2012,12059,The Lancet,Lim
+W2128769815,555.0,165.0,true,cornflowerblue,,,false,2,10.0,10.0,Huttenhower 2012,,false,right,1.0,'Structure, function and diversity of the healthy human microbiome',2012,11965,Nature,Huttenhower
+W2125826054,570.0,180.0,true,cornflowerblue,,,false,2,10.0,10.0,Qin 2010,,false,right,1.0,A human gut microbial gene catalogue established by metagenomic sequencing,2010,11960,Nature,Qin
+W3005680577,435.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Chen 2020,,false,right,1.0,A Simple Framework for Contrastive Learning of Visual Representations,2020,11940,arXiv (Cornell University),Chen
+W2962756421,570.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Grover 2016,,false,right,1.0,node2vec,2016,11899,ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD),Grover
+W2999615587,450.0,405.0,true,cornflowerblue,,,false,2,10.0,10.0,Lundberg 2020,,false,right,1.0,From local explanations to global understanding with explainable AI for trees,2020,11868,Nature Machine Intelligence,Lundberg
+W2963091558,420.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Wang 2018,,false,right,1.0,Non-local Neural Networks,2018,11829,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Wang
+W2096420865,135.0,780.0,true,cornflowerblue,,,false,2,10.0,10.0,Bandelt 1999,,false,right,1.0,Median-joining networks for inferring intraspecific phylogenies,1999,11816,Molecular Biology and Evolution,Bandelt
+W3014974815,330.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Isensee 2020,,false,right,1.0,nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation,2020,11748,Nature Methods,Isensee
+W2295107390,405.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Zhou 2016,,false,right,1.0,Learning Deep Features for Discriminative Localization,2016,11679,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Zhou
+W2127048411,720.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Fortunato 2009,,false,right,1.0,Community detection in graphs,2009,11530,Physics Reports,Fortunato
+W2331128040,330.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Johnson 2016,,false,right,1.0,Perceptual Losses for Real-Time Style Transfer and Super-Resolution,2016,11516,Lecture notes in computer science,Johnson
+W3210904070,405.0,705.0,true,cornflowerblue,,,false,2,10.0,10.0,Cobbe 2021,,false,right,1.0,Socratic guiding questions in synthetic arithmetic data: matched LoRA runs (revision v2),2021,11341,arXiv (Cornell University),Cobbe
+W2801159594,915.0,450.0,true,cornflowerblue,,,false,2,10.0,10.0,Rambaut 2018,,false,right,1.0,Posterior Summarization in Bayesian Phylogenetics Using Tracer 1.7,2018,11268,Systematic Biology,Rambaut
+W2884436604,270.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Zhou 2018,,false,right,1.0,UNet++: A Nested U-Net Architecture for Medical Image Segmentation,2018,11109,Lecture notes in computer science,Zhou
+W3156458251,780.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Letunić 2021,,false,right,1.0,Interactive Tree Of Life (iTOL) v5: an online tool for phylogenetic tree display and annotation,2021,11071,Nucleic Acids Research,Letunić
+W2158804744,330.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Krzywinski 2009,,false,right,1.0,Circos: An information aesthetic for comparative genomics,2009,11031,Genome Research,Krzywinski
+W3036167779,420.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Ho 2020,,false,right,1.0,Denoising Diffusion Probabilistic Models,2020,11019,arXiv (Cornell University),Ho
+W2028046413,705.0,195.0,true,cornflowerblue,,,false,2,10.0,10.0,Hanwell 2012,,false,right,1.0,'Avogadro: an advanced semantic chemical editor, visualization, and analysis platform',2012,10923,Journal of Cheminformatics,Hanwell
+W2157795344,570.0,270.0,true,cornflowerblue,,,false,2,10.0,10.0,Souiai 2014,,false,right,1.0,In silico prediction of protein-protein interactions in human macrophages,2014,10785,BMC Research Notes,Souiai
+W2345356016,630.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Kuleshov 2016,,false,right,1.0,Enrichr: a comprehensive gene set enrichment analysis web server 2016 update,2016,10775,Nucleic Acids Research,Kuleshov
+W2640329709,285.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Mądry 2017,,false,right,1.0,Towards Deep Learning Models Resistant to Adversarial Attacks,2017,10735,arXiv (Cornell University),Mądry
+W2949650786,390.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,He 2015,,false,right,1.0,Deep Residual Learning for Image Recognition,2015,10734,arXiv (Cornell University),He
+W2749069611,750.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Bürkner 2017,,false,right,1.0,brms : An R Package for Bayesian Multilevel Models Using Stan,2017,10646,Journal of Statistical Software,Bürkner
+W2765081049,315.0,360.0,true,cornflowerblue,,,false,2,10.0,10.0,Abbott 2017,,false,right,1.0,GW170817: Observation of Gravitational Waves from a Binary Neutron Star Inspiral,2017,10592,Physical Review Letters,Abbott
+W2166073443,510.0,0.0,true,cornflowerblue,,,false,2,10.0,10.0,Oostenveld 2010,,false,right,1.0,'FieldTrip: Open Source Software for Advanced Analysis of MEG, EEG, and Invasive Electrophysiological Data',2010,10571,Computational Intelligence and Neuroscience,Oostenveld
+W2122122381,465.0,960.0,true,cornflowerblue,,,false,2,10.0,10.0,Azuma 1997,,false,right,1.0,A Survey of Augmented Reality,1997,10562,PRESENCE Virtual and Augmented Reality,Azuma
+W3009506062,360.0,60.0,true,cornflowerblue,,,false,2,10.0,10.0,Wang 2020,,false,right,1.0,Immediate Psychological Responses and Associated Factors during the Initial Stage of the 2019 Coronavirus Disease (COVID-19) Epidemic among the General Population in China,2020,10547,International Journal of Environmental Research and Public Health,Wang
+W4390041933,450.0,750.0,true,cornflowerblue,,,false,2,10.0,10.0,Team 2023,,false,right,1.0,Gemini: A Family of Highly Capable Multimodal Models,2023,10518,arXiv (Cornell University),Team
+W2096173332,600.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Szklarczyk 2014,,false,right,1.0,'STRING v10: protein–protein interaction networks, integrated over the tree of life',2014,10438,Nucleic Acids Research,Szklarczyk
+W2963857746,330.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Liu 2018,,false,right,1.0,Path Aggregation Network for Instance Segmentation,2018,10429,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Liu
+W2888532099,345.0,390.0,true,cornflowerblue,,,false,2,10.0,10.0,Price-Whelan 2018,,false,right,1.0,The Astropy Project: Building an Open-science Project and Status of the v2.0 Core Package *,2018,10350,The Astronomical Journal,Price-Whelan
+W2131222241,525.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Bhatt 2013,,false,right,1.0,The global distribution and burden of dengue,2013,10314,Nature,Bhatt
+W4308834893,570.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Szklarczyk 2022,,false,right,1.0,The STRING database in 2023: protein–protein association networks and functional enrichment analyses for any sequenced genome of interest,2022,10306,Nucleic Acids Research,Szklarczyk
+W4226002507,405.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,He 2022,,false,right,1.0,Masked Autoencoders Are Scalable Vision Learners,2022,10190,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,He
+W3034552520,345.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Wang 2020,,false,right,1.0,ECA-Net: Efficient Channel Attention for Deep Convolutional Neural Networks,2020,10121,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Wang
+W3163993681,255.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Karniadakis 2021,,false,right,1.0,Physics-informed machine learning,2021,10107,Nature Reviews Physics,Karniadakis
+W2624503621,390.0,450.0,true,cornflowerblue,,,false,2,10.0,10.0,Qi 2017,,false,right,1.0,PointNet++: Deep Hierarchical Feature Learning on Point Sets in a Metric Space,2017,10102,arXiv (Cornell University),Qi
+W2750384547,525.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Han 2017,,false,right,1.0,Fashion-MNIST: a Novel Image Dataset for Benchmarking Machine Learning Algorithms,2017,10043,arXiv (Cornell University),Han
+W2406250479,255.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Gu 2016,,false,right,1.0,Complex heatmaps reveal patterns and correlations in multidimensional genomic data,2016,10037,Bioinformatics,Gu
+W2630837129,330.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Chen 2017,,false,right,1.0,Rethinking Atrous Convolution for Semantic Image Segmentation,2017,10005,arXiv (Cornell University),Chen
+W2979826702,420.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Wolf 2020,,false,right,1.0,Transformers: State-of-the-Art Natural Language Processing,2020,9970,Conference on Empirical Methods in Natural Language Processing: System Demonstrations (EMNLP),Wolf
+W3001279689,390.0,690.0,true,cornflowerblue,,,false,2,10.0,10.0,A 2020,,false,right,1.0,Scaling Laws for Neural Language Models,2020,9945,arXiv (Cornell University),A
+W3195577433,405.0,600.0,true,cornflowerblue,,,false,2,10.0,10.0,Bommasani 2021,,false,right,1.0,On the Opportunities and Risks of Foundation Models,2021,9889,arXiv (Cornell University),Bommasani
+W2607129810,225.0,855.0,true,cornflowerblue,,,false,2,10.0,10.0,Tang 2017,,false,right,1.0,GEPIA: a web server for cancer and normal gene expression profiling and interactive analyses,2017,9878,Nucleic Acids Research,Tang
+W1522734439,435.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Tran 2015,,false,right,1.0,Learning Spatiotemporal Features with 3D Convolutional Networks,2015,9857,IEEE/CVF International Conference on Computer Vision (ICCV),Tran
+W2950635152,450.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Cho 2014,,false,right,1.0,Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation,2014,9788,arXiv (Cornell University),Cho
+W2152061559,120.0,180.0,true,cornflowerblue,,,false,2,10.0,10.0,Initiative 2013,,false,right,1.0,Signatures of mutational processes in human cancer,2013,9715,Nature,Initiative
+W1803102843,810.0,870.0,true,cornflowerblue,,,false,2,10.0,10.0,Kelley 2015,,false,right,1.0,'The Phyre2 web portal for protein modeling, prediction and analysis',2015,9675,Nature Protocols,Kelley
+W4298289240,360.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Goodfellow 2014,,false,right,1.0,Generative Adversarial Networks,2014,9583,arXiv (Cornell University),Goodfellow
+W2026616100,390.0,870.0,true,cornflowerblue,,,false,2,10.0,10.0,Fedorov 2012,,false,right,1.0,3D Slicer as an image computing platform for the Quantitative Imaging Network,2012,9481,Magnetic Resonance Imaging,Fedorov
+W4281790889,480.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Mirdita 2022,,false,right,1.0,ColabFold: making protein folding accessible to all,2022,9381,Nature Methods,Mirdita
+W2952481429,660.0,900.0,true,cornflowerblue,,,false,2,10.0,10.0,Bankhead 2017,,false,right,1.0,QuPath: Open source software for digital pathology image analysis,2017,9381,Scientific Reports,Bankhead
+W2134295053,495.0,15.0,true,cornflowerblue,,,false,2,10.0,10.0,Al‐Fuqaha 2015,,false,right,1.0,'Internet of Things: A Survey on Enabling Technologies, Protocols, and Applications',2015,9259,IEEE Communications Surveys & Tutorials,Al‐Fuqaha
+W2110300022,495.0,105.0,true,cornflowerblue,,,false,2,10.0,10.0,Langille 2013,,false,right,1.0,Predictive functional profiling of microbial communities using 16S rRNA marker gene sequences,2013,9222,Nature Biotechnology,Langille
+W2149961401,120.0,750.0,true,cornflowerblue,,,false,2,10.0,10.0,Fischbacher 2007,,false,right,1.0,z-Tree: Zurich toolbox for ready-made economic experiments,2007,9153,Experimental Economics,Fischbacher
+W2286929393,330.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Yu 2015,,false,right,1.0,Multi-Scale Context Aggregation by Dilated Convolutions,2015,9150,arXiv (Cornell University),Yu
+W2138621811,795.0,390.0,true,cornflowerblue,,,false,2,10.0,10.0,Kleinberg 1999,,false,right,1.0,Authoritative sources in a hyperlinked environment,1999,9113,Journal of the ACM,Kleinberg
+W3140854437,420.0,465.0,true,cornflowerblue,,,false,2,10.0,10.0,Alzubaidi 2021,,false,right,1.0,'Review of deep learning: concepts, CNN architectures, challenges, applications, future directions',2021,8948,Journal Of Big Data,Alzubaidi
+W2518108298,450.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Loshchilov 2016,,false,right,1.0,SGDR: Stochastic Gradient Descent with Warm Restarts,2016,8838,arXiv (Cornell University),Loshchilov
+W4224035735,360.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Aditya 2022,,false,right,1.0,Hierarchical Text-Conditional Image Generation with CLIP Latents,2022,8812,arXiv (Cornell University),Aditya
+W3132661792,645.0,420.0,true,cornflowerblue,,,false,2,10.0,10.0,Jin 2021,,false,right,1.0,Inference and analysis of cell-cell communication using CellChat,2021,8743,Nature Communications,Jin
+W2127435093,255.0,75.0,true,cornflowerblue,,,false,2,10.0,10.0,Jones 2008,,false,right,1.0,Global trends in emerging infectious diseases,2008,8727,Nature,Jones
+W2964199361,480.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Cho 2014,,false,right,1.0,On the Properties of Neural Machine Translation: Encoder–Decoder Approaches,2014,8715,,Cho
+W1902237438,480.0,630.0,true,cornflowerblue,,,false,2,10.0,10.0,Luong 2015,,false,right,1.0,Effective Approaches to Attention-based Neural Machine Translation,2015,8656,Conference on Empirical Methods in Natural Language Processing (EMNLP),Luong
+W2978346165,645.0,15.0,true,cornflowerblue,,,false,2,10.0,10.0,Verhoef 2019,,false,right,1.0,Digital transformation: A multidisciplinary reflection and research agenda,2019,8638,Journal of Business Research,Verhoef
+W4249896096,165.0,165.0,true,cornflowerblue,,,false,2,10.0,10.0,Lang 2015,,false,right,1.0,Recommendations for Cardiac Chamber Quantification by Echocardiography in Adults: An Update from the American Society of Echocardiography and the European Association of Cardiovascular Imaging,2015,8584,European Heart Journal - Cardiovascular Imaging,Lang
+W1514535095,420.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Xu 2015,,false,right,1.0,'Show, Attend and Tell: Neural Image Caption Generation with Visual Attention',2015,8550,arXiv (Cornell University),Xu
+W2523246573,375.0,405.0,true,cornflowerblue,,,false,2,10.0,10.0,Ruder 2016,,false,right,1.0,An overview of gradient descent optimization algorithms,2016,8532,arXiv (Cornell University),Ruder
+W2111684210,645.0,330.0,true,cornflowerblue,,,false,2,10.0,10.0,Zuur 2009,,false,right,1.0,A protocol for data exploration to avoid common statistical problems,2009,8510,Methods in Ecology and Evolution,Zuur
+W1904365287,435.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Hinton 2012,,false,right,1.0,Improving neural networks by preventing co-adaptation of feature detectors,2012,8498,arXiv (Cornell University),Hinton
+W2108344016,900.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Vos 2012,,false,right,1.0,Years lived with disability (YLDs) for 1160 sequelae of 289 diseases and injuries 1990–2010: a systematic analysis for the Global Burden of Disease Study 2010,2012,8488,The Lancet,Vos
+W2105397247,315.0,60.0,true,cornflowerblue,,,false,2,10.0,10.0,Roffi 2015,,false,right,1.0,2015 ESC Guidelines for the management of acute coronary syndromes in patients presenting without persistent ST-segment elevation,2015,8387,European Heart Journal,Roffi
+W2144985796,270.0,870.0,true,cornflowerblue,,,false,2,10.0,10.0,Norgren 2007,,false,right,1.0,Inter-Society Consensus for the Management of Peripheral Arterial Disease (TASC II),2007,8283,Journal of Vascular Surgery,Norgren
+W2102201073,420.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Friedman 1991,,false,right,1.0,Multivariate Adaptive Regression Splines,1991,8267,The Annals of Statistics,Friedman
+W3004227146,960.0,345.0,true,cornflowerblue,,,false,2,10.0,10.0,Rakita 2020,,false,right,1.0,Re-epithelialization and immune cell behaviour in an ex vivo human skin model,2020,8265,Scientific Reports,Rakita
+W2594475271,330.0,660.0,true,cornflowerblue,,,false,2,10.0,10.0,Doshi‐Velez 2017,,false,right,1.0,Towards A Rigorous Science of Interpretable Machine Learning,2017,8144,arXiv (Cornell University),Doshi‐Velez
+W3107527779,570.0,195.0,true,cornflowerblue,,,false,2,10.0,10.0,Szklarczyk 2020,,false,right,1.0,'The STRING database in 2021: customizable protein–protein networks, and functional characterization of user-uploaded gene/measurement sets',2020,8126,Nucleic Acids Research,Szklarczyk
+W2169393322,435.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Simonyan 2013,,false,right,1.0,Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps,2013,8014,Oxford University Research Archive (ORA) (University of Oxford),Simonyan
+W2616247523,450.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Selvaraju 2019,,false,right,1.0,Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based Localization,2019,7989,International Journal of Computer Vision,Selvaraju
+W2759190050,795.0,825.0,true,cornflowerblue,,,false,2,10.0,10.0,Shaffer 2017,,false,right,1.0,An Overview of Heart Rate Variability Metrics and Norms,2017,7965,Frontiers in Public Health,Shaffer
+W2519091744,387.0,543.0,true,cornflowerblue,,,false,2,10.0,10.0,Oord 2016,,false,right,1.0,WaveNet: A Generative Model for Raw Audio,2016,7929,arXiv (Cornell University),Oord
+W2341539131,735.0,150.0,true,cornflowerblue,,,false,2,10.0,10.0,Ramírez 2016,,false,right,1.0,deepTools2: a next generation web server for deep-sequencing data analysis,2016,7889,Nucleic Acids Research,Ramírez
+W2070050178,675.0,195.0,true,cornflowerblue,,,false,2,10.0,10.0,Chen 2013,,false,right,1.0,Enrichr: interactive and collaborative HTML5 gene list enrichment analysis tool,2013,7813,BMC Bioinformatics,Chen
+W3152893301,480.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Zhou 2020,,false,right,1.0,Graph neural networks: A review of methods and applications,2020,7811,AI Open,Zhou
+W2260756217,345.0,705.0,true,cornflowerblue,,,false,2,10.0,10.0,Mnih 2016,,false,right,1.0,Asynchronous Methods for Deep Reinforcement Learning,2016,7808,arXiv (Cornell University),Mnih
+W2151512268,420.0,15.0,true,cornflowerblue,,,false,2,10.0,10.0,Chatrchyan 2008,,false,right,1.0,The CMS experiment at the CERN LHC,2008,7769,Journal of Instrumentation,Chatrchyan
+W2161289668,690.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Verhaak 2010,,false,right,1.0,'Integrated Genomic Analysis Identifies Clinically Relevant Subtypes of Glioblastoma Characterized by Abnormalities in PDGFRA, IDH1, EGFR, and NF1',2010,7720,Cancer Cell,Verhaak
+W2171165037,90.0,720.0,true,cornflowerblue,,,false,2,10.0,10.0,Jauch 2013,,false,right,1.0,Guidelines for the Early Management of Patients With Acute Ischemic Stroke,2013,7698,Stroke,Jauch
+W2476548250,360.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Shi 2016,,false,right,1.0,Real-Time Single Image and Video Super-Resolution Using an Efficient Sub-Pixel Convolutional Neural Network,2016,7689,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Shi
+W3136918052,540.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Consortium 2018,,false,right,1.0,UniProt: a worldwide hub of protein knowledge,2018,7674,Nucleic Acids Research,Consortium
+W2065769502,705.0,405.0,true,cornflowerblue,,,false,2,10.0,10.0,Albert 2000,,false,right,1.0,Error and attack tolerance of complex networks,2000,7646,Nature,Albert
+W2091257550,900.0,690.0,true,cornflowerblue,,,false,2,10.0,10.0,Foster 1998,,false,right,1.0,The Grid 2: Blueprint for a New Computing Infrastructure,1998,7637,,Foster
+W2883780447,315.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Ma 2018,,false,right,1.0,ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design,2018,7624,Lecture notes in computer science,Ma
+W2101357408,765.0,855.0,true,cornflowerblue,,,false,2,10.0,10.0,Ripke 2014,,false,right,1.0,Biological insights from 108 schizophrenia-associated genetic loci,2014,7595,Nature,Ripke
+W2087484885,645.0,945.0,true,cornflowerblue,,,false,2,10.0,10.0,Faul 2007,,false,right,1.0,'G*Power 3: A flexible statistical power analysis program for the social, behavioral, and biomedical sciences',2007,70373,Behavior Research Methods,Faul
+W2160378127,510.0,795.0,true,cornflowerblue,,,false,2,10.0,10.0,Katoh 2013,,false,right,1.0,MAFFT Multiple Sequence Alignment Software Version 7: Improvements in Performance and Usability,2013,46309,Molecular Biology and Evolution,Katoh
+W2132525235,0.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Lu 2011,,false,right,1.0,Multiwfn: A multifunctional wavefunction analyzer,2011,45997,Journal of Computational Chemistry,Lu
+W4254687493,330.0,945.0,true,cornflowerblue,,,false,2,10.0,10.0,Wickham 2016,,false,right,1.0,ggplot2,2016,34218,Use R!,Wickham
+W2187089797,510.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Maaten 2008,,false,right,1.0,Visualizing Data using t-SNE,2008,33666,Research portal (Tilburg University),Maaten
+W2034285706,120.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Quast 2012,,false,right,1.0,The SILVA ribosomal RNA gene database project: improved data processing and web-based tools,2012,33504,Nucleic Acids Research,Quast
+W2148698435,870.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Ronquist 2012,,false,right,1.0,MrBayes 3.2: Efficient Bayesian Phylogenetic Inference and Model Choice Across a Large Model Space,2012,28399,Systematic Biology,Ronquist
+W2124026197,210.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Emsley 2010,,false,right,1.0,Features and development of Coot,2010,27920,Acta Crystallographica Section D Biological Crystallography,Emsley
+W2158698691,555.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Fawcett 2005,,false,right,1.0,An introduction to ROC analysis,2005,23256,Pattern Recognition Letters,Fawcett
+W1587026990,435.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Wickham 2009,,false,right,1.0,ggplot2: Elegant Graphics for Data Analysis,2009,19660,,Wickham
+W2047968138,570.0,960.0,true,cornflowerblue,,,false,2,10.0,10.0,Stukowski 2009,,false,right,1.0,Visualization and analysis of atomistic simulation data with OVITO–the Open Visualization Tool,2009,16988,Modelling and Simulation in Materials Science and Engineering,Stukowski
+W3036319615,225.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Chen 2020,,false,right,1.0,TBtools: An Integrative Toolkit Developed for Interactive Analyses of Big Biological Data,2020,14552,Molecular Plant,Chen
+W2118898434,30.0,645.0,true,cornflowerblue,,,false,2,10.0,10.0,Anselin 1995,,false,right,1.0,Local Indicators of Spatial Association—LISA,1995,13795,Geographical Analysis,Anselin
+W2786672974,585.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,McInnes 2018,,false,right,1.0,UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction,2018,12289,arXiv (Cornell University),McInnes
+W3003217347,555.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Wu 2020,,false,right,1.0,A new coronavirus associated with human respiratory disease in China,2020,11925,Nature,Wu
+W2106578986,855.0,180.0,true,cornflowerblue,,,false,2,10.0,10.0,Cingolani 2012,,false,right,1.0,'A program for annotating and predicting the effects of single nucleotide polymorphisms, SnpEff',2012,11868,Fly,Cingolani
+W2164154943,660.0,870.0,true,cornflowerblue,,,false,2,10.0,10.0,Conesa 2005,,false,right,1.0,'Blast2GO: a universal tool for annotation, visualization and analysis in functional genomics research',2005,11565,Bioinformatics,Conesa
+W2118258530,660.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Barrett 2012,,false,right,1.0,NCBI GEO: archive for functional genomics data sets—update,2012,10521,Nucleic Acids Research,Barrett
+W2229412420,270.0,345.0,true,cornflowerblue,,,false,2,10.0,10.0,Lorensen 1987,,false,right,1.0,Marching cubes: A high resolution 3D surface construction algorithm,1987,10320,ACM SIGGRAPH Conference (SIGGRAPH),Lorensen
+W2170488209,870.0,795.0,true,cornflowerblue,,,false,2,10.0,10.0,Kollmuss 2002,,false,right,1.0,Mind the Gap: Why do people act environmentally and what are the barriers to pro-environmental behavior?,2002,10094,Environmental Education Research,Kollmuss
+W2751583588,420.0,855.0,true,cornflowerblue,,,false,2,10.0,10.0,Katoh 2017,,false,right,1.0,'MAFFT online service: multiple sequence alignment, interactive sequence choice and visualization',2017,9172,Briefings in Bioinformatics,Katoh
+W1982855075,660.0,105.0,true,cornflowerblue,,,false,2,10.0,10.0,Walker 2014,,false,right,1.0,Pilon: An Integrated Tool for Comprehensive Microbial Variant Detection and Genome Assembly Improvement,2014,9130,PLoS ONE,Walker
+W2952167528,570.0,135.0,true,cornflowerblue,,,false,2,10.0,10.0,Wick 2017,,false,right,1.0,Unicycler: Resolving bacterial genome assemblies from short and long sequencing reads,2017,8758,PLoS Computational Biology,Wick
+W2112311198,585.0,945.0,true,cornflowerblue,,,false,2,10.0,10.0,Geuzaine 2009,,false,right,1.0,Gmsh: A 3‐D finite element mesh generator with built‐in pre‐ and post‐processing facilities,2009,8337,International Journal for Numerical Methods in Engineering,Geuzaine
+W3128261063,390.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Waskom 2021,,false,right,1.0,seaborn: statistical data visualization,2021,8210,The Journal of Open Source Software,Waskom
+W2158489424,60.0,690.0,true,cornflowerblue,,,false,2,10.0,10.0,Falush 2003,,false,right,1.0,Inference of Population Structure Using Multilocus Genotype Data: Linked Loci and Correlated Allele Frequencies,2003,8006,Genetics,Falush
+W2110035718,960.0,630.0,true,cornflowerblue,,,false,2,10.0,10.0,Bradbury 2007,,false,right,1.0,TASSEL: software for association mapping of complex traits in diverse samples,2007,7862,Bioinformatics,Bradbury
+W2020134788,495.0,0.0,true,cornflowerblue,,,false,2,10.0,10.0,Wang 2012,,false,right,1.0,MCScanX: a toolkit for detection and evolutionary analysis of gene synteny and collinearity,2012,7690,Nucleic Acids Research,Wang
+W2988396470,555.0,855.0,true,cornflowerblue,,,false,2,10.0,10.0,Emms 2019,,false,right,1.0,OrthoFinder: phylogenetic orthology inference for comparative genomics,2019,7676,Genome biology,Emms
+W4200150166,360.0,360.0,true,cornflowerblue,,,false,2,10.0,10.0,Mildenhall 2021,,false,right,1.0,NeRF,2021,7591,Communications of the ACM,Mildenhall
+W2047940964,795.0,465.0,true,cornflowerblue,,,false,2,10.0,10.0,Clauset 2004,,false,right,1.0,Finding community structure in very large networks,2004,7576,Physical Review E,Clauset
+W2979750740,450.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Wang 2019,,false,right,1.0,Dynamic Graph CNN for Learning on Point Clouds,2019,7568,ACM Transactions on Graphics,Wang
+W4309506674,405.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Bateman 2022,,false,right,1.0,UniProt: the Universal Protein Knowledgebase in 2023,2022,7506,Nucleic Acids Research,Bateman
+W2133371793,945.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,White 1999,,false,right,1.0,Program MARK: survival estimation from populations of marked animals,1999,7500,Bird Study,White
+W2955058313,360.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Fu 2019,,false,right,1.0,Dual Attention Network for Scene Segmentation,2019,7427,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Fu
+W2114622716,180.0,330.0,true,cornflowerblue,,,false,2,10.0,10.0,Adams 2012,,false,right,1.0,PHENIX: a comprehensive Python-based system for macromolecular structure solution,2012,7356,International Tables for Crystallography,Adams
+W3041133507,510.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Zhuang 2020,,false,right,1.0,A Comprehensive Survey on Transfer Learning,2020,7325,Proceedings of the IEEE,Zhuang
+W4385318467,735.0,870.0,true,cornflowerblue,,,false,2,10.0,10.0,Kerbl 2023,,false,right,1.0,3D Gaussian Splatting for Real-Time Radiance Field Rendering,2023,7287,ACM Transactions on Graphics,Kerbl
+W2766527293,375.0,480.0,true,cornflowerblue,,,false,2,10.0,10.0,Karras 2017,,false,right,1.0,'Progressive Growing of GANs for Improved Quality, Stability, and Variation',2017,7193,arXiv (Cornell University),Karras
+W4313531093,30.0,375.0,true,cornflowerblue,,,false,2,10.0,10.0,López-Otín 2023,,false,right,1.0,Hallmarks of aging: An expanding universe,2023,7128,Cell,López-Otín
+W2127847431,780.0,870.0,true,cornflowerblue,,,false,2,10.0,10.0,Stamatakis 2008,,false,right,1.0,A Rapid Bootstrap Algorithm for the RAxML Web Servers,2008,7033,Systematic Biology,Stamatakis
+W3005212621,495.0,930.0,true,cornflowerblue,,,false,2,10.0,10.0,Wang 2020,,false,right,1.0,Remdesivir and chloroquine effectively inhibit the recently emerged novel coronavirus (2019-nCoV) in vitro,2020,7006,Cell Research,Wang
+W2123768693,450.0,945.0,true,cornflowerblue,,,false,2,10.0,10.0,Lindahl 2001,,false,right,1.0,GROMACS 3.0: a package for molecular simulation and trajectory analysis,2001,6994,Journal of Molecular Modeling,Lindahl
+W1565377632,285.0,675.0,true,cornflowerblue,,,false,2,10.0,10.0,Chiu 2008,,false,right,1.0,Introduction to Data Mining,2008,6987,Routledge eBooks,Chiu
+W2962949934,435.0,525.0,true,cornflowerblue,,,false,2,10.0,10.0,Gu 2017,,false,right,1.0,Recent advances in convolutional neural networks,2017,6956,Pattern Recognition,Gu
+W2952230511,495.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Collobert 2011,,false,right,1.0,Natural Language Processing (almost) from Scratch,2011,6923,arXiv (Cornell University),Collobert
+W2973457155,285.0,345.0,true,cornflowerblue,,,false,2,10.0,10.0,Liebschner 2019,,false,right,1.0,'Macromolecular structure determination using X-rays, neutrons and electrons: recent developments in Phenix',2019,6849,Acta Crystallographica Section D Structural Biology,Liebschner
+W2124651399,75.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Perkins 1994,,false,right,1.0,Highly dynamic Destination-Sequenced Distance-Vector routing (DSDV) for mobile computers,1994,6780,ACM SIGCOMM Computer Communication Review,Perkins
+W2091922579,345.0,270.0,true,cornflowerblue,,,false,2,10.0,10.0,Pruesse 2007,,false,right,1.0,SILVA: a comprehensive online resource for quality checked and aligned ribosomal RNA sequence data compatible with ARB,2007,6773,Nucleic Acids Research,Pruesse
+W2995327724,345.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Karras 2020,,false,right,1.0,Analyzing and Improving the Image Quality of StyleGAN,2020,6735,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Karras
+W2155806125,210.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Ludwig 2004,,false,right,1.0,ARB: a software environment for sequence data,2004,6714,Nucleic Acids Research,Ludwig
+W2103912979,570.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Chin 2014,,false,right,1.0,cytoHubba: identifying hub objects and sub-networks from complex interactome,2014,6699,BMC Systems Biology,Chin
+W2135695572,540.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Elith 2008,,false,right,1.0,A working guide to boosted regression trees,2008,6654,Journal of Animal Ecology,Elith
+W2439568532,465.0,570.0,true,cornflowerblue,,,false,2,10.0,10.0,Lipton 2018,,false,right,1.0,The Mythos of Model Interpretability,2018,6625,Queue,Lipton
+W2149933564,450.0,600.0,true,cornflowerblue,,,false,2,10.0,10.0,Yosinski 2014,,false,right,1.0,How transferable are features in deep neural networks?,2014,6604,arXiv (Cornell University),Yosinski
+W2137813581,45.0,495.0,true,cornflowerblue,,,false,2,10.0,10.0,Kschischang 2001,,false,right,1.0,Factor graphs and the sum-product algorithm,2001,6516,IEEE Transactions on Information Theory,Kschischang
+W2936695845,495.0,735.0,true,cornflowerblue,,,false,2,10.0,10.0,Tianyi 2019,,false,right,1.0,BERTScore: Evaluating Text Generation with BERT,2019,6494,arXiv (Cornell University),Tianyi
+W4389984066,375.0,765.0,true,cornflowerblue,,,false,2,10.0,10.0,Gao 2023,,false,right,1.0,Retrieval-Augmented Generation for Large Language Models: A Survey,2023,6429,arXiv (Cornell University),Gao
+W3112376646,480.0,270.0,true,cornflowerblue,,,false,2,10.0,10.0,Bateman 2020,,false,right,1.0,UniProt: the universal protein knowledgebase in 2021,2020,6335,Nucleic Acids Research,Bateman
+W2980282514,420.0,690.0,true,cornflowerblue,,,false,2,10.0,10.0,Wolf 2019,,false,right,1.0,'HuggingFaces Transformers: State-of-the-art Natural Language Processing',2019,6216,arXiv (Cornell University),Wolf
+W2962730651,300.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Cao 2019,,false,right,1.0,OpenPose: Realtime Multi-Person 2D Pose Estimation Using Part Affinity Fields,2019,6185,IEEE Transactions on Pattern Analysis and Machine Intelligence,Cao
+W4378212544,675.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Hao 2023,,false,right,1.0,'Dictionary learning for integrative, multimodal and scalable single-cell analysis',2023,6150,Nature Biotechnology,Hao
+W2756203131,510.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Yu 2018,,false,right,1.0,Spatio-Temporal Graph Convolutional Networks: A Deep Learning Framework for Traffic Forecasting,2018,6057,International Joint Conference on Artificial Intelligence,Yu
+W2786715987,360.0,600.0,true,cornflowerblue,,,false,2,10.0,10.0,Guidotti 2018,,false,right,1.0,A Survey of Methods for Explaining Black Box Models,2018,6035,ACM Computing Surveys,Guidotti
+W2927961455,855.0,630.0,true,cornflowerblue,,,false,2,10.0,10.0,Letunić 2019,,false,right,1.0,Interactive Tree Of Life (iTOL) v4: recent updates and new developments,2019,5973,Nucleic Acids Research,Letunić
+W2135621733,315.0,825.0,true,cornflowerblue,,,false,2,10.0,10.0,Finn 2011,,false,right,1.0,HMMER web server: interactive sequence similarity searching,2011,5973,Nucleic Acids Research,Finn
+W2796207838,675.0,225.0,true,cornflowerblue,,,false,2,10.0,10.0,Thórsson 2018,,false,right,1.0,The Immune Landscape of Cancer,2018,5890,Immunity,Thórsson
+W2884367402,375.0,510.0,true,cornflowerblue,,,false,2,10.0,10.0,Zhao 2019,,false,right,1.0,Object Detection With Deep Learning: A Review,2019,5880,IEEE Transactions on Neural Networks and Learning Systems,Zhao
+W4394671432,405.0,405.0,true,cornflowerblue,,,false,2,10.0,10.0,X. 2015,,false,right,1.0,ShapeNet: An Information-Rich 3D Model Repository,2015,5880,arXiv (Cornell University),X.
+W2553303224,345.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Zoph 2016,,false,right,1.0,Neural Architecture Search with Reinforcement Learning,2016,5774,arXiv (Cornell University),Zoph
+W2124351162,420.0,615.0,true,cornflowerblue,,,false,2,10.0,10.0,Rother 2004,,false,right,1.0,'"GrabCut"',2004,5769,ACM Transactions on Graphics,Rother
+W2162143298,285.0,900.0,true,cornflowerblue,,,false,2,10.0,10.0,Krämer 2013,,false,right,1.0,Causal analysis approaches in Ingenuity Pathway Analysis,2013,5729,Bioinformatics,Krämer
+W2082138120,90.0,735.0,true,cornflowerblue,,,false,2,10.0,10.0,Pumplin 2002,,false,right,1.0,New Generation of Parton Distributions with Uncertainties from Global QCD Analysis,2002,5719,Journal of High Energy Physics,Pumplin
+W205310263,975.0,540.0,true,cornflowerblue,,,false,2,10.0,10.0,Souza 2010,,false,right,1.0,Integrative review: what is it? How to do it?,2010,5657,Einstein (São Paulo),Souza
+W1989277387,585.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Fabregat 2015,,false,right,1.0,The Reactome pathway Knowledgebase,2015,5605,Nucleic Acids Research,Fabregat
+W2177317049,855.0,300.0,true,cornflowerblue,,,false,2,10.0,10.0,Kim 2015,,false,right,1.0,PubChem Substance and Compound databases,2015,5563,Nucleic Acids Research,Kim
+W2089458547,765.0,435.0,true,cornflowerblue,,,false,2,10.0,10.0,Newman 2004,,false,right,1.0,Fast algorithm for detecting community structure in networks,2004,5511,Physical Review E,Newman
+W2171468534,870.0,255.0,true,cornflowerblue,,,false,2,10.0,10.0,Bollen 2011,,false,right,1.0,Twitter mood predicts the stock market,2011,5460,Journal of Computational Science,Bollen
+W2277195237,375.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Krishna 2017,,false,right,1.0,Visual Genome: Connecting Language and Vision Using Crowdsourced Dense Image Annotations,2017,5448,International Journal of Computer Vision,Krishna
+W1882958252,465.0,555.0,true,cornflowerblue,,,false,2,10.0,10.0,Ganin 2014,,false,right,1.0,Unsupervised Domain Adaptation by Backpropagation,2014,5441,arXiv (Cornell University),Ganin
+W2154197653,210.0,375.0,true,cornflowerblue,,,false,2,10.0,10.0,Afonine 2012,,false,right,1.0,Towards automated crystallographic structure refinement with phenix.refine,2012,5418,Acta Crystallographica Section D Biological Crystallography,Afonine
+W2745461083,465.0,585.0,true,cornflowerblue,,,false,2,10.0,10.0,Anderson 2018,,false,right,1.0,Bottom-Up and Top-Down Attention for Image Captioning and Visual Question Answering,2018,5416,IEEE Computer Society Conference on Computer Vision and Pattern Recognition/Proceedings - IEEE Computer Society Conferen,Anderson
+W2040340473,405.0,15.0,true,cornflowerblue,,,false,2,10.0,10.0,Kreutz 2014,,false,right,1.0,Software-Defined Networking: A Comprehensive Survey,2014,5333,Proceedings of the IEEE,Kreutz
+W1934094702,675.0,240.0,true,cornflowerblue,,,false,2,10.0,10.0,Guinney 2015,,false,right,1.0,The consensus molecular subtypes of colorectal cancer,2015,5327,Nature Medicine,Guinney
+W2884430236,435.0,975.0,true,cornflowerblue,,,false,2,10.0,10.0,Butler 2018,,false,right,1.0,Machine learning for molecular and materials science,2018,5274,Nature,Butler
+W2116634113,720.0,270.0,true,cornflowerblue,,,false,2,10.0,10.0,Gautier 2004,,false,right,1.0,affy—analysis of Affymetrix GeneChip data at the probe level,2004,5239,Bioinformatics,Gautier
+W4384071683,375.0,690.0,true,cornflowerblue,,,false,2,10.0,10.0,Singhal 2023,,false,right,1.0,Large language models encode clinical knowledge,2023,5232,Nature,Singhal
+W1950118853,330.0,390.0,true,cornflowerblue,,,false,2,10.0,10.0,Hoshino 2015,,false,right,1.0,Tumour exosome integrins determine organotropic metastasis,2015,5205,Nature,Hoshino
+W2804846127,630.0,0.0,true,cornflowerblue,,,false,2,10.0,10.0,Danaei 2018,,false,right,1.0,Impact of Particle Size and Polydispersity Index on the Clinical Applications of Lipidic Nanocarrier Systems,2018,5192,Pharmaceutics,Danaei
+W2266175888,900.0,750.0,true,cornflowerblue,,,false,2,10.0,10.0,Gao 2016,,false,right,1.0,Fully integrated wearable sensor arrays for multiplexed in situ perspiration analysis,2016,5179,Nature,Gao
+W2944545583,600.0,270.0,true,cornflowerblue,,,false,2,10.0,10.0,Raudvere 2019,,false,right,1.0,g:Profiler: a web server for functional enrichment analysis and conversions of gene lists (2019 update),2019,5155,Nucleic Acids Research,Raudvere
+W2734356283,405.0,285.0,true,cornflowerblue,,,false,2,10.0,10.0,Goddard 2017,,false,right,1.0,UCSF ChimeraX: Meeting modern challenges in visualization and analysis,2017,5147,Protein Science,Goddard
+W2170776626,450.0,315.0,true,cornflowerblue,,,false,2,10.0,10.0,Cox 2014,,false,right,1.0,'Accurate Proteome-wide Label-free Quantification by Delayed Normalization and Maximal Peptide Ratio Extraction, Termed MaxLFQ',2014,5147,Molecular & Cellular Proteomics,Cox
+edgedef> node1,node2,directed BOOLEAN,color VARCHAR(256),labelcolor VARCHAR(256),visible BOOLEAN,width DOUBLE,weight DOUBLE,label VARCHAR(256),labelvisible BOOLEAN,labelsize DOUBLE
+W2963446712,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963446712,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W2105846236,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W2105846236,W3122877168,true,dandelion,,true,2.0,1.0,,false,1.0
+W3003257820,W2015159529,true,dandelion,,true,2.0,1.0,,false,1.0
+W3003257820,W2132022337,true,dandelion,,true,2.0,1.0,,false,1.0
+W3003257820,W2252795400,true,dandelion,,true,2.0,1.0,,false,1.0
+W3003257820,W2765081049,true,dandelion,,true,2.0,1.0,,false,1.0
+W3003257820,W2888532099,true,dandelion,,true,2.0,1.0,,false,1.0
+W4327810158,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W4327810158,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W4327810158,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W4327810158,W3210904070,true,dandelion,,true,2.0,1.0,,false,1.0
+W4327810158,W4223908421,true,dandelion,,true,2.0,1.0,,false,1.0
+W4327810158,W4224308101,true,dandelion,,true,2.0,1.0,,false,1.0
+W4327810158,W4226278401,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030163527,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030163527,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030163527,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030163527,W3027879771,true,dandelion,,true,2.0,1.0,,false,1.0
+W2150220236,W2075220720,true,dandelion,,true,2.0,1.0,,false,1.0
+W2150220236,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W2552465644,W2173520492,true,dandelion,,true,2.0,1.0,,false,1.0
+W2552465644,W2331128040,true,dandelion,,true,2.0,1.0,,false,1.0
+W2552465644,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W2552465644,W2963470893,true,dandelion,,true,2.0,1.0,,false,1.0
+W2593436234,W2169678694,true,dandelion,,true,2.0,1.0,,false,1.0
+W2593436234,W2177317049,true,dandelion,,true,2.0,1.0,,false,1.0
+W2148606196,W1992419399,true,dandelion,,true,2.0,1.0,,false,1.0
+W2148606196,W2015370254,true,dandelion,,true,2.0,1.0,,false,1.0
+W2148606196,W2065769502,true,dandelion,,true,2.0,1.0,,false,1.0
+W2148606196,W2138621811,true,dandelion,,true,2.0,1.0,,false,1.0
+W2900569176,W1966327575,true,dandelion,,true,2.0,1.0,,false,1.0
+W2900569176,W1989277387,true,dandelion,,true,2.0,1.0,,false,1.0
+W2900569176,W2096173332,true,dandelion,,true,2.0,1.0,,false,1.0
+W2900569176,W2118258530,true,dandelion,,true,2.0,1.0,,false,1.0
+W2900569176,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390874575,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390874575,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390874575,W2432481613,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390874575,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390874575,W3030520226,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390874575,W3195577433,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390874575,W4224308101,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390874575,W4226002507,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390874575,W4288083516,true,dandelion,,true,2.0,1.0,,false,1.0
+W1849277567,W1904365287,true,dandelion,,true,2.0,1.0,,false,1.0
+W1849277567,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W1849277567,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2114843025,W2149441684,true,dandelion,,true,2.0,1.0,,false,1.0
+W2114843025,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2114843025,W4301159569,true,dandelion,,true,2.0,1.0,,false,1.0
+W2095293504,W2015370254,true,dandelion,,true,2.0,1.0,,false,1.0
+W2095293504,W2148606196,true,dandelion,,true,2.0,1.0,,false,1.0
+W2163922914,W2097308346,true,dandelion,,true,2.0,1.0,,false,1.0
+W2163922914,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W2163922914,W2952230511,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W1514535095,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W1673923490,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W1945616565,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W2295107390,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W2439568532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W2594475271,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W2786715987,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981731882,W2962858109,true,dandelion,,true,2.0,1.0,,false,1.0
+W2125910575,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2132914434,W1479807131,true,dandelion,,true,2.0,1.0,,false,1.0
+W2132914434,W2097308346,true,dandelion,,true,2.0,1.0,,false,1.0
+W229097380,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W2056132907,W2102201073,true,dandelion,,true,2.0,1.0,,false,1.0
+W2995022099,W1673923490,true,dandelion,,true,2.0,1.0,,false,1.0
+W2995022099,W1945616565,true,dandelion,,true,2.0,1.0,,false,1.0
+W2995022099,W2640329709,true,dandelion,,true,2.0,1.0,,false,1.0
+W2995022099,W2970971581,true,dandelion,,true,2.0,1.0,,false,1.0
+W2117131162,W2161289668,true,dandelion,,true,2.0,1.0,,false,1.0
+W2800392236,W229097380,true,dandelion,,true,2.0,1.0,,false,1.0
+W2800392236,W2125910575,true,dandelion,,true,2.0,1.0,,false,1.0
+W2800392236,W2131681506,true,dandelion,,true,2.0,1.0,,false,1.0
+W2800392236,W2132022337,true,dandelion,,true,2.0,1.0,,false,1.0
+W2800392236,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W3208645186,W2900619723,true,dandelion,,true,2.0,1.0,,false,1.0
+W2784874046,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2784874046,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2784874046,W2096733369,true,dandelion,,true,2.0,1.0,,false,1.0
+W2784874046,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W2784874046,W2904367110,true,dandelion,,true,2.0,1.0,,false,1.0
+W2784874046,W2949650786,true,dandelion,,true,2.0,1.0,,false,1.0
+W2223470559,W2105846236,true,dandelion,,true,2.0,1.0,,false,1.0
+W2463195069,W1989277387,true,dandelion,,true,2.0,1.0,,false,1.0
+W2463195069,W2157795344,true,dandelion,,true,2.0,1.0,,false,1.0
+W2463195069,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2463195069,W2170776626,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226278401,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226278401,W3195577433,true,dandelion,,true,2.0,1.0,,false,1.0
+W2097308346,W2156718197,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W2964309882,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W3005680577,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W3035524453,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W3135367836,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W3195577433,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W4224308101,true,dandelion,,true,2.0,1.0,,false,1.0
+W4366208220,W4226002507,true,dandelion,,true,2.0,1.0,,false,1.0
+W2132022337,W2148606196,true,dandelion,,true,2.0,1.0,,false,1.0
+W2950354111,W1982855075,true,dandelion,,true,2.0,1.0,,false,1.0
+W2950354111,W2153325555,true,dandelion,,true,2.0,1.0,,false,1.0
+W2950354111,W2950150251,true,dandelion,,true,2.0,1.0,,false,1.0
+W4309674289,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W4309674289,W4327810158,true,dandelion,,true,2.0,1.0,,false,1.0
+W2024046085,W1678356000,true,dandelion,,true,2.0,1.0,,false,1.0
+W2024046085,W2102201073,true,dandelion,,true,2.0,1.0,,false,1.0
+W1946252112,W2055298722,true,dandelion,,true,2.0,1.0,,false,1.0
+W1946252112,W2096420865,true,dandelion,,true,2.0,1.0,,false,1.0
+W2167482691,W2075220720,true,dandelion,,true,2.0,1.0,,false,1.0
+W2169589032,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W1966716734,W2133990480,true,dandelion,,true,2.0,1.0,,false,1.0
+W1966716734,W2145126338,true,dandelion,,true,2.0,1.0,,false,1.0
+W1966716734,W2158698691,true,dandelion,,true,2.0,1.0,,false,1.0
+W1966716734,W2160697532,true,dandelion,,true,2.0,1.0,,false,1.0
+W4402754006,W2193145675,true,dandelion,,true,2.0,1.0,,false,1.0
+W4402754006,W2963857746,true,dandelion,,true,2.0,1.0,,false,1.0
+W4402754006,W3030520226,true,dandelion,,true,2.0,1.0,,false,1.0
+W2530237102,W2162896254,true,dandelion,,true,2.0,1.0,,false,1.0
+W2530237102,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W2530237102,W2462099493,true,dandelion,,true,2.0,1.0,,false,1.0
+W2530237102,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W2136850043,W2065769502,true,dandelion,,true,2.0,1.0,,false,1.0
+W2136850043,W2075220720,true,dandelion,,true,2.0,1.0,,false,1.0
+W2136850043,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W3027879771,W2980282514,true,dandelion,,true,2.0,1.0,,false,1.0
+W3027879771,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W1945616565,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2096733369,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2173520492,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2193145675,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2286929393,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2412782625,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2519887557,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2553303224,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2750384547,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2784874046,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2883780447,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2963163009,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168997536,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W1888005072,W1532325895,true,dandelion,,true,2.0,1.0,,false,1.0
+W1888005072,W2156718197,true,dandelion,,true,2.0,1.0,,false,1.0
+W1888005072,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224308101,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224308101,W3016970897,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224308101,W3195577433,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224308101,W3210904070,true,dandelion,,true,2.0,1.0,,false,1.0
+W2547875792,W1514535095,true,dandelion,,true,2.0,1.0,,false,1.0
+W2547875792,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W2547875792,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W4403853618,W4327810158,true,dandelion,,true,2.0,1.0,,false,1.0
+W4403853618,W4384918448,true,dandelion,,true,2.0,1.0,,false,1.0
+W4403853618,W4390041933,true,dandelion,,true,2.0,1.0,,false,1.0
+W4403853618,W4401306886,true,dandelion,,true,2.0,1.0,,false,1.0
+W2086561953,W2154241726,true,dandelion,,true,2.0,1.0,,false,1.0
+W2162896254,W229097380,true,dandelion,,true,2.0,1.0,,false,1.0
+W2162896254,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W2118745042,W2075220720,true,dandelion,,true,2.0,1.0,,false,1.0
+W2118745042,W2148606196,true,dandelion,,true,2.0,1.0,,false,1.0
+W4223908421,W4226278401,true,dandelion,,true,2.0,1.0,,false,1.0
+W4387164156,W2734356283,true,dandelion,,true,2.0,1.0,,false,1.0
+W4387164156,W2973457155,true,dandelion,,true,2.0,1.0,,false,1.0
+W4387164156,W3177828909,true,dandelion,,true,2.0,1.0,,false,1.0
+W4387164156,W4281790889,true,dandelion,,true,2.0,1.0,,false,1.0
+W4387164156,W4309506674,true,dandelion,,true,2.0,1.0,,false,1.0
+W1479807131,W2024046085,true,dandelion,,true,2.0,1.0,,false,1.0
+W1479807131,W2048679005,true,dandelion,,true,2.0,1.0,,false,1.0
+W1479807131,W2097308346,true,dandelion,,true,2.0,1.0,,false,1.0
+W2225156818,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W2225156818,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W1990869665,W2151512268,true,dandelion,,true,2.0,1.0,,false,1.0
+W2107940314,W2158804744,true,dandelion,,true,2.0,1.0,,false,1.0
+W2139577967,W1603903339,true,dandelion,,true,2.0,1.0,,false,1.0
+W2805516822,W1888005072,true,dandelion,,true,2.0,1.0,,false,1.0
+W2805516822,W1902237438,true,dandelion,,true,2.0,1.0,,false,1.0
+W2805516822,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W2805516822,W2328078142,true,dandelion,,true,2.0,1.0,,false,1.0
+W2805516822,W2766453196,true,dandelion,,true,2.0,1.0,,false,1.0
+W2805516822,W2950635152,true,dandelion,,true,2.0,1.0,,false,1.0
+W2805516822,W2962756421,true,dandelion,,true,2.0,1.0,,false,1.0
+W2805516822,W2963091558,true,dandelion,,true,2.0,1.0,,false,1.0
+W2805516822,W2979750740,true,dandelion,,true,2.0,1.0,,false,1.0
+W2159929956,W2075220720,true,dandelion,,true,2.0,1.0,,false,1.0
+W1603903339,W2024424774,true,dandelion,,true,2.0,1.0,,false,1.0
+W2088794999,W1678356000,true,dandelion,,true,2.0,1.0,,false,1.0
+W2088794999,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W2005821483,W2058046532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2005821483,W2126650951,true,dandelion,,true,2.0,1.0,,false,1.0
+W2005821483,W2159929956,true,dandelion,,true,2.0,1.0,,false,1.0
+W1909320841,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W150292108,W2075220720,true,dandelion,,true,2.0,1.0,,false,1.0
+W150292108,W2089458547,true,dandelion,,true,2.0,1.0,,false,1.0
+W150292108,W2095293504,true,dandelion,,true,2.0,1.0,,false,1.0
+W150292108,W2125910575,true,dandelion,,true,2.0,1.0,,false,1.0
+W150292108,W2150220236,true,dandelion,,true,2.0,1.0,,false,1.0
+W150292108,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W2035080386,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W1990420052,W2102201073,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226125322,W2904367110,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226125322,W2995327724,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226125322,W3036167779,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226125322,W3135367836,true,dandelion,,true,2.0,1.0,,false,1.0
+W2128677857,W1972098965,true,dandelion,,true,2.0,1.0,,false,1.0
+W2037246595,W2258584306,true,dandelion,,true,2.0,1.0,,false,1.0
+W1644641054,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W1644641054,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W1644641054,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2594183968,W1678356000,true,dandelion,,true,2.0,1.0,,false,1.0
+W2594183968,W2024046085,true,dandelion,,true,2.0,1.0,,false,1.0
+W2594183968,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W2594183968,W2949650786,true,dandelion,,true,2.0,1.0,,false,1.0
+W2256362396,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2950150251,W2075220720,true,dandelion,,true,2.0,1.0,,false,1.0
+W2950150251,W2125826054,true,dandelion,,true,2.0,1.0,,false,1.0
+W2950150251,W2128769815,true,dandelion,,true,2.0,1.0,,false,1.0
+W2950150251,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2091030812,W2158804744,true,dandelion,,true,2.0,1.0,,false,1.0
+W2100805904,W2024046085,true,dandelion,,true,2.0,1.0,,false,1.0
+W2951799803,W2097308346,true,dandelion,,true,2.0,1.0,,false,1.0
+W2951799803,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W2951799803,W2519132385,true,dandelion,,true,2.0,1.0,,false,1.0
+W4396946025,W2110052313,true,dandelion,,true,2.0,1.0,,false,1.0
+W2098005762,W2095293504,true,dandelion,,true,2.0,1.0,,false,1.0
+W2098005762,W2127048411,true,dandelion,,true,2.0,1.0,,false,1.0
+W2098005762,W2148606196,true,dandelion,,true,2.0,1.0,,false,1.0
+W2098005762,W3037819556,true,dandelion,,true,2.0,1.0,,false,1.0
+W2050345155,W2160697532,true,dandelion,,true,2.0,1.0,,false,1.0
+W4321499901,W2981731882,true,dandelion,,true,2.0,1.0,,false,1.0
+W4321499901,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W2028695285,W2075220720,true,dandelion,,true,2.0,1.0,,false,1.0
+W2028695285,W2125910575,true,dandelion,,true,2.0,1.0,,false,1.0
+W2028695285,W2138621811,true,dandelion,,true,2.0,1.0,,false,1.0
+W2028695285,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W2462099493,W229097380,true,dandelion,,true,2.0,1.0,,false,1.0
+W2462099493,W2125910575,true,dandelion,,true,2.0,1.0,,false,1.0
+W2462099493,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2462099493,W2162896254,true,dandelion,,true,2.0,1.0,,false,1.0
+W2462099493,W2167482691,true,dandelion,,true,2.0,1.0,,false,1.0
+W2462099493,W2530237102,true,dandelion,,true,2.0,1.0,,false,1.0
+W2462099493,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W2515300481,W2151169308,true,dandelion,,true,2.0,1.0,,false,1.0
+W3147387781,W1522734439,true,dandelion,,true,2.0,1.0,,false,1.0
+W3147387781,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W3147387781,W2963091558,true,dandelion,,true,2.0,1.0,,false,1.0
+W3147387781,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W3147387781,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W3147387781,W4288083516,true,dandelion,,true,2.0,1.0,,false,1.0
+W3154258817,W2593436234,true,dandelion,,true,2.0,1.0,,false,1.0
+W3183475563,W2804822363,true,dandelion,,true,2.0,1.0,,false,1.0
+W3183475563,W3112376646,true,dandelion,,true,2.0,1.0,,false,1.0
+W3183475563,W3177828909,true,dandelion,,true,2.0,1.0,,false,1.0
+W2159449603,W2037246595,true,dandelion,,true,2.0,1.0,,false,1.0
+W2159449603,W2258584306,true,dandelion,,true,2.0,1.0,,false,1.0
+W2948978827,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2948978827,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W2948978827,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W2948978827,W2163922914,true,dandelion,,true,2.0,1.0,,false,1.0
+W2948978827,W2547875792,true,dandelion,,true,2.0,1.0,,false,1.0
+W2519132385,W229097380,true,dandelion,,true,2.0,1.0,,false,1.0
+W4396821501,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904383797,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904383797,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904383797,W2229412420,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904383797,W2624503621,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904383797,W2766527293,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904383797,W4394671432,true,dandelion,,true,2.0,1.0,,false,1.0
+W2126650951,W2075220720,true,dandelion,,true,2.0,1.0,,false,1.0
+W2126650951,W2159929956,true,dandelion,,true,2.0,1.0,,false,1.0
+W3037819556,W2127048411,true,dandelion,,true,2.0,1.0,,false,1.0
+W2953494151,W2328078142,true,dandelion,,true,2.0,1.0,,false,1.0
+W2953494151,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W2393319904,W1888005072,true,dandelion,,true,2.0,1.0,,false,1.0
+W2393319904,W2097308346,true,dandelion,,true,2.0,1.0,,false,1.0
+W2393319904,W2163922914,true,dandelion,,true,2.0,1.0,,false,1.0
+W2393319904,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W2328078142,W1514535095,true,dandelion,,true,2.0,1.0,,false,1.0
+W2328078142,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2328078142,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W2328078142,W2149933564,true,dandelion,,true,2.0,1.0,,false,1.0
+W2328078142,W2949650786,true,dandelion,,true,2.0,1.0,,false,1.0
+W1979104937,W1532325895,true,dandelion,,true,2.0,1.0,,false,1.0
+W1979104937,W2095293504,true,dandelion,,true,2.0,1.0,,false,1.0
+W1979104937,W2100235918,true,dandelion,,true,2.0,1.0,,false,1.0
+W1979104937,W2148606196,true,dandelion,,true,2.0,1.0,,false,1.0
+W3016970897,W1673923490,true,dandelion,,true,2.0,1.0,,false,1.0
+W3016970897,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W3016970897,W2328078142,true,dandelion,,true,2.0,1.0,,false,1.0
+W3016970897,W2640329709,true,dandelion,,true,2.0,1.0,,false,1.0
+W3016970897,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W3016970897,W2953494151,true,dandelion,,true,2.0,1.0,,false,1.0
+W3016970897,W4297808394,true,dandelion,,true,2.0,1.0,,false,1.0
+W7155906632,W3195577433,true,dandelion,,true,2.0,1.0,,false,1.0
+W4415796023,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W4403370767,W4390041933,true,dandelion,,true,2.0,1.0,,false,1.0
+W4388522045,W3036319615,true,dandelion,,true,2.0,1.0,,false,1.0
+W2949520286,W2402144811,true,dandelion,,true,2.0,1.0,,false,1.0
+W4288083516,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W4288083516,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W4288083516,W2193145675,true,dandelion,,true,2.0,1.0,,false,1.0
+W4288083516,W2277195237,true,dandelion,,true,2.0,1.0,,false,1.0
+W4288083516,W2963163009,true,dandelion,,true,2.0,1.0,,false,1.0
+W2888728157,W1966716734,true,dandelion,,true,2.0,1.0,,false,1.0
+W2888728157,W2158698691,true,dandelion,,true,2.0,1.0,,false,1.0
+W1686810756,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W1686810756,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W1686810756,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W639708223,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W639708223,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W639708223,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2896457183,W2149933564,true,dandelion,,true,2.0,1.0,,false,1.0
+W2896457183,W2787560479,true,dandelion,,true,2.0,1.0,,false,1.0
+W3177828909,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W3177828909,W3035965352,true,dandelion,,true,2.0,1.0,,false,1.0
+W3177828909,W3112376646,true,dandelion,,true,2.0,1.0,,false,1.0
+W3177828909,W3183475563,true,dandelion,,true,2.0,1.0,,false,1.0
+W1959608418,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W1959608418,W2163922914,true,dandelion,,true,2.0,1.0,,false,1.0
+W2519887557,W1888005072,true,dandelion,,true,2.0,1.0,,false,1.0
+W2519887557,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W2519887557,W2962756421,true,dandelion,,true,2.0,1.0,,false,1.0
+W2102605133,W2163922914,true,dandelion,,true,2.0,1.0,,false,1.0
+W1678356000,W2024046085,true,dandelion,,true,2.0,1.0,,false,1.0
+W1678356000,W2102201073,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963163009,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963163009,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963163009,W2412782625,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963163009,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963163009,W2553303224,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963163009,W2630837129,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035965352,W2015159529,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035965352,W2132022337,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035965352,W2252795400,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035965352,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035965352,W2402144811,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035965352,W2888532099,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035965352,W2970971581,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035965352,W3003257820,true,dandelion,,true,2.0,1.0,,false,1.0
+W2908510526,W1514535095,true,dandelion,,true,2.0,1.0,,false,1.0
+W2908510526,W2173520492,true,dandelion,,true,2.0,1.0,,false,1.0
+W2908510526,W2518108298,true,dandelion,,true,2.0,1.0,,false,1.0
+W2908510526,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W1966327575,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962858109,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962858109,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962858109,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962858109,W2163922914,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962858109,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962858109,W2295107390,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962858109,W2439568532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2133564696,W1810943226,true,dandelion,,true,2.0,1.0,,false,1.0
+W2133564696,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W2133564696,W2950635152,true,dandelion,,true,2.0,1.0,,false,1.0
+W2133564696,W2964199361,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963276645,W2056279562,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963276645,W2110300022,true,dandelion,,true,2.0,1.0,,false,1.0
+W2193145675,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W4401306886,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W4401306886,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W4401306886,W3210904070,true,dandelion,,true,2.0,1.0,,false,1.0
+W4401306886,W4226278401,true,dandelion,,true,2.0,1.0,,false,1.0
+W4401306886,W4327810158,true,dandelion,,true,2.0,1.0,,false,1.0
+W4401306886,W4390041933,true,dandelion,,true,2.0,1.0,,false,1.0
+W2180229411,W2154714625,true,dandelion,,true,2.0,1.0,,false,1.0
+W2412782625,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2412782625,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2412782625,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2412782625,W1910657905,true,dandelion,,true,2.0,1.0,,false,1.0
+W2412782625,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2412782625,W2124351162,true,dandelion,,true,2.0,1.0,,false,1.0
+W2412782625,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W2412782625,W2286929393,true,dandelion,,true,2.0,1.0,,false,1.0
+W2131681506,W2047940964,true,dandelion,,true,2.0,1.0,,false,1.0
+W2131681506,W2089458547,true,dandelion,,true,2.0,1.0,,false,1.0
+W2131681506,W2095293504,true,dandelion,,true,2.0,1.0,,false,1.0
+W2056279562,W229097380,true,dandelion,,true,2.0,1.0,,false,1.0
+W2056279562,W1587026990,true,dandelion,,true,2.0,1.0,,false,1.0
+W2056279562,W2091922579,true,dandelion,,true,2.0,1.0,,false,1.0
+W2056279562,W2128769815,true,dandelion,,true,2.0,1.0,,false,1.0
+W2056279562,W2160697532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2056279562,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W2964309882,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2964309882,W1910657905,true,dandelion,,true,2.0,1.0,,false,1.0
+W2964309882,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W2964309882,W2412782625,true,dandelion,,true,2.0,1.0,,false,1.0
+W2964309882,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W2964309882,W2630837129,true,dandelion,,true,2.0,1.0,,false,1.0
+W1677182931,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W1677182931,W1904365287,true,dandelion,,true,2.0,1.0,,false,1.0
+W1677182931,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W1910657905,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W1910657905,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W1910657905,W2286929393,true,dandelion,,true,2.0,1.0,,false,1.0
+W1910657905,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W2766453196,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W2766453196,W2950635152,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030520226,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030520226,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030520226,W2193145675,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030520226,W2432481613,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030520226,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030520226,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030520226,W2963091558,true,dandelion,,true,2.0,1.0,,false,1.0
+W3030520226,W2970971581,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384918448,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384918448,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384918448,W3210904070,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384918448,W4223908421,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384918448,W4327810158,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W1945616565,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W2277195237,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W2328078142,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W2402144811,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W2518108298,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W2787560479,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W2970971581,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W3003257820,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W3005680577,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W3016970897,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W3035524453,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W3035965352,true,dandelion,,true,2.0,1.0,,false,1.0
+W3135367836,W4297808394,true,dandelion,,true,2.0,1.0,,false,1.0
+W1945616565,W1673923490,true,dandelion,,true,2.0,1.0,,false,1.0
+W2130942839,W1810943226,true,dandelion,,true,2.0,1.0,,false,1.0
+W2130942839,W2133564696,true,dandelion,,true,2.0,1.0,,false,1.0
+W2130942839,W2950635152,true,dandelion,,true,2.0,1.0,,false,1.0
+W2133990480,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W4396721167,W3177828909,true,dandelion,,true,2.0,1.0,,false,1.0
+W4396721167,W4309674289,true,dandelion,,true,2.0,1.0,,false,1.0
+W2402144811,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W2402144811,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W2402144811,W2949650786,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W2163922914,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W2432481613,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W2949650786,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W2950635152,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W2962949934,true,dandelion,,true,2.0,1.0,,false,1.0
+W2592929672,W4298289240,true,dandelion,,true,2.0,1.0,,false,1.0
+W2096733369,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2159707944,W2133465414,true,dandelion,,true,2.0,1.0,,false,1.0
+W2159707944,W2145126338,true,dandelion,,true,2.0,1.0,,false,1.0
+W2159707944,W2160697532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2159707944,W2161289668,true,dandelion,,true,2.0,1.0,,false,1.0
+W2159707944,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W2173520492,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2173520492,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W2395611524,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2395611524,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2395611524,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2395611524,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2395611524,W2286929393,true,dandelion,,true,2.0,1.0,,false,1.0
+W3210383951,W2105846236,true,dandelion,,true,2.0,1.0,,false,1.0
+W3210383951,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W3210383951,W3122877168,true,dandelion,,true,2.0,1.0,,false,1.0
+W4297808394,W2096733369,true,dandelion,,true,2.0,1.0,,false,1.0
+W4297808394,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W4297808394,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W4297808394,W2260756217,true,dandelion,,true,2.0,1.0,,false,1.0
+W4297808394,W2519091744,true,dandelion,,true,2.0,1.0,,false,1.0
+W4297808394,W2950635152,true,dandelion,,true,2.0,1.0,,false,1.0
+W2928665623,W1989277387,true,dandelion,,true,2.0,1.0,,false,1.0
+W2928665623,W2133465414,true,dandelion,,true,2.0,1.0,,false,1.0
+W2928665623,W2136850043,true,dandelion,,true,2.0,1.0,,false,1.0
+W2928665623,W2158804744,true,dandelion,,true,2.0,1.0,,false,1.0
+W2928665623,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2928665623,W2345356016,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2096733369,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2149933564,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2173520492,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2331128040,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2402144811,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2553303224,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2592929672,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W2954996726,W2963470893,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168867926,W2560647685,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168867926,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168867926,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W3168867926,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W2125065061,W2108344016,true,dandelion,,true,2.0,1.0,,false,1.0
+W2125065061,W2110052313,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035524453,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035524453,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035524453,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035524453,W2412782625,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035524453,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035524453,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035524453,W3005680577,true,dandelion,,true,2.0,1.0,,false,1.0
+W3035524453,W4297808394,true,dandelion,,true,2.0,1.0,,false,1.0
+W2006617902,W2145126338,true,dandelion,,true,2.0,1.0,,false,1.0
+W2006617902,W2158698691,true,dandelion,,true,2.0,1.0,,false,1.0
+W2006617902,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W2214074259,W2133465414,true,dandelion,,true,2.0,1.0,,false,1.0
+W2214074259,W2161289668,true,dandelion,,true,2.0,1.0,,false,1.0
+W1673923490,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963470893,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963470893,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963470893,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963470893,W2173520492,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963470893,W2331128040,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963470893,W2476548250,true,dandelion,,true,2.0,1.0,,false,1.0
+W3201073812,W2047968138,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981852735,W1810943226,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981852735,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981852735,W2149933564,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981852735,W2787560479,true,dandelion,,true,2.0,1.0,,false,1.0
+W2981852735,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W2787560479,W2952230511,true,dandelion,,true,2.0,1.0,,false,1.0
+W2787560479,W2964199361,true,dandelion,,true,2.0,1.0,,false,1.0
+W2549139847,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2549139847,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2549139847,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2549139847,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2549139847,W2519091744,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904367110,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904367110,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904367110,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904367110,W2402144811,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904367110,W2766527293,true,dandelion,,true,2.0,1.0,,false,1.0
+W2904367110,W4298289240,true,dandelion,,true,2.0,1.0,,false,1.0
+W2432481613,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2432481613,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2432481613,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2271840356,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W2110052313,W2108344016,true,dandelion,,true,2.0,1.0,,false,1.0
+W2110052313,W2125065061,true,dandelion,,true,2.0,1.0,,false,1.0
+W2128769815,W2125826054,true,dandelion,,true,2.0,1.0,,false,1.0
+W2125826054,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W3005680577,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W3005680577,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W3005680577,W2096733369,true,dandelion,,true,2.0,1.0,,false,1.0
+W3005680577,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W3005680577,W2518108298,true,dandelion,,true,2.0,1.0,,false,1.0
+W3005680577,W3035524453,true,dandelion,,true,2.0,1.0,,false,1.0
+W3005680577,W4297808394,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962756421,W1888005072,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962756421,W2127048411,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962756421,W2156718197,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962756421,W2163922914,true,dandelion,,true,2.0,1.0,,false,1.0
+W2999615587,W1678356000,true,dandelion,,true,2.0,1.0,,false,1.0
+W2999615587,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963091558,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963091558,W1522734439,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963091558,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963091558,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963091558,W1904365287,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963091558,W2519091744,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963091558,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W3014974815,W1641498739,true,dandelion,,true,2.0,1.0,,false,1.0
+W3014974815,W2412782625,true,dandelion,,true,2.0,1.0,,false,1.0
+W3014974815,W2432481613,true,dandelion,,true,2.0,1.0,,false,1.0
+W3014974815,W2592929672,true,dandelion,,true,2.0,1.0,,false,1.0
+W3014974815,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W3014974815,W2970971581,true,dandelion,,true,2.0,1.0,,false,1.0
+W2295107390,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2295107390,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2295107390,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2295107390,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2127048411,W2015370254,true,dandelion,,true,2.0,1.0,,false,1.0
+W2127048411,W2047940964,true,dandelion,,true,2.0,1.0,,false,1.0
+W2127048411,W2065769502,true,dandelion,,true,2.0,1.0,,false,1.0
+W2127048411,W2089458547,true,dandelion,,true,2.0,1.0,,false,1.0
+W2127048411,W2095293504,true,dandelion,,true,2.0,1.0,,false,1.0
+W2127048411,W2131681506,true,dandelion,,true,2.0,1.0,,false,1.0
+W2127048411,W2132914434,true,dandelion,,true,2.0,1.0,,false,1.0
+W2127048411,W2148606196,true,dandelion,,true,2.0,1.0,,false,1.0
+W2331128040,W1673923490,true,dandelion,,true,2.0,1.0,,false,1.0
+W2331128040,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2331128040,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2331128040,W2173520492,true,dandelion,,true,2.0,1.0,,false,1.0
+W3210904070,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W3210904070,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W3210904070,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W2801159594,W1549853756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2801159594,W2148698435,true,dandelion,,true,2.0,1.0,,false,1.0
+W2884436604,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W2884436604,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W3156458251,W2927961455,true,dandelion,,true,2.0,1.0,,false,1.0
+W3036167779,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W3036167779,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W3036167779,W2519091744,true,dandelion,,true,2.0,1.0,,false,1.0
+W3036167779,W2904367110,true,dandelion,,true,2.0,1.0,,false,1.0
+W3036167779,W2963091558,true,dandelion,,true,2.0,1.0,,false,1.0
+W3036167779,W2995327724,true,dandelion,,true,2.0,1.0,,false,1.0
+W2028046413,W2169678694,true,dandelion,,true,2.0,1.0,,false,1.0
+W2345356016,W2070050178,true,dandelion,,true,2.0,1.0,,false,1.0
+W2345356016,W2118258530,true,dandelion,,true,2.0,1.0,,false,1.0
+W2345356016,W2133465414,true,dandelion,,true,2.0,1.0,,false,1.0
+W2640329709,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2949650786,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2949650786,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2949650786,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2949650786,W1904365287,true,dandelion,,true,2.0,1.0,,false,1.0
+W2949650786,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2749069611,W1536497620,true,dandelion,,true,2.0,1.0,,false,1.0
+W2749069611,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W2765081049,W2252795400,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390041933,W3210904070,true,dandelion,,true,2.0,1.0,,false,1.0
+W4390041933,W4223908421,true,dandelion,,true,2.0,1.0,,false,1.0
+W2096173332,W229097380,true,dandelion,,true,2.0,1.0,,false,1.0
+W2096173332,W1989277387,true,dandelion,,true,2.0,1.0,,false,1.0
+W2096173332,W2118258530,true,dandelion,,true,2.0,1.0,,false,1.0
+W2096173332,W2160697532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963857746,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963857746,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963857746,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963857746,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963857746,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963857746,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W2963857746,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W2131222241,W1678356000,true,dandelion,,true,2.0,1.0,,false,1.0
+W4308834893,W2118258530,true,dandelion,,true,2.0,1.0,,false,1.0
+W4308834893,W2900569176,true,dandelion,,true,2.0,1.0,,false,1.0
+W4308834893,W3107527779,true,dandelion,,true,2.0,1.0,,false,1.0
+W4308834893,W3112376646,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W2149933564,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W2518108298,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W3005680577,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W3035524453,true,dandelion,,true,2.0,1.0,,false,1.0
+W4226002507,W4297808394,true,dandelion,,true,2.0,1.0,,false,1.0
+W3034552520,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W3034552520,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W3034552520,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W3034552520,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W3034552520,W2883780447,true,dandelion,,true,2.0,1.0,,false,1.0
+W3034552520,W2955058313,true,dandelion,,true,2.0,1.0,,false,1.0
+W3034552520,W2963091558,true,dandelion,,true,2.0,1.0,,false,1.0
+W3034552520,W2963163009,true,dandelion,,true,2.0,1.0,,false,1.0
+W3034552520,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W3163993681,W2402144811,true,dandelion,,true,2.0,1.0,,false,1.0
+W3163993681,W2970971581,true,dandelion,,true,2.0,1.0,,false,1.0
+W2624503621,W1644641054,true,dandelion,,true,2.0,1.0,,false,1.0
+W2624503621,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2624503621,W4394671432,true,dandelion,,true,2.0,1.0,,false,1.0
+W2406250479,W2114843025,true,dandelion,,true,2.0,1.0,,false,1.0
+W2630837129,W1910657905,true,dandelion,,true,2.0,1.0,,false,1.0
+W2630837129,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W2630837129,W2412782625,true,dandelion,,true,2.0,1.0,,false,1.0
+W2630837129,W2949650786,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979826702,W2787560479,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979826702,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979826702,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W3001279689,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W3001279689,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W1882958252,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W1990100773,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2133564696,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2277195237,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2328078142,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2402144811,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2439568532,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2519091744,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2560647685,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2594475271,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2766453196,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2787560479,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2953494151,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2954996726,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2970971581,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2979826702,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W2995327724,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W3016970897,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W3035524453,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W3036167779,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W3135367836,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W3168867926,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W4226002507,true,dandelion,,true,2.0,1.0,,false,1.0
+W3195577433,W4297808394,true,dandelion,,true,2.0,1.0,,false,1.0
+W1522734439,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W1522734439,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W1522734439,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W1522734439,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W4298289240,W1904365287,true,dandelion,,true,2.0,1.0,,false,1.0
+W4298289240,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W2026616100,W2155263737,true,dandelion,,true,2.0,1.0,,false,1.0
+W4281790889,W2952167528,true,dandelion,,true,2.0,1.0,,false,1.0
+W4281790889,W3136918052,true,dandelion,,true,2.0,1.0,,false,1.0
+W4281790889,W3177828909,true,dandelion,,true,2.0,1.0,,false,1.0
+W4281790889,W3183475563,true,dandelion,,true,2.0,1.0,,false,1.0
+W2134295053,W2111619626,true,dandelion,,true,2.0,1.0,,false,1.0
+W2110300022,W2128769815,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2158698691,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2412782625,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2432481613,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2523246573,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2592929672,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2884367402,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2954996726,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2962949934,true,dandelion,,true,2.0,1.0,,false,1.0
+W3140854437,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W2518108298,W2949650786,true,dandelion,,true,2.0,1.0,,false,1.0
+W2518108298,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224035735,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224035735,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224035735,W3036167779,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224035735,W3135367836,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224035735,W4226125322,true,dandelion,,true,2.0,1.0,,false,1.0
+W4224035735,W4298289240,true,dandelion,,true,2.0,1.0,,false,1.0
+W3132661792,W2131681506,true,dandelion,,true,2.0,1.0,,false,1.0
+W3132661792,W2132914434,true,dandelion,,true,2.0,1.0,,false,1.0
+W3132661792,W2786672974,true,dandelion,,true,2.0,1.0,,false,1.0
+W3132661792,W2900569176,true,dandelion,,true,2.0,1.0,,false,1.0
+W2964199361,W1810943226,true,dandelion,,true,2.0,1.0,,false,1.0
+W2964199361,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W1902237438,W1514535095,true,dandelion,,true,2.0,1.0,,false,1.0
+W1902237438,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W1902237438,W2133564696,true,dandelion,,true,2.0,1.0,,false,1.0
+W1514535095,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W1514535095,W1810943226,true,dandelion,,true,2.0,1.0,,false,1.0
+W1514535095,W1909320841,true,dandelion,,true,2.0,1.0,,false,1.0
+W1514535095,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W1514535095,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W1514535095,W2133564696,true,dandelion,,true,2.0,1.0,,false,1.0
+W1514535095,W2950635152,true,dandelion,,true,2.0,1.0,,false,1.0
+W2523246573,W2271840356,true,dandelion,,true,2.0,1.0,,false,1.0
+W2111684210,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W2108344016,W2125065061,true,dandelion,,true,2.0,1.0,,false,1.0
+W2594475271,W1757796397,true,dandelion,,true,2.0,1.0,,false,1.0
+W3107527779,W1989277387,true,dandelion,,true,2.0,1.0,,false,1.0
+W3107527779,W2096173332,true,dandelion,,true,2.0,1.0,,false,1.0
+W3107527779,W3136918052,true,dandelion,,true,2.0,1.0,,false,1.0
+W2169393322,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2616247523,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2616247523,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2616247523,W1945616565,true,dandelion,,true,2.0,1.0,,false,1.0
+W2616247523,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2616247523,W2163922914,true,dandelion,,true,2.0,1.0,,false,1.0
+W2616247523,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2616247523,W2295107390,true,dandelion,,true,2.0,1.0,,false,1.0
+W2616247523,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W2616247523,W2439568532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2519091744,W2286929393,true,dandelion,,true,2.0,1.0,,false,1.0
+W2519091744,W2949650786,true,dandelion,,true,2.0,1.0,,false,1.0
+W2341539131,W2259938310,true,dandelion,,true,2.0,1.0,,false,1.0
+W2070050178,W2133465414,true,dandelion,,true,2.0,1.0,,false,1.0
+W2070050178,W2259938310,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W1888005072,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2133564696,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2393319904,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2519887557,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2756203131,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2766453196,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2805516822,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2962756421,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2963091558,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W3152893301,W2979750740,true,dandelion,,true,2.0,1.0,,false,1.0
+W2260756217,W1757796397,true,dandelion,,true,2.0,1.0,,false,1.0
+W2161289668,W1987971958,true,dandelion,,true,2.0,1.0,,false,1.0
+W2161289668,W2157795344,true,dandelion,,true,2.0,1.0,,false,1.0
+W2476548250,W1522734439,true,dandelion,,true,2.0,1.0,,false,1.0
+W2476548250,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2476548250,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2476548250,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W2883780447,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2883780447,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W2883780447,W2553303224,true,dandelion,,true,2.0,1.0,,false,1.0
+W2883780447,W2963163009,true,dandelion,,true,2.0,1.0,,false,1.0
+W2883780447,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W2187089797,W2156718197,true,dandelion,,true,2.0,1.0,,false,1.0
+W2034285706,W2155806125,true,dandelion,,true,2.0,1.0,,false,1.0
+W2124026197,W2144998676,true,dandelion,,true,2.0,1.0,,false,1.0
+W2124026197,W2229412420,true,dandelion,,true,2.0,1.0,,false,1.0
+W3036319615,W2086561953,true,dandelion,,true,2.0,1.0,,false,1.0
+W3036319615,W2158804744,true,dandelion,,true,2.0,1.0,,false,1.0
+W3036319615,W2406250479,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786672974,W2097308346,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786672974,W2156718197,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786672974,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786672974,W2750384547,true,dandelion,,true,2.0,1.0,,false,1.0
+W3003217347,W2160378127,true,dandelion,,true,2.0,1.0,,false,1.0
+W3003217347,W2804822363,true,dandelion,,true,2.0,1.0,,false,1.0
+W2118258530,W2160697532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2118258530,W2259938310,true,dandelion,,true,2.0,1.0,,false,1.0
+W2751583588,W2135621733,true,dandelion,,true,2.0,1.0,,false,1.0
+W2751583588,W2160378127,true,dandelion,,true,2.0,1.0,,false,1.0
+W1982855075,W2117131162,true,dandelion,,true,2.0,1.0,,false,1.0
+W2952167528,W1982855075,true,dandelion,,true,2.0,1.0,,false,1.0
+W2952167528,W2153325555,true,dandelion,,true,2.0,1.0,,false,1.0
+W2952167528,W2950354111,true,dandelion,,true,2.0,1.0,,false,1.0
+W3128261063,W1587026990,true,dandelion,,true,2.0,1.0,,false,1.0
+W3128261063,W3035965352,true,dandelion,,true,2.0,1.0,,false,1.0
+W2988396470,W2160378127,true,dandelion,,true,2.0,1.0,,false,1.0
+W4200150166,W2904383797,true,dandelion,,true,2.0,1.0,,false,1.0
+W4200150166,W4394671432,true,dandelion,,true,2.0,1.0,,false,1.0
+W2047940964,W2015370254,true,dandelion,,true,2.0,1.0,,false,1.0
+W2047940964,W2089458547,true,dandelion,,true,2.0,1.0,,false,1.0
+W2047940964,W2095293504,true,dandelion,,true,2.0,1.0,,false,1.0
+W2047940964,W2148606196,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979750740,W1644641054,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979750740,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979750740,W2518108298,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979750740,W2519887557,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979750740,W2624503621,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979750740,W2766453196,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979750740,W2963091558,true,dandelion,,true,2.0,1.0,,false,1.0
+W2979750740,W4394671432,true,dandelion,,true,2.0,1.0,,false,1.0
+W4309506674,W3112376646,true,dandelion,,true,2.0,1.0,,false,1.0
+W2955058313,W1514535095,true,dandelion,,true,2.0,1.0,,false,1.0
+W2955058313,W2412782625,true,dandelion,,true,2.0,1.0,,false,1.0
+W2955058313,W2630837129,true,dandelion,,true,2.0,1.0,,false,1.0
+W2955058313,W2963091558,true,dandelion,,true,2.0,1.0,,false,1.0
+W3041133507,W1479807131,true,dandelion,,true,2.0,1.0,,false,1.0
+W3041133507,W1882958252,true,dandelion,,true,2.0,1.0,,false,1.0
+W3041133507,W2048679005,true,dandelion,,true,2.0,1.0,,false,1.0
+W3041133507,W2149933564,true,dandelion,,true,2.0,1.0,,false,1.0
+W3041133507,W2439568532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2766527293,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2766527293,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W2766527293,W2173520492,true,dandelion,,true,2.0,1.0,,false,1.0
+W2766527293,W2519091744,true,dandelion,,true,2.0,1.0,,false,1.0
+W2766527293,W2963470893,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W1522734439,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W1904365287,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W1959608418,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2096733369,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2173520492,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2286929393,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2295107390,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2395611524,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2476548250,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2518108298,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2519091744,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2616247523,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2952230511,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962949934,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W2952230511,W1479807131,true,dandelion,,true,2.0,1.0,,false,1.0
+W2973457155,W2114622716,true,dandelion,,true,2.0,1.0,,false,1.0
+W2973457155,W2124026197,true,dandelion,,true,2.0,1.0,,false,1.0
+W2973457155,W2154197653,true,dandelion,,true,2.0,1.0,,false,1.0
+W2973457155,W2154714625,true,dandelion,,true,2.0,1.0,,false,1.0
+W2973457155,W2180229411,true,dandelion,,true,2.0,1.0,,false,1.0
+W2973457155,W2734356283,true,dandelion,,true,2.0,1.0,,false,1.0
+W2091922579,W2155806125,true,dandelion,,true,2.0,1.0,,false,1.0
+W2995327724,W1677182931,true,dandelion,,true,2.0,1.0,,false,1.0
+W2995327724,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2995327724,W2766527293,true,dandelion,,true,2.0,1.0,,false,1.0
+W2995327724,W2904367110,true,dandelion,,true,2.0,1.0,,false,1.0
+W2995327724,W4298289240,true,dandelion,,true,2.0,1.0,,false,1.0
+W2103912979,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2135695572,W1678356000,true,dandelion,,true,2.0,1.0,,false,1.0
+W2135695572,W2024046085,true,dandelion,,true,2.0,1.0,,false,1.0
+W2135695572,W2582743722,true,dandelion,,true,2.0,1.0,,false,1.0
+W2439568532,W1673923490,true,dandelion,,true,2.0,1.0,,false,1.0
+W2439568532,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2439568532,W2187089797,true,dandelion,,true,2.0,1.0,,false,1.0
+W2149933564,W1904365287,true,dandelion,,true,2.0,1.0,,false,1.0
+W2149933564,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2936695845,W2787560479,true,dandelion,,true,2.0,1.0,,false,1.0
+W4389984066,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W4389984066,W3210904070,true,dandelion,,true,2.0,1.0,,false,1.0
+W3112376646,W3136918052,true,dandelion,,true,2.0,1.0,,false,1.0
+W2980282514,W2787560479,true,dandelion,,true,2.0,1.0,,false,1.0
+W2980282514,W2896457183,true,dandelion,,true,2.0,1.0,,false,1.0
+W2980282514,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W2980282514,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962730651,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962730651,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2962730651,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W4378212544,W2097308346,true,dandelion,,true,2.0,1.0,,false,1.0
+W2756203131,W2130942839,true,dandelion,,true,2.0,1.0,,false,1.0
+W2756203131,W2519887557,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786715987,W1514535095,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786715987,W1565377632,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786715987,W1673923490,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786715987,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786715987,W2169393322,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786715987,W2295107390,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786715987,W2439568532,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786715987,W2594475271,true,dandelion,,true,2.0,1.0,,false,1.0
+W2786715987,W2616247523,true,dandelion,,true,2.0,1.0,,false,1.0
+W2927961455,W2148698435,true,dandelion,,true,2.0,1.0,,false,1.0
+W2796207838,W1966327575,true,dandelion,,true,2.0,1.0,,false,1.0
+W2796207838,W2117692326,true,dandelion,,true,2.0,1.0,,false,1.0
+W2796207838,W2159707944,true,dandelion,,true,2.0,1.0,,false,1.0
+W2796207838,W2519132385,true,dandelion,,true,2.0,1.0,,false,1.0
+W2884367402,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2884367402,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2884367402,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2884367402,W1904365287,true,dandelion,,true,2.0,1.0,,false,1.0
+W2884367402,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W2884367402,W2549139847,true,dandelion,,true,2.0,1.0,,false,1.0
+W2553303224,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2553303224,W2963446712,true,dandelion,,true,2.0,1.0,,false,1.0
+W1989277387,W2133465414,true,dandelion,,true,2.0,1.0,,false,1.0
+W2089458547,W2015370254,true,dandelion,,true,2.0,1.0,,false,1.0
+W2089458547,W2095293504,true,dandelion,,true,2.0,1.0,,false,1.0
+W2089458547,W2148606196,true,dandelion,,true,2.0,1.0,,false,1.0
+W2277195237,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2277195237,W1514535095,true,dandelion,,true,2.0,1.0,,false,1.0
+W2277195237,W1686810756,true,dandelion,,true,2.0,1.0,,false,1.0
+W2277195237,W2102605133,true,dandelion,,true,2.0,1.0,,false,1.0
+W1882958252,W1849277567,true,dandelion,,true,2.0,1.0,,false,1.0
+W2154197653,W2114622716,true,dandelion,,true,2.0,1.0,,false,1.0
+W2154197653,W2124026197,true,dandelion,,true,2.0,1.0,,false,1.0
+W2154197653,W2154714625,true,dandelion,,true,2.0,1.0,,false,1.0
+W2154197653,W2180229411,true,dandelion,,true,2.0,1.0,,false,1.0
+W2745461083,W639708223,true,dandelion,,true,2.0,1.0,,false,1.0
+W2745461083,W1514535095,true,dandelion,,true,2.0,1.0,,false,1.0
+W2745461083,W2277195237,true,dandelion,,true,2.0,1.0,,false,1.0
+W2745461083,W2949650786,true,dandelion,,true,2.0,1.0,,false,1.0
+W2745461083,W2950635152,true,dandelion,,true,2.0,1.0,,false,1.0
+W1934094702,W2116634113,true,dandelion,,true,2.0,1.0,,false,1.0
+W1934094702,W2157795344,true,dandelion,,true,2.0,1.0,,false,1.0
+W1934094702,W2160697532,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384071683,W2042492924,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384071683,W2908510526,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384071683,W2981852735,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384071683,W3001279689,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384071683,W3030163527,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384071683,W3195577433,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384071683,W3210904070,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384071683,W4224308101,true,dandelion,,true,2.0,1.0,,false,1.0
+W4384071683,W4226278401,true,dandelion,,true,2.0,1.0,,false,1.0
+W1950118853,W2170776626,true,dandelion,,true,2.0,1.0,,false,1.0
+W2944545583,W1969353942,true,dandelion,,true,2.0,1.0,,false,1.0
+W2944545583,W1989277387,true,dandelion,,true,2.0,1.0,,false,1.0
+W2944545583,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2944545583,W2345356016,true,dandelion,,true,2.0,1.0,,false,1.0
+W2944545583,W3136918052,true,dandelion,,true,2.0,1.0,,false,1.0
+W2734356283,W2159675211,true,dandelion,,true,2.0,1.0,,false,1.0
+W2170776626,W2157795344,true,dandelion,,true,2.0,1.0,,false,1.0
