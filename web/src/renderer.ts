@@ -43,6 +43,8 @@ export interface RendererEvents {
   dragBehaviour?(id: number, alt: boolean): DragBehaviour | null;
   /** hint text while dragging (null when done) */
   dragHint?(text: string | null): void;
+  /** a wheel turn over the graph; return true to take it (no zoom) */
+  wheel?(ev: WheelEvent): boolean;
 }
 
 const HIGHLIGHT = 0xff1f6b;
@@ -510,6 +512,16 @@ export class Renderer {
   // ---- camera ---------------------------------------------------------------
   get scale() {
     return this.world.scale.x;
+  }
+
+  /** Graph coordinates to canvas pixels (the inverse of toWorld). */
+  toScreen(x: number, y: number) {
+    return { sx: x * this.scale + this.world.x, sy: y * this.scale + this.world.y };
+  }
+
+  /** Changes whenever the camera moves (for overlays that follow it). */
+  cameraKey(): string {
+    return `${this.world.x.toFixed(2)},${this.world.y.toFixed(2)},${this.scale.toFixed(5)}`;
   }
 
   toWorld(sx: number, sy: number) {
@@ -1472,6 +1484,7 @@ export class Renderer {
     });
     el.addEventListener("wheel", (ev) => {
       ev.preventDefault();
+      if (this.events.wheel?.(ev)) return;
       this.tween = null;
       const { sx, sy } = local(ev);
       const before = this.toWorld(sx, sy);

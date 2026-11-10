@@ -588,3 +588,35 @@ body.app .view-col { flex: 1 1 auto; }
 .ramp-ticks { position: relative; width: 160px; height: 5px; }
 .ramp-ticks span { position: absolute; top: 0; width: 1px; height: 5px; background: var(--muted); }
 .menu-sep { border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* excentric labelling lens (src/lens.ts) */
+.lens-layer { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: hidden; }
+.lens-svg { position: absolute; inset: 0; }
+.lens-circle { fill: color-mix(in srgb, var(--bg) 18%, transparent); stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.lens-circle.stuck { stroke: var(--text); stroke-dasharray: none; stroke-width: 1.6; fill: color-mix(in srgb, var(--bg) 30%, transparent); }
+.lens-line { fill: none; stroke-width: 0.9; opacity: 0.55; }
+.lens-line.hot { stroke-width: 2; opacity: 1; }
+.lens-cols { position: absolute; inset: 0; }
+.lens-col { position: absolute; display: flex; flex-direction: column; max-width: 40%; }
+.lens-col.left { align-items: flex-end; }
+.lens-label, .lens-more {
+  pointer-events: auto; height: 17px; line-height: 17px; padding: 0 5px; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 100%; font-family: Helvetica, Arial, sans-serif; cursor: pointer;
+  background: color-mix(in srgb, var(--bg) 82%, transparent); border-radius: 3px;
+}
+.lens-label:hover { background: var(--panel); outline: 1px solid var(--border); }
+.lens-label.selected { outline: 1.5px solid #1d6fe8; }
+.lens-more { color: var(--muted); font-size: 11px; font-style: italic; cursor: default; }
+.lens-panel {
+  position: absolute; transform: translateX(-50%); pointer-events: auto; display: flex; flex-direction: column;
+  align-items: center; gap: 3px; padding: 3px 6px; font: 11px system-ui, sans-serif; color: var(--muted);
+  background: color-mix(in srgb, var(--bg) 85%, transparent); border-radius: 5px;
+}
+.lens-panel.stuck { border: 1px solid var(--border); background: var(--panel); }
+.lens-bars { display: flex; align-items: flex-end; gap: 2px; height: 30px; }
+.lens-bar { width: 9px; height: var(--h); padding: 0; border: 0; border-radius: 1px; background: var(--c); cursor: pointer; }
+.lens-bar:disabled { cursor: default; }
+.lens-bar.off { opacity: 0.25; }
+.lens-actions { display: flex; gap: 4px; }
+.lens-actions button { font: inherit; padding: 1px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); cursor: pointer; }
+#graph[data-tool="lens"] canvas { cursor: crosshair; }

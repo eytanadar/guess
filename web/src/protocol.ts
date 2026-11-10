@@ -132,6 +132,8 @@ export type FromWorker =
   | { type: "download"; name: string; text: string }
   /** optimizeLabels(): simulated annealing over label positions in the renderer */
   | { type: "labels"; op: "optimize"; ms: number }
+  /** excentricLens(): the lens tool on or off, and its options */
+  | { type: "lens"; on: boolean; radius?: number; auto?: boolean; max?: number }
   | { type: "select"; nodes: number[] }
   /** undo()/redo() reversed or re-applied the command run in console cell `cell` */
   | { type: "undone"; cell: number; undone: boolean }

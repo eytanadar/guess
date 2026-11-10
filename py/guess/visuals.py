@@ -390,6 +390,25 @@ def install(session):
         view.labels["along"] = bool(on)
         view.changed()
 
+    def excentricLens(on=True, radius=None, autoSize=None, maxLabels=None):
+        """excentricLens() turns on the lens tool (the toolbar's Lens): a circle
+        that follows the pointer and lists the labels of the nodes under it
+        beside it, each joined to its node by a line (excentric labelling).
+        The wheel resizes it, Shift+wheel scrolls long lists; a click pins it,
+        and then clicking a label selects its node (Shift: add or remove),
+        "Select" takes everything under the lens, and the colour bars filter
+        the list. radius in pixels; autoSize=true sizes the lens to the
+        density under it; maxLabels per side. excentricLens(false) turns it
+        off."""
+        msg = {"type": "lens", "on": bool(on)}
+        if radius is not None:
+            msg["radius"] = float(radius)
+        if autoSize is not None:
+            msg["auto"] = bool(autoSize)
+        if maxLabels is not None:
+            msg["max"] = int(maxLabels)
+        session.emit(msg)
+
     def labelPlacement(method="candidates"):
         """labelPlacement("candidates") or labelPlacement("particles") chooses how
         labels with labelpos "outside" (and edge labels, which slide along their
@@ -496,7 +515,7 @@ def install(session):
                setDisplayBackground, getDisplayBackground, setBackgroundImage,
                removeBackgroundImage, overrideArrowLength, overrideArrowWidth, curvedEdges,
                setEdgeColorMode, labelOutlines, hideOverlappingLabels, edgeLabelsAlong,
-               labelPlacement, constantLabelSize, optimizeLabels, select):
+               labelPlacement, constantLabelSize, optimizeLabels, excentricLens, select):
         reg(fn.__name__, fn)
     # Legend()/GradientLegend() are constructors: don't auto-call on a bare name
     session._bind("Legend", make_legend, kind="command")

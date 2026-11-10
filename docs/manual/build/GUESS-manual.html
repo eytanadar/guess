@@ -1807,6 +1807,28 @@ nodes first, avoiding other nodes and labels.</p>
 <span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>edgeLabelsAlong()</span></code></pre></div>
 <p>The Style panel sets the same things: map <em>Label</em> with a
 position, or <em>Label size</em> to a number.</p>
+<p><strong>Finding room for labels.</strong> Labels placed
+<code>outside</code>, and edge labels (which slide along their edge),
+are placed to avoid other labels, nodes and edges:</p>
+<ul>
+<li><code>labelPlacement(&quot;candidates&quot;)</code> (the default) tries 16
+positions around each node, biggest nodes first, then moves the labels
+that still collide.</li>
+<li><code>labelPlacement(&quot;particles&quot;)</code> also searches further out,
+ring by ring, and draws a thin leader line to labels it places away from
+their node. It keeps labels off edges best.</li>
+<li><code>optimizeLabels(2)</code> polishes the positions by simulated
+annealing for two seconds and keeps the result (until the graph is
+replaced or the method changes). The status bar reports how much it
+improved. Use it before exporting a figure.</li>
+<li><code>constantLabelSize()</code> keeps labels the same size on
+screen as you zoom. Each label appears once there is room for it and
+stays as you zoom further in, so zooming in reveals more labels.</li>
+</ul>
+<p>On the sample graph with every label shown, placing them
+<code>outside</code> cuts label overlaps by about two thirds and edges
+crossing labels by about the same; particles all but removes the edge
+crossings.</p>
 <h1 id="direct-manipulation">13. Direct manipulation</h1>
 <p>The mouse does more than pan and zoom. <em>Help → Mouse and
 gestures</em> shows all of this with pictures, and a tip appears the
@@ -2011,8 +2033,8 @@ undo</h1>
 <td>complete commands, fields, nodes and attributes</td>
 </tr>
 <tr>
-<td>↑ / ↓ on the first / last line</td>
-<td>earlier / later commands</td>
+<td>Shift+↑ / Shift+↓</td>
+<td>earlier / later commands (plain ↑ / ↓ move within the code)</td>
 </tr>
 <tr>
 <td>Esc, or <em>Stop</em></td>
@@ -3293,6 +3315,12 @@ springLayout with each edge’s natural length mapped linearly from its
 maxLength). Iterations as for springLayout.</p>
 <h2 id="display-hulls-legends-background-edges-labels-selection-export">Display:
 hulls, legends, background, edges, labels, selection, export</h2>
+<h3 id="constantlabelsizeontrue"><code>constantLabelSize(on=True)</code></h3>
+<p>constantLabelSize() keeps labels the same size on screen as you zoom
+(they grow with the graph otherwise); each label appears once there is
+room for it and stays as you zoom further in, so zooming in reveals more
+labels. Labels inside nodes keep fitting their nodes.
+constantLabelSize(false) turns it off.</p>
 <h3 id="createconvexhullseq-color20020025590"><code>createConvexHull(seq, color=&#39;200,200,255,90&#39;)</code></h3>
 <p>Shade the convex hull around the nodes in seq (edges contribute their
 endpoints).</p>
@@ -3354,11 +3382,25 @@ all.</p>
 <h3 id="labeloutlinesontrue"><code>labelOutlines(on=True)</code></h3>
 <p>labelOutlines() draws a halo in the background colour around labels
 so they stay readable over edges; labelOutlines(false) turns it off.</p>
+<h3 id="labelplacementmethodcandidates"><code>labelPlacement(method=&#39;candidates&#39;)</code></h3>
+<p>labelPlacement(“candidates”) or labelPlacement(“particles”) chooses
+how labels with labelpos “outside” (and edge labels, which slide along
+their edge) find room. “candidates” (default) tries 16 positions around
+each node, biggest nodes first, then re-places labels that still
+collide; “particles” also searches further out, ring by ring, and draws
+a leader line to labels it places away from their node. Both avoid other
+labels, nodes and edges.</p>
 <h3 id="legend"><code>Legend()</code></h3>
 <p>A legend box on the display.
 <code>l = Legend(); l.add(bob, &quot;managers&quot;)</code>.</p>
 <p>Entries snapshot the look of the node, edge or hull at the time they
 are added.</p>
+<h3 id="optimizelabelsseconds2"><code>optimizeLabels(seconds=2)</code></h3>
+<p>optimizeLabels() improves the positions of labels placed “outside”
+(and of edge labels) by simulated annealing for a few seconds, trading
+overlaps with labels, nodes and edges against the preferred positions;
+the result stays until the graph is replaced, labelPlacement changes or
+you run it again. Good before exporting a figure.</p>
 <h3 id="overridearrowlengthlength"><code>overrideArrowLength(length)</code></h3>
 <p>Fix the arrowhead length (graph units) for all directed edges; None
 resets.</p>
@@ -3811,64 +3853,71 @@ palette (Cmd/Ctrl+K).</p>
 <p><strong>Labels where there’s room</strong></p>
 <div class="sourceCode" id="cb119"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a>g.nodes.labelvisible <span class="op">=</span> true</span>
 <span id="cb119-2"><a href="#cb119-2" aria-hidden="true" tabindex="-1"></a>g.nodes.labelpos <span class="op">=</span> <span class="st">&#39;outside&#39;</span></span></code></pre></div>
+<p><strong>Labels off the edges</strong></p>
+<div class="sourceCode" id="cb120"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a>g.nodes.labelpos <span class="op">=</span> <span class="st">&#39;outside&#39;</span></span>
+<span id="cb120-2"><a href="#cb120-2" aria-hidden="true" tabindex="-1"></a>labelPlacement(<span class="st">&#39;particles&#39;</span>)</span></code></pre></div>
+<p><strong>Polish label positions</strong></p>
+<div class="sourceCode" id="cb121"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a>optimizeLabels(<span class="dv">2</span>)</span></code></pre></div>
+<p><strong>Labels that stay readable when zooming</strong></p>
+<div class="sourceCode" id="cb122"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a>constantLabelSize()</span></code></pre></div>
 <p><strong>Label size by a field</strong></p>
-<div class="sourceCode" id="cb120"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a>labelSizeBy(pagerank, <span class="fl">0.8</span>, <span class="dv">2</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb123"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a>labelSizeBy(pagerank, <span class="fl">0.8</span>, <span class="dv">2</span>)</span></code></pre></div>
 <p><strong>Edge labels</strong></p>
-<div class="sourceCode" id="cb121"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a>labelBy(freq)</span>
-<span id="cb121-2"><a href="#cb121-2" aria-hidden="true" tabindex="-1"></a>edgeLabelsAlong()</span></code></pre></div>
+<div class="sourceCode" id="cb124"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a>labelBy(freq)</span>
+<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a>edgeLabelsAlong()</span></code></pre></div>
 <p><strong>Bundle edges</strong></p>
-<div class="sourceCode" id="cb122"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a>bundleEdges()</span></code></pre></div>
+<div class="sourceCode" id="cb125"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a>bundleEdges()</span></code></pre></div>
 <p><strong>Force-directed edge bundling</strong></p>
-<div class="sourceCode" id="cb123"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a>bundleEdges(method<span class="op">=</span><span class="st">&#39;fdeb&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb126"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>bundleEdges(method<span class="op">=</span><span class="st">&#39;fdeb&#39;</span>)</span></code></pre></div>
 <h3 id="filtering-and-selection">Filtering and selection</h3>
 <p><strong>Show only a core</strong></p>
-<div class="sourceCode" id="cb124"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a>showOnly(kCore(<span class="dv">3</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb127"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a>showOnly(kCore(<span class="dv">3</span>))</span></code></pre></div>
 <p><strong>Ego network</strong></p>
-<div class="sourceCode" id="cb125"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a>showOnly(egoNetwork(v1, <span class="dv">2</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb128"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>showOnly(egoNetwork(v1, <span class="dv">2</span>))</span></code></pre></div>
 <p><strong>Largest component</strong></p>
-<div class="sourceCode" id="cb126"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>showOnly(giantComponent())</span></code></pre></div>
+<div class="sourceCode" id="cb129"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a>showOnly(giantComponent())</span></code></pre></div>
 <p><strong>Edges inside communities</strong></p>
-<div class="sourceCode" id="cb127"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a>showOnly(intraEdges(modularity_class))</span></code></pre></div>
+<div class="sourceCode" id="cb130"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a>showOnly(intraEdges(modularity_class))</span></code></pre></div>
 <p><strong>Show everything again</strong></p>
-<div class="sourceCode" id="cb128"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>showAll()</span></code></pre></div>
+<div class="sourceCode" id="cb131"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a>showAll()</span></code></pre></div>
 <p><strong>Select from code</strong></p>
-<div class="sourceCode" id="cb129"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a>select(dept <span class="op">==</span> <span class="st">&#39;dept2&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb132"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>select(dept <span class="op">==</span> <span class="st">&#39;dept2&#39;</span>)</span></code></pre></div>
 <p><strong>Act on the selection</strong></p>
-<div class="sourceCode" id="cb130"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a>sel.color <span class="op">=</span> orange</span>
-<span id="cb130-2"><a href="#cb130-2" aria-hidden="true" tabindex="-1"></a>center(sel)</span></code></pre></div>
+<div class="sourceCode" id="cb133"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a>sel.color <span class="op">=</span> orange</span>
+<span id="cb133-2"><a href="#cb133-2" aria-hidden="true" tabindex="-1"></a>center(sel)</span></code></pre></div>
 <p><strong>Table of a set</strong></p>
-<div class="sourceCode" id="cb131"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a>table(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb134"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a>table(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>)</span></code></pre></div>
 <h3 id="files-and-sessions">Files and sessions</h3>
 <p><strong>Load Gephi’s format</strong></p>
-<div class="sourceCode" id="cb132"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>makeFromGEXF(<span class="st">&#39;graph.gexf&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb135"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a>makeFromGEXF(<span class="st">&#39;graph.gexf&#39;</span>)</span></code></pre></div>
 <p><strong>Load spreadsheets</strong></p>
-<div class="sourceCode" id="cb133"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a>makeFromCSV(<span class="st">&#39;edges.csv&#39;</span>, <span class="st">&#39;nodes.csv&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb136"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a>makeFromCSV(<span class="st">&#39;edges.csv&#39;</span>, <span class="st">&#39;nodes.csv&#39;</span>)</span></code></pre></div>
 <p><strong>Export for Gephi</strong></p>
-<div class="sourceCode" id="cb134"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a>exportGEXF(<span class="st">&#39;graph.gexf&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb137"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a>exportGEXF(<span class="st">&#39;graph.gexf&#39;</span>)</span></code></pre></div>
 <p><strong>Save a session</strong></p>
-<div class="sourceCode" id="cb135"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a>saveSession(<span class="st">&#39;work.guess&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb138"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a>saveSession(<span class="st">&#39;work.guess&#39;</span>)</span></code></pre></div>
 <p><strong>Save what you ran</strong></p>
-<div class="sourceCode" id="cb136"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a>saveHistory(<span class="st">&#39;work.py&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb139"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a>saveHistory(<span class="st">&#39;work.py&#39;</span>)</span></code></pre></div>
 <p><strong>Snapshot and morph</strong></p>
-<div class="sourceCode" id="cb137"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a>ss(<span class="st">&#39;before&#39;</span>)</span>
-<span id="cb137-2"><a href="#cb137-2" aria-hidden="true" tabindex="-1"></a>circleLayout()</span>
-<span id="cb137-3"><a href="#cb137-3" aria-hidden="true" tabindex="-1"></a>morph(<span class="st">&#39;before&#39;</span>, <span class="dv">2000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb140"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a>ss(<span class="st">&#39;before&#39;</span>)</span>
+<span id="cb140-2"><a href="#cb140-2" aria-hidden="true" tabindex="-1"></a>circleLayout()</span>
+<span id="cb140-3"><a href="#cb140-3" aria-hidden="true" tabindex="-1"></a>morph(<span class="st">&#39;before&#39;</span>, <span class="dv">2000</span>)</span></code></pre></div>
 <p><strong>Random graph</strong></p>
-<div class="sourceCode" id="cb138"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a>makeBarabasiAlbertRandom(<span class="dv">5</span>, <span class="dv">2</span>, <span class="dv">300</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb141"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a>makeBarabasiAlbertRandom(<span class="dv">5</span>, <span class="dv">2</span>, <span class="dv">300</span>)</span></code></pre></div>
 <h3 id="interface-building">Interface building</h3>
 <p><strong>A slider that filters</strong></p>
-<div class="sourceCode" id="cb139"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> Slider(freq.<span class="bu">min</span>, freq.<span class="bu">max</span>, label<span class="op">=</span><span class="st">&#39;min freq&#39;</span>)</span>
-<span id="cb139-2"><a href="#cb139-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> update(v):</span>
-<span id="cb139-3"><a href="#cb139-3" aria-hidden="true" tabindex="-1"></a>    (freq <span class="op">&lt;</span> v).visible <span class="op">=</span> false</span>
-<span id="cb139-4"><a href="#cb139-4" aria-hidden="true" tabindex="-1"></a>    (freq <span class="op">&gt;=</span> v).visible <span class="op">=</span> true</span>
-<span id="cb139-5"><a href="#cb139-5" aria-hidden="true" tabindex="-1"></a>s.onChange <span class="op">=</span> update</span>
-<span id="cb139-6"><a href="#cb139-6" aria-hidden="true" tabindex="-1"></a>ui.dock(Panel(<span class="st">&#39;Filter&#39;</span>, s))</span></code></pre></div>
+<div class="sourceCode" id="cb142"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> Slider(freq.<span class="bu">min</span>, freq.<span class="bu">max</span>, label<span class="op">=</span><span class="st">&#39;min freq&#39;</span>)</span>
+<span id="cb142-2"><a href="#cb142-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> update(v):</span>
+<span id="cb142-3"><a href="#cb142-3" aria-hidden="true" tabindex="-1"></a>    (freq <span class="op">&lt;</span> v).visible <span class="op">=</span> false</span>
+<span id="cb142-4"><a href="#cb142-4" aria-hidden="true" tabindex="-1"></a>    (freq <span class="op">&gt;=</span> v).visible <span class="op">=</span> true</span>
+<span id="cb142-5"><a href="#cb142-5" aria-hidden="true" tabindex="-1"></a>s.onChange <span class="op">=</span> update</span>
+<span id="cb142-6"><a href="#cb142-6" aria-hidden="true" tabindex="-1"></a>ui.dock(Panel(<span class="st">&#39;Filter&#39;</span>, s))</span></code></pre></div>
 <p><strong>React to clicks</strong></p>
-<div class="sourceCode" id="cb140"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a>graphevents.clickNode <span class="op">=</span> <span class="kw">lambda</span> n: center([n] <span class="op">+</span> n.getNeighbors())</span></code></pre></div>
+<div class="sourceCode" id="cb143"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a>graphevents.clickNode <span class="op">=</span> <span class="kw">lambda</span> n: center([n] <span class="op">+</span> n.getNeighbors())</span></code></pre></div>
 <p><strong>Record a movie</strong></p>
-<div class="sourceCode" id="cb141"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a>startMovie(<span class="dv">30</span>, <span class="st">&#39;run.webm&#39;</span>)</span>
-<span id="cb141-2"><a href="#cb141-2" aria-hidden="true" tabindex="-1"></a>gemLayout()</span>
-<span id="cb141-3"><a href="#cb141-3" aria-hidden="true" tabindex="-1"></a>stopMovie()</span></code></pre></div>
+<div class="sourceCode" id="cb144"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb144-1"><a href="#cb144-1" aria-hidden="true" tabindex="-1"></a>startMovie(<span class="dv">30</span>, <span class="st">&#39;run.webm&#39;</span>)</span>
+<span id="cb144-2"><a href="#cb144-2" aria-hidden="true" tabindex="-1"></a>gemLayout()</span>
+<span id="cb144-3"><a href="#cb144-3" aria-hidden="true" tabindex="-1"></a>stopMovie()</span></code></pre></div>
 <h2 id="fields">Fields</h2>
 <p>Built-in node fields:</p>
 <table>

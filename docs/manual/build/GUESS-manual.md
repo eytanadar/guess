@@ -1214,6 +1214,26 @@ edgeLabelsAlong()
 The Style panel sets the same things: map *Label* with a position, or *Label
 size* to a number.
 
+**Finding room for labels.** Labels placed `outside`, and edge labels (which
+slide along their edge), are placed to avoid other labels, nodes and edges:
+
+- `labelPlacement("candidates")` (the default) tries 16 positions around each
+  node, biggest nodes first, then moves the labels that still collide.
+- `labelPlacement("particles")` also searches further out, ring by ring, and
+  draws a thin leader line to labels it places away from their node. It keeps
+  labels off edges best.
+- `optimizeLabels(2)` polishes the positions by simulated annealing for two
+  seconds and keeps the result (until the graph is replaced or the method
+  changes). The status bar reports how much it improved. Use it before
+  exporting a figure.
+- `constantLabelSize()` keeps labels the same size on screen as you zoom.
+  Each label appears once there is room for it and stays as you zoom further
+  in, so zooming in reveals more labels.
+
+On the sample graph with every label shown, placing them `outside` cuts
+label overlaps by about two thirds and edges crossing labels by about the
+same; particles all but removes the edge crossings.
+
 \newpage
 
 # 13. Direct manipulation
@@ -1334,7 +1354,7 @@ several things are selected, the function receives the selection.
 | Shift+Enter, Cmd/Ctrl+Enter | run the cell |
 | Enter | a new line |
 | Tab | complete commands, fields, nodes and attributes |
-| ↑ / ↓ on the first / last line | earlier / later commands |
+| Shift+↑ / Shift+↓ | earlier / later commands (plain ↑ / ↓ move within the code) |
 | Esc, or *Stop* | interrupt running code |
 | Ctrl+L | clear the output |
 | Shift+Cmd/Ctrl+F | find in the console output |
@@ -2673,6 +2693,14 @@ springLayout.
 
 ## Display: hulls, legends, background, edges, labels, selection, export
 
+### `constantLabelSize(on=True)`
+
+constantLabelSize() keeps labels the same size on screen as you zoom
+(they grow with the graph otherwise); each label appears once there is
+room for it and stays as you zoom further in, so zooming in reveals more
+labels. Labels inside nodes keep fitting their nodes.
+constantLabelSize(false) turns it off.
+
 ### `createConvexHull(seq, color='200,200,255,90')`
 
 Shade the convex hull around the nodes in seq (edges contribute their endpoints).
@@ -2758,11 +2786,29 @@ bigger node, rechecked as you zoom; hideOverlappingLabels(false) shows all.
 labelOutlines() draws a halo in the background colour around labels so
 they stay readable over edges; labelOutlines(false) turns it off.
 
+### `labelPlacement(method='candidates')`
+
+labelPlacement("candidates") or labelPlacement("particles") chooses how
+labels with labelpos "outside" (and edge labels, which slide along their
+edge) find room. "candidates" (default) tries 16 positions around each
+node, biggest nodes first, then re-places labels that still collide;
+"particles" also searches further out, ring by ring, and draws a leader
+line to labels it places away from their node. Both avoid other labels,
+nodes and edges.
+
 ### `Legend()`
 
 A legend box on the display. ``l = Legend(); l.add(bob, "managers")``.
 
 Entries snapshot the look of the node, edge or hull at the time they are added.
+
+### `optimizeLabels(seconds=2)`
+
+optimizeLabels() improves the positions of labels placed "outside"
+(and of edge labels) by simulated annealing for a few seconds, trading
+overlaps with labels, nodes and edges against the preferred positions;
+the result stays until the graph is replaced, labelPlacement changes or
+you run it again. Good before exporting a figure.
 
 ### `overrideArrowLength(length)`
 
@@ -3634,6 +3680,25 @@ fitNodesToLabels()
 ```python
 g.nodes.labelvisible = true
 g.nodes.labelpos = 'outside'
+```
+
+**Labels off the edges**
+
+```python
+g.nodes.labelpos = 'outside'
+labelPlacement('particles')
+```
+
+**Polish label positions**
+
+```python
+optimizeLabels(2)
+```
+
+**Labels that stay readable when zooming**
+
+```python
+constantLabelSize()
 ```
 
 **Label size by a field**

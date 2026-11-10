@@ -9,6 +9,7 @@ import { HelpPanel, type HelpIndex } from "./help";
 import { Palette, type PaletteItem } from "./palette";
 import { DataTable, type TableData } from "./table";
 import { TimelineBar, type TimelineInfo } from "./timeline";
+import { ExcentricLens } from "./lens";
 import { FilterPanel, StylePanel, VarsPanel, pyLit, type FieldInfo, type PanelHost, type Workspace } from "./panels";
 import * as store from "./store";
 import sampleGdf from "../../gdfs/sample.gdf?raw";
@@ -79,6 +80,7 @@ const renderer = new Renderer($("#graph"), {
   selected: (ids) => syncSelection(ids),
   clickedAt: (x, y) => send({ type: "click", x, y }),
   dragBehaviour: (id, alt) => (tool === "select" ? dragBehaviour(id, alt) : null),
+  wheel: (ev) => tool === "lens" && lens.wheel(ev),
   dragHint: (text) => {
     status.textContent = text ?? "";
   },
@@ -98,7 +100,7 @@ function syncSelection(ids: number[]) {
 }
 
 // ---- click tools (Gephi's toolbar: neighbourhood highlight, shortest path, heat map, painter) ----
-type Tool = "select" | "path" | "heat" | "paint";
+type Tool = "select" | "path" | "heat" | "paint" | "lens";
 let tool: Tool = "select";
 let pathStart: number | null = null;
 const paintColor = $<HTMLInputElement>("#paint-color");
@@ -116,12 +118,34 @@ function setTool(t: Tool) {
   renderer.setFocus(null);
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-tool]")) b.setAttribute("aria-pressed", String(b.dataset.tool === t));
   $("#graph").dataset.tool = t;
-  status.textContent = { select: "", path: "Path: click the first node", heat: "Heat map: click a node", paint: "Paint: click nodes (shift-click: with neighbours)" }[t];
+  status.textContent = { select: "", path: "Path: click the first node", heat: "Heat map: click a node", paint: "Paint: click nodes (shift-click: with neighbours)",
+    lens: "Lens: point at nodes to list them · wheel resizes · Shift+wheel scrolls · click pins it, then select or filter" }[t];
+  lens.setActive(t === "lens");
 }
+
+// excentric labelling lens (src/lens.ts): a click tool that lists and selects the nodes under it
+const lens = new ExcentricLens($("#graph"), renderer, {
+  select: (ids, add) => {
+    const next = add ? [...new Set([...renderer.selection, ...ids])] : ids;
+    renderer.setSelection(next);
+    syncSelection([...renderer.selection]);
+  },
+  toggle: (id) => syncSelection(renderer.toggleSelected(id)),
+  zoomTo: (id) => renderer.center([id]),
+});
+const lensLoop = () => {
+  lens.tick();
+  requestAnimationFrame(lensLoop);
+};
+requestAnimationFrame(lensLoop);
 
 for (const b of document.querySelectorAll<HTMLButtonElement>("[data-tool]")) b.addEventListener("click", () => setTool(b.dataset.tool as Tool));
 
 function onGraphClick(hit: Hit, shift: boolean) {
+  if (tool === "lens") {
+    lens.click();
+    return;
+  }
   if (tool !== "select") {
     if (hit?.kind !== "n") return;
     const c = JSON.stringify(paintColor.value);
@@ -374,6 +398,10 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     case "image":
       renderer.addImage(m.key, m.url);
+      break;
+    case "lens":
+      lens.configure({ radius: m.radius, auto: m.auto, max: m.max });
+      setTool(m.on ? "lens" : "select");
       break;
     case "labels": {
       // after the current redraw, so the labels being optimised are laid out
@@ -629,6 +657,7 @@ document.addEventListener("keydown", (ev) => {
   if (ev.key !== "Escape") return;
   closeMenu();
   if (!$("#console").contains(ev.target as Node)) {
+    if (tool === "lens" && lens.release()) return;
     if (tool !== "select") setTool("select");
     else if (renderer.focused !== null) renderer.setFocus(null);
     else if (renderer.selection.size) {
