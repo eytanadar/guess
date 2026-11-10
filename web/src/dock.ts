@@ -200,7 +200,48 @@ export class Dock {
       });
       svg.append(el);
     };
-    if (c.kind === "pie") {
+    if (c.kind === "line") {
+      const left = 34, bottom = 30, top = 8, right = 8;
+      const pw = W - left - right, ph = H - top - bottom;
+      const all = (c.series ?? []).flatMap((s) => s.points);
+      const xmin = Math.min(0, ...all.map((p) => p[0])), xmax = Math.max(1e-9, ...all.map((p) => p[0]));
+      const ymin = Math.min(0, ...all.map((p) => p[1])), ymax = Math.max(1e-9, ...all.map((p) => p[1]));
+      const X = (v: number) => left + (pw * (v - xmin)) / (xmax - xmin || 1);
+      const Y = (v: number) => top + ph * (1 - (v - ymin) / (ymax - ymin || 1));
+      const axis = document.createElementNS(SVG, "path");
+      axis.setAttribute("d", `M${left},${top} V${top + ph} H${W - right}`);
+      axis.setAttribute("class", "axis");
+      svg.append(axis);
+      for (const [v, isX] of [[ymin, false], [ymax, false], [xmin, true], [xmax, true]] as [number, boolean][]) {
+        const t = document.createElementNS(SVG, "text");
+        t.setAttribute("x", String(isX ? X(v) : left - 4));
+        t.setAttribute("y", String(isX ? top + ph + 11 : Y(v) + 3));
+        t.setAttribute("class", isX ? "xtick" : "tick");
+        t.textContent = fmt(v);
+        svg.append(t);
+      }
+      (c.series ?? []).forEach((s, i) => {
+        const line = document.createElementNS(SVG, "polyline");
+        line.setAttribute("points", s.points.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" "));
+        line.setAttribute("fill", "none");
+        line.setAttribute("stroke", hex(s.color));
+        line.setAttribute("stroke-width", "1.8");
+        svg.append(line);
+        const key = document.createElementNS(SVG, "text");
+        key.setAttribute("x", String(W - right - 2));
+        key.setAttribute("y", String(top + 10 + i * 12));
+        key.setAttribute("class", "tick");
+        key.setAttribute("fill", hex(s.color));
+        key.textContent = s.name;
+        svg.append(key);
+      });
+      const xl = document.createElementNS(SVG, "text");
+      xl.setAttribute("x", String(left + pw / 2));
+      xl.setAttribute("y", String(H - 2));
+      xl.setAttribute("class", "axis-label");
+      xl.textContent = c.xlabel;
+      svg.append(xl);
+    } else if (c.kind === "pie") {
       const total = items.reduce((s, it) => s + Math.max(0, it.value), 0) || 1;
       const cx = W / 2, cy = H / 2, r = H / 2 - 12;
       let a0 = -Math.PI / 2;

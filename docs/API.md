@@ -9,11 +9,11 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (67)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (70)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
-- [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (15)
+- [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (16)
 - [networkx bridge and sample graphs](#networkx-bridge-and-sample-graphs) (4)
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
@@ -189,6 +189,29 @@ padding is the space around the text. Labels with line breaks
 
 Like range() but for floats.
 
+### `geoDistance(name='km', lat=None, lon=None)`
+
+geoDistance() stores each edge's great-circle length in kilometres
+(from its ends' latitude and longitude fields, as geoLayout finds them)
+in the edge field `km` (or name=...). Use it as a cost:
+for e in g.edges: e.weight = e.km, then shortestPath(a, b,
+weighted=true) is the shortest route by distance. Returns the field.
+
+### `geoLayout(lat=None, lon=None, projection='mercator', map='auto', width=1000, land=None, borders=None, parallels=(29.5, 45.5), center=(-96.0, 37.5))`
+
+geoLayout() places nodes by their latitude and longitude fields
+(found by name: latitude/lat and longitude/lon/lng, or pass them:
+geoLayout(lat, lon)) and draws a map underneath. projection:
+"mercator" (default; shapes kept, high latitudes enlarged),
+"equirectangular" (longitude and latitude as x and y) or "albers"
+(equal-area conic; with parallels= and center=, US by default, which
+suits the lower 48 states). map: "world" (land outlines), "usa" (the
+states), None for no map, or "auto" (usa when every node is in the
+US, else world). land= and borders= set the map's colours (default:
+light or dark grey to suit the theme). The layout fits nodes into
+`width` units across; nodes without coordinates are set in a row
+below. Outlines: Natural Earth 1:110m, public domain.
+
 ### `getAppletContext()`
 
 For old applet scripts: .showDocument(url) opens a browser window.
@@ -352,6 +375,10 @@ Remove one edge.
 ### `removeLeaves()`
 
 Repeatedly remove nodes of total degree <= 1. Returns what was removed.
+
+### `removeMap()`
+
+removeMap() removes the map drawn by geoLayout (the positions stay).
 
 ### `removeNode(n)`
 
@@ -664,6 +691,20 @@ values only the 20 most common are printed.
 
 reciprocity(): the share of directed edges whose reverse edge also
 exists (1 = every tie returned). Undirected edges are left out.
+
+### `robustness(orders=('random', 'degree'), trials=5, seed=0, show=True)`
+
+robustness() asks how the network falls apart as nodes fail: for
+each way of removing nodes it gives the share of nodes still in the
+largest connected piece after removing each share of them, and plots
+the curves. orders: "random" (failures; averaged over `trials`
+random orders), "degree" or "betweenness" (attacks on the biggest
+hubs or bridges first, ranked once at the start), "adaptive" (the
+current highest-degree node each time), or a node field (highest
+first). The graph isn't changed. Returns {order: [(removed share,
+largest-piece share), ...]} and prints the share removed at which the
+largest piece drops below half. Many real networks shrug off random
+failures but break quickly under attack.
 
 ### `spanningTree(maximum=False, weighted=True)`
 

@@ -423,6 +423,109 @@ def install(session):
         return dict(census)
 
     @cmd
+    def robustness(orders=("random", "degree"), trials=5, seed=0, show=True):
+        """robustness() asks how the network falls apart as nodes fail: for
+        each way of removing nodes it gives the share of nodes still in the
+        largest connected piece after removing each share of them, and plots
+        the curves. orders: "random" (failures; averaged over `trials`
+        random orders), "degree" or "betweenness" (attacks on the biggest
+        hubs or bridges first, ranked once at the start), "adaptive" (the
+        current highest-degree node each time), or a node field (highest
+        first). The graph isn't changed. Returns {order: [(removed share,
+        largest-piece share), ...]} and prints the share removed at which the
+        largest piece drops below half. Many real networks shrug off random
+        failures but break quickly under attack."""
+        import random as _random
+        gr = g()
+        nodes = gr._nodes_list()
+        n = len(nodes)
+        if n < 2:
+            raise GuessError("robustness needs at least two nodes")
+        idx = {x._id: i for i, x in enumerate(nodes)}
+        adj = [[] for _ in range(n)]
+        for e in gr._edges_list():
+            a, b = idx[e._n1._id], idx[e._n2._id]
+            if a != b:
+                adj[a].append(b)
+                adj[b].append(a)
+
+        def curve(order):
+            # add nodes back in reverse removal order, tracking the largest piece
+            parent, size = list(range(n)), [1] * n
+            alive = [False] * n
+
+            def find(x):
+                while parent[x] != x:
+                    parent[x] = parent[parent[x]]
+                    x = parent[x]
+                return x
+            largest, sizes = 0, [0] * (n + 1)      # sizes[k]: largest piece with k nodes present
+            for k, v in enumerate(reversed(order), start=1):
+                alive[v] = True
+                for w in adj[v]:
+                    if alive[w]:
+                        a, b = find(v), find(w)
+                        if a != b:
+                            if size[a] < size[b]:
+                                a, b = b, a
+                            parent[b] = a
+                            size[a] += size[b]
+                largest = max(largest, size[find(v)])
+                sizes[k] = largest
+            return [(i / n, sizes[n - i] / n) for i in range(n + 1)]
+
+        def adaptive_order():
+            deg = [len(a) for a in adj]
+            gone = [False] * n
+            out = []
+            for _ in range(n):
+                v = max((i for i in range(n) if not gone[i]), key=lambda i: (deg[i], -i))
+                gone[v] = True
+                out.append(v)
+                for w in adj[v]:
+                    if not gone[w]:
+                        deg[w] -= 1
+            return out
+
+        if isinstance(orders, (str, Field)):
+            orders = [orders]
+        results = {}
+        for o in orders:
+            name = o.name if isinstance(o, Field) else str(o)
+            if name == "random":
+                rng = _random.Random(seed)
+                runs = []
+                for _ in range(max(1, int(trials))):
+                    order = list(range(n))
+                    rng.shuffle(order)
+                    runs.append(curve(order))
+                pts = [(runs[0][i][0], sum(r[i][1] for r in runs) / len(runs)) for i in range(n + 1)]
+            elif name == "adaptive":
+                pts = curve(adaptive_order())
+            else:
+                f = o if isinstance(o, Field) else gr.node_schema.get(name)
+                if f is None and (NODE, name) in gr.lazy_fields:
+                    f = gr._lazy_field(NODE, name)       # betweenness etc.: computed on first use
+                if f is None:
+                    raise GuessError(f"unknown order {name!r}: use random, degree, betweenness, adaptive or a node field")
+                vals = [f.get(x) for x in nodes]
+                pts = curve(sorted(range(n), key=lambda i: (-(vals[i] if isinstance(vals[i], (int, float)) else 0), i)))
+            results[name] = pts
+        palette = [0x2c7bb6, 0xd7191c, 0x1a9641, 0x8e5fbf, 0xfdae61]
+        step = max(1, n // 200)
+        series = [{"name": k, "color": palette[i % len(palette)],
+                   "points": [[round(x, 4), round(y, 4)] for x, y in v[::step] + [v[-1]]]}
+                  for i, (k, v) in enumerate(results.items())]
+        if show:
+            for k, v in results.items():
+                half = next((x for x, y in v if y < 0.5), 1.0)
+                print(f"{k:>12}: largest piece below half after removing {half:.0%} of nodes")
+            session.emit({"type": "chart", "id": "chart:line:robustness", "kind": "line",
+                          "title": "Robustness", "xlabel": "share of nodes removed",
+                          "ylabel": "share in the largest piece", "items": [], "series": series})
+        return results
+
+    @cmd
     def reciprocity():
         """reciprocity(): the share of directed edges whose reverse edge also
         exists (1 = every tie returned). Undirected edges are left out."""

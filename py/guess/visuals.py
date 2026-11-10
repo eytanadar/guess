@@ -167,6 +167,7 @@ class View:
         self.pie = None             # pie-chart nodes (glyphs.py)
         self.drag = {}              # declarative dragging context: ring, axes
         self.guides = []            # labelled lines drawn under the graph (hive plot axes)
+        self.map = None             # geoLayout's outlines: {"rings", "fill", "stroke"}
         self.guides_note = ""
         self.border_width = 0.75
         self._next = 1
@@ -213,7 +214,8 @@ class View:
                 "styles": {k: list(v) for k, v in self.styles.items()},
                 "pie": self.pie, "border_width": self.border_width,
                 "slides": [dict(s) for s in getattr(self, "slides", [])],
-                "guides": [dict(x) for x in self.guides], "guides_note": self.guides_note}
+                "guides": [dict(x) for x in self.guides], "guides_note": self.guides_note,
+                "map": self.map}
 
     def restore(self, snap):
         self.hulls = {}
@@ -233,6 +235,7 @@ class View:
         self.slides = [dict(s) for s in snap.get("slides", [])]
         self.guides = [dict(x) for x in snap.get("guides", [])]
         self.guides_note = snap.get("guides_note", "")
+        self.map = snap.get("map")
         self.session.emit({"type": "slides", "slides": [{"note": s["note"]} for s in self.slides], "index": None})
         for n in self.session.graph._nodes_list():
             self.session.graph._mark(n)
@@ -253,7 +256,7 @@ class View:
                 "curvature": self.curvature, "edgeColor": self.edge_color, "labels": dict(self.labels), "styles": list(self.styles),
                 "pie": [colors.to_rgba_int(c)[0] for c in self.pie["colors"]] if self.pie else None,
                 "borderWidth": self.border_width, "drag": self._drag_record(),
-                "guides": self.guides, "guidesNote": self.guides_note, "hulls": hulls, "legends": [l.record() for l in self.legends.values()]}
+                "guides": self.guides, "guidesNote": self.guides_note, "map": self.map, "hulls": hulls, "legends": [l.record() for l in self.legends.values()]}
 
 
 def _data_url(path):

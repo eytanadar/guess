@@ -67,6 +67,9 @@ export interface Overlay {
   borderWidth?: number;
   /** labelled lines under the graph (hive plot axes) */
   guides?: { x1: number; y1: number; x2: number; y2: number; label: string }[];
+  /** a map drawn under the graph (geoLayout): outlines as flat [x0, y0, x1, y1, …]
+   * rings in graph coordinates; fill/stroke null = follow the theme */
+  map?: { rings: number[][]; fill: number | null; stroke: number | null } | null;
   guidesNote?: string;
   /** context for semantic dragging (see main.ts dragBehaviour) */
   drag?: DragContext;
@@ -85,9 +88,11 @@ export interface WidgetRec { id: string; kind: string; props: Record<string, unk
 export interface PanelRec extends WidgetRec { children: WidgetRec[] }
 
 export interface ChartMsg {
-  type: "chart"; id: string; kind: "bar" | "pie" | "distrib";
+  type: "chart"; id: string; kind: "bar" | "pie" | "distrib" | "line";
   title: string; xlabel: string; ylabel: string;
   items: { label: string; value: number; color: number; ids: ["n" | "e", number][] }[];
+  /** line charts: one polyline per series, x and y in data units */
+  series?: { name: string; color: number; points: [number, number][] }[];
 }
 
 export type UiMsg =

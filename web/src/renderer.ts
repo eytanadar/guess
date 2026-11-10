@@ -179,6 +179,10 @@ export class Renderer {
   private backdrop = new Container();
   private hullG = new Graphics();
   private guideG = new Graphics();
+  /** geographic outlines under the graph (geoLayout); redrawn when the map or theme changes */
+  private mapG = new Graphics();
+  private map: Overlay["map"] = null;
+  private mapKey = "";
   private guideLabels = new Container();
   private guides: NonNullable<Overlay["guides"]> = [];
   private guidesNote = "";
@@ -275,7 +279,7 @@ export class Renderer {
     }).observe(this.host);
     // draw only when something changed (idle graphs cost nothing)
     this.app.ticker.remove(this.app.render, this.app);
-    this.world.addChild(this.backdrop, this.guideG, this.guideLabels, this.hullG, this.edgeG, this.nodeG, this.imageLayer, this.leaderG, this.pills, this.halos, this.labels, this.overlay);
+    this.world.addChild(this.backdrop, this.mapG, this.guideG, this.guideLabels, this.hullG, this.edgeG, this.nodeG, this.imageLayer, this.leaderG, this.pills, this.halos, this.labels, this.overlay);
     this.app.stage.addChild(this.world);
     this.app.ticker.add(() => this.frame());
     this.bindInput();
@@ -411,6 +415,7 @@ export class Renderer {
     this.userBg = ov.background;
     this.guides = ov.guides ?? [];
     this.guidesNote = ov.guidesNote ?? "";
+    this.map = ov.map ?? null;
     this.pieColors = ov.pie ?? null;
     this.borderWidth = ov.borderWidth ?? 0.75;
     this.applyBackground();
@@ -604,6 +609,7 @@ export class Renderer {
     if (this.dirty) {
       this.dirty = false;
       this.updateFocus();
+      this.drawMap();
       this.drawGuides();
       this.drawHulls();
       this.drawEdges();
@@ -628,6 +634,33 @@ export class Renderer {
   }
 
   private lastSize = [0, 0];
+
+  /** Land/borders fill and line colours for the map: given, or from the theme. */
+  private mapColors(): [number, number] {
+    const bg = this.app.renderer.background.color.toNumber();
+    const lum = 0.2126 * ((bg >> 16) & 255) + 0.7152 * ((bg >> 8) & 255) + 0.0722 * (bg & 255);
+    const dark = lum < 128;
+    return [this.map?.fill ?? (dark ? 0x2b2f36 : 0xeef0f2), this.map?.stroke ?? (dark ? 0x535a66 : 0xb9bfc8)];
+  }
+
+  private drawMap() {
+    const m = this.map;
+    const [fill, stroke] = this.mapColors();
+    const key = m ? `${m.rings.length}:${m.rings[0]?.slice(0, 4).join(",")}:${fill}:${stroke}` : "";
+    if (key === this.mapKey) return;
+    this.mapKey = key;
+    const g = this.mapG;
+    g.clear();
+    if (!m) return;
+    for (const r of m.rings) {
+      if (r.length < 6) continue;
+      g.poly(r, true).fill({ color: fill });
+    }
+    for (const r of m.rings) {
+      if (r.length < 4) continue;
+      g.poly(r, true).stroke({ width: 1, color: stroke, pixelLine: true });
+    }
+  }
 
   /** Hive plot axes: a line per axis with its label beyond the outer end. */
   private drawGuides() {
@@ -1590,6 +1623,14 @@ export class Renderer {
     const W = x1 - x0 + 2 * pad, H = y1 - y0 + 2 * pad;
     out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0 - pad} ${y0 - pad} ${W} ${H}" width="${W}" height="${H}">`);
     out.push(`<rect x="${x0 - pad}" y="${y0 - pad}" width="${W}" height="${H}" fill="${col(this.app.renderer.background.color.toNumber())}"/>`);
+    if (this.map) {
+      const [fill, stroke] = this.mapColors();
+      for (const r of this.map.rings) {
+        if (r.length < 6) continue;
+        const d = "M" + Array.from({ length: r.length / 2 }, (_, k) => `${r[2 * k].toFixed(1)},${r[2 * k + 1].toFixed(1)}`).join("L") + "Z";
+        out.push(`<path d="${d}" fill="${col(fill)}" stroke="${col(stroke)}" stroke-width="0.6"/>`);
+      }
+    }
     for (const h of this.hulls) {
       const pts: [number, number][] = [];
       for (const id of h.nodes) {
