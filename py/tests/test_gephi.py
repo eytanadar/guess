@@ -69,7 +69,7 @@ def test_lazy_statistic_fields_and_recompute(s):
     assert ev(s, "bob.strength") == 3.0
     assert ev(s, "jane.triangles") == 1
     s.run("addEdge(al_x, bob)")
-    assert ev(s, "al_x.component") == 1          # stale until recomputed
+    assert ev(s, "al_x.component") == 0          # recomputed on read after the change
     assert s.run("recompute(component)")
     assert ev(s, "al_x.component") == 0
     assert s.run("recompute()")

@@ -1,6 +1,6 @@
 // Figures for the cookbooks. A recipe's figure is written in its Markdown as
 // ![caption](img/NAME.png); this runs the recipe's python blocks that come
-// before the image in the real app (fresh browser, cookbooks/data uploaded)
+// before the image in the real app (fresh browser; the datasets are built in)
 // and saves the graph area as cookbooks/<volume>/img/NAME.png (app-NAME: the
 // whole window, for capstone apps with their panels).
 //
@@ -9,7 +9,7 @@
 //   npm run cookbook-shots -- sna:karate-split       # one figure
 import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readFileSync, readdirSync, rmSync, existsSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
 
@@ -67,11 +67,6 @@ async function startServer() {
   throw new Error("dev server did not start");
 }
 
-const gdfs = resolve(books, "..", "gdfs");
-const data = [
-  ...readdirSync(join(books, "data")).filter((f) => !f.endsWith(".py") && !f.endsWith(".md")).map((f) => join(books, "data", f)),
-  ...readdirSync(gdfs).filter((f) => f.endsWith(".gdf") && f !== "sample.gdf").map((f) => join(gdfs, f)),
-];
 const todo = figures();
 const server = await startServer();
 const browser = await chromium.launch({ channel: process.env.CI ? undefined : "chrome" });
@@ -83,10 +78,7 @@ try {
     await page.goto(`http://localhost:${PORT}/`);
     await page.locator(".console-out").getByText(/loaded 402/).first().waitFor({ timeout: 180000 });
     await page.addStyleTag({ content: "#tip, #tipcard { display: none !important; }" });
-    // put the datasets in the app's file space, as File → Open would, without opening them
-    for (const f of data) {
-      await page.evaluate(([name, text]) => window.__guess.writeFile(name, text), [basename(f), readFileSync(f, "utf8")]);
-    }
+    // the datasets are already in the app's file space (fetched on first use)
     // igraph and Graphviz load in the background after start-up: wait for both
     for (let i = 0; i < 60; i++) {
       await run("from guess import igr as __i, gv as __g\nprint('READY' if __i.module() is not None and __g.runner() is not None else 'WAIT')", 100);

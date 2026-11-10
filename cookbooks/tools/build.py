@@ -23,6 +23,7 @@ OUT = BOOKS / "build"
 MANUAL_TOOLS = ROOT / "docs" / "manual" / "tools"
 sys.path.insert(0, str(ROOT / "docs" / "manual"))
 from build import font_args  # noqa: E402  (the manual's font picker)
+sys.path.insert(0, str(HERE))
 
 VOLUMES = ["core", "sna", "biology", "text", "infrastructure", "software", "investigations", "ecology"]   # reading order
 
@@ -71,6 +72,7 @@ def build(vol, fmts):
 
 
 def write_index():
+    from datasets import used_by
     items = []
     for vol in volumes():
         m = meta(vol)
@@ -79,7 +81,10 @@ def write_index():
         if links:
             items.append(f'<li><div class="t">{html.escape(m.get("title", vol))}</div>'
                          f'<div class="note">{html.escape(m.get("subtitle", ""))}</div>'
-                         f'<div class="links">{links}</div></li>')
+                         f'<div class="links">{links}</div>'
+                         + (f'<div class="data">Data: ' + " · ".join(f'<a href="data/{f}" download>{f}</a>' for f in used_by(vol))
+                            + "</div>" if used_by(vol) else "")
+                         + "</li>")
     (OUT / "index.html").write_text(f"""<!doctype html>
 <html lang="en">
 <head>
@@ -101,6 +106,8 @@ def write_index():
   .t {{ font-weight: 600; font-size: 1.15rem; }}
   .note {{ color: var(--muted); font-size: .95rem; }}
   a {{ color: var(--link); font-weight: 600; }}
+  .data {{ font-size: .85rem; color: var(--muted); margin-top: .25rem; }}
+  .data a {{ font-weight: 400; }}
   footer {{ color: var(--muted); font-size: .85rem; margin-top: 2rem; }}
 </style>
 </head>
@@ -111,7 +118,9 @@ Start with the Kitchen; the field books build on it.</p>
 <ul>
 {chr(10).join(items)}
 </ul>
-<footer>Built {datetime.date.today().isoformat()}. Every code sample in these books is run by the build.</footer>
+<footer>Built {datetime.date.today().isoformat()}. Every code sample in these books is run by the build.
+In GUESS the data files are already available: open them by name. Sources and licences: <a href="data/README.md">datasets README</a>.
+On the GUESS site, <a href="../">the manual</a> is one level up.</footer>
 </body>
 </html>
 """)

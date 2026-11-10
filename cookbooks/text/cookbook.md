@@ -299,6 +299,41 @@ even an outlier with no real neighbours, so look at the weights
 (`plotHistogram(weight)`). A threshold network leaves outliers isolated,
 which is often more honest.
 
+# Live sources
+
+## Wikipedia's link neighbourhood [Basic]{.level}
+
+```{.python .norun}
+makeFromWikipedia("Graph drawing", limit=100)
+sizeBy(indegree, 4, 30)
+labelBy(label)
+forceAtlas2Layout()
+```
+
+**How it works.** `makeFromWikipedia(title)` opens an article, the
+articles it links to (up to `limit`), and every link among them. Sizing
+by `indegree` shows which linked articles the neighbourhood itself
+points to most: the topic's core concepts. Pages that citation templates
+link to everywhere (such as "Doi (identifier)") are left out. `lang=`
+picks another language edition. Comparing editions is a study in itself.
+
+## Any field's literature, from OpenAlex [Basic]{.level}
+
+```{.python .norun}
+makeFromOpenAlex("edge bundling", limit=200)
+removeDisconnected()
+mp = mainPath()
+leidenClusters()
+```
+
+**How it works.** `makeFromOpenAlex(words)` builds the same kind of
+citation network as `vis-papers.gdf` for any topic: the most cited works
+with the words in their titles, and the citations among them.
+`mode="authors"` gives the paper–author network for co-authorship
+recipes. Every recipe in the citation chapters then works on the field you
+care about. Remember the pitfalls of title search: synonyms are missed and
+homonyms are caught.
+
 # Knowledge graphs
 
 ## Query Wikidata [Intermediate]{.level}

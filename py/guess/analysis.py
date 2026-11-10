@@ -317,8 +317,10 @@ def install(session):
 
     @cmd
     def recompute(*fields):
-        """recompute(pagerank, coreness, ...) recalculates computed fields (betweenness,
-        pagerank, closeness, ...) after the graph has changed; recompute() redoes
+        """Computed fields (betweenness, pagerank, component, ...) recalculate
+        themselves when read after the graph has changed, so this is rarely
+        needed: recompute(pagerank, ...) forces it now (e.g. for a field you
+        had overwritten, which then follows the graph again); recompute() redoes
         every computed field that has been used so far."""
         names = [f.name if isinstance(f, Field) else str(f) for f in fields]
         if not names:
@@ -338,6 +340,7 @@ def install(session):
                     f = schema[name]
                     for elem in (g._nodes_list() if kind == NODE else g._edges_list()):
                         f.set(elem, values.get(elem, f.default))
+                    f.lazy_at = g._version          # follows the graph again
                 else:
                     g._lazy_field(kind, name)
             if not done:

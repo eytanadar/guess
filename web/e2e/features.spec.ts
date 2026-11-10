@@ -466,16 +466,30 @@ test("2006 manual compatibility: custom menu items and old export formats", asyn
   expect(errors).toEqual([]);
 });
 
-test("Help menu: Manual and GitHub open in a new tab", async ({ page, context }) => {
+test("Help menu: Manual, Cookbooks and GitHub open in a new tab", async ({ page, context }) => {
   const errors = await boot(page);
   const [manual] = await Promise.all([context.waitForEvent("page"), menu(page, "Help", "#btn-manual")]);
   expect(new URL(manual.url()).pathname).toBe("/manuals/");
   // the dev server serves docs/manual/build when the manual has been built
   if (existsSync(new URL("../../docs/manual/build/index.html", import.meta.url))) {
     await expect(manual).toHaveTitle("GUESS manual");
-    await expect(manual.locator("a", { hasText: "PDF" })).toHaveAttribute("href", "GUESS-manual.pdf");
+    await expect(manual.locator("a", { hasText: "PDF" }).first()).toHaveAttribute("href", "GUESS-manual.pdf");
+    // the manual's index lists the cookbooks, deployed beside it
+    await expect(manual.locator("a[href='cookbooks/GUESS-for-core.html']")).toHaveCount(1);
   }
   await manual.close();
+  const [books] = await Promise.all([context.waitForEvent("page"), menu(page, "Help", "#btn-cookbooks")]);
+  expect(new URL(books.url()).pathname).toBe("/manuals/cookbooks/");
+  if (existsSync(new URL("../../cookbooks/build/index.html", import.meta.url))) {
+    await expect(books).toHaveTitle("GUESS cookbooks");
+    await expect(books.locator("a[href='GUESS-for-sna.html']")).toHaveCount(1);
+    // each book's data files are linked, and download
+    await expect(books.locator("a[href='data/karate.gdf']").first()).toBeVisible();
+    const res = await books.request.get(new URL("data/karate.gdf", books.url()).href);
+    expect(res.ok()).toBe(true);
+    expect((await res.text()).startsWith("nodedef>")).toBe(true);
+  }
+  await books.close();
   const [gh] = await Promise.all([context.waitForEvent("page"), menu(page, "Help", "#btn-github")]);
   expect(gh.url()).toContain("github.com/eytanadar/guess");
   await gh.close();

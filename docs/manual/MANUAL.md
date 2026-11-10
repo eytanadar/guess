@@ -78,7 +78,11 @@ Nothing you load leaves your computer. Files you open are read by the page
 itself, and your work is autosaved in the browser. If you close the tab and
 come back, the graph, the history and the display are where you left them.
 Python variables you defined are not kept, but the commands that made them
-are in the history.
+are in the history. *File → Start fresh* forgets all of it (the saved
+session, the history, your settings) and starts again with the sample graph.
+
+The data files used by the GUESS cookbooks are there too: open them by name,
+e.g. `makeFromGDF("karate.gdf")`. Each is downloaded the first time it's used.
 
 If you want to run your own copy, on a laptop with no network or on your
 group's web server, see [Deploying GUESS](#deploying-guess).
@@ -807,8 +811,12 @@ other field:
 ```python
 (pagerank > 0.01).labelvisible = true
 sortBy(betweenness)[-10:]           # the ten most "between" nodes
-recompute()                         # after editing the graph
 ```
+
+These fields follow the graph: after you add or remove nodes or edges (or
+change edge weights), each is recalculated the next time it's read, once,
+however many edits came before. If you assign to one yourself
+(`v1.pagerank = 0`) it keeps your values until `recompute(pagerank)`.
 
 Whole-graph measures are commands: `density()`, `diameter()`,
 `averagePathLength()`, `averageClustering()`, `transitivity()`,

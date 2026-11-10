@@ -83,3 +83,16 @@ def test_geo_distance():
     lens = {(e._n1.name, e._n2.name): e.km for e in s.graph.edges}
     assert 5530 < lens[("lhr", "jfk")] < 5560            # about 5,540 km
     assert lens[("lhr", "x")] is None
+
+
+def test_loading_a_new_graph_drops_the_map_and_background_image(tmp_path):
+    s = _s()
+    s.run("n = addNode('nyc'); n.latitude, n.longitude = 40.7, -74.0")
+    s.run("m = addNode('la'); m.latitude, m.longitude = 34.0, -118.2")
+    assert s.run("geoLayout()") and s.view.map
+    s.view.image = {"url": "data:image/png;base64,", "x": 0, "y": 0}
+    p = tmp_path / "small.gdf"
+    p.write_text("nodedef> name\na\nb\nedgedef> node1,node2\na,b\n")
+    assert s.run(f"makeFromGDF({str(p)!r})"), s.rec.of("error")
+    assert s.view.map is None and s.view.image is None
+    assert s.view.record()["map"] is None

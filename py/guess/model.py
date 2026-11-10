@@ -237,6 +237,11 @@ class Field:
         self.readonly = readonly
         self.compute = compute
         self.builtin = builtin
+        # computed fields (betweenness, component, ...): the graph version
+        # their values describe; reading them on a changed graph recomputes
+        # them once. None for ordinary fields and computed ones a user has
+        # assigned to (their values are the user's from then on).
+        self.lazy_at = None
 
     __hash__ = object.__hash__
 
@@ -247,6 +252,8 @@ class Field:
     def get(self, elem):
         if self.compute is not None:
             return self.compute(elem)
+        if self.lazy_at is not None and self.lazy_at != self.graph._version:
+            self.graph._refresh_lazy(self)
         return elem._vals.get(self.name, self.default)
 
     def set(self, elem, value):
@@ -272,6 +279,10 @@ class Field:
         j = self.graph.journal
         if j is not None:
             j.note(elem, self.name)
+        if self.lazy_at is not None:
+            self.lazy_at = None          # assigned by the user: no longer recomputed
+        if self.name == "weight" and self.kind == EDGE:
+            self.graph._version += 1     # weighted measures depend on it
         was = elem._vals.get(self.name, self.default) if self.name == "visible" else None
         elem._vals[self.name] = v
         if self.name == "visible" and bool(v) != bool(was):
@@ -746,6 +757,7 @@ class Graph:
         self.edge_schema = {}
         self.listeners = []       # objects with optional on_* methods
         self.lazy_fields = {}     # (kind, name) -> callable(graph) -> {elem: value}
+        self._version = 0         # bumped by every structural change (computed fields check it)
         self._dropped_lazy = set()   # computed fields in use when the graph was cleared
         self.states = {}          # filled in by states.install
         self.ranges = {}          # element -> [(lo, hi)], filled in by ranges.install
@@ -871,9 +883,34 @@ class Graph:
         f = Field(self, name, kind, ftype, 0 if ftype == INT else 0.0)
         for elem, v in values.items():
             elem._vals[name] = v
+        f.lazy_at = self._version
         schema[name] = f
         self._emit("on_field_added", f)
         return f
+
+    def _refresh_lazy(self, f):
+        """Recompute a computed field for the current graph (it was computed
+        before the graph changed). Values go straight in: not an undo step."""
+        fn = self.lazy_fields.get((f.kind, f.name))
+        f.lazy_at = self._version          # first, so reads inside fn don't recurse
+        if fn is None:
+            return
+        values = fn(self)
+        if isinstance(values, tuple):
+            values = values[0]
+        elems = self._nodes_list() if f.kind == NODE else self._edges_list()
+        for elem in elems:
+            elem._vals[f.name] = values.get(elem, f.default)
+
+    def _adopt_computed(self):
+        """Fields named like computed ones (from a file, a projection or a
+        subgraph) may describe another graph: mark them stale so the first
+        read recomputes them."""
+        for (kind, name) in self.lazy_fields:
+            schema = self.node_schema if kind == NODE else self.edge_schema
+            f = schema.get(name)
+            if f is not None and f.compute is None and not f.builtin:
+                f.lazy_at = -1
 
     # mutation -------------------------------------------------------------
     def addNode(self, name, **attrs):
@@ -885,6 +922,7 @@ class Graph:
             self._next_node_id += 1
             self._nodes[name] = n
             self._node_ids[n._id] = n
+            self._version += 1
             self._mark(n)
             if self.journal is not None:
                 self.journal.ops.append(("add", n))
@@ -901,6 +939,7 @@ class Graph:
         self._edges[e._id] = e
         n1._inc[e._id] = e
         n2._inc[e._id] = e
+        self._version += 1
         self._mark(e)
         if self.journal is not None:
             self.journal.ops.append(("add", e))
@@ -919,6 +958,7 @@ class Graph:
             return False
         e._n1._inc.pop(e._id, None)
         e._n2._inc.pop(e._id, None)
+        self._version += 1
         self.dirty_edges.discard(e._id)
         self.removed_edges.add(e._id)
         if self.journal is not None:
@@ -930,6 +970,7 @@ class Graph:
         for e in list(n._inc.values()):
             self.removeEdge(e)
         del self._nodes[n._name]
+        self._version += 1
         del self._node_ids[n._id]
         self.dirty_nodes.discard(n._id)
         self.removed_nodes.add(n._id)
@@ -975,6 +1016,7 @@ class Graph:
             if isinstance(x, Node) and x._name not in self._nodes and x._g is self:
                 self._nodes[x._name] = x
                 self._node_ids[x._id] = x
+                self._version += 1
                 object.__setattr__(x, "_inc", {})
                 self.removed_nodes.discard(x._id)
                 self._mark(x)
@@ -989,6 +1031,7 @@ class Graph:
                 self._edges[x._id] = x
                 x._n1._inc[x._id] = x
                 x._n2._inc[x._id] = x
+                self._version += 1
                 self.removed_edges.discard(x._id)
                 self._mark(x)
                 self._deleted.pop(("Edge", x._id), None)

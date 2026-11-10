@@ -239,6 +239,129 @@ def install(session):
         print(f"loaded {len(g._nodes)} proteins, {len(g._edges)} interactions from STRING "
               f"(score >= {float(score):g}); data CC BY 4.0, string-db.org")
 
+    @cmd
+    def makeFromWikipedia(title, limit=150, lang="en"):
+        """makeFromWikipedia("Graph drawing") opens a page's link network: the
+        page, up to `limit` articles it links to, and every link among them
+        (directed: linking page -> linked page). Node `hop` is 0 for the start
+        page and 1 for the others; `indegree` then shows which linked
+        articles the neighbourhood itself points to most (identifier pages
+        such as "Doi (identifier)", linked by citation templates, are left
+        out). lang= picks the
+        language edition ("de", "fr", ...). Wikipedia text is CC BY-SA; the
+        link structure is what's loaded here."""
+        api = f"https://{lang}.wikipedia.org/w/api.php"
+
+        def links(titles):
+            out = {}
+            params = {"action": "query", "prop": "links", "titles": "|".join(titles), "plnamespace": 0,
+                      "pllimit": "max", "format": "json", "origin": "*", "redirects": 1}
+            for _ in range(40):
+                data = json.loads(http(f"{api}?{urllib.parse.urlencode(params)}"))
+                q = data.get("query", {})
+                rename = {r["from"]: r["to"] for r in q.get("redirects", [])}
+                for page in q.get("pages", {}).values():
+                    if "missing" in page:
+                        continue
+                    out.setdefault(page["title"], set()).update(l["title"] for l in page.get("links", []))
+                if "continue" not in data:
+                    break
+                params.update(data["continue"])
+            return out, rename
+
+        first, rename = links([str(title)])
+        if not first:
+            raise GuessError(f"no Wikipedia page {title!r} ({lang})")
+        root = next(iter(first))
+        # citation templates link every article to "Doi (identifier)" etc.: not content
+        targets = sorted(t for t in first[root] if not t.endswith("(identifier)"))[: int(limit)]
+        found = {root: first[root]}
+        for k in range(0, len(targets), 50):
+            more, _r = links(targets[k:k + 50])
+            found.update(more)
+        keep = {root} | set(targets)
+        g.clear()
+        g.addNodeField("hop", INT, 1)
+        names = {}
+        for t in [root] + targets:
+            n = g.addNode(_ident(t) if _ident(t) not in g._nodes else _ident(t) + "_")
+            n.label, n.hop = t, 0 if t == root else 1
+            names[t] = n
+        count = 0
+        for src, dsts in found.items():
+            if src not in names:
+                continue
+            for d in dsts:
+                if d in keep and d != src:
+                    g.addDirectedEdge(names[src], names[d])
+                    count += 1
+        _scatter(g)
+        session.ns["frLayout"]()
+        session.scene()
+        print(f"{len(names)} Wikipedia articles around {root!r}, {count} links among them")
+
+    @cmd
+    def makeFromOpenAlex(search, limit=200, mode="citations"):
+        """makeFromOpenAlex("graph drawing") searches OpenAlex (the open
+        catalogue of scholarly works, CC0) for works with those words in the
+        title, takes the `limit` most cited, and opens their citation network
+        (citing -> cited) with `title`, `year`, `cites` (citations from
+        anywhere), `venue` and `firstauthor`. mode="authors" opens a two-mode
+        paper-author network instead (kind = paper or author), ready for
+        project(kind, "author"). Ready for mainPath(), leidenClusters() and
+        the Text cookbook's recipes."""
+        want = max(1, min(int(limit), 1000))
+        sel = "id,title,publication_year,cited_by_count,referenced_works,authorships,primary_location"
+        works, page = [], 1
+        while len(works) < want and page <= 5:
+            q = urllib.parse.urlencode({"filter": f"title.search:{search}", "sort": "cited_by_count:desc",
+                                        "per-page": min(200, want), "page": page, "select": sel})
+            batch = json.loads(http(f"https://api.openalex.org/works?{q}")).get("results", [])
+            if not batch:
+                break
+            works += batch
+            page += 1
+        works = works[:want]
+        if not works:
+            raise GuessError(f"no OpenAlex works with {search!r} in the title")
+        short = {w["id"]: "W" + w["id"].rsplit("/W", 1)[-1] for w in works}
+        g.clear()
+        for f, t in (("title", STRING), ("year", INT), ("cites", INT), ("venue", STRING),
+                     ("firstauthor", STRING), ("kind", STRING)):
+            g.addNodeField(f, t, None)
+        for w in works:
+            n = g.addNode(short[w["id"]])
+            auth = w.get("authorships") or []
+            last = auth[0]["author"]["display_name"].split()[-1] if auth else "?"
+            n.title = re.sub(r"<[^>]+>", "", w.get("title") or "")[:200]
+            n.year, n.cites = int(w.get("publication_year") or 0), int(w.get("cited_by_count") or 0)
+            n.venue = (((w.get("primary_location") or {}).get("source") or {}).get("display_name") or "")[:120]
+            n.firstauthor, n.kind = last, "paper"
+            n.label = f"{last} {n.year}"
+        links = 0
+        if mode == "authors":
+            people = {}
+            for w in works:
+                for a in (w.get("authorships") or [])[:25]:
+                    who = a["author"]["display_name"]
+                    if who not in people:
+                        p = g.addNode(_ident(who) if _ident(who) not in g._nodes else _ident(who) + "_a")
+                        p.label, p.kind = who, "author"
+                        people[who] = p
+                    g.addUndirectedEdge(short[w["id"]], people[who])
+                    links += 1
+        else:
+            for w in works:
+                for r in w.get("referenced_works") or []:
+                    if r in short and r != w["id"]:
+                        g.addDirectedEdge(short[w["id"]], short[r])
+                        links += 1
+        _scatter(g)
+        session.ns["frLayout"]()
+        session.scene()
+        what = "authorships" if mode == "authors" else "citations among them"
+        print(f"{len(works)} works matching {search!r} (most cited first), {links} {what}; OpenAlex, CC0")
+
     # ---- Neo4j ------------------------------------------------------------------
     @cmd
     def makeFromCypher(query, url="http://localhost:7474", user=None, password=None, database="neo4j"):

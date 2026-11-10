@@ -452,21 +452,20 @@ confused. Treat the graph as a map for reading code, not a proof.</p>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> (module <span class="op">==</span> <span class="st">&quot;networkx&quot;</span>)</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>root[<span class="dv">0</span>].indegree</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>remove(root)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>recompute()</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(feedbackEdges())</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="bu">max</span>(groupBy(strongcomponent), key<span class="op">=</span><span class="bu">len</span>)</span></code></pre></div>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(feedbackEdges())</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="bu">max</span>(groupBy(strongcomponent), key<span class="op">=</span><span class="bu">len</span>)</span></code></pre></div>
 <p>At first sight networkx is riddled with cycles:
 <code>feedbackEdges()</code> lists 260 edges to break. Nearly all of
 them pass through the package root. Its <code>__init__.py</code> imports
 the subpackages so that users can write <code>nx.shortest_path</code>,
-and 253 modules import the root back. Remove the root and recompute, and
-only 9 cycle-closing edges remain. Most sit in one knot of seven modules
-inside <code>networkx.utils</code>, which provides the decorators and
-backend dispatching that the rest of the library builds on. The pattern
-is typical of convenient top-level APIs. It’s harmless at run time,
-because Python finishes loading the root before the submodules use it,
-but it hides the real structure from naive analysis. Remove the facade
-before you read the architecture.</p>
+and 253 modules import the root back. Remove the root and only 9
+cycle-closing edges remain. Most sit in one knot of seven modules inside
+<code>networkx.utils</code>, which provides the decorators and backend
+dispatching that the rest of the library builds on. The pattern is
+typical of convenient top-level APIs. It’s harmless at run time, because
+Python finishes loading the root before the submodules use it, but it
+hides the real structure from naive analysis. Remove the facade before
+you read the architecture.</p>
 <h2 data-number="8.2" id="case-study-guess-read-by-guess-basic"><span class="header-section-number">8.2</span> Case study: GUESS, read by
 GUESS <span class="level">Basic</span></h2>
 <div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;guess-imports.gdf&quot;</span>)</span>

@@ -117,6 +117,26 @@ def write_index():
             rows.append(f'<li><a href="{f.name}">{label}</a> <span class="meta">{f.name} · {mb:.1f} MB</span>'
                         f'<div class="note">{note}</div></li>')
     date = datetime.date.today().isoformat()
+    # the cookbooks, deployed beside the manual in cookbooks/ (web/scripts/copy-manuals.mjs)
+    books = []
+    cb = ROOT / "cookbooks"
+    for md in sorted(cb.glob("*/cookbook.md")):
+        meta = dict(re.findall(r'^(title|subtitle): "?(.*?)"?$', md.read_text().split("---")[1], flags=re.M))
+        books.append((md.parent.name, meta.get("title", md.parent.name), meta.get("subtitle", "")))
+    order = ["core", "sna", "biology", "text", "infrastructure", "software", "investigations", "ecology"]
+    books.sort(key=lambda b: order.index(b[0]) if b[0] in order else len(order))
+    sys.path.insert(0, str(ROOT / "cookbooks" / "tools"))
+    from datasets import used_by
+
+    def data_links(v):
+        files = used_by(v)
+        if not files:
+            return '<div class="data">Data: made by the recipes themselves (no files)</div>'
+        return ('<div class="data">Data: ' + " · ".join(f'<a href="cookbooks/data/{f}" download>{f}</a>' for f in files)
+                + "</div>")
+    cook = "".join(f'<li><a href="cookbooks/GUESS-for-{v}.html">{t}</a> <span class="meta">'
+                   f'<a href="cookbooks/GUESS-for-{v}.pdf">PDF</a> · <a href="cookbooks/GUESS-for-{v}.epub">EPUB</a></span>'
+                   f'<div class="note">{s}</div>{data_links(v)}</li>' for v, t, s in books)
     (OUT / "index.html").write_text(f"""<!doctype html>
 <html lang="en">
 <head>
@@ -131,6 +151,7 @@ def write_index():
   body {{ margin: 0 auto; max-width: 40rem; padding: 3rem 16px; background: var(--bg); color: var(--text);
          font: 17px/1.55 "Avenir Next", "Helvetica Neue", system-ui, sans-serif; }}
   h1 {{ font-size: 2.2rem; margin: 0; }}
+  h2 {{ font-size: 1.5rem; margin: 2.5rem 0 0; }}
   .sub {{ color: var(--muted); margin: .2rem 0 2rem; }}
   ul {{ list-style: none; padding: 0; }}
   li {{ padding: .9rem 0; border-top: 1px solid var(--border); }}
@@ -138,6 +159,8 @@ def write_index():
   a {{ color: var(--link); font-weight: 600; font-size: 1.1rem; }}
   .meta {{ color: var(--muted); font-size: .85rem; margin-left: .5rem; }}
   .note {{ color: var(--muted); font-size: .95rem; }}
+  .data {{ font-size: .85rem; color: var(--muted); margin-top: .25rem; }}
+  .data a {{ font-weight: 400; font-size: .85rem; }}
   footer {{ color: var(--muted); font-size: .85rem; margin-top: 2rem; }}
 </style>
 </head>
@@ -146,6 +169,14 @@ def write_index():
 <p class="sub">The Graph Exploration System, for the web</p>
 <ul>
 {chr(10).join(rows)}
+</ul>
+<h2>Cookbooks</h2>
+<p class="sub">Short, runnable recipes for one field each, all building on the GUESS Kitchen.
+Every book ends with a capstone: a small visual-analytics app. The data files
+each book uses are linked below it (in GUESS they're already there: just open them by name).
+Sources and licences: <a href="cookbooks/data/README.md">datasets README</a>. <a href="cookbooks/">All cookbooks</a></p>
+<ul>
+{cook}
 </ul>
 <footer>Built {date}. The same manual in each format, including the full command reference (Appendix D).</footer>
 </body>

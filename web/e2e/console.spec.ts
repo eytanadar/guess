@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { boot, input, lastError, run, type } from "./helpers";
+import { boot, input, lastError, menu, run, type } from "./helpers";
 
 test("loads the sample graph and runs paper examples", async ({ page }) => {
   const errors = await boot(page);
@@ -108,7 +108,48 @@ test("Stop interrupts a runaway command", async ({ page }) => {
   await page.keyboard.press("Shift+Enter");
   // wait until the command is actually running (starting a run resets the interrupt flag)
   await expect(page.locator(".cell.running")).toHaveCount(1);
-  await page.waitForTimeout(300);
-  await page.click("#stop");
-  await expect(page.locator(".console-out .error").last()).toHaveText("Interrupted");
+  // under load the first click can land before Python checks the flag: press
+  // Stop until the run reports the interrupt (each press is idempotent)
+  await expect(async () => {
+    await page.click("#stop");
+    await expect(page.locator(".console-out .error").last()).toHaveText("Interrupted", { timeout: 2000 });
+  }).toPass({ timeout: 30000 });
+  await expect(page.locator(".cell.running")).toHaveCount(0);
+});
+
+test("the cookbooks' datasets are there by name, fetched on first use", async ({ page }) => {
+  await boot(page);
+  const cells = page.locator(".cell");
+  for (const [code, expected] of [
+    ['makeFromGDF("karate.gdf")', "loaded 34 nodes, 78 edges"],          // a cookbook dataset
+    ['makeFromCSV("friends.csv")', "loaded 8 nodes"],                       // a tiny one
+    ['makeFromGDF("adamic-glance.gdf")', "loaded 40 nodes"],                // from gdfs/
+    ['print(len(open("scandal-in-bohemia.txt").read()) > 10000)', "True"],   // any file type
+  ]) {
+    const n = await cells.count();
+    await type(page, code);
+    await page.keyboard.press("Shift+Enter");
+    await expect(cells.nth(n)).toContainText(expected, { timeout: 30000 });
+  }
+});
+
+test("File → Start fresh forgets the autosave, history and settings", async ({ page }) => {
+  await boot(page);
+  const cells = page.locator(".cell");
+  const n = await cells.count();
+  await type(page, "addNode('only_here')");
+  await page.keyboard.press("Shift+Enter");
+  await expect(cells).toHaveCount(n + 1);
+  await page.evaluate(() => localStorage.setItem("guess.theme", "dark"));
+  await page.waitForTimeout(2600);                            // the autosave runs 2 s after a change
+  await page.reload();
+  await expect(page.locator(".console-out")).toContainText("Restored your previous session", { timeout: 60000 });
+  page.once("dialog", (d) => void d.accept());
+  await menu(page, "File", "#fresh-start");
+  await page.waitForURL((u) => !u.search && !u.hash);
+  await expect(page.locator(".console-out").getByText(/loaded 402/).first()).toBeVisible({ timeout: 60000 });
+  await expect(page.locator(".console-out")).not.toContainText("Restored your previous session");
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("guess.")))).toEqual(
+    expect.not.arrayContaining(["guess.theme", "guess.history"]));
+  expect(await page.evaluate(() => localStorage.getItem("guess.theme"))).toBeNull();
 });

@@ -180,9 +180,14 @@ class View:
 
     def reset_for_new_graph(self):
         """A new graph was loaded: drop what belonged to the old one (legends,
-        hulls, hive plot axes, pies, drag context, slides). Display preferences
-        (background, curved edges, edge colours, label options, styles) stay."""
-        had = bool(self.legends or self.hulls or self.guides or self.pie or self.drag or getattr(self, "slides", None))
+        hulls, hive plot axes, pies, drag context, slides, and the geoLayout map
+        and background image, which are placed in the old graph's coordinates).
+        Display preferences (background colour, curved edges, edge colours,
+        label options, styles) stay."""
+        had = bool(self.legends or self.hulls or self.guides or self.pie or self.drag or getattr(self, "slides", None)
+                   or self.map or self.image)
+        self.map = None
+        self.image = None
         self.legends = {}
         self.hulls = {}
         self.guides = []

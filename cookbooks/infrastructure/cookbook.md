@@ -140,6 +140,23 @@ every journey between them and the lower 48 passes through one place.
 That's a bridge, and it's the more fragile kind of importance: other hubs
 can substitute for Atlanta, but nothing can substitute for Anchorage.
 
+## Do the hubs form a club? [Intermediate]{.level}
+
+```python
+makeFromGDF("us-airports.gdf")
+rc = richClub()
+```
+
+**How it works.** The *rich-club coefficient* for degree *k* is the
+density of the links among the nodes with more than *k* links.
+`richClub()` normalises it by the same measure in randomised networks with
+the same degrees: above 1, the hubs link to each other more than chance
+predicts. The US network is only weakly a rich club (1.05 to 1.10 for hubs
+with 25–75 routes): the big hubs are connected to each other, but no
+more than their sheer number of routes implies. Airline hub systems
+feed each hub from its own region rather than tying the hubs into a
+tight core.
+
 ## Find the weak points [Basic]{.level}
 
 ```python
@@ -166,7 +183,6 @@ makeFromGDF("us-airports.gdf")
 geoLayout(projection="albers")
 ss("open")
 remove(ANC)
-recompute()
 colorize(component)
 g.edges.color = "150,150,150,60"
 len(giantComponent()), len(component.distinct)
@@ -174,10 +190,10 @@ len(giantComponent()), len(component.distinct)
 
 ![Without Anchorage, Alaska falls into pieces](img/infra-anchorage.png)
 
-**How it works.** `ss("open")` saves the network, `remove(ANC)` closes
-Anchorage, and `recompute()` refreshes computed fields such as
-`component` (*SNA: the Medici case study*). Colouring by component shows
-what's left. Eight airports were already off the main network (two small
+**How it works.** `ss("open")` saves the network and `remove(ANC)` closes
+Anchorage. Computed fields such as `component` follow the change on their
+own: they're recalculated the next time they're read. Colouring by
+component shows what's left. Eight airports were already off the main network (two small
 island systems), and closing Anchorage cuts off 87 more, in 12 new
 pieces, nearly all in Alaska. Closing Atlanta, the busiest hub, strands
 eleven. `ls("open")` reopens it, and `morph("open", 1500)` animates the
@@ -252,6 +268,44 @@ JFK, 8,007 km.
 everything connected (with `weight` as cost, the cheapest network).
 `maxFlow(a, b)` and `minCut(a, b)` give how many separate routes join two
 places, and which few routes' loss would separate them.
+
+## A round trip through several cities [Intermediate]{.level}
+
+```python
+makeFromGDF("us-airports.gdf")
+geoLayout(projection="albers")
+geoDistance()
+trip = travelingSalesman([SEA, BOS, MIA, LAX, DEN], weight="km")
+trip.color = red
+[n.iata for n in trip if n in g.nodes], round(trip.length)
+```
+
+**How it works.** `travelingSalesman(stops, weight)` finds a short round
+trip through the stops (an approximation: the exact problem is
+intractable for many stops), travelling along existing routes with `km` as
+the length. It may pass through other airports. The result is the route's
+airports and flights in order, and `.length` is its total: here Seattle,
+Boston, Miami, Denver, Los Angeles and back, 11,705 km in five flights.
+`cycle=False` gives a one-way route that starts at the first stop.
+
+## Send a flow at least cost [Advanced]{.level}
+
+```python
+makeFromGDF("us-airports.gdf")
+geoDistance()
+addEdgeField("capacity", DOUBLE, None)
+for e in g.edges: e.capacity = e.weight
+minCostFlow(SEA, MIA, 5, cost="km")
+[(e.node1.iata, e.node2.iata, e.flow) for e in g.edges if e.flow > 0]
+```
+
+**How it works.** `minCostFlow(a, b, amount)` sends `amount` units from
+`a` to `b` as cheaply as possible, with each edge limited to its
+`capacity` and costing its `cost` field per unit. Here capacity is a
+stand-in, the number of airlines on each route, and cost is distance.
+The cheapest way to move five units from Seattle to Miami splits them
+between the direct route and a route through Tampa. That's the shape of
+real logistics problems: freight, evacuation, network bandwidth.
 
 # Regional systems
 
@@ -350,7 +404,6 @@ ss("open")
 state = {"closed": []}
 
 def update():
-    recompute()
     main = giantComponent()
     g.nodes.color = "70,110,180"
     stranded = [n for n in g.nodes if n not in main]
@@ -393,9 +446,9 @@ center()
   `reopen()` returns to it with `ls`.
 - **Closing airports.** A click removes that airport. The slider ranks
   airports by routes (`degree`) or `betweenness`, and removes the top *k*.
-- **Who's cut off.** After each change, `update()` recomputes the fields
-  (the hub-closure recipe), finds the largest connected piece, and
-  colours everyone outside it red. With the slider on betweenness, three
+- **Who's cut off.** After each change, `update()` finds the largest
+  connected piece (as in the hub-closure recipe) and colours everyone
+  outside it red. With the slider on betweenness, three
   closures are enough to strand most of Alaska.
 - **The chart.** The robustness chart beside the map is the same analysis
   as the failures-versus-attacks recipe, for every *k* at once.

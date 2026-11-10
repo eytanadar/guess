@@ -20,7 +20,13 @@ type Py = {
   setInterruptBuffer(buf: Uint8Array): void;
   pyimport(name: string): any;
   globals: { set(name: string, v: unknown): void; get(name: string): any };
-  FS: { mkdirTree(p: string): void; writeFile(p: string, data: string | Uint8Array): void };
+  FS: {
+    mkdirTree(p: string): void;
+    writeFile(p: string, data: string | Uint8Array): void;
+    createLazyFile(parent: string, name: string, url: string, canRead: boolean, canWrite: boolean): unknown;
+    analyzePath(p: string): { exists: boolean };
+    unlink(p: string): void;
+  };
 };
 
 let py: Py | null = null;
@@ -45,6 +51,10 @@ async function init(msg: Extract<ToWorker, { type: "init" }>) {
   py.FS.mkdirTree("/data");
   for (const [name, text] of Object.entries(msg.data)) {
     py.FS.writeFile(`/data/${name}`, text);
+  }
+  // the cookbooks' datasets: listed now, downloaded the first time they're read
+  for (const [name, url] of Object.entries(msg.lazy ?? {})) {
+    if (!py.FS.analyzePath(`/data/${name}`).exists) py.FS.createLazyFile("/data", name, url, true, false);
   }
   let interruptible = false;
   if (msg.interrupt) {
@@ -170,6 +180,8 @@ json.dumps(session.help_index() if __w == "help" else session.panel_data(__w, __
       break;
     }
     case "writeFile":
+      // a dataset not yet downloaded is a lazy, read-only file: replace it
+      if (py!.FS.analyzePath(`/data/${msg.name}`).exists) py!.FS.unlink(`/data/${msg.name}`);
       py!.FS.writeFile(`/data/${msg.name}`, msg.data);
       post({ type: "reply", id: msg.id, value: `/data/${msg.name}` });
       break;

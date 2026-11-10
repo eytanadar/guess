@@ -112,7 +112,6 @@ addresses.
 makeFromGDF("claims-SIMULATED.gdf")
 project(kind, "person")
 removeDisconnected()
-recompute()
 rows = groupStats(component, top=6)
 ```
 
@@ -145,7 +144,6 @@ for p in (kind == "person"):
     p.days = ";".join(str(c.day) for c in cs)
 project(kind, "person")
 removeDisconnected()
-recompute()
 def profile(members):
     docs = set(d for p in members for d in (p.doctors or "").split(";") if d)
     laws = set(d for p in members for d in (p.lawyers or "").split(";") if d)
@@ -244,7 +242,6 @@ addNodeField("claims", INTEGER, 0)
 for p in (kind == "person"): p.claims = sum(1 for c in p.getNeighbors() if c.kind == "claim")
 project(kind, "person")
 removeDisconnected()
-recompute()
 suspects = [rw for rw in groupStats(component, show=False) if sum(p.claims for p in rw["members"]) >= 2.5 * rw["size"]]
 [(rw["size"], sum(p.claims for p in rw["members"])) for rw in suspects]
 ```
@@ -280,7 +277,6 @@ addNodeField("flag", VARCHAR, None)
 for p in (kind == "person"): p.claims = sum(1 for c in p.getNeighbors() if c.kind == "claim")
 project(kind, "person")
 _ = removeDisconnected()
-recompute()
 forceAtlas2Layout()
 queue = sorted(groupStats(component, show=False), key=lambda rw: -sum(p.claims for p in rw["members"]) / rw["size"])
 state = {"i": 0, "min": 2.0}

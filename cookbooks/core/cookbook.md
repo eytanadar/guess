@@ -354,6 +354,28 @@ shortest path. `weighted=true` treats the edge weight as a length (so
 heavier means farther; invert weights first if they measure strength).
 `heatMap(node)` colours by distance and stores it in `hops`.
 
+## Coordinates for machine learning [Advanced]{.level}
+
+**You want** to feed network position into a statistical model or a
+classifier, which needs numbers per node, not a graph.
+
+```python
+makeFromGDF("karate.gdf")
+embed(8, seed=1)
+scatterLayout(emb0, emb1)
+colorize(club)
+```
+
+**How it works.** `embed(dims)` gives each node coordinates (fields `emb0`,
+`emb1`…) such that nodes in similar network positions are close
+(node2vec). It takes many short random walks and factorises how often
+nodes appear near each other. `scatterLayout(emb0, emb1)` draws the first
+two coordinates. In the karate club the first coordinate alone separates
+the two sides fairly well (its correlation with `club` is about −0.6). The
+fields export with the rest of the data (`exportCSV`) for use in any
+modelling tool. `p` and `q` tune the walks: low `q` explores outwards
+(communities), low `p` stays local (roles).
+
 # Finding structure
 
 ## Components, bridges and cut points [Basic]{.level}
@@ -539,6 +561,23 @@ bundles (MINGLE). `method="fdeb"` gives smoother curves, and passing a
 field (`bundleEdges(modularity_class)`) bundles within groups.
 `unbundleEdges()` undoes it.
 
+## Simplify a hairball with motifs [Intermediate]{.level}
+
+```python
+makeFromGDF("sample.gdf")
+findMotifs("fan", 3)
+collapseMotifs("fan", 3)
+len(g.nodes)
+```
+
+**How it works.** Big drawings are cluttered by small repeated shapes:
+*fans* (several leaves hanging off one node), *connectors* (nodes that all
+link to the same few others and nothing else) and *cliques*.
+`findMotifs(kind, minimum)` finds them, and `collapseMotifs` replaces each
+with a single meta-node labelled with its kind and size. Here the
+organisation's 26 fans collapse, taking it from 402 nodes to 303 without
+losing anything: double-click a meta-node, or `expandAll()`, to open it.
+
 ## Explore a crowded area with the lens [Basic]{.level}
 
 Press **L** (or the Lens button in the toolbar) and move over a dense area: the lens
@@ -610,6 +649,21 @@ slides()
 
 **How it works.** `addSlide(note)` saves the graph and the camera as a
 slide, and the Slides panel plays them, morphing from one to the next.
+
+## A one-page report [Basic]{.level}
+
+```python
+makeFromGDF("karate.gdf")
+louvainClusters()
+report()
+report("karate-report.html")
+```
+
+**How it works.** `report()` prints a summary of the graph: size, density,
+components, the degree distribution, path lengths, clustering,
+assortativity, the top nodes by degree, betweenness and PageRank, and any
+communities found so far. `report("name.html")` (or `.md`) saves it as a
+page to share. In the browser, it's offered as a download.
 
 ## Save your work and your method [Basic]{.level}
 

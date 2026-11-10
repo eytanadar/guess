@@ -288,7 +288,6 @@ trophicLevels()
 top = sortBy(trophic)[-1]
 ss("web")
 remove(top)
-recompute()
 len(g.nodes)
 ls("web")
 r = extinctions(["basal"], show=False)
@@ -343,8 +342,8 @@ def cascade():
         n.lost = None if n not in gone else ("removed" if n in state["removed"] else "starved")
     (lost == "removed").color = black
     (lost == "starved").color = "200,200,200"
-    report.text = f"removed {len(state['removed'])}, starved {len(gone) - len(state['removed'])}, surviving {len(g.nodes) - len(gone)} of {len(g.nodes)}"
-    StatusBar.setStatus(report.text)
+    tally.text = f"removed {len(state['removed'])}, starved {len(gone) - len(state['removed'])}, surviving {len(g.nodes) - len(gone)} of {len(g.nodes)}"
+    StatusBar.setStatus(tally.text)
 
 def remove_species(n):
     if n not in state["removed"]:
@@ -364,11 +363,11 @@ def apply_order(name):
     state["removed"] = order[:int(depth.value)]
     cascade()
 
-report = Label("click a species to remove it")
+tally = Label("click a species to remove it")
 order = Dropdown(["most connected", "least connected", "highest level", "producers"], label="order",
                  onChange=apply_order)
 depth = Slider(0, 20, 5, label="species removed", onChange=lambda v: apply_order(order.value))
-ui.dock(Panel("Extinction explorer", order, depth, Button("Reset", onClick=reset), report, position="bottom"))
+ui.dock(Panel("Extinction explorer", order, depth, Button("Reset", onClick=reset), tally, position="bottom"))
 graphevents.clickNode = remove_species
 _ = extinctions(["random", "degree", "basal"])
 cascade()

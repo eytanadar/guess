@@ -379,6 +379,63 @@ women they share, which shows how the social calendar hung together.
 event becomes a clique), so degree and clustering in the projection are
 inflated. Compare with the two-mode graph, and prefer weighted measures.
 
+# Diffusion
+
+## How far does it spread, and from where? [Intermediate]{.level}
+
+**You want** to know how far something (a rumour, an infection, an
+innovation) travels through a network, and how much it matters where it
+starts.
+
+::: ingredients
+**Ingredients:** `karate.gdf` · `spread`
+:::
+
+```python
+makeFromGDF("karate.gdf")
+frLayout()
+spread([m1], "SIR", beta=0.15, gamma=0.3, seed=1)
+colorBy(infected_at, yellow, red)
+(infected_at < 0).color = lightgray
+reach = []
+for k in range(20):
+    spread([m12], "SIR", beta=0.15, gamma=0.3, seed=k, show=False)
+    reach.append(len(infected_at >= 0))
+sum(reach) / len(reach)
+```
+
+**How it works.** `spread(seeds, model)` simulates step by step. In the
+SIR model each infected member infects each susceptible friend with
+probability `beta` per step, and recovers with probability `gamma`. It
+stores when each member was reached (`infected_at`, −1 if never) and plots
+the susceptible, infected and recovered counts. Because it's random, one
+run proves little: the loop repeats it 20 times. Started from the
+instructor, an outbreak with these parameters reaches about 18 members on
+average. Started from member 12, who has a single friend, it reaches about
+8. Position decides reach.
+
+**Variations.** `showTime(t, infected_at)` replays a run step by step.
+Compare `"SI"` (no recovery), and `"cascade"`, where each newly reached
+member gets one chance to pass it on.
+
+## Simple and complex contagion [Advanced]{.level}
+
+```python
+makeFromGDF("karate.gdf")
+spread([m1, m2], "threshold", threshold=0.4)
+spread([m1, m34], "threshold", threshold=0.4)
+```
+
+**How it works.** Some things spread through single contacts (a cold).
+Others need reinforcement from several (an expensive new habit). In the
+*threshold* model a member adopts only once at least `threshold` of their
+friends have. Seeded with two close allies, the instructor and member 2,
+it reaches 14 members, and stalls at the edge of their side of the club.
+Seeded with the two rival leaders, it reaches 29. Complex contagions need
+seeds spread across groups, because bridging ties carry them poorly. That's
+the opposite of the advice for simple contagions, where a single central
+seed does well.
+
 # Case studies
 
 ## Case study: the karate club split [Intermediate]{.level}
@@ -450,14 +507,12 @@ in-laws weren't in-laws of each other. Now remove them and see what's left:
 ```python
 ss("with")
 remove(Medici)
-recompute()
 colorize(component)
 graphStats()
 ```
 
-`recompute()` matters here. Computed fields such as `component` and
-`betweenness` are calculated the first time they're used and kept, so
-after editing the graph, recompute them. Without the Medici the network
+Computed fields such as `component` and `betweenness` follow the edit:
+they're recalculated the next time they're read. Without the Medici the network
 falls into three pieces: the Acciaiuoli alone, the Pazzi and Salviati
 together, and the other eleven. Their marriages were the glue of the
 elite, which is why marrying into them was worth so much. `ls("with")`

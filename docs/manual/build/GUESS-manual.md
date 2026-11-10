@@ -78,7 +78,11 @@ Nothing you load leaves your computer. Files you open are read by the page
 itself, and your work is autosaved in the browser. If you close the tab and
 come back, the graph, the history and the display are where you left them.
 Python variables you defined are not kept, but the commands that made them
-are in the history.
+are in the history. *File → Start fresh* forgets all of it (the saved
+session, the history, your settings) and starts again with the sample graph.
+
+The data files used by the GUESS cookbooks are there too: open them by name,
+e.g. `makeFromGDF("karate.gdf")`. Each is downloaded the first time it's used.
 
 If you want to run your own copy, on a laptop with no network or on your
 group's web server, see [Deploying GUESS](#deploying-guess).
@@ -807,8 +811,12 @@ other field:
 ```python
 (pagerank > 0.01).labelvisible = true
 sortBy(betweenness)[-10:]           # the ten most "between" nodes
-recompute()                         # after editing the graph
 ```
+
+These fields follow the graph: after you add or remove nodes or edges (or
+change edge weights), each is recalculated the next time it's read, once,
+however many edits came before. If you assign to one yourself
+(`v1.pagerank = 0`) it keeps your values until `recompute(pagerank)`.
 
 Whole-graph measures are commands: `density()`, `diameter()`,
 `averagePathLength()`, `averageClustering()`, `transitivity()`,
@@ -1679,6 +1687,13 @@ Same as biComponentClusters() (the manual's spelling).
 
 center() fits the whole graph; center(seq) zooms to the given elements.
 
+### `collapseMotifs(kind='fan', minimum=3)`
+
+collapseMotifs("fan") collapses every motif found by findMotifs into
+one meta-node (labelled with the kind and its size), which simplifies
+the drawing without losing anything: expand(node) or expandAll() bring
+the members back. Returns the meta-nodes.
+
 ### `colorBy(field, start, end, scale='linear', middle=None, center=None)`
 
 colorBy(field, startColor, endColor) colours elements along a gradient in
@@ -1720,6 +1735,17 @@ Euclidean distance between two nodes' positions.
 ### `einverse(seq)`
 
 All edges not in seq.
+
+### `embed(dims=8, walks=10, length=40, window=5, p=1.0, q=1.0, seed=0, name='emb')`
+
+embed(dims=8) gives every node coordinates in `dims` dimensions such
+that nodes in similar network positions are close (node2vec, Grover
+and Leskovec 2016): random walks from every node (`walks` of `length`
+steps; p and q bias them towards returning or exploring), then a
+factorisation of how often nodes co-occur within `window` steps. The
+coordinates are stored in fields emb0, emb1, ... (name=...), ready for
+scatterLayout(emb0, emb1), similarity searches or a classifier
+(toNetworkX(), or export the table). Fine up to a few thousand nodes.
 
 ### `enrichment(seq, sets, background=None, top=10, minSize=2, show=True)`
 
@@ -1802,6 +1828,18 @@ and mergeNodes; it never merges anything itself.
 ### `findEdges(seq)`
 
 The edges among the members of a (possibly mixed) set.
+
+### `findMotifs(kind='fan', minimum=3, show=True)`
+
+findMotifs("fan") finds NodeXL-style motifs, the small repeated
+shapes that clutter big drawings:
+  "fan"        several leaves (nodes with one neighbour) on the same node
+  "connector"  several nodes linked to exactly the same 2-4 others and
+               nothing else (e.g. people who all know the same two)
+  "clique"     groups where everyone is linked to everyone (each node
+               in at most one, largest first)
+with at least `minimum` members. Returns the groups (members only);
+collapseMotifs(kind) replaces each with one meta-node.
 
 ### `findNodes(seq)`
 
@@ -2036,6 +2074,15 @@ from the others, `aliases` records the other names and labels, and
 `merged` counts the nodes it stands for. One undo step. Also takes a
 set or a list of pairs from findDuplicates (each pair merged).
 
+### `minCostFlow(source, target, amount, capacity='capacity', cost='weight')`
+
+minCostFlow(a, b, 100) finds the cheapest way to send `amount` units
+from a to b: each edge can carry up to its `capacity` field (missing
+or empty = unlimited) at its `cost` field per unit (default: weight;
+missing = 1). Direction is followed for directed edges; an undirected
+edge can carry flow either way. Stores each edge's flow in `flow` and
+returns the total cost (an error if the amount can't get through).
+
 ### `nestedness(kindField, rows=None)`
 
 nestedness(kind) measures how nested a two-mode network is (NODF,
@@ -2098,6 +2145,16 @@ Its name still refers to it, so addNode(n) puts it back.
 
 Remove (and return) all edges whose endpoints are the same node.
 
+### `report(filename=None, top=5)`
+
+report() writes a one-page summary of the graph: size, density,
+components, degree distribution, path lengths, clustering,
+assortativity, the `top` nodes by degree, betweenness and PageRank,
+and the communities if any have been found (modularity_class,
+leiden_class, infomap_class). report("summary.html") saves it as a web
+page (offered as a download in the browser) and report("summary.md")
+as Markdown; with no name it's printed. Returns the Markdown.
+
 ### `resizeLinear(field, start, end)`
 
 Size nodes (or edge widths) by rank of field value, from start to end.
@@ -2105,6 +2162,16 @@ Size nodes (or edge widths) by rank of field value, from start to end.
 ### `resizeRandom(field, start, end)`
 
 Give each distinct value of field a random size (or edge width) between start and end.
+
+### `richClub(normalized=True, trials=5, seed=0, show=True)`
+
+richClub() asks whether the well-connected nodes are densely linked
+to each other: for each degree k, the rich-club coefficient is the
+density of the links among nodes with degree > k. normalized=True
+divides it by the same coefficient in degree-preserving random
+networks (averaged over `trials`): above 1 = a rich club (hubs prefer
+each other, as in airline or scientific elites), below 1 = hubs avoid
+each other. Prints a table and returns {k: value}.
 
 ### `setSynchronous(state=True)`
 
@@ -2129,6 +2196,35 @@ Nodes around a circle ordered by field; radius shrinks with outdegree.
 ### `sortBy(*d)`
 
 sortBy(field) or sortBy(seq, field).
+
+### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True)`
+
+spread([v1, v2], model="SIR") simulates something spreading from
+the seed nodes, one step at a time:
+  "SI"         each step, every infected node infects each susceptible
+               neighbour with probability beta
+  "SIR"        the same, and each infected node recovers (and can't be
+               infected again) with probability gamma
+  "cascade"    independent cascade: a newly active node gets one chance
+               (probability beta) to activate each neighbour
+  "threshold"  a node becomes active when at least `threshold` of its
+               neighbours are (complex contagion: ideas, adoption)
+Directed edges are followed in their direction. Stores `infected_at`
+(the step a node was reached; -1 = never) and `state` (S, I or R at the
+end), plots how many are in each state at each step, and returns those
+counts. Replay it with showTime(t, infected_at); compare seeds and
+parameters by running it again.
+
+### `travelingSalesman(stops=None, weight='weight', cycle=True)`
+
+travelingSalesman(stops) finds a short route that visits every node
+in `stops` (default: all) and returns to the start (cycle=False: an
+open path), travelling along the graph's edges with `weight` as the
+length (missing = 1); a stop can be passed through more than once.
+It's an approximation (Christofides' algorithm on undirected graphs,
+a greedy method otherwise), fine for planning, not a proof of
+optimality. Returns the route's nodes and edges in order; .length
+holds its total length.
 
 ### `trophicLevels()`
 
@@ -2257,8 +2353,10 @@ The smallest eccentricity among nodes with at least one neighbour.
 
 ### `recompute(*fields)`
 
-recompute(pagerank, coreness, ...) recalculates computed fields (betweenness,
-pagerank, closeness, ...) after the graph has changed; recompute() redoes
+Computed fields (betweenness, pagerank, component, ...) recalculate
+themselves when read after the graph has changed, so this is rarely
+needed: recompute(pagerank, ...) forces it now (e.g. for a field you
+had overwritten, which then follows the graph again); recompute() redoes
 every computed field that has been used so far.
 
 ### `shortestPath(source, target, weighted=False)`
@@ -3377,6 +3475,17 @@ relationships it returns (properties become fields).
 makeFromNDEx(uuid) opens a public network from the NDEx repository
 (Cytoscape's network commons), with its attributes and layout.
 
+### `makeFromOpenAlex(search, limit=200, mode='citations')`
+
+makeFromOpenAlex("graph drawing") searches OpenAlex (the open
+catalogue of scholarly works, CC0) for works with those words in the
+title, takes the `limit` most cited, and opens their citation network
+(citing -> cited) with `title`, `year`, `cites` (citations from
+anywhere), `venue` and `firstauthor`. mode="authors" opens a two-mode
+paper-author network instead (kind = paper or author), ready for
+project(kind, "author"). Ready for mainPath(), leidenClusters() and
+the Text cookbook's recipes.
+
 ### `makeFromSPARQL(query, endpoint='https://query.wikidata.org/sparql', directed=True)`
 
 makeFromSPARQL(query) builds a graph from a SPARQL query whose rows bind
@@ -3403,6 +3512,18 @@ or one string separated by spaces/commas. Nodes get `description`,
 makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV, a
 .guess session or a .py script) and opens it; format=".gexf" etc. when
 the URL doesn't end in the extension.
+
+### `makeFromWikipedia(title, limit=150, lang='en')`
+
+makeFromWikipedia("Graph drawing") opens a page's link network: the
+page, up to `limit` articles it links to, and every link among them
+(directed: linking page -> linked page). Node `hop` is 0 for the start
+page and 1 for the others; `indegree` then shows which linked
+articles the neighbourhood itself points to most (identifier pages
+such as "Doi (identifier)", linked by citation templates, are left
+out). lang= picks the
+language edition ("de", "fr", ...). Wikipedia text is CC BY-SA; the
+link structure is what's loaded here.
 
 ### `sparql(query, endpoint='https://query.wikidata.org/sparql')`
 

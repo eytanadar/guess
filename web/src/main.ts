@@ -13,6 +13,12 @@ import { ExcentricLens } from "./lens";
 import { FilterPanel, StylePanel, VarsPanel, pyLit, type FieldInfo, type PanelHost, type Workspace } from "./panels";
 import * as store from "./store";
 import sampleGdf from "../../gdfs/sample.gdf?raw";
+// the cookbooks' datasets (and the other example graphs), deployed beside the app
+// and fetched only when a recipe opens one: makeFromGDF("karate.gdf") just works
+const datasetUrls = import.meta.glob(
+  ["../../cookbooks/data/*.{gdf,csv,txt,md}", "../../gdfs/*.gdf", "!../../gdfs/sample.gdf"],
+  { query: "?url", import: "default", eager: true },
+) as Record<string, string>;
 
 // The Python package, shipped into the worker's virtual filesystem.
 const pyFiles = import.meta.glob("../../py/guess/*.py", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
@@ -218,8 +224,9 @@ async function uiEvent(target: string, name: string, value: unknown): Promise<un
 // ---- autosave (IndexedDB) -------------------------------------------------------------
 let saveTimer = 0;
 let savedRevision = -1;
+let wiping = false;
 function scheduleAutosave() {
-  if (appMode) return;
+  if (appMode || wiping) return;
   clearTimeout(saveTimer);
   saveTimer = window.setTimeout(async () => {
     const r = await request<[number, string] | null>((id) => ({ type: "snapshot", id, since: savedRevision }));
@@ -1144,6 +1151,7 @@ function dragBehaviour(id: number, alt: boolean): DragBehaviour | null {
 $("#btn-gestures").addEventListener("click", () => void openSide("help", "gestures"));
 // the built manual is deployed next to the app (scripts/copy-manuals.mjs; the dev server serves it too)
 $("#btn-manual").addEventListener("click", () => window.open(new URL("manuals/", location.href).href, "_blank", "noopener"));
+$("#btn-cookbooks").addEventListener("click", () => window.open(new URL("manuals/cookbooks/", location.href).href, "_blank", "noopener"));
 $("#btn-github").addEventListener("click", () => window.open("https://github.com/eytanadar/guess", "_blank", "noopener"));
 const TIPS: Record<string, string> = {
   ring: "Tip: drag a node around the circle to reorder it; the others make room.",
@@ -1615,7 +1623,7 @@ async function onReady() {
   } else if (loadUrl) {
     await openUrl(loadUrl);
   } else if (await restoreAutosave()) {
-    term.note("Restored your previous session (variables are not restored). Sample graph starts over.");
+    term.note("Restored your previous session (variables are not restored). File → Start fresh forgets it.");
   } else {
     showWelcome();
     await term.submit(`makeFromGDF("sample.gdf")`);
@@ -1637,6 +1645,32 @@ function showWelcome() {
     "help",
   ]);
 }
+
+/** File → Start fresh (or ?fresh): forget what GUESS saved in this browser (the
+ * autosaved session in IndexedDB, and history, settings and panel sizes in
+ * localStorage) and reload with nothing but the sample graph. */
+async function freshStart(confirmFirst = true) {
+  if (confirmFirst && !window.confirm(
+    "Start fresh?\n\nThis clears what GUESS has saved in this browser: the autosaved session, " +
+    "your command history, settings (theme, tips, editor mode) and panel sizes. " +
+    "Files you've downloaded aren't touched. The page reloads with the sample graph.")) return;
+  wiping = true;
+  clearTimeout(saveTimer);
+  await new Promise<void>((resolve) => {
+    try {
+      const req = indexedDB.deleteDatabase("guess");
+      req.onsuccess = req.onerror = req.onblocked = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith("guess.")) localStorage.removeItem(k);
+  } catch { /* storage unavailable */ }
+  location.replace(location.pathname);       // no ?load, #s= or ?fresh: a clean start
+}
+$("#fresh-start").addEventListener("click", () => void freshStart());
+if (params.has("fresh")) void freshStart(false);
 
 async function restoreAutosave(): Promise<boolean> {
   const saved = await store.get<string>("autosave");
@@ -1662,7 +1696,14 @@ async function main() {
   const files: Record<string, string> = {};
   for (const [path, text] of Object.entries(pyFiles)) files[path.split("/").pop()!] = text;
   status.textContent = "Starting…";
-  send({ type: "init", files, data: { "sample.gdf": sampleGdf }, interrupt: interruptBuf });
+  const data: Record<string, string> = { "sample.gdf": sampleGdf };
+  const lazy: Record<string, string> = {};
+  for (const [path, url] of Object.entries(datasetUrls)) {
+    const name = path.split("/").pop()!.replace(/^README\.md$/, "datasets-README.md");
+    if (url.startsWith("data:")) data[name] = await (await fetch(url)).text(); // tiny files Vite inlined
+    else lazy[name] = new URL(url, location.href).href;
+  }
+  send({ type: "init", files, data, lazy, interrupt: interruptBuf });
 }
 
 main();

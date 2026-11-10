@@ -249,7 +249,6 @@ len(feedbackEdges()), len(strongcomponent.distinct)
 root = (module == "networkx")
 root[0].indegree
 remove(root)
-recompute()
 len(feedbackEdges())
 max(groupBy(strongcomponent), key=len)
 ```
@@ -258,7 +257,7 @@ At first sight networkx is riddled with cycles: `feedbackEdges()` lists
 260 edges to break. Nearly all of them pass through the package root. Its
 `__init__.py` imports the subpackages so that users can write
 `nx.shortest_path`, and 253 modules import the root back. Remove the root
-and recompute, and only 9 cycle-closing edges remain. Most sit in one knot
+and only 9 cycle-closing edges remain. Most sit in one knot
 of seven modules inside `networkx.utils`, which provides the decorators and
 backend dispatching that the rest of the library builds on. The pattern is
 typical of convenient top-level APIs. It's harmless at run time, because

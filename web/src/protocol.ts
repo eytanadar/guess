@@ -147,7 +147,9 @@ export type FromWorker =
   | { type: "reply"; id: number; value: unknown };
 
 export type ToWorker =
-  | { type: "init"; files: Record<string, string>; data: Record<string, string>; interrupt?: SharedArrayBuffer }
+  | { type: "init"; files: Record<string, string>; data: Record<string, string>;
+      /** datasets fetched on first read (name -> absolute URL): the cookbooks' data */
+      lazy?: Record<string, string>; interrupt?: SharedArrayBuffer }
   /** quiet: a watched cell refreshing (not added to history or undo) */
   | { type: "run"; id: number; code: string; echo?: boolean; cell?: number; quiet?: boolean }
   | { type: "complete"; id: number; code: string }

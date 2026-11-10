@@ -219,6 +219,7 @@ def load(session, data):
         session._graph_order = list(data["workspaces"].get("order") or [ws["current"], *ws["stored"]])
         session.emit({"type": "graphs", "names": session._graph_order, "current": ws["current"]})
     view.changed()
+    session.graph._adopt_computed()
     session.scene()
     return data
 

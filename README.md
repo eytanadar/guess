@@ -23,6 +23,26 @@ gestures, interface building, deployment, and the full command reference):
 
 In a deployed copy of the app, **Help → Manual** opens the same manual.
 
+
+## Cookbooks
+
+Short, runnable recipes for network analysis in one field each, built on a
+shared "Kitchen" of basics. Every book ends with a capstone: a small
+visual-analytics app built with GUESS's panels, sliders and menus. In the app:
+**Help → Cookbooks**.
+
+| book | |
+|---|---|
+| The GUESS Kitchen | [web page](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-core.html) · [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-core.pdf) |
+| Social Network Analysis | [web page](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-sna.html) · [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-sna.pdf) |
+| Biology | [web page](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-biology.html) · [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-biology.pdf) |
+| Text, Knowledge and Citation Networks | [web page](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-text.html) · [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-text.pdf) |
+| Infrastructure and Transportation | [web page](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-infrastructure.html) · [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-infrastructure.pdf) |
+| Software and Systems | [web page](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-software.html) · [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-software.pdf) |
+| Investigations | [web page](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-investigations.html) · [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-investigations.pdf) |
+| Ecology | [web page](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-ecology.html) · [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-ecology.pdf) |
+
+Sources and build instructions: [cookbooks/README.md](cookbooks/README.md).
 ## Run
 
 ```sh
