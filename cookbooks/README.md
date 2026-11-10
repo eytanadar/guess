@@ -11,6 +11,7 @@ The plan, the order of volumes and the features they need are in
 | `biology/` | GUESS for Biology | written |
 | `text/` | GUESS for Text, Knowledge and Citation Networks | written |
 | `infrastructure/` | GUESS for Infrastructure and Transportation | written |
+| `software/` | GUESS for Software and Systems | written |
 
 Each book is one `cookbook.md`. A recipe is a `##` section. Its
 ` ```python ` blocks are run by the checker, and an image written as

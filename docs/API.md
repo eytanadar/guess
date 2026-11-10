@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (70)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (72)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -252,6 +252,17 @@ labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
 edge field) in proportion to a numeric field: 1 is the normal size. Sets
 the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank").
 
+### `makeFromCalls(target)`
+
+makeFromCalls("package.module") builds a call graph of a module (a
+module name or a .py file): a node per function and method, an edge
+from each to the functions it calls. Calls are matched by name
+(f(), self.f(), cls.f(), Class.f()), so it's an approximation: calls
+through variables, other modules or dynamic dispatch are missed.
+Nodes get `function` (Class.name or name), `cls`, `lines`, `params`
+and `public` (no leading underscore); edges get `weight`, the number
+of call sites.
+
 ### `makeFromCSV(filename, nodes=None, directed=False)`
 
 makeFromCSV("edges.csv") replaces the graph with a spreadsheet table as
@@ -292,6 +303,21 @@ compatibility with GUESS 2006, a GraphML (XML) file works too.
 ### `makeFromGraphML(filename)`
 
 Replace the current graph with a GraphML file.
+
+### `makeFromImports(target, external=False, tests=False, level=None)`
+
+makeFromImports("networkx") builds the import graph of a Python
+package (an installed package's name, or a folder or file of
+source): a node per module, an edge from each module to each module
+of the package it imports (importer -> imported). Nodes get `module`
+(the dotted name), `package` (its parent package), `depth`, `lines`,
+`functions` and `classes`; edges get `weight` (import statements) and
+`toplevel` (false when every import between the two happens inside a
+function: a deferred import, often used to dodge an import cycle).
+external=true also adds the outside packages imported (`external`
+true). level=k merges modules below depth k into their parent (e.g.
+level=2 gives one node per subpackage). Test modules are skipped
+unless tests=true. The code is parsed, never run.
 
 ### `makeFromPajek(filename)`
 

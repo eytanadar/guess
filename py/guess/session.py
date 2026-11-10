@@ -51,7 +51,7 @@ class Session:
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
-        from . import algorithms, analysis, builders, charts, compat, connectors, enrichment, geo, glyphs, groups, gui, gv, igr, interop, layouts, persist, ranges, slides, states, structure, styles, timeline, visuals, workspaces
+        from . import algorithms, analysis, builders, charts, codegraphs, compat, connectors, enrichment, geo, glyphs, groups, gui, gv, igr, interop, layouts, persist, ranges, slides, states, structure, styles, timeline, visuals, workspaces
         gui.install(self)
         charts.install(self)
         persist.install(self)
@@ -73,6 +73,7 @@ class Session:
         enrichment.install(self)
         builders.install(self)
         geo.install(self)
+        codegraphs.install(self)
         timeline.install(self)
         slides.install(self)
         compat.install(self)

@@ -38,3 +38,12 @@ Regenerate with `make_text.py` (`papers` or `holmes` to fetch one part).
 | `us-airports.gdf`, `world-airports.gdf` | OpenFlights airports and routes databases (openflights.org), a 2014 snapshot | Derived databases under the **Open Database License** (ODbL 1.0): you may share and adapt them with attribution to OpenFlights, and adapted databases must be offered under the ODbL too. Edges merge both directions; `weight` counts airline route listings. Regenerate with `make_infrastructure.py`. |
 
 Map outlines drawn by `geoLayout` (in `py/guess/mapdata.py`) are Natural Earth 1:110m, public domain.
+
+## Software
+
+| file | source | notes |
+|---|---|---|
+| `networkx-imports.gdf` | made by `makeFromImports("networkx")` from networkx 3.7 (BSD licence) | module import graph: module names and sizes only, no code |
+| `guess-imports.gdf` | made by `makeFromImports` from GUESS's own `py/guess` | a snapshot; the live package will differ |
+
+Regenerate with `make_software.py`.
