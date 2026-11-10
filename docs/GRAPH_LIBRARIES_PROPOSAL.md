@@ -102,6 +102,17 @@ C versions only above ~1k nodes.
 
 ## Tier 3: Graphviz layouts (1–2 days for the pipeline, then small per engine)
 
+**Status (2026-11-09): done**, in `py/guess/gv.py`. `@hpcc-js/wasm-graphviz`
+1.30.0 (Graphviz 16.1) runs in the worker, loaded in the background after
+igraph; Python calls it synchronously, so each layout is one ordinary,
+undoable command. Done: `dotLayout` (with routed edges as bends and
+`clusters=`), `neatoLayout`, `sfdpLayout`, `fdpLayout`, `circoLayout`,
+`twopiLayout`, `osageLayout`, `graphvizLayout(engine, **attrs)` and
+`removeOverlap` (PRISM, keeping positions via `nop`). DOT import/export now
+share one scale (1 GUESS unit = 3 points) and use node centres. Not done:
+orthogonal edge routing after an arbitrary layout (`routeEdges`), drawing
+cluster boxes, `treemapLayout` (patchwork), `edgepaint`, `clusterMap`.
+
 **Pipeline**
 1. Python writes DOT (the `exportDOT` code).
 2. The worker passes it to the page, which runs the WebAssembly build with `json0` output.

@@ -105,6 +105,12 @@
             <button role="menuitem" data-run="hiveLayout()" title="Nodes on radial axes by role, placed by degree (hiveLayout(field, position) for your own axes)">Hive plot</button>
             <button role="menuitem" data-run="treeLayout(sel[0] if len(sel) else None)">Tree (from selection)</button>
             <hr />
+            <button role="menuitem" data-run="dotLayout()" title="Graphviz dot: layers, few crossings, edges routed around nodes">Layered, routed edges (dot)</button>
+            <button role="menuitem" data-run="neatoLayout()" title="Graphviz neato: distances on screen follow distances in the graph">Stress (neato)</button>
+            <button role="menuitem" data-run="sfdpLayout()" title="Graphviz sfdp: multilevel, for thousands of nodes">Large graph (sfdp)</button>
+            <button role="menuitem" data-run="drlLayout()" title="igraph DrL: tens of thousands of nodes, clusters far apart">Very large graph (DrL)</button>
+            <hr />
+            <button role="menuitem" data-run="removeOverlap()" title="Graphviz PRISM: separates nodes while keeping the layout's shape">Remove overlaps (keep shape)</button>
             <button role="menuitem" data-run="noverlapLayout()">Remove overlaps</button>
             <button role="menuitem" data-run="labelAdjustLayout()">Remove label overlaps</button>
             <button role="menuitem" data-run="rotateLayout(90)">Rotate 90°</button>
@@ -116,6 +122,7 @@
           <div class="menu-pop" role="menu" hidden>
             <button role="menuitem" data-run="graphStats()">Graph statistics</button>
             <button role="menuitem" data-run="cl = louvainClusters()&#10;colorize(modularity_class)&#10;legendFor(modularity_class)">Find communities</button>
+            <button role="menuitem" data-run="cl = leidenClusters()&#10;colorize(leiden_class)&#10;legendFor(leiden_class)" title="igraph Leiden: every community internally connected">Find communities (Leiden)</button>
             <hr />
             <button role="menuitem" data-run="sizeBy(pagerank, 5, 40, 'sqrt')">Size by PageRank</button>
             <button role="menuitem" data-run="sizeBy(betweenness, 5, 40, 'sqrt')">Size by betweenness</button>

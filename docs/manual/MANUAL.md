@@ -635,10 +635,29 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `randomLayout()` | random positions |
 | `drlLayout()`, `lglLayout()`, `umapLayout()` | for large graphs (igraph, section 7.9): DrL (tens of thousands of nodes, clusters well apart), LGL (grown from a root), UMAP (tight islands) |
 | `dhLayout()` | Davidson–Harel: even spacing, few crossings; small graphs |
+| `dotLayout(rankdir="TB", clusters=None)` | Graphviz dot: layers with few crossings, long edges routed around nodes; `clusters=dept` keeps groups together |
+| `neatoLayout()` | Graphviz neato (stress majorization): distances on screen follow distances in the graph; the best quality up to a few thousand nodes |
+| `sfdpLayout()`, `fdpLayout(clusters=)`, `circoLayout()`, `twopiLayout(root)`, `osageLayout(field)` | other Graphviz engines: multilevel force (large graphs), force with cluster boxes, circles, rings around a root, packed groups |
+| `graphvizLayout(engine, **attrs)` | any Graphviz engine with any graph attributes, e.g. `graphvizLayout("neato", mode="sgd")` |
 | `bipartiteLayout(field)` | a two-mode network in two rows |
 | `binPackLayout()` | packs the connected components side by side |
+| `removeOverlap()` | separate overlapping nodes while keeping the layout's shape (Graphviz PRISM); works after any layout |
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
 | `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(x, y)` | transform the current layout |
+
+The Graphviz and igraph layouts are loaded in the background a few seconds
+after GUESS starts (about 2 MB together). If you run one sooner, GUESS says
+so; run it again a moment later.
+
+```python
+makeSimpleDirectedRandom(30, 45)
+remove(feedbackEdges())                   # make it acyclic (section 7.7)
+dotLayout()                               # layers, arrows pointing down
+colorize(generation)
+neatoLayout()
+removeOverlap()
+makeFromGDF("sample.gdf")                 # back to the sample graph
+```
 
 Nodes whose `fixed` field is true stay where they are. So you can pin a few
 nodes and lay out the rest around them:

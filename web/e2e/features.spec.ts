@@ -587,7 +587,7 @@ test("igraph loads in the background and powers statistics, communities and layo
   const errors = await boot(page);
   // wait for the background load (a few seconds at most)
   await expect.poll(async () => {
-    await run(page, "import igraph\nprint('igraph', igraph.__version__)");
+    await run(page, "try:\n    import igraph\n    print('igraph', igraph.__version__)\nexcept ImportError:\n    print('still loading')");
     return page.locator(".cell").last().innerText();
   }, { timeout: 60000, intervals: [1000] }).toContain("igraph 1.");
   await run(page, "useIgraph()");
@@ -598,6 +598,26 @@ test("igraph loads in the background and powers statistics, communities and layo
   await expect(page.locator(".cell").last()).toContainText("True");
   await run(page, "drlLayout()\nprint(len(similarTo(v1)), len(predictLinks(3, show=False)))");
   await expect(page.locator(".cell").last()).toContainText("3");
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test("Graphviz loads in the background and lays out graphs", async ({ page }) => {
+  const errors = await boot(page);
+  await expect.poll(async () => {
+    await run(page, "from guess import gv\nprint('graphviz', gv.runner() is not None)");
+    return page.locator(".cell").last().innerText();
+  }, { timeout: 60000, intervals: [1000] }).toContain("graphviz True");
+  await run(page, "makeSimpleDirectedRandom(20, 30)\nremove(feedbackEdges())\ndotLayout()\n"
+    + "print(all(e.node1.y + e.node1.height / 2 < e.node2.y + e.node2.height / 2 for e in g.edges))");
+  await expect(page.locator(".cell").last()).toContainText("True");
+  const bent = await page.evaluate(() => [...(window as any).__guess.renderer.edges.values()].filter((e: any) => e.b && e.b.length).length);
+  expect(bent).toBeGreaterThan(0);
+  await run(page, "makeSample('karate')\nneatoLayout()\nfor n in g.nodes: n.x = n.x / 5; n.y = n.y / 5\nremoveOverlap()\nprint('ok')");
+  await expect(page.locator(".cell").last()).toContainText("ok");
+  await menu(page, "Layout", "Large graph (sfdp)");
+  await expect(page.locator(".cell").last()).toContainText("sfdpLayout()");
+  await expect(page.locator(".cell").last()).not.toHaveClass(/failed/);
   expect(await lastError(page)).toBeNull();
   expect(errors).toEqual([]);
 });

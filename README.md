@@ -157,3 +157,15 @@ history, Esc interrupts. Executed cells stack up above with their output: click
 
 Hover output to highlight the matching nodes and edges. Right-click a node, an
 edge, or console output for a context menu.
+
+## Third-party components
+
+GUESS runs Python in the browser with [Pyodide](https://pyodide.org) (MPL-2.0)
+and uses [numpy](https://numpy.org) (BSD), [networkx](https://networkx.org)
+(BSD), [igraph](https://igraph.org) (GPL-2.0-or-later, loaded at run time
+from Pyodide's package set) and [Graphviz](https://graphviz.org) (EPL-2.0;
+source at https://gitlab.com/graphviz/graphviz) through
+[@hpcc-js/wasm-graphviz](https://github.com/hpcc-systems/hpcc-js-wasm)
+(Apache-2.0), unmodified. The display uses [PixiJS](https://pixijs.com) (MIT)
+and the console [CodeMirror](https://codemirror.net) (MIT).
+

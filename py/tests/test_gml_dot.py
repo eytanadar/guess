@@ -1,5 +1,6 @@
 """GML and Graphviz DOT import (and GML export)."""
 import networkx as nx
+import pytest
 
 from tests.test_gython import Recorder
 from guess import Session
@@ -79,7 +80,9 @@ def test_dot(tmp_path):
     names = sorted(n._name for n in g.nodes)
     assert names == ["a", "b", "c", "d", "e", "f", "g", "h", "multipart"]
     a = g.getNodeByName("a")
-    assert (a.x, a.y) == (72.0, -144.0) and a.style == 1 and a.rank == 3 and a.width == 24.0
+    # pos is the centre in points (1 unit = 3 points), y up; x, y are the top-left corner
+    assert (a.x + a.width / 2, a.y + a.height / 2) == (24.0, -48.0)
+    assert a.style == 1 and a.rank == 3 and a.width == 24.0
     assert g.getNodeByName("g").label == "Gee" and g.getNodeByName("g").cluster == "left"
     assert g.getNodeByName("h").cluster == "left" and g.getNodeByName("c").cluster in ("", None)
     assert g.getNodeByName("multipart").dot_fixed == 1
@@ -112,7 +115,8 @@ def test_dot_reader_maps_more_attributes(tmp_path):
     g = s.graph
     a, b, r = (g.getNodeByName(k) for k in "abr")
     assert a.color.lower() in ("yellow", "#ffff00", "255,255,0") and a.strokecolor.lower() in ("red", "#ff0000", "255,0,0")
-    assert a.labelcolor.lower() in ("blue", "#0000ff", "0,0,255") and a.fixed and (a.x, a.y) == (10.0, -20.0)
+    assert a.labelcolor.lower() in ("blue", "#0000ff", "0,0,255") and a.fixed
+    assert (a.x + a.width / 2, a.y + a.height / 2) == pytest.approx((10 / 3, -20 / 3))
     assert b.label == "Bee" and not b.visible and r.label == "left mid right"
     es = {(e._n1._name, e._n2._name): e for e in g.edges}
     assert es[("a", "b")].labelcolor.lower() in ("green", "#008000", "0,128,0") and es[("a", "b")].style == "dashed"

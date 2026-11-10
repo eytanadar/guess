@@ -29,6 +29,10 @@ _TOKEN = re.compile(r"""
 
 KEYWORDS = {"strict", "graph", "digraph", "node", "edge", "subgraph"}
 
+# Graphviz works in points; one GUESS unit is 3 points (a 0.5 inch node is
+# 12 units wide, GUESS's default size), for sizes and positions alike
+PT = 3.0
+
 
 def _tokens(text):
     # lines starting with # are C-preprocessor output: ignored
@@ -296,12 +300,7 @@ def read_dot(graph, text):
                 label = re.sub(r"[{}|]+", " ", label)
             label = label.replace("\\N", name)
             n.label = re.sub(r"\s+", " ", re.sub(r"\\[nlr]", " ", label)).strip()
-        m = re.match(r"\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)(\s*!)?", a.get("pos", ""))
-        if m:
-            n.x, n.y = float(m.group(1)), -float(m.group(2))     # Graphviz y points up
-            has_pos = True
-            if m.group(3):
-                n.fixed = True
+        pos = re.match(r"\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)(\s*!)?", a.get("pos", ""))
         styles = styles_of.get(id(a), set())
         filled = "filled" in styles
         c = _color(a["fillcolor"]) if "fillcolor" in a else None
@@ -319,9 +318,16 @@ def read_dot(graph, text):
             n.clusterlabel = p.cluster_labels[a["cluster"]]
         for k, attr in (("width", "width"), ("height", "height")):
             try:
-                setattr(n, attr, max(1.0, float(a[k]) * 72 / 3))    # inches → a GUESS-sized node
+                setattr(n, attr, max(1.0, float(a[k]) * 72 / PT))   # inches → GUESS units
             except (KeyError, ValueError):
                 pass
+        if pos:
+            # Graphviz gives the centre in points, y up; GUESS keeps the top-left corner
+            n.x = float(pos.group(1)) / PT - float(n.width) / 2
+            n.y = -float(pos.group(2)) / PT - float(n.height) / 2
+            has_pos = True
+            if pos.group(3):
+                n.fixed = True
         if a.get("shape") in _SHAPES:
             n.style = _SHAPES[a["shape"]]
         _fields(graph.node_schema, n, a, _NODE_DONE, _RESERVED_N)
@@ -426,8 +432,9 @@ def write_dot(graph, clusters="cluster", layout=True):
             styles.append("invis")
         pairs = [
             ("label", n.label if n.label and n.label != n._name else None),
-            ("pos", f"{_num(n.x)},{_num(-n.y)}" + ("!" if n.fixed else "") if layout else None),
-            ("width", _num(float(n.width) * 3 / 72)), ("height", _num(float(n.height) * 3 / 72)),
+            ("pos", f"{_num((n.x + float(n.width) / 2) * PT)},{_num(-(n.y + float(n.height) / 2) * PT)}"
+                    + ("!" if n.fixed else "") if layout else None),
+            ("width", _num(float(n.width) * PT / 72)), ("height", _num(float(n.height) * PT / 72)),
             ("shape", _SHAPE_OUT.get(int(n.style or 2), "ellipse")),
             ("style", ",".join(styles)), ("fillcolor", _hex(n.color)),
             ("color", _hex(n.strokecolor) if n.strokecolor else None),

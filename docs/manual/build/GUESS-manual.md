@@ -635,10 +635,29 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `randomLayout()` | random positions |
 | `drlLayout()`, `lglLayout()`, `umapLayout()` | for large graphs (igraph, section 7.9): DrL (tens of thousands of nodes, clusters well apart), LGL (grown from a root), UMAP (tight islands) |
 | `dhLayout()` | Davidson–Harel: even spacing, few crossings; small graphs |
+| `dotLayout(rankdir="TB", clusters=None)` | Graphviz dot: layers with few crossings, long edges routed around nodes; `clusters=dept` keeps groups together |
+| `neatoLayout()` | Graphviz neato (stress majorization): distances on screen follow distances in the graph; the best quality up to a few thousand nodes |
+| `sfdpLayout()`, `fdpLayout(clusters=)`, `circoLayout()`, `twopiLayout(root)`, `osageLayout(field)` | other Graphviz engines: multilevel force (large graphs), force with cluster boxes, circles, rings around a root, packed groups |
+| `graphvizLayout(engine, **attrs)` | any Graphviz engine with any graph attributes, e.g. `graphvizLayout("neato", mode="sgd")` |
 | `bipartiteLayout(field)` | a two-mode network in two rows |
 | `binPackLayout()` | packs the connected components side by side |
+| `removeOverlap()` | separate overlapping nodes while keeping the layout's shape (Graphviz PRISM); works after any layout |
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
 | `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(x, y)` | transform the current layout |
+
+The Graphviz and igraph layouts are loaded in the background a few seconds
+after GUESS starts (about 2 MB together). If you run one sooner, GUESS says
+so; run it again a moment later.
+
+```python
+makeSimpleDirectedRandom(30, 45)
+remove(feedbackEdges())                   # make it acyclic (section 7.7)
+dotLayout()                               # layers, arrows pointing down
+colorize(generation)
+neatoLayout()
+removeOverlap()
+makeFromGDF("sample.gdf")                 # back to the sample graph
+```
 
 Nodes whose `fixed` field is true stay where they are. So you can pin a few
 nodes and lay out the rest around them:
@@ -2324,6 +2343,69 @@ tend to stay among, building a hierarchy; count=None cuts it where
 modularity is highest, walktrapClusters(8) gives 8 communities.
 Stored in walktrap_class; cutDendrogram(n) re-cuts it.
 
+## Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal
+
+### `circoLayout()`
+
+circoLayout() puts the biconnected parts of the graph on circles,
+chained together: shows rings and cycles (pathways, loops).
+
+### `dotLayout(rankdir='TB', clusters=None, nodesep=0.25, ranksep=0.5, route=True)`
+
+dotLayout() draws the graph in layers with Graphviz's dot: edges point
+down (rankdir="LR": left to right; "BT", "RL"), crossings are minimised
+and long edges are routed around nodes as smooth bends (route=False:
+straight edges). clusters=dept keeps each value's nodes together in a
+box. nodesep and ranksep are spacings in inches. Best for hierarchies,
+dependency and citation graphs.
+
+### `fdpLayout(clusters=None, overlap='prism')`
+
+fdpLayout() is a force layout that can keep clusters together:
+fdpLayout(clusters=modularity_class) gives each community its own box.
+
+### `graphvizLayout(engine='dot', **attrs)`
+
+graphvizLayout("neato") lays the graph out with any Graphviz engine:
+dot, neato, fdp, sfdp, circo, twopi, osage or patchwork. Keyword
+arguments become Graphviz graph attributes, e.g.
+graphvizLayout("neato", mode="sgd", overlap="prism") or
+graphvizLayout("dot", rankdir="LR", ranksep=1). Pinned (fixed) nodes stay
+put in neato and fdp.
+
+### `neatoLayout(mode='major', model='shortpath', lenField=None, overlap='prism')`
+
+neatoLayout() places nodes so their distances on screen follow their
+distances in the graph (stress majorization: the best-quality layout up
+to a few thousand nodes). mode: "major" (default), "sgd" (faster),
+"KK" (Kamada-Kawai); model="circuit" uses resistance distance;
+lenField=weight makes an edge field the preferred edge length;
+overlap="prism" (default) then removes node overlaps (overlap="true"
+leaves them).
+
+### `osageLayout(clusters)`
+
+osageLayout(dept) packs each value's nodes into a rectangle and packs
+the rectangles together: a compact overview of the groups.
+
+### `removeOverlap(method='prism', sep=4)`
+
+removeOverlap() moves nodes apart until none overlap, keeping the shape
+of the current layout (Graphviz's PRISM). Works after any layout. method:
+"prism" (default), "voronoi", "scale" (spread evenly), "compress";
+sep is the extra margin in points.
+
+### `sfdpLayout(overlap='prism', K=None)`
+
+sfdpLayout() is Graphviz's multilevel force layout: fast on large graphs
+(thousands to tens of thousands of nodes) with good global structure.
+K is the ideal edge length in inches; overlap="prism" removes overlaps.
+
+### `twopiLayout(root=None)`
+
+twopiLayout(v1) places nodes on rings by their distance from a root
+(Graphviz's twopi; default root: chosen by Graphviz).
+
 ## Layouts
 
 ### `binPackLayout(rescale=True)`
@@ -3448,6 +3530,24 @@ findPattern([('a','b'), ('b','c'), ('c','a')])
 
 ```python
 drlLayout()
+```
+
+**Layered drawing (Graphviz)**
+
+```python
+dotLayout(rankdir='LR')
+```
+
+**Stress layout (Graphviz)**
+
+```python
+neatoLayout()
+```
+
+**Remove overlaps, keep shape**
+
+```python
+removeOverlap()
 ```
 
 ### Filtering and selection

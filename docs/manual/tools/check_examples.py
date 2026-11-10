@@ -27,6 +27,12 @@ import tempfile  # noqa: E402
 _work = tempfile.mkdtemp(prefix="guess-manual-")
 shutil.copy(SAMPLE, os.path.join(_work, "sample.gdf"))
 os.chdir(_work)
+
+# Graphviz layouts: the page's WebAssembly Graphviz, run through Node
+from guess import gv  # noqa: E402
+gv._RUNNER[0] = gv.node_runner(ROOT / "web")
+if gv._RUNNER[0] is None:
+    print("note: Graphviz examples need node and web/node_modules; they will fail")
 chapters = re.split(r"^# ", text, flags=re.M)
 failures = 0
 total = 0

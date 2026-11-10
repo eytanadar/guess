@@ -16,6 +16,7 @@ Commands can be called without parentheses when they take no arguments
 - [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (13)
 - [networkx bridge and sample graphs](#networkx-bridge-and-sample-graphs) (4)
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
+- [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
 - [Layouts](#layouts) (33)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (30)
 - [Styles and visual mappings](#styles-and-visual-mappings) (10)
@@ -822,6 +823,69 @@ walktrapClusters() groups nodes that short random walks (steps long)
 tend to stay among, building a hierarchy; count=None cuts it where
 modularity is highest, walktrapClusters(8) gives 8 communities.
 Stored in walktrap_class; cutDendrogram(n) re-cuts it.
+
+## Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal
+
+### `circoLayout()`
+
+circoLayout() puts the biconnected parts of the graph on circles,
+chained together: shows rings and cycles (pathways, loops).
+
+### `dotLayout(rankdir='TB', clusters=None, nodesep=0.25, ranksep=0.5, route=True)`
+
+dotLayout() draws the graph in layers with Graphviz's dot: edges point
+down (rankdir="LR": left to right; "BT", "RL"), crossings are minimised
+and long edges are routed around nodes as smooth bends (route=False:
+straight edges). clusters=dept keeps each value's nodes together in a
+box. nodesep and ranksep are spacings in inches. Best for hierarchies,
+dependency and citation graphs.
+
+### `fdpLayout(clusters=None, overlap='prism')`
+
+fdpLayout() is a force layout that can keep clusters together:
+fdpLayout(clusters=modularity_class) gives each community its own box.
+
+### `graphvizLayout(engine='dot', **attrs)`
+
+graphvizLayout("neato") lays the graph out with any Graphviz engine:
+dot, neato, fdp, sfdp, circo, twopi, osage or patchwork. Keyword
+arguments become Graphviz graph attributes, e.g.
+graphvizLayout("neato", mode="sgd", overlap="prism") or
+graphvizLayout("dot", rankdir="LR", ranksep=1). Pinned (fixed) nodes stay
+put in neato and fdp.
+
+### `neatoLayout(mode='major', model='shortpath', lenField=None, overlap='prism')`
+
+neatoLayout() places nodes so their distances on screen follow their
+distances in the graph (stress majorization: the best-quality layout up
+to a few thousand nodes). mode: "major" (default), "sgd" (faster),
+"KK" (Kamada-Kawai); model="circuit" uses resistance distance;
+lenField=weight makes an edge field the preferred edge length;
+overlap="prism" (default) then removes node overlaps (overlap="true"
+leaves them).
+
+### `osageLayout(clusters)`
+
+osageLayout(dept) packs each value's nodes into a rectangle and packs
+the rectangles together: a compact overview of the groups.
+
+### `removeOverlap(method='prism', sep=4)`
+
+removeOverlap() moves nodes apart until none overlap, keeping the shape
+of the current layout (Graphviz's PRISM). Works after any layout. method:
+"prism" (default), "voronoi", "scale" (spread evenly), "compress";
+sep is the extra margin in points.
+
+### `sfdpLayout(overlap='prism', K=None)`
+
+sfdpLayout() is Graphviz's multilevel force layout: fast on large graphs
+(thousands to tens of thousands of nodes) with good global structure.
+K is the ideal edge length in inches; overlap="prism" removes overlaps.
+
+### `twopiLayout(root=None)`
+
+twopiLayout(v1) places nodes on rings by their distance from a root
+(Graphviz's twopi; default root: chosen by Graphviz).
 
 ## Layouts
 
@@ -1947,6 +2011,24 @@ findPattern([('a','b'), ('b','c'), ('c','a')])
 
 ```python
 drlLayout()
+```
+
+**Layered drawing (Graphviz)**
+
+```python
+dotLayout(rankdir='LR')
+```
+
+**Stress layout (Graphviz)**
+
+```python
+neatoLayout()
+```
+
+**Remove overlaps, keep shape**
+
+```python
+removeOverlap()
 ```
 
 ### Filtering and selection

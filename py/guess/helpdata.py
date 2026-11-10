@@ -10,6 +10,7 @@ GROUPS = [
     ("structure", "Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions"),
     ("interop", "networkx bridge and sample graphs"),
     ("igr", "igraph: communities, large-graph layouts, similarity, patterns, cuts and flows"),
+    ("gv", "Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal"),
     ("layouts", "Layouts"),
     ("visuals", "Display: hulls, legends, background, edges, labels, selection, export"),
     ("styles", "Styles and visual mappings"),
@@ -104,6 +105,9 @@ EXAMPLES = [
         ("Likely missing links", "predictLinks(10)", "link prediction adamic adar"),
         ("Find a pattern", "findPattern([('a','b'), ('b','c'), ('c','a')])", "subgraph isomorphism motif triangle"),
         ("Large-graph layout", "drlLayout()", "igraph drl openord big"),
+        ("Layered drawing (Graphviz)", "dotLayout(rankdir='LR')", "dot hierarchy dag graphviz sugiyama"),
+        ("Stress layout (Graphviz)", "neatoLayout()", "neato stress majorization graphviz"),
+        ("Remove overlaps, keep shape", "removeOverlap()", "prism overlap graphviz"),
     ]),
     ("Filtering and selection", [
         ("Show only a core", "showOnly(kCore(3))", "filter hide"),

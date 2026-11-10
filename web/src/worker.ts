@@ -66,7 +66,16 @@ session = Session(lambda m: __js_emit(json.dumps(m)))
   const p = py;
   p.loadPackage(["igraph"])
     .then(() => p.runPython("import importlib; importlib.invalidate_caches()"))
-    .catch((e: unknown) => console.warn("igraph did not load; GUESS uses networkx/numpy instead", e));
+    .catch((e: unknown) => console.warn("igraph did not load; GUESS uses networkx/numpy instead", e))
+    // then Graphviz (WebAssembly, about 0.8 MB): Python calls it synchronously (py/guess/gv.py)
+    .then(() => import("@hpcc-js/wasm-graphviz"))
+    .then(({ Graphviz }) => Graphviz.load())
+    .then((gv) => {
+      (self as unknown as { guessGraphvizLayout: unknown }).guessGraphvizLayout =
+        (dot: string, engine: string, nop: number) =>
+          gv.layout(dot, "json", engine as Parameters<typeof gv.layout>[2], nop ? { nop } : undefined);
+    })
+    .catch((e: unknown) => console.warn("Graphviz did not load; its layouts are unavailable", e));
 }
 
 // Pyodide's networkx recipe depends on matplotlib (and numpy, Pillow, ...).
