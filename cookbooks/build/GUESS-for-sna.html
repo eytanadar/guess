@@ -709,10 +709,14 @@ mutual information about 0.75, where 1 is identical), but Louvain finds
 groups. <code>mixingMatrix(dept)[d]</code> shows where one department’s
 ties go.</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>assortativity(dept)</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>subgraph(freq <span class="op">&gt;</span> <span class="dv">100</span>)</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>assortativity(dept)</span></code></pre></div>
-<p><code>subgraph(freq &gt; 100)</code> opens a new graph of only the
-heavy communication ties (<code>use(&quot;main&quot;)</code> goes back). If
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>subgraph(g.nodes, <span class="st">&quot;heavy ties&quot;</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>remove(freq <span class="op">&lt;=</span> <span class="dv">100</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>assortativity(dept)</span></code></pre></div>
+<p><code>subgraph(g.nodes, &quot;heavy ties&quot;)</code> copies the organisation
+into a graph of its own (<code>use(&quot;main&quot;)</code> goes back), and
+<code>remove(freq &lt;= 100)</code> keeps only the 367 heavy
+communication ties. (<code>subgraph(freq &gt; 100)</code> alone wouldn’t
+do it: it keeps every edge among those ties’ endpoints.) If
 assortativity by department rose there, departments would be where the
 real work happens. If it fell, the important work would cross department
 lines. Here it barely moves (0.77 to 0.76): heavy and light ties follow

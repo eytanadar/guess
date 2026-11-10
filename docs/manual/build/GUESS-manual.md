@@ -1675,12 +1675,16 @@ Same as biComponentClusters() (the manual's spelling).
 
 center() fits the whole graph; center(seq) zooms to the given elements.
 
-### `colorBy(field, start, end, scale='linear', middle=None)`
+### `colorBy(field, start, end, scale='linear', middle=None, center=None)`
 
 colorBy(field, startColor, endColor) colours elements along a gradient in
 proportion to a numeric field's value; scale may be "linear", "log",
-"sqrt" or "rank"; middle=color adds a midpoint colour. Compare colorize,
-which spaces distinct values evenly.
+"sqrt" or "rank"; middle=color adds a midpoint colour. center=value
+makes a diverging gradient: that value gets the middle colour (white
+unless given) and the ends are equally far from it, so equal changes
+up and down look equally strong, e.g. colorBy(lfc, blue, red,
+center=0) for fold changes. Compare colorize, which spaces distinct
+values evenly.
 
 ### `colorize(field, *cs)`
 
@@ -1712,6 +1716,18 @@ Euclidean distance between two nodes' positions.
 ### `einverse(seq)`
 
 All edges not in seq.
+
+### `enrichment(seq, sets, background=None, top=10, minSize=2, show=True)`
+
+enrichment(nodes, sets) tests which sets (from readSets, or any
+{name: [node names]}) are over-represented among the nodes, against
+the background (default: every node in the graph that is in at least
+one set). For each set it gives the overlap k of n nodes, the set's
+size K among the N background nodes, the fold enrichment
+(k/n)/(K/N), the hypergeometric p-value and the Benjamini-Hochberg
+q-value (the false discovery rate over all sets tested). Sets with
+fewer than minSize background members are skipped. Prints the `top`
+rows by p-value and returns all rows as dicts, best first.
 
 ### `execfile(filename)`
 
@@ -1853,6 +1869,47 @@ Replace the current graph with a GraphML file.
 
 Replace the current graph with a Pajek .net file (nodes are named pajek<id>).
 
+### `makeFromSimilarity(filename, k=5, threshold=None, method='cosine', id=None, columns=None, features=None, values=None, mutual=False)`
+
+makeFromSimilarity("profiles.csv") links each row of a feature table
+to the k rows most similar to it (k=5), or, with threshold=t, every
+pair at least t similar. The table is wide (an id column, here the
+first or id=..., then numeric columns; columns=[...] picks them, and
+text columns become node fields) or long, one row per (id, feature,
+value): features="keyword", values="score" (values default to 1).
+method: "cosine" (default; profiles pointing the same way),
+"correlation" (same ups and downs), "jaccard" (shared nonzero
+features) or "euclidean" (close values; 1/(1+distance)). mutual=true
+keeps only pairs that are in each other's top k. Edges get `weight`
+= similarity. Typical uses: co-expression networks, documents by
+term profile, people by votes or answers.
+
+### `makeFromText(filename, terms=None, by='paragraph', window=None, minCount=3, maxTerms=60, caseSensitive=False, stopwords=None)`
+
+makeFromText("story.txt", terms) builds a co-occurrence network: one
+node per term, linked when two terms occur in the same paragraph
+(by="sentence" or "line" for smaller units; window=k for within k
+words of each other, in the same paragraph). terms is a list of names, or a dict from each
+node's name to its aliases, e.g. {"Holmes": ["Holmes", "Sherlock"],
+"Adler": ["Irene Adler", "Miss Adler", "the woman"]} (matching ignores
+case unless caseSensitive=true). Without terms, the maxTerms most
+frequent words (at least minCount times, minus common words and
+stopwords=[...]) are used. Nodes get `count` (occurrences), `units`
+(paragraphs etc. containing them) and `first` (the first unit, for
+story order); edges get `weight`, the number of shared units (or
+windows).
+
+### `makeFromTwoMode(filename, a=None, b=None, weight=None)`
+
+makeFromTwoMode("paper-authors.csv", "paper", "author") reads a table
+with one row per pair (a paper and one of its authors, a gene and one
+of its terms, a person and an event) as a two-mode network: a node
+for every value of each column, an edge for every row, and `kind` set
+to the column's name, ready for bipartiteLayout(kind) or
+project(kind, "author"). a= and b= name the columns (default: the
+first two); weight= names a numeric column to use as edge weight.
+Repeated rows add to the weight.
+
 ### `ninverse(seq)`
 
 All nodes not in seq.
@@ -1860,6 +1917,14 @@ All nodes not in seq.
 ### `readjustEdges()`
 
 Kept for old scripts: parallel edges are always drawn as separate curves.
+
+### `readSets(filename, item=None, set=None, where=None)`
+
+readSets("go.csv") reads a table with one row per (item, set) pair,
+e.g. gene,term, into {set: {items}} for enrichment(). item= and set=
+name the columns (default: the first two); where={"aspect": "process"}
+keeps only matching rows. A row's set may list several, separated by
+";" or "|".
 
 ### `remove(seq)`
 
@@ -2123,6 +2188,20 @@ assortativity(dept) measures homophily by a field: near 1 = ties stay
 within the same value, 0 = random mixing, negative = ties cross values.
 Numeric fields use the correlation of values across edges.
 
+### `blockmodel(k=4, show=True)`
+
+blockmodel(k) groups the nodes into k positions of structurally
+equivalent nodes: nodes tied to the same others (in the same
+directions), whether or not they're tied to each other, which is a
+role (teacher, broker, follower), not a community. Profiles are
+compared by correlation and merged by average-linkage clustering.
+Stores each node's position in `position` (0 = largest), prints the
+image matrix (the density of ties from each position to each other;
+a dense diagonal means cohesive positions, dense off-diagonals mean
+roles that serve each other) and returns the positions. Try
+colorize(position), then collapseBy(position) for the reduced graph.
+Fine up to a couple of thousand nodes.
+
 ### `bridges()`
 
 bridges(): the edges whose removal would split a connected part of the
@@ -2152,6 +2231,19 @@ descendants(n): every node reachable from n along directed edges
 feedbackEdges(): directed edges that close cycles (back edges of a
 depth-first search, plus self-loops); removing or reversing them leaves
 the directed part acyclic. A small set, not necessarily the smallest.
+
+### `mainPath()`
+
+mainPath() finds the main path of a citation (or other flow)
+network: the chain of directed edges that the most source-to-sink
+paths run through (Hummon and Doreian's main path analysis, key-route
+variant). Each directed edge gets `spc`, its search path count as a
+share of all source-to-sink paths (0..1). The path starts at the edge
+with the highest spc and extends both ways, always along the
+highest-spc edge, to a source and a sink. Edges closing cycles
+(feedbackEdges()) are ignored. Returns the path's nodes and edges.
+In a citation network with edges citing -> cited, it runs from recent
+work back to the field's foundations.
 
 ### `mixingMatrix(field, show=True)`
 
@@ -3026,6 +3118,22 @@ The graphs in this session; the current one first.
 
 newGraph(name) starts an empty graph and switches to it.
 
+### `project(kindField, keep, method='count', name=None)`
+
+project(kind, "woman") turns a two-mode network (people and the
+events, groups or papers they belong to) into a one-mode network of
+just the nodes whose `kind` is "woman": two are linked when they share
+a neighbour of the other kind. It opens as a new graph (the two-mode
+one stays; use() goes back), keeping fields and positions. Each edge
+gets `shared` (how many neighbours in common) and `weight`, by method:
+  "count"    the number shared (default)
+  "jaccard"  shared / neighbours of either (0..1; removes the size
+             effect of very active nodes)
+  "newman"   each shared neighbour adds 1/(its degree - 1), so a
+             small event counts more than a crowded one
+Each kept node also gets `affiliations`: its number of other-kind
+neighbours. E.g. project(kind, "event") gives the event network.
+
 ### `renameGraph(name)`
 
 renameGraph(name) renames the current graph.
@@ -3101,6 +3209,20 @@ makeFromSPARQL(query) builds a graph from a SPARQL query whose rows bind
 ?source and ?target (optionally ?sourceLabel / ?targetLabel, used as
 labels; any other variables become edge fields). E.g. a Wikidata query
 for "influenced by" links.
+
+### `makeFromSTRING(genes, species=9606, score=0.7, add=0, server='https://string-db.org')`
+
+makeFromSTRING(["TP53", "MDM2", "ATM"]) opens the protein interactions
+among those genes from the STRING database (string-db.org): species is
+an NCBI taxon (9606 human, 10090 mouse, 4932 yeast, 7227 fly, 6239
+worm, 3702 Arabidopsis, 511145 E. coli), score the minimum combined
+confidence (0.4 medium, 0.7 high, 0.9 highest), add=n also brings in
+the n proteins that interact most with the query. Genes may be a list
+or one string separated by spaces/commas. Nodes get `description`,
+`stringId` and `query` (true for the genes you asked for); edges get
+`score` (also `weight`) and the evidence behind it: `experiments`,
+`databases`, `textmining`, `coexpression`, `neighborhood`, `fusion`,
+`cooccurrence` (each 0..1). STRING data are CC BY 4.0: cite it.
 
 ### `makeFromURL(url, format=None)`
 
@@ -3912,6 +4034,7 @@ Built-in node fields:
 | `indegree` | INTEGER | 0 (read-only) |
 | `outdegree` | INTEGER | 0 (read-only) |
 | `totaldegree` | INTEGER | 0 (read-only) |
+| `degree` | INTEGER | 0 (read-only) |
 
 Built-in edge fields:
 

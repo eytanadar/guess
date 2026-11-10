@@ -8,7 +8,7 @@
 //   npm run cookbook-shots -- sna:karate-split       # one figure
 import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readFileSync, readdirSync, rmSync, existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
 
@@ -82,10 +82,10 @@ try {
     await page.goto(`http://localhost:${PORT}/`);
     await page.locator(".console-out").getByText(/loaded 402/).first().waitFor({ timeout: 180000 });
     await page.addStyleTag({ content: "#tip, #tipcard { display: none !important; }" });
-    // put the datasets in the app's file space (opening each, which the recipe then replaces)
-    await page.locator("#file").setInputFiles(data);
-    await page.waitForFunction((k) => document.querySelectorAll(".cell").length >= k, data.length + 1, { timeout: 60000 });
-    await page.waitForFunction(() => !document.querySelector(".cell.running"), null, { timeout: 60000 });
+    // put the datasets in the app's file space, as File → Open would, without opening them
+    for (const f of data) {
+      await page.evaluate(([name, text]) => window.__guess.writeFile(name, text), [basename(f), readFileSync(f, "utf8")]);
+    }
     try {
       if (!(await run(f.code))) console.error(`  ${f.vol}:${f.name}: the recipe reported an error`);
       const b = await page.locator("#graph").boundingBox();

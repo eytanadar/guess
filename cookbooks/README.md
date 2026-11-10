@@ -8,9 +8,9 @@ The plan, the order of volumes and the features they need are in
 |---|---|---|
 | `core/` | The GUESS Kitchen: basics every book shares | written |
 | `sna/` | GUESS for Social Network Analysis | written |
-| `biology/` | GUESS for Biology | next |
-| `text/` | GUESS for Text, Knowledge and Citation Networks | planned |
-| `infrastructure/` | GUESS for Infrastructure and Transportation | planned |
+| `biology/` | GUESS for Biology | written |
+| `text/` | GUESS for Text, Knowledge and Citation Networks | written |
+| `infrastructure/` | GUESS for Infrastructure and Transportation | next |
 
 Each book is one `cookbook.md`. A recipe is a `##` section. Its
 ` ```python ` blocks are run by the checker, and an image written as

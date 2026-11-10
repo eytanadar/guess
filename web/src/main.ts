@@ -1717,4 +1717,9 @@ main();
 }
 
 // for debugging and tests in the dev server only
-if (import.meta.env.DEV) (window as unknown as { __guess: unknown }).__guess = { renderer, term };
+if (import.meta.env.DEV) {
+  // test and figure scripts: put a file in the app's file space without opening it
+  const writeFile = (name: string, text: string) =>
+    request((id) => ({ type: "writeFile", id, name, data: new TextEncoder().encode(text) }));
+  (window as unknown as { __guess: unknown }).__guess = { renderer, term, writeFile };
+}

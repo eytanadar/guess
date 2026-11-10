@@ -136,9 +136,13 @@ makeFromGDF("vis-papers.gdf")
 removeDisconnected()
 mp = mainPath()
 showOnly(mp)
-dagLayout()
+g.edges.visible = false
+mp.visible = true
+scatterLayout(year, generation)
+mp.color = red
 labelBy(label)
-sorted(n.year for n in mp if n in g.nodes)[:3]
+g.nodes.labelpos = "outside"
+optimizeLabels()
 ```
 
 ![The main path of graph-drawing research](img/text-mainpath.png)
@@ -147,7 +151,10 @@ sorted(n.year for n in mp if n in g.nodes)[:3]
 Doreian). For every citation it counts how many chains from the newest
 papers back to the oldest pass through it (its *search path count*,
 stored as `spc`, a share of all such chains). Then it follows the
-heaviest links. Here the path runs from Chiba et al. (1985) and Tamassia
+heaviest links. `showOnly(mp)` keeps the path's papers, and
+`mp.visible = true` (after hiding every edge) keeps only its citations.
+`scatterLayout(year, generation)` lays it out as a timeline: year across,
+citation depth up. Here the path runs from Chiba et al. (1985) and Tamassia
 et al. (1988) through Kamada–Kawai (1989) and Fruchterman–Reingold (1991)
 to the multilevel methods of 2000–2006 (Walshaw, Harel and Koren,
 Hachul and Jünger). It then turns to edge bundling (2008–2010, including
@@ -229,12 +236,13 @@ both problems.
 makeFromTwoMode("vis-paper-keywords.csv", "paper", "keyword")
 project(kind, "keyword", method="jaccard")
 remove(affiliations < 8)
-removeDisconnected()
 remove(weight < 0.05)
+showOnly(giantComponent())
 louvainClusters()
 colorize(modularity_class)
-sizeBy(affiliations, 6, 40)
+sizeBy(affiliations, 12, 60)
 labelBy(label)
+labelSizeBy(affiliations)
 forceAtlas2Layout()
 ```
 
@@ -243,8 +251,11 @@ forceAtlas2Layout()
 **How it works.** Projecting papers × keywords onto the keywords links
 two keywords when papers share them. Jaccard weights (shared papers ÷
 papers with either) keep a ubiquitous keyword like "network visualization"
-(382 papers) from linking to everything. Removing rare keywords and weak
-links leaves a thematic map whose communities are the field's topics.
+(382 papers) from linking to everything. Removing rare keywords (in fewer
+than 8 papers) and weak links leaves 86 keywords. The 73 that stay connected
+form a thematic map whose communities are the field's topics. Filter
+first, then keep the largest component, since each removal can strand
+more nodes.
 
 # Similarity
 
@@ -327,8 +338,11 @@ total count with a `COUNT(*)` query.
 ## Case study: the contest in "A Scandal in Bohemia" [Basic]{.level}
 
 ```python
-cast = {"Holmes": ["Holmes", "Sherlock"], "Irene Adler": ["Irene Adler", "Irene", "Miss Adler", "the woman", "Mrs. Norton"],
-        "the King": ["King", "Majesty", "Count Von Kramm", "Von Kramm"], "Godfrey Norton": ["Godfrey Norton", "Godfrey", "Mr. Norton"]}
+cast = {"Holmes": ["Holmes", "Sherlock"],
+        "Irene Adler": ["Irene Adler", "Irene", "Miss Adler", "the woman",
+                        "Mrs. Norton"],
+        "the King": ["King", "Majesty", "Count Von Kramm", "Von Kramm"],
+        "Godfrey Norton": ["Godfrey Norton", "Godfrey", "Mr. Norton"]}
 makeFromText("scandal-in-bohemia.txt", cast)
 [(n.label, n.first, n.units) for n in sortBy(first)]
 ```
@@ -360,7 +374,8 @@ for grp in groupBy(leiden_class)[:8]:
 for n in g.nodes: n.decade = n.year // 10 * 10
 for d in (1980, 1990, 2000, 2010):
     fronts = sorted(groupBy(decade == d, leiden_class), key=len)[-3:]
-    print(d, len(decade == d), [(names.get(f[0].leiden_class, "other"), len(f)) for f in reversed(fronts)])
+    top = [(names.get(f[0].leiden_class, "other"), len(f)) for f in reversed(fronts)]
+    print(d, len(decade == d), top)
 ```
 
 This puts the pieces together. Each research front is named by its top

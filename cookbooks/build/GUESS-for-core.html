@@ -452,6 +452,11 @@ to a set (<code>(… ).senior = true</code>) sets it on every member. The
 types are <code>VARCHAR</code> (text), <code>INTEGER</code>,
 <code>DOUBLE</code>, <code>BOOLEAN</code>. Python works too:
 <code>for n in g.nodes: n.senior = n.degree &gt; 5</code>.</p>
+<p><strong>Pitfalls.</strong> Field, node and colour names are reserved,
+so they can’t be used as variable names. <code>x = 5</code> is an error
+because <code>x</code> is the field holding each node’s position, and so
+are <code>size</code>, <code>color</code>, <code>label</code> and your
+own fields’ names. Pick another name (<code>xs = …</code>).</p>
 <h1 data-number="4" id="asking-questions"><span class="header-section-number">4</span> Asking questions</h1>
 <h2 data-number="4.1" id="select-by-value-basic"><span class="header-section-number">4.1</span> Select by value <span class="level">Basic</span></h2>
 <p><strong>You have</strong> a field. <strong>You want</strong> the
@@ -810,13 +815,13 @@ colours: re-run <code>colorize</code> and the legend updates.</p>
 <span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>optimizeLabels()</span>
 <span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>hideOverlappingLabels()</span></code></pre></div>
 <p><strong>How it works.</strong> <code>labelpos</code> is where a
-node’s label goes: <code>&quot;right&quot;</code>, <code>&quot;center&quot;</code>,
-<code>&quot;inside&quot;</code> (fitted into the shape), or
-<code>&quot;outside&quot;</code>, which lets GUESS choose a free spot.
-<code>optimizeLabels()</code> runs a longer search for positions, and
-<code>hideOverlappingLabels()</code> drops the labels that still
-collide, smallest nodes first. <code>labelSizeBy(degree)</code> makes
-important labels bigger.</p>
+node’s label goes: <code>&quot;right&quot;</code>, <code>&quot;left&quot;</code>,
+<code>&quot;above&quot;</code>, <code>&quot;below&quot;</code>, <code>&quot;inside&quot;</code>
+(fitted into the shape), or <code>&quot;outside&quot;</code>, which lets GUESS
+choose a free spot. <code>optimizeLabels()</code> runs a longer search
+for positions, and <code>hideOverlappingLabels()</code> drops the labels
+that still collide, smallest nodes first.
+<code>labelSizeBy(degree)</code> makes important labels bigger.</p>
 <h2 data-number="8.3" id="outline-groups-and-bundle-the-hairball-intermediate"><span class="header-section-number">8.3</span> Outline groups and bundle the
 hairball <span class="level">Intermediate</span></h2>
 <div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;lesmis.gdf&quot;</span>)</span>

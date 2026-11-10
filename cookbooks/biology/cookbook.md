@@ -25,7 +25,7 @@ are in the cookbooks' `data` folder:
 | `yeast-modules.gdf` | 134 budding-yeast genes from seven well-known complexes and pathways (`module`), with the 1,320 interactions STRING scores at 0.7 or more. Edge `score` is STRING's combined confidence, and `experiments`, `databases`, `textmining` and `coexpression` are the evidence behind it. From string-db.org, CC BY 4.0. |
 | `yeast-go-slim.csv` | Gene Ontology slim terms for those genes (gene, aspect, term), from the Saccharomyces Genome Database, CC BY 4.0. |
 | `pheromone-pathway.csv` | A simplified, directed and signed map of the yeast mating-pheromone pathway, drawn from textbook accounts: who `activates` or `inhibits` whom. For teaching, not a curated resource. |
-| `pheromone-expression-SIMULATED.csv` | **Simulated** log₂ fold changes at 15, 30 and 60 minutes after pheromone, for the 134 genes. They are shaped like the known response (mating genes up, G1 cyclins down) but invented: use them to learn the recipes, never as results. |
+| `pheromone-expression-SIMULATED.csv` | **Simulated** log2 fold changes at 15, 30 and 60 minutes after pheromone, for the 134 genes. They are shaped like the known response (mating genes up, G1 cyclins down) but invented: use them to learn the recipes, never as results. |
 
 # Getting the data in
 
@@ -144,7 +144,8 @@ group does.
 ```python
 makeFromGDF("yeast-modules.gdf")
 leidenClusters()
-go = readSets("yeast-go-slim.csv", item="gene", set="term", where={"aspect": "process"})
+go = readSets("yeast-go-slim.csv", item="gene", set="term",
+              where={"aspect": "process"})
 r = enrichment(leiden_class == 0, go, top=5)
 ```
 
@@ -163,7 +164,7 @@ more of its genes than chance. For each term it reports:
 | `q` | the false discovery rate over all terms tested (Benjamini–Hochberg) |
 
 The largest community has 28 of its 31 genes in "protein catabolic process"
-(q ≈ 10⁻¹⁵): it's the proteasome. `r` holds every row, and
+(q ≈ 2e-15): it's the proteasome. `r` holds every row, and
 `r[0]["members"]` is a set of the genes, so `r[0]["members"].color = red`
 shows them.
 
@@ -172,7 +173,8 @@ shows them.
 ```python
 makeFromGDF("yeast-modules.gdf")
 leidenClusters()
-go = readSets("yeast-go-slim.csv", item="gene", set="term", where={"aspect": "process"})
+go = readSets("yeast-go-slim.csv", item="gene", set="term",
+              where={"aspect": "process"})
 for grp in groupBy(leiden_class):
     best = enrichment(grp, go, show=False)[0]
     print(grp[0].leiden_class, len(grp), best["set"], "%.0e" % best["q"])
@@ -241,7 +243,7 @@ for cyc in sorted(nx.simple_cycles(G), key=len)[:6]:
 **How it works.** `toNetworkX()` hands the graph to networkx, whose
 `simple_cycles` lists every cycle. A loop's sign is the product of its
 edges' signs, so an odd number of inhibitions makes it negative. The
-shortest loop, FUS3 → STE12 → MSG5 ⊣ FUS3, is negative: the response
+shortest loop, FUS3 → STE12 → MSG5 -| FUS3, is negative: the response
 switches on a phosphatase that turns the kinase off. The loop through the
 receptor (STE12 → STE2) is positive: responding cells make more receptor.
 
@@ -320,7 +322,8 @@ forceAtlas2Layout()
 sizeBy(betweenness, 6, 40)
 bridging = interEdges(module)
 bridging.color = red
-sorted(set(n.name for e in bridging for n in (e.node1, e.node2) if n.module == "pheromone response"))
+ends = [n for e in bridging for n in (e.node1, e.node2)]
+sorted(set(n.name for n in ends if n.module == "pheromone response"))
 ```
 
 The 28 edges between the two modules touch ten pheromone genes, but
@@ -333,7 +336,7 @@ makeFromCSV("pheromone-pathway.csv")
 [n.name for n in shortestPath(STE2, CDC28) if n in g.nodes]
 ```
 
-Following the arrows, the route is STE2 → STE4 → STE5 → FUS3 → FAR1 ⊣
+Following the arrows, the route is STE2 → STE4 → STE5 → FUS3 → FAR1 -|
 CDC28: receptor, G-protein, scaffold, MAP kinase, then the CDK inhibitor.
 
 ## Case study: from a hit list to modules [Advanced]{.level}
@@ -341,7 +344,8 @@ CDC28: receptor, G-protein, scaffold, MAP kinase, then the CDK inhibitor.
 A screen gives you genes. With a network connection, the full workflow is:
 
 ```{.python .norun}
-makeFromSTRING("RPN11 RPT5 PRE1 CDC28 CLN2 FAR1 FUS3 STE12 RPO21 MSH2", species=4932, add=20)
+hits = "RPN11 RPT5 PRE1 CDC28 CLN2 FAR1 FUS3 STE12 RPO21 MSH2"
+makeFromSTRING(hits, species=4932, add=20)
 leidenClusters()
 ```
 
@@ -352,10 +356,11 @@ makeFromGDF("yeast-modules.gdf")
 subgraph(g.nodes, "physical")
 remove(experiments <= 0.5)
 leidenClusters()
-go = readSets("yeast-go-slim.csv", item="gene", set="term", where={"aspect": "process"})
+go = readSets("yeast-go-slim.csv", item="gene", set="term",
+              where={"aspect": "process"})
 for grp in groupBy(leiden_class)[:5]:
     best = enrichment(grp, go, show=False)[0]
-    print(len(grp), best["set"], "q=%.0e" % best["q"], sorted(n.name for n in grp)[:4])
+    print(len(grp), best["set"], "q=%.0e" % best["q"])
 ```
 
 `subgraph(g.nodes, "physical")` copies the network into a graph of its
