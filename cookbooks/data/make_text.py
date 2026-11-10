@@ -117,8 +117,73 @@ def papers():
     print("  vis-paper-authors.csv, vis-paper-keywords.csv")
 
 
+def institutions():
+    """vis-institutions.gdf: the institutions of the papers' authors (OpenAlex
+    geo), linked when they co-author a paper; `firstyear` is their first paper
+    in the set, `papers` how many."""
+    import csv as _csv
+    from guess import Session
+    ids = [r["Id"] for r in _csv.DictReader(open(HERE / "vis-papers-nodes.csv"))]
+    years = {r["Id"]: int(r["year"] or 0) for r in _csv.DictReader(open(HERE / "vis-papers-nodes.csv"))}
+    paper_inst = {}
+    for k in range(0, len(ids), 50):
+        q = urllib.parse.urlencode({"filter": "openalex:" + "|".join(ids[k:k + 50]),
+                                    "select": "id,authorships", "per-page": 50})
+        for w in json.loads(get(f"https://api.openalex.org/works?{q}"))["results"]:
+            insts = {i["id"].rsplit("/", 1)[-1] for a in (w.get("authorships") or [])
+                     for i in (a.get("institutions") or []) if i.get("id")}
+            paper_inst[short(w["id"])] = insts
+    all_inst = sorted({i for v in paper_inst.values() for i in v})
+    geo = {}
+    for k in range(0, len(all_inst), 50):
+        q = urllib.parse.urlencode({"filter": "openalex:" + "|".join(all_inst[k:k + 50]),
+                                    "select": "id,display_name,geo,country_code,type", "per-page": 50})
+        for r in json.loads(get(f"https://api.openalex.org/institutions?{q}"))["results"]:
+            gg = r.get("geo") or {}
+            if gg.get("latitude") is not None:
+                geo[r["id"].rsplit("/", 1)[-1]] = (r["display_name"], gg["latitude"], gg["longitude"],
+                                                   gg.get("country") or r.get("country_code") or "", r.get("type") or "")
+    s = Session(lambda m: print(m.get("text", "")) if m.get("type") == "error" else None)
+    g = s.graph
+    s.run("addNodeField('institution', VARCHAR, None); addNodeField('country', VARCHAR, None); "
+          "addNodeField('itype', VARCHAR, None); addNodeField('latitude', DOUBLE, None); "
+          "addNodeField('longitude', DOUBLE, None); addNodeField('firstyear', INTEGER, 0); "
+          "addNodeField('papers', INTEGER, 0)")
+    if "weight" not in g.edge_schema:
+        g.addEdgeField("weight", "DOUBLE", 1.0)
+    g.addEdgeField("firstyear", "INTEGER", 0)
+    stats = {}
+    for p, insts in paper_inst.items():
+        for i in insts:
+            if i in geo:
+                st = stats.setdefault(i, [0, 9999])
+                st[0] += 1
+                st[1] = min(st[1], years.get(p, 9999))
+    for i, (papers, first) in stats.items():
+        name, lat, lon, country, itype = geo[i]
+        n = g.addNode(i)
+        n.label, n.institution, n.country, n.itype = name[:60], name, country, itype
+        n.latitude, n.longitude, n.firstyear, n.papers = lat, lon, first, papers
+    pairs = {}
+    for p, insts in paper_inst.items():
+        insts = sorted(i for i in insts if i in stats)
+        for a in range(len(insts)):
+            for b in range(a + 1, len(insts)):
+                k = (insts[a], insts[b])
+                w = pairs.setdefault(k, [0, 9999])
+                w[0] += 1
+                w[1] = min(w[1], years.get(p, 9999))
+    for (a, b), (w, y) in pairs.items():
+        g.addUndirectedEdge(a, b, weight=float(w), firstyear=y)
+    s.run("geoLayout(map=None)")
+    assert s.run(f"exportGDF({str(HERE / 'vis-institutions.gdf')!r})")
+    print(f"  vis-institutions.gdf: {len(g.nodes)} institutions, {len(g.edges)} co-authorship links")
+
+
 if __name__ == "__main__":
-    if "papers" not in sys.argv[1:]:
+    if "holmes" in sys.argv[1:] or not sys.argv[1:]:
         holmes()
-    if "holmes" not in sys.argv[1:]:
+    if "papers" in sys.argv[1:] or not sys.argv[1:]:
         papers()
+    if "institutions" in sys.argv[1:] or not sys.argv[1:]:
+        institutions()

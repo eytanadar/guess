@@ -495,3 +495,76 @@ important work would cross department lines. Here it barely moves (0.77
 to 0.76): heavy and light ties follow the chart alike. The exceptions are
 the brokers (*Find the brokers between groups*): the few people whose
 heavy ties cross departments.
+
+# Capstone
+
+## Capstone: finding the brokers in an organisation [Advanced]{.level}
+
+**The problem.** An organisational consultant wants to find the people
+who connect departments, and to understand each one's position. Who are
+they? Which departments do they bridge? How redundant are their contacts?
+This recipe builds a broker finder on the sample organisation:
+
+- people are coloured by department and sized by how many departments
+  their contacts span;
+- a slider sets the minimum span to count as a broker, and the others fade;
+- a drop-down focuses on one department and its outside ties;
+- a click on a person shows their brokerage profile and highlights their
+  ego network;
+- a chart shows how constraint is distributed.
+
+```python
+makeFromGDF("sample.gdf")
+forceAtlas2Layout()
+colorize(dept)
+addNodeField("span", INTEGER, 0)
+for n in g.nodes: n.span = len(set(m.dept for m in n.getNeighbors()) - {n.dept})
+sizeBy(span, 4, 26)
+plotHistogram(constraint)
+
+def brokers(v):
+    g.nodes.labelvisible = false
+    picked = (span >= int(v))
+    g.nodes.color = "215,215,215"
+    colorize(dept)
+    (span < int(v)).color = "225,225,225"
+    picked.labelvisible = true
+    summary.text = f"{len(picked)} people reach {int(v)} or more other departments"
+
+def focus(d):
+    team = (dept == d)
+    contacts = [m for n in team for m in n.getNeighbors()]
+    showOnly(list(team) + contacts)
+    summary.text = f"{d}: {len(team)} people, {len(interEdges(dept) & (team <-> g.nodes))} ties outside"
+
+def profile(n):
+    reached = sorted(set(m.dept for m in n.getNeighbors()) - {n.dept})
+    person.text = (f"{n.name} ({n.dept}): {n.degree} contacts in {len(reached)} other departments; "
+                   f"effective size {n.effsize:.1f}, constraint {n.constraint:.2f}")
+    center(egoNetwork(n))
+
+summary, person = Label(""), Label("click a person")
+ui.dock(Panel("Brokers", Slider(0, 6, 2, label="other departments reached", onChange=brokers),
+              Dropdown(sorted(dept.distinct), label="department", onChange=focus),
+              Button("Everyone", onClick=lambda: (showAll(), brokers(2))), summary, person, position="bottom"))
+graphevents.clickNode = profile
+brokers(2)
+center(giantComponent())
+```
+
+![A broker finder: people sized by the number of other departments they reach](img/app-sna.png)
+
+**How it works.**
+
+- **The measure.** `span` counts, for each person, the departments their
+  contacts belong to beyond their own: the raw material of brokerage (the
+  brokerage recipe).
+- **The slider.** It recolours and relabels so that only people above
+  the threshold stand out. It doesn't hide anyone, so the brokers stay in
+  context.
+- **The drop-down.** It shows one department and everyone its members are
+  tied to, with a count of the department's ties outside.
+- **The click.** It reports the person's Burt measures, `effsize` and
+  `constraint` (the ego-network recipe), and zooms to their ego network.
+- **The chart.** `plotHistogram(constraint)` shows the distribution in a
+  panel, so you can see where a given person falls.

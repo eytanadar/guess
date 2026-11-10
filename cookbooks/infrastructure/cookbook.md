@@ -322,3 +322,80 @@ between Europe, Africa and Asia, and Toronto, which join continents with
 comparatively few routes. A planner asking "which airports matter most?"
 needs both lists: the first for traffic, the second for keeping regions
 connected at all.
+
+# Capstone
+
+## Capstone: an airport disruption simulator [Advanced]{.level}
+
+**The problem.** An operations planner wants to rehearse disruptions.
+Close an airport (weather, a strike, an accident) and see who loses
+service. Close the top few by some measure and see how fast the system
+fragments. This recipe builds a simulator on the US network:
+
+- the network on a map, airports sized by routes;
+- a click closes an airport, and the airports cut off from the main
+  network turn red;
+- a drop-down and a slider close the top *k* airports by routes or by
+  betweenness;
+- a reset button reopens everything;
+- the robustness curves sit beside the map for reference.
+
+```python
+makeFromGDF("us-airports.gdf")
+geoLayout(projection="albers")
+sizeBy(degree, 2, 22)
+g.edges.color = "130,130,130,35"
+_ = robustness(["random", "degree", "betweenness"])
+ss("open")
+state = {"closed": []}
+
+def update():
+    recompute()
+    main = giantComponent()
+    g.nodes.color = "70,110,180"
+    stranded = [n for n in g.nodes if n not in main]
+    for n in stranded: n.color = red
+    status.text = f"closed {len(state['closed'])}: {', '.join(state['closed'][:8])}; {len(stranded)} airports cut off"
+    StatusBar.setStatus(status.text)
+
+def close(n):
+    state["closed"].append(n.iata)
+    remove(n)
+    update()
+
+def reopen():
+    ls("open")
+    state["closed"] = []
+    update()
+
+def close_top(measure, k):
+    reopen()
+    ranked = sortBy(degree if measure == "routes" else betweenness)[-int(k):]
+    for n in ranked:
+        state["closed"].append(n.iata)
+    remove(ranked)
+    update()
+
+pick = Dropdown(["routes", "betweenness"], label="close the top airports by")
+count = Slider(0, 20, 3, label="how many", onChange=lambda v: close_top(pick.value or "routes", v))
+status = Label("click an airport to close it")
+ui.dock(Panel("Disruption", pick, count, Button("Reopen all", onClick=reopen), status, position="bottom"))
+graphevents.clickNode = close
+update()
+center()
+```
+
+![The disruption simulator: closing airports and seeing who is cut off](img/app-infrastructure.png)
+
+**How it works.**
+
+- **Saving the network.** `ss("open")` saves the full network once.
+  `reopen()` returns to it with `ls`.
+- **Closing airports.** A click removes that airport. The slider ranks
+  airports by routes (`degree`) or `betweenness`, and removes the top *k*.
+- **Who's cut off.** After each change, `update()` recomputes the fields
+  (the hub-closure recipe), finds the largest connected piece, and
+  colours everyone outside it red. With the slider on betweenness, three
+  closures are enough to strand most of Alaska.
+- **The chart.** The robustness chart beside the map is the same analysis
+  as the failures-versus-attacks recipe, for every *k* at once.

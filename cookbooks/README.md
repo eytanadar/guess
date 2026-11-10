@@ -12,10 +12,12 @@ The plan, the order of volumes and the features they need are in
 | `text/` | GUESS for Text, Knowledge and Citation Networks | written |
 | `infrastructure/` | GUESS for Infrastructure and Transportation | written |
 | `software/` | GUESS for Software and Systems | written |
+| `investigations/` | GUESS for Investigations | written |
+| `ecology/` | GUESS for Ecology | written |
 
-Each book is one `cookbook.md`. A recipe is a `##` section. Its
+Each book is one `cookbook.md` and ends with a capstone recipe: a small visual-analytics app (panels, sliders, drop-downs, click and right-click handlers) for a narrow problem in its field. A recipe is a `##` section. Its
 ` ```python ` blocks are run by the checker, and an image written as
-`![caption](img/name.png)` is rendered from the blocks before it.
+`![caption](img/name.png)` is rendered from the blocks before it (`img/app-name.png`: the whole window, for capstones).
 
 ```sh
 cd py && .venv/bin/python ../cookbooks/tools/check_recipes.py    # run every recipe (all must pass)

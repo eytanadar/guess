@@ -624,3 +624,85 @@ history()
 view) to one file that `makeFromSession` (or *File → Open*) restores.
 `history()` lists the commands you ran, which is your method: save it as a
 `.py` file and `execfile` replays it on new data.
+
+# Capstone
+
+## Capstone: an explorer for any network [Advanced]{.level}
+
+**The problem.** You've just been handed a network file and want a quick,
+reusable way to look at it from every angle without typing a command for
+each view. This recipe builds a small explorer that works on any graph:
+
+- drop-downs to colour by any field and size by any numeric field;
+- a slider that hides weakly connected nodes;
+- buttons to find communities, lay out again and reset;
+- a click shows everything known about a node, and a right-click focuses
+  on its neighbourhood;
+- the legend and status bar keep track of what's shown.
+
+```python
+makeFromGDF("sample.gdf")
+fields = [f for f in getNodeSchema() if not f.builtin]          # the data's own fields
+categories = [f.name for f in fields if len(f.distinct) <= 30]
+numbers = [f.name for f in fields if all(isinstance(v, (int, float)) for v in f.values()) and len(f.distinct) > 1]
+numbers = numbers + ["degree", "betweenness", "pagerank"]
+
+def colour_by(name):
+    fld = getNodeSchema()[[f.name for f in getNodeSchema()].index(name)]
+    if name in numbers and name not in categories:
+        colorBy(fld, lightgray, red)
+    else:
+        colorize(fld)
+    legendFor(fld)
+    StatusBar.setStatus(f"colour: {name}")
+
+def size_by(name):
+    sizeBy(getNodeSchema()[[f.name for f in getNodeSchema()].index(name)], 4, 30)
+
+def min_degree(v):
+    showOnly(degree >= int(v))
+    shown.text = f"{len(degree >= int(v))} of {len(g.nodes)} nodes with degree >= {int(v)}"
+
+def details(n):
+    vals = ", ".join(f"{f.name}={getattr(n, f.name)}" for f in fields[:8])
+    about.text = f"{n.name}: degree {n.degree}; {vals}"
+
+def communities():
+    louvainClusters()
+    colour_by("modularity_class")
+
+shown, about = Label(""), Label("click a node")
+panel = Panel("Explore",
+              Dropdown(categories + [n for n in numbers if n not in categories], label="colour", onChange=colour_by),
+              Dropdown(numbers, label="size", onChange=size_by),
+              Slider(0, 10, 0, label="minimum degree", onChange=min_degree),
+              Button("Communities", onClick=communities),
+              Button("Lay out", onClick=lambda: forceAtlas2Layout()),
+              Button("Show all", onClick=lambda: (showAll(), min_degree(0))),
+              shown, about, position="bottom")
+ui.dock(panel)
+graphevents.clickNode = details
+item = NodeEditorPopup.addItem("Focus on neighbourhood")
+item.menuEvent = lambda n: showOnly(egoNetwork(n, 2))
+min_degree(0)
+colour_by(max(categories, key=lambda c: len(getNodeSchema()[[f.name for f in getNodeSchema()].index(c)].distinct)) if categories else "degree")
+size_by("degree")
+center()
+```
+
+![An explorer for any network, here the sample organisation](img/app-core.png)
+
+**How it works.**
+
+- **Reading the fields.** `getNodeSchema()` lists the graph's fields, and
+  `builtin` marks GUESS's own (position, colour, visibility). The recipe
+  sorts the data's fields into categories (few distinct values) and
+  numbers, adds three computed measures, and offers them in two
+  `Dropdown`s. Choosing one calls `colorize` or
+  `colorBy` (with a live legend), or `sizeBy`.
+- **Filtering.** The `Slider` calls `showOnly(degree >= v)`, a query
+  built from its value.
+- **The rest.** The buttons wrap commands from this book. `graphevents`
+  and `NodeEditorPopup` add click and right-click behaviour. Because
+  nothing in it names a field of the sample data, the explorer works
+  unchanged on any file: replace the first line.

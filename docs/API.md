@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (72)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (81)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -169,6 +169,37 @@ it): fields, positions, colours and sizes. Offered as a download.
 
 Write the graph as GraphML (offered as a download in the browser).
 
+### `extinctions(orders=('random', 'degree'), trials=10, seed=0, show=True)`
+
+extinctions() simulates species loss in a food web: species are
+removed one at a time ("primary" extinctions) and any species left
+with nothing to eat dies out too ("secondary" extinctions; species
+that eat nothing in the web, the basal ones, never starve). orders:
+"random" (averaged over `trials`), "degree" (most connected first),
+"least" (least connected first), "basal" (producers first) or a node
+field (highest first). Plots the share of species surviving against
+the share removed, and prints R50, the share of primary removals
+that brings total losses to half the species (higher = more robust).
+The graph isn't changed. Returns {order: [(removed, surviving)...]}.
+
+### `findCycles(maxLength=5, among=None, limit=1000)`
+
+findCycles(maxLength=5) finds directed cycles (A -> B -> ... -> A)
+of up to maxLength nodes, e.g. money sent round a ring of accounts
+back to where it started. among=nodes restricts the search. Each
+cycle is a set of its nodes and edges (shortest first); at most
+`limit` are returned. Undirected edges count both ways.
+
+### `findDuplicates(field=None, threshold=0.85, among=None, top=50, show=True)`
+
+findDuplicates(name) lists pairs of nodes whose values of a text
+field look like the same entity: compared after normalising (case,
+accents, punctuation, word order, company suffixes and titles like
+Ltd, Inc, Mr), scored 0..1 by string similarity, best first, at least
+`threshold`. among=nodes restricts the search (e.g. one kind of
+entity). Default field: label. Returns (node, node, score) for review
+and mergeNodes; it never merges anything itself.
+
 ### `findEdges(seq)`
 
 The edges among the members of a (possibly mixed) set.
@@ -232,6 +263,16 @@ Like groupBy, with the groups ordered by value.
 
 groupBy(field) or groupBy(seq, field): groups of elements sharing a value.
 
+### `groupStats(field, top=12, show=True)`
+
+groupStats(modularity_class) profiles each group of nodes sharing a
+value of a field: size, internal edges, density (internal edges /
+possible pairs), boundary edges (to the rest), conductance (boundary
+/ all edges touching the group: low = well separated), and the
+group's most connected member. Prints the largest `top` groups and
+returns a row per group, largest first; a dense, isolated group of
+entities that should be unrelated is a classic red flag.
+
 ### `help(obj=None)`
 
 help() opens the help browser (searchable commands and examples; also
@@ -292,6 +333,18 @@ Replace the current graph with the contents of a GDF file.
 
 Replace the current graph with a GEXF file (Gephi's format): attributes,
 colours, positions, sizes, edge weights and thickness.
+
+### `makeFromGloBI(taxa, interaction='eats', limit=500, server='https://api.globalbioticinteractions.org')`
+
+makeFromGloBI(["Vulpes vulpes", "Lynx lynx"]) opens observed species
+interactions from the Global Biotic Interactions database (GloBI):
+for each taxon, what it `interaction`s (eats, preysOn, pollinates,
+parasiteOf, visitsFlowersOf, ...), up to `limit` records each.
+Feeding links run from food to eater, other kinds from the taxon to
+its partner. Edges get `weight` (records) and `interaction`; nodes
+`taxon` (the full name) and `query` (true for the taxa you asked
+for). GloBI aggregates many studies with their own licences: cite
+GloBI and the sources you use.
 
 ### `makeFromGML(filename)`
 
@@ -363,6 +416,37 @@ to the column's name, ready for bipartiteLayout(kind) or
 project(kind, "author"). a= and b= name the columns (default: the
 first two); weight= names a numeric column to use as edge weight.
 Repeated rows add to the weight.
+
+### `makeNicheModel(species=30, connectance=0.15, seed=0)`
+
+makeNicheModel(species, connectance) builds a food web with the niche
+model (Williams and Martinez 2000), which reproduces the structure of
+real food webs well: each species has a niche value (0..1) and eats
+every species whose niche falls in a range below its own. connectance
+(links / species^2) is typically 0.05-0.3. Edges run from food to
+eater; nodes get `niche` and `range`. Species left without any link
+are dropped. seed= gives a different web.
+
+### `mergeNodes(*nodes, name=None)`
+
+mergeNodes(a, b, ...) merges nodes that are the same entity into
+the first (or name=...): every edge of the others moves to it
+(parallel edges are combined, adding their weights; edges between the
+merged nodes disappear), empty fields of the kept node are filled
+from the others, `aliases` records the other names and labels, and
+`merged` counts the nodes it stands for. One undo step. Also takes a
+set or a list of pairs from findDuplicates (each pair merged).
+
+### `nestedness(kindField, rows=None)`
+
+nestedness(kind) measures how nested a two-mode network is (NODF,
+Almeida-Neto et al. 2008; 0 = not at all, 100 = perfectly): in a
+nested plant-pollinator network, the specialists interact with
+subsets of the species the generalists interact with. kind is the
+field saying which side each node is on; rows= names one side
+(default: the first value). Returns (NODF, NODF of the rows, NODF of
+the columns). Compare with a randomised network (rewire()) to judge
+whether a value is high.
 
 ### `ninverse(seq)`
 
@@ -446,6 +530,14 @@ Nodes around a circle ordered by field; radius shrinks with outdegree.
 ### `sortBy(*d)`
 
 sortBy(field) or sortBy(seq, field).
+
+### `trophicLevels()`
+
+trophicLevels() computes each species' prey-averaged trophic level
+(`trophic`: 1 for species that eat nothing in the web, otherwise 1 + the
+mean level of what it eats), `omnivory` (the spread of its food's
+levels: 0 = eats on one level) and `role` (basal: eats nothing here;
+top: nothing eats it; else intermediate). Prints a summary.
 
 ## Undo, redo, history and logging
 
@@ -947,13 +1039,16 @@ rare ones counting more), "jaccard", "common" (count of shared
 neighbours) or "resource" (resource allocation). Returns the `top`
 pairs as (node, node, score), best first.
 
-### `rewire(times=None, name=None, seed=0)`
+### `rewire(times=None, name=None, seed=0, keep=None)`
 
 rewire() makes a randomised copy of the graph in a new tab keeping
 every node's degree (repeated swaps of edge ends, 10 x edges by
 default): the null model for "is this structure more than chance?".
 Compare e.g. transitivity() or modularity here and there. Edge weights
-travel with the swapped ends.
+travel with the swapped ends. keep=field only swaps ends that share
+that field's value, so the edges between each pair of values stay
+the same in number: rewire(keep=kind) keeps a two-mode network
+two-mode (plants still only link to pollinators).
 
 ### `similarTo(n, method='jaccard', top=10)`
 

@@ -844,15 +844,22 @@ def install(session):
         print(f"removed {len(removed)} edges ({len(loops_out)} self-loops)")
 
     @cmd
-    def rewire(times=None, name=None, seed=0):
+    def rewire(times=None, name=None, seed=0, keep=None):
         """rewire() makes a randomised copy of the graph in a new tab keeping
         every node's degree (repeated swaps of edge ends, 10 x edges by
         default): the null model for "is this structure more than chance?".
         Compare e.g. transitivity() or modularity here and there. Edge weights
-        travel with the swapped ends."""
+        travel with the swapped ends. keep=field only swaps ends that share
+        that field's value, so the edges between each pair of values stay
+        the same in number: rewire(keep=kind) keeps a two-mode network
+        two-mode (plants still only link to pollinators)."""
         gr = g()
+        keep_name = None if keep is None else (keep.name if hasattr(keep, "name") else str(keep))
+        if keep_name is not None and keep_name not in gr.node_schema:
+            raise GuessError(f"keep= needs a node field (no node field {keep_name!r})")
         session.ns["subgraph"](list(gr._nodes_list()), name or "rewired")
         gr = g()
+        keep_f = None if keep_name is None else gr.node_schema[keep_name]
         rnd = random.Random(seed)
         edges = [e for e in gr._edges_list() if e._n1 is not e._n2]
         if len(edges) < 2:
@@ -870,6 +877,8 @@ def install(session):
                 c, d = d, c
             if len({a._id, b._id, c._id, d._id}) < 4:
                 continue
+            if keep_f is not None and keep_f.get(b) != keep_f.get(d):
+                continue       # the two ends swapped must be of the same kind
             k1, k2 = frozenset((a._id, d._id)), frozenset((c._id, b._id))
             if k1 in present or k2 in present:
                 continue

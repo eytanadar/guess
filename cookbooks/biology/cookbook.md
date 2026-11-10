@@ -377,3 +377,78 @@ some modules to dissolve.
 count the nodes before and after, and treat those that drop out as "no
 physical evidence", not "no interaction".
 :::
+
+# Capstone
+
+## Capstone: a module browser for a time course [Advanced]{.level}
+
+**The problem.** A lab has a time course after a treatment and wants to
+browse it through the interaction network. Which modules respond? When?
+Which genes lead? This recipe builds a module browser:
+
+- modules are found and named by their top GO term, and a drop-down picks one;
+- a slider steps through the time points, recolouring every gene;
+- a checkbox switches between all evidence and experimental evidence only;
+- a click on a gene shows its description and its values at every time point;
+- a legend shows the diverging scale.
+
+```python
+makeFromGDF("yeast-modules.gdf")
+makeFromCSV("pheromone-expression-SIMULATED.csv")
+forceAtlas2Layout()
+_ = leidenClusters()
+go = readSets("yeast-go-slim.csv", item="gene", set="term", where={"aspect": "process"})
+names = {}
+for grp in groupBy(leiden_class):
+    names[enrichment(grp, go, show=False)[0]["set"]] = grp[0].leiden_class
+times = [lfc15, lfc30, lfc60]
+state = {"t": 2}
+
+def recolour(i):
+    state["t"] = int(i)
+    colorBy(times[state["t"]], blue, red, center=0)
+    legendFor(times[state["t"]], title=f"log2 change at {[15, 30, 60][state['t']]} min")
+
+def pick_module(term):
+    members = (leiden_class == names[term])
+    g.nodes.labelvisible = false
+    members.labelvisible = true
+    center(members)
+    up = len(members & (times[state["t"]] > 1))
+    info.text = f"{term}: {len(members)} genes, {up} up more than 2-fold"
+
+def evidence(only):
+    if only:
+        showOnly(experiments > 0.5)
+    else:
+        showAll()
+
+def gene(n):
+    values = ", ".join(f"{t}: {getattr(n, f.name):+.1f}" for t, f in zip((15, 30, 60), times))
+    info.text = f"{n.name} ({n.module}): {n.description}; {values}"
+
+info = Label("pick a module, or click a gene")
+ui.dock(Panel("Modules", Dropdown(sorted(names), label="module", onChange=pick_module),
+              Slider(0, 2, 2, label="time point (15, 30, 60 min)", onChange=recolour),
+              Checkbox("experimental evidence only", onChange=evidence), info, position="bottom"))
+graphevents.clickNode = gene
+recolour(2)
+center()
+```
+
+![A module browser: simulated expression at 60 minutes on the yeast network](img/app-biology.png)
+
+**How it works.**
+
+- **Naming the modules.** The modules come from `leidenClusters()`, and
+  each is named by its top enriched term (the module-naming recipe), so the
+  drop-down lists biology ("signal transduction", "protein catabolic
+  process"), not numbers.
+- **The slider.** It indexes the three expression fields. `colorBy(...,
+  center=0)` and `legendFor` redraw the diverging scale for each time point.
+- **The checkbox.** It toggles `showOnly(experiments > 0.5)`, the
+  physical-evidence view from the second case study.
+- **The click.** It reads a gene's fields into the label.
+
+As before, the expression values are **simulated**: substitute your own
+table, with an `Id` column of gene names, in the second line.

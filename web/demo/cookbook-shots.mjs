@@ -1,7 +1,8 @@
 // Figures for the cookbooks. A recipe's figure is written in its Markdown as
 // ![caption](img/NAME.png); this runs the recipe's python blocks that come
 // before the image in the real app (fresh browser, cookbooks/data uploaded)
-// and saves the graph area as cookbooks/<volume>/img/NAME.png.
+// and saves the graph area as cookbooks/<volume>/img/NAME.png (app-NAME: the
+// whole window, for capstone apps with their panels).
 //
 //   cd web && npm run cookbook-shots                 # every volume
 //   npm run cookbook-shots -- sna                    # one volume
@@ -86,11 +87,20 @@ try {
     for (const f of data) {
       await page.evaluate(([name, text]) => window.__guess.writeFile(name, text), [basename(f), readFileSync(f, "utf8")]);
     }
+    // igraph and Graphviz load in the background after start-up: wait for both
+    for (let i = 0; i < 60; i++) {
+      await run("from guess import igr as __i, gv as __g\nprint('READY' if __i.module() is not None and __g.runner() is not None else 'WAIT')", 100);
+      if ((await page.locator(".cell").last().innerText()).includes("READY")) break;
+      await sleep(1000);
+    }
+    await page.keyboard.press("Control+l");    // clear the console, so figures start clean
+    await sleep(200);
     try {
       if (!(await run(f.code))) console.error(`  ${f.vol}:${f.name}: the recipe reported an error`);
-      const b = await page.locator("#graph").boundingBox();
+      // app-* figures (capstones) show the whole window, panels and all
       const png = join(tmp, `${f.name}.png`);
-      await page.screenshot({ path: png, clip: b });
+      if (f.name.startsWith("app-")) await page.screenshot({ path: png });
+      else await page.screenshot({ path: png, clip: await page.locator("#graph").boundingBox() });
       const dir = join(books, f.vol, "img");
       mkdirSync(dir, { recursive: true });
       execFileSync("ffmpeg", ["-v", "error", "-y", "-i", png, "-vf", "scale='min(1400,iw)':-1", join(dir, `${f.name}.png`)]);

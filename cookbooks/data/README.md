@@ -47,3 +47,19 @@ Map outlines drawn by `geoLayout` (in `py/guess/mapdata.py`) are Natural Earth 1
 | `guess-imports.gdf` | made by `makeFromImports` from GUESS's own `py/guess` | a snapshot; the live package will differ |
 
 Regenerate with `make_software.py`.
+
+## Text: history and geography
+
+| file | source | notes |
+|---|---|---|
+| `vis-institutions.gdf` | OpenAlex, CC0 | the institutions of the `vis-papers` authors, with OpenAlex coordinates; `firstyear`, `papers`; edges are co-authorships, dated by their first joint paper. Made by `make_text.py institutions`. |
+
+## Investigations
+
+| file | source | notes |
+|---|---|---|
+| `claims-SIMULATED.gdf`, `transfers-SIMULATED.gdf` | **simulated** for the cookbooks by `make_investigations.py` (seeded) | invented people, companies and accounts. Planted patterns are recorded in `ring` and `pattern` so recipes can be checked. Never use as data. |
+
+## Ecology
+
+No data files: the recipes generate food webs with `makeNicheModel` (the niche model of Williams and Martinez, 2000) and fetch observed interactions with `makeFromGloBI` (Global Biotic Interactions, globalbioticinteractions.org; cite GloBI and the original sources).

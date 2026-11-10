@@ -286,3 +286,77 @@ page). Colour by indegree and the foundation is plain: `model` and
 session, which installs it. That's the shape you want: new commands, like
 the ones added for these cookbooks, can be written without touching
 anything that depends on them.
+
+# Capstone
+
+## Capstone: a refactoring impact assistant [Advanced]{.level}
+
+**The problem.** A developer is about to change a module, and wants to
+know the blast radius first. What imports it, directly and indirectly?
+What does it need? Is it caught in a cycle? This recipe builds the
+assistant on GUESS's own import graph:
+
+- modules are laid out in layers;
+- a click (or a pick from a drop-down ranked by fan-in) colours everything
+  the module could break red, and everything it needs blue;
+- a label shows the counts and the module's instability;
+- a checkbox shows only the modules caught in import cycles, with the
+  deferred imports dashed;
+- a right-click opens the module's call graph.
+
+```python
+makeFromGDF("guess-imports.gdf")
+labelBy(label)
+g.nodes.labelpos = "inside"
+fitNodesToLabels()
+dotLayout()
+ranked = [n.module for n in reversed(sortBy(indegree))]
+
+def impact(n):
+    g.nodes.color = "225,225,225"
+    hurt, needs = ancestors(n), descendants(n)
+    hurt.color = "230,90,80"
+    needs.color = "110,150,220"
+    n.color = orange
+    ca, ce = n.indegree, n.outdegree
+    unstable = ce / (ca + ce) if ca + ce else 0
+    info.text = (f"{n.module}: {len(hurt)} modules could break, {len(needs)} needed; "
+                 f"imported by {ca}, imports {ce}, instability {unstable:.2f}")
+
+def by_name(name):
+    impact([n for n in g.nodes if n.module == name][0])
+
+def cycles_only(on):
+    if on:
+        tangled = [grp for grp in groupBy(strongcomponent) if len(grp) > 1]
+        showOnly([n for grp in tangled for n in grp])
+        info.text = f"{len(tangled)} import cycles; deferred imports are thin"
+        for e in g.edges: e.width = 1 if not e.toplevel else 4
+    else:
+        showAll()
+
+info = Label("click a module")
+ui.dock(Panel("Impact", Dropdown(ranked, label="module (most imported first)", onChange=by_name),
+              Checkbox("cycles only", onChange=cycles_only), info, position="bottom"))
+graphevents.clickNode = impact
+item = NodeEditorPopup.addItem("Open call graph")
+item.menuEvent = lambda n: makeFromCalls(n.module)
+impact(sortBy(indegree)[-1])
+center()
+```
+
+![The impact assistant: what a change to guess.model could break (red)](img/app-software.png)
+
+**How it works.**
+
+- **Blast radius.** `impact` combines the change-impact recipe
+  (`ancestors` for what could break, `descendants` for what's needed) with
+  Martin's instability, for whichever module is clicked or chosen.
+- **The drop-down.** It's ranked by `indegree`, so the most risky
+  modules to change come first.
+- **The cycles view.** The checkbox reuses the import-cycles recipe,
+  showing only modules in a `strongcomponent` of two or more and drawing
+  top-level imports thick and deferred ones thin.
+- **The right-click item.** It opens the module's call graph with
+  `makeFromCalls`, which reads the live source (in place of the
+  snapshot). Run `makeFromGDF("guess-imports.gdf")` again to come back.

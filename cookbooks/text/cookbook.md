@@ -24,6 +24,7 @@ are in the cookbooks' `data` folder:
 | `vis-papers-nodes.csv` | the same papers as a node table |
 | `vis-paper-authors.csv` | paper, author: one row per authorship |
 | `vis-paper-keywords.csv` | paper, keyword, score: OpenAlex's keywords for each paper |
+| `vis-institutions.gdf` | the 932 institutions of those papers' authors, located (`latitude`, `longitude`, `country`), with `papers` (how many) and `firstyear` (their first paper in the set), linked when they co-author (edge `firstyear`: their first joint paper). From OpenAlex, CC0. |
 
 # Networks from text
 
@@ -331,6 +332,66 @@ Western and recent subjects are better covered. `LIMIT` also truncates
 silently. Read the result as "what Wikidata records", and check the
 total count with a `COUNT(*)` query.
 
+# History and geography
+
+## Where was a field made, and when? [Intermediate]{.level}
+
+**You want** to see the geography of a body of work change over time:
+which places took part, and when they joined.
+
+::: ingredients
+**Ingredients:** `vis-institutions.gdf` · `geoLayout` · `showTime`
+:::
+
+```python
+makeFromGDF("vis-institutions.gdf")
+geoLayout(projection="equirectangular")
+sizeBy(papers, 3, 24)
+colorBy(firstyear, blue, red)
+legendFor(firstyear)
+g.edges.color = "120,120,120,30"
+showTime(1999, firstyear)
+```
+
+![Institutions publishing on graph drawing before 2000](img/text-geography.png)
+
+**How it works.** Each institution sits where it is (`geoLayout`), sized
+by its number of papers and coloured by the year it first appears.
+`showTime(1999, firstyear)` shows only the institutions active by 1999,
+and the edges between them. Step the year and the map fills in. *View →
+Timeline* gives a slider. In the 1980s the field is mostly American (20 of
+32 institutions). Germany, Britain, Australia and Canada join in the
+1990s, and by the 2010s France has the second-largest group. In the 2020s
+the largest group of newly active institutions is Chinese (42 of 143).
+
+**Pitfalls.** A paper set built from title searches in English, sorted by
+citations, under-counts recent work (it hasn't been cited yet) and work
+published in other languages. The off-topic atmospheric-science papers
+from *Who writes with whom?* bring their institutions too. A map makes a
+sample look like a census. Say how the sample was drawn.
+
+## Do collaborations cross borders? [Intermediate]{.level}
+
+```python
+makeFromGDF("vis-institutions.gdf")
+for d in (1990, 2000, 2010, 2020):
+    ties = [e for e in g.edges if d <= e.firstyear < d + 10]
+    abroad = [e for e in ties if e.node1.country != e.node2.country]
+    print(d, len(ties), round(len(abroad) / len(ties), 2))
+geoLayout(projection="equirectangular")
+g.edges.visible = false
+for e in g.edges: e.visible = e.node1.country != e.node2.country
+bundleEdges()
+```
+
+**How it works.** Each edge is a collaboration between two institutions,
+dated by their first joint paper. Comparing the two ends' countries
+shows how international the field's collaborations are: about half the
+ties formed in each decade from the 1990s to the 2010s join institutions
+in different countries, rising to 64% in the 2020s. The last lines show
+only the cross-border ties on the map, bundled so the transatlantic and
+transpacific corridors stand out.
+
 # Case studies
 
 ## Case study: the contest in "A Scandal in Bohemia" [Basic]{.level}
@@ -387,3 +448,78 @@ through the same fronts in the same order. One citation network and three
 recipes (communities, their names, the main path) give a defensible short
 history of a field. Check it against what its practitioners say, of
 course.
+
+# Capstone
+
+## Capstone: a literature explorer [Advanced]{.level}
+
+**The problem.** A newcomer to a field wants to explore its literature
+as a living thing: how it grew, what its fronts are, which papers
+matter, and how the main line of work runs through it. This recipe builds
+a literature explorer on the graph-drawing papers:
+
+- a year slider grows the citation network up to the chosen year;
+- a drop-down highlights one research front, named by keyword;
+- a checkbox overlays the main path;
+- a click on a paper shows its title, venue and citation count, and a
+  right-click shows everything that builds on it;
+- the legend explains the colours by front.
+
+```python
+makeFromGDF("vis-papers.gdf")
+_ = removeDisconnected()
+forceAtlas2Layout()
+_ = leidenClusters()
+kw = readSets("vis-paper-keywords.csv", item="paper", set="keyword")
+fronts = {}
+for grp in groupBy(leiden_class)[:8]:
+    fronts[enrichment(grp, kw, show=False)[0]["set"]] = grp[0].leiden_class
+colorize(leiden_class)
+mp = mainPath()
+sizeBy(indegree, 3, 28)
+
+def until(y):
+    showTime(int(y), year)
+    shown.text = f"{len(year <= int(y))} papers by {int(y)}"
+
+def front(name):
+    g.nodes.labelvisible = false
+    members = (leiden_class == fronts[name])
+    for n in sortBy(members, indegree)[-6:]: n.labelvisible = true
+    center(members)
+
+def main_path(on):
+    g.edges.width = 1
+    if on:
+        for e in mp:
+            if e in g.edges: e.width = 6
+
+def paper(n):
+    about.text = f"{n.label}: {n.title} ({n.venue or 'no venue'}); cited {n.cites} times overall"
+
+shown, about = Label(""), Label("click a paper")
+ui.dock(Panel("Literature", Slider(1980, 2024, 2024, label="year", onChange=until),
+              Dropdown(sorted(fronts), label="research front", onChange=front),
+              Checkbox("main path", onChange=main_path), shown, about, position="bottom"))
+graphevents.clickNode = paper
+item = NodeEditorPopup.addItem("Show what builds on this")
+item.menuEvent = lambda n: showOnly(ancestors(n) | [n])
+until(2024)
+center(giantComponent())
+```
+
+![A literature explorer: graph-drawing research, coloured by research front](img/app-text.png)
+
+**How it works.**
+
+- **The slider.** `showTime(t, year)` shows the papers published by year
+  `t` and the citations among them, so dragging it replays the field's
+  growth.
+- **The fronts.** They're Leiden communities named by their top keyword
+  (the research-fronts recipe), and the drop-down labels each front's
+  most cited papers.
+- **The main path.** `mainPath()` is computed once. The checkbox widens
+  its edges.
+- **The right-click item.** It uses `ancestors`: in a citation network
+  (citing → cited), the ancestors of a paper are everything that cites it,
+  directly or through others, which is its intellectual descendants.
