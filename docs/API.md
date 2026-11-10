@@ -395,11 +395,16 @@ groupsOfSize(field, min[, max]): the nodes (or edges) whose value of
 field is shared by at least min (and at most max) elements — e.g. drop
 tiny communities with showOnly(groupsOfSize(modularity_class, 5)).
 
-### `heatMap(center, near='red', far='lightgray', unreachable='white')`
+### `heatMap(center, near='#d7191c', far='#2c7bb6', unreachable='#bdbdbd', middle='#8e5fbf', spread=True)`
 
 heatMap(node) colours every node by its distance (hops, ignoring
-direction) from node — near colour at the node, fading to far — and stores
-the distance in the hops field (-1 if unreachable). Gephi's heat map tool.
+direction) from node: red at the node, through violet, to blue for the
+farthest, grey if unreachable; the distance is stored in the hops field
+(-1 if unreachable). spread=True (default) spaces the colours by how
+many nodes are at each distance, so every band is visible;
+spread=False spaces them by distance alone. near, middle, far and
+unreachable change the colours (middle=None: a straight blend). Gephi's
+heat map tool.
 
 ### `interEdges(field)`
 

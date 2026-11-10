@@ -48,3 +48,23 @@ figcaption { color: var(--muted); font-size: .9em; margin-top: .4rem; }
 nav#TOC ul { list-style: none; padding-left: 1rem; }
 nav#TOC > ul { padding-left: 0; }
 nav#TOC a { text-decoration: none; }
+
+/* code highlighting: pandoc's tango colours are for light backgrounds; the
+   code box itself (pre) already follows the theme, so pandoc's own background
+   goes, and dark mode gets colours that read on a dark box */
+div.sourceCode { background: transparent !important; }
+@media (prefers-color-scheme: dark) {
+  div.sourceCode code span.kw, div.sourceCode code span.cf { color: #c792ea; }
+  div.sourceCode code span.fu { color: #82aaff; }
+  div.sourceCode code span.dv, div.sourceCode code span.bn, div.sourceCode code span.fl,
+  div.sourceCode code span.cn, div.sourceCode code span.ot { color: #f9a77a; }
+  div.sourceCode code span.st, div.sourceCode code span.ch, div.sourceCode code span.ss,
+  div.sourceCode code span.vs { color: #b5dc8c; }
+  div.sourceCode code span.co, div.sourceCode code span.do, div.sourceCode code span.an,
+  div.sourceCode code span.cv, div.sourceCode code span.in, div.sourceCode code span.wa,
+  div.sourceCode code span.pp { color: #a3a9b3; }
+  div.sourceCode code span.op, div.sourceCode code span.sc { color: #89ddff; }
+  div.sourceCode code span.dt, div.sourceCode code span.at { color: #ffcb6b; }
+  div.sourceCode code span.va { color: #e4e6ea; }
+  div.sourceCode code span.er, div.sourceCode code span.al { color: #ff6b7a; }
+}

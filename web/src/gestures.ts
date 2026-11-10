@@ -63,7 +63,7 @@ export const GESTURE_SECTIONS: { title: string; items: Gesture[] }[] = [
       { id: "path", title: "Shortest path", how: "Choose Path, then click two nodes",
         what: "Colours a shortest path between them, with the colour beside the tools: shortestPath(a, b).color = …", img: "path" },
       { id: "heat", title: "Heat map", how: "Choose Heat, then click a node",
-        what: "Colours every node by its distance from that node (heatMap(node)); the distance is stored in the hops field.", img: "heat" },
+        what: "Colours every node by its distance from that node, red (near) through violet to blue (far), grey if unreachable (heatMap(node)); the distance is stored in the hops field.", img: "heat" },
       { id: "paint", title: "Paint", how: "Choose Paint, then click nodes · shift-click paints the neighbours too",
         what: "paint(node, colour) or paint(node, colour, 1)." },
       { id: "lens", title: "Excentric lens", how: "Choose ◎ Lens (or press L), then point at nodes · wheel resizes · Shift+wheel scrolls · click pins it",

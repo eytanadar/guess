@@ -136,6 +136,23 @@ figcaption { color: var(--muted); font-size: .9em; margin-top: .4rem; }
 nav#TOC ul { list-style: none; padding-left: 1rem; }
 nav#TOC > ul { padding-left: 0; }
 nav#TOC a { text-decoration: none; }
+
+div.sourceCode { background: transparent !important; }
+@media (prefers-color-scheme: dark) {
+div.sourceCode code span.kw, div.sourceCode code span.cf { color: #c792ea; }
+div.sourceCode code span.fu { color: #82aaff; }
+div.sourceCode code span.dv, div.sourceCode code span.bn, div.sourceCode code span.fl,
+div.sourceCode code span.cn, div.sourceCode code span.ot { color: #f9a77a; }
+div.sourceCode code span.st, div.sourceCode code span.ch, div.sourceCode code span.ss,
+div.sourceCode code span.vs { color: #b5dc8c; }
+div.sourceCode code span.co, div.sourceCode code span.do, div.sourceCode code span.an,
+div.sourceCode code span.cv, div.sourceCode code span.in, div.sourceCode code span.wa,
+div.sourceCode code span.pp { color: #a3a9b3; }
+div.sourceCode code span.op, div.sourceCode code span.sc { color: #89ddff; }
+div.sourceCode code span.dt, div.sourceCode code span.at { color: #ffcb6b; }
+div.sourceCode code span.va { color: #e4e6ea; }
+div.sourceCode code span.er, div.sourceCode code span.al { color: #ff6b7a; }
+}
 </style>
 </head>
 <body>
@@ -947,9 +964,10 @@ all.</p>
 <p>Fields know a little about themselves:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>freq.<span class="bu">min</span>, freq.<span class="bu">max</span>, freq.avg, freq.<span class="bu">sum</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>dept.distinct                  <span class="co"># every value, once each</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>sortBy(freq)[<span class="op">-</span><span class="dv">5</span>:]              <span class="co"># the five edges with the highest freq</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>groupBy(dept)                  <span class="co"># a set of sets, one per value</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>groupAndSortBy(dept)           <span class="co"># the same, largest group first</span></span></code></pre></div>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>dept.find(<span class="st">&#39;eng&#39;</span>)               <span class="co"># the nodes whose dept is &#39;eng&#39; (same as dept == &#39;eng&#39;)</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>sortBy(freq)[<span class="op">-</span><span class="dv">5</span>:]              <span class="co"># the five edges with the highest freq</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>groupBy(dept)                  <span class="co"># a set of sets, one per value</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>groupAndSortBy(dept)           <span class="co"># the same, largest group first</span></span></code></pre></div>
 <p>Some node fields aren’t stored but computed the first time you use
 them: <code>indegree</code>, <code>outdegree</code> and
 <code>totaldegree</code>, and the network statistics in section 7.3,
@@ -1972,7 +1990,8 @@ undo it, or copy it into a script.</p>
 <li><strong>Path</strong>: click two nodes to colour a shortest path
 between them.</li>
 <li><strong>Heat</strong>: click a node for a heat map of the distance
-from it.</li>
+from it: red near it, through violet, to blue for the farthest (grey:
+unreachable).</li>
 <li><strong>Paint</strong>: click nodes to paint them with the colour
 next to the tools. Shift-click paints the neighbours too.</li>
 <li><strong>◎ Lens</strong> (or press <strong>L</strong>, which switches
@@ -2802,11 +2821,14 @@ path length, clustering, transitivity, degree assortativity, reciprocity
 <p>groupsOfSize(field, min[, max]): the nodes (or edges) whose value of
 field is shared by at least min (and at most max) elements — e.g. drop
 tiny communities with showOnly(groupsOfSize(modularity_class, 5)).</p>
-<h3 id="heatmapcenter-nearred-farlightgray-unreachablewhite"><code>heatMap(center, near=&#39;red&#39;, far=&#39;lightgray&#39;, unreachable=&#39;white&#39;)</code></h3>
+<h3 id="heatmapcenter-neard7191c-far2c7bb6-unreachablebdbdbd-middle8e5fbf-spreadtrue"><code>heatMap(center, near=&#39;#d7191c&#39;, far=&#39;#2c7bb6&#39;, unreachable=&#39;#bdbdbd&#39;, middle=&#39;#8e5fbf&#39;, spread=True)</code></h3>
 <p>heatMap(node) colours every node by its distance (hops, ignoring
-direction) from node — near colour at the node, fading to far — and
-stores the distance in the hops field (-1 if unreachable). Gephi’s heat
-map tool.</p>
+direction) from node: red at the node, through violet, to blue for the
+farthest, grey if unreachable; the distance is stored in the hops field
+(-1 if unreachable). spread=True (default) spaces the colours by how
+many nodes are at each distance, so every band is visible; spread=False
+spaces them by distance alone. near, middle, far and unreachable change
+the colours (middle=None: a straight blend). Gephi’s heat map tool.</p>
 <h3 id="interedgesfield"><code>interEdges(field)</code></h3>
 <p>interEdges(field): edges joining nodes with different values of the
 field.</p>

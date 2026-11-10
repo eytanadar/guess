@@ -473,6 +473,7 @@ Fields know a little about themselves:
 ```python
 freq.min, freq.max, freq.avg, freq.sum
 dept.distinct                  # every value, once each
+dept.find('eng')               # the nodes whose dept is 'eng' (same as dept == 'eng')
 sortBy(freq)[-5:]              # the five edges with the highest freq
 groupBy(dept)                  # a set of sets, one per value
 groupAndSortBy(dept)           # the same, largest group first
@@ -1306,7 +1307,8 @@ The tools next to the menus turn clicks into commands:
 
 - **Select** (the default) is everything above.
 - **Path**: click two nodes to colour a shortest path between them.
-- **Heat**: click a node for a heat map of the distance from it.
+- **Heat**: click a node for a heat map of the distance from it: red near
+  it, through violet, to blue for the farthest (grey: unreachable).
 - **Paint**: click nodes to paint them with the colour next to the tools.
   Shift-click paints the neighbours too.
 - **◎ Lens** (or press **L**, which switches between Select and Lens): an

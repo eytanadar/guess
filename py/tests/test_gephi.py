@@ -132,7 +132,9 @@ def test_shortest_path_heat_map_paint(s):
     assert ev(s, "jane.color") == "red"
     assert s.run("heatMap(bob)")
     assert ev(s, "bob.hops") == 0 and ev(s, "jane.hops") == 1 and ev(s, "al_x.hops") == -1
-    assert ev(s, "bob.color") == "255,0,0,255"
+    assert ev(s, "bob.color") == "215,25,28,255"              # red at the centre
+    assert ev(s, "al_x.color") == "#bdbdbd"                   # grey: unreachable
+    assert s.run("heatMap(bob, near=red, far=blue, middle=None)") and ev(s, "bob.color") == "255,0,0,255"
     assert s.run("paint(al_x, blue)") and ev(s, "al_x.color") == "blue"
     assert s.run("paint(bob, green, 1)") and ev(s, "jane.color") == "green"
 
@@ -237,7 +239,7 @@ def test_csv_export_roundtrip(big, tmp_path):
     assert big.run(f"exportCSV({str(e)!r}); exportCSV({str(n)!r}, 'nodes')")
     assert big.run(f"makeFromCSV({str(e)!r}, {str(n)!r})"), big.rec.of("error")
     assert ev(big, "(len(g.nodes), len(g.edges))") == (402, 725)
-    assert ev(big, "v1.color") == color and ev(big, "v1.dept") == "dept"
+    assert ev(big, "v1.color") == color and ev(big, "v1.dept") == "dept0"
 
 
 # ---- layouts -------------------------------------------------------------------

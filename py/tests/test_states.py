@@ -40,3 +40,10 @@ def test_ranges(s):
     assert ev(s, "getRange(bob)") == "1,5-10,20"
     s.run("addNodeField('span', VARCHAR, '')\nbob.span = '2-4'")
     assert names(ev(s, "span rcontains 3")) == ["bob"]
+
+
+
+def test_field_find(s):
+    assert names(ev(s, "jobfunc.find('Manager')")) == names(ev(s, "jobfunc == 'Manager'"))
+    assert names(ev(s, "jobfunc.find('nobody')")) == []
+    assert names(ev(s, "freq.find(freq.max)")) == names(ev(s, "freq == freq.max"))

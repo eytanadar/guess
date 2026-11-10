@@ -363,6 +363,11 @@ class Field:
         from .states import field_in_state
         return field_in_state(self, state)
 
+    def find(self, value):
+        """``dept.find('eng')``: the elements whose value is 'eng' (the same
+        as ``dept == 'eng'``)."""
+        return self._query("==", value)
+
     def like(self, pattern):
         """SQL LIKE: ``%`` matches any run, ``_`` any single character."""
         rx = _like_regex(str(pattern))
