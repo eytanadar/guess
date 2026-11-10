@@ -252,6 +252,12 @@ class Field:
     def set(self, elem, value):
         if self.readonly:
             raise GuessError(f"field '{self.name}' is read-only")
+        if self.name == "labelpos" and self.kind == NODE and value is not None:
+            value = str(value).lower()
+            if value not in LABEL_POSITIONS:
+                raise GuessError(f"labelpos should be one of {', '.join(LABEL_POSITIONS)}, got {value!r}")
+        if self.name == "labelsize" and value is not None and float(value) <= 0:
+            raise GuessError("labelsize should be a positive scale (1 = normal)")
         if self.name.endswith("color") and value is not None:
             try:
                 value = colors.normalize(value)
@@ -675,7 +681,12 @@ _NODE_BUILTINS = [
     ("label", STRING, None, True),
     ("image", STRING, None, True),
     ("labelvisible", BOOL, False, True),
+    ("labelpos", STRING, "right", True),
+    ("labelsize", DOUBLE, 1.0, True),
 ]
+
+# where a node's label goes; "outside" lets GUESS pick a free side
+LABEL_POSITIONS = ("right", "left", "above", "below", "inside", "outside")
 
 _EDGE_BUILTINS = [
     ("color", STRING, "dandelion", True),
@@ -685,6 +696,7 @@ _EDGE_BUILTINS = [
     ("weight", DOUBLE, 1.0, False),
     ("label", STRING, None, True),
     ("labelvisible", BOOL, False, True),
+    ("labelsize", DOUBLE, 1.0, True),
 ]
 
 

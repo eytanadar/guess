@@ -112,7 +112,7 @@ export class StylePanel {
   private async build() {
     const [nf, ef] = await Promise.all([this.host.fields("n"), this.host.fields("e")]);
     this.nodeFields = new Set(nf.map((f) => f.name));
-    const skip = new Set(["x", "y", "visible", "color", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "label", "labelvisible", "directed"]);
+    const skip = new Set(["x", "y", "visible", "color", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "label", "labelvisible", "labelpos", "labelsize", "directed"]);
     this.form.replaceChildren();
     const target = select([["n", "Nodes"], ["e", "Edges"]]);
     const prop = select([]);
@@ -127,15 +127,15 @@ export class StylePanel {
       const fields = (kind === "n" ? nf : ef).filter((f) => !skip.has(f.name) || f.name === "totaldegree");
       const p = prop.value;
       prop.replaceChildren(...(kind === "n"
-        ? [["color", "Colour"], ["size", "Size"], ["label", "Label"], ["shape", "Shape"]]
-        : [["color", "Colour"], ["size", "Width"], ["label", "Label"]]).map(([v, t]) => {
+        ? [["color", "Colour"], ["size", "Size"], ["label", "Label"], ["labelsize", "Label size"], ["shape", "Shape"]]
+        : [["color", "Colour"], ["size", "Width"], ["label", "Label"], ["labelsize", "Label size"]]).map(([v, t]) => {
         const o = el("option") as HTMLOptionElement;
         o.value = v;
         o.textContent = t;
         return o;
       }));
       if ([...prop.options].some((o) => o.value === p)) prop.value = p;
-      const usable = fields.filter((f) => (prop.value === "size" ? f.numeric : true));
+      const usable = fields.filter((f) => (prop.value === "size" || prop.value === "labelsize" ? f.numeric : true));
       const cur = field.value;
       field.replaceChildren(...usable.map((f) => {
         const o = el("option") as HTMLOptionElement;
@@ -192,7 +192,35 @@ export class StylePanel {
         show.type = "checkbox";
         show.checked = true;
         opts.append(labelled("show labels", show));
-        getCode = () => `labelBy(${ref}${show.checked ? "" : ", false"})`;
+        if (kind === "n") {
+          // where the label goes; "outside" lets GUESS pick a free side for each node
+          const pos = select([["right", "right of the node"], ["inside", "inside the node"], ["outside", "outside, wherever there's room"],
+            ["below", "below"], ["above", "above"], ["left", "left"]], "right");
+          const fit = el("input") as HTMLInputElement;
+          fit.type = "checkbox";
+          const fitRow = labelled("resize nodes to fit", fit);
+          fitRow.hidden = true;
+          pos.onchange = () => { fitRow.hidden = pos.value !== "inside"; };
+          opts.append(labelled("position", pos), fitRow);
+          getCode = () => [`labelBy(${ref}${show.checked ? "" : ", false"})`,
+            pos.value === "inside" && fit.checked ? "fitNodesToLabels()" : `g.nodes.labelpos = ${JSON.stringify(pos.value)}`].join("\n");
+        } else {
+          getCode = () => `labelBy(${ref}${show.checked ? "" : ", false"})`;
+        }
+      } else if (prop.value === "labelsize") {
+        const lo = el("input") as HTMLInputElement, hi = el("input") as HTMLInputElement;
+        for (const [inp, v] of [[lo, "0.8"], [hi, "2"]] as const) {
+          inp.type = "number";
+          inp.step = "0.1";
+          inp.min = "0.1";
+          inp.value = v;
+          inp.className = "pf-num";
+        }
+        const scale = select([["linear", "linear"], ["sqrt", "square root"], ["log", "log"], ["rank", "rank"]], "linear");
+        const range = el("span", "pf-inline");
+        range.append(lo, " to ", hi);
+        opts.append(labelled("from / to (1 = normal)", range), labelled("scale", scale));
+        getCode = () => `labelSizeBy(${ref}, ${Number(lo.value)}, ${Number(hi.value)}, ${JSON.stringify(scale.value)})`;
       } else {
         getCode = () => `shapeBy(${ref})`;
       }
@@ -279,7 +307,8 @@ export class StylePanel {
     box.append(labelled("edge colours", mode),
       toggle("curved edges", "curvedEdges()", "curvedEdges(false)"),
       toggle("label outlines", "labelOutlines()", "labelOutlines(false)"),
-      toggle("hide overlapping labels", "hideOverlappingLabels()", "hideOverlappingLabels(false)"));
+      toggle("hide overlapping labels", "hideOverlappingLabels()", "hideOverlappingLabels(false)"),
+      toggle("edge labels along edges", "edgeLabelsAlong()", "edgeLabelsAlong(false)"));
     return box;
   }
 }
@@ -326,8 +355,8 @@ export class FilterPanel {
   private buildAdder() {
     this.adder.replaceChildren();
     const opts: [string, string][] = [];
-    for (const f of this.nf) if (!["x", "y", "visible", "fixed", "width", "height", "style", "labelvisible", "strokecolor", "labelcolor"].includes(f.name)) opts.push([`n:${f.name}`, `node ${f.name}`]);
-    for (const f of this.ef) if (!["visible", "labelvisible", "labelcolor"].includes(f.name)) opts.push([`e:${f.name}`, `edge ${f.name}`]);
+    for (const f of this.nf) if (!["x", "y", "visible", "fixed", "width", "height", "style", "labelvisible", "strokecolor", "labelcolor", "labelpos", "labelsize"].includes(f.name)) opts.push([`n:${f.name}`, `node ${f.name}`]);
+    for (const f of this.ef) if (!["visible", "labelvisible", "labelcolor", "labelsize"].includes(f.name)) opts.push([`e:${f.name}`, `edge ${f.name}`]);
     opts.push(["s:kcore", "k-core (structure)"], ["s:giant", "largest component"], ["s:ego", "ego network of a node"], ["s:groups", "groups of at least N"]);
     const pick = select(opts);
     const add = el("button", "", "Add");

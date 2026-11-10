@@ -200,7 +200,8 @@ def load(session, data):
     view.arrow = v.get("arrow", {"length": None, "width": None})
     view.curvature = float(v.get("curvature", 0.0))
     view.edge_color = v.get("edgeColor", "original")
-    view.labels = {"outline": False, "cull": False, **v.get("labels", {})}
+    view.labels = {"outline": False, "cull": False, "along": False, "placement": "candidates", "screen": False,
+                   **v.get("labels", {})}
     view.styles = {str(k): list(map(str, c)) for k, c in v.get("styles", {}).items()}
     view.pie = v.get("pie")
     view.border_width = float(v.get("borderWidth", 0.75))

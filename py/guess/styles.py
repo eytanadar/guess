@@ -15,8 +15,8 @@ from .model import EDGE, NODE, Edge, Field, GSet, GuessError, Node, elements_of,
 
 LEGEND_MAX = 300   # rows a legendFor legend lists when expanded
 
-# node shapes cycled by shapeBy: circle, square, rounded square
-SHAPES = [2, 1, 3]
+# node shapes cycled by shapeBy: circle, square, rounded square, triangle, diamond, hexagon, octagon
+SHAPES = [2, 1, 3, 11, 12, 13, 14]
 
 
 def install(session):
@@ -46,7 +46,8 @@ def install(session):
     @cmd
     def shapeBy(field):
         """shapeBy(field) gives each value of a node field its own shape (circle,
-        square, rounded square, repeating), the most common value first."""
+        square, rounded square, triangle, diamond, hexagon, octagon, then
+        repeating), the most common value first."""
         f = field_arg(field, "shapeBy")
         if f.kind != NODE:
             raise GuessError("shapeBy needs a node field")

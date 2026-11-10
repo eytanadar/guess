@@ -172,8 +172,8 @@ def test_size_and_colour_by_value(s):
 def test_label_settings_roundtrip(s):
     s.run("labelOutlines(); hideOverlappingLabels()")
     s.flush()
-    assert s.rec.of("overlay")[-1]["labels"] == {"outline": True, "cull": True}
-    assert roundtrip(s).view.labels == {"outline": True, "cull": True}
+    assert s.rec.of("overlay")[-1]["labels"] == {"outline": True, "cull": True, "along": False, "placement": "candidates", "screen": False}
+    assert roundtrip(s).view.labels == {"outline": True, "cull": True, "along": False, "placement": "candidates", "screen": False}
 
 
 # ---- formats -----------------------------------------------------------------

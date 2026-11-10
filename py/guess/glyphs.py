@@ -90,11 +90,29 @@ def install(session):
         view.changed()
 
     @cmd
-    def bundleEdges(fld, strength=0.85):
-        """bundleEdges(field) routes each edge between two groups (values of a node
-        field, e.g. modularity_class) through the groups' centres, so edges
-        between the same groups merge into bundles. strength 0..1 (0 = straight).
-        Layouts and unbundleEdges() straighten them again."""
+    def bundleEdges(fld=None, strength=0.85, method=None, neighbors=10, angleStrength=1.2,
+                    stiffness=0.1, compatibility=0.6, cycles=6):
+        """bundleEdges() bundles edges that run alike, so the main flows stand
+        out of a hairball. Three methods:
+          bundleEdges()                 MINGLE (multilevel, saves "ink"): fast,
+                                        tree-like bundles; good for large graphs
+          bundleEdges(method="fdeb")    force-directed edge bundling: smooth,
+                                        organic curves; up to a few thousand edges
+          bundleEdges(modularity_class) through the centres of the groups of a
+                                        node field
+        strength 0..1 blends toward straight lines (0 = straight). MINGLE:
+        neighbors (edges compared with each), angleStrength (higher allows
+        sharper turns). FDEB: stiffness (of each edge), compatibility (0..1, how
+        alike edges must be to attract), cycles. Layouts and unbundleEdges()
+        straighten them again."""
+        beta = min(max(float(strength), 0.0), 1.0)
+        if fld is None or method is not None:
+            m = str(method or "mingle").lower()
+            if m not in ("mingle", "fdeb"):
+                raise GuessError('method should be "mingle" or "fdeb" (or give a field to bundle by groups)')
+            _bundle_geometric(m, beta, neighbors=int(neighbors), angle_strength=float(angleStrength),
+                              stiffness=float(stiffness), threshold=float(compatibility), cycles=int(cycles))
+            return
         f = field(fld, "bundleEdges")
         beta = min(max(float(strength), 0.0), 1.0)
         cent = {}
@@ -118,10 +136,67 @@ def install(session):
             n_bundled += 1
         print(f"bundled {n_bundled} edges between {len(cent)} groups")
 
+    def _bundle_geometric(method, beta, **opts):
+        from . import bundling
+        edges, coords, flipped = [], [], []
+        for e in g._edges_list():
+            a, b = e._n1, e._n2
+            pa, pb = (_c(a, "x"), _c(a, "y")), (_c(b, "x"), _c(b, "y"))
+            if a is b or pa == pb:
+                g.set_bends(e, None)
+                continue
+            # undirected edges run left to right, so edges drawn either way can bundle
+            flip = not e._directed and (pa[0], pa[1]) > (pb[0], pb[1])
+            if flip:
+                pa, pb = pb, pa
+            edges.append(e)
+            coords.append((*pa, *pb))
+            flipped.append(flip)
+        if not edges:
+            print("no edges to bundle")
+            return
+        if method == "fdeb":
+            if len(edges) > 6000:
+                raise GuessError(f"{len(edges)} edges is too many for FDEB (up to about 6,000); "
+                                 'try bundleEdges() (MINGLE)')
+            paths = bundling.fdeb(coords, stiffness=opts["stiffness"], threshold=opts["threshold"],
+                                  cycles=opts["cycles"])
+        else:
+            paths = bundling.mingle(coords, neighbors=opts["neighbors"], angle_strength=opts["angle_strength"])
+        bundled = 0
+        for e, path, flip in zip(edges, paths, flipped):
+            if method == "mingle":
+                path = _bspline(path, 6 * len(path)) if len(path) > 2 else path   # smooth the meeting points
+            pts = _toward_chord(path, beta)
+            if flip:
+                pts = pts[::-1]
+            inner = pts[1:-1]
+            g.set_bends(e, inner or None)
+            bundled += bool(inner)
+        print(f"bundled {bundled} edges ({'MINGLE' if method == 'mingle' else 'FDEB'})")
+
     @cmd
     def unbundleEdges():
         """Draw edges straight again after bundleEdges."""
         g.clear_bends()
+
+
+def _toward_chord(path, beta):
+    """Blend a polyline toward the straight line between its ends (beta 1:
+    unchanged, 0: straight), point by point at the same fraction of length."""
+    if beta >= 1 or len(path) < 3:
+        return [tuple(map(float, p)) for p in path]
+    (x0, y0), (x1, y1) = path[0], path[-1]
+    lengths = [0.0]
+    for (ax, ay), (bx, by) in zip(path, path[1:]):
+        lengths.append(lengths[-1] + math.hypot(bx - ax, by - ay))
+    total = lengths[-1] or 1.0
+    out = []
+    for (x, y), d in zip(path, lengths):
+        t = d / total
+        cx, cy = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+        out.append((beta * x + (1 - beta) * cx, beta * y + (1 - beta) * cy))
+    return out
 
 
 def _c(n, axis):

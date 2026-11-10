@@ -516,6 +516,37 @@ def install(session):
             setattr(e, attr, lo + (hi - lo) * t(v))
 
     @cmd
+    def labelSizeBy(field, smallest=0.8, largest=2.0, scale="linear"):
+        """labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
+        edge field) in proportion to a numeric field: 1 is the normal size. Sets
+        the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank")."""
+        field = _field(field)
+        vals = _numeric(field)
+        t = _scaler(vals, scale)
+        lo, hi = float(smallest), float(largest)
+        if lo <= 0 or hi <= 0:
+            raise GuessError("label sizes are scales and must be positive (1 = normal)")
+        for e, v in vals:
+            e.labelsize = lo + (hi - lo) * t(v)
+
+    @cmd
+    def fitNodesToLabels(seq=None, padding=4):
+        """fitNodesToLabels() puts each node's label inside it (labelpos =
+        "inside") and resizes the node to fit the label, as in a flowchart or a
+        Graphviz drawing; fitNodesToLabels(dept == 'dept3') does some nodes.
+        padding is the space around the text. Labels with line breaks
+        (`\\n`) make taller nodes."""
+        from .textwidth import text_size
+        nodes = [x for x in elements_of(seq if seq is not None else g.nodes) if isinstance(x, Node)]
+        pad = float(padding)
+        for n in nodes:
+            text = n.label if n.label else n._name
+            w, h = text_size(text, n.labelsize or 1.0)
+            n.labelpos = "inside"
+            n.width = w + 2 * pad + (0.25 * w if n.style in (2, 5, 11, 12, 13, 14) else 0)
+            n.height = h + 2 * pad + (0.3 * h if n.style in (2, 5, 11, 12) else 0)
+
+    @cmd
     def colorBy(field, start, end, scale="linear", middle=None):
         """colorBy(field, startColor, endColor) colours elements along a gradient in
         proportion to a numeric field's value; scale may be "linear", "log",

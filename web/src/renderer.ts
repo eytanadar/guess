@@ -1,5 +1,6 @@
 // Graph renderer on PixiJS. Holds only visual state; the model lives in the worker.
 import { Application, BitmapFont, BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js";
+import { activationScales, anneal, type Candidate, type Choice, greedyRepair, type Item, Occupancy, particles, type Rect, rectOf } from "./labelplace";
 import type { EdgeRec, HullRec, Morph, NodeRec, Overlay } from "./protocol";
 
 interface Anim {
@@ -65,6 +66,110 @@ function installHaloFont() {
   });
 }
 const DIM_EDGE = 0.08, DIM_NODE = 0.15;
+/** edge labels are a little smaller than node labels */
+const EDGE_LABEL = 0.85;
+
+/** Where one label is drawn; computed once per redraw (layoutLabels) and
+ *  used by the display and by SVG export alike. */
+export interface LabelPlacement {
+  key: string; text: string;
+  x: number; y: number;        // anchor point, world coordinates
+  ax: number; ay: number;      // anchor (0..1) within the text block
+  scale: number;               // BitmapText scale (LABEL_SCALE x labelsize)
+  color: number;
+  rot: number;                 // radians (edge labels along their edge)
+  pill: boolean;               // a background-coloured pill behind (edge labels)
+  halo: boolean;               // may get the outline halo (not for labels inside nodes)
+  priority: number;
+  w: number; h: number;        // size in world units (unrotated)
+  leader?: [number, number, number, number];   // a line from the node to a label placed away from it
+}
+
+/** Positions around a node for a label of w x h: the 8 classic positions and
+ *  positions sliding along each side; pref 0 is the most preferred (right,
+ *  then above-right, as cartographers prefer). */
+function nodeCandidates(n: { x: number; y: number; w: number; h: number }, w: number, h: number): Candidate[] {
+  const gap = 2, cx = n.x + n.w / 2, cy = n.y + n.h / 2;
+  const R = n.x + n.w + gap, L = n.x - gap, T = n.y - gap, B = n.y + n.h + gap;
+  return [
+    { x: R, y: cy, ax: 0, ay: 0.5, pref: 0 },
+    { x: n.x + n.w, y: n.y, ax: 0, ay: 1, pref: 0.15 },
+    { x: R, y: cy - h * 0.45, ax: 0, ay: 0.5, pref: 0.2 },
+    { x: R, y: cy + h * 0.45, ax: 0, ay: 0.5, pref: 0.22 },
+    { x: n.x + n.w, y: n.y + n.h, ax: 0, ay: 0, pref: 0.25 },
+    { x: L, y: cy, ax: 1, ay: 0.5, pref: 0.3 },
+    { x: cx, y: T, ax: 0.5, ay: 1, pref: 0.35 },
+    { x: cx, y: B, ax: 0.5, ay: 0, pref: 0.4 },
+    { x: L, y: cy - h * 0.45, ax: 1, ay: 0.5, pref: 0.45 },
+    { x: L, y: cy + h * 0.45, ax: 1, ay: 0.5, pref: 0.47 },
+    { x: cx + w * 0.3, y: T, ax: 0.5, ay: 1, pref: 0.48 },
+    { x: cx - w * 0.3, y: T, ax: 0.5, ay: 1, pref: 0.5 },
+    { x: cx + w * 0.3, y: B, ax: 0.5, ay: 0, pref: 0.52 },
+    { x: cx - w * 0.3, y: B, ax: 0.5, ay: 0, pref: 0.54 },
+    { x: n.x, y: n.y, ax: 1, ay: 1, pref: 0.55 },
+    { x: n.x, y: n.y + n.h, ax: 1, ay: 0, pref: 0.6 },
+  ];
+}
+
+/** Positions along an edge's polyline (the middle first), turned along it when asked. */
+function edgeCandidates(p: number[], along: boolean): Candidate[] {
+  const seg: number[] = [0];
+  for (let i = 0; i + 3 < p.length; i += 2) seg.push(seg[seg.length - 1] + Math.hypot(p[i + 2] - p[i], p[i + 3] - p[i + 1]));
+  const total = seg[seg.length - 1] || 1;
+  const at = (t: number) => {
+    const d = t * total;
+    let k = 1;
+    while (k < seg.length - 1 && seg[k] < d) k++;
+    const u = (d - seg[k - 1]) / ((seg[k] - seg[k - 1]) || 1);
+    const i = (k - 1) * 2;
+    const dx = p[i + 2] - p[i], dy = p[i + 3] - p[i + 1];
+    let rot = 0;
+    if (along) {
+      rot = Math.atan2(dy, dx);
+      if (rot > Math.PI / 2) rot -= Math.PI;        // keep the text upright
+      else if (rot < -Math.PI / 2) rot += Math.PI;
+    }
+    return { x: p[i] + dx * u, y: p[i + 1] + dy * u, rot };
+  };
+  return [[0.5, 0], [0.4, 0.1], [0.6, 0.1], [0.3, 0.25], [0.7, 0.25]].map(([t, pref]) => ({ ...at(t), ax: 0.5, ay: 0.5, pref }));
+}
+
+/** Polygon outline of the shapes that have one (styles 11-14), [x0, y0, ...]. */
+function polyPoints(n: { x: number; y: number; w: number; h: number; s: number }): number[] | null {
+  const { x, y, w, h } = n, cx = x + w / 2, cy = y + h / 2;
+  switch (n.s) {
+    case 11: return [cx, y, x + w, y + h, x, y + h];                                   // triangle
+    case 12: return [cx, y, x + w, cy, cx, y + h, x, cy];                               // diamond
+    case 13: return [x + w * 0.25, y, x + w * 0.75, y, x + w, cy, x + w * 0.75, y + h, x + w * 0.25, y + h, x, cy];   // hexagon
+    case 14: {                                                                         // octagon
+      const kx = w * 0.29, ky = h * 0.29;
+      return [x + kx, y, x + w - kx, y, x + w, y + ky, x + w, y + h - ky, x + w - kx, y + h, x + kx, y + h, x, y + h - ky, x, y + ky];
+    }
+    default: return null;
+  }
+}
+
+const isRound = (s: number) => s === 2 || s === 5 || s === 9;
+
+/** The share of a node's width and height a label inside it may use, and
+ *  where the text sits vertically (0.5 = middle; a triangle's is lower). */
+function insideBox(s: number): [number, number, number] {
+  switch (s) {
+    case 2: case 5: case 9: return [0.74, 0.72, 0.5];
+    case 3: case 6: case 10: return [0.88, 0.85, 0.5];
+    case 11: return [0.5, 0.5, 0.64];
+    case 12: return [0.56, 0.56, 0.5];
+    case 13: return [0.72, 0.86, 0.5];
+    case 14: return [0.8, 0.8, 0.5];
+    default: return [0.9, 0.88, 0.5];
+  }
+}
+
+/** Black or white text, whichever reads better on a fill colour. */
+function contrastText(fill: number) {
+  const r = (fill >> 16) & 255, g = (fill >> 8) & 255, b = fill & 255;
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? 0x1a1a1a : 0xffffff;
+}
 
 export class Renderer {
   readonly app = new Application();
@@ -85,6 +190,27 @@ export class Renderer {
   private labelPriority = new Map<string, number>();
   private labelOutline = false;
   private labelCull = false;
+  /** edge labels turned along their edges (edgeLabelsAlong) */
+  private labelAlong = false;
+  /** background pills behind edge labels, by label key */
+  private pills = new Container();
+  private pillPool = new Map<string, Graphics>();
+  /** the current label layout (also used by SVG export) */
+  private placements: LabelPlacement[] = [];
+  /** text -> [width, height] at scale 1 (multi-line aware) */
+  private measureCache = new Map<string, [number, number]>();
+  /** "candidates" (greedy with repair) or "particles" for outside and edge labels */
+  private labelMethod: "candidates" | "particles" = "candidates";
+  /** candidate index per label key, from optimizeLabels() */
+  private optimized = new Map<string, number>();
+  private movable = new Set<string>();
+  private movableItems: Item[] = [];
+  private leaderG = new Graphics();
+  /** labels keep their size on screen; each appears from its activation scale */
+  private constantSize = false;
+  private activation = new Map<string, number>();
+  private sizedFor = 0;
+  private probe: BitmapText | null = null;
   private cullScale = 0;
   /** selected nodes (box, lasso, shift-click, select()) */
   readonly selection = new Set<number>();
@@ -147,7 +273,7 @@ export class Renderer {
     }).observe(this.host);
     // draw only when something changed (idle graphs cost nothing)
     this.app.ticker.remove(this.app.render, this.app);
-    this.world.addChild(this.backdrop, this.guideG, this.guideLabels, this.hullG, this.edgeG, this.nodeG, this.imageLayer, this.halos, this.labels, this.overlay);
+    this.world.addChild(this.backdrop, this.guideG, this.guideLabels, this.hullG, this.edgeG, this.nodeG, this.imageLayer, this.leaderG, this.pills, this.halos, this.labels, this.overlay);
     this.app.stage.addChild(this.world);
     this.app.ticker.add(() => this.frame());
     this.bindInput();
@@ -155,6 +281,7 @@ export class Renderer {
 
   // ---- model updates ----------------------------------------------------
   setScene(nodes: NodeRec[], edges: EdgeRec[]) {
+    this.optimized.clear();          // a new graph: optimizeLabels() positions no longer apply
     this.anim = null;
     this.nodes = new Map(nodes.map((n) => [n.i, n]));
     this.edges = new Map(edges.map((e) => [e.i, e]));
@@ -290,10 +417,17 @@ export class Renderer {
     this.arrowWidth = ov.arrow.width;
     this.curvature = ov.curvature ?? 0;
     this.edgeColorMode = ov.edgeColor ?? "original";
-    const outline = !!ov.labels?.outline, cull = !!ov.labels?.cull;
-    if (outline !== this.labelOutline || cull !== this.labelCull) {
+    const outline = !!ov.labels?.outline, cull = !!ov.labels?.cull, along = !!ov.labels?.along;
+    const method = ov.labels?.placement === "particles" ? "particles" : "candidates";
+    const constant = !!ov.labels?.screen;
+    if (method !== this.labelMethod) this.optimized.clear();      // a new method replaces optimizeLabels()
+    if (outline !== this.labelOutline || cull !== this.labelCull || along !== this.labelAlong
+        || method !== this.labelMethod || constant !== this.constantSize) {
       this.labelOutline = outline;
       this.labelCull = cull;
+      this.labelAlong = along;
+      this.labelMethod = method;
+      this.constantSize = constant;
       this.labelsDirty = true;
     }
     const key = ov.image ? `${ov.image.url.length}:${ov.image.url.slice(-64)}:${ov.image.x}:${ov.image.y}` : "";
@@ -469,7 +603,11 @@ export class Renderer {
       }
       this.drawOverlay();
     }
-    if (this.labelCull && Math.abs(this.scale / (this.cullScale || 1) - 1) > 0.03) this.cullLabels();
+    if (this.constantSize && Math.abs(this.scale / (this.sizedFor || 1) - 1) > 0.01) {
+      this.sizeForZoom();
+      this.cullLabels();
+      this.needsRender = true;
+    } else if (this.labelCull && Math.abs(this.scale / (this.cullScale || 1) - 1) > 0.03) this.cullLabels();
     if (this.needsRender || this.app.renderer.width !== this.lastSize[0] || this.app.renderer.height !== this.lastSize[1]) {
       this.needsRender = false;
       this.lastSize = [this.app.renderer.width, this.app.renderer.height];
@@ -689,6 +827,249 @@ export class Renderer {
     }
   }
 
+  /** [width, height] of a text at scale 1 (BitmapText units; multi-line aware). */
+  private measure(text: string): [number, number] {
+    let m = this.measureCache.get(text);
+    if (m) return m;
+    if (!this.probe) this.probe = new BitmapText({ text: "", style: LABEL_STYLE });
+    this.probe.text = text;
+    const b = this.probe.getLocalBounds();
+    m = [b.width, b.height || LABEL_STYLE.fontSize * 1.15];
+    if (this.measureCache.size > 20000) this.measureCache.clear();
+    this.measureCache.set(text, m);
+    return m;
+  }
+
+  /** Fit a label inside a node: wrap at spaces when the node is tall enough,
+   *  shrink down to 45% of the size, and finally cut it short with an ellipsis.
+   *  Returns null when not even one character fits. */
+  private fitInside(text: string, n: NodeRec, scale: number): { text: string; scale: number } | null {
+    const [kw, kh] = insideBox(n.s);
+    const aw = n.w * kw, ah = n.h * kh;
+    const fits = (t: string, sc: number) => {
+      const [w, h] = this.measure(t);
+      return w * sc <= aw && h * sc <= ah;
+    };
+    if (fits(text, scale)) return { text, scale };
+    // candidate wrappings: 1..6 lines, balanced greedily by width
+    const words = text.split(/[ \t]+/).filter(Boolean);
+    const options = [text];
+    const lineH = this.measure("Ag")[1];
+    for (let k = 2; k <= Math.min(words.length, 6); k++) {
+      if (k * lineH * scale * 0.45 > ah) break;
+      const target = this.measure(text)[0] / k;
+      const lines: string[] = [];
+      let cur = "";
+      for (const wd of words) {
+        const next = cur ? `${cur} ${wd}` : wd;
+        if (cur && this.measure(next)[0] > target * 1.15 && lines.length < k - 1) {
+          lines.push(cur);
+          cur = wd;
+        } else cur = next;
+      }
+      lines.push(cur);
+      const t = lines.join("\n");
+      if (fits(t, scale)) return { text: t, scale };
+      options.push(t);
+    }
+    // shrink: the option that needs the least shrinking, down to 45%
+    let best = { text, scale: 0 };
+    for (const t of options) {
+      const [w, h] = this.measure(t);
+      const sc = Math.min(scale, aw / (w || 1), ah / (h || 1));
+      if (sc > best.scale) best = { text: t, scale: sc };
+    }
+    const least = scale * 0.45;
+    if (best.scale >= least) return best;
+    // cut short on one line at the smallest size
+    if (lineH * least > ah) return null;
+    let lo = 0, hi = text.length;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (this.measure(text.slice(0, mid).trimEnd() + "\u2026")[0] * least <= aw) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo === 0 ? null : { text: text.slice(0, lo).trimEnd() + "\u2026", scale: least };
+  }
+
+  /** Where every visible label goes. Node labels: labelpos right / left /
+   *  above / below / inside (also styles 4-6) / outside (the first free side,
+   *  bigger nodes first: the hook for smarter placement). Edge labels: at the
+   *  middle of the edge, on a pill, optionally turned along it. */
+  private layoutLabels(): LabelPlacement[] {
+    const out: LabelPlacement[] = [];
+    const focus = this.focus;
+    const outside: { n: NodeRec; text: string; color: number; scale: number; priority: number }[] = [];
+    const side = (n: NodeRec, pos: string): [number, number, number, number] => {
+      const cx = n.x + n.w / 2, cy = n.y + n.h / 2, gap = 2;
+      switch (pos) {
+        case "left": return [n.x - gap, cy, 1, 0.5];
+        case "above": return [cx, n.y - gap, 0.5, 1];
+        case "below": return [cx, n.y + n.h + gap, 0.5, 0];
+        case "above-right": return [n.x + n.w, n.y, 0, 1];
+        case "below-right": return [n.x + n.w, n.y + n.h, 0, 0];
+        case "above-left": return [n.x, n.y, 1, 1];
+        case "below-left": return [n.x, n.y + n.h, 1, 0];
+        default: return [n.x + n.w + gap, cy, 0, 0.5];
+      }
+    };
+    for (const id of this.order) {
+      const n = this.nodes.get(id);
+      if (!n || !n.v) continue;
+      const textStyle = n.s >= 4 && n.s <= 6;
+      let text: string;
+      let priority = n.w * n.h;
+      if (focus) {
+        // the focused neighbourhood is labelled (by name if it has no label); the rest is not
+        if (!focus.nodes.has(id)) continue;
+        text = n.l || n.name;
+        if (!text) continue;
+        if (id === focus.id) priority = Infinity;
+      } else {
+        if (!(n.lv || textStyle) || !n.l) continue;
+        text = n.l;
+      }
+      const pos = textStyle ? "inside" : (n.lp || "right");
+      const scale = LABEL_SCALE * (n.ls ?? 1);
+      if (pos === "inside") {
+        const fit = this.fitInside(text, n, scale);
+        if (!fit) continue;
+        const [, , vy] = insideBox(n.s);
+        const color = n.lc >= 0 ? n.lc : n.a >= 0.5 && n.s !== 7 ? contrastText(n.c) : this.labelColor;
+        const [w, h] = this.measure(fit.text);
+        out.push({ key: `n${id}`, text: fit.text, x: n.x + n.w / 2, y: n.y + n.h * vy, ax: 0.5, ay: 0.5,
+                   scale: fit.scale, color, rot: 0, pill: false, halo: false, priority: textStyle ? Math.max(priority, 1e9) : priority,
+                   w: w * fit.scale, h: h * fit.scale });
+        continue;
+      }
+      const color = n.lc >= 0 ? n.lc : this.labelColor;
+      if (pos === "outside") {
+        outside.push({ n, text, color, scale, priority });
+        continue;
+      }
+      const [w, h] = this.measure(text);
+      const [x, y, ax, ay] = side(n, pos);
+      out.push({ key: `n${id}`, text, x, y, ax, ay, scale, color, rot: 0, pill: false, halo: true, priority, w: w * scale, h: h * scale });
+    }
+    // movable labels: outside node labels (candidates around the node) and
+    // edge labels (sliding along the edge), placed by the chosen method
+    const items: Item[] = [];
+    const meta = new Map<string, { text: string; color: number; scale: number; pill: boolean; halo: boolean }>();
+    for (const o of outside) {
+      const [tw, th] = this.measure(o.text);
+      const w = tw * o.scale, h = th * o.scale;
+      const key = `n${o.n.i}`;
+      items.push({ key, owner: o.n.i, priority: o.priority, w, h, cands: nodeCandidates(o.n, w, h), node: [o.n.x, o.n.y, o.n.x + o.n.w, o.n.y + o.n.h] });
+      meta.set(key, { text: o.text, color: o.color, scale: o.scale, pill: false, halo: true });
+    }
+    for (const e of this.edges.values()) {
+      const a = this.nodes.get(e.s), b = this.nodes.get(e.t);
+      if (!e.v || !e.lv || !e.l || !a || !b || !a.v || !b.v) continue;
+      if (focus && !focus.edges.has(e.i)) continue;
+      const p = a === b ? [a.x + a.w / 2, a.y - Math.max(a.w, a.h) * 1.3, a.x + a.w / 2 + 1, a.y - Math.max(a.w, a.h) * 1.3] : this.edgePoints(e, a, b);
+      const scale = LABEL_SCALE * EDGE_LABEL * (e.ls ?? 1);
+      const [tw, th] = this.measure(e.l);
+      const key = `e${e.i}`;
+      items.push({ key, owner: -1 - e.i, priority: -1, w: tw * scale, h: th * scale, cands: edgeCandidates(p, this.labelAlong) });
+      meta.set(key, { text: e.l, color: e.lc >= 0 ? e.lc : this.labelColor, scale, pill: true, halo: false });
+    }
+    this.movable = new Set(items.map((it) => it.key));
+    this.movableItems = items;
+    if (items.length) {
+      const chosen = this.placeItems(items, out);
+      for (const it of items) {
+        const c = chosen.get(it.key);
+        if (!c) continue;
+        const m = meta.get(it.key)!;
+        out.push({ key: it.key, text: m.text, x: c.cand.x, y: c.cand.y, ax: c.cand.ax, ay: c.cand.ay, scale: m.scale,
+                   color: m.color, rot: c.cand.rot ?? 0, pill: m.pill, halo: m.halo, priority: it.priority, w: it.w, h: it.h,
+                   leader: c.leader });
+      }
+    }
+    return out;
+  }
+
+  /** The obstacles movable labels must avoid: nodes, edges, fixed labels. */
+  private obstacles(fixed: LabelPlacement[]): Occupancy {
+    let hsum = 0;
+    for (const p of fixed) hsum += p.h;
+    const occ = new Occupancy(Math.max(16, (fixed.length ? hsum / fixed.length : 10) * 3));
+    for (const id of this.order) {
+      const n = this.nodes.get(id);
+      if (n && n.v) occ.addRect([n.x, n.y, n.x + n.w, n.y + n.h], n.i, false);
+    }
+    if (this.edges.size <= 40000) {
+      for (const e of this.edges.values()) {
+        const a = this.nodes.get(e.s), b = this.nodes.get(e.t);
+        if (!e.v || !a || !b || !a.v || !b.v || a === b) continue;
+        occ.addPolyline(this.edgePoints(e, a, b), -1 - e.i, a.i, b.i);
+      }
+    }
+    for (const p of fixed) {
+      const r: Rect = [p.x - p.ax * p.w, p.y - p.ay * p.h, p.x + (1 - p.ax) * p.w, p.y + (1 - p.ay) * p.h];
+      occ.addRect(r, Number(p.key.slice(1)) * (p.key[0] === "e" ? -1 : 1), true);
+    }
+    return occ;
+  }
+
+  /** Place movable labels: positions kept from optimizeLabels() first, the
+   *  rest by the current method (greedy with repair, or particles). */
+  private placeItems(items: Item[], fixed: LabelPlacement[]): Map<string, Choice> {
+    const occ = this.obstacles(fixed);
+    const out = new Map<string, Choice>();
+    const rest: Item[] = [];
+    for (const it of items) {
+      const i = this.optimized.get(it.key);
+      if (i !== undefined && i < it.cands.length) {
+        const cand = it.cands[i];
+        out.set(it.key, { cand, cost: 0 });
+        occ.addRect(rectOf(cand, it.w, it.h), it.owner, true);
+      } else rest.push(it);
+    }
+    const placed = this.labelMethod === "particles" ? particles(rest, occ) : greedyRepair(rest, occ);
+    for (const [k, v] of placed) out.set(k, v);
+    return out;
+  }
+
+  /** optimizeLabels(): simulated annealing over the movable labels' candidate
+   *  positions for `ms` milliseconds; the result is kept (until the graph is
+   *  replaced, the method changes or this is run again). Returns the total
+   *  cost before and after. */
+  optimizeLabels(ms: number): { before: number; after: number; labels: number } {
+    this.optimized.clear();
+    const saved = this.labelMethod;
+    this.labelMethod = "candidates";
+    const all = this.layoutLabels();
+    this.labelMethod = saved;
+    const fixed = all.filter((p) => !this.movable.has(p.key));
+    const items = this.movableItems;
+    const occ = this.obstacles(fixed);
+    const total = (choice: Map<string, number>) => {
+      const o = occ.clone();
+      let c = 0;
+      for (const it of [...items].sort((a, b) => b.priority - a.priority)) {
+        const i = choice.get(it.key) ?? 0;
+        const cand = it.cands[i];
+        c += o.cost(rectOf(cand, it.w, it.h), it.owner, it.h);
+        o.addRect(rectOf(cand, it.w, it.h), it.owner, true);
+      }
+      return c;
+    };
+    const start = new Map<string, number>();
+    const byKey = new Map(items.map((it) => [it.key, it]));
+    for (const p of all) {
+      const it = byKey.get(p.key);
+      if (it) start.set(p.key, Math.max(0, it.cands.findIndex((c) => c.x === p.x && c.y === p.y)));
+    }
+    const before = total(start);
+    const best = anneal(items, occ, ms);
+    const after = total(best);
+    for (const [k, i] of (after <= before ? best : start)) this.optimized.set(k, i);
+    this.labelsDirty = true;
+    this.invalidate(true);
+    return { before, after: Math.min(before, after), labels: items.length };
+  }
+
   private drawLabels() {
     const used = new Set<string>();
     const bg = this.app.renderer.background.color.toNumber();
@@ -696,7 +1077,6 @@ export class Renderer {
       let t = map.get(key);
       if (!t) {
         t = new BitmapText({ text, style });
-        t.scale.set(LABEL_SCALE);
         map.set(key, t);
         layer.addChild(t);
       } else if (t.text !== text) {
@@ -704,58 +1084,97 @@ export class Renderer {
       }
       return t;
     };
-    const place = (key: string, text: string, color: number, x: number, y: number, ax: number, priority: number) => {
-      used.add(key);
-      this.labelPriority.set(key, priority);
-      const t = pool(this.labelPool, this.labels, LABEL_STYLE, key, text);
-      t.tint = color;
-      t.anchor.set(ax, 0.5);
-      t.position.set(x, y);
-      if (this.labelOutline) {
-        const h = pool(this.haloPool, this.halos, HALO_STYLE, key, text);
+    this.placements = this.layoutLabels();
+    for (const p of this.placements) {
+      used.add(p.key);
+      this.labelPriority.set(p.key, p.priority);
+      const t = pool(this.labelPool, this.labels, LABEL_STYLE, p.key, p.text);
+      const align = p.text.includes("\n") ? "center" : "left";
+      if (t.style.align !== align) t.style.align = align;
+      t.scale.set(p.scale);
+      t.tint = p.color;
+      t.anchor.set(p.ax, p.ay);
+      t.position.set(p.x, p.y);
+      t.rotation = p.rot;
+      if (this.labelOutline && p.halo) {
+        const h = pool(this.haloPool, this.halos, HALO_STYLE, p.key, p.text);
+        if (h.style.align !== align) h.style.align = align;
+        h.scale.set(p.scale);
         h.tint = bg;
-        h.anchor.set(ax, 0.5);
-        h.position.set(x, y);
+        h.anchor.set(p.ax, p.ay);
+        h.position.set(p.x, p.y);
+        h.rotation = p.rot;
       }
-    };
-    const focus = this.focus;
-    for (const id of this.order) {
-      const n = this.nodes.get(id);
-      const isText = n && n.s >= 4 && n.s <= 6;
-      if (!n || !n.v) continue;
-      if (focus) {
-        // the focused neighbourhood is labelled (by name if it has no label); the rest is not
-        if (!focus.nodes.has(id)) continue;
-        if (!n.l && !n.name) continue;
-        const color = n.lc >= 0 ? n.lc : this.labelColor;
-        const text = n.l || n.name;
-        if (isText) place(`n${id}`, text, color, n.x + n.w / 2, n.y + n.h / 2, 0.5, Infinity);
-        else place(`n${id}`, text, color, n.x + n.w + 2, n.y + n.h / 2, 0, id === focus.id ? Infinity : n.w * n.h);
-        continue;
+      if (p.pill) {
+        let g = this.pillPool.get(p.key);
+        if (!g) {
+          g = new Graphics();
+          this.pillPool.set(p.key, g);
+          this.pills.addChild(g);
+        }
+        const pad = 1.5 * (p.scale / LABEL_SCALE);
+        g.clear();
+        g.roundRect(-p.ax * p.w - pad, -p.ay * p.h - pad * 0.4, p.w + 2 * pad, p.h + pad * 0.8, (p.h + pad) / 2);
+        g.fill({ color: bg, alpha: 0.85 });
+        g.position.set(p.x, p.y);
+        g.rotation = p.rot;
       }
-      if (!(n.lv || isText) || !n.l) continue;
-      const color = n.lc >= 0 ? n.lc : this.labelColor;
-      if (isText) place(`n${id}`, n.l, color, n.x + n.w / 2, n.y + n.h / 2, 0.5, n.w * n.h);
-      else place(`n${id}`, n.l, color, n.x + n.w + 2, n.y + n.h / 2, 0, n.w * n.h);
     }
-    for (const e of this.edges.values()) {
-      const a = this.nodes.get(e.s), b = this.nodes.get(e.t);
-      if (!e.v || !e.lv || !e.l || !a || !b || !a.v || !b.v) continue;
-      if (focus && !focus.edges.has(e.i)) continue;
-      const p = a === b ? [a.x + a.w / 2, a.y - Math.max(a.w, a.h) * 1.3] : this.edgePoints(e, a, b);
-      const m = Math.floor(p.length / 4) * 2;   // middle vertex of the polyline
-      const [lx, ly] = p.length === 4 ? [(p[0] + p[2]) / 2, (p[1] + p[3]) / 2] : [p[m], p[m + 1]];
-      place(`e${e.i}`, e.l, e.lc >= 0 ? e.lc : this.labelColor, lx, ly, 0.5, -1);
-    }
+    const haloKeys = new Set(this.labelOutline ? this.placements.filter((p) => p.halo).map((p) => p.key) : []);
     for (const map of [this.labelPool, this.haloPool]) {
       for (const [key, t] of map) {
-        if (!used.has(key) || (map === this.haloPool && !this.labelOutline)) {
+        if (!used.has(key) || (map === this.haloPool && !haloKeys.has(key))) {
           t.destroy();
           map.delete(key);
         }
       }
     }
+    for (const [key, g] of this.pillPool) {
+      if (!used.has(key)) {
+        g.destroy();
+        this.pillPool.delete(key);
+      }
+    }
     for (const key of this.labelPriority.keys()) if (!used.has(key)) this.labelPriority.delete(key);
+    // leader lines for labels placed away from their node
+    const lg = this.leaderG;
+    lg.clear();
+    let leaders = 0;
+    for (const p of this.placements) {
+      if (!p.leader) continue;
+      lg.moveTo(p.leader[0], p.leader[1]).lineTo(p.leader[2], p.leader[3]);
+      leaders++;
+    }
+    if (leaders) lg.stroke({ width: 0.6, color: this.labelColor, alpha: 0.55 });
+    // constant screen size: each label's activation zoom (Been et al.)
+    this.activation.clear();
+    if (this.constantSize) {
+      const list = this.placements.filter((p) => p.halo || p.pill).map((p) => ({
+        key: p.key, priority: p.priority, ax: p.x, ay: p.y,
+        box: [-p.ax * p.w, -p.ay * p.h, (1 - p.ax) * p.w, (1 - p.ay) * p.h] as Rect,
+      }));
+      this.activation = activationScales(list, Math.max(this.scale / 16, 1e-6));
+    }
+    this.sizeForZoom();
+  }
+
+  /** Constant-size labels: scale them against the zoom and show those whose
+   *  activation zoom has been reached. Graph-sized labels: all shown. */
+  private sizeForZoom() {
+    this.sizedFor = this.scale;
+    const z = this.scale || 1;
+    for (const p of this.placements) {
+      const t = this.labelPool.get(p.key);
+      if (!t) continue;
+      const act = this.activation.get(p.key);
+      const k = this.constantSize && act !== undefined ? 1 / z : 1;
+      t.scale.set(p.scale * k);
+      const h = this.haloPool.get(p.key);
+      if (h) h.scale.set(p.scale * k);
+      const pill = this.pillPool.get(p.key);
+      if (pill) pill.scale.set(k);
+      (t as unknown as { zoomHidden: boolean }).zoomHidden = this.constantSize && act !== undefined && z < act;
+    }
   }
 
   /** Hide labels that would overlap a higher-priority (bigger node's) label at this zoom. */
@@ -765,9 +1184,12 @@ export class Renderer {
       t.visible = v;
       const h = this.haloPool.get(key);
       if (h) h.visible = v;
+      const pill = this.pillPool.get(key);
+      if (pill) pill.visible = v;
     };
+    const zoomHidden = (t: BitmapText) => !!(t as unknown as { zoomHidden?: boolean }).zoomHidden;
     if (!this.labelCull) {
-      for (const [key, t] of this.labelPool) if (!t.visible) setVis(key, t, true);
+      for (const [key, t] of this.labelPool) if (t.visible === zoomHidden(t)) setVis(key, t, !zoomHidden(t));
       return;
     }
     const s = this.scale, CELL = 96;
@@ -775,8 +1197,12 @@ export class Renderer {
     const keys = [...this.labelPool.keys()].sort((p, q) => (this.labelPriority.get(q) ?? 0) - (this.labelPriority.get(p) ?? 0));
     for (const key of keys) {
       const t = this.labelPool.get(key)!;
+      if (zoomHidden(t)) {
+        setVis(key, t, false);
+        continue;
+      }
       const w = t.width * s, h = t.height * s;
-      const x0 = t.x * s - t.anchor.x * w, y0 = t.y * s - h / 2, x1 = x0 + w, y1 = y0 + h;
+      const x0 = t.x * s - t.anchor.x * w, y0 = t.y * s - t.anchor.y * h, x1 = x0 + w, y1 = y0 + h;
       const cx0 = Math.floor(x0 / CELL), cx1 = Math.floor(x1 / CELL), cy0 = Math.floor(y0 / CELL), cy1 = Math.floor(y1 / CELL);
       let clash = false;
       for (let cx = cx0; cx <= cx1 && !clash; cx++) {
@@ -892,10 +1318,13 @@ export class Renderer {
       const n = this.nodes.get(this.order[i]);
       if (!n || !n.v) continue;
       if (x < n.x - slop || x > n.x + n.w + slop || y < n.y - slop || y > n.y + n.h + slop) continue;
-      if (n.s === 2 || n.s === 5 || n.s === 9) {
+      if (isRound(n.s)) {
         const rx = n.w / 2 + slop, ry = n.h / 2 + slop;
         const dx = (x - n.x - n.w / 2) / rx, dy = (y - n.y - n.h / 2) / ry;
         if (dx * dx + dy * dy > 1) continue;
+      } else {
+        const poly = polyPoints({ x: n.x - slop, y: n.y - slop, w: n.w + 2 * slop, h: n.h + 2 * slop, s: n.s });
+        if (poly && !pointInPolygon(x, y, poly)) continue;
       }
       return { kind: "n", id: n.i };
     }
@@ -1180,17 +1609,32 @@ export class Renderer {
       const n = this.nodes.get(id);
       if (!n || !n.v) continue;
       const fill = `fill="${col(n.c)}" fill-opacity="${n.a}" stroke="${col(n.sc >= 0 ? n.sc : darken(n.c))}" stroke-width="0.75"`;
-      if (n.s === 2 || n.s === 5 || n.s === 9) out.push(`<ellipse cx="${n.x + n.w / 2}" cy="${n.y + n.h / 2}" rx="${n.w / 2}" ry="${n.h / 2}" ${fill}/>`);
+      const poly = polyPoints(n);
+      if (poly) out.push(`<polygon points="${poly.join(" ")}" ${fill}/>`);
+      else if (isRound(n.s)) out.push(`<ellipse cx="${n.x + n.w / 2}" cy="${n.y + n.h / 2}" rx="${n.w / 2}" ry="${n.h / 2}" ${fill}/>`);
       else if (n.s === 3 || n.s === 6 || n.s === 10) out.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="${Math.min(n.w, n.h) * 0.25}" ${fill}/>`);
       else out.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" ${fill}/>`);
-      const isText = n.s >= 4 && n.s <= 6;
-      if ((n.lv || isText) && n.l) {
-        const lc = col(n.lc >= 0 ? n.lc : this.labelColor) + (this.labelOutline
-          ? `" stroke="${col(this.app.renderer.background.color.toNumber())}" stroke-width="3" stroke-linejoin="round" paint-order="stroke` : "");
-        out.push(isText
-          ? `<text x="${n.x + n.w / 2}" y="${n.y + n.h / 2}" font-size="10" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" dominant-baseline="central" fill="${lc}">${esc(n.l)}</text>`
-          : `<text x="${n.x + n.w + 2}" y="${n.y + n.h / 2}" font-size="10" font-family="Helvetica, Arial, sans-serif" dominant-baseline="central" fill="${lc}">${esc(n.l)}</text>`);
+    }
+    // labels: the same placements as on screen (positions, wrapping, sizes, pills, rotation)
+    const bgc = col(this.app.renderer.background.color.toNumber());
+    const laid = this.layoutLabels();
+    for (const p of laid) {
+      if (p.leader) out.push(`<line x1="${p.leader[0]}" y1="${p.leader[1]}" x2="${p.leader[2]}" y2="${p.leader[3]}" stroke="${col(this.labelColor)}" stroke-opacity="0.55" stroke-width="0.6"/>`);
+    }
+    for (const p of laid) {
+      const size = 10 * (p.scale / LABEL_SCALE);
+      const lines = p.text.split("\n");
+      const lineH = p.h / lines.length;
+      const rot = p.rot ? ` transform="rotate(${(p.rot * 180) / Math.PI} ${p.x} ${p.y})"` : "";
+      if (p.pill) {
+        const pad = 1.5 * (p.scale / LABEL_SCALE);
+        out.push(`<rect x="${p.x - p.ax * p.w - pad}" y="${p.y - p.ay * p.h - pad * 0.4}" width="${p.w + 2 * pad}" height="${p.h + pad * 0.8}" rx="${(p.h + pad) / 2}" fill="${bgc}" fill-opacity="0.85"${rot}/>`);
       }
+      const anchor = p.ax === 0 ? "start" : p.ax === 1 ? "end" : "middle";
+      const halo = this.labelOutline && p.halo ? ` stroke="${bgc}" stroke-width="3" stroke-linejoin="round" paint-order="stroke"` : "";
+      const top = p.y - p.ay * p.h;
+      const tspans = lines.map((ln, i) => `<tspan x="${p.x}" y="${top + (i + 0.5) * lineH}">${esc(ln)}</tspan>`).join("");
+      out.push(`<text font-size="${size}" font-family="Helvetica, Arial, sans-serif" text-anchor="${anchor}" dominant-baseline="central" fill="${col(p.color)}"${halo}${rot}>${tspans}</text>`);
     }
     out.push("</svg>");
     return out.join("\n");
@@ -1244,6 +1688,11 @@ function convexHull(points: [number, number][]): [number, number][] {
 }
 
 function shape(g: Graphics, n: { x: number; y: number; w: number; h: number; s: number }) {
+  const poly = polyPoints(n);
+  if (poly) {
+    g.poly(poly);
+    return;
+  }
   switch (n.s) {
     case 2: case 5: case 9:
       g.ellipse(n.x + n.w / 2, n.y + n.h / 2, n.w / 2, n.h / 2);
@@ -1293,8 +1742,21 @@ function pointInPolygon(x: number, y: number, pts: number[]) {
 
 function boundaryDistance(n: NodeRec, ux: number, uy: number) {
   const rx = n.w / 2, ry = n.h / 2;
-  if (n.s === 2 || n.s === 5 || n.s === 9) {
+  if (isRound(n.s)) {
     return 1 / Math.sqrt((ux * ux) / (rx * rx || 1) + (uy * uy) / (ry * ry || 1));
+  }
+  const poly = polyPoints({ x: -rx, y: -ry, w: n.w, h: n.h, s: n.s });
+  if (poly) {
+    // the ray from the centre along (ux, uy) meets the outline: nearest crossing of any side
+    let best = Infinity;
+    for (let i = 0; i < poly.length; i += 2) {
+      const ax = poly[i], ay = poly[i + 1], bx = poly[(i + 2) % poly.length], by = poly[(i + 3) % poly.length];
+      const ex = bx - ax, ey = by - ay, den = ux * ey - uy * ex;
+      if (Math.abs(den) < 1e-12) continue;
+      const t = (ax * ey - ay * ex) / den, u = (ax * uy - ay * ux) / den;
+      if (t > 0 && u >= -1e-9 && u <= 1 + 1e-9) best = Math.min(best, t);
+    }
+    if (Number.isFinite(best)) return best;
   }
   const tx = ux ? rx / Math.abs(ux) : Infinity;
   const ty = uy ? ry / Math.abs(uy) : Infinity;

@@ -360,9 +360,11 @@ behave, and you can set them in the file:
 | `x`, `y` | position (if missing, GUESS lays out the graph) | |
 | `color` | fill colour (a name or `"r,g,b"` / `"r,g,b,a"`) | cornflowerblue |
 | `strokecolor` | outline colour | darker fill |
-| `style` | shape: 1 rectangle, 2 ellipse, 3 rounded rectangle, 4–6 the same with the label inside, 7 image | 2 |
+| `style` | shape: 1 rectangle, 2 ellipse, 3 rounded rectangle, 4–6 the same with the label inside, 7 image, 11 triangle, 12 diamond, 13 hexagon, 14 octagon | 2 |
 | `width`, `height` | size | 10 |
-| `label`, `labelvisible`, `labelcolor` | the label text, whether it's shown, its colour | name, false |
+| `label`, `labelvisible`, `labelcolor` | the label text, whether it's shown, its colour (inside a node: black or white for contrast, unless set) | name, false |
+| `labelpos` | where the label goes: `right`, `left`, `above`, `below`, `inside`, or `outside` (GUESS picks a free side) | right |
+| `labelsize` | label size as a scale (1 = normal) | 1 |
 | `image` | an image file or URL (with style 7) | |
 | `visible` | whether it's drawn | true |
 | `fixed` | layouts don't move it | false |
@@ -372,7 +374,7 @@ behave, and you can set them in the file:
 | `directed` | a directed edge (arrow) | false |
 | `color`, `width` | colour and thickness | dandelion, 2 |
 | `weight` | used by weighted layouts and paths | 1 |
-| `label`, `labelvisible`, `labelcolor` | as for nodes | |
+| `label`, `labelvisible`, `labelcolor`, `labelsize` | as for nodes; edge labels sit on a small background pill at the middle of the edge | |
 | `visible` | whether it's drawn | true |
 
 GDF files embedded in old GUESS applets end each line with `;` and are
@@ -757,6 +759,21 @@ pieChart([indegree, outdegree])     # each node becomes a pie of several fields
 pieNeighbors(dept)                  # a pie of the neighbours' departments
 pieOff()
 bundleEdges(dept)                   # bundle edges that run between the same groups
+unbundleEdges()
+```
+
+Edge bundling also works without groups. `bundleEdges()` uses MINGLE
+(Gansner et al. 2011): edges that run alike merge, level by level, into
+bundles that share a trunk, saving "ink". It is fast enough for large graphs.
+`bundleEdges(method="fdeb")` is force-directed edge bundling (Holten and van
+Wijk 2009): edges attract compatible edges like elastic strands, giving
+smooth, organic curves; it suits up to a few thousand edges. Both work best
+when many long edges run between the same regions, and `strength=` (0 to 1)
+relaxes the bundles toward straight lines. The View menu has both.
+
+```python
+bundleEdges()                       # MINGLE
+bundleEdges(method="fdeb", strength=0.7)
 unbundleEdges()
 ```
 
@@ -1165,12 +1182,37 @@ Hulls follow their nodes when you move them or run a layout.
   curves.
 - **Labels**: `labelOutlines()` draws labels with a halo so they read on any
   background. `hideOverlappingLabels()` drops labels that would collide,
-  keeping the bigger nodes' labels.
+  keeping the bigger nodes' labels. `edgeLabelsAlong()` turns edge labels to
+  run along their edges.
 - **Background image**: `setBackgroundImage("map.png", x, y)` puts an image
   under the graph (a map, say), and `removeBackgroundImage()` takes it away.
 - **Arrows**: `overrideArrowLength(12)`, `overrideArrowWidth(6)`.
 
 ![Dark theme, with colorize(dept), labelBy(name) and hideOverlappingLabels().](img/dark.png)
+
+## 12.4 Labels inside nodes, positions and sizes
+
+A node's `labelpos` says where its label goes. `inside` fits the label into
+the node: it wraps long labels onto several lines when the node is tall
+enough, shrinks the text down to about half size, and finally shortens it
+with "…". The text is black or white, whichever reads better on the fill
+(unless `labelcolor` is set). Styles 4–6 always put the label inside.
+`outside` lets GUESS choose a side for each label, bigger nodes first,
+avoiding other nodes and labels.
+
+```python
+g.nodes.labelvisible = true
+g.nodes.labelpos = "outside"              # a free side for each label
+(dept == "dept3").labelpos = "inside"
+fitNodesToLabels(dept == "dept3")         # or: grow nodes to fit their labels
+labelSizeBy(pagerank, 0.8, 2)             # bigger labels for important nodes
+for e in (freq > 150): e.label = str(e.freq)
+(freq > 150).labelvisible = true
+edgeLabelsAlong()
+```
+
+The Style panel sets the same things: map *Label* with a position, or *Label
+size* to a number.
 
 \newpage
 
@@ -1680,6 +1722,14 @@ The edges among the members of a (possibly mixed) set.
 
 The nodes among the members of a (possibly mixed) set.
 
+### `fitNodesToLabels(seq=None, padding=4)`
+
+fitNodesToLabels() puts each node's label inside it (labelpos =
+"inside") and resizes the node to fit the label, as in a flowchart or a
+Graphviz drawing; fitNodesToLabels(dept == 'dept3') does some nodes.
+padding is the space around the text. Labels with line breaks
+(`\n`) make taller nodes.
+
 ### `floatRange(a, b, inc)`
 
 Like range() but for floats.
@@ -1717,6 +1767,12 @@ Hide nodes with no edges other than self loops.
 ### `infowindow()`
 
 Open the data table (the Jython version's information window).
+
+### `labelSizeBy(field, smallest=0.8, largest=2.0, scale='linear')`
+
+labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
+edge field) in proportion to a numeric field: 1 is the normal size. Sets
+the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank").
 
 ### `makeFromCSV(filename, nodes=None, directed=False)`
 
@@ -2629,6 +2685,12 @@ direction reads without arrows. curvedEdges(false) goes back to straight
 lines; curvedEdges(k) sets the curvature: the arc radius is edge length / k
 (default 1.2, as in Gephi; 2 gives semicircles).
 
+### `edgeLabelsAlong(on=True)`
+
+edgeLabelsAlong() turns edge labels to run along their edges (kept
+upright, so they read left to right); edgeLabelsAlong(false) keeps them
+horizontal (the default).
+
 ### `exportCGM(filename=None)`
 
 Not available in the browser (the Java version wrote CGM); use exportSVG or exportPDF.
@@ -2799,7 +2861,8 @@ removeStyle(name) deletes a saved style.
 ### `shapeBy(field)`
 
 shapeBy(field) gives each value of a node field its own shape (circle,
-square, rounded square, repeating), the most common value first.
+square, rounded square, triangle, diamond, hexagon, octagon, then
+repeating), the most common value first.
 
 ### `table(seq=None)`
 
@@ -2813,12 +2876,21 @@ nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)).
 borderBy(field) gives node borders a distinct colour per value of a
 field (as colorize does for fills) and widens them.
 
-### `bundleEdges(fld, strength=0.85)`
+### `bundleEdges(fld=None, strength=0.85, method=None, neighbors=10, angleStrength=1.2, stiffness=0.1, compatibility=0.6, cycles=6)`
 
-bundleEdges(field) routes each edge between two groups (values of a node
-field, e.g. modularity_class) through the groups' centres, so edges
-between the same groups merge into bundles. strength 0..1 (0 = straight).
-Layouts and unbundleEdges() straighten them again.
+bundleEdges() bundles edges that run alike, so the main flows stand
+out of a hairball. Three methods:
+  bundleEdges()                 MINGLE (multilevel, saves "ink"): fast,
+                                tree-like bundles; good for large graphs
+  bundleEdges(method="fdeb")    force-directed edge bundling: smooth,
+                                organic curves; up to a few thousand edges
+  bundleEdges(modularity_class) through the centres of the groups of a
+                                node field
+strength 0..1 blends toward straight lines (0 = straight). MINGLE:
+neighbors (edges compared with each), angleStrength (higher allows
+sharper turns). FDEB: stiffness (of each edge), compatibility (0..1, how
+alike edges must be to attract), cycles. Layouts and unbundleEdges()
+straighten them again.
 
 ### `pieChart(fields, palette=None)`
 
@@ -3550,6 +3622,45 @@ neatoLayout()
 removeOverlap()
 ```
 
+**Labels inside nodes**
+
+```python
+g.nodes.labelvisible = true
+fitNodesToLabels()
+```
+
+**Labels where there's room**
+
+```python
+g.nodes.labelvisible = true
+g.nodes.labelpos = 'outside'
+```
+
+**Label size by a field**
+
+```python
+labelSizeBy(pagerank, 0.8, 2)
+```
+
+**Edge labels**
+
+```python
+labelBy(freq)
+edgeLabelsAlong()
+```
+
+**Bundle edges**
+
+```python
+bundleEdges()
+```
+
+**Force-directed edge bundling**
+
+```python
+bundleEdges(method='fdeb')
+```
+
 ### Filtering and selection
 
 **Show only a core**
@@ -3694,6 +3805,8 @@ Built-in node fields:
 | `label` | VARCHAR | None |
 | `image` | VARCHAR | None |
 | `labelvisible` | BOOLEAN | False |
+| `labelpos` | VARCHAR | 'right' |
+| `labelsize` | DOUBLE | 1.0 |
 | `indegree` | INTEGER | 0 (read-only) |
 | `outdegree` | INTEGER | 0 (read-only) |
 | `totaldegree` | INTEGER | 0 (read-only) |
@@ -3714,6 +3827,7 @@ Built-in edge fields:
 | `weight` | DOUBLE | 1.0 |
 | `label` | VARCHAR | None |
 | `labelvisible` | BOOLEAN | False |
+| `labelsize` | DOUBLE | 1.0 |
 
 Computed node fields (calculated the first time they are used, by name or
 as `n.<field>`; `recompute()` after editing the graph): `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`, `harmonic`, `eccentricity`, `clustering`, `triangles`, `coreness`, `strength`, `component`, `strongcomponent`, `betweenness`, `degrank`, `hits`, `rwbetweenness`, `knn`; edge field `betweenness`.

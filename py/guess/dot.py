@@ -211,7 +211,8 @@ class _Parser:
 # --------------------------------------------------------------------------
 
 _SHAPES = {"box": 1, "rect": 1, "rectangle": 1, "square": 1, "ellipse": 2, "oval": 2, "circle": 2,
-           "point": 2, "doublecircle": 2, "egg": 2, "triangle": 5, "diamond": 9, "Mrecord": 3, "record": 1}
+           "point": 2, "doublecircle": 2, "egg": 2, "triangle": 11, "diamond": 12, "hexagon": 13,
+           "octagon": 14, "Mrecord": 3, "record": 1}
 _NODE_DONE = {"pos", "color", "fillcolor", "label", "width", "height", "shape", "fontcolor"}
 _EDGE_DONE = {"color", "label", "penwidth", "weight", "guess_weight", "fontcolor", "pos", "dir"}
 _RESERVED_N = {"name", "x", "y", "visible", "color", "strokecolor", "labelcolor", "fixed", "style", "width",
@@ -388,7 +389,8 @@ _GV_ATTRS = {
     "style", "tailhead", "taillabel", "tailport", "tooltip", "url", "vertices", "weight", "width",
     "xlabel", "xlp", "z",
 }
-_SHAPE_OUT = {1: "box", 2: "ellipse", 3: "Mrecord", 5: "triangle", 9: "diamond"}
+_SHAPE_OUT = {1: "box", 2: "ellipse", 3: "Mrecord", 4: "box", 5: "ellipse", 6: "Mrecord",
+              11: "triangle", 12: "diamond", 13: "hexagon", 14: "octagon"}
 
 
 def _q(v):

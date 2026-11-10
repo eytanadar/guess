@@ -10,6 +10,10 @@ export interface NodeRec {
   m?: number;
   /** pie slice sizes (see Overlay.pie) */
   p?: number[];
+  /** label position when not "right": left, above, below, inside, outside (GUESS picks a free side) */
+  lp?: string;
+  /** label size as a scale (absent: 1) */
+  ls?: number;
 }
 
 export interface EdgeRec {
@@ -18,6 +22,8 @@ export interface EdgeRec {
   l: string; lv: boolean; lc: number;
   /** bend points [x0, y0, x1, y1, ...] (centre coordinates), if routed */
   b?: number[] | null;
+  /** label size as a scale (absent: 1) */
+  ls?: number;
 }
 
 /** Interpreter output: text, node, edge, or a (possibly annotated) group. */
@@ -64,7 +70,7 @@ export interface Overlay {
   guidesNote?: string;
   /** context for semantic dragging (see main.ts dragBehaviour) */
   drag?: DragContext;
-  labels?: { outline: boolean; cull: boolean };
+  labels?: { outline: boolean; cull: boolean; along?: boolean; placement?: string; screen?: boolean };
   hulls: HullRec[];
   legends: LegendRec[];
 }
@@ -124,6 +130,8 @@ export type FromWorker =
   | UiMsg
   | { type: "image"; key: string; url: string }
   | { type: "download"; name: string; text: string }
+  /** optimizeLabels(): simulated annealing over label positions in the renderer */
+  | { type: "labels"; op: "optimize"; ms: number }
   | { type: "select"; nodes: number[] }
   /** undo()/redo() reversed or re-applied the command run in console cell `cell` */
   | { type: "undone"; cell: number; undone: boolean }

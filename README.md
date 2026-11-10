@@ -166,6 +166,8 @@ and uses [numpy](https://numpy.org) (BSD), [networkx](https://networkx.org)
 from Pyodide's package set) and [Graphviz](https://graphviz.org) (EPL-2.0;
 source at https://gitlab.com/graphviz/graphviz) through
 [@hpcc-js/wasm-graphviz](https://github.com/hpcc-systems/hpcc-js-wasm)
-(Apache-2.0), unmodified. The display uses [PixiJS](https://pixijs.com) (MIT)
+(Apache-2.0), unmodified. Edge bundling includes a Python port of [MINGLE](https://github.com/philogb/mingle)
+(MIT, Copyright (c) 2013 Twitter, Nicolas Garcia Belmonte); the force-directed
+bundling is written from Holten and van Wijk's paper. The display uses [PixiJS](https://pixijs.com) (MIT)
 and the console [CodeMirror](https://codemirror.net) (MIT).
 

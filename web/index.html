@@ -75,6 +75,9 @@
             <button role="menuitemcheckbox" id="btn-timeline" aria-pressed="false" title="Scrub or play through time (ranges or a field such as year)">Timeline</button>
             <hr />
             <button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges())">Curved edges</button>
+            <button role="menuitem" data-run="bundleEdges()" title="MINGLE: merge edges that run alike into bundles (good for large graphs)">Bundle edges (MINGLE)</button>
+            <button role="menuitem" data-run="bundleEdges(method='fdeb')" title="Force-directed edge bundling: smooth, organic bundles">Bundle edges (force-directed)</button>
+            <button role="menuitem" data-run="unbundleEdges()">Straighten edges</button>
             <button role="menuitemcheckbox" id="label-outlines" aria-pressed="false">Label outlines</button>
             <button role="menuitemcheckbox" id="label-cull" aria-pressed="false">Hide overlapping labels</button>
             <hr />

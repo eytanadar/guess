@@ -375,6 +375,16 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
     case "image":
       renderer.addImage(m.key, m.url);
       break;
+    case "labels": {
+      // after the current redraw, so the labels being optimised are laid out
+      requestAnimationFrame(() => {
+        const r = renderer.optimizeLabels(Math.max(100, Math.min(m.ms, 30000)));
+        status.textContent = r.labels
+          ? `optimizeLabels: ${r.labels} labels, overlap cost ${r.before.toFixed(1)} → ${r.after.toFixed(1)}`
+          : "optimizeLabels: no labels to place (labelpos \"outside\" or edge labels)";
+      });
+      break;
+    }
     case "download":
       download(m.name, new Blob([m.text], { type: "text/plain" }));
       break;

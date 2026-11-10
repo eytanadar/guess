@@ -97,7 +97,7 @@ export class Console {
     gutter.title = "Run (Shift+Enter)";
     gutter.onclick = () => this.runEditor();
     const hint = el("div", "cell-hint");
-    hint.textContent = "Shift+Enter to run · Tab completes · ↑↓ history · Esc interrupts";
+    hint.textContent = "Shift+Enter to run · Tab completes · Shift+↑↓ history · Esc interrupts";
     const editorBox = el("div", "cell-editor");
     this.inputBox.append(gutter, editorBox, hint);
     root.append(this.out, this.inputBox);
@@ -148,16 +148,9 @@ export class Console {
       this.host.interrupt();
       return true;
     };
-    const firstLine = (s: EditorState) => s.doc.lineAt(s.selection.main.head).number === 1;
-    const lastLine = (s: EditorState) => s.doc.lineAt(s.selection.main.head).number === s.doc.lines;
-    const up: Command = (v) => {
-      if (completionStatus(v.state) || !v.state.selection.main.empty || !firstLine(v.state)) return false;
-      return this.recall(-1);
-    };
-    const down: Command = (v) => {
-      if (completionStatus(v.state) || !v.state.selection.main.empty || !lastLine(v.state)) return false;
-      return this.recall(1);
-    };
+    // history is on Shift+Up / Shift+Down; plain arrows only move inside the editor
+    const up: Command = (v) => (completionStatus(v.state) ? false : this.recall(-1));
+    const down: Command = (v) => (completionStatus(v.state) ? false : this.recall(1));
     const tab: Command = (v) => {
       if (completionStatus(v.state) === "active") return acceptCompletion(v);
       const sel = v.state.selection.main;
@@ -205,8 +198,8 @@ export class Console {
       ])),
       Prec.high(keymap.of([
         { key: "Tab", run: tab },
-        { key: "ArrowUp", run: up },
-        { key: "ArrowDown", run: down },
+        { key: "Shift-ArrowUp", run: up },
+        { key: "Shift-ArrowDown", run: down },
       ])),
       keymap.of([...closeBracketsKeymap, ...completionKeymap, ...historyKeymap, ...searchKeymap, indentWithTab, ...defaultKeymap]),
       this.signatureHelp(),

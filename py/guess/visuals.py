@@ -162,7 +162,7 @@ class View:
         self.arrow = {"length": None, "width": None}
         self.curvature = 0.0        # 0 = straight edges; > 0 = Gephi-style curves
         self.edge_color = "original"  # or source / target / mixed (node colours)
-        self.labels = {"outline": False, "cull": False}
+        self.labels = {"outline": False, "cull": False, "along": False, "placement": "candidates", "screen": False}
         self.styles = {}            # name -> [Gython lines] (defineStyle / applyStyle)
         self.pie = None             # pie-chart nodes (glyphs.py)
         self.drag = {}              # declarative dragging context: ring, axes
@@ -383,6 +383,44 @@ def install(session):
         view.labels["outline"] = bool(on)
         view.changed()
 
+    def edgeLabelsAlong(on=True):
+        """edgeLabelsAlong() turns edge labels to run along their edges (kept
+        upright, so they read left to right); edgeLabelsAlong(false) keeps them
+        horizontal (the default)."""
+        view.labels["along"] = bool(on)
+        view.changed()
+
+    def labelPlacement(method="candidates"):
+        """labelPlacement("candidates") or labelPlacement("particles") chooses how
+        labels with labelpos "outside" (and edge labels, which slide along their
+        edge) find room. "candidates" (default) tries 16 positions around each
+        node, biggest nodes first, then re-places labels that still collide;
+        "particles" also searches further out, ring by ring, and draws a leader
+        line to labels it places away from their node. Both avoid other labels,
+        nodes and edges."""
+        m = str(method).lower()
+        if m not in ("candidates", "particles"):
+            raise GuessError('method should be "candidates" or "particles"')
+        view.labels["placement"] = m
+        view.changed()
+
+    def constantLabelSize(on=True):
+        """constantLabelSize() keeps labels the same size on screen as you zoom
+        (they grow with the graph otherwise); each label appears once there is
+        room for it and stays as you zoom further in, so zooming in reveals more
+        labels. Labels inside nodes keep fitting their nodes.
+        constantLabelSize(false) turns it off."""
+        view.labels["screen"] = bool(on)
+        view.changed()
+
+    def optimizeLabels(seconds=2):
+        """optimizeLabels() improves the positions of labels placed "outside"
+        (and of edge labels) by simulated annealing for a few seconds, trading
+        overlaps with labels, nodes and edges against the preferred positions;
+        the result stays until the graph is replaced, labelPlacement changes or
+        you run it again. Good before exporting a figure."""
+        session.emit({"type": "labels", "op": "optimize", "ms": int(float(seconds) * 1000)})
+
     def hideOverlappingLabels(on=True):
         """hideOverlappingLabels() hides labels that would overlap a label of a
         bigger node, rechecked as you zoom; hideOverlappingLabels(false) shows all."""
@@ -457,7 +495,8 @@ def install(session):
     for fn in (createConvexHull, removeConvexHull, removeConvexHulls, getConvexHulls,
                setDisplayBackground, getDisplayBackground, setBackgroundImage,
                removeBackgroundImage, overrideArrowLength, overrideArrowWidth, curvedEdges,
-               setEdgeColorMode, labelOutlines, hideOverlappingLabels, select):
+               setEdgeColorMode, labelOutlines, hideOverlappingLabels, edgeLabelsAlong,
+               labelPlacement, constantLabelSize, optimizeLabels, select):
         reg(fn.__name__, fn)
     # Legend()/GradientLegend() are constructors: don't auto-call on a bare name
     session._bind("Legend", make_legend, kind="command")

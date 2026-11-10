@@ -621,3 +621,107 @@ test("Graphviz loads in the background and lays out graphs", async ({ page }) =>
   expect(await lastError(page)).toBeNull();
   expect(errors).toEqual([]);
 });
+
+test("labels inside nodes, positions, sizes, new shapes and edge labels", async ({ page }) => {
+  const errors = await boot(page);
+  await run(page, `makeSample('florentine')
+g.nodes.labelvisible = true
+g.nodes.labelpos = 'inside'
+for n in g.nodes: n.width = 40; n.height = 30
+Medici.color = '#222244'
+Pazzi.color = '#f5f0c8'
+Acciaiuoli.label = 'Acciaiuoli family of bankers'
+Acciaiuoli.height = 60
+Strozzi.style = 13
+Strozzi.labelpos = 'below'
+Albizzi.style = 12
+Albizzi.labelsize = 1.6
+Albizzi.labelpos = 'right'
+for e in g.edges: e.label = 'marriage'
+g.edges.labelvisible = true
+center()`);
+  await page.waitForTimeout(600);
+  const pl = () => page.evaluate(() => {
+    const r = (window as any).__guess.renderer;
+    const nodes = new Map([...r.nodes.values()].map((n: any) => [n.name, n]));
+    return r.placements.map((p: any) => ({ ...p, node: p.key.startsWith("n") ? [...nodes.values()].find((n: any) => `n${n.i}` === p.key) : null }));
+  });
+  let P = await pl();
+  const byName = (name: string) => P.find((p: any) => p.node?.name === name);
+  // inside: fits the node, contrasting colour, wrapped when long
+  for (const p of P.filter((q: any) => q.node && q.node.name !== "Strozzi" && q.node.name !== "Albizzi")) {
+    expect(p.w).toBeLessThanOrEqual(p.node.w + 0.01);
+  }
+  expect(byName("Medici").color).toBe(0xffffff);
+  expect(byName("Pazzi").color).toBe(0x1a1a1a);
+  expect(byName("Acciaiuoli").text).toContain("\n");
+  // below / right with a bigger size
+  const st = byName("Strozzi");
+  expect(st.ay).toBe(0);
+  expect(st.y).toBeGreaterThan(st.node.y + st.node.h);
+  expect(byName("Albizzi").scale).toBeCloseTo(0.25 * 1.6);
+  // edge labels on pills; turned along their edges on request
+  const edgeLabels = P.filter((p: any) => p.key.startsWith("e"));
+  expect(edgeLabels.length).toBe(20);
+  expect(edgeLabels.every((p: any) => p.pill && p.rot === 0)).toBe(true);
+  await run(page, "edgeLabelsAlong()");
+  await page.waitForTimeout(300);
+  P = await pl();
+  expect(P.filter((p: any) => p.key.startsWith("e") && p.rot !== 0).length).toBeGreaterThan(10);
+  expect(P.filter((p: any) => p.key.startsWith("e")).every((p: any) => Math.abs(p.rot) <= Math.PI / 2 + 1e-9)).toBe(true);
+  // the SVG export draws the same: polygons for the new shapes, wrapped lines, pills
+  const svg: string = await page.evaluate(() => (window as any).__guess.renderer.exportSVG());
+  expect(svg).toContain("<polygon");
+  expect((svg.match(/<tspan/g) ?? []).length).toBeGreaterThan(20);
+  expect(svg).toContain('fill-opacity="0.85"');
+  expect(svg).toContain("rotate(");
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test("label placement: candidates, particles, annealing and constant-size labels", async ({ page }) => {
+  const errors = await boot(page);
+  const stats = () => page.evaluate(() => {
+    const r = (window as any).__guess.renderer;
+    const P = r.placements.filter((p: any) => p.key.startsWith("n"));
+    const B = P.map((p: any) => [p.x - p.ax * p.w, p.y - p.ay * p.h, p.x + (1 - p.ax) * p.w, p.y + (1 - p.ay) * p.h]);
+    let ll = 0;
+    for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++)
+      if (Math.min(B[i][2], B[j][2]) > Math.max(B[i][0], B[j][0]) && Math.min(B[i][3], B[j][3]) > Math.max(B[i][1], B[j][1])) ll++;
+    return { overlaps: ll, leaders: P.filter((p: any) => p.leader).length, n: P.length };
+  });
+  await run(page, "g.nodes.labelvisible = true");
+  await page.waitForTimeout(400);
+  const fixed = await stats();
+  await run(page, "g.nodes.labelpos = 'outside'");
+  await page.waitForTimeout(400);
+  const cand = await stats();
+  expect(cand.n).toBe(402);
+  expect(cand.overlaps).toBeLessThan(fixed.overlaps * 0.6);
+  await run(page, "labelPlacement('particles')");
+  await page.waitForTimeout(400);
+  const part = await stats();
+  expect(part.leaders).toBeGreaterThan(0);
+  expect(part.overlaps).toBeLessThan(fixed.overlaps * 0.6);
+  await run(page, "labelPlacement('candidates')\noptimizeLabels(1)");
+  await expect(page.locator("#status")).toContainText(/optimizeLabels: 402 labels, overlap cost [\d.]+ → [\d.]+/, { timeout: 10000 });
+  const [before, after] = (await page.locator("#status").innerText()).match(/[\d.]+ → [\d.]+/)![0].split(" → ").map(Number);
+  expect(after).toBeLessThanOrEqual(before);
+  // constant-size labels: zooming in reveals more of them
+  await run(page, "constantLabelSize()\ncenter()");
+  await page.waitForTimeout(800);
+  const shown = () => page.evaluate(() => [...(window as any).__guess.renderer.labelPool.values()].filter((t: any) => t.visible).length);
+  const out = await shown();
+  await run(page, "center(egoNetwork(v128, 1))");
+  await page.waitForTimeout(1200);
+  const inside = await page.evaluate(() => {
+    const r = (window as any).__guess.renderer;
+    const [x0, y0, x1, y1] = (() => { const v = r.getView(); const c = r.app.canvas.getBoundingClientRect(); return [v[0] - c.width / 2 / v[2], v[1] - c.height / 2 / v[2], v[0] + c.width / 2 / v[2], v[1] + c.height / 2 / v[2]]; })();
+    const inView = r.placements.filter((p: any) => p.key.startsWith("n") && p.x > x0 && p.x < x1 && p.y > y0 && p.y < y1);
+    return { inView: inView.length, visible: inView.filter((p: any) => r.labelPool.get(p.key)?.visible).length };
+  });
+  expect(out).toBeLessThan(402);
+  expect(inside.visible).toBeGreaterThan(inside.inView * 0.8);
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});

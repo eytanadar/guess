@@ -360,9 +360,11 @@ behave, and you can set them in the file:
 | `x`, `y` | position (if missing, GUESS lays out the graph) | |
 | `color` | fill colour (a name or `"r,g,b"` / `"r,g,b,a"`) | cornflowerblue |
 | `strokecolor` | outline colour | darker fill |
-| `style` | shape: 1 rectangle, 2 ellipse, 3 rounded rectangle, 4–6 the same with the label inside, 7 image | 2 |
+| `style` | shape: 1 rectangle, 2 ellipse, 3 rounded rectangle, 4–6 the same with the label inside, 7 image, 11 triangle, 12 diamond, 13 hexagon, 14 octagon | 2 |
 | `width`, `height` | size | 10 |
-| `label`, `labelvisible`, `labelcolor` | the label text, whether it's shown, its colour | name, false |
+| `label`, `labelvisible`, `labelcolor` | the label text, whether it's shown, its colour (inside a node: black or white for contrast, unless set) | name, false |
+| `labelpos` | where the label goes: `right`, `left`, `above`, `below`, `inside`, or `outside` (GUESS picks a free side) | right |
+| `labelsize` | label size as a scale (1 = normal) | 1 |
 | `image` | an image file or URL (with style 7) | |
 | `visible` | whether it's drawn | true |
 | `fixed` | layouts don't move it | false |
@@ -372,7 +374,7 @@ behave, and you can set them in the file:
 | `directed` | a directed edge (arrow) | false |
 | `color`, `width` | colour and thickness | dandelion, 2 |
 | `weight` | used by weighted layouts and paths | 1 |
-| `label`, `labelvisible`, `labelcolor` | as for nodes | |
+| `label`, `labelvisible`, `labelcolor`, `labelsize` | as for nodes; edge labels sit on a small background pill at the middle of the edge | |
 | `visible` | whether it's drawn | true |
 
 GDF files embedded in old GUESS applets end each line with `;` and are
@@ -757,6 +759,21 @@ pieChart([indegree, outdegree])     # each node becomes a pie of several fields
 pieNeighbors(dept)                  # a pie of the neighbours' departments
 pieOff()
 bundleEdges(dept)                   # bundle edges that run between the same groups
+unbundleEdges()
+```
+
+Edge bundling also works without groups. `bundleEdges()` uses MINGLE
+(Gansner et al. 2011): edges that run alike merge, level by level, into
+bundles that share a trunk, saving "ink". It is fast enough for large graphs.
+`bundleEdges(method="fdeb")` is force-directed edge bundling (Holten and van
+Wijk 2009): edges attract compatible edges like elastic strands, giving
+smooth, organic curves; it suits up to a few thousand edges. Both work best
+when many long edges run between the same regions, and `strength=` (0 to 1)
+relaxes the bundles toward straight lines. The View menu has both.
+
+```python
+bundleEdges()                       # MINGLE
+bundleEdges(method="fdeb", strength=0.7)
 unbundleEdges()
 ```
 
@@ -1165,12 +1182,57 @@ Hulls follow their nodes when you move them or run a layout.
   curves.
 - **Labels**: `labelOutlines()` draws labels with a halo so they read on any
   background. `hideOverlappingLabels()` drops labels that would collide,
-  keeping the bigger nodes' labels.
+  keeping the bigger nodes' labels. `edgeLabelsAlong()` turns edge labels to
+  run along their edges.
 - **Background image**: `setBackgroundImage("map.png", x, y)` puts an image
   under the graph (a map, say), and `removeBackgroundImage()` takes it away.
 - **Arrows**: `overrideArrowLength(12)`, `overrideArrowWidth(6)`.
 
 ![Dark theme, with colorize(dept), labelBy(name) and hideOverlappingLabels().](img/dark.png)
+
+## 12.4 Labels inside nodes, positions and sizes
+
+A node's `labelpos` says where its label goes. `inside` fits the label into
+the node: it wraps long labels onto several lines when the node is tall
+enough, shrinks the text down to about half size, and finally shortens it
+with "…". The text is black or white, whichever reads better on the fill
+(unless `labelcolor` is set). Styles 4–6 always put the label inside.
+`outside` lets GUESS choose a side for each label, bigger nodes first,
+avoiding other nodes and labels.
+
+```python
+g.nodes.labelvisible = true
+g.nodes.labelpos = "outside"              # a free side for each label
+(dept == "dept3").labelpos = "inside"
+fitNodesToLabels(dept == "dept3")         # or: grow nodes to fit their labels
+labelSizeBy(pagerank, 0.8, 2)             # bigger labels for important nodes
+for e in (freq > 150): e.label = str(e.freq)
+(freq > 150).labelvisible = true
+edgeLabelsAlong()
+```
+
+The Style panel sets the same things: map *Label* with a position, or *Label
+size* to a number.
+
+**Finding room for labels.** Labels placed `outside`, and edge labels (which
+slide along their edge), are placed to avoid other labels, nodes and edges:
+
+- `labelPlacement("candidates")` (the default) tries 16 positions around each
+  node, biggest nodes first, then moves the labels that still collide.
+- `labelPlacement("particles")` also searches further out, ring by ring, and
+  draws a thin leader line to labels it places away from their node. It keeps
+  labels off edges best.
+- `optimizeLabels(2)` polishes the positions by simulated annealing for two
+  seconds and keeps the result (until the graph is replaced or the method
+  changes). The status bar reports how much it improved. Use it before
+  exporting a figure.
+- `constantLabelSize()` keeps labels the same size on screen as you zoom.
+  Each label appears once there is room for it and stays as you zoom further
+  in, so zooming in reveals more labels.
+
+On the sample graph with every label shown, placing them `outside` cuts
+label overlaps by about two thirds and edges crossing labels by about the
+same; particles all but removes the edge crossings.
 
 \newpage
 
@@ -1292,7 +1354,7 @@ several things are selected, the function receives the selection.
 | Shift+Enter, Cmd/Ctrl+Enter | run the cell |
 | Enter | a new line |
 | Tab | complete commands, fields, nodes and attributes |
-| ↑ / ↓ on the first / last line | earlier / later commands |
+| Shift+↑ / Shift+↓ | earlier / later commands (plain ↑ / ↓ move within the code) |
 | Esc, or *Stop* | interrupt running code |
 | Ctrl+L | clear the output |
 | Shift+Cmd/Ctrl+F | find in the console output |

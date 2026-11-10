@@ -84,7 +84,7 @@ export const GESTURE_SECTIONS: { title: string; items: Gesture[] }[] = [
   {
     title: "Keyboard",
     items: [
-      { id: "keys", title: "Shortcuts", how: "Shift+Enter run · Cmd/Ctrl+K search · F1 help · Cmd/Ctrl+Z undo (outside the code cell) · Shift+Cmd/Ctrl+Z redo · Esc interrupt or clear · Shift+Cmd/Ctrl+F find in output · ↑↓ history",
+      { id: "keys", title: "Shortcuts", how: "Shift+Enter run · Cmd/Ctrl+K search · F1 help · Cmd/Ctrl+Z undo (outside the code cell) · Shift+Cmd/Ctrl+Z redo · Esc interrupt or clear · Shift+Cmd/Ctrl+F find in output · Shift+↑↓ history",
         what: "Every gesture above writes Gython into the console, so it can be read, undone and run again." },
     ],
   },

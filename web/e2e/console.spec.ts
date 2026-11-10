@@ -64,10 +64,14 @@ test("cells: Enter adds a line, Shift+Enter runs, Edit and Run again reuse a cel
   await cells.last().locator(".cell-rerun").click();
   await expect(cells).toHaveCount(before + 3);
   await expect(cells.last().locator(".cell-out")).toHaveText("100");
-  // up-arrow recalls history
+  // Shift+Up recalls history; plain Up only moves within the code
   await page.locator(input).click();
   await page.keyboard.press("ArrowUp");
+  await expect(page.locator(input)).not.toContainText("print(k");
+  await page.keyboard.press("Shift+ArrowUp");
   await expect(page.locator(input)).toHaveText("print(k * 50)");
+  await page.keyboard.press("Shift+ArrowDown");
+  await expect(page.locator(input)).not.toContainText("print(k");
   // an error marks the cell
   await run(page, "nosuchname");
   await expect(cells.last()).toHaveClass(/failed/);

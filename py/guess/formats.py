@@ -147,7 +147,7 @@ def _pajek_vertex(graph, line):
         elif key == "lc":
             labelcolor = value
         p += 2
-    style = 2
+    style = {"triangle": 11, "diamond": 12}.get(shape, 2)
     if shape == "box":
         style = 3 if rounded else 1
     n = graph.addNode("pajek" + ident)
@@ -366,7 +366,7 @@ def _gml_parse(text):
 
 
 _GML_SHAPES = {"ellipse": 2, "oval": 2, "circle": 2, "rectangle": 1, "rect": 1, "box": 1,
-               "roundrectangle": 3, "triangle": 5, "diamond": 9}
+               "roundrectangle": 3, "triangle": 11, "diamond": 12, "hexagon": 13, "octagon": 14}
 
 
 def _gml_type(values):

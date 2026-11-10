@@ -641,6 +641,8 @@ class Session:
             "lc": colors.to_rgba_int(lc)[0] if lc else -1,
             "v": bool(val("visible")),
             "img": self._image_key(val("image")),
+            **({"lp": val("labelpos")} if val("labelpos") not in (None, "right") else {}),
+            **({"ls": float(val("labelsize"))} if val("labelsize") not in (None, 1.0) else {}),
             **({"m": 1} if n._id in getattr(self, "groups", ()) else {}),
             **({"p": self._pie(n)} if getattr(self.view, "pie", None) else {}),
         }
@@ -702,6 +704,7 @@ class Session:
             "lv": bool(val("labelvisible")),
             "lc": colors.to_rgba_int(lc)[0] if lc else -1,
             "b": [c for p in self.graph.bends.get(e, ()) for c in p] or None,
+            **({"ls": float(val("labelsize"))} if val("labelsize") not in (None, 1.0) else {}),
         }
 
     def scene(self):

@@ -70,7 +70,8 @@ def node_runner(web_dir):
     return run
 
 
-_SHAPES = {1: "box", 2: "ellipse", 3: "box", 5: "triangle", 9: "diamond"}
+_SHAPES = {1: "box", 2: "ellipse", 3: "box", 4: "box", 5: "ellipse", 6: "box",
+           11: "triangle", 12: "diamond", 13: "hexagon", 14: "octagon"}
 
 
 def build_dot(snap, edges, *, directed, graph_attrs, clusters=None, with_pos=False, len_field=None):

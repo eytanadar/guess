@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (60)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (62)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -18,7 +18,7 @@ Commands can be called without parentheses when they take no arguments
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
 - [Layouts](#layouts) (33)
-- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (30)
+- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (34)
 - [Styles and visual mappings](#styles-and-visual-mappings) (10)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
@@ -161,6 +161,14 @@ The edges among the members of a (possibly mixed) set.
 
 The nodes among the members of a (possibly mixed) set.
 
+### `fitNodesToLabels(seq=None, padding=4)`
+
+fitNodesToLabels() puts each node's label inside it (labelpos =
+"inside") and resizes the node to fit the label, as in a flowchart or a
+Graphviz drawing; fitNodesToLabels(dept == 'dept3') does some nodes.
+padding is the space around the text. Labels with line breaks
+(`\n`) make taller nodes.
+
 ### `floatRange(a, b, inc)`
 
 Like range() but for floats.
@@ -198,6 +206,12 @@ Hide nodes with no edges other than self loops.
 ### `infowindow()`
 
 Open the data table (the Jython version's information window).
+
+### `labelSizeBy(field, smallest=0.8, largest=2.0, scale='linear')`
+
+labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
+edge field) in proportion to a numeric field: 1 is the normal size. Sets
+the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank").
 
 ### `makeFromCSV(filename, nodes=None, directed=False)`
 
@@ -1098,6 +1112,14 @@ springLayout.
 
 ## Display: hulls, legends, background, edges, labels, selection, export
 
+### `constantLabelSize(on=True)`
+
+constantLabelSize() keeps labels the same size on screen as you zoom
+(they grow with the graph otherwise); each label appears once there is
+room for it and stays as you zoom further in, so zooming in reveals more
+labels. Labels inside nodes keep fitting their nodes.
+constantLabelSize(false) turns it off.
+
 ### `createConvexHull(seq, color='200,200,255,90')`
 
 Shade the convex hull around the nodes in seq (edges contribute their endpoints).
@@ -1109,6 +1131,12 @@ source to target, as in Gephi's preview, so a->b and b->a separate and
 direction reads without arrows. curvedEdges(false) goes back to straight
 lines; curvedEdges(k) sets the curvature: the arc radius is edge length / k
 (default 1.2, as in Gephi; 2 gives semicircles).
+
+### `edgeLabelsAlong(on=True)`
+
+edgeLabelsAlong() turns edge labels to run along their edges (kept
+upright, so they read left to right); edgeLabelsAlong(false) keeps them
+horizontal (the default).
 
 ### `exportCGM(filename=None)`
 
@@ -1177,11 +1205,29 @@ bigger node, rechecked as you zoom; hideOverlappingLabels(false) shows all.
 labelOutlines() draws a halo in the background colour around labels so
 they stay readable over edges; labelOutlines(false) turns it off.
 
+### `labelPlacement(method='candidates')`
+
+labelPlacement("candidates") or labelPlacement("particles") chooses how
+labels with labelpos "outside" (and edge labels, which slide along their
+edge) find room. "candidates" (default) tries 16 positions around each
+node, biggest nodes first, then re-places labels that still collide;
+"particles" also searches further out, ring by ring, and draws a leader
+line to labels it places away from their node. Both avoid other labels,
+nodes and edges.
+
 ### `Legend()`
 
 A legend box on the display. ``l = Legend(); l.add(bob, "managers")``.
 
 Entries snapshot the look of the node, edge or hull at the time they are added.
+
+### `optimizeLabels(seconds=2)`
+
+optimizeLabels() improves the positions of labels placed "outside"
+(and of edge labels) by simulated annealing for a few seconds, trading
+overlaps with labels, nodes and edges against the preferred positions;
+the result stays until the graph is replaced, labelPlacement changes or
+you run it again. Good before exporting a figure.
 
 ### `overrideArrowLength(length)`
 
@@ -1280,7 +1326,8 @@ removeStyle(name) deletes a saved style.
 ### `shapeBy(field)`
 
 shapeBy(field) gives each value of a node field its own shape (circle,
-square, rounded square, repeating), the most common value first.
+square, rounded square, triangle, diamond, hexagon, octagon, then
+repeating), the most common value first.
 
 ### `table(seq=None)`
 
@@ -1294,12 +1341,21 @@ nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)).
 borderBy(field) gives node borders a distinct colour per value of a
 field (as colorize does for fills) and widens them.
 
-### `bundleEdges(fld, strength=0.85)`
+### `bundleEdges(fld=None, strength=0.85, method=None, neighbors=10, angleStrength=1.2, stiffness=0.1, compatibility=0.6, cycles=6)`
 
-bundleEdges(field) routes each edge between two groups (values of a node
-field, e.g. modularity_class) through the groups' centres, so edges
-between the same groups merge into bundles. strength 0..1 (0 = straight).
-Layouts and unbundleEdges() straighten them again.
+bundleEdges() bundles edges that run alike, so the main flows stand
+out of a hairball. Three methods:
+  bundleEdges()                 MINGLE (multilevel, saves "ink"): fast,
+                                tree-like bundles; good for large graphs
+  bundleEdges(method="fdeb")    force-directed edge bundling: smooth,
+                                organic curves; up to a few thousand edges
+  bundleEdges(modularity_class) through the centres of the groups of a
+                                node field
+strength 0..1 blends toward straight lines (0 = straight). MINGLE:
+neighbors (edges compared with each), angleStrength (higher allows
+sharper turns). FDEB: stiffness (of each edge), compatibility (0..1, how
+alike edges must be to attract), cycles. Layouts and unbundleEdges()
+straighten them again.
 
 ### `pieChart(fields, palette=None)`
 
@@ -2031,6 +2087,64 @@ neatoLayout()
 removeOverlap()
 ```
 
+**Labels inside nodes**
+
+```python
+g.nodes.labelvisible = true
+fitNodesToLabels()
+```
+
+**Labels where there's room**
+
+```python
+g.nodes.labelvisible = true
+g.nodes.labelpos = 'outside'
+```
+
+**Labels off the edges**
+
+```python
+g.nodes.labelpos = 'outside'
+labelPlacement('particles')
+```
+
+**Polish label positions**
+
+```python
+optimizeLabels(2)
+```
+
+**Labels that stay readable when zooming**
+
+```python
+constantLabelSize()
+```
+
+**Label size by a field**
+
+```python
+labelSizeBy(pagerank, 0.8, 2)
+```
+
+**Edge labels**
+
+```python
+labelBy(freq)
+edgeLabelsAlong()
+```
+
+**Bundle edges**
+
+```python
+bundleEdges()
+```
+
+**Force-directed edge bundling**
+
+```python
+bundleEdges(method='fdeb')
+```
+
 ### Filtering and selection
 
 **Show only a core**
@@ -2175,6 +2289,8 @@ Built-in node fields:
 | `label` | VARCHAR | None |
 | `image` | VARCHAR | None |
 | `labelvisible` | BOOLEAN | False |
+| `labelpos` | VARCHAR | 'right' |
+| `labelsize` | DOUBLE | 1.0 |
 | `indegree` | INTEGER | 0 (read-only) |
 | `outdegree` | INTEGER | 0 (read-only) |
 | `totaldegree` | INTEGER | 0 (read-only) |
@@ -2195,6 +2311,7 @@ Built-in edge fields:
 | `weight` | DOUBLE | 1.0 |
 | `label` | VARCHAR | None |
 | `labelvisible` | BOOLEAN | False |
+| `labelsize` | DOUBLE | 1.0 |
 
 Computed node fields (calculated the first time they are used, by name or
 as `n.<field>`; `recompute()` after editing the graph): `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`, `harmonic`, `eccentricity`, `clustering`, `triangles`, `coreness`, `strength`, `component`, `strongcomponent`, `betweenness`, `degrank`, `hits`, `rwbetweenness`, `knn`; edge field `betweenness`.
