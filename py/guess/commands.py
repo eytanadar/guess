@@ -547,14 +547,28 @@ def install(session):
             n.height = h + 2 * pad + (0.3 * h if n.style in (2, 5, 11, 12) else 0)
 
     @cmd
-    def colorBy(field, start, end, scale="linear", middle=None):
+    def colorBy(field, start, end, scale="linear", middle=None, center=None):
         """colorBy(field, startColor, endColor) colours elements along a gradient in
         proportion to a numeric field's value; scale may be "linear", "log",
-        "sqrt" or "rank"; middle=color adds a midpoint colour. Compare colorize,
-        which spaces distinct values evenly."""
+        "sqrt" or "rank"; middle=color adds a midpoint colour. center=value
+        makes a diverging gradient: that value gets the middle colour (white
+        unless given) and the ends are equally far from it, so equal changes
+        up and down look equally strong, e.g. colorBy(lfc, blue, red,
+        center=0) for fold changes. Compare colorize, which spaces distinct
+        values evenly."""
         field = _field(field)
         vals = _numeric(field)
-        t = _scaler(vals, scale)
+        if center is not None:
+            if scale != "linear":
+                raise GuessError("center= works with the linear scale only")
+            c = float(center)
+            dev = max((abs(v - c) for _e, v in vals), default=0.0) or 1.0
+            middle = "white" if middle is None else middle
+
+            def t(v):
+                return 0.5 + 0.5 * (v - c) / dev
+        else:
+            t = _scaler(vals, scale)
         stops = [colors.parse(start, (255, 0, 0, 255))]
         if middle is not None:
             stops.append(colors.parse(middle, (0, 255, 0, 255)))

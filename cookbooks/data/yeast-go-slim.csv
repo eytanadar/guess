@@ -1,0 +1,1535 @@
+gene,aspect,term
+ACO1,component,cytosol
+ACO1,component,intracellular membraneless organelle
+ACO1,component,mitochondrion
+ACO1,component,organelle
+ACO1,function,DNA binding
+ACO1,function,RNA binding
+ACO1,function,lyase activity
+ACO1,function,mRNA binding
+ACO1,process,carbohydrate metabolic process
+ACO1,process,cellular respiration
+ACO1,process,generation of precursor metabolites and energy
+ACO1,process,monocarboxylic acid metabolic process
+ACO1,process,small molecule metabolic process
+APC1,component,anaphase-promoting complex
+APC1,component,nucleus
+APC1,component,organelle
+APC1,component,protein-containing complex
+APC1,component,ubiquitin ligase complex
+APC1,function,acyltransferase activity
+APC1,function,transferase activity
+APC1,process,catabolic process
+APC1,process,protein catabolic process
+APC1,process,protein modification by small protein conjugation or removal
+APC1,process,regulation of cell cycle
+APC1,process,regulation of organelle organization
+BEM1,component,cell cortex
+BEM1,component,cytoplasm
+BEM1,component,incipient cellular bud site
+BEM1,component,mitochondrion
+BEM1,component,organelle
+BEM1,component,site of polarized growth
+BEM1,function,enzyme regulator activity
+BEM1,function,ion binding
+BEM1,function,lipid binding
+BEM1,process,cell morphogenesis
+BEM1,process,regulation of organelle organization
+CDC14,component,RENT complex
+CDC14,component,chromatin silencing complex
+CDC14,component,cytoplasm
+CDC14,component,intracellular membraneless organelle
+CDC14,component,microtubule organizing center
+CDC14,component,nucleolus
+CDC14,component,nucleus
+CDC14,component,organelle
+CDC14,component,protein-containing complex
+CDC14,component,site of polarized growth
+CDC14,component,spindle pole body
+CDC14,function,hydrolase activity
+CDC14,function,phosphatase activity
+CDC14,process,catabolic process
+CDC14,process,cell cycle
+CDC14,process,chromosome organization
+CDC14,process,chromosome segregation
+CDC14,process,cytoskeleton organization
+CDC14,process,mitotic cell cycle
+CDC14,process,organelle fission
+CDC14,process,regulation of cell cycle
+CDC14,process,regulation of organelle organization
+CDC14,process,response to chemical
+CDC14,process,response to osmotic stress
+CDC14,process,response to stress
+CDC16,component,anaphase-promoting complex
+CDC16,component,cytosol
+CDC16,component,nucleus
+CDC16,component,organelle
+CDC16,component,protein-containing complex
+CDC16,component,ubiquitin ligase complex
+CDC16,function,acyltransferase activity
+CDC16,function,transferase activity
+CDC16,process,catabolic process
+CDC16,process,protein catabolic process
+CDC16,process,protein modification by small protein conjugation or removal
+CDC16,process,regulation of DNA metabolic process
+CDC20,component,anaphase-promoting complex
+CDC20,component,cytoplasm
+CDC20,component,mitotic checkpoint complex
+CDC20,component,nucleus
+CDC20,component,organelle
+CDC20,component,protein-containing complex
+CDC20,component,ubiquitin ligase complex
+CDC20,function,enzyme regulator activity
+CDC20,process,catabolic process
+CDC20,process,cell cycle
+CDC20,process,meiotic cell cycle
+CDC20,process,protein catabolic process
+CDC20,process,regulation of cell cycle
+CDC20,process,regulation of organelle organization
+CDC20,process,signal transduction
+CDC23,component,anaphase-promoting complex
+CDC23,component,protein-containing complex
+CDC23,component,ubiquitin ligase complex
+CDC23,function,acyltransferase activity
+CDC23,function,transferase activity
+CDC23,process,catabolic process
+CDC23,process,protein catabolic process
+CDC23,process,protein modification by small protein conjugation or removal
+CDC27,component,anaphase-promoting complex
+CDC27,component,protein-containing complex
+CDC27,component,ubiquitin ligase complex
+CDC27,function,acyltransferase activity
+CDC27,function,transferase activity
+CDC27,process,catabolic process
+CDC27,process,protein catabolic process
+CDC27,process,protein modification by small protein conjugation or removal
+CDC28,component,cyclin-dependent protein kinase holoenzyme complex
+CDC28,component,cytoplasm
+CDC28,component,cytoplasmic stress granule
+CDC28,component,endoplasmic reticulum
+CDC28,component,intracellular membraneless organelle
+CDC28,component,nucleus
+CDC28,component,organelle
+CDC28,component,protein-containing complex
+CDC28,component,site of polarized growth
+CDC28,function,enzyme binding
+CDC28,function,histone binding
+CDC28,function,kinase activity
+CDC28,function,transferase activity
+CDC28,process,DNA damage response
+CDC28,process,DNA metabolic process
+CDC28,process,DNA repair
+CDC28,process,Golgi vesicle transport
+CDC28,process,catabolic process
+CDC28,process,cell cycle
+CDC28,process,cellular component assembly
+CDC28,process,chromosome organization
+CDC28,process,cytoskeleton organization
+CDC28,process,mRNA processing
+CDC28,process,mitotic cell cycle
+CDC28,process,organelle assembly
+CDC28,process,protein catabolic process
+CDC28,process,regulation of DNA metabolic process
+CDC28,process,regulation of cell cycle
+CDC28,process,regulation of organelle organization
+CDC28,process,response to stress
+CDC28,process,transport
+CDC28,process,vesicle-mediated transport
+CDC34,component,SCF ubiquitin ligase complex
+CDC34,component,cytoplasm
+CDC34,component,nucleus
+CDC34,component,organelle
+CDC34,component,protein-containing complex
+CDC34,component,ubiquitin ligase complex
+CDC34,function,acyltransferase activity
+CDC34,function,transferase activity
+CDC34,process,catabolic process
+CDC34,process,protein catabolic process
+CDC34,process,protein modification by small protein conjugation or removal
+CDC4,component,SCF ubiquitin ligase complex
+CDC4,component,nuclear SCF ubiquitin ligase complex
+CDC4,component,nucleus
+CDC4,component,organelle
+CDC4,component,protein-containing complex
+CDC4,component,ubiquitin ligase complex
+CDC4,function,acyltransferase activity
+CDC4,function,transferase activity
+CDC4,function,ubiquitin-like protein binding
+CDC4,process,catabolic process
+CDC4,process,cell cycle
+CDC4,process,meiotic cell cycle
+CDC4,process,protein catabolic process
+CDC4,process,protein modification by small protein conjugation or removal
+CDC42,component,cytoskeleton
+CDC42,component,incipient cellular bud site
+CDC42,component,intracellular membraneless organelle
+CDC42,component,membrane
+CDC42,component,nuclear envelope
+CDC42,component,organelle
+CDC42,component,plasma membrane
+CDC42,component,site of polarized growth
+CDC42,function,GTPase activity
+CDC42,function,hydrolase activity
+CDC42,process,cytoskeleton organization
+CDC42,process,growth
+CDC42,process,invasive growth in response to glucose limitation
+CDC42,process,membrane organization
+CDC42,process,regulation of cell cycle
+CDC42,process,regulation of organelle organization
+CDC42,process,regulation of transport
+CDC42,process,signal transduction
+CDC53,component,SCF ubiquitin ligase complex
+CDC53,component,protein-containing complex
+CDC53,component,ubiquitin ligase complex
+CDC53,function,DNA binding
+CDC53,function,acyltransferase activity
+CDC53,function,protein-macromolecule adaptor activity
+CDC53,function,transferase activity
+CDC53,process,catabolic process
+CDC53,process,protein catabolic process
+CDC6,component,DNA replication preinitiation complex
+CDC6,component,cytoplasm
+CDC6,component,nuclear pre-replicative complex
+CDC6,component,nucleus
+CDC6,component,organelle
+CDC6,component,protein-containing complex
+CDC6,function,ATP hydrolysis activity
+CDC6,function,DNA binding
+CDC6,function,GTPase activity
+CDC6,function,chromatin binding
+CDC6,function,enzyme regulator activity
+CDC6,function,hydrolase activity
+CDC6,function,ion binding
+CDC6,process,cellular component assembly
+CDC6,process,protein-containing complex assembly
+CDC6,process,regulation of DNA metabolic process
+CDC6,process,regulation of cell cycle
+CDH1,component,anaphase-promoting complex
+CDH1,component,cytoplasm
+CDH1,component,nucleus
+CDH1,component,organelle
+CDH1,component,protein-containing complex
+CDH1,component,ubiquitin ligase complex
+CDH1,function,enzyme regulator activity
+CDH1,process,regulation of cell cycle
+CDH1,process,regulation of organelle organization
+CIT1,component,cytosol
+CIT1,component,mitochondrion
+CIT1,component,organelle
+CIT1,function,acyltransferase activity
+CIT1,function,transferase activity
+CIT1,process,catabolic process
+CIT1,process,cellular respiration
+CIT1,process,generation of precursor metabolites and energy
+CIT1,process,nucleobase-containing compound catabolic process
+CIT1,process,nucleobase-containing small molecule metabolic process
+CIT1,process,small molecule metabolic process
+CIT1,process,sulfur compound metabolic process
+CIT2,component,cytoplasm
+CIT2,component,cytosol
+CIT2,component,mitochondrion
+CIT2,component,organelle
+CIT2,component,peroxisome
+CIT2,function,acyltransferase activity
+CIT2,function,transferase activity
+CIT2,process,carbohydrate metabolic process
+CIT2,process,cellular respiration
+CIT2,process,generation of precursor metabolites and energy
+CIT2,process,monocarboxylic acid metabolic process
+CIT2,process,small molecule metabolic process
+CLB1,component,cyclin-dependent protein kinase holoenzyme complex
+CLB1,component,cytoplasm
+CLB1,component,nucleus
+CLB1,component,organelle
+CLB1,component,protein-containing complex
+CLB1,function,enzyme regulator activity
+CLB1,process,cytoskeleton organization
+CLB1,process,regulation of cell cycle
+CLB1,process,regulation of organelle organization
+CLB2,component,cytoplasm
+CLB2,component,intracellular membraneless organelle
+CLB2,component,microtubule organizing center
+CLB2,component,nucleus
+CLB2,component,organelle
+CLB2,component,site of polarized growth
+CLB2,component,spindle
+CLB2,component,spindle pole body
+CLB2,function,enzyme regulator activity
+CLB2,process,regulation of cell cycle
+CLB3,component,cytoplasm
+CLB3,component,intracellular membraneless organelle
+CLB3,component,lipid droplet
+CLB3,component,nucleus
+CLB3,component,organelle
+CLB3,function,enzyme regulator activity
+CLB3,process,organelle fission
+CLB3,process,regulation of cell cycle
+CLB3,process,regulation of organelle organization
+CLB4,component,cytoplasm
+CLB4,component,nucleus
+CLB4,component,organelle
+CLB4,function,enzyme regulator activity
+CLB4,process,regulation of cell cycle
+CLB4,process,regulation of organelle organization
+CLB5,component,nucleus
+CLB5,component,organelle
+CLB5,function,enzyme regulator activity
+CLB5,process,DNA metabolic process
+CLB5,process,DNA replication
+CLB5,process,regulation of DNA metabolic process
+CLB5,process,regulation of cell cycle
+CLB5,process,regulation of organelle organization
+CLB6,component,cellular component
+CLB6,function,enzyme regulator activity
+CLB6,process,DNA metabolic process
+CLB6,process,DNA replication
+CLB6,process,regulation of DNA metabolic process
+CLN1,component,cytoplasm
+CLN1,component,nucleus
+CLN1,component,organelle
+CLN1,function,enzyme regulator activity
+CLN1,process,regulation of cell cycle
+CLN2,component,cyclin-dependent protein kinase holoenzyme complex
+CLN2,component,cytoplasm
+CLN2,component,nucleus
+CLN2,component,organelle
+CLN2,component,protein-containing complex
+CLN2,function,enzyme regulator activity
+CLN2,process,regulation of cell cycle
+CLN3,component,nucleus
+CLN3,component,organelle
+CLN3,function,enzyme regulator activity
+CLN3,process,organelle fusion
+CLN3,process,regulation of cell cycle
+CLN3,process,vacuole organization
+DIG1,component,Ste12p-Dig1p-Dig2p complex
+DIG1,component,Tec1p-Ste12p-Dig1p complex
+DIG1,component,nucleus
+DIG1,component,organelle
+DIG1,component,protein-containing complex
+DIG1,function,molecular function
+DIG1,process,response to chemical
+DIG2,component,Ste12p-Dig1p-Dig2p complex
+DIG2,component,nucleus
+DIG2,component,organelle
+DIG2,component,protein-containing complex
+DIG2,function,molecular function
+DIG2,process,response to chemical
+FAR1,component,Cdc24p-Far1p-Gbetagamma complex
+FAR1,component,cytoplasm
+FAR1,component,nucleus
+FAR1,component,organelle
+FAR1,component,protein-containing complex
+FAR1,component,site of polarized growth
+FAR1,function,enzyme regulator activity
+FAR1,function,ion binding
+FAR1,process,regulation of cell cycle
+FAR1,process,response to chemical
+FUM1,component,cytosol
+FUM1,component,mitochondrion
+FUM1,component,nucleus
+FUM1,component,organelle
+FUM1,function,lyase activity
+FUM1,process,cellular respiration
+FUM1,process,generation of precursor metabolites and energy
+FUM1,process,small molecule metabolic process
+FUS1,component,endoplasmic reticulum
+FUS1,component,membrane
+FUS1,component,organelle
+FUS1,component,plasma membrane
+FUS1,component,site of polarized growth
+FUS1,function,molecular function
+FUS1,process,biological process
+FUS3,component,cytoplasm
+FUS3,component,cytoplasmic stress granule
+FUS3,component,intracellular membraneless organelle
+FUS3,component,mitochondrion
+FUS3,component,nucleus
+FUS3,component,organelle
+FUS3,component,site of polarized growth
+FUS3,function,kinase activity
+FUS3,function,transferase activity
+FUS3,process,growth
+FUS3,process,invasive growth in response to glucose limitation
+FUS3,process,regulation of transport
+FUS3,process,response to chemical
+FUS3,process,signal transduction
+GPA1,component,cytoplasmic vesicle
+GPA1,component,cytosol
+GPA1,component,endosome
+GPA1,component,heterotrimeric G-protein complex
+GPA1,component,membrane
+GPA1,component,organelle
+GPA1,component,plasma membrane
+GPA1,component,protein-containing complex
+GPA1,function,GTPase activity
+GPA1,function,hydrolase activity
+GPA1,process,cytoskeleton-dependent intracellular transport
+GPA1,process,nucleus organization
+GPA1,process,organelle fusion
+GPA1,process,transport
+IDH1,component,intracellular membraneless organelle
+IDH1,component,isocitrate dehydrogenase complex (NAD+)
+IDH1,component,mitochondrion
+IDH1,component,organelle
+IDH1,component,protein-containing complex
+IDH1,function,oxidoreductase activity
+IDH1,process,amino acid metabolic process
+IDH1,process,biosynthetic process
+IDH1,process,cellular respiration
+IDH1,process,generation of precursor metabolites and energy
+IDH1,process,small molecule metabolic process
+IDH2,component,isocitrate dehydrogenase complex (NAD+)
+IDH2,component,mitochondrion
+IDH2,component,organelle
+IDH2,component,protein-containing complex
+IDH2,function,oxidoreductase activity
+IDH2,process,amino acid metabolic process
+IDH2,process,biosynthetic process
+IDH2,process,cellular respiration
+IDH2,process,generation of precursor metabolites and energy
+IDH2,process,small molecule metabolic process
+KGD1,component,intracellular membraneless organelle
+KGD1,component,mitochondrion
+KGD1,component,organelle
+KGD1,component,oxoglutarate dehydrogenase complex
+KGD1,component,protein-containing complex
+KGD1,function,oxidoreductase activity
+KGD1,process,cellular respiration
+KGD1,process,generation of precursor metabolites and energy
+KGD1,process,small molecule metabolic process
+KGD2,component,intracellular membraneless organelle
+KGD2,component,mitochondrion
+KGD2,component,organelle
+KGD2,component,oxoglutarate dehydrogenase complex
+KGD2,component,protein-containing complex
+KGD2,function,acyltransferase activity
+KGD2,function,oxidoreductase activity
+KGD2,function,transferase activity
+KGD2,process,cellular respiration
+KGD2,process,generation of precursor metabolites and energy
+KGD2,process,small molecule metabolic process
+KSS1,component,nucleus
+KSS1,component,organelle
+KSS1,component,site of polarized growth
+KSS1,function,kinase activity
+KSS1,function,transferase activity
+KSS1,process,growth
+KSS1,process,invasive growth in response to glucose limitation
+KSS1,process,regulation of cell cycle
+KSS1,process,response to chemical
+KSS1,process,signal transduction
+LPD1,component,cytosol
+LPD1,component,glycine cleavage complex
+LPD1,component,intracellular membraneless organelle
+LPD1,component,mitochondrion
+LPD1,component,organelle
+LPD1,component,oxoglutarate dehydrogenase complex
+LPD1,component,protein-containing complex
+LPD1,component,pyruvate dehydrogenase complex
+LPD1,function,oxidoreductase activity
+LPD1,process,amino acid metabolic process
+LPD1,process,biosynthetic process
+LPD1,process,catabolic process
+LPD1,process,cellular respiration
+LPD1,process,generation of precursor metabolites and energy
+LPD1,process,monocarboxylic acid metabolic process
+LPD1,process,nucleobase-containing small molecule metabolic process
+LPD1,process,small molecule metabolic process
+LPD1,process,sulfur compound metabolic process
+LSC1,component,intracellular membraneless organelle
+LSC1,component,mitochondrion
+LSC1,component,organelle
+LSC1,function,ligase activity
+LSC1,process,cellular respiration
+LSC1,process,generation of precursor metabolites and energy
+LSC1,process,nucleobase-containing small molecule metabolic process
+LSC1,process,small molecule metabolic process
+LSC1,process,sulfur compound metabolic process
+LSC2,component,mitochondrion
+LSC2,component,organelle
+LSC2,function,ligase activity
+LSC2,process,cellular respiration
+LSC2,process,generation of precursor metabolites and energy
+LSC2,process,nucleobase-containing small molecule metabolic process
+LSC2,process,small molecule metabolic process
+LSC2,process,sulfur compound metabolic process
+MBP1,component,MBF transcription complex
+MBP1,component,RNA polymerase II transcription regulator complex
+MBP1,component,nucleus
+MBP1,component,organelle
+MBP1,component,protein-containing complex
+MBP1,component,transcription regulator complex
+MBP1,function,DNA binding
+MBP1,function,DNA-binding transcription factor activity
+MBP1,process,biosynthetic process
+MDH1,component,cytosol
+MDH1,component,mitochondrion
+MDH1,component,organelle
+MDH1,function,RNA binding
+MDH1,function,mRNA binding
+MDH1,function,oxidoreductase activity
+MDH1,process,cellular respiration
+MDH1,process,generation of precursor metabolites and energy
+MLH1,component,MutLalpha complex
+MLH1,component,MutLbeta complex
+MLH1,component,MutLgamma complex
+MLH1,component,cytoplasm
+MLH1,component,mitochondrion
+MLH1,component,nucleus
+MLH1,component,organelle
+MLH1,component,protein-containing complex
+MLH1,function,ATP hydrolysis activity
+MLH1,function,hydrolase activity
+MLH1,function,ion binding
+MLH1,process,DNA damage response
+MLH1,process,DNA metabolic process
+MLH1,process,DNA recombination
+MLH1,process,DNA repair
+MLH1,process,response to stress
+MSG5,component,cytoplasm
+MSG5,component,nucleus
+MSG5,component,organelle
+MSG5,function,hydrolase activity
+MSG5,function,phosphatase activity
+MSG5,process,cell wall organization or biogenesis
+MSG5,process,signal transduction
+MSH2,component,MutSalpha complex
+MSH2,component,MutSbeta complex
+MSH2,component,chromosome
+MSH2,component,intracellular membraneless organelle
+MSH2,component,nuclear chromosome
+MSH2,component,nucleus
+MSH2,component,organelle
+MSH2,component,protein-containing complex
+MSH2,function,ATP hydrolysis activity
+MSH2,function,DNA binding
+MSH2,function,hydrolase activity
+MSH2,function,ion binding
+MSH2,process,DNA damage response
+MSH2,process,DNA metabolic process
+MSH2,process,DNA recombination
+MSH2,process,DNA repair
+MSH2,process,cellular component assembly
+MSH2,process,chromatin organization
+MSH2,process,regulation of DNA metabolic process
+MSH2,process,response to stress
+MSH3,component,MutSbeta complex
+MSH3,component,cytoplasm
+MSH3,component,nucleus
+MSH3,component,organelle
+MSH3,component,protein-containing complex
+MSH3,function,DNA binding
+MSH3,process,DNA damage response
+MSH3,process,DNA metabolic process
+MSH3,process,DNA recombination
+MSH3,process,DNA repair
+MSH3,process,regulation of DNA metabolic process
+MSH3,process,response to stress
+MSH6,component,MutSalpha complex
+MSH6,component,cytoplasm
+MSH6,component,nucleus
+MSH6,component,organelle
+MSH6,component,protein-containing complex
+MSH6,function,ATP hydrolysis activity
+MSH6,function,DNA binding
+MSH6,function,hydrolase activity
+MSH6,function,ion binding
+MSH6,process,DNA damage response
+MSH6,process,DNA metabolic process
+MSH6,process,DNA repair
+MSH6,process,regulation of DNA metabolic process
+MSH6,process,response to stress
+PMS1,component,MutLalpha complex
+PMS1,component,cytoplasm
+PMS1,component,nucleus
+PMS1,component,organelle
+PMS1,component,protein-containing complex
+PMS1,function,ATP hydrolysis activity
+PMS1,function,DNA binding
+PMS1,function,hydrolase activity
+PMS1,function,ion binding
+PMS1,process,DNA damage response
+PMS1,process,DNA metabolic process
+PMS1,process,DNA repair
+PMS1,process,response to stress
+PRE1,component,membrane
+PRE1,component,nucleus
+PRE1,component,organelle
+PRE1,component,"proteasome core complex, beta-subunit complex"
+PRE1,component,protein-containing complex
+PRE1,function,enzyme regulator activity
+PRE1,process,catabolic process
+PRE1,process,protein catabolic process
+PRE10,component,intracellular membraneless organelle
+PRE10,component,organelle
+PRE10,component,"proteasome core complex, alpha-subunit complex"
+PRE10,component,proteasome storage granule
+PRE10,component,protein-containing complex
+PRE10,function,RNA binding
+PRE10,function,mRNA binding
+PRE10,process,catabolic process
+PRE10,process,protein catabolic process
+PRE2,component,cytosol
+PRE2,component,nucleus
+PRE2,component,organelle
+PRE2,component,peroxisome
+PRE2,component,"proteasome core complex, beta-subunit complex"
+PRE2,component,protein-containing complex
+PRE2,function,hydrolase activity
+PRE2,function,peptidase activity
+PRE2,process,catabolic process
+PRE2,process,cellular component assembly
+PRE2,process,protein catabolic process
+PRE2,process,protein-containing complex assembly
+PRE3,component,intracellular membraneless organelle
+PRE3,component,organelle
+PRE3,component,"proteasome core complex, beta-subunit complex"
+PRE3,component,proteasome storage granule
+PRE3,component,protein-containing complex
+PRE3,function,hydrolase activity
+PRE3,function,peptidase activity
+PRE3,process,catabolic process
+PRE3,process,protein catabolic process
+PRE4,component,intracellular membraneless organelle
+PRE4,component,nucleus
+PRE4,component,organelle
+PRE4,component,"proteasome core complex, beta-subunit complex"
+PRE4,component,proteasome storage granule
+PRE4,component,protein-containing complex
+PRE4,function,molecular function
+PRE4,process,catabolic process
+PRE4,process,cellular component assembly
+PRE4,process,protein catabolic process
+PRE4,process,protein-containing complex assembly
+PRE5,component,intracellular membraneless organelle
+PRE5,component,organelle
+PRE5,component,"proteasome core complex, alpha-subunit complex"
+PRE5,component,proteasome storage granule
+PRE5,component,protein-containing complex
+PRE5,function,molecular function
+PRE5,process,catabolic process
+PRE5,process,protein catabolic process
+PRE6,component,intracellular membraneless organelle
+PRE6,component,membrane
+PRE6,component,mitochondrion
+PRE6,component,nucleus
+PRE6,component,organelle
+PRE6,component,"proteasome core complex, alpha-subunit complex"
+PRE6,component,proteasome storage granule
+PRE6,component,protein-containing complex
+PRE6,function,molecular function
+PRE6,process,catabolic process
+PRE6,process,protein catabolic process
+PRE7,component,cytosol
+PRE7,component,nucleus
+PRE7,component,organelle
+PRE7,component,"proteasome core complex, beta-subunit complex"
+PRE7,component,protein-containing complex
+PRE7,function,molecular function
+PRE7,process,catabolic process
+PRE7,process,protein catabolic process
+PRE8,component,intracellular membraneless organelle
+PRE8,component,organelle
+PRE8,component,"proteasome core complex, alpha-subunit complex"
+PRE8,component,proteasome storage granule
+PRE8,component,protein-containing complex
+PRE8,function,molecular function
+PRE8,process,catabolic process
+PRE8,process,protein catabolic process
+PRE9,component,intracellular membraneless organelle
+PRE9,component,organelle
+PRE9,component,"proteasome core complex, alpha-subunit complex"
+PRE9,component,proteasome storage granule
+PRE9,component,protein-containing complex
+PRE9,function,molecular function
+PRE9,process,catabolic process
+PRE9,process,cellular component assembly
+PRE9,process,protein catabolic process
+PRE9,process,protein-containing complex assembly
+PUP1,component,cytosol
+PUP1,component,intracellular membraneless organelle
+PUP1,component,nucleus
+PUP1,component,organelle
+PUP1,component,"proteasome core complex, beta-subunit complex"
+PUP1,component,proteasome storage granule
+PUP1,component,protein-containing complex
+PUP1,function,hydrolase activity
+PUP1,function,peptidase activity
+PUP1,process,catabolic process
+PUP1,process,protein catabolic process
+PUP2,component,intracellular membraneless organelle
+PUP2,component,organelle
+PUP2,component,"proteasome core complex, alpha-subunit complex"
+PUP2,component,proteasome storage granule
+PUP2,component,protein-containing complex
+PUP2,function,molecular function
+PUP2,process,catabolic process
+PUP2,process,protein catabolic process
+PUP3,component,nucleus
+PUP3,component,organelle
+PUP3,component,"proteasome core complex, beta-subunit complex"
+PUP3,component,protein-containing complex
+PUP3,function,enzyme regulator activity
+PUP3,process,catabolic process
+PUP3,process,protein catabolic process
+RAD51,component,chromosome
+RAD51,component,intracellular membraneless organelle
+RAD51,component,nuclear chromosome
+RAD51,component,organelle
+RAD51,function,DNA binding
+RAD51,process,DNA damage response
+RAD51,process,DNA metabolic process
+RAD51,process,DNA recombination
+RAD51,process,DNA repair
+RAD51,process,chromosome organization
+RAD51,process,response to stress
+RAD51,process,telomere organization
+RAD52,component,chromosome
+RAD52,component,intracellular membraneless organelle
+RAD52,component,nuclear chromosome
+RAD52,component,nucleus
+RAD52,component,organelle
+RAD52,function,DNA binding
+RAD52,function,isomerase activity
+RAD52,process,DNA damage response
+RAD52,process,DNA metabolic process
+RAD52,process,DNA recombination
+RAD52,process,DNA repair
+RAD52,process,biosynthetic process
+RAD52,process,cellular component assembly
+RAD52,process,chromosome organization
+RAD52,process,protein-containing complex assembly
+RAD52,process,response to stress
+RAD52,process,telomere organization
+RAD54,component,cytoplasm
+RAD54,component,nucleus
+RAD54,component,organelle
+RAD54,function,ion binding
+RAD54,process,DNA metabolic process
+RAD54,process,DNA recombination
+RAD54,process,chromatin organization
+RAD54,process,chromosome organization
+RAD54,process,telomere organization
+RAD55,component,Rad51C-XRCC3 complex
+RAD55,component,protein-containing complex
+RAD55,function,molecular function
+RAD55,process,DNA metabolic process
+RAD55,process,cellular component assembly
+RAD55,process,protein-containing complex assembly
+RAD57,component,Rad51C-XRCC3 complex
+RAD57,component,protein-containing complex
+RAD57,function,molecular function
+RAD57,process,DNA metabolic process
+RAD57,process,DNA recombination
+RAD57,process,cellular component assembly
+RAD57,process,chromosome organization
+RAD57,process,protein-containing complex assembly
+RAD57,process,telomere organization
+RPB10,component,RNA polymerase I complex
+RPB10,component,"RNA polymerase II, core complex"
+RPB10,component,RNA polymerase III complex
+RPB10,component,protein-containing complex
+RPB10,function,ion binding
+RPB10,function,nucleotidyltransferase activity
+RPB10,function,transferase activity
+RPB10,process,DNA-templated transcription
+RPB10,process,biosynthetic process
+RPB10,process,tRNA metabolic process
+RPB10,process,transcription by RNA polymerase I
+RPB10,process,transcription by RNA polymerase II
+RPB10,process,transcription by RNA polymerase III
+RPB11,component,"RNA polymerase II, core complex"
+RPB11,component,protein-containing complex
+RPB11,function,nucleotidyltransferase activity
+RPB11,function,transferase activity
+RPB11,process,DNA-templated transcription
+RPB11,process,DNA-templated transcription termination
+RPB11,process,biosynthetic process
+RPB11,process,transcription by RNA polymerase II
+RPB2,component,"RNA polymerase II, core complex"
+RPB2,component,cytoplasmic stress granule
+RPB2,component,intracellular membraneless organelle
+RPB2,component,mitochondrion
+RPB2,component,nucleus
+RPB2,component,organelle
+RPB2,component,proteasome storage granule
+RPB2,component,protein-containing complex
+RPB2,function,DNA binding
+RPB2,function,RNA binding
+RPB2,function,ion binding
+RPB2,function,mRNA binding
+RPB2,function,nucleotidyltransferase activity
+RPB2,function,transferase activity
+RPB2,process,DNA-templated transcription
+RPB2,process,biosynthetic process
+RPB2,process,transcription by RNA polymerase II
+RPB3,component,"RNA polymerase II, core complex"
+RPB3,component,nucleoplasm
+RPB3,component,protein-containing complex
+RPB3,function,ion binding
+RPB3,function,nucleotidyltransferase activity
+RPB3,function,transferase activity
+RPB3,process,DNA-templated transcription
+RPB3,process,DNA-templated transcription termination
+RPB3,process,biosynthetic process
+RPB3,process,transcription by RNA polymerase II
+RPB4,component,P-body
+RPB4,component,"RNA polymerase II, core complex"
+RPB4,component,cytoplasm
+RPB4,component,intracellular membraneless organelle
+RPB4,component,nucleus
+RPB4,component,organelle
+RPB4,component,protein-containing complex
+RPB4,function,DNA binding
+RPB4,function,RNA binding
+RPB4,function,nucleotidyltransferase activity
+RPB4,function,transferase activity
+RPB4,process,DNA-templated transcription
+RPB4,process,DNA-templated transcription initiation
+RPB4,process,RNA catabolic process
+RPB4,process,biosynthetic process
+RPB4,process,catabolic process
+RPB4,process,nucleobase-containing compound catabolic process
+RPB4,process,regulation of translation
+RPB4,process,transcription by RNA polymerase II
+RPB5,component,RNA polymerase I complex
+RPB5,component,"RNA polymerase II, core complex"
+RPB5,component,RNA polymerase III complex
+RPB5,component,protein-containing complex
+RPB5,function,nucleotidyltransferase activity
+RPB5,function,transferase activity
+RPB5,process,DNA-templated transcription
+RPB5,process,biosynthetic process
+RPB5,process,tRNA metabolic process
+RPB5,process,transcription by RNA polymerase I
+RPB5,process,transcription by RNA polymerase II
+RPB5,process,transcription by RNA polymerase III
+RPB7,component,P-body
+RPB7,component,"RNA polymerase II, core complex"
+RPB7,component,cytoplasm
+RPB7,component,intracellular membraneless organelle
+RPB7,component,nucleus
+RPB7,component,organelle
+RPB7,component,protein-containing complex
+RPB7,function,DNA binding
+RPB7,function,RNA binding
+RPB7,function,nucleotidyltransferase activity
+RPB7,function,transferase activity
+RPB7,process,DNA-templated transcription
+RPB7,process,DNA-templated transcription initiation
+RPB7,process,RNA catabolic process
+RPB7,process,biosynthetic process
+RPB7,process,catabolic process
+RPB7,process,nucleobase-containing compound catabolic process
+RPB7,process,regulation of translation
+RPB7,process,transcription by RNA polymerase II
+RPB8,component,RNA polymerase I complex
+RPB8,component,"RNA polymerase II, core complex"
+RPB8,component,RNA polymerase III complex
+RPB8,component,protein-containing complex
+RPB8,function,nucleotidyltransferase activity
+RPB8,function,transferase activity
+RPB8,process,DNA-templated transcription
+RPB8,process,biosynthetic process
+RPB8,process,tRNA metabolic process
+RPB8,process,transcription by RNA polymerase I
+RPB8,process,transcription by RNA polymerase II
+RPB8,process,transcription by RNA polymerase III
+RPB9,component,"RNA polymerase II, core complex"
+RPB9,component,protein-containing complex
+RPB9,function,ion binding
+RPB9,function,nucleotidyltransferase activity
+RPB9,function,transferase activity
+RPB9,process,DNA damage response
+RPB9,process,DNA metabolic process
+RPB9,process,DNA repair
+RPB9,process,DNA-templated transcription
+RPB9,process,DNA-templated transcription initiation
+RPB9,process,biosynthetic process
+RPB9,process,response to stress
+RPB9,process,transcription by RNA polymerase II
+RPC10,component,RNA polymerase I complex
+RPC10,component,"RNA polymerase II, core complex"
+RPC10,component,RNA polymerase III complex
+RPC10,component,cytoplasm
+RPC10,component,intracellular membraneless organelle
+RPC10,component,nucleolus
+RPC10,component,nucleus
+RPC10,component,organelle
+RPC10,component,peroxisome
+RPC10,component,protein-containing complex
+RPC10,function,ion binding
+RPC10,function,nucleotidyltransferase activity
+RPC10,function,transferase activity
+RPC10,process,DNA-templated transcription
+RPC10,process,biosynthetic process
+RPC10,process,tRNA metabolic process
+RPC10,process,transcription by RNA polymerase I
+RPC10,process,transcription by RNA polymerase II
+RPC10,process,transcription by RNA polymerase III
+RPN1,component,cytoplasm
+RPN1,component,endoplasmic reticulum
+RPN1,component,intracellular membraneless organelle
+RPN1,component,nucleus
+RPN1,component,organelle
+RPN1,component,"proteasome regulatory particle, base subcomplex"
+RPN1,component,proteasome storage granule
+RPN1,component,protein-containing complex
+RPN1,function,hydrolase activity
+RPN1,function,peptidase activity
+RPN1,function,protein-macromolecule adaptor activity
+RPN1,process,catabolic process
+RPN1,process,protein catabolic process
+RPN10,component,proteasome complex
+RPN10,component,"proteasome regulatory particle, base subcomplex"
+RPN10,component,protein-containing complex
+RPN10,function,molecular function
+RPN10,process,cellular component assembly
+RPN10,process,protein-containing complex assembly
+RPN11,component,cytosol
+RPN11,component,intracellular membraneless organelle
+RPN11,component,mitochondrion
+RPN11,component,nucleus
+RPN11,component,organelle
+RPN11,component,"proteasome regulatory particle, lid subcomplex"
+RPN11,component,proteasome storage granule
+RPN11,component,protein-containing complex
+RPN11,function,hydrolase activity
+RPN11,function,ion binding
+RPN11,function,peptidase activity
+RPN11,process,cellular component assembly
+RPN11,process,mitochondrion organization
+RPN11,process,organelle assembly
+RPN11,process,organelle fission
+RPN11,process,protein modification by small protein conjugation or removal
+RPN11,process,protein-containing complex assembly
+RPN12,component,intracellular membraneless organelle
+RPN12,component,organelle
+RPN12,component,"proteasome regulatory particle, lid subcomplex"
+RPN12,component,proteasome storage granule
+RPN12,component,protein-containing complex
+RPN12,function,molecular function
+RPN12,process,catabolic process
+RPN12,process,protein catabolic process
+RPN2,component,intracellular membraneless organelle
+RPN2,component,nucleus
+RPN2,component,organelle
+RPN2,component,"proteasome regulatory particle, base subcomplex"
+RPN2,component,proteasome storage granule
+RPN2,component,protein-containing complex
+RPN2,function,enzyme binding
+RPN2,function,hydrolase activity
+RPN2,function,peptidase activity
+RPN2,process,catabolic process
+RPN2,process,cellular component assembly
+RPN2,process,protein catabolic process
+RPN2,process,protein-containing complex assembly
+RPN3,component,"proteasome regulatory particle, lid subcomplex"
+RPN3,component,protein-containing complex
+RPN3,function,molecular function
+RPN3,process,catabolic process
+RPN3,process,protein catabolic process
+RPN5,component,COP9 signalosome
+RPN5,component,intracellular membraneless organelle
+RPN5,component,organelle
+RPN5,component,proteasome complex
+RPN5,component,"proteasome regulatory particle, lid subcomplex"
+RPN5,component,proteasome storage granule
+RPN5,component,protein-containing complex
+RPN5,function,molecular function
+RPN5,process,protein modification by small protein conjugation or removal
+RPN6,component,intracellular membraneless organelle
+RPN6,component,organelle
+RPN6,component,"proteasome regulatory particle, lid subcomplex"
+RPN6,component,proteasome storage granule
+RPN6,component,protein-containing complex
+RPN6,function,structural molecule activity
+RPN6,process,catabolic process
+RPN6,process,cellular component assembly
+RPN6,process,protein catabolic process
+RPN6,process,protein-containing complex assembly
+RPN7,component,nucleus
+RPN7,component,organelle
+RPN7,component,"proteasome regulatory particle, lid subcomplex"
+RPN7,component,protein-containing complex
+RPN7,function,structural molecule activity
+RPN7,process,catabolic process
+RPN7,process,protein catabolic process
+RPN8,component,intracellular membraneless organelle
+RPN8,component,organelle
+RPN8,component,"proteasome regulatory particle, lid subcomplex"
+RPN8,component,proteasome storage granule
+RPN8,component,protein-containing complex
+RPN8,function,molecular function
+RPN8,process,catabolic process
+RPN8,process,protein catabolic process
+RPN9,component,cytosol
+RPN9,component,intracellular membraneless organelle
+RPN9,component,nucleus
+RPN9,component,organelle
+RPN9,component,"proteasome regulatory particle, lid subcomplex"
+RPN9,component,proteasome storage granule
+RPN9,component,protein-containing complex
+RPN9,function,structural molecule activity
+RPN9,process,catabolic process
+RPN9,process,cellular component assembly
+RPN9,process,protein catabolic process
+RPN9,process,protein-containing complex assembly
+RPO21,component,"RNA polymerase II, core complex"
+RPO21,component,cytoplasmic stress granule
+RPO21,component,intracellular membraneless organelle
+RPO21,component,mitochondrion
+RPO21,component,nucleus
+RPO21,component,organelle
+RPO21,component,protein-containing complex
+RPO21,function,DNA binding
+RPO21,function,ion binding
+RPO21,function,nucleotidyltransferase activity
+RPO21,function,transferase activity
+RPO21,process,DNA damage response
+RPO21,process,DNA metabolic process
+RPO21,process,DNA-templated transcription
+RPO21,process,biosynthetic process
+RPO21,process,response to stress
+RPO21,process,transcription by RNA polymerase II
+RPS0A,component,90S preribosome
+RPS0A,component,cytoplasmic stress granule
+RPS0A,component,cytosolic small ribosomal subunit
+RPS0A,component,intracellular membraneless organelle
+RPS0A,component,organelle
+RPS0A,component,preribosome
+RPS0A,component,protein-containing complex
+RPS0A,component,ribonucleoprotein complex
+RPS0A,component,small ribosomal subunit
+RPS0A,function,structural constituent of ribosome
+RPS0A,function,structural molecule activity
+RPS0A,process,biosynthetic process
+RPS0A,process,cellular component assembly
+RPS0A,process,cytoplasmic translation
+RPS0A,process,nuclear transport
+RPS0A,process,nucleocytoplasmic transport
+RPS0A,process,protein-RNA complex assembly
+RPS0A,process,protein-containing complex assembly
+RPS0A,process,rRNA processing
+RPS0A,process,ribosomal subunit export from nucleus
+RPS0A,process,translation
+RPS0A,process,transport
+RPS11A,component,90S preribosome
+RPS11A,component,cytosolic small ribosomal subunit
+RPS11A,component,preribosome
+RPS11A,component,protein-containing complex
+RPS11A,component,ribonucleoprotein complex
+RPS11A,component,small ribosomal subunit
+RPS11A,function,structural constituent of ribosome
+RPS11A,function,structural molecule activity
+RPS11A,process,cellular component assembly
+RPS11A,process,protein-RNA complex assembly
+RPS11A,process,protein-containing complex assembly
+RPS11A,process,rRNA processing
+RPS13,component,90S preribosome
+RPS13,component,cytosolic small ribosomal subunit
+RPS13,component,preribosome
+RPS13,component,protein-containing complex
+RPS13,component,ribonucleoprotein complex
+RPS13,component,small ribosomal subunit
+RPS13,function,RNA binding
+RPS13,function,rRNA binding
+RPS13,function,structural constituent of ribosome
+RPS13,function,structural molecule activity
+RPS13,process,rRNA processing
+RPS14A,component,90S preribosome
+RPS14A,component,cytosolic small ribosomal subunit
+RPS14A,component,preribosome
+RPS14A,component,protein-containing complex
+RPS14A,component,ribonucleoprotein complex
+RPS14A,component,small ribosomal subunit
+RPS14A,component,small-subunit processome
+RPS14A,function,RNA binding
+RPS14A,function,mRNA binding
+RPS14A,function,structural constituent of ribosome
+RPS14A,function,structural molecule activity
+RPS14A,process,biosynthetic process
+RPS14A,process,cellular component assembly
+RPS14A,process,cytoplasmic translation
+RPS14A,process,protein-RNA complex assembly
+RPS14A,process,protein-containing complex assembly
+RPS14A,process,rRNA processing
+RPS14A,process,translation
+RPS15,component,cytosolic small ribosomal subunit
+RPS15,component,protein-containing complex
+RPS15,component,ribonucleoprotein complex
+RPS15,component,small ribosomal subunit
+RPS15,function,structural constituent of ribosome
+RPS15,function,structural molecule activity
+RPS15,process,biosynthetic process
+RPS15,process,cytoplasmic translation
+RPS15,process,nuclear transport
+RPS15,process,nucleocytoplasmic transport
+RPS15,process,ribosomal subunit export from nucleus
+RPS15,process,translation
+RPS15,process,transport
+RPS16A,component,90S preribosome
+RPS16A,component,cytosolic small ribosomal subunit
+RPS16A,component,preribosome
+RPS16A,component,protein-containing complex
+RPS16A,component,ribonucleoprotein complex
+RPS16A,component,small ribosomal subunit
+RPS16A,function,structural constituent of ribosome
+RPS16A,function,structural molecule activity
+RPS16A,process,rRNA processing
+RPS16A,process,translational initiation
+RPS17A,component,cytosolic small ribosomal subunit
+RPS17A,component,protein-containing complex
+RPS17A,component,ribonucleoprotein complex
+RPS17A,component,small ribosomal subunit
+RPS17A,function,structural constituent of ribosome
+RPS17A,function,structural molecule activity
+RPS17A,process,biosynthetic process
+RPS17A,process,cytoplasmic translation
+RPS17A,process,translation
+RPS18A,component,cytoplasm
+RPS18A,component,cytosolic small ribosomal subunit
+RPS18A,component,mitochondrion
+RPS18A,component,organelle
+RPS18A,component,protein-containing complex
+RPS18A,component,ribonucleoprotein complex
+RPS18A,component,small ribosomal subunit
+RPS18A,function,structural constituent of ribosome
+RPS18A,function,structural molecule activity
+RPS18A,process,biosynthetic process
+RPS18A,process,cytoplasmic translation
+RPS18A,process,nuclear transport
+RPS18A,process,nucleocytoplasmic transport
+RPS18A,process,rRNA processing
+RPS18A,process,ribosomal subunit export from nucleus
+RPS18A,process,translation
+RPS18A,process,transport
+RPS19A,component,cytosolic small ribosomal subunit
+RPS19A,component,protein-containing complex
+RPS19A,component,ribonucleoprotein complex
+RPS19A,component,small ribosomal subunit
+RPS19A,function,structural constituent of ribosome
+RPS19A,function,structural molecule activity
+RPS19A,process,nuclear transport
+RPS19A,process,nucleocytoplasmic transport
+RPS19A,process,ribosomal small subunit biogenesis
+RPS19A,process,ribosomal subunit export from nucleus
+RPS19A,process,transport
+RPS1A,component,90S preribosome
+RPS1A,component,cytosolic small ribosomal subunit
+RPS1A,component,preribosome
+RPS1A,component,protein-containing complex
+RPS1A,component,ribonucleoprotein complex
+RPS1A,component,small ribosomal subunit
+RPS1A,function,structural constituent of ribosome
+RPS1A,function,structural molecule activity
+RPS1A,process,biosynthetic process
+RPS1A,process,cytoplasmic translation
+RPS1A,process,rRNA processing
+RPS1A,process,translation
+RPS2,component,cytosolic small ribosomal subunit
+RPS2,component,preribosome
+RPS2,component,protein-containing complex
+RPS2,component,ribonucleoprotein complex
+RPS2,component,small ribosomal subunit
+RPS2,component,small-subunit processome
+RPS2,function,RNA binding
+RPS2,function,rRNA binding
+RPS2,function,structural constituent of ribosome
+RPS2,function,structural molecule activity
+RPS2,process,nuclear transport
+RPS2,process,nucleocytoplasmic transport
+RPS2,process,regulation of translation
+RPS2,process,ribosomal subunit export from nucleus
+RPS2,process,transport
+RPS20,component,cytosolic small ribosomal subunit
+RPS20,component,protein-containing complex
+RPS20,component,ribonucleoprotein complex
+RPS20,component,small ribosomal subunit
+RPS20,function,RNA binding
+RPS20,function,mRNA binding
+RPS20,process,rRNA processing
+RPS24A,component,cytosolic small ribosomal subunit
+RPS24A,component,mitochondrion
+RPS24A,component,organelle
+RPS24A,component,protein-containing complex
+RPS24A,component,ribonucleoprotein complex
+RPS24A,component,small ribosomal subunit
+RPS24A,function,structural constituent of ribosome
+RPS24A,function,structural molecule activity
+RPS24A,process,biosynthetic process
+RPS24A,process,cytoplasmic translation
+RPS24A,process,rRNA processing
+RPS24A,process,translation
+RPS3,component,90S preribosome
+RPS3,component,cytosolic small ribosomal subunit
+RPS3,component,preribosome
+RPS3,component,"preribosome, small subunit precursor"
+RPS3,component,protein-containing complex
+RPS3,component,ribonucleoprotein complex
+RPS3,component,small ribosomal subunit
+RPS3,function,nuclease activity
+RPS3,function,structural constituent of ribosome
+RPS3,function,structural molecule activity
+RPS3,process,RNA catabolic process
+RPS3,process,biosynthetic process
+RPS3,process,catabolic process
+RPS3,process,cytoplasmic translation
+RPS3,process,nuclear transport
+RPS3,process,nucleobase-containing compound catabolic process
+RPS3,process,nucleocytoplasmic transport
+RPS3,process,ribosomal subunit export from nucleus
+RPS3,process,translation
+RPS3,process,transport
+RPS31,component,cytoplasm
+RPS31,component,cytosolic small ribosomal subunit
+RPS31,component,protein-containing complex
+RPS31,component,ribonucleoprotein complex
+RPS31,component,small ribosomal subunit
+RPS31,function,ion binding
+RPS31,function,structural constituent of ribosome
+RPS31,function,structural molecule activity
+RPS31,process,biosynthetic process
+RPS31,process,cellular component assembly
+RPS31,process,protein-RNA complex assembly
+RPS31,process,protein-containing complex assembly
+RPS31,process,rRNA processing
+RPS31,process,ribosome biogenesis
+RPS5,component,90S preribosome
+RPS5,component,cytosolic small ribosomal subunit
+RPS5,component,preribosome
+RPS5,component,protein-containing complex
+RPS5,component,ribonucleoprotein complex
+RPS5,component,small ribosomal subunit
+RPS5,function,structural constituent of ribosome
+RPS5,function,structural molecule activity
+RPS5,process,nuclear transport
+RPS5,process,nucleocytoplasmic transport
+RPS5,process,rRNA processing
+RPS5,process,ribosomal subunit export from nucleus
+RPS5,process,transport
+RPS6A,component,90S preribosome
+RPS6A,component,cytosolic small ribosomal subunit
+RPS6A,component,preribosome
+RPS6A,component,protein-containing complex
+RPS6A,component,ribonucleoprotein complex
+RPS6A,component,small ribosomal subunit
+RPS6A,component,small-subunit processome
+RPS6A,function,structural constituent of ribosome
+RPS6A,function,structural molecule activity
+RPS6A,process,rRNA processing
+RPS8A,component,90S preribosome
+RPS8A,component,cytosolic small ribosomal subunit
+RPS8A,component,preribosome
+RPS8A,component,protein-containing complex
+RPS8A,component,ribonucleoprotein complex
+RPS8A,component,small ribosomal subunit
+RPS8A,function,structural constituent of ribosome
+RPS8A,function,structural molecule activity
+RPS8A,process,rRNA processing
+RPS9A,component,90S preribosome
+RPS9A,component,cytoplasm
+RPS9A,component,cytosolic small ribosomal subunit
+RPS9A,component,preribosome
+RPS9A,component,protein-containing complex
+RPS9A,component,ribonucleoprotein complex
+RPS9A,component,small ribosomal subunit
+RPS9A,component,small-subunit processome
+RPS9A,function,RNA binding
+RPS9A,function,rRNA binding
+RPS9A,function,structural constituent of ribosome
+RPS9A,function,structural molecule activity
+RPS9A,process,anatomical structure formation involved in morphogenesis
+RPS9A,process,cell wall organization or biogenesis
+RPS9A,process,cellular component assembly
+RPS9A,process,rRNA processing
+RPT1,component,"proteasome regulatory particle, base subcomplex"
+RPT1,component,protein-containing complex
+RPT1,function,ATP hydrolysis activity
+RPT1,function,enzyme binding
+RPT1,function,hydrolase activity
+RPT1,process,catabolic process
+RPT1,process,cellular component assembly
+RPT1,process,protein catabolic process
+RPT1,process,protein-containing complex assembly
+RPT2,component,nucleus
+RPT2,component,organelle
+RPT2,component,"proteasome regulatory particle, base subcomplex"
+RPT2,component,protein-containing complex
+RPT2,function,ATP hydrolysis activity
+RPT2,function,hydrolase activity
+RPT2,function,isomerase activity
+RPT2,process,RNA catabolic process
+RPT2,process,catabolic process
+RPT2,process,cellular component assembly
+RPT2,process,nucleobase-containing compound catabolic process
+RPT2,process,protein catabolic process
+RPT2,process,protein-containing complex assembly
+RPT3,component,"proteasome regulatory particle, base subcomplex"
+RPT3,component,protein-containing complex
+RPT3,function,ATP hydrolysis activity
+RPT3,function,hydrolase activity
+RPT3,process,catabolic process
+RPT3,process,cellular component assembly
+RPT3,process,protein catabolic process
+RPT3,process,protein-containing complex assembly
+RPT4,component,nucleus
+RPT4,component,organelle
+RPT4,component,"proteasome regulatory particle, base subcomplex"
+RPT4,component,protein-containing complex
+RPT4,function,ATP hydrolysis activity
+RPT4,function,enzyme binding
+RPT4,function,hydrolase activity
+RPT4,process,DNA damage response
+RPT4,process,DNA metabolic process
+RPT4,process,DNA repair
+RPT4,process,catabolic process
+RPT4,process,cellular component assembly
+RPT4,process,protein catabolic process
+RPT4,process,protein-containing complex assembly
+RPT4,process,response to chemical
+RPT4,process,response to stress
+RPT5,component,"proteasome regulatory particle, base subcomplex"
+RPT5,component,protein-containing complex
+RPT5,function,ATP hydrolysis activity
+RPT5,function,hydrolase activity
+RPT5,process,catabolic process
+RPT5,process,cellular component assembly
+RPT5,process,protein catabolic process
+RPT5,process,protein-containing complex assembly
+RPT6,component,intracellular membraneless organelle
+RPT6,component,nucleus
+RPT6,component,organelle
+RPT6,component,"proteasome regulatory particle, base subcomplex"
+RPT6,component,proteasome storage granule
+RPT6,component,protein-containing complex
+RPT6,function,enzyme binding
+RPT6,process,DNA damage response
+RPT6,process,DNA metabolic process
+RPT6,process,DNA repair
+RPT6,process,RNA catabolic process
+RPT6,process,catabolic process
+RPT6,process,cellular component assembly
+RPT6,process,chromatin organization
+RPT6,process,nucleobase-containing compound catabolic process
+RPT6,process,protein catabolic process
+RPT6,process,protein-containing complex assembly
+RPT6,process,response to stress
+SCL1,component,mitochondrion
+SCL1,component,organelle
+SCL1,component,"proteasome core complex, alpha-subunit complex"
+SCL1,component,protein-containing complex
+SCL1,function,molecular function
+SCL1,process,catabolic process
+SCL1,process,protein catabolic process
+SDH1,component,membrane
+SDH1,component,mitochondrion
+SDH1,component,organelle
+SDH1,component,protein-containing complex
+SDH1,component,respiratory chain complex
+SDH1,component,respiratory chain complex II (succinate dehydrogenase)
+SDH1,function,ion binding
+SDH1,function,oxidoreductase activity
+SDH1,process,cellular respiration
+SDH1,process,generation of precursor metabolites and energy
+SDH2,component,membrane
+SDH2,component,mitochondrion
+SDH2,component,organelle
+SDH2,component,protein-containing complex
+SDH2,component,respiratory chain complex
+SDH2,component,respiratory chain complex II (succinate dehydrogenase)
+SDH2,function,oxidoreductase activity
+SDH2,process,cellular respiration
+SDH2,process,generation of precursor metabolites and energy
+SDH3,component,TIM22 mitochondrial import inner membrane insertion complex
+SDH3,component,membrane
+SDH3,component,mitochondrion
+SDH3,component,organelle
+SDH3,component,protein-containing complex
+SDH3,component,respiratory chain complex
+SDH3,component,respiratory chain complex II (succinate dehydrogenase)
+SDH3,function,oxidoreductase activity
+SDH3,process,cellular respiration
+SDH3,process,generation of precursor metabolites and energy
+SDH3,process,membrane organization
+SDH3,process,mitochondrion organization
+SDH3,process,transport
+SDH4,component,membrane
+SDH4,component,mitochondrion
+SDH4,component,organelle
+SDH4,component,protein-containing complex
+SDH4,component,respiratory chain complex
+SDH4,component,respiratory chain complex II (succinate dehydrogenase)
+SDH4,function,oxidoreductase activity
+SDH4,process,cellular respiration
+SDH4,process,generation of precursor metabolites and energy
+SIC1,component,cytoplasm
+SIC1,component,nucleus
+SIC1,component,organelle
+SIC1,function,enzyme regulator activity
+SIC1,process,biological process
+SKP1,component,CBF3 complex
+SKP1,component,RAVE complex
+SKP1,component,SCF ubiquitin ligase complex
+SKP1,component,cytoplasm
+SKP1,component,intracellular membraneless organelle
+SKP1,component,kinetochore
+SKP1,component,nucleus
+SKP1,component,organelle
+SKP1,component,protein-containing complex
+SKP1,component,ubiquitin ligase complex
+SKP1,function,DNA binding
+SKP1,function,acyltransferase activity
+SKP1,function,transferase activity
+SKP1,process,catabolic process
+SKP1,process,cellular component assembly
+SKP1,process,chromosome organization
+SKP1,process,cytoskeleton organization
+SKP1,process,homeostatic process
+SKP1,process,intracellular monoatomic ion homeostasis
+SKP1,process,organelle assembly
+SKP1,process,protein catabolic process
+SKP1,process,protein modification by small protein conjugation or removal
+SKP1,process,protein-containing complex assembly
+SKP1,process,regulation of cell cycle
+SKP1,process,regulation of translation
+SST2,component,membrane
+SST2,component,plasma membrane
+SST2,function,enzyme regulator activity
+SST2,process,response to chemical
+SST2,process,signal transduction
+STE11,component,cytoplasm
+STE11,function,kinase activity
+STE11,function,transferase activity
+STE11,process,growth
+STE11,process,invasive growth in response to glucose limitation
+STE11,process,pseudohyphal growth
+STE11,process,response to chemical
+STE11,process,response to osmotic stress
+STE11,process,response to stress
+STE11,process,signal transduction
+STE12,component,Ste12p-Dig1p-Dig2p complex
+STE12,component,Tec1p-Ste12p-Dig1p complex
+STE12,component,nucleoplasm
+STE12,component,nucleus
+STE12,component,organelle
+STE12,component,protein-containing complex
+STE12,function,DNA-binding transcription factor activity
+STE12,process,growth
+STE12,process,invasive growth in response to glucose limitation
+STE12,process,pseudohyphal growth
+STE12,process,response to chemical
+STE18,component,Cdc24p-Far1p-Gbetagamma complex
+STE18,component,G-protein beta/gamma-subunit complex
+STE18,component,cytoplasm
+STE18,component,heterotrimeric G-protein complex
+STE18,component,membrane
+STE18,component,plasma membrane
+STE18,component,protein-containing complex
+STE18,function,molecular function
+STE18,process,signal transduction
+STE2,component,membrane
+STE2,component,plasma membrane
+STE2,function,molecular function
+STE2,process,signal transduction
+STE20,component,cytoplasm
+STE20,component,incipient cellular bud site
+STE20,component,membrane
+STE20,component,nucleus
+STE20,component,organelle
+STE20,component,plasma membrane
+STE20,component,site of polarized growth
+STE20,function,RNA binding
+STE20,function,kinase activity
+STE20,function,mRNA binding
+STE20,function,transferase activity
+STE20,process,cell budding
+STE20,process,cell division
+STE20,process,cellular component assembly
+STE20,process,growth
+STE20,process,invasive growth in response to glucose limitation
+STE20,process,lipid transport
+STE20,process,organelle assembly
+STE20,process,organelle inheritance
+STE20,process,pseudohyphal growth
+STE20,process,regulation of cell cycle
+STE20,process,regulation of transport
+STE20,process,response to chemical
+STE20,process,response to osmotic stress
+STE20,process,response to oxidative stress
+STE20,process,response to stress
+STE20,process,signal transduction
+STE20,process,transport
+STE20,process,vacuole organization
+STE3,component,endoplasmic reticulum
+STE3,component,membrane
+STE3,component,organelle
+STE3,component,plasma membrane
+STE3,function,molecular function
+STE3,process,signal transduction
+STE4,component,Cdc24p-Far1p-Gbetagamma complex
+STE4,component,G-protein beta/gamma-subunit complex
+STE4,component,heterotrimeric G-protein complex
+STE4,component,membrane
+STE4,component,plasma membrane
+STE4,component,protein-containing complex
+STE4,function,enzyme binding
+STE4,process,growth
+STE4,process,invasive growth in response to glucose limitation
+STE4,process,response to chemical
+STE5,component,cytoplasm
+STE5,component,membrane
+STE5,component,nucleus
+STE5,component,organelle
+STE5,component,plasma membrane
+STE5,component,site of polarized growth
+STE5,function,ion binding
+STE5,function,lipid binding
+STE5,function,protein-macromolecule adaptor activity
+STE5,function,structural molecule activity
+STE5,process,growth
+STE5,process,invasive growth in response to glucose limitation
+STE5,process,signal transduction
+STE7,component,cytoplasm
+STE7,component,site of polarized growth
+STE7,function,kinase activity
+STE7,function,transferase activity
+STE7,process,growth
+STE7,process,invasive growth in response to glucose limitation
+STE7,process,pseudohyphal growth
+STE7,process,response to chemical
+STE7,process,response to stress
+STE7,process,signal transduction
+SWI4,component,RNA polymerase II transcription regulator complex
+SWI4,component,SBF transcription complex
+SWI4,component,chromatin
+SWI4,component,protein-containing complex
+SWI4,component,transcription regulator complex
+SWI4,function,DNA binding
+SWI4,function,DNA-binding transcription factor activity
+SWI4,process,response to heat
+SWI4,process,response to stress
+SWI6,component,MBF transcription complex
+SWI6,component,RNA polymerase II transcription regulator complex
+SWI6,component,SBF transcription complex
+SWI6,component,cytoplasm
+SWI6,component,nucleus
+SWI6,component,organelle
+SWI6,component,protein-containing complex
+SWI6,component,transcription regulator complex
+SWI6,function,molecular function
+SWI6,process,regulation of DNA metabolic process
+SWI6,process,regulation of cell cycle
+SWI6,process,regulation of organelle organization
+SWI6,process,response to heat
+SWI6,process,response to stress
+WHI5,component,RNA polymerase II transcription regulator complex
+WHI5,component,SBF transcription complex
+WHI5,component,cytoplasm
+WHI5,component,nucleus
+WHI5,component,organelle
+WHI5,component,protein-containing complex
+WHI5,component,transcription regulator complex
+WHI5,function,transcription factor binding
+WHI5,process,regulation of cell cycle

@@ -19,7 +19,7 @@ import random
 import re
 import urllib.parse
 
-from .model import DOUBLE, INT, STRING, GuessError
+from .model import BOOL, DOUBLE, INT, STRING, GuessError
 
 
 def http(url, method="GET", body=None, headers=None):
@@ -165,6 +165,78 @@ def install(session):
         name = (aspects.get("networkAttributes") or [{}])[0].get("name", uuid)
         print(f"loaded NDEx network {name!r}: {len(g._nodes)} nodes, {len(g._edges)} edges")
 
+    @cmd
+    def makeFromSTRING(genes, species=9606, score=0.7, add=0, server="https://string-db.org"):
+        """makeFromSTRING(["TP53", "MDM2", "ATM"]) opens the protein interactions
+        among those genes from the STRING database (string-db.org): species is
+        an NCBI taxon (9606 human, 10090 mouse, 4932 yeast, 7227 fly, 6239
+        worm, 3702 Arabidopsis, 511145 E. coli), score the minimum combined
+        confidence (0.4 medium, 0.7 high, 0.9 highest), add=n also brings in
+        the n proteins that interact most with the query. Genes may be a list
+        or one string separated by spaces/commas. Nodes get `description`,
+        `stringId` and `query` (true for the genes you asked for); edges get
+        `score` (also `weight`) and the evidence behind it: `experiments`,
+        `databases`, `textmining`, `coexpression`, `neighborhood`, `fusion`,
+        `cooccurrence` (each 0..1). STRING data are CC BY 4.0: cite it."""
+        if isinstance(genes, str):
+            genes = [x for x in genes.replace(",", " ").split() if x]
+        genes = [str(x) for x in genes]
+        if not genes:
+            raise GuessError("makeFromSTRING needs some gene names")
+        q = urllib.parse.urlencode({"identifiers": "\r".join(genes), "species": int(species),
+                                    "limit": 1, "echo_query": 1, "caller_identity": "guess"})
+        ids = _tsv(http(f"{server}/api/tsv/get_string_ids?{q}"))
+        if not ids:
+            raise GuessError(f"STRING knows none of those genes in species {species}")
+        asked = {r["stringId"] for r in ids}
+        q = urllib.parse.urlencode({"identifiers": "\r".join(asked), "species": int(species),
+                                    "required_score": int(round(float(score) * 1000)),
+                                    "add_nodes": int(add), "caller_identity": "guess"})
+        rows = _tsv(http(f"{server}/api/tsv/network?{q}"))
+        g.clear()
+        for f, t in (("description", STRING), ("stringId", STRING), ("query", BOOL)):
+            g.addNodeField(f, t, None if t != BOOL else False)
+        channels = (("experiments", "escore"), ("databases", "dscore"), ("textmining", "tscore"),
+                    ("coexpression", "ascore"), ("neighborhood", "nscore"), ("fusion", "fscore"),
+                    ("cooccurrence", "pscore"))
+        g.addEdgeField("score", DOUBLE, 0.0)
+        if "weight" not in g.edge_schema:
+            g.addEdgeField("weight", DOUBLE, 1.0)
+        for f, _ in channels:
+            g.addEdgeField(f, DOUBLE, 0.0)
+        nodes = {}
+
+        def node(sid, name, desc=None):
+            if sid not in nodes:
+                n = g.addNode(_ident(name) if _ident(name) not in g._nodes else _ident(sid))
+                n.label = str(name)
+                n.stringId = sid
+                n.query = sid in asked
+                nodes[sid] = n
+            if desc:
+                nodes[sid].description = desc.split(";")[0][:200]
+            return nodes[sid]
+
+        for r in ids:
+            node(r["stringId"], r["preferredName"], r.get("annotation"))
+        seen = set()
+        for r in rows:
+            a = node(r["stringId_A"], r["preferredName_A"])
+            b = node(r["stringId_B"], r["preferredName_B"])
+            key = tuple(sorted((a._id, b._id)))
+            if key in seen:
+                continue
+            seen.add(key)
+            e = g.addUndirectedEdge(a, b)
+            e.score = e.weight = float(r["score"])
+            for f, col in channels:
+                e._g.edge_schema[f].set(e, float(r.get(col) or 0))
+        _scatter(g)
+        session.ns["frLayout"]()
+        session.scene()
+        print(f"loaded {len(g._nodes)} proteins, {len(g._edges)} interactions from STRING "
+              f"(score >= {float(score):g}); data CC BY 4.0, string-db.org")
+
     # ---- Neo4j ------------------------------------------------------------------
     @cmd
     def makeFromCypher(query, url="http://localhost:7474", user=None, password=None, database="neo4j"):
@@ -231,6 +303,12 @@ def _term(v):
         except ValueError:
             return val
     return val
+
+
+def _tsv(text):
+    import csv
+    import io
+    return list(csv.DictReader(io.StringIO(text), delimiter="\t"))
 
 
 def _ident(s):

@@ -170,6 +170,18 @@ def fill_legend(lg, f, title=None):
         hi = max(vals, key=lambda p: p[1])
         lg._ramp = {"from": colors.to_rgba_int(lo[0].color)[0], "to": colors.to_rgba_int(hi[0].color)[0],
                     "min": _num(lo[1]), "max": _num(hi[1])}
+        # the colours actually used, sampled at evenly spaced values, so a
+        # midpoint colour or an uneven scale shows in the ramp as it does on the graph
+        span = hi[1] - lo[1]
+        if span > 0:
+            ordered = sorted(vals, key=lambda p: p[1])
+            stops, k = [], 0
+            for i in range(9):
+                target = lo[1] + span * i / 8
+                while k + 1 < len(ordered) and abs(ordered[k + 1][1] - target) <= abs(ordered[k][1] - target):
+                    k += 1
+                stops.append([round((ordered[k][1] - lo[1]) / span, 4), colors.to_rgba_int(ordered[k][0].color)[0]])
+            lg._ramp["stops"] = stops
         return
     groups = sorted(groups, key=len, reverse=True)
     # long legends: the 12 largest groups, then "… N more" which expands (in the

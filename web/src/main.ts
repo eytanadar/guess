@@ -767,7 +767,9 @@ function renderLegends(legends: LegendRec[]) {
     if (lg.ramp) {
       const bar = document.createElement("div");
       bar.className = "ramp";
-      bar.style.background = `linear-gradient(to right, ${hex(lg.ramp.from)}, ${hex(lg.ramp.to)})`;
+      const stops = lg.ramp.stops?.length ? lg.ramp.stops.map(([at, c]) => `${hex(c)} ${(at * 100).toFixed(1)}%`).join(", ")
+        : `${hex(lg.ramp.from)}, ${hex(lg.ramp.to)}`;
+      bar.style.background = `linear-gradient(to right, ${stops})`;
       const ends = document.createElement("div");
       ends.className = "ramp-ends";
       ends.innerHTML = "<span></span><span></span>";

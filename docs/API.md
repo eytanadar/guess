@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (62)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (64)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -25,7 +25,7 @@ Commands can be called without parentheses when they take no arguments
 - [Several graphs: subgraphs and tabs](#several-graphs-subgraphs-and-tabs) (7)
 - [Time: ranges, years and the timeline](#time-ranges-years-and-the-timeline) (1)
 - [Presentations (slides)](#presentations-slides) (6)
-- [Data from the web: URLs, SPARQL, NDEx, Neo4j, packages](#data-from-the-web-urls-sparql-ndex-neo4j-packages) (6)
+- [Data from the web: URLs, SPARQL, NDEx, Neo4j, packages](#data-from-the-web-urls-sparql-ndex-neo4j-packages) (7)
 - [States and morphing](#states-and-morphing) (12)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
 - [Charts](#charts) (4)
@@ -117,6 +117,18 @@ Euclidean distance between two nodes' positions.
 ### `einverse(seq)`
 
 All edges not in seq.
+
+### `enrichment(seq, sets, background=None, top=10, minSize=2, show=True)`
+
+enrichment(nodes, sets) tests which sets (from readSets, or any
+{name: [node names]}) are over-represented among the nodes, against
+the background (default: every node in the graph that is in at least
+one set). For each set it gives the overlap k of n nodes, the set's
+size K among the N background nodes, the fold enrichment
+(k/n)/(K/N), the hypergeometric p-value and the Benjamini-Hochberg
+q-value (the false discovery rate over all sets tested). Sets with
+fewer than minSize background members are skipped. Prints the `top`
+rows by p-value and returns all rows as dicts, best first.
 
 ### `execfile(filename)`
 
@@ -265,6 +277,14 @@ All nodes not in seq.
 ### `readjustEdges()`
 
 Kept for old scripts: parallel edges are always drawn as separate curves.
+
+### `readSets(filename, item=None, set=None, where=None)`
+
+readSets("go.csv") reads a table with one row per (item, set) pair,
+e.g. gene,term, into {set: {items}} for enrichment(). item= and set=
+name the columns (default: the first two); where={"aspect": "process"}
+keeps only matching rows. A row's set may list several, separated by
+";" or "|".
 
 ### `remove(seq)`
 
@@ -1536,6 +1556,20 @@ makeFromSPARQL(query) builds a graph from a SPARQL query whose rows bind
 ?source and ?target (optionally ?sourceLabel / ?targetLabel, used as
 labels; any other variables become edge fields). E.g. a Wikidata query
 for "influenced by" links.
+
+### `makeFromSTRING(genes, species=9606, score=0.7, add=0, server='https://string-db.org')`
+
+makeFromSTRING(["TP53", "MDM2", "ATM"]) opens the protein interactions
+among those genes from the STRING database (string-db.org): species is
+an NCBI taxon (9606 human, 10090 mouse, 4932 yeast, 7227 fly, 6239
+worm, 3702 Arabidopsis, 511145 E. coli), score the minimum combined
+confidence (0.4 medium, 0.7 high, 0.9 highest), add=n also brings in
+the n proteins that interact most with the query. Genes may be a list
+or one string separated by spaces/commas. Nodes get `description`,
+`stringId` and `query` (true for the genes you asked for); edges get
+`score` (also `weight`) and the evidence behind it: `experiments`,
+`databases`, `textmining`, `coexpression`, `neighborhood`, `fusion`,
+`cooccurrence` (each 0..1). STRING data are CC BY 4.0: cite it.
 
 ### `makeFromURL(url, format=None)`
 

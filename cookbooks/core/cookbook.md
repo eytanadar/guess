@@ -202,6 +202,11 @@ true`) sets it on every member. The types are `VARCHAR` (text), `INTEGER`,
 `DOUBLE`, `BOOLEAN`. Python works too:
 `for n in g.nodes: n.senior = n.degree > 5`.
 
+**Pitfalls.** Field, node and colour names are reserved, so they can't
+be used as variable names. `x = 5` is an error because `x` is the field
+holding each node's position, and so are `size`, `color`, `label` and your
+own fields' names. Pick another name (`xs = …`).
+
 # Asking questions
 
 ## Select by value [Basic]{.level}
@@ -512,7 +517,7 @@ hideOverlappingLabels()
 ```
 
 **How it works.** `labelpos` is where a node's label goes: `"right"`,
-`"center"`, `"inside"` (fitted into the shape), or `"outside"`, which lets
+`"left"`, `"above"`, `"below"`, `"inside"` (fitted into the shape), or `"outside"`, which lets
 GUESS choose a free spot. `optimizeLabels()` runs a longer search for
 positions, and `hideOverlappingLabels()` drops the labels that still
 collide, smallest nodes first. `labelSizeBy(degree)` makes important labels

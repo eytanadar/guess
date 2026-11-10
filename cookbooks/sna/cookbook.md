@@ -484,12 +484,15 @@ groups. `mixingMatrix(dept)[d]` shows where one department's ties go.
 
 ```python
 assortativity(dept)
-subgraph(freq > 100)
+subgraph(g.nodes, "heavy ties")
+remove(freq <= 100)
 assortativity(dept)
 ```
 
-`subgraph(freq > 100)` opens a new graph of only the heavy communication
-ties (`use("main")` goes back). If assortativity by department rose there,
+`subgraph(g.nodes, "heavy ties")` copies the organisation into a graph of
+its own (`use("main")` goes back), and `remove(freq <= 100)` keeps only the
+367 heavy communication ties. (`subgraph(freq > 100)` alone wouldn't do it:
+it keeps every edge among those ties' endpoints.) If assortativity by department rose there,
 departments would be where the real work happens. If it fell, the
 important work would cross department lines. Here it barely moves (0.77
 to 0.76): heavy and light ties follow the chart alike. The exceptions are

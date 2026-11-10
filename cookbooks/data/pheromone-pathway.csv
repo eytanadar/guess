@@ -1,0 +1,27 @@
+Source,Target,Type,effect,mechanism
+STE2,STE4,Directed,activates,pheromone-bound receptor frees the G-beta-gamma dimer
+GPA1,STE4,Directed,inhibits,G-alpha (GDP-bound) holds G-beta-gamma
+SST2,GPA1,Directed,activates,RGS protein speeds G-alpha's GTP hydrolysis
+STE4,STE5,Directed,activates,recruits the scaffold to the membrane
+STE4,STE20,Directed,activates,binds and positions the PAK kinase
+CDC42,STE20,Directed,activates,GTPase activates the PAK kinase
+STE20,STE11,Directed,activates,phosphorylates the MAPKKK
+STE5,STE11,Directed,activates,scaffold
+STE5,STE7,Directed,activates,scaffold
+STE5,FUS3,Directed,activates,scaffold
+STE11,STE7,Directed,activates,phosphorylates the MAPKK
+STE7,FUS3,Directed,activates,phosphorylates the MAPK
+STE7,KSS1,Directed,activates,phosphorylates the MAPK
+FUS3,STE12,Directed,activates,relieves repression of the transcription factor
+KSS1,STE12,Directed,activates,relieves repression of the transcription factor
+DIG1,STE12,Directed,inhibits,binds and represses
+DIG2,STE12,Directed,inhibits,binds and represses
+FUS3,DIG1,Directed,inhibits,phosphorylation releases STE12
+FUS3,FAR1,Directed,activates,phosphorylation activates the CDK inhibitor
+FAR1,CDC28,Directed,inhibits,inhibits CDK-G1 cyclin: cell-cycle arrest
+STE12,FUS1,Directed,activates,transcription (mating)
+STE12,FAR1,Directed,activates,transcription
+STE12,SST2,Directed,activates,transcription (negative feedback)
+STE12,MSG5,Directed,activates,transcription (negative feedback)
+STE12,STE2,Directed,activates,transcription (positive feedback)
+MSG5,FUS3,Directed,inhibits,phosphatase inactivates the MAPK

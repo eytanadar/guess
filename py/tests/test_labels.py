@@ -99,3 +99,24 @@ def test_excentric_lens_command(s):
     assert s.rec.of("lens")[-1] == {"type": "lens", "on": True, "radius": 80.0, "auto": True, "max": 10}
     run(s, "excentricLens(false)")
     assert s.rec.of("lens")[-1] == {"type": "lens", "on": False}
+
+
+def test_color_by_center_and_legend_stops():
+    from guess import Session, colors
+    from tests.test_gython import Recorder
+    s = Session(Recorder())
+    s.run("addNodeField('lfc', DOUBLE, 0)")
+    for i, v in enumerate([-1.0, -0.5, 0.0, 0.5, 1.0, 2.0] + [0.1 * k for k in range(10)]):
+        s.run(f"addNode('n{i}').lfc = {v}")
+    assert s.run("colorBy(lfc, blue, red, center=0)")
+    g = s.graph
+    rgb = lambda n: colors.to_rgba_int(g.getNodeByName(n).color)[0]   # noqa: E731
+    assert rgb("n2") == 0xFFFFFF                     # zero is white
+    # equal distances from the centre: -1 is as far towards blue as +1 is towards red
+    lo, hi = colors.parse(g.getNodeByName("n0").color), colors.parse(g.getNodeByName("n4").color)
+    assert lo[2] == 255 and hi[0] == 255 and lo[0] == hi[2] == lo[1] == hi[1]
+    assert s.run("__lg = legendFor(lfc)")
+    ramp = s.ns["__lg"]._ramp
+    assert ramp["stops"][0][0] == 0 and ramp["stops"][-1][0] == 1
+    assert any(c == 0xFFFFFF for _at, c in ramp["stops"])   # the white middle is in the legend
+    assert not s.run("colorBy(lfc, blue, red, scale='log', center=0)")
