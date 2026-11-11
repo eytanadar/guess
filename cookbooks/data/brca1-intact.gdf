@@ -1,0 +1,2669 @@
+nodedef> name VARCHAR,uniprot VARCHAR,species VARCHAR,kind VARCHAR,description VARCHAR
+FECH_P22830_2,P22830-2,'Homo sapiens',protein,'Isoform 2 of Ferrochelatase, mitochondrial'
+CRYL1,Q9Y2S2,'Homo sapiens',protein,'Lambda-crystallin homolog'
+SPATC1L,Q9H0A9-2,'Homo sapiens',protein,'Speriolin-like protein'
+DPY30,Q9C005,'Homo sapiens',protein,'Protein dpy-30 homolog'
+Ube2o,Q6ZPJ3,'Mus musculus',protein,'(E3-independent) E2 ubiquitin-conjugating enzyme UBE2O'
+RIPK1,Q13546,'Homo sapiens',protein,'Receptor-interacting serine/threonine-protein kinase 1'
+NXPH3,O95157,'Homo sapiens',protein,Neurexophilin-3
+PSMD7,P51665,'Homo sapiens',protein,'26S proteasome non-ATPase regulatory subunit 7'
+YWHAG,P61981,'Homo sapiens',protein,'14-3-3 protein gamma'
+G3BP1,Q13283,'Homo sapiens',protein,'Ras GTPase-activating protein-binding protein 1'
+HMBOX1,Q6NT76,'Homo sapiens',protein,'Homeobox-containing protein 1'
+MAPK6,Q16659,'Homo sapiens',protein,'Mitogen-activated protein kinase 6'
+C5,P01031,'Homo sapiens',protein,'Complement C5'
+AKAP3,O75969,'Homo sapiens',protein,'A-kinase anchor protein 3'
+CERS3,Q8IU89,'Homo sapiens',protein,'Ceramide synthase 3'
+ATP5IF1,Q9UII2,'Homo sapiens',protein,'ATPase inhibitor, mitochondrial'
+Bap1,Q99PU7,'Mus musculus',protein,'Ubiquitin carboxyl-terminal hydrolase BAP1'
+AVIL_O75366_2,O75366-2,'Homo sapiens',protein,'Isoform 2 of Advillin'
+MAP1LC3A,Q9H492,'Homo sapiens',protein,'Microtubule-associated protein 1 light chain 3 alpha'
+brc_1_EBI_8480911,EBI-8480911,'Caenorhabditis elegans',protein,'uncharacterized protein brc-1'
+PSG11,Q9UQ72,'Homo sapiens',protein,'Pregnancy-specific beta-1-glycoprotein 11'
+GPR182,O15218,'Homo sapiens',protein,'G-protein coupled receptor 182'
+HMGN2,P05204,'Homo sapiens',protein,'Non-histone chromosomal protein HMG-17'
+TMEM160,Q9NX00,'Homo sapiens',protein,'Transmembrane protein 160'
+PSMC6,P62333,'Homo sapiens',protein,'26S proteasome regulatory subunit 10B'
+RAD54L2,Q9Y4B4,'Homo sapiens',protein,'Helicase ARIP4'
+ns4a_cvh22,P19739,'Human coronavirus 229E',protein,'Non-structural protein 4a'
+TRIM52,Q96A61,'Homo sapiens',protein,'E3 ubiquitin-protein ligase TRIM52'
+RNASE7,Q9H1E1,'Homo sapiens',protein,'Ribonuclease 7'
+P2RX5_Q93086,Q93086,'Homo sapiens',protein,'P2X purinoceptor 5'
+TRIM74,Q86UV6,'Homo sapiens',protein,'Tripartite motif-containing protein 74'
+smo_1,P55853,'Caenorhabditis elegans',protein,'Small ubiquitin-related modifier'
+DPP9,Q86TI2,'Homo sapiens',protein,'Dipeptidyl peptidase 9'
+o82638_arath,O82638,'Arabidopsis thaliana (Mouse-ear cress)',protein,'BRISC and BRCA1-A complex member 1'
+PPL,O60437,'Homo sapiens',protein,Periplakin
+NCBP2,P52298,'Homo sapiens',protein,'Nuclear cap-binding protein subunit 2'
+ATXR5,Q8VZJ1,'Arabidopsis thaliana (Mouse-ear cress)',protein,'Histone-lysine N-methyltransferase ATXR5'
+TANC2,Q9HCD6,'Homo sapiens',protein,'Protein TANC2'
+GFOD1,Q9NXC2,'Homo sapiens',protein,'Glucose-fructose oxidoreductase domain-containing protein 1'
+bard1.L,Q90X95,'Xenopus laevis (African clawed frog)',protein,
+SLC2A1,P11166,'Homo sapiens',protein,'Solute carrier family 2, facilitated glucose transporter member 1'
+TINF2,Q9BSI4,'Homo sapiens',protein,'TERF1-interacting nuclear factor 2'
+STN1,Q9H668,'Homo sapiens',protein,'CST complex subunit STN1'
+SPINK14,Q6IE38,'Homo sapiens',protein,'Serine protease inhibitor Kazal-type 14'
+SLC66A1LP,A1A4F0,'Homo sapiens',protein,'Putative uncharacterized protein SLC66A1LP'
+GATD1_Q8NB37,Q8NB37,'Homo sapiens',protein,'Glutamine amidotransferase-like class 1 domain-containing protein 1'
+YWHAB,P31946,'Homo sapiens',protein,'14-3-3 protein beta/alpha'
+GSK3A,P49840,'Homo sapiens',protein,'Glycogen synthase kinase-3 alpha'
+KNL1,Q8NG31,'Homo sapiens',protein,'Outer kinetochore KNL1 complex subunit KNL1'
+EZH2,Q15910,'Homo sapiens',protein,'Histone-lysine N-methyltransferase EZH2'
+EGLN3,Q9H6Z9,'Homo sapiens',protein,'Prolyl hydroxylase EGLN3'
+NCCRP1,Q6ZVX7,'Homo sapiens',protein,'F-box only protein 50'
+ZNF479,Q96JC4,'Homo sapiens',protein,'Zinc finger protein 479'
+RRAGA,Q7L523,'Homo sapiens',protein,'Ras-related GTP-binding protein A'
+Nipbl,Q6KCD5,'Mus musculus',protein,'Nipped-B-like protein'
+TERF1,P54274,'Homo sapiens',protein,'Telomeric repeat-binding factor 1'
+TNKS,O95271,'Homo sapiens',protein,'Poly [ADP-ribose] polymerase tankyrase-1'
+KBTBD7,Q8WVZ9,'Homo sapiens',protein,'Kelch repeat and BTB domain-containing protein 7'
+SMCHD1,A6NHR9,'Homo sapiens',protein,'Structural maintenance of chromosomes flexible hinge domain-containing protein 1'
+ALDH6A1,Q02252,'Homo sapiens',protein,'Methylmalonate-semialdehyde/malonate-semialdehyde dehydrogenase [acylating], mitochondrial'
+VTA1,Q9NP79,'Homo sapiens',protein,'Vacuolar protein sorting-associated protein VTA1 homolog'
+EXOC8,Q8IYI6,'Homo sapiens',protein,'Exocyst complex component 8'
+HNRNPCL2,B2RXH8,'Homo sapiens',protein,'Heterogeneous nuclear ribonucleoprotein C-like 2'
+MDC1,Q14676,'Homo sapiens',protein,'Mediator of DNA damage checkpoint protein 1'
+ILVBL,A1L0T0,'Homo sapiens',protein,'2-hydroxyacyl-CoA lyase 2'
+NCBP1,Q09161,'Homo sapiens',protein,'Nuclear cap-binding protein subunit 1'
+PSMD2,Q13200,'Homo sapiens',protein,'26S proteasome non-ATPase regulatory subunit 2'
+LY86,O95711,'Homo sapiens',protein,'Lymphocyte antigen 86'
+G3BP2,Q9UN86,'Homo sapiens',protein,'Ras GTPase-activating protein-binding protein 2'
+PTPN11,Q06124,'Homo sapiens',protein,'Tyrosine-protein phosphatase non-receptor type 11'
+POF1B,Q8WVV4,'Homo sapiens',protein,'Protein POF1B'
+PTCHD1,Q96NR3,'Homo sapiens',protein,'Patched domain-containing protein 1'
+NDOR1,Q9UHB4,'Homo sapiens',protein,'NADPH-dependent diflavin oxidoreductase 1'
+MSH5,O43196,'Homo sapiens',protein,'MutS protein homolog 5'
+P2RY10,O00398,'Homo sapiens',protein,'Putative P2Y purinoceptor 10'
+Cenpc,P49452,'Mus musculus',protein,'Centromere protein C'
+SUMO2,P61956,'Homo sapiens',protein,'Small ubiquitin-related modifier 2'
+IVL,P07476,'Homo sapiens',protein,Involucrin
+DENR,O43583,'Homo sapiens',protein,'Density-regulated protein'
+ASXL1,Q8IXJ9,'Homo sapiens',protein,'Polycomb group protein ASXL1'
+DCLRE1B,Q9H816,'Homo sapiens',protein,'5 exonuclease Apollo'
+SLIRP,Q9GZT3,'Homo sapiens',protein,'SRA stem-loop-interacting RNA-binding protein, mitochondrial'
+TBR1,Q16650,'Homo sapiens',protein,'T-box brain protein 1'
+ssrna_ag,EBI-5333185,'Chemical synthesis (Chemical synthesis)','ribonucleic acid',ssRNA_AG
+PHLPP1_O60346_2,O60346-2,'Homo sapiens',protein,'PH domain leucine-rich repeat-containing protein phosphatase 1'
+MBD6,Q96DN6,'Homo sapiens',protein,'Methyl-CpG-binding domain protein 6'
+Uimc1,Q5U5Q9,'Mus musculus',protein,'BRCA1-A complex subunit RAP80'
+PRODH_O43272,O43272,'Homo sapiens',protein,'Proline dehydrogenase 1, mitochondrial'
+ATG16L1_Q676U5_1,Q676U5-1,'Homo sapiens',protein,'Autophagy-related protein 16-1'
+HDAC6,Q9UBN7,'Homo sapiens',protein,'Protein deacetylase HDAC6'
+GPR45,Q9Y5Y3,'Homo sapiens',protein,'Probable G-protein coupled receptor 45'
+INSR,P06213,'Homo sapiens',protein,'Insulin receptor'
+HAT1,O14929,'Homo sapiens',protein,'Histone acetyltransferase type B catalytic subunit'
+DRC3,Q9H069,'Homo sapiens',protein,'Dynein regulatory complex subunit 3'
+HCST,Q9UBK5,'Homo sapiens',protein,'Hematopoietic cell signal transducer'
+HCFC2,Q9Y5Z7,'Homo sapiens',protein,'Host cell factor 2'
+DNAL4,O96015,'Homo sapiens',protein,'Dynein axonemal light chain 4'
+MORC3,Q14149,'Homo sapiens',protein,'MORC family CW-type zinc finger protein 3'
+CENPU,Q71F23,'Homo sapiens',protein,'Centromere protein U'
+KHDRBS3,O75525,'Homo sapiens',protein,'KH domain-containing, RNA-binding, signal transduction-associated protein 3'
+ARID1A,O14497,'Homo sapiens',protein,'AT-rich interactive domain-containing protein 1A'
+EGFR,P00533,'Homo sapiens',protein,'Epidermal growth factor receptor'
+ODF2,Q5BJF6,'Homo sapiens',protein,'Outer dense fiber protein 2'
+PSMD3,O43242,'Homo sapiens',protein,'26S proteasome non-ATPase regulatory subunit 3'
+OST4,P0C6T2,'Homo sapiens',protein,'Dolichyl-diphosphooligosaccharide--protein glycosyltransferase subunit 4'
+Sqstm1,Q64337,'Mus musculus',protein,Sequestosome-1
+CREB1,P16220,'Homo sapiens',protein,'Cyclic AMP-responsive element-binding protein 1'
+HIP1R,O75146,'Homo sapiens',protein,'Huntingtin-interacting protein 1-related protein'
+CTC1,Q2NKJ3,'Homo sapiens',protein,'CST complex subunit CTC1'
+PMF1,Q6P1K2,'Homo sapiens',protein,'Polyamine-modulated factor 1'
+Rpl35,Q6ZWV7,'Mus musculus',protein,'Large ribosomal subunit protein uL29'
+SPANXN3,Q5MJ09,'Homo sapiens',protein,'Sperm protein associated with the nucleus on the X chromosome N3'
+GABARAPL2,P60520,'Homo sapiens',protein,'Gamma-aminobutyric acid receptor-associated protein-like 2'
+KIFC1,Q9BW19,'Homo sapiens',protein,'Kinesin-like protein KIFC1'
+HMOX1,P09601,'Homo sapiens',protein,'Heme oxygenase 1'
+DOCK5_Q9H7D0,Q9H7D0,'Homo sapiens',protein,'Dedicator of cytokinesis protein 5'
+ubq_1,EBI-8480970,'Caenorhabditis elegans',protein,
+CRYBG1,Q9Y4K1,'Homo sapiens',protein,'Beta/gamma crystallin domain-containing protein 1'
+CD70,P32970,'Homo sapiens',protein,'CD70 antigen'
+GABARAPL1,Q9H0R8,'Homo sapiens',protein,'Gamma-aminobutyric acid receptor-associated protein-like 1'
+CDC25C,P30307,'Homo sapiens',protein,'M-phase inducer phosphatase 3'
+ITPR3,Q14573,'Homo sapiens',protein,'Inositol 1,4,5-trisphosphate-gated calcium channel ITPR3'
+jkk_1,G5EDT6,'Caenorhabditis elegans',protein,'Dual specificity mitogen-activated protein kinase kinase jkk-1'
+ANAPC7,Q9UJX3,'Homo sapiens',protein,'Anaphase-promoting complex subunit 7'
+FUBP1,Q96AE4,'Homo sapiens',protein,'Far upstream element-binding protein 1'
+YWHAH,Q04917,'Homo sapiens',protein,'14-3-3 protein eta'
+PLK1,P53350,'Homo sapiens',protein,'Serine/threonine-protein kinase PLK1'
+ZNF382,Q96SR6,'Homo sapiens',protein,'Zinc finger protein 382'
+TNS1,Q9HBL0,'Homo sapiens',protein,Tensin-1
+TBC1D5,Q92609,'Homo sapiens',protein,'TBC1 domain family member 5'
+UBE2J1,Q9Y385,'Homo sapiens',protein,'Ubiquitin-conjugating enzyme E2 J1'
+KIF18A,Q8NI77,'Homo sapiens',protein,'Kinesin-like protein KIF18A'
+KIFC3,Q9BVG8-5,'Homo sapiens',protein,'Kinesin-like protein KIFC3'
+CPAP,Q9HC77,'Homo sapiens',protein,'Centrosomal P4.1-associated protein'
+Ezh2,Q61188,'Mus musculus',protein,'Histone-lysine N-methyltransferase EZH2'
+LAMC1,P11047,'Homo sapiens',protein,'Laminin subunit gamma-1'
+WASHC3,Q9Y3C0,'Homo sapiens',protein,'WASH complex subunit 3'
+TNIP1,Q15025,'Homo sapiens',protein,'TNFAIP3-interacting protein 1'
+BAG5,Q9UL15,'Homo sapiens',protein,'BAG family molecular chaperone regulator 5'
+TPX2,Q9ULW0,'Homo sapiens',protein,'Targeting protein for Xklp2'
+MORF4L1,Q9UBU8,'Homo sapiens',protein,'Mortality factor 4-like protein 1'
+rad_51,Q95Q25,'Caenorhabditis elegans',protein,'DNA repair protein RAD51 homolog'
+PRSS3,P35030,'Homo sapiens',protein,Trypsin-3
+MTNR1A,P48039,'Homo sapiens',protein,'Melatonin receptor type 1A'
+BRCA1_Q90Z51,Q90Z51,'Gallus gallus (Chicken)',protein,'RING-type E3 ubiquitin transferase'
+NIPSNAP1,Q9BPW8,'Homo sapiens',protein,'Protein NipSnap homolog 1'
+AR,P10275,'Homo sapiens',protein,'Androgen receptor'
+CALML5,Q9NZT1,'Homo sapiens',protein,'Calmodulin-like protein 5'
+GIT1,Q9Y2X7,'Homo sapiens',protein,'ARF GTPase-activating protein GIT1'
+MCM2,P49736,'Homo sapiens',protein,'DNA replication licensing factor MCM2'
+Babam2,Q6P7Q1,'Rattus norvegicus (Rat)',protein,'BRISC and BRCA1-A complex member 2'
+RNF6,Q9Y252,'Homo sapiens',protein,'E3 ubiquitin-protein ligase RNF6'
+UBE2I,P63279,'Homo sapiens',protein,'SUMO-conjugating enzyme UBC9'
+a0a1d6jpd5_maize,A0A1D6JPD5,'Zea mays (Maize)',protein,'Acireductone dioxygenase'
+PGAM5,Q96HS1,'Homo sapiens',protein,'Serine/threonine-protein phosphatase PGAM5, mitochondrial'
+MAVS,Q7Z434-4,'Homo sapiens',protein,'Mitochondrial antiviral-signaling protein'
+FPR1,P21462,'Homo sapiens',protein,'fMet-Leu-Phe receptor'
+AHNAK2,Q8IVF2,'Homo sapiens',protein,'Protein AHNAK2'
+NBR1_Q14596_2,Q14596-2,'Homo sapiens',protein,'Next to BRCA1 gene 1 protein'
+PRR14L,Q5THK1-4,'Homo sapiens',protein,'Protein PRR14L'
+Vps41,Q5KU39,'Mus musculus',protein,'Vacuolar protein sorting-associated protein 41 homolog'
+UIMC1_Q96RL1_1,Q96RL1-1,'Homo sapiens',protein,'BRCA1-A complex subunit RAP80'
+Tlx3,O55144,'Mus musculus',protein,'T-cell leukemia homeobox protein 3'
+RAD18,Q9NS91,'Homo sapiens',protein,'E3 ubiquitin-protein ligase RAD18'
+SETX,Q7Z333,'Homo sapiens',protein,'Probable helicase senataxin'
+SLC31A1,O15431,'Homo sapiens',protein,'High affinity copper uptake protein 1'
+BRK1,Q8WUW1,'Homo sapiens',protein,'Protein BRICK1'
+GABPA,Q06546,'Homo sapiens',protein,'GA-binding protein alpha chain'
+FAM111A,Q96PZ2,'Homo sapiens',protein,'Serine protease FAM111A'
+Asx,Q9V727,'Drosophila melanogaster (Fruit fly)',protein,'Polycomb group protein Asx'
+Dmel\CG6333,Q9VVH8,'Drosophila melanogaster (Fruit fly)',protein,
+BRCA1_Q9NQR3,Q9NQR3,'Homo sapiens',protein,
+numa1.S,P70012,'Xenopus laevis (African clawed frog)',protein,
+CHEK1,O14757,'Homo sapiens',protein,'Serine/threonine-protein kinase Chk1'
+CASP8,Q14790,'Homo sapiens',protein,Caspase-8
+NELFA,Q9H3P2,'Homo sapiens',protein,'Negative elongation factor A'
+CPLANE1,Q9H799,'Homo sapiens',protein,'Ciliogenesis and planar polarity effector 1'
+ufo,EBI-22251470,'Chemical synthesis (Chemical synthesis)',peptide,
+brca1_human_gene,ENSG00000012048,'Homo sapiens',gene,'breast cancer 1, early onset'
+RAD50,Q92878,'Homo sapiens',protein,'DNA repair protein RAD50'
+ssrna_ug,EBI-5333164,'Chemical synthesis (Chemical synthesis)','ribonucleic acid',ssRNA_UG
+TRIM8,Q9BZR9,'Homo sapiens',protein,'E3 ubiquitin-protein ligase TRIM8'
+MAP7,Q14244,'Homo sapiens',protein,Ensconsin
+TNKS2,Q9H2K2,'Homo sapiens',protein,'Poly [ADP-ribose] polymerase tankyrase-2'
+SERPINA1,P01009,'Homo sapiens',protein,Alpha-1-antitrypsin
+ACACA_Q13085_1,Q13085-1,'Homo sapiens',protein,'Acetyl-CoA carboxylase 1'
+ADGRG5,Q8IZF4,'Homo sapiens',protein,'Adhesion G-protein coupled receptor G5'
+JAK1,P23458,'Homo sapiens',protein,'Tyrosine-protein kinase JAK1'
+LMNA,P02545,'Homo sapiens',protein,Prelamin-A/C
+SUMO1,P63165,'Homo sapiens',protein,'Small ubiquitin-related modifier 1'
+BAD,Q92934,'Homo sapiens',protein,'Bcl2-associated agonist of cell death'
+ubc_9,Q95017,'Caenorhabditis elegans',protein,'SUMO-conjugating enzyme UBC9'
+Orc2,Q60862,'Mus musculus',protein,'Origin recognition complex subunit 2'
+Xpo1,Q6P5F9,'Mus musculus',protein,Exportin-1
+COG1,Q8WTW3,'Homo sapiens',protein,'Conserved oligomeric Golgi complex subunit 1'
+POLE,Q07864,'Homo sapiens',protein,'DNA polymerase epsilon catalytic subunit A'
+PPP4R1L,Q9P1A2,'Homo sapiens',protein,'Putative serine/threonine-protein phosphatase 4 regulatory subunit 1-like'
+KNG1,P01042,'Homo sapiens',protein,Kininogen-1
+PLCG1,P19174,'Homo sapiens',protein,'1-phosphatidylinositol 4,5-bisphosphate phosphodiesterase gamma-1'
+METAP1,P53582,'Homo sapiens',protein,'Methionine aminopeptidase 1'
+CFTR,P13569,'Homo sapiens',protein,'Cystic fibrosis transmembrane conductance regulator'
+Pten,O08586,'Mus musculus',protein,'Phosphatidylinositol 3,4,5-trisphosphate 3-phosphatase and dual-specificity protein phosphatase PTEN'
+ATG16L1_Q676U5,Q676U5,'Homo sapiens',protein,'Autophagy-related protein 16-1'
+PPP1CA,P62136,'Homo sapiens',protein,'Serine/threonine-protein phosphatase PP1-alpha catalytic subunit'
+BAG4,O95429,'Homo sapiens',protein,'BAG family molecular chaperone regulator 4'
+USP28,Q96RU2,'Homo sapiens',protein,'Ubiquitin carboxyl-terminal hydrolase 28'
+'(human) hsamir99b3p',URS00001C308D_9606,'Homo sapiens','micro rna','Homo sapiens (human) hsa-miR-99b-3p'
+TCP13,Q9S7W5,'Arabidopsis thaliana (Mouse-ear cress)',protein,'Transcription factor TCP13'
+BRCC3_P46736_2,P46736-2,'Homo sapiens',protein,'Isoform 1 of Lys-63-specific deubiquitinase BRCC36'
+NOP53,Q9NZM5,'Homo sapiens',protein,'Ribosome biogenesis protein NOP53'
+ETAA1,Q9NY74,'Homo sapiens',protein,'Ewings tumor-associated antigen 1'
+EN1,Q05925,'Homo sapiens',protein,'Homeobox protein engrailed-1'
+CAMK2A,Q9UQM7,'Homo sapiens',protein,'Calcium/calmodulin-dependent protein kinase type II subunit alpha'
+ATMIN,O43313,'Homo sapiens',protein,'ATM interactor'
+SPAG5,Q96R06,'Homo sapiens',protein,'Sperm-associated antigen 5'
+MAP2K2,P36507,'Homo sapiens',protein,'Dual specificity mitogen-activated protein kinase kinase 2'
+CFB,P00751,'Homo sapiens',protein,'Complement factor B'
+Akap3,O88987,'Mus musculus',protein,'A-kinase anchor protein 3'
+C9orf85,Q96MD7,'Homo sapiens',protein,'Uncharacterized protein C9orf85'
+CIMIP6,Q8N5S3,'Homo sapiens',protein,'Ciliary microtubule inner protein 6'
+ENDOU,P21128,'Homo sapiens',protein,'Uridylate-specific endoribonuclease'
+PCNA,P12004,'Homo sapiens',protein,'Proliferating cell nuclear antigen'
+DCX,O43602,'Homo sapiens',protein,'Neuronal migration protein doublecortin'
+PMS1,P54277,'Homo sapiens',protein,'PMS1 protein homolog 1'
+SERPIND1,P05546,'Homo sapiens',protein,'Heparin cofactor 2'
+ASXL3,Q9C0F0,'Homo sapiens',protein,'Putative Polycomb group protein ASXL3'
+S100A8,P05109,'Homo sapiens',protein,'Protein S100-A8'
+NDUFA10,O95299,'Homo sapiens',protein,'NADH dehydrogenase [ubiquinone] 1 alpha subcomplex subunit 10, mitochondrial'
+RAD9A,Q99638,'Homo sapiens',protein,'Cell cycle checkpoint control protein RAD9A'
+PARN,O95453,'Homo sapiens',protein,'Poly(A)-specific ribonuclease PARN'
+SLC22A11,Q9NSA0,'Homo sapiens',protein,'Solute carrier family 22 member 11'
+MUS81,Q96NY9,'Homo sapiens',protein,'Structure-specific endonuclease subunit MUS81'
+GPKOW,Q92917,'Homo sapiens',protein,'G-patch domain and KOW motifs-containing protein'
+LRRC73,Q5JTD7,'Homo sapiens',protein,'Leucine-rich repeat-containing protein 73'
+Phlpp1_Q8CHE4,Q8CHE4,'Mus musculus',protein,'PH domain leucine-rich repeat-containing protein phosphatase 1'
+CAND1,Q86VP6,'Homo sapiens',protein,'Cullin-associated NEDD8-dissociated protein 1'
+CHEK2,O96017,'Homo sapiens',protein,'Serine/threonine-protein kinase Chk2'
+hsa_mir_146b_5p,URS000075DF95_9606,'Homo sapiens','micro rna','Homo sapiens (human) hsa-miR-146b-5p'
+PPP2CA,P67775,'Homo sapiens',protein,'Serine/threonine-protein phosphatase 2A catalytic subunit alpha isoform'
+GOPC_Q9HD26,Q9HD26,'Homo sapiens',protein,'Golgi-associated PDZ and coiled-coil motif-containing protein'
+TFDP3,Q5H9I0,'Homo sapiens',protein,'Transcription factor Dp family member 3'
+EGR3,Q06889,'Homo sapiens',protein,'Early growth response protein 3'
+F2RL1,P55085,'Homo sapiens',protein,'Proteinase-activated receptor 2'
+IGHM,P01871,'Homo sapiens',protein,'Immunoglobulin heavy constant mu'
+BRD7,Q9NPI1,'Homo sapiens',protein,'Bromodomain-containing protein 7'
+TEX35,Q5T0J7,'Homo sapiens',protein,'Testis-expressed protein 35'
+RO60,P10155,'Homo sapiens',protein,'RNA-binding protein RO60'
+ATM,Q13315,'Homo sapiens',protein,'Serine-protein kinase ATM'
+AGGF1,Q8N302,'Homo sapiens',protein,'Angiogenic factor with G patch and FHA domains 1'
+RAD51_Q06609_1,Q06609-1,'Homo sapiens',protein,'DNA repair protein RAD51 homolog 1'
+APOA1,P02647,'Homo sapiens',protein,'Apolipoprotein A-I'
+UBXN4,Q92575,'Homo sapiens',protein,'UBX domain-containing protein 4'
+DDX42,Q86XP3,'Homo sapiens',protein,'ATP-dependent RNA helicase DDX42'
+KLK15,Q9H2R5,'Homo sapiens',protein,Kallikrein-15
+MSGN1,A6NI15,'Homo sapiens',protein,Mesogenin-1
+AURKA,O14965,'Homo sapiens',protein,'Aurora kinase A'
+CXCR3,P49682,'Homo sapiens',protein,'C-X-C chemokine receptor type 3'
+DUSP16,Q9BY84,'Homo sapiens',protein,'Dual specificity protein phosphatase 16'
+CUL4B,Q13620,'Homo sapiens',protein,Cullin-4B
+ydisqvfpf,EBI-21978329,'Chemical synthesis (Chemical synthesis)',peptide,'YDISQVFPF peptide'
+P2RY8,Q86VZ1,'Homo sapiens',protein,'S-geranylgeranyl-glutathione receptor P2RY8'
+MRPL36,Q9P0J6,'Homo sapiens',protein,'Large ribosomal subunit protein bL36m'
+PLEKHA2,Q9HB19,'Homo sapiens',protein,'Pleckstrin homology domain-containing family A member 2'
+Junb,P09450,'Mus musculus',protein,'Transcription factor JunB'
+SLC39A9,Q9NUM3,'Homo sapiens',protein,'Zinc transporter ZIP9'
+INO80B,Q9C086,'Homo sapiens',protein,'INO80 complex subunit B'
+ORF1b,X5D6G5,'Porcine reproductive and respiratory syndrome virus',protein,'Replicase polyprotein 1ab'
+GAMMAHV.ORF31,O41947,'Murid herpesvirus 4 (MuHV-4)',protein,
+KAT5,Q92993,'Homo sapiens',protein,'Histone acetyltransferase KAT5'
+THNSL1,Q8IYQ7,'Homo sapiens',protein,'Threonine synthase-like 1'
+MYH6,P13533,'Homo sapiens',protein,Myosin-6
+NCAPH2_Q6IBW4_2,Q6IBW4-2,'Homo sapiens',protein,'Condensin-2 complex subunit H2'
+FANCE,Q9HB96,'Homo sapiens',protein,'Fanconi anemia group E protein'
+CP,P00450,'Homo sapiens',protein,Ceruloplasmin
+DOCK5_Q9H7D0_2,Q9H7D0-2,'Homo sapiens',protein,'Isoform 2 of Dedicator of cytokinesis protein 5'
+BRCA1_Q8IZK2,Q8IZK2,'Homo sapiens',protein,
+KSR1,Q8IVT5,'Homo sapiens',protein,'Kinase suppressor of Ras 1'
+YWHAQ,P27348,'Homo sapiens',protein,'14-3-3 protein theta'
+GGA1,Q9UJY5,'Homo sapiens',protein,'ADP-ribosylation factor-binding protein GGA1'
+EME1,Q96AY2,'Homo sapiens',protein,'Structure-specific endonuclease subunit EME1'
+AVPR2,P30518,'Homo sapiens',protein,'Vasopressin V2 receptor'
+C4B,P0C0L5,'Homo sapiens',protein,'Complement C4-B'
+PHF8,Q9UPP1,'Homo sapiens',protein,'Histone lysine demethylase PHF8'
+RPA3,P35244,'Homo sapiens',protein,'Replication protein A 14 kDa subunit'
+SERPING1,P05155,'Homo sapiens',protein,'Plasma protease C1 inhibitor'
+WRNIP1,Q96S55,'Homo sapiens',protein,'ATPase WRNIP1'
+AHCYL2,Q96HN2,'Homo sapiens',protein,'Adenosylhomocysteinase 3'
+COPS2,P61201,'Homo sapiens',protein,'COP9 signalosome complex subunit 2'
+DHRS7B,Q6IAN0,'Homo sapiens',protein,'Dehydrogenase/reductase SDR family member 7B'
+RBM45,Q8IUH3,'Homo sapiens',protein,'RNA-binding protein 45'
+PTGES3,Q15185,'Homo sapiens',protein,'Prostaglandin E synthase 3'
+SSU72,Q9NP77,'Homo sapiens',protein,'RNA polymerase II subunit A C-terminal domain phosphatase SSU72'
+TRIM33,Q9UPN9,'Homo sapiens',protein,'E3 ubiquitin-protein ligase TRIM33'
+IPO4,Q8TEX9,'Homo sapiens',protein,Importin-4
+AKT1,P31749,'Homo sapiens',protein,'RAC-alpha serine/threonine-protein kinase'
+GTF2I,P78347,'Homo sapiens',protein,'General transcription factor II-I'
+IGHG1,P01857,'Homo sapiens',protein,'Immunoglobulin heavy constant gamma 1'
+CBLC,Q9ULV8,'Homo sapiens',protein,'E3 ubiquitin-protein ligase CBL-C'
+AFG2A,Q8NB90,'Homo sapiens',protein,'ATPase family gene 2 protein homolog A'
+SLC16A11,Q8NCK7,'Homo sapiens',protein,'Monocarboxylate transporter 11'
+ITIH4,Q14624,'Homo sapiens',protein,'Inter-alpha-trypsin inhibitor heavy chain H4'
+PPP1R15A,O75807,'Homo sapiens',protein,'Protein phosphatase 1 regulatory subunit 15A'
+ALB,P02768,'Homo sapiens',protein,Albumin
+ERCC1,P07992,'Homo sapiens',protein,'DNA excision repair protein ERCC-1'
+Brca1,P48754,'Mus musculus',protein,'Breast cancer type 1 susceptibility protein homolog'
+C4BPA,P04003,'Homo sapiens',protein,'C4b-binding protein alpha chain'
+KRAS,P01116-1,'Homo sapiens',protein,'GTPase KRas'
+GABARAP_O95166,O95166,'Homo sapiens',protein,'Gamma-aminobutyric acid receptor-associated protein'
+TMEM31,Q5JXX7,'Homo sapiens',protein,'Transmembrane protein 31'
+GRB2,P62993,'Homo sapiens',protein,'Growth factor receptor-bound protein 2'
+GATD1_Q8NB37_2,Q8NB37-2,'Homo sapiens',protein,'Isoform 2 of Glutamine amidotransferase-like class 1 domain-containing protein 1'
+ATAD1,Q8NBU5,'Homo sapiens',protein,'Outer mitochondrial transmembrane helix translocase'
+VIPR2,P41587,'Homo sapiens',protein,'Vasoactive intestinal polypeptide receptor 2'
+RHNO1,Q9BSD3,'Homo sapiens',protein,'RAD9, HUS1, RAD1-interacting nuclear orphan protein 1'
+LUZP1,Q86V48,'Homo sapiens',protein,'Leucine zipper protein 1'
+Phlpp1_Q8CHE4_2,Q8CHE4-2,'Mus musculus',protein,'PH domain leucine-rich repeat-containing protein phosphatase 1'
+MELK,Q14680,'Homo sapiens',protein,'Maternal embryonic leucine zipper kinase'
+RNF11,Q9Y3C5,'Homo sapiens',protein,'RING finger protein 11'
+UBE2H,P62256,'Homo sapiens',protein,'Ubiquitin-conjugating enzyme E2 H'
+CYP2J2,P51589,'Homo sapiens',protein,'Cytochrome P450 2J2'
+ZNF350,Q9GZX5,'Homo sapiens',protein,'Zinc finger protein 350'
+PDHA1,P08559,'Homo sapiens',protein,'Pyruvate dehydrogenase E1 component subunit alpha, somatic form, mitochondrial'
+CSNK2B,P67870,'Homo sapiens',protein,'Casein kinase II subunit beta'
+RNF149,Q8NC42,'Homo sapiens',protein,'E3 ubiquitin-protein ligase RNF149'
+RPA2,P15927,'Homo sapiens',protein,'Replication protein A 32 kDa subunit'
+ESR1,P03372,'Homo sapiens',protein,'Estrogen receptor'
+adp_ribose,CHEBI:16864,'Chemical synthesis (Chemical synthesis)','small molecule',ADP-D-ribose
+DCLRE1A,Q6PJP8,'Homo sapiens',protein,'DNA cross-link repair 1A protein'
+tac_1,G5ECG0,'Caenorhabditis elegans',protein,'Transforming acid coiled-coil-containing protein 1'
+par,CHEBI:61151,'Chemical synthesis (Chemical synthesis)','poly adenine',poly-ADP-D-ribose
+SPATA2,Q9UM82,'Homo sapiens',protein,'Spermatogenesis-associated protein 2'
+MCPH1,Q8NEM0,'Homo sapiens',protein,Microcephalin
+CENPI,Q92674,'Homo sapiens',protein,'Centromere protein I'
+HCFC1_A6NEM2,A6NEM2,'Homo sapiens',protein,'Host cell factor 1'
+Phlpp1_Q8CHE4_1,Q8CHE4-1,'Mus musculus',protein,'PH domain leucine-rich repeat-containing protein phosphatase 1'
+UIMC1_Q96RL1,Q96RL1,'Homo sapiens',protein,'BRCA1-A complex subunit RAP80'
+SLC35E1,Q96K37,'Homo sapiens',protein,'Solute carrier family 35 member E1'
+CDPF1,Q6NVV7,'Homo sapiens',protein,'Cysteine-rich DPF motif domain-containing protein 1'
+FEZ1,Q99689,'Homo sapiens',protein,'Fasciculation and elongation protein zeta-1'
+FECH_P22830,P22830,'Homo sapiens',protein,'Ferrochelatase, mitochondrial'
+CDC5L,Q99459,'Homo sapiens',protein,'Cell division cycle 5-like protein'
+ENTREP1,Q15884,'Homo sapiens',protein,'Endosomal transmembrane epsin interactor 1'
+DIP2A,Q14689-6,'Homo sapiens',protein,'Disco-interacting protein 2 homolog A'
+TMEM108,Q6UXF1,'Homo sapiens',protein,'Transmembrane protein 108'
+BRCA2,P51587,'Homo sapiens',protein,'Breast cancer type 2 susceptibility protein'
+IGKC,P01834,'Homo sapiens',protein,'Immunoglobulin kappa constant'
+Nbr1,P97432,'Mus musculus',protein,'Next to BRCA1 gene 1 protein'
+DNPH1,O43598,'Homo sapiens',protein,'5-hydroxymethyl-dUMP N-hydrolase'
+SSR4,P51571,'Homo sapiens',protein,'Translocon-associated protein subunit delta'
+DISC1,Q9NRI5,'Homo sapiens',protein,'Disrupted in schizophrenia 1 protein'
+BACH1,O14867,'Homo sapiens',protein,'Transcription regulator protein BACH1'
+PTPRJ,Q12913,'Homo sapiens',protein,'Receptor-type tyrosine-protein phosphatase eta'
+Ncbp2,Q9CQ49,'Mus musculus',protein,'Nuclear cap-binding protein subunit 2'
+ARF4,P18085,'Homo sapiens',protein,'ADP-ribosylation factor 4'
+SGO2,Q562F6,'Homo sapiens',protein,'Shugoshin 2'
+POLR2K,P53803,'Homo sapiens',protein,'DNA-directed RNA polymerases I, II, and III subunit RPABC4'
+OPRM1_P35372,P35372,'Homo sapiens',protein,'Mu-type opioid receptor'
+GSK3B_P49841,P49841,'Homo sapiens',protein,'Glycogen synthase kinase-3 beta'
+LYPD4_Q6UWN0_2,Q6UWN0-2,'Homo sapiens',protein,'Isoform 2 of Ly6/PLAUR domain-containing protein 4'
+ECE1,Q07730,'Candida albicans (strain SC5314 / ATCC MYA-2876)',protein,'Extent of cell elongation protein 1'
+EWSR1,Q01844,'Homo sapiens',protein,'RNA-binding protein EWS'
+M6pr,P24668,'Mus musculus',protein,'Cation-dependent mannose-6-phosphate receptor'
+KINB1,Q84VQ1,'Arabidopsis thaliana (Mouse-ear cress)',protein,'SNF1-related protein kinase regulatory subunit beta-1'
+brcc3,Q66GV6,'Xenopus laevis (African clawed frog)',protein,'Lys-63-specific deubiquitinase BRCC36'
+RpS15Aa,P48149,'Drosophila melanogaster (Fruit fly)',protein,'Small ribosomal subunit protein uS8A'
+Targ2,Q961L8,'Drosophila melanogaster (Fruit fly)',protein,
+ATRIP,Q8WXE1,'Homo sapiens',protein,'ATR-interacting protein'
+NSF,P46459,'Homo sapiens',protein,'Vesicle-fusing ATPase'
+PON1,P27169,'Homo sapiens',protein,'Serum paraoxonase/arylesterase 1'
+UBL4B,Q8N7F7,'Homo sapiens',protein,'Ubiquitin-like protein 4B'
+CSTF1,Q05048,'Homo sapiens',protein,'Cleavage stimulation factor subunit 1'
+SLX4,Q8IY92,'Homo sapiens',protein,'Structure-specific endonuclease subunit SLX4'
+S100A6,P06703,'Homo sapiens',protein,'Protein S100-A6'
+ATF1,P18846,'Homo sapiens',protein,'Cyclic AMP-dependent transcription factor ATF-1'
+RBM15,Q96T37,'Homo sapiens',protein,'RNA-binding protein 15'
+RNF8,O76064,'Homo sapiens',protein,'E3 ubiquitin-protein ligase RNF8'
+IL36RN,Q9UBH0,'Homo sapiens',protein,'Interleukin-36 receptor antagonist protein'
+NUDT1,P36639-4,'Homo sapiens',protein,'Oxidized purine nucleoside triphosphate hydrolase'
+TRIM55,Q9BYV6,'Homo sapiens',protein,'Tripartite motif-containing protein 55'
+CBX5,P45973,'Homo sapiens',protein,'Chromobox protein homolog 5'
+EXOC5,O00471,'Homo sapiens',protein,'Exocyst complex component 5'
+PEX5_P50542,P50542,'Homo sapiens',protein,'Peroxisomal targeting signal 1 receptor'
+FANCC,Q00597,'Homo sapiens',protein,'Fanconi anemia group C protein'
+A2ML1,A8K2U0,'Homo sapiens',protein,'Alpha-2-macroglobulin-like protein 1'
+a0a3l6dk31_maize,A0A3L6DK31,'Zea mays (Maize)',protein,'U3 small nucleolar RNA-associated protein 11'
+ERCC4,Q92889,'Homo sapiens',protein,'DNA repair endonuclease XPF'
+TFG,Q92734,'Homo sapiens',protein,'Protein TFG'
+SLC35G1,Q2M3R5,'Homo sapiens',protein,'Solute carrier family 35 member G1'
+CYB5B,O43169,'Homo sapiens',protein,'Cytochrome b5 type B'
+STAG1,Q8WVM7,'Homo sapiens',protein,'Cohesin subunit SA-1'
+E7_P36817,P36817,'Human papillomavirus type 9',protein,'Protein E7'
+CFH,P08603,'Homo sapiens',protein,'Complement factor H'
+ENKD1,Q9H0I2,'Homo sapiens',protein,'Enkurin domain-containing protein 1'
+NR2F2,P24468,'Homo sapiens',protein,'COUP transcription factor 2'
+HMGCS1,Q01581,'Homo sapiens',protein,'Hydroxymethylglutaryl-CoA synthase, cytoplasmic'
+TIGAR,Q9NQ88,'Homo sapiens',protein,'Fructose-2,6-bisphosphatase TIGAR'
+F9I5.13,Q9M810,'Arabidopsis thaliana (Mouse-ear cress)',protein,'Dynein light chain'
+TOM1,O60784-4,'Homo sapiens',protein,'Target of Myb1 membrane trafficking protein'
+FAAP24,Q9BTP7,'Homo sapiens',protein,'Fanconi anemia core complex-associated protein 24'
+FANCG,O15287,'Homo sapiens',protein,'Fanconi anemia group G protein'
+PRKAR2B,P31323,'Homo sapiens',protein,'cAMP-dependent protein kinase type II-beta regulatory subunit'
+APOB,P04114,'Homo sapiens',protein,'Apolipoprotein B-100'
+CENPM,Q9NSP4,'Homo sapiens',protein,'Centromere protein M'
+brca1.L,Q90X96,'Xenopus laevis (African clawed frog)',protein,'RING-type E3 ubiquitin transferase'
+TOPBP1,Q92547,'Homo sapiens',protein,'DNA topoisomerase 2-binding protein 1'
+SLC7A11,Q9UPY5,'Homo sapiens',protein,'Cystine/glutamate transporter'
+SLF2,Q8IX21,'Homo sapiens',protein,'SMC5-SMC6 complex localization factor protein 2'
+GABARAP_Q6IAW1,Q6IAW1,'Homo sapiens',protein,
+HACD3,Q9P035,'Homo sapiens',protein,'Very-long-chain (3R)-3-hydroxyacyl-CoA dehydratase 3'
+FAM184A,Q8NB25,'Homo sapiens',protein,'Protein FAM184A'
+ATG10,Q9H0Y0,'Homo sapiens',protein,'Ubiquitin-like-conjugating enzyme ATG10'
+HTT,P42858,'Homo sapiens',protein,Huntingtin
+UIMC1_Q96RL1_2,Q96RL1-2,'Homo sapiens',protein,'BRCA1-A complex subunit RAP80'
+LDOC1,O95751,'Homo sapiens',protein,'Protein LDOC1'
+SMAD4,Q13485,'Homo sapiens',protein,'Mothers against decapentaplegic homolog 4'
+BRCA1_P38398_5,P38398-5,'Homo sapiens',protein,'Breast cancer type 1 susceptibility protein'
+BVLF1,Q2MG95,'Epstein-Barr virus (strain B95-8) (HHV-4)',protein,
+MAB21L4,Q08AI8,'Homo sapiens',protein,'Protein mab-21-like 4'
+TWIST1,Q15672,'Homo sapiens',protein,'Twist-related protein 1'
+'ccsb orf id: 52859',EBI-16435328,'Homo sapiens',protein,
+TRAF1,Q13077,'Homo sapiens',protein,'TNF receptor-associated factor 1'
+TGM1,P22735,'Homo sapiens',protein,'Protein-glutamine gamma-glutamyltransferase K'
+MYC,P01106,'Homo sapiens',protein,'Myc proto-oncogene protein'
+SNW1,Q13573,'Homo sapiens',protein,'SNW domain-containing protein 1'
+KDM5B,Q9UGL1,'Homo sapiens',protein,'Lysine-specific demethylase 5B'
+PKP1,Q13835,'Homo sapiens',protein,Plakophilin-1
+CIP2A,Q8TCG1,'Homo sapiens',protein,'Protein CIP2A'
+TCP14,Q93Z00,'Arabidopsis thaliana (Mouse-ear cress)',protein,'Transcription factor TCP14'
+TYMP,P19971,'Homo sapiens',protein,'Thymidine phosphorylase'
+LOXL4,Q96JB6,'Homo sapiens',protein,'Lysyl oxidase homolog 4'
+FYN,P06241,'Homo sapiens',protein,'Tyrosine-protein kinase Fyn'
+ns3b_sars,P59633,'Human SARS coronavirus',protein,'ORF3b protein'
+CEP85,Q6P2H3-1,'Homo sapiens',protein,'Centrosomal protein of 85 kDa'
+MTA1,Q13330,'Homo sapiens',protein,'Metastasis-associated protein MTA1'
+ETV6,P41212,'Homo sapiens',protein,'Transcription factor ETV6'
+WTAP,Q15007,'Homo sapiens',protein,'Pre-mRNA-splicing regulator WTAP'
+PRAME,P78395,'Homo sapiens',protein,'Melanoma antigen preferentially expressed in tumors'
+Palb2,Q3U0P1,'Mus musculus',protein,'Partner and localizer of BRCA2'
+PTEN,P60484,'Homo sapiens',protein,'Phosphatidylinositol 3,4,5-trisphosphate 3-phosphatase and dual-specificity protein phosphatase PTEN'
+LIN7C,Q9NUP9,'Homo sapiens',protein,'Protein lin-7 homolog C'
+FUS,P35637,'Homo sapiens',protein,'RNA-binding protein FUS'
+SLC30A8,Q8IWU4,'Homo sapiens',protein,'Proton-coupled zinc antiporter SLC30A8'
+SULT1A2,P50226,'Homo sapiens',protein,'Sulfotransferase 1A2'
+RASIP1,Q5U651,'Homo sapiens',protein,'Ras-interacting protein 1'
+KPNA1,P52294,'Homo sapiens',protein,'Importin subunit alpha-5'
+POLR1A,O95602,'Homo sapiens',protein,'DNA-directed RNA polymerase I subunit RPA1'
+E6_P06930,P06930,'Human papillomavirus 5',protein,'Protein E6'
+MRPL41,Q8IXM3,'Homo sapiens',protein,'Large ribosomal subunit protein mL41'
+NRDC,O43847,'Homo sapiens',protein,Nardilysin
+MYOD1,P15172,'Homo sapiens',protein,'Myoblast determination protein 1'
+JUP,P14923,'Homo sapiens',protein,'Junction plakoglobin'
+IFI30,P13284,'Homo sapiens',protein,'Gamma-interferon-inducible lysosomal thiol reductase'
+Dnmt1,P13864,'Mus musculus',protein,'DNA (cytosine-5)-methyltransferase 1'
+RNF169,Q8NCN4,'Homo sapiens',protein,'E3 ubiquitin-protein ligase RNF169'
+DIS3,Q9Y2L1,'Homo sapiens',protein,'Exosome complex exonuclease RRP44'
+SP7,Q8TDD2,'Homo sapiens',protein,'Transcription factor Sp7'
+FGA,P02671,'Homo sapiens',protein,'Fibrinogen alpha chain'
+APOA2,P02652,'Homo sapiens',protein,'Apolipoprotein A-II'
+RECQL5,O94762,'Homo sapiens',protein,'ATP-dependent DNA helicase Q5'
+RGS9BP,Q6ZS82,'Homo sapiens',protein,'Regulator of G-protein signaling 9-binding protein'
+PHLPP1_O60346_1,O60346-1,'Homo sapiens',protein,'PH domain leucine-rich repeat-containing protein phosphatase 1'
+ZNF653,Q96CK0,'Homo sapiens',protein,'Zinc finger protein 653'
+PBDC1,Q9BVG4,'Homo sapiens',protein,'Protein PBDC1'
+RFC4,P35249,'Homo sapiens',protein,'Replication factor C subunit 4'
+POLR2F,P61218,'Homo sapiens',protein,'DNA-directed RNA polymerases I, II, and III subunit RPABC2'
+ELAVL1,Q15717,'Homo sapiens',protein,'ELAV-like protein 1'
+RFXANK,O14593,'Homo sapiens',protein,'DNA-binding protein RFXANK'
+S100A9,P06702,'Homo sapiens',protein,'Protein S100-A9'
+ASXL2_Q76L83_2,Q76L83-2,'Homo sapiens',protein,'Putative Polycomb group protein ASXL2'
+ATG2A,Q2TAZ0,'Homo sapiens',protein,'Autophagy-related protein 2 homolog A'
+CSNK1E,P49674,'Homo sapiens',protein,'Casein kinase I isoform epsilon'
+ATF7IP,Q6VMQ6,'Homo sapiens',protein,'Activating transcription factor 7-interacting protein 1'
+RPL13,P26373,'Homo sapiens',protein,'Large ribosomal subunit protein eL13'
+RECQL,P46063,'Homo sapiens',protein,'ATP-dependent DNA helicase Q1'
+GM2A,P17900,'Homo sapiens',protein,'Ganglioside GM2 activator'
+CT45A3,Q8NHU0,'Homo sapiens',protein,'Cancer/testis antigen family 45 member A3'
+a0a3g5l8e4_yerpe,A0A3G5L8E4,'Yersinia pestis',protein,
+bach1peptide,DIP-48755N,'Chemical synthesis (Chemical synthesis)',peptide,'BACH1 peptide'
+Map1lc3b,Q9CQV6,'Mus musculus',protein,'Microtubule-associated protein 1 light chain 3 beta'
+TMX3,Q96JJ7,'Homo sapiens',protein,'Protein disulfide-isomerase TMX3'
+BLOC1S6,Q9UL45,'Homo sapiens',protein,'Biogenesis of lysosome-related organelles complex 1 subunit 6'
+CHD3,Q12873,'Homo sapiens',protein,'Chromodomain-helicase-DNA-binding protein 3'
+IGHA2,P01877,'Homo sapiens',protein,'Immunoglobulin heavy constant alpha 2'
+RAVER1,A0A087WZ13,'Homo sapiens',protein,'Ribonucleoprotein PTB-binding 1'
+H3C1,P68431,'Homo sapiens',protein,'Histone H3.1'
+POLR2E,P19388,'Homo sapiens',protein,'DNA-directed RNA polymerases I, II, and III subunit RPABC1'
+PIAS4,Q8N2W9,'Homo sapiens',protein,'E3 SUMO-protein ligase PIAS4'
+CHI3L1,P36222,'Homo sapiens',protein,'Chitinase-3-like protein 1'
+ABRAXAS2,Q15018,'Homo sapiens',protein,'BRISC complex subunit Abraxas 2'
+SERPINB4,P48594,'Homo sapiens',protein,'Serpin B4'
+Tp53_P02340,P02340,'Mus musculus',protein,'Cellular tumor antigen p53'
+TUBA1C,Q9BQE3,'Homo sapiens',protein,'Tubulin alpha-1C chain'
+TERF2IP,Q9NYB0,'Homo sapiens',protein,'Telomeric repeat-binding factor 2-interacting protein 1'
+RIOX2_Q8IUF8_4,Q8IUF8-4,'Homo sapiens',protein,'Ribosomal oxygenase 2'
+PRPF38A,Q8NAV1,'Homo sapiens',protein,'Pre-mRNA-splicing factor 38A'
+RPN2,P04844,'Homo sapiens',protein,'Dolichyl-diphosphooligosaccharide--protein glycosyltransferase subunit 2'
+RBBP7,Q16576,'Homo sapiens',protein,'Histone-binding protein RBBP7'
+MANF,P55145,'Homo sapiens',protein,'Mesencephalic astrocyte-derived neurotrophic factor'
+F7,P08709,'Homo sapiens',protein,'Coagulation factor VII'
+LOC100193132,B4FDX6,'Zea mays (Maize)',protein,'BRISC and BRCA1-A complex member 1'
+TOM1L2,Q6ZVM7-1,'Homo sapiens',protein,'TOM1-like protein 2'
+ZC3H8,Q8N5P1,'Homo sapiens',protein,'Zinc finger CCCH domain-containing protein 8'
+C3,P01024,'Homo sapiens',protein,'Complement C3'
+NIPA1,Q7RTP0,'Homo sapiens',protein,'Magnesium transporter NIPA1'
+TERF2,Q15554,'Homo sapiens',protein,'Telomeric repeat-binding factor 2'
+POMK,Q9H5K3,'Homo sapiens',protein,'Protein O-mannose kinase'
+UBE2O,Q9C0C9,'Homo sapiens',protein,'(E3-independent) E2 ubiquitin-conjugating enzyme'
+BRCC3_P46736,P46736,'Homo sapiens',protein,'Lys-63-specific deubiquitinase BRCC36'
+PIPSL,A2A3N6,'Homo sapiens',protein,'Putative PIP5K1A and PSMD4-like protein'
+CDK16,Q00536,'Homo sapiens',protein,'Cyclin-dependent kinase 16'
+CD80,P33681,'Homo sapiens',protein,'T-lymphocyte activation antigen CD80'
+PLA2G4D,Q86XP0,'Homo sapiens',protein,'Cytosolic phospholipase A2 delta'
+DNAAF5,Q86Y56,'Homo sapiens',protein,'Dynein axonemal assembly factor 5'
+FOXK1,P85037,'Homo sapiens',protein,'Forkhead box protein K1'
+ipi00260209,XP_293026,'Homo sapiens',protein,
+CEP126,Q9P2H0,'Homo sapiens',protein,'Centrosomal protein of 126 kDa'
+sptf,DIP-48754N,'Chemical synthesis (Chemical synthesis)',peptide,Phosphopeptide
+SAGE1,Q9NXZ1,'Homo sapiens',protein,'Sarcoma antigen 1'
+NAE1,Q13564,'Homo sapiens',protein,'NEDD8-activating enzyme E1 regulatory subunit'
+CHRM4,P08173,'Homo sapiens',protein,'Muscarinic acetylcholine receptor M4'
+NFYC,Q13952,'Homo sapiens',protein,'Nuclear transcription factor Y subunit gamma'
+MKI67,P46013,'Homo sapiens',protein,'Proliferation marker protein Ki-67'
+SSH3,Q8TE77,'Homo sapiens',protein,'Protein phosphatase Slingshot homolog 3'
+ITM2B,Q9Y287,'Homo sapiens',protein,'Integral membrane protein 2B'
+CEP135,Q66GS9,'Homo sapiens',protein,'Centrosomal protein of 135 kDa'
+MAS1,P04201,'Homo sapiens',protein,'Proto-oncogene Mas'
+Bard1,O70445,'Mus musculus',protein,'BRCA1-associated RING domain protein 1'
+BARD1_Q99728,Q99728,'Homo sapiens',protein,'BRCA1-associated RING domain protein 1'
+Map1lc3a,Q91VR7,'Mus musculus',protein,'Microtubule-associated protein 1 light chain 3 alpha'
+CLTA,P09496,'Homo sapiens',protein,'Clathrin light chain A'
+TMEM74,Q96NL1,'Homo sapiens',protein,'Transmembrane protein 74'
+HMGN5,P82970,'Homo sapiens',protein,'High mobility group nucleosome-binding domain-containing protein 5'
+QSOX1,O00391,'Homo sapiens',protein,'Sulfhydryl oxidase 1'
+GPR17,Q13304,'Homo sapiens',protein,'Uracil nucleotide/cysteinyl leukotriene receptor'
+GPRASP2,Q96D09,'Homo sapiens',protein,'G-protein coupled receptor-associated sorting protein 2'
+KLF16,Q9BXK1,'Homo sapiens',protein,'Krueppel-like factor 16'
+CPNE1,Q99829,'Homo sapiens',protein,Copine-1
+INF2,Q27J81,'Homo sapiens',protein,'Inverted formin-2'
+ELK3,P41970,'Homo sapiens',protein,'ETS domain-containing protein Elk-3'
+PRKN,O60260-5,'Homo sapiens',protein,'E3 ubiquitin-protein ligase parkin'
+MMS22L,Q6ZRQ5,'Homo sapiens',protein,'Protein MMS22-like'
+MMS19,Q96T76,'Homo sapiens',protein,'MMS19 nucleotide excision repair protein homolog'
+CAMK2D_Q13557_10,Q13557-10,'Homo sapiens',protein,'Calcium/calmodulin-dependent protein kinase type II subunit delta'
+GSK3B_P49841_2,P49841-2,'Homo sapiens',protein,'Glycogen synthase kinase-3 beta'
+CD40,P25942,'Homo sapiens',protein,'Tumor necrosis factor receptor superfamily member 5'
+SSRP1,Q08945,'Homo sapiens',protein,'FACT complex subunit SSRP1'
+FOSL2,P15408,'Homo sapiens',protein,'Fos-related antigen 2'
+SRSF7,Q16629,'Homo sapiens',protein,'Serine/arginine-rich splicing factor 7'
+LRIF1,Q5T3J3,'Homo sapiens',protein,'Ligand-dependent nuclear receptor-interacting factor 1'
+LIPH,Q8WWY8,'Homo sapiens',protein,'Lipase member H'
+PRPS2,P11908,'Homo sapiens',protein,'Ribose-phosphate pyrophosphokinase 2'
+ABL1,P00519,'Homo sapiens',protein,'Tyrosine-protein kinase ABL1'
+UBA3,Q8TBC4,'Homo sapiens',protein,'NEDD8-activating enzyme E1 catalytic subunit'
+KDM1B,Q8NB78,'Homo sapiens',protein,'Lysine-specific histone demethylase 2'
+JUNB,P17275,'Homo sapiens',protein,'Transcription factor JunB'
+TLX1,P31314,'Homo sapiens',protein,'T-cell leukemia homeobox protein 1'
+KAT7,O95251,'Homo sapiens',protein,'Histone acetyltransferase KAT7'
+IGLL5,B9A064,'Homo sapiens',protein,'Immunoglobulin lambda-like polypeptide 5'
+FOXK2,Q01167,'Homo sapiens',protein,'Forkhead box protein K2'
+RCAN1,P53805,'Homo sapiens',protein,Calcipressin-1
+ETS1,P14921,'Homo sapiens',protein,'Protein C-ets-1'
+SNAPC4,Q5SXM2,'Homo sapiens',protein,'snRNA-activating protein complex subunit 4'
+DNAI2,Q9GZS0,'Homo sapiens',protein,'Dynein axonemal intermediate chain 2'
+SERPINB13_Q9UIV8_2,Q9UIV8-2,'Homo sapiens',protein,'Isoform 2 of Serpin B13'
+SHC1,P29353,'Homo sapiens',protein,'SHC-transforming protein 1'
+Hoxa2,P31245,'Mus musculus',protein,'Homeobox protein Hox-A2'
+BRCA1_A5A751,A5A751,'Sus scrofa (Pig)',protein,'RING-type E3 ubiquitin transferase'
+SMTN,P53814,'Homo sapiens',protein,Smoothelin
+ZNF521,Q96K83,'Homo sapiens',protein,'Zinc finger protein 521'
+Tnks2,Q3UES3,'Mus musculus',protein,'Poly [ADP-ribose] polymerase tankyrase-2'
+AKR1B10,O60218,'Homo sapiens',protein,'Aldo-keto reductase family 1 member B10'
+SBSN,Q6UWP8,'Homo sapiens',protein,Suprabasin
+ELF4,Q99607,'Homo sapiens',protein,'ETS-related transcription factor Elf-4'
+Hmga2,P52927,'Mus musculus',protein,'High mobility group protein HMGI-C'
+KLK10,O43240,'Homo sapiens',protein,Kallikrein-10
+SUZ12,Q15022,'Homo sapiens',protein,'Polycomb protein SUZ12'
+OBSL1,O75147-3,'Homo sapiens',protein,'Obscurin-like protein 1'
+EDDM3B,P56851,'Homo sapiens',protein,'Epididymal secretory protein E3-beta'
+FAM83H,Q6ZRV2,'Homo sapiens',protein,'Protein FAM83H'
+HNF1B,P35680,'Homo sapiens',protein,'Hepatocyte nuclear factor 1-beta'
+MAP1LC3B,Q9GZQ8,'Homo sapiens',protein,'Microtubule-associated protein 1 light chain 3 beta'
+HNRNPA1,P09651,'Homo sapiens',protein,'Heterogeneous nuclear ribonucleoprotein A1'
+CIDEB,Q9UHD4,'Homo sapiens',protein,'Lipid transferase CIDEB'
+LIN28B,Q6ZN17,'Homo sapiens',protein,'Protein lin-28 homolog B'
+IL17RA,Q96F46,'Homo sapiens',protein,'Interleukin-17 receptor A'
+LIN28A,Q9H9Z2,'Homo sapiens',protein,'Protein lin-28 homolog A'
+H2BC21,Q16778,'Homo sapiens',protein,'Histone H2B type 2-E'
+BRAF,P15056,'Homo sapiens',protein,'Serine/threonine-protein kinase B-raf'
+OPRM1_P35372_10,P35372-10,'Homo sapiens',protein,'Mu-type opioid receptor'
+brca1_human_cre_site_dna_probe,EBI-10043688,'Homo sapiens','deoxyribonucleic acid','Human BRCA1 gene promoter CRE site DNA probe'
+RAD1,O60671,'Homo sapiens',protein,'Cell cycle checkpoint protein RAD1'
+INTS9,Q9NV88,'Homo sapiens',protein,'Integrator complex subunit 9'
+A2M,P01023,'Homo sapiens',protein,Alpha-2-macroglobulin
+DHX38,Q92620,'Homo sapiens',protein,'Pre-mRNA-splicing factor ATP-dependent RNA helicase PRP16'
+SLC27A6,Q9Y2P4,'Homo sapiens',protein,'Long-chain fatty acid transport protein 6'
+Mta1,Q8K4B0,'Mus musculus',protein,'Metastasis-associated protein MTA1'
+VWA5A_O00534,O00534,'Homo sapiens',protein,'von Willebrand factor A domain-containing protein 5A'
+CBR1,P16152,'Homo sapiens',protein,'Carbonyl reductase [NADPH] 1'
+WDR48,Q8TAF3,'Homo sapiens',protein,'WD repeat-containing protein 48'
+BRCA1_P38398_6,P38398-6,'Homo sapiens',protein,'Breast cancer type 1 susceptibility protein'
+BHLH27,Q700E3,'Arabidopsis thaliana (Mouse-ear cress)',protein,'Transcription factor bHLH27'
+RAD52,P43351,'Homo sapiens',protein,'DNA repair protein RAD52 homolog'
+NCAPG2,Q86XI2,'Homo sapiens',protein,'Condensin-2 complex subunit G2'
+EPM2AIP1,Q7L775,'Homo sapiens',protein,'EPM2A-interacting protein 1'
+PPHLN1,Q8NEY8,'Homo sapiens',protein,Periphilin-1
+a0a5p8yj66_yerpe,A0A5P8YJ66,'Yersinia pestis',protein,
+ACP7,Q6ZNF0,'Homo sapiens',protein,'Acid phosphatase type 7'
+KIF2C,Q99661,'Homo sapiens',protein,'Kinesin-like protein KIF2C'
+YWHAZ,P63104,'Homo sapiens',protein,'14-3-3 protein zeta/delta'
+cdkn1a_human_gene,ENSG00000124762,'Homo sapiens',gene,'Human CDKN1A gene'
+SERPINB2,P05120,'Homo sapiens',protein,'Plasminogen activator inhibitor 2'
+APLNR,P35414,'Homo sapiens',protein,'Apelin receptor'
+BRCA1_P38398_1,P38398-1,'Homo sapiens',protein,'Breast cancer type 1 susceptibility protein'
+hsa_mir_146a_5p,URS000050B527_9606,'Homo sapiens','micro rna','Homo sapiens (human) hsa-miR-146a-5p'
+IL36G,Q9NZH8,'Homo sapiens',protein,'Interleukin-36 gamma'
+FHL3,Q13643,'Homo sapiens',protein,'Four and a half LIM domains protein 3'
+Brip1,Q5SXJ3,'Mus musculus',protein,'Fanconi anemia group J protein homolog'
+RNF166,Q96A37,'Homo sapiens',protein,'E3 ubiquitin-protein ligase RNF166'
+tpx2_a,Q6NUF4,'Xenopus laevis (African clawed frog)',protein,'Targeting protein for Xklp2-A'
+FFAR1,O14842,'Homo sapiens',protein,'Free fatty acid receptor 1'
+ALOX12B,O75342,'Homo sapiens',protein,'Arachidonate 12-lipoxygenase, 12R-type'
+ZNF526,Q8TF50,'Homo sapiens',protein,'Zinc finger protein 526'
+PSMC4,P43686,'Homo sapiens',protein,'26S proteasome regulatory subunit 6B'
+ELF1,P32519,'Homo sapiens',protein,'ETS-related transcription factor Elf-1'
+BECN1,Q14457,'Homo sapiens',protein,Beclin-1
+HSD17B14,Q9BPX1,'Homo sapiens',protein,'L-fucose dehydrogenase'
+CABIN1,Q9Y6J0,'Homo sapiens',protein,'Calcineurin-binding protein cabin-1'
+NELFCD_Q8IXH7_1,Q8IXH7-1,'Homo sapiens',protein,'Negative elongation factor C/D'
+PSMC2,P35998,'Homo sapiens',protein,'26S proteasome regulatory subunit 7'
+MFAP4,P55083,'Homo sapiens',protein,'Microfibril-associated glycoprotein 4'
+RABEP1,Q15276,'Homo sapiens',protein,'Rab GTPase-binding effector protein 1'
+DDOST,P39656,'Homo sapiens',protein,'Dolichyl-diphosphooligosaccharide--protein glycosyltransferase 48 kDa subunit'
+ACP3,P15309,'Homo sapiens',protein,'Prostatic acid phosphatase'
+S100A2,P29034,'Homo sapiens',protein,'Protein S100-A2'
+HUS1,O60921,'Homo sapiens',protein,'Checkpoint protein HUS1'
+CORO6_Q6QEF8_5,Q6QEF8-5,'Homo sapiens',protein,Coronin-6
+HTR2C,P28335,'Homo sapiens',protein,'5-hydroxytryptamine receptor 2C'
+NSMCE4A,Q9NXX6,'Homo sapiens',protein,'Non-structural maintenance of chromosomes element 4 homolog A'
+HSF2BP,O75031,'Homo sapiens',protein,'Heat shock factor 2-binding protein'
+NPAS1,Q99742,'Homo sapiens',protein,'Neuronal PAS domain-containing protein 1'
+Plcg2,Q8CIH5,'Mus musculus',protein,'1-phosphatidylinositol 4,5-bisphosphate phosphodiesterase gamma-2'
+mdm2_human_probe,EBI-2694074,'Homo sapiens','deoxyribonucleic acid','Human Double minute 2 E box  oligonucleotide probe'
+KLK7,P49862,'Homo sapiens',protein,Kallikrein-7
+BRAP,Q7Z569,'Homo sapiens',protein,'BRCA1-associated protein'
+IGHG4,P01861,'Homo sapiens',protein,'Immunoglobulin heavy constant gamma 4'
+N,P07207,'Drosophila melanogaster (Fruit fly)',protein,'Neurogenic locus Notch protein'
+NELFB,Q8WX92,'Homo sapiens',protein,'Negative elongation factor B'
+DNMT1,P26358,'Homo sapiens',protein,'DNA (cytosine-5)-methyltransferase 1'
+LRPPRC,P42704,'Homo sapiens',protein,'Leucine-rich PPR motif-containing protein, mitochondrial'
+IGF1R,P08069,'Homo sapiens',protein,'Insulin-like growth factor 1 receptor'
+MEF2C,Q06413,'Homo sapiens',protein,'Myocyte-specific enhancer factor 2C'
+PpD3,Q9VH81,'Drosophila melanogaster (Fruit fly)',protein,'protein-serine/threonine phosphatase'
+brc_1_B6VQ60,B6VQ60,'Caenorhabditis elegans',protein,'Breast cancer type 1 susceptibility protein homolog'
+BRCA1_P38398,P38398,'Homo sapiens',protein,'Breast cancer type 1 susceptibility protein'
+UBB,P0CG47,'Homo sapiens',protein,Polyubiquitin-B
+NFIC,P08651,'Homo sapiens',protein,'Nuclear factor 1 C-type'
+PACSIN1,Q9BY11,'Homo sapiens',protein,'Protein kinase C and casein kinase substrate in neurons protein 1'
+S100A7,P31151,'Homo sapiens',protein,'Protein S100-A7'
+NSMCE2,Q96MF7,'Homo sapiens',protein,'E3 SUMO-protein ligase NSE2'
+A1BG,P04217,'Homo sapiens',protein,Alpha-1B-glycoprotein
+DBP,P04296,'Human herpesvirus 1 (strain 17) (HHV-1)',protein,'Major DNA-binding protein'
+IL1RN,P18510,'Homo sapiens',protein,'Interleukin-1 receptor antagonist protein'
+MFSD4A,Q8N468,'Homo sapiens',protein,'Major facilitator superfamily domain-containing protein 4A'
+NME4,O00746,'Homo sapiens',protein,'Nucleoside diphosphate kinase, mitochondrial'
+SCLT1,Q96NL6,'Homo sapiens',protein,'Sodium channel and clathrin linker 1'
+ZBTB48,P10074,'Homo sapiens',protein,'Zinc finger and BTB domain-containing protein 48'
+RECQL4,O94761,'Homo sapiens',protein,'ATP-dependent DNA helicase Q4'
+CEBPE,Q15744,'Homo sapiens',protein,'CCAAT/enhancer-binding protein epsilon'
+IPO5,O00410,'Homo sapiens',protein,Importin-5
+RBBP8,Q99708,'Homo sapiens',protein,'DNA endonuclease RBBP8'
+XYLT1,Q86Y38,'Homo sapiens',protein,'Xylosyltransferase 1'
+HAP1,P54257,'Homo sapiens',protein,'Huntingtin-associated protein 1'
+SERPINA3,P01011,'Homo sapiens',protein,Alpha-1-antichymotrypsin
+RAD51B,O15315,'Homo sapiens',protein,'DNA repair protein RAD51 homolog 2'
+CCDC30,Q5VVM6,'Homo sapiens',protein,'Coiled-coil domain-containing protein 30'
+brd_1,Q21209,'Caenorhabditis elegans',protein,'BRCA1-associated RING domain protein 1'
+WRN,Q14191,'Homo sapiens',protein,'Bifunctional 3-5 exonuclease/ATP-dependent helicase WRN'
+E6_P06929,P06929,'Human papillomavirus type 1a',protein,'Protein E6'
+EEF1AKMT3,Q96AZ1,'Homo sapiens',protein,'EEF1A lysine methyltransferase 3'
+USP8,P40818,'Homo sapiens',protein,'Ubiquitin carboxyl-terminal hydrolase 8'
+FANCL,Q9NW38,'Homo sapiens',protein,'E3 ubiquitin-protein ligase FANCL'
+Paxip1,Q6NZQ4,'Mus musculus',protein,'PAX-interacting protein 1'
+a0a1d6pwb6_maize,A0A1D6PWB6,'Zea mays (Maize)',protein,
+MAPT,P10636-8,'Homo sapiens',protein,'Microtubule-associated protein tau'
+FBXO28,Q9NVF7,'Homo sapiens',protein,'F-box only protein 28'
+FAM9B,Q8IZU0,'Homo sapiens',protein,'Protein FAM9B'
+SNCA,P37840,'Homo sapiens',protein,Alpha-synuclein
+RABGGTB,P53611,'Homo sapiens',protein,'Geranylgeranyl transferase type-2 subunit beta'
+MBD5,Q9P267,'Homo sapiens',protein,'Methyl-CpG-binding domain protein 5'
+ITIH2,P19823,'Homo sapiens',protein,'Inter-alpha-trypsin inhibitor heavy chain H2'
+FHL2,Q14192,'Homo sapiens',protein,'Four and a half LIM domains protein 2'
+NSMCE1,Q8WV22,'Homo sapiens',protein,'Non-structural maintenance of chromosomes element 1 homolog'
+CASK,O14936,'Homo sapiens',protein,'Peripheral plasma membrane protein CASK'
+BABAM1,Q9NWV8,'Homo sapiens',protein,'BRISC and BRCA1-A complex member 1'
+BABAM2,Q9NXR7,'Homo sapiens',protein,'BRISC and BRCA1-A complex member 2'
+NBR1_Q14596,Q14596,'Homo sapiens',protein,'Next to BRCA1 gene 1 protein'
+POLR2B,P30876,'Homo sapiens',protein,'DNA-directed RNA polymerase II subunit RPB2'
+LDLRAD4,O15165-2,'Homo sapiens',protein,'Low-density lipoprotein receptor class A domain-containing protein 4'
+CAPZA1,P52907,'Homo sapiens',protein,'F-actin-capping protein subunit alpha-1'
+SPOP,O43791,'Homo sapiens',protein,'Speckle-type POZ protein'
+CCNA2,P20248,'Homo sapiens',protein,Cyclin-A2
+AHSG,P02765,'Homo sapiens',protein,Alpha-2-HS-glycoprotein
+P0C6X7_PRO_0000037314,P0C6X7-PRO_0000037314,'Human SARS coronavirus',protein,'Non-structural protein 7'
+KLK6,Q92876,'Homo sapiens',protein,Kallikrein-6
+LRRC47,Q8N1G4,'Homo sapiens',protein,'Leucine-rich repeat-containing protein 47'
+Map3k1,Q62925,'Rattus norvegicus (Rat)',protein,'Mitogen-activated protein kinase kinase kinase 1'
+PRC1,O43663,'Homo sapiens',protein,'Protein regulator of cytokinesis 1'
+TMEM40,Q8WWA1,'Homo sapiens',protein,'Transmembrane protein 40'
+CRYAB,P02511,'Homo sapiens',protein,'Alpha-crystallin B chain'
+AARSD1,Q9BTE6-2,'Homo sapiens',protein,'Alanyl-tRNA editing protein Aarsd1'
+LPAR6,P43657,'Homo sapiens',protein,'Lysophosphatidic acid receptor 6'
+ITSN1,Q15811,'Homo sapiens',protein,Intersectin-1
+RNF40,O75150,'Homo sapiens',protein,'E3 ubiquitin-protein ligase BRE1B'
+HNRNPA2B1,P22626,'Homo sapiens',protein,'Heterogeneous nuclear ribonucleoproteins A2/B1'
+Pcbd1,P61458,'Mus musculus',protein,'Pterin-4-alpha-carbinolamine dehydratase'
+LYZL6,O75951,'Homo sapiens',protein,'Lysozyme-like protein 6'
+P0DTD1_PRO_0000449624,P0DTD1-PRO_0000449624,SARS-CoV-2,protein,'Non-structural protein 6'
+SLC35E4,Q6ICL7,'Homo sapiens',protein,'Solute carrier family 35 member E4'
+COMTD1,Q86VU5,'Homo sapiens',protein,'Catechol O-methyltransferase domain-containing protein 1'
+P0DTD1_PRO_0000449623,P0DTD1-PRO_0000449623,SARS-CoV-2,protein,'3C-like proteinase nsp5'
+ZCCHC10,Q8TBK6,'Homo sapiens',protein,'Zinc finger CCHC domain-containing protein 10'
+NSMCE3,Q96MG7,'Homo sapiens',protein,'Non-structural maintenance of chromosomes element 3 homolog'
+PLBD1,Q6P4A8,'Homo sapiens',protein,'Phospholipase B-like 1'
+ARL8B,Q9NVJ2,'Homo sapiens',protein,'ADP-ribosylation factor-like protein 8B'
+HMGA1,P17096,'Homo sapiens',protein,'High mobility group protein HMG-I/HMG-Y'
+LGALS7,P47929,'Homo sapiens',protein,Galectin-7
+a0a1d6gwc0_maize,A0A1D6GWC0,'Zea mays (Maize)',protein,'BRISC and BRCA1-A complex member 2'
+PSMC5,P62195,'Homo sapiens',protein,'26S proteasome regulatory subunit 8'
+FEV,Q99581,'Homo sapiens',protein,'Protein FEV'
+ERAP1,Q9NZ08,'Homo sapiens',protein,'Endoplasmic reticulum aminopeptidase 1'
+Suz12,Q80U70,'Mus musculus',protein,'Polycomb protein Suz12'
+hsa_mir_182_5p,URS00001CC379_9606,'Homo sapiens','micro rna','Homo sapiens (human) microRNA hsa-miR-182-5p'
+CENPA,P49450,'Homo sapiens',protein,'Histone H3-like centromeric protein A'
+UNC93A,Q86WB7,'Homo sapiens',protein,'Protein unc-93 homolog A'
+Rps27a,P62991,'Mus musculus',protein,Ubiquitin
+FAM168A,Q92567,'Homo sapiens',protein,'Protein FAM168A'
+SYNE2,Q8WXH0,'Homo sapiens',protein,Nesprin-2
+RANGAP1,P46060,'Homo sapiens',protein,'Ran GTPase-activating protein 1'
+FKBP8,Q14318,'Homo sapiens',protein,'Peptidyl-prolyl cis-trans isomerase FKBP8'
+TRIM27,P14373,'Homo sapiens',protein,'Zinc finger protein RFP'
+MLF1,P58340,'Homo sapiens',protein,'Myeloid leukemia factor 1'
+ap3a_sars2,P0DTC3,SARS-CoV-2,protein,'ORF3a protein'
+CORO6_Q6QEF8,Q6QEF8,'Homo sapiens',protein,Coronin-6
+AP2M1,Q96CW1,'Homo sapiens',protein,'AP-2 complex subunit mu'
+KLF11,O14901,'Homo sapiens',protein,'Krueppel-like factor 11'
+BRAT1,Q6PJG6,'Homo sapiens',protein,'Integrator complex assembly factor BRAT1'
+SPPL2B,Q8TCT7,'Homo sapiens',protein,'Signal peptide peptidase-like 2B'
+PRKACG,P22612,'Homo sapiens',protein,'cAMP-dependent protein kinase catalytic subunit gamma'
+ANKRD17,O75179,'Homo sapiens',protein,'Ankyrin repeat domain-containing protein 17'
+CAPZB,P47756,'Homo sapiens',protein,'F-actin-capping protein subunit beta'
+LONRF1,Q17RB8,'Homo sapiens',protein,'LON peptidase N-terminal domain and RING finger protein 1'
+SFXN4,Q6P4A7,'Homo sapiens',protein,Sideroflexin-4
+RAD51_Q06609,Q06609,'Homo sapiens',protein,'DNA repair protein RAD51 homolog 1'
+H1_5,P16401,'Homo sapiens',protein,'Histone H1.5'
+Brap,Q99MP8,'Mus musculus',protein,'BRCA1-associated protein'
+TEAD1,P28347,'Homo sapiens',protein,'Transcriptional enhancer factor TEF-1'
+ZNF655,Q8N720,'Homo sapiens',protein,'Zinc finger protein 655'
+RPA1,P27694,'Homo sapiens',protein,'Replication protein A 70 kDa DNA-binding subunit'
+POMGNT1,Q8WZA1,'Homo sapiens',protein,'Protein O-linked-mannose beta-1,2-N-acetylglucosaminyltransferase 1'
+KLHL22,Q53GT1,'Homo sapiens',protein,'Kelch-like protein 22'
+Tmed10,Q9D1D4,'Mus musculus',protein,'Transmembrane emp24 domain-containing protein 10'
+PLA2G4E,Q3MJ16,'Homo sapiens',protein,'Cytosolic phospholipase A2 epsilon'
+RHAMM,Q643Y9,'Xenopus laevis (African clawed frog)',protein,
+TOLLIP,Q9H0E2,'Homo sapiens',protein,'Toll-interacting protein'
+HNRNPC,P07910,'Homo sapiens',protein,'Heterogeneous nuclear ribonucleoproteins C1/C2'
+AVIL_O75366,O75366,'Homo sapiens',protein,Advillin
+PSME3_P61289,P61289,'Homo sapiens',protein,'Proteasome activator complex subunit 3'
+EFHC1,Q5JVL4,'Homo sapiens',protein,'EF-hand domain-containing protein 1'
+PHB1,P35232,'Homo sapiens',protein,'Prohibitin 1'
+NELFCD_Q8IXH7_4,Q8IXH7-4,'Homo sapiens',protein,'Negative elongation factor C/D'
+MTCH1,Q9NZJ7,'Homo sapiens',protein,'Mitochondrial carrier homolog 1'
+NUTF2,P61970,'Homo sapiens',protein,'Nuclear transport factor 2'
+CEBPD,P49716,'Homo sapiens',protein,'CCAAT/enhancer-binding protein delta'
+PFAS,O15067,'Homo sapiens',protein,'Phosphoribosylformylglycinamidine synthase'
+NT5C3A,Q9H0P0,'Homo sapiens',protein,'Cytosolic 5-nucleotidase 3A'
+SUPT5H,O00267,'Homo sapiens',protein,'Transcription elongation factor SPT5'
+CIAO2A,Q9H5X1,'Homo sapiens',protein,'Cytosolic iron-sulfur assembly component 2A'
+BRCA1_P38398_2,P38398-2,'Homo sapiens',protein,'Breast cancer type 1 susceptibility protein'
+'fla FIII',A0A5P8YEA2,'Yersinia pestis',protein,'Flagellar basal-body rod protein FlgC'
+SKP1,P63208,'Homo sapiens',protein,'S-phase kinase-associated protein 1'
+PMS2P3,Q13401,'Homo sapiens',protein,'Putative postmeiotic segregation increased 2-like protein 3'
+Ubb,Q78XY9,'Mus musculus',protein,
+HNF4A,P41235,'Homo sapiens',protein,'Hepatocyte nuclear factor 4-alpha'
+Hap1,O35668,'Mus musculus',protein,'Huntingtin-associated protein 1'
+RRAS,P10301,'Homo sapiens',protein,'Ras-related protein R-Ras'
+PALB2,Q86YC2,'Homo sapiens',protein,'Partner and localizer of BRCA2'
+PPM1G,O15355,'Homo sapiens',protein,'Protein phosphatase 1G'
+ssdna_dc,EBI-5333265,'Chemical synthesis (Chemical synthesis)','single stranded deoxyribonucleic acid',ssDNA_dC
+PSMD4,P55036,'Homo sapiens',protein,'26S proteasome non-ATPase regulatory subunit 4'
+SKIL,P12757,'Homo sapiens',protein,'Ski-like protein'
+Tcf3,P15806,'Mus musculus',protein,'Transcription factor E2-alpha'
+Olig1,Q9JKN5,'Mus musculus',protein,'Oligodendrocyte transcription factor 1'
+MYB,P10242,'Homo sapiens',protein,'Transcriptional activator Myb'
+NCAPH2_Q6IBW4,Q6IBW4,'Homo sapiens',protein,'Condensin-2 complex subunit H2'
+LAMTOR2,Q9Y2Q5,'Homo sapiens',protein,'Ragulator complex protein LAMTOR2'
+TEKTL1,Q8IYK2,'Homo sapiens',protein,'Tektin-like protein 1'
+ANKHD1,Q8IWZ3,'Homo sapiens',protein,'Ankyrin repeat and KH domain-containing protein 1'
+TTC28,Q96AY4,'Homo sapiens',protein,'Tetratricopeptide repeat protein 28'
+PSME3_P61289_2,P61289-2,'Homo sapiens',protein,'Proteasome activator complex subunit 3'
+NELFE,P18615,'Homo sapiens',protein,'Negative elongation factor E'
+ANXA8,P13928,'Homo sapiens',protein,'Annexin A8'
+TIAM1,Q13009,'Homo sapiens',protein,'Rho guanine nucleotide exchange factor TIAM1'
+MAGEA9,P43362,'Homo sapiens',protein,'Melanoma-associated antigen 9'
+PHF11,Q9UIL8,'Homo sapiens',protein,'PHD finger protein 11'
+FBXW7,Q969H0,'Homo sapiens',protein,'F-box/WD repeat-containing protein 7'
+E6_P03126,P03126,'Human papillomavirus type 16',protein,'Protein E6'
+CLPX,O76031,'Homo sapiens',protein,'ATP-dependent clpX-like chaperone, mitochondrial'
+hsa_mir_638,URS000075DB2F_9606,'Homo sapiens','micro rna',
+GADD45GIP1,Q8TAE8,'Homo sapiens',protein,'Large ribosomal subunit protein mL64'
+VPS4A,Q9UN37,'Homo sapiens',protein,'Vacuolar protein sorting-associated protein 4A'
+STAT3,P40763,'Homo sapiens',protein,'Signal transducer and activator of transcription 3'
+IFI16,Q16666,'Homo sapiens',protein,'Gamma-interferon-inducible protein 16'
+CCNE1,P24864,'Homo sapiens',protein,'G1/S-specific cyclin-E1'
+BLM,P54132,'Homo sapiens',protein,'RecQ-like DNA helicase BLM'
+TRAPPC9,Q96Q05-1,'Homo sapiens',protein,'Trafficking protein particle complex subunit 9'
+UBC,P0CG48,'Homo sapiens',protein,Polyubiquitin-C
+UVRAG,Q9P2Y5,'Homo sapiens',protein,'UV radiation resistance-associated gene protein'
+AXIN1_O15169,O15169,'Homo sapiens',protein,Axin-1
+RIF1,Q5UIP0,'Homo sapiens',protein,'Telomere-associated protein RIF1'
+S100A7A,Q86SG5,'Homo sapiens',protein,'Protein S100-A7A'
+SERPINB7,O75635,'Homo sapiens',protein,'Serpin B7'
+HOMEZ,Q8IX15,'Homo sapiens',protein,'Homeobox and leucine zipper protein Homez'
+SHMT2,P34897,'Homo sapiens',protein,'Serine hydroxymethyltransferase, mitochondrial'
+GSDMA,Q96QA5,'Homo sapiens',protein,Gasdermin-A
+GLUL,P15104,'Homo sapiens',protein,'Glutamine synthetase'
+PTN,P21246,'Homo sapiens',protein,Pleiotrophin
+E2F5,C9JYE9,'Homo sapiens',protein,
+HDLBP,Q00341,'Homo sapiens',protein,Vigilin
+KDR,P35968,'Homo sapiens',protein,'Vascular endothelial growth factor receptor 2'
+NDUFAB1,O14561,'Homo sapiens',protein,'Acyl carrier protein, mitochondrial'
+M_P59596,P59596,'Human SARS coronavirus',protein,'Membrane protein'
+ERP44,Q9BS26,'Homo sapiens',protein,'Endoplasmic reticulum resident protein 44'
+NUMA1,Q14980,'Homo sapiens',protein,'Nuclear mitotic apparatus protein 1'
+SSR3,Q9UNL2,'Homo sapiens',protein,'Translocon-associated protein subunit gamma'
+SHCBP1L,Q9BZQ2,'Homo sapiens',protein,'Testicular spindle-associated protein SHCBP1L'
+CUL2,Q13617,'Homo sapiens',protein,Cullin-2
+APCS,P02743,'Homo sapiens',protein,'Serum amyloid P-component'
+CBX3,Q13185,'Homo sapiens',protein,'Chromobox protein homolog 3'
+SMNDC1,O75940,'Homo sapiens',protein,'Survival of motor neuron-related-splicing factor 30'
+TOP3A,Q13472,'Homo sapiens',protein,'DNA topoisomerase 3-alpha'
+ELP1,O95163,'Homo sapiens',protein,'Elongator complex protein 1'
+PSMA4,P25789,'Homo sapiens',protein,'Proteasome subunit alpha type-4'
+JUN,P05412,'Homo sapiens',protein,'Transcription factor Jun'
+PPP1CC,P36873,'Homo sapiens',protein,'Serine/threonine-protein phosphatase PP1-gamma catalytic subunit'
+APOA4,P06727,'Homo sapiens',protein,'Apolipoprotein A-IV'
+AGO2,Q9UKV8,'Homo sapiens',protein,'Protein argonaute-2'
+TNIK,Q9UKE5,'Homo sapiens',protein,'TRAF2 and NCK-interacting protein kinase'
+ATR,Q13535,'Homo sapiens',protein,'Serine/threonine-protein kinase ATR'
+TP53,P04637,'Homo sapiens',protein,'Cellular tumor antigen p53'
+P2RX5_Q93086_4,Q93086-4,'Homo sapiens',protein,'Isoform 4 of P2X purinoceptor 5'
+ABT1,Q9ULW3,'Homo sapiens',protein,'Activator of basal transcription 1'
+RAD51D,O75771-3,'Homo sapiens',protein,'DNA repair protein RAD51 homolog 4'
+NDUFA5,Q16718,'Homo sapiens',protein,'NADH dehydrogenase [ubiquinone] 1 alpha subcomplex subunit 5'
+PSMD8,P48556,'Homo sapiens',protein,'26S proteasome non-ATPase regulatory subunit 8'
+NEK1,Q96PY6,'Homo sapiens',protein,'Serine/threonine-protein kinase Nek1'
+ORM1,P02763,'Homo sapiens',protein,'Alpha-1-acid glycoprotein 1'
+SMARCE1,Q969G3,'Homo sapiens',protein,'SWI/SNF-related matrix-associated actin-dependent regulator of chromatin subfamily E member 1'
+FANCF,Q9NPI8,'Homo sapiens',protein,'Fanconi anemia group F protein'
+RMI1,Q9H9A7,'Homo sapiens',protein,'RecQ-mediated genome instability protein 1'
+a0a1d6jp38_maize,A0A1D6JP38,'Zea mays (Maize)',protein,
+TULP2,O00295,'Homo sapiens',protein,'Tubby-related protein 2'
+VCP,P55072,'Homo sapiens',protein,'Transitional endoplasmic reticulum ATPase'
+CETN2,P41208,'Homo sapiens',protein,Centrin-2
+VPS35,Q96QK1,'Homo sapiens',protein,'Vacuolar protein sorting-associated protein 35'
+U2AF1,Q01081,'Homo sapiens',protein,'Splicing factor U2AF 35 kDa subunit'
+POLR2C,P19387,'Homo sapiens',protein,'DNA-directed RNA polymerase II subunit RPB3'
+DCTPP1,Q9H773,'Homo sapiens',protein,'dCTP pyrophosphatase 1'
+GPT2,Q8TD30,'Homo sapiens',protein,'Alanine aminotransferase 2'
+ZNF827,Q17R98,'Homo sapiens',protein,'Zinc finger protein 827'
+MLH1,P40692,'Homo sapiens',protein,'DNA mismatch repair protein Mlh1'
+TRIM41,Q8WV44,'Homo sapiens',protein,'E3 ubiquitin-protein ligase TRIM41'
+ubiq_human,DIP-24261N,'Homo sapiens',protein,UBIQ_HUMAN
+odd,P23803,'Drosophila melanogaster (Fruit fly)',protein,'Protein odd-skipped'
+UBXN6,Q9BZV1,'Homo sapiens',protein,'UBX domain-containing protein 6'
+SLC67A1,Q96BI1,'Homo sapiens',protein,'Solute carrier family 67 member A1'
+FANCA,O15360,'Homo sapiens',protein,'Fanconi anemia group A protein'
+JAK2,O60674,'Homo sapiens',protein,'Tyrosine-protein kinase JAK2'
+PARK7,Q99497,'Homo sapiens',protein,'Parkinson disease protein 7'
+IGFBP3,P17936,'Homo sapiens',protein,'Insulin-like growth factor-binding protein 3'
+BAG6,P46379,'Homo sapiens',protein,'Large proline-rich protein BAG6'
+40038273,40038273,'Homo sapiens',protein,
+GMPS,P49915,'Homo sapiens',protein,'GMP synthase [glutamine-hydrolyzing]'
+brap_2,Q95QN6,'Caenorhabditis elegans',protein,'BRCA1-associated protein homolog 2'
+ELF2,Q15723,'Homo sapiens',protein,'ETS-related transcription factor Elf-2'
+SERPINB13_Q9UIV8,Q9UIV8,'Homo sapiens',protein,'Serpin B13'
+'1_phosphatidyl_1d_myo_inositol 4,5_bisphosphate',CHEBI:18348,'Chemical synthesis (Chemical synthesis)','small molecule','1-phosphatidyl-1D-myo-inositol 4,5-bisphosphates'
+MGST1,P10620,'Homo sapiens',protein,'Microsomal glutathione S-transferase 1'
+NFIX,Q14938,'Homo sapiens',protein,'Nuclear factor 1 X-type'
+LSM8,O95777,'Homo sapiens',protein,'U6 snRNA-associated Sm-like protein LSm8'
+FANCI,Q9NVI1,'Homo sapiens',protein,'Fanconi anemia group I protein'
+CDKN3,Q16667,'Homo sapiens',protein,'Cyclin-dependent kinase inhibitor 3'
+UXT,Q9UBK9,'Homo sapiens',protein,'Protein UXT'
+sala,P21750,'Drosophila melanogaster (Fruit fly)',protein,'Protein spalt-accessory'
+TONSL,Q96HA7,'Homo sapiens',protein,'Tonsoku-like protein'
+NMI,Q13287,'Homo sapiens',protein,N-myc-interactor
+Nedd1,P33215,'Mus musculus',protein,'Protein NEDD1'
+GYPA,P02724,'Homo sapiens',protein,Glycophorin-A
+YWHAE,P62258,'Homo sapiens',protein,'14-3-3 protein epsilon'
+ANK1_P16157,P16157,'Homo sapiens',protein,Ankyrin-1
+VWA5A_O00534_3,O00534-3,'Homo sapiens',protein,'Isoform 3 of von Willebrand factor A domain-containing protein 5A'
+HPX,P02790,'Homo sapiens',protein,Hemopexin
+CDH5,P33151,'Homo sapiens',protein,Cadherin-5
+ZHX1,Q9UKY1,'Homo sapiens',protein,'Zinc fingers and homeoboxes protein 1'
+AGO1,Q9UL18,'Homo sapiens',protein,'Protein argonaute-1'
+SNAP91,O60641,'Homo sapiens',protein,'Clathrin coat assembly protein AP180'
+TGM3,Q08188,'Homo sapiens',protein,'Protein-glutamine gamma-glutamyltransferase E'
+RAD23B,P54727,'Homo sapiens',protein,'UV excision repair protein RAD23 homolog B'
+YJU2,Q9BW85,'Homo sapiens',protein,'Splicing factor YJU2'
+FAM210A,Q96ND0,'Homo sapiens',protein,'Protein FAM210A'
+RAD23A,P54725,'Homo sapiens',protein,'UV excision repair protein RAD23 homolog A'
+BARD1_Q99728_1,Q99728-1,'Homo sapiens',protein,'BRCA1-associated RING domain protein 1'
+CPSF6,Q16630,'Homo sapiens',protein,'Cleavage and polyadenylation specificity factor subunit 6'
+RPS6KA4,O75676,'Homo sapiens',protein,'Ribosomal protein S6 kinase alpha-4'
+ZRANB2,O95218,'Homo sapiens',protein,'Zinc finger Ran-binding domain-containing protein 2'
+DEF6,Q9H4E7,'Homo sapiens',protein,'Differentially expressed in FDCP 6 homolog'
+ZNF207,O43670,'Homo sapiens',protein,'BUB3-interacting and GLEBS motif-containing protein ZNF207'
+CALML3,P27482,'Homo sapiens',protein,'Calmodulin-like protein 3'
+a8k7j6_human,A8K7J6,'Homo sapiens',protein,'Large ribosomal subunit protein mL52'
+VPS4B,O75351,'Homo sapiens',protein,'Vacuolar protein sorting-associated protein 4B'
+SLC27A5,Q9Y2P5,'Homo sapiens',protein,'Long-chain fatty acid transport protein 5'
+ORC3,Q9UBD5,'Homo sapiens',protein,'Origin recognition complex subunit 3'
+HIVEP1,P15822,'Homo sapiens',protein,'Zinc finger protein 40'
+IKZF1,Q13422-7,'Homo sapiens',protein,'DNA-binding protein Ikaros'
+AGPAT2,O15120,'Homo sapiens',protein,'1-acyl-sn-glycerol-3-phosphate acyltransferase beta'
+NBR2,EBI-20871461,'Homo sapiens',protein,'Next to BRCA1 gene 2 protein'
+LTBR,P36941,'Homo sapiens',protein,'Tumor necrosis factor receptor superfamily member 3'
+PIK3R1,P27986,'Homo sapiens',protein,'Phosphatidylinositol 3-kinase regulatory subunit alpha'
+FXYD6,Q9H0Q3,'Homo sapiens',protein,'FXYD domain-containing ion transport regulator 6'
+LYPD4_Q6UWN0,Q6UWN0,'Homo sapiens',protein,'Ly6/PLAUR domain-containing protein 4'
+KPNA2,P52292,'Homo sapiens',protein,'Importin subunit alpha-1'
+ssdna_dtdg,EBI-5333234,'Chemical synthesis (Chemical synthesis)','single stranded deoxyribonucleic acid',ssDNA_dTdG
+CIAO2B,Q9Y3D0,'Homo sapiens',protein,'Cytosolic iron-sulfur assembly component 2B'
+ssdna_dtdc,EBI-5333236,'Chemical synthesis (Chemical synthesis)','single stranded deoxyribonucleic acid',ssDNA_dTdC
+CSTF2,P33240,'Homo sapiens',protein,'Cleavage stimulation factor subunit 2'
+LCN2,P80188,'Homo sapiens',protein,'Neutrophil gelatinase-associated lipocalin'
+OC90,Q02509,'Homo sapiens',protein,Otoconin-90
+DNAJC25,Q9H1X3,'Homo sapiens',protein,'DnaJ homolog subfamily C member 25'
+POLR2H,P52434,'Homo sapiens',protein,'DNA-directed RNA polymerases I, II, and III subunit RPABC3'
+PYCR3,B5MD87,'Homo sapiens',protein,'pyrroline-5-carboxylate reductase'
+PPIL4,Q8WUA2,'Homo sapiens',protein,'Peptidyl-prolyl cis-trans isomerase-like 4'
+TRIM46,Q7Z4K8,'Homo sapiens',protein,'Tripartite motif-containing protein 46'
+POLR2J,P52435,'Homo sapiens',protein,'DNA-directed RNA polymerase II subunit RPB11-a'
+HAL,P42357,'Homo sapiens',protein,'Histidine ammonia-lyase'
+CKAP4,Q07065,'Homo sapiens',protein,'Cytoskeleton-associated protein 4'
+SMC1A,Q14683,'Homo sapiens',protein,'Structural maintenance of chromosomes protein 1A'
+CTR9,P89105,'Saccharomyces cerevisiae',protein,'RNA polymerase-associated protein CTR9'
+XRCC3,O43542,'Homo sapiens',protein,'DNA repair protein XRCC3'
+TRIM28,Q13263,'Homo sapiens',protein,'Transcription intermediary factor 1-beta'
+ORM2,P19652,'Homo sapiens',protein,'Alpha-1-acid glycoprotein 2'
+CRTAC1_Q9NQ79_2,Q9NQ79-2,'Homo sapiens',protein,'Isoform 2 of Cartilage acidic protein 1'
+SETDB1,Q15047,'Homo sapiens',protein,'Histone-lysine N-methyltransferase SETDB1'
+KHSRP,Q92945,'Homo sapiens',protein,'Far upstream element-binding protein 2'
+E2F1,Q01094,'Homo sapiens',protein,'Transcription factor E2F1'
+PNOC,Q13519,'Homo sapiens',protein,Prepronociceptin
+CCNO,P22674,'Homo sapiens',protein,Cyclin-O
+HSPD1,P10809,'Homo sapiens',protein,'60 kDa heat shock protein, mitochondrial'
+BCAR3,O75815,'Homo sapiens',protein,'Breast cancer anti-estrogen resistance protein 3'
+NPRL2,Q8WTW4,'Homo sapiens',protein,'GATOR1 complex protein NPRL2'
+RPL27A,P46776,'Homo sapiens',protein,'Large ribosomal subunit protein uL15'
+CBX1,P83916,'Homo sapiens',protein,'Chromobox protein homolog 1'
+PRDX5,P30044,'Homo sapiens',protein,'Peroxiredoxin-5, mitochondrial'
+PRKAG1,P54619,'Homo sapiens',protein,'5-AMP-activated protein kinase subunit gamma-1'
+TP53BP1,Q12888,'Homo sapiens',protein,'TP53-binding protein 1'
+TNFAIP3,P21580,'Homo sapiens',protein,'Tumor necrosis factor alpha-induced protein 3'
+HP,P00738,'Homo sapiens',protein,Haptoglobin
+Ino80,Q9VDY1,'Drosophila melanogaster (Fruit fly)',protein,'Chromatin-remodeling ATPase INO80'
+PLG,P00747,'Homo sapiens',protein,Plasminogen
+MSN,P26038,'Homo sapiens',protein,Moesin
+SLC25A11,Q02978,'Homo sapiens',protein,'Mitochondrial 2-oxoglutarate/malate carrier protein'
+ABRAXAS1_Q6UWZ7,Q6UWZ7,'Homo sapiens',protein,'BRCA1-A complex subunit Abraxas 1'
+HNRNPAB,Q99729,'Homo sapiens',protein,'Heterogeneous nuclear ribonucleoprotein A/B'
+FCGBP,Q9Y6R7,'Homo sapiens',protein,'IgGFc-binding protein'
+Nelfb,Q8C4Y3,'Mus musculus',protein,'Negative elongation factor B'
+PHLPP1_O60346,O60346,'Homo sapiens',protein,'PH domain leucine-rich repeat-containing protein phosphatase 1'
+RMI2,Q96E14,'Homo sapiens',protein,'RecQ-mediated genome instability protein 2'
+GSTM3,P21266,'Homo sapiens',protein,'Glutathione S-transferase Mu 3'
+CDK8,P49336,'Homo sapiens',protein,'Cyclin-dependent kinase 8'
+Lamtor2,Q9JHS3,'Mus musculus',protein,'Ragulator complex protein LAMTOR2'
+IGHG3,P01860,'Homo sapiens',protein,'Immunoglobulin heavy constant gamma 3'
+H3_7,Q5TEC6,'Homo sapiens',protein,'Histone H3-7'
+SOD1,P00441,'Homo sapiens',protein,'Superoxide dismutase [Cu-Zn]'
+PSME1,Q06323,'Homo sapiens',protein,'Proteasome activator complex subunit 1'
+BRIP1,Q9BX63,'Homo sapiens',protein,'Fanconi anemia group J protein'
+q83d60_coxbu,Q83D60,'Coxiella burnetii (strain RSA 493 / Nine Mile phase I)',protein,
+FOXRED2,Q8IWF2,'Homo sapiens',protein,'FAD-dependent oxidoreductase domain-containing protein 2'
+VAPB,O95292,'Homo sapiens',protein,'Vesicle-associated membrane protein-associated protein B/C'
+SDC1,P18827,'Homo sapiens',protein,Syndecan-1
+KRT40,Q6A162,'Homo sapiens',protein,'Keratin, type I cytoskeletal 40'
+a0a6l7hg24_bacan,A0A6L7HG24,'Bacillus anthracis',protein,
+CARNMT1,Q8N4J0,'Homo sapiens',protein,'Carnosine N-methyltransferase'
+SPRTN,Q9H040,'Homo sapiens',protein,'DNA-dependent metalloprotease SPRTN'
+ANK1_P16157_10,P16157-10,'Homo sapiens',protein,Ankyrin-1
+Brat1_Q8C3R1,Q8C3R1,'Mus musculus',protein,'Integrator complex assembly factor BRAT1'
+COMMD8,Q9NX08,'Homo sapiens',protein,'COMM domain-containing protein 8'
+GNAL,P38405,'Homo sapiens',protein,'Guanine nucleotide-binding protein G(olf) subunit alpha'
+RBM12,Q9NTZ6,'Homo sapiens',protein,'RNA-binding protein 12'
+ANLN,Q9NQW6,'Homo sapiens',protein,Anillin
+KSR2,Q6VAB6,'Homo sapiens',protein,'Kinase suppressor of Ras 2'
+TF,P02787,'Homo sapiens',protein,Serotransferrin
+DDB1,Q16531,'Homo sapiens',protein,'DNA damage-binding protein 1'
+CUL1,Q13616,'Homo sapiens',protein,Cullin-1
+mrna_brca1,ENST00000357654,'Homo sapiens','messenger rna','BRCA1 DNA repair associated'
+znuC,Q7CIC2,'Yersinia pestis',protein,'Zinc import ATP-binding protein ZnuC'
+EVPL,Q92817,'Homo sapiens',protein,Envoplakin
+AGT,P01019,'Homo sapiens',protein,Angiotensinogen
+HSPA9,P38646,'Homo sapiens',protein,'Stress-70 protein, mitochondrial'
+ABCE1,P61221,'Homo sapiens',protein,'ATP-binding cassette sub-family E member 1'
+SQSTM1_Q13501_2,Q13501-2,'Homo sapiens',protein,Sequestosome-1
+MRPL53,Q96EL3,'Homo sapiens',protein,'Large ribosomal subunit protein mL53'
+NAPA,P54920,'Homo sapiens',protein,'Alpha-soluble NSF attachment protein'
+DDX39A,O00148,'Homo sapiens',protein,'ATP-dependent RNA helicase DDX39A'
+MTUS2,Q5JR59-3,'Homo sapiens',protein,'Microtubule-associated tumor suppressor candidate 2'
+NPM1,P06748,'Homo sapiens',protein,Nucleophosmin
+LRRK2,Q5S007,'Homo sapiens',protein,'Leucine-rich repeat serine/threonine-protein kinase 2'
+CEP70,Q8NHQ1,'Homo sapiens',protein,'Centrosomal protein of 70 kDa'
+SERPINF1,P36955,'Homo sapiens',protein,'Pigment epithelium-derived factor'
+NRSN1,Q8IZ57,'Homo sapiens',protein,Neurensin-1
+a0a1d6e647_maize,A0A1D6E647,'Zea mays (Maize)',protein,'RING-type E3 ubiquitin transferase BRCA1'
+NPTN,Q9Y639,'Homo sapiens',protein,Neuroplastin
+q6zwh1_human,Q6ZWH1,'Homo sapiens',protein,'BRISC and BRCA1-A complex member 2'
+PTH2R,P49190,'Homo sapiens',protein,'Parathyroid hormone 2 receptor'
+GTSE1,Q9NYZ3,'Homo sapiens',protein,'G2 and S phase-expressed protein 1'
+SCGN,O76038,'Homo sapiens',protein,Secretagogin
+Nek1,P51954,'Mus musculus',protein,'Serine/threonine-protein kinase Nek1'
+SRSF1,Q07955,'Homo sapiens',protein,'Serine/arginine-rich splicing factor 1'
+Ewsr1,Q61545,'Mus musculus',protein,'RNA-binding protein EWS'
+IGHA1,P01876,'Homo sapiens',protein,'Immunoglobulin heavy constant alpha 1'
+cvhsa_oligo,EBI-20623174,'Human SARS coronavirus','ribonucleic acid','22 nucleotides of the 5′ untranslated region of Severe Acute Respiratory Syndrome Coronavirus HKU-39849'
+TRIM29,Q14134,'Homo sapiens',protein,'Tripartite motif-containing protein 29'
+SLX4IP,Q5VYV7,'Homo sapiens',protein,'Protein SLX4IP'
+SF3B4,Q15427,'Homo sapiens',protein,'Splicing factor 3B subunit 4'
+TREX2,Q9BQ50,'Homo sapiens',protein,'Three prime repair exonuclease 2'
+GC,P02774,'Homo sapiens',protein,'Vitamin D-binding protein'
+Xrcc6,Q6AZ64,'Rattus norvegicus (Rat)',protein,'X-ray repair cross-complementing protein 6'
+GPR55,Q9Y2T6,'Homo sapiens',protein,'G-protein coupled receptor 55'
+NBR1_Q14596_1,Q14596-1,'Homo sapiens',protein,'Next to BRCA1 gene 1 protein'
+E6_P06463,P06463,'Human papillomavirus type 18',protein,'Protein E6'
+KIF4A,O95239,'Homo sapiens',protein,'Chromosome-associated kinesin KIF4A'
+AFG2B,Q9BVQ7,'Homo sapiens',protein,'ATPase family gene 2 protein homolog B'
+SLC25A13,Q9UJS0,'Homo sapiens',protein,'Electrogenic aspartate/glutamate antiporter SLC25A13, mitochondrial'
+DVL2,O14641,'Homo sapiens',protein,'Segment polarity protein dishevelled homolog DVL-2'
+ING5,Q8WYH8,'Homo sapiens',protein,'Inhibitor of growth protein 5'
+VPS25,Q9BRG1,'Homo sapiens',protein,'Vacuolar protein-sorting-associated protein 25'
+HPR,P00739,'Homo sapiens',protein,'Haptoglobin-related protein'
+MACROH2A1,O75367,'Homo sapiens',protein,'Core histone macro-H2A.1'
+PEX5_P50542_4,P50542-4,'Homo sapiens',protein,'Peroxisomal targeting signal 1 receptor'
+MRE11,P49959,'Homo sapiens',protein,'Double-strand break repair protein MRE11'
+AMOT,Q4VCS5,'Homo sapiens',protein,Angiomotin
+LGR5,O75473,'Homo sapiens',protein,'Leucine-rich repeat-containing G-protein coupled receptor 5'
+Dmel\CG5555,Q9VDZ1,'Drosophila melanogaster (Fruit fly)',protein,'BRCA1-associated protein'
+ALDH3A2,P51648,'Homo sapiens',protein,'Aldehyde dehydrogenase family 3 member A2'
+SQSTM1_Q13501,Q13501,'Homo sapiens',protein,Sequestosome-1
+FTL,P02792,'Homo sapiens',protein,'Ferritin light chain'
+UGGT2,Q9NYU1,'Homo sapiens',protein,'UDP-glucose:glycoprotein glucosyltransferase 2'
+KIF20B,Q96Q89,'Homo sapiens',protein,'Kinesin-like protein KIF20B'
+FANCD2,Q9BXW9,'Homo sapiens',protein,'Fanconi anemia group D2 protein'
+GOLGA2,Q08379,'Homo sapiens',protein,'Golgin subfamily A member 2'
+NOL4,O94818,'Homo sapiens',protein,'Nucleolar protein 4'
+NAGK,Q9UJ70,'Homo sapiens',protein,'N-acetyl-D-glucosamine kinase'
+UBE2U,Q5VVX9,'Homo sapiens',protein,'Ubiquitin-conjugating enzyme E2 U'
+ZGRF1,Q86YA3,'Homo sapiens',protein,'5-3 DNA helicase ZGRF1'
+IGHG2,P01859,'Homo sapiens',protein,'Immunoglobulin heavy constant gamma 2'
+SUPT16H,Q9Y5B9,'Homo sapiens',protein,'FACT complex subunit SPT16'
+SULT2B1,O00204,'Homo sapiens',protein,'Sulfotransferase 2B1'
+SYK,P43405,'Homo sapiens',protein,'Tyrosine-protein kinase SYK'
+BCL2,P10415,'Homo sapiens',protein,'Apoptosis regulator Bcl-2'
+HRG,P04196,'Homo sapiens',protein,'Histidine-rich glycoprotein'
+VCL,P18206,'Homo sapiens',protein,Vinculin
+TOP2A,P11388,'Homo sapiens',protein,'DNA topoisomerase 2-alpha'
+dctA,Q8ZA28,'Yersinia pestis',protein,'C4-dicarboxylate transport protein'
+USHBP1,Q8N6Y0,'Homo sapiens',protein,'Harmonin-binding protein USHBP1'
+FXYD3,Q14802,'Homo sapiens',protein,'FXYD domain-containing ion transport regulator 3'
+PAX6,P26367,'Homo sapiens',protein,'Paired box protein Pax-6'
+MICU1,Q9BPX6,'Homo sapiens',protein,'Calcium uptake protein 1, mitochondrial'
+ITIH1,P19827,'Homo sapiens',protein,'Inter-alpha-trypsin inhibitor heavy chain H1'
+SERPINB3,P29508,'Homo sapiens',protein,'Serpin B3'
+SNRPA1,P09661,'Homo sapiens',protein,'U2 small nuclear ribonucleoprotein A'
+MED12,Q93074,'Homo sapiens',protein,'Mediator of RNA polymerase II transcription subunit 12'
+TCEAL2,Q9H3H9,'Homo sapiens',protein,'Transcription elongation factor A protein-like 2'
+POLR2I,P36954,'Homo sapiens',protein,'DNA-directed RNA polymerase II subunit RPB9'
+DST,Q03001,'Homo sapiens',protein,Dystonin
+PA,Q5EP34,'Influenza A virus (A/Viet Nam/1203/2004(H5N1))',protein,'Polymerase acidic protein'
+PIAS1,O75925,'Homo sapiens',protein,'E3 SUMO-protein ligase PIAS1'
+SLC30A7,Q8NEW0,'Homo sapiens',protein,'Zinc transporter 7'
+USP7,Q93009,'Homo sapiens',protein,'Ubiquitin carboxyl-terminal hydrolase 7'
+POLD1,P28340,'Homo sapiens',protein,'DNA polymerase delta catalytic subunit'
+BLMH,Q13867,'Homo sapiens',protein,'Bleomycin hydrolase'
+FGB,P02675,'Homo sapiens',protein,'Fibrinogen beta chain'
+HTR1E,P28566,'Homo sapiens',protein,'5-hydroxytryptamine receptor 1E'
+hsa_mir_181a_5p,URS00003DA300_9606,'Homo sapiens','micro rna','Homo sapiens (human) microRNA hsa-miR-182-5p'
+TIMM23,O14925,'Homo sapiens',protein,'Mitochondrial import inner membrane translocase subunit Tim23'
+AASDHPPT,Q9NRN7,'Homo sapiens',protein,'L-aminoadipate-semialdehyde dehydrogenase-phosphopantetheinyl transferase'
+HMG20A,Q9NP66,'Homo sapiens',protein,'High mobility group protein 20A'
+AXIN1_A0A0S2Z4M1,A0A0S2Z4M1,'Homo sapiens',protein,Axin-1
+caly,Q7K5N4,'Drosophila melanogaster (Fruit fly)',protein,'Ubiquitin carboxyl-terminal hydrolase calypso'
+hsa_mir_484,URS0000597BED_9606,'Homo sapiens','micro rna','Homo sapiens (human) hsa-miR-484'
+PPP1R9B,Q96SB3,'Homo sapiens',protein,Neurabin-2
+MDH9.17,Q5XF81,'Arabidopsis thaliana (Mouse-ear cress)',protein,'BRISC and BRCA1-A complex member 2'
+TCERG1,O14776,'Homo sapiens',protein,'Transcription elongation regulator 1'
+ARHGAP1,Q07960,'Homo sapiens',protein,'Rho GTPase-activating protein 1'
+PSMD11,O00231,'Homo sapiens',protein,'26S proteasome non-ATPase regulatory subunit 11'
+CCDC85A,Q96PX6,'Homo sapiens',protein,'Coiled-coil domain-containing protein 85A'
+q96be0_human,Q96BE0,'Homo sapiens',protein,'Heat shock cognate 71 kDa protein'
+FANCM,Q8IYD8,'Homo sapiens',protein,'Fanconi anemia group M protein'
+CHMP5,Q9NZZ3,'Homo sapiens',protein,'Charged multivesicular body protein 5'
+UBXN1,Q04323,'Homo sapiens',protein,'UBX domain-containing protein 1'
+SLF1,Q9BQI6,'Homo sapiens',protein,'SMC5-SMC6 complex localization factor protein 1'
+THEM5,Q8N1Q8,'Homo sapiens',protein,'Acyl-coenzyme A thioesterase THEM5'
+ZCCHC8,Q6NZY4,'Homo sapiens',protein,'Zinc finger CCHC domain-containing protein 8'
+Nelfa,Q8BG30,'Mus musculus',protein,'Negative elongation factor A'
+TFPT,P0C1Z6,'Homo sapiens',protein,'TCF3 fusion partner'
+PML,P29590,'Homo sapiens',protein,'Protein PML'
+ACBD5,Q5T8D3-2,'Homo sapiens',protein,'Acyl-CoA-binding domain-containing protein 5'
+H2BC10,P62807,'Homo sapiens',protein,'Histone H2B type 1-C/E/F/G/I'
+Tp53_P10361,P10361,'Rattus norvegicus (Rat)',protein,'Cellular tumor antigen p53'
+NDST1,P52848,'Homo sapiens',protein,'Bifunctional heparan sulfate N-deacetylase/N-sulfotransferase 1'
+WWP2,O00308,'Homo sapiens',protein,'NEDD4-like E3 ubiquitin-protein ligase WWP2'
+NDRG2,Q9UN36,'Homo sapiens',protein,'Protein NDRG2'
+STK11,Q15831,'Homo sapiens',protein,'Serine/threonine-protein kinase STK11'
+CASP6,P55212,'Homo sapiens',protein,Caspase-6
+E7_P03129,P03129,'Human papillomavirus type 16',protein,'Protein E7'
+NOLC1,Q14978,'Homo sapiens',protein,'Nucleolar and coiled-body phosphoprotein 1'
+sh2d3a_1,EBI-22256260,'Chemical synthesis (Chemical synthesis)',peptide,
+ZBTB1,Q9Y2K1,'Homo sapiens',protein,'Zinc finger and BTB domain-containing protein 1'
+FGG,P02679,'Homo sapiens',protein,'Fibrinogen gamma chain'
+Brcc3,P46737,'Mus musculus',protein,'Lys-63-specific deubiquitinase BRCC36'
+KIF23,Q02241,'Homo sapiens',protein,'Kinesin-like protein KIF23'
+M_P0DOF2,P0DOF2,'Rabies virus (strain ERA)',protein,'Matrix protein'
+NBN,O60934,'Homo sapiens',protein,Nibrin
+CRTAC1_Q9NQ79,Q9NQ79,'Homo sapiens',protein,'Cartilage acidic protein 1'
+PPP1CB,P62140,'Homo sapiens',protein,'Serine/threonine-protein phosphatase PP1-beta catalytic subunit'
+PMS2,P54278,'Homo sapiens',protein,'Mismatch repair endonuclease PMS2'
+NCK1,P16333,'Homo sapiens',protein,'SH2/SH3 adapter protein NCK1'
+POLR2D,A0A287ADR4,'Sus scrofa (Pig)',protein,'DNA-directed RNA polymerase II subunit RPB4'
+CAMK2D_Q13557,Q13557,'Homo sapiens',protein,'Calcium/calmodulin-dependent protein kinase type II subunit delta'
+ESR2,Q92731,'Homo sapiens',protein,'Estrogen receptor beta'
+a0a1d6lxl2_maize,A0A1D6LXL2,'Zea mays (Maize)',protein,
+RAB5A,P20339,'Homo sapiens',protein,'Ras-related protein Rab-5A'
+Brat1_Q9VDE8,Q9VDE8,'Drosophila melanogaster (Fruit fly)',protein,'Integrator complex assembly factor Brat1'
+CCND1,P24385,'Homo sapiens',protein,'G1/S-specific cyclin-D1'
+SNAPC5,O75971,'Homo sapiens',protein,'snRNA-activating protein complex subunit 5'
+SMARCA5,O60264,'Homo sapiens',protein,'SWI/SNF-related matrix-associated actin-dependent regulator of chromatin subfamily A member 5'
+SMARCA4,P51532,'Homo sapiens',protein,'SWI/SNF-related matrix-associated actin-dependent regulator of chromatin subfamily A member 4'
+ACD,Q96AP0,'Homo sapiens',protein,'Adrenocortical dysplasia protein homolog'
+H4C16,P62805,'Homo sapiens',protein,'Histone H4'
+OGT,O15294,'Homo sapiens',protein,'UDP-N-acetylglucosamine--peptide N-acetylglucosaminyltransferase 110 kDa subunit'
+PIN1,Q13526,'Homo sapiens',protein,'Peptidyl-prolyl cis-trans isomerase NIMA-interacting 1'
+AXIN2,Q9Y2T1,'Homo sapiens',protein,Axin-2
+RNF168,Q8IYW5,'Homo sapiens',protein,'E3 ubiquitin-protein ligase RNF168'
+hsa_mir_205_5p,URS0000446722_9606,'Homo sapiens','micro rna','micro RNA 205'
+NIPSNAP2,O75323-1,'Homo sapiens',protein,'Protein NipSnap homolog 2'
+H2AX,P16104,'Homo sapiens',protein,'Histone H2AX'
+CORO7,P57737-1,'Homo sapiens',protein,'Isoform 1 of Coronin-7'
+TLK2,Q86UE8,'Homo sapiens',protein,'Serine/threonine-protein kinase tousled-like 2'
+KIR2DL4,Q99706,'Homo sapiens',protein,'Killer cell immunoglobulin-like receptor 2DL4'
+GNL2,Q13823,'Homo sapiens',protein,'Nucleolar GTP-binding protein 2'
+HMMR,O75330,'Homo sapiens',protein,'Hyaluronan mediated motility receptor'
+ANKRD11,X5D778,'Homo sapiens',protein,
+POT1,Q9NUX5,'Homo sapiens',protein,'Protection of telomeres protein 1'
+SDR16C5,Q8N3Y7,'Homo sapiens',protein,'Epidermal retinol dehydrogenase 2'
+XRCC6,P12956,'Homo sapiens',protein,'X-ray repair cross-complementing protein 6'
+ABLIM3,O94929,'Homo sapiens',protein,'Actin-binding LIM protein 3'
+HCFC1_P51610,P51610,'Homo sapiens',protein,'Host cell factor 1'
+ASXL2_Q76L83,Q76L83,'Homo sapiens',protein,'Putative Polycomb group protein ASXL2'
+CCNC,P24863,'Homo sapiens',protein,Cyclin-C
+DCTN1,Q14203-5,'Homo sapiens',protein,'Dynactin subunit 1'
+TEKT4,Q8WW24,'Homo sapiens',protein,Tektin-4
+NELFCD_Q8IXH7,Q8IXH7,'Homo sapiens',protein,'Negative elongation factor C/D'
+VCAM1,P19320,'Homo sapiens',protein,'Vascular cell adhesion protein 1'
+RB1CC1,Q8TDY2,'Homo sapiens',protein,'RB1-inducible coiled-coil protein 1'
+TTR,P02766,'Homo sapiens',protein,Transthyretin
+CTBP2,P56545,'Homo sapiens',protein,'C-terminal-binding protein 2'
+MAP1LC3C,Q9BXW4,'Homo sapiens',protein,'Microtubule-associated protein 1 light chain 3 gamma'
+GOPC_Q9HD26_2,Q9HD26-2,'Homo sapiens',protein,'Golgi-associated PDZ and coiled-coil motif-containing protein'
+BAP1,Q92560,'Homo sapiens',protein,'Ubiquitin carboxyl-terminal hydrolase BAP1'
+BARD1_A0AVN2,A0AVN2,'Homo sapiens',protein,'BRCA1-associated RING domain protein 1'
+CEBPG,P53567,'Homo sapiens',protein,'CCAAT/enhancer-binding protein gamma'
+FABP5,Q01469,'Homo sapiens',protein,'Fatty acid-binding protein 5'
+HRAS,P01112,'Homo sapiens',protein,'GTPase HRas'
+RIOX2_Q8IUF8,Q8IUF8,'Homo sapiens',protein,'Ribosomal oxygenase 2'
+KPNA4,O00629,'Homo sapiens',protein,'Importin subunit alpha-3'
+SMC6,Q96SB8,'Homo sapiens',protein,'Structural maintenance of chromosomes protein 6'
+EMSY,Q7Z589,'Homo sapiens',protein,'BRCA2-interacting transcriptional repressor EMSY'
+VTN,P04004,'Homo sapiens',protein,Vitronectin
+hsa_mir_186_5p,URS000040DCFF_9606,'Homo sapiens','micro rna','Homo sapiens (human) hsa-miR-186-5p'
+MCM10,Q5T670,'Homo sapiens',protein,'Protein MCM10 homolog'
+ACACA_Q13085,Q13085,'Homo sapiens',protein,'Acetyl-CoA carboxylase 1'
+Hoxc12,Q8K5B8,'Mus musculus',protein,'Homeobox protein Hox-C12'
+EXD2,Q9NVH0,'Homo sapiens',protein,'Exonuclease 3-5 domain-containing protein 2'
+FAAP100,Q0VG06,'Homo sapiens',protein,'Fanconi anemia core complex-associated protein 100'
+TRIM24,O15164,'Homo sapiens',protein,'Transcription intermediary factor 1-alpha'
+EHD1,Q9H4M9,'Homo sapiens',protein,'EH domain-containing protein 1'
+DLST,P36957,'Homo sapiens',protein,'Dihydrolipoyllysine-residue succinyltransferase component of 2-oxoglutarate dehydrogenase complex, mitochondrial'
+SDCBP,O00560,'Homo sapiens',protein,Syntenin-1
+PRODH_E7EQL6,E7EQL6,'Homo sapiens',protein,'Proline dehydrogenase'
+addA,Q81TW1,'Bacillus anthracis',protein,'ATP-dependent helicase/nuclease subunit A'
+'15_deoxy_delta(12,14',CHEBI:34159,'Chemical synthesis (Chemical synthesis)','small molecule','15-deoxy-Delta(12,14)-prostaglandin J2'
+TNFSF13B,Q9Y275,'Homo sapiens',protein,'Tumor necrosis factor ligand superfamily member 13B'
+Dlg4,P31016,'Rattus norvegicus (Rat)',protein,'Disks large homolog 4'
+GFI1B,Q5VTD9,'Homo sapiens',protein,'Zinc finger protein Gfi-1b'
+CCDC136,Q96JN2-2,'Homo sapiens',protein,'Coiled-coil domain-containing protein 136'
+SMC5,Q8IY18,'Homo sapiens',protein,'Structural maintenance of chromosomes protein 5'
+sir1_human_gene,ENSG00000096717,'Homo sapiens',gene,'SIRT1 Human Gene'
+KIF2A,O00139,'Homo sapiens',protein,'Kinesin-like protein KIF2A'
+MRPL1,Q9BYD6,'Homo sapiens',protein,'Large ribosomal subunit protein uL1m'
+FANCB,Q8NB91,'Homo sapiens',protein,'Fanconi anemia group B protein'
+GATA2,P23769,'Homo sapiens',protein,'Endothelial transcription factor GATA-2'
+KLF8,O95600,'Homo sapiens',protein,'Krueppel-like factor 8'
+CDK1,P06493,'Homo sapiens',protein,'Cyclin-dependent kinase 1'
+PIK3C3,Q8NEB9,'Homo sapiens',protein,'Phosphatidylinositol 3-kinase catalytic subunit type 3'
+PPARD,Q03181,'Homo sapiens',protein,'Peroxisome proliferator-activated receptor delta'
+ATP5PO,P48047,'Homo sapiens',protein,'ATP synthase peripheral stalk subunit OSCP, mitochondrial'
+FAM189B,P81408-2,'Homo sapiens',protein,'Isoform B of Protein FAM189B'
+TAX1BP1,Q86VP1-2,'Homo sapiens',protein,'Tax1-binding protein 1'
+CYTIP,O60759,'Homo sapiens',protein,'Cytohesin-interacting protein'
+KLHDC3,Q9BQ90,'Homo sapiens',protein,'Kelch domain-containing protein 3'
+MNAT1,P51948,'Homo sapiens',protein,'CDK-activating kinase assembly factor MAT1'
+NCAPD3,P42695,'Homo sapiens',protein,'Condensin-2 complex subunit D3'
+ABRAXAS1_D6REL5,D6REL5,'Homo sapiens',protein,'BRCA1-A complex subunit Abraxas 1'
+SLC2A9,Q9NRM0,'Homo sapiens',protein,'Solute carrier family 2, facilitated glucose transporter member 9'
+YY1,P25490,'Homo sapiens',protein,'Transcriptional repressor protein YY1'
+MAU2,Q9Y6X3,'Homo sapiens',protein,'MAU2 chromatid cohesion factor homolog'
+ATG8,P38182,'Saccharomyces cerevisiae',protein,'Autophagy-related protein 8'
+NPHP3,Q7Z494,'Homo sapiens',protein,Nephrocystin-3
+IGLC6,P0CF74,'Homo sapiens',protein,'Immunoglobulin lambda constant 6'
+abraxas1,Q6GR31,'Xenopus laevis (African clawed frog)',protein,'BRCA1-A complex subunit Abraxas 1'
+SYT4,Q9H2B2,'Homo sapiens',protein,Synaptotagmin-4
+MFSD14A,Q96MC6,'Homo sapiens',protein,'Hippocampus abundant transcript 1 protein'
+edgedef> node1 VARCHAR,node2 VARCHAR,miscore DOUBLE,evidence INT
+MFSD14A,NBR1_Q14596,0.350,1
+SYT4,NBR1_Q14596,0.560,3
+SYT4,NBR1_Q14596_2,0.560,3
+abraxas1,Xpo1,0.350,1
+IGLC6,PHF11,0.350,1
+NPHP3,BAP1,0.350,1
+ATG8,NBR1_Q14596,0.630,7
+MAU2,BRCA1_P38398,0.270,1
+YY1,BAP1,0.270,1
+SLC2A9,BRAT1,0.350,1
+ABRAXAS1_D6REL5,MDC1,0.270,1
+NCAPD3,BRCA1_P38398,0.270,1
+MNAT1,BRCA1_P38398,0.370,1
+KLHDC3,BRAP,0.530,4
+CYTIP,BABAM2,0.350,1
+TAX1BP1,NBR1_Q14596,0.270,1
+FAM189B,BABAM2,0.350,1
+FAM189B,BABAM1,0.350,1
+ATP5PO,BRCC3_P46736,0.350,1
+PPARD,BRAT1,0.350,1
+PIK3C3,NBR1_Q14596_1,0.270,1
+CDK1,UIMC1_Q96RL1,0.350,1
+KLF8,BAP1,0.270,1
+GATA2,BAP1,0.270,1
+FANCB,BRCA1_P38398,0.270,1
+MRPL1,BRCC3_P46736,0.350,1
+KIF2A,BRCA1_P38398,0.270,1
+sir1_human_gene,BRCA1_P38398,0.350,1
+SMC5,BRIP1,0.270,1
+SMC5,BRCA1_P38398,0.410,2
+SMC5,UIMC1_Q96RL1,0.270,1
+CCDC136,BARD1_A0AVN2,0.560,3
+GFI1B,BABAM2,0.370,1
+GFI1B,BRCA1_P38398,0.370,1
+Dlg4,NELFB,0.440,1
+TNFSF13B,BRAT1,0.530,2
+'15_deoxy_delta(12,14',BABAM2,0.350,1
+addA,BRCC3_P46736,0.370,1
+PRODH_E7EQL6,BRAP,0.350,1
+SDCBP,PHF11,0.560,3
+DLST,UIMC1_Q96RL1,0.350,1
+EHD1,PHF11,0.350,1
+TRIM24,BRCA1_P38398,0.370,1
+FAAP100,BRCA1_P38398,0.270,1
+EXD2,BRCA1_P38398,0.350,1
+Hoxc12,Brca1,0.370,1
+ACACA_Q13085,BRCA1_P38398,0.520,2
+MCM10,BRCA1_P38398,0.270,1
+hsa_mir_186_5p,mrna_brca1,0.400,1
+VTN,PHF11,0.350,1
+EMSY,BRCA1_P38398,0.270,1
+SMC6,BRCA1_P38398,0.270,1
+KPNA4,ABRAXAS1_Q6UWZ7,0.440,2
+RIOX2_Q8IUF8,UIMC1_Q96RL1,0.400,1
+HRAS,BABAM1,0.350,1
+HRAS,BRAP,0.520,3
+FABP5,NELFB,0.350,1
+CEBPG,NBR1_Q14596,0.350,1
+BARD1_A0AVN2,GOLGA2,0.560,3
+BARD1_A0AVN2,CEP70,0.560,3
+BARD1_A0AVN2,TRAF1,0.560,3
+BARD1_A0AVN2,LDOC1,0.560,3
+BARD1_A0AVN2,EXOC5,0.560,3
+BARD1_A0AVN2,PPP1R15A,0.350,1
+BARD1_A0AVN2,SPAG5,0.560,3
+BAP1,GOPC_Q9HD26_2,0.350,1
+BAP1,RB1CC1,0.370,1
+BAP1,ASXL2_Q76L83,0.730,6
+BAP1,HCFC1_P51610,0.740,6
+BAP1,OGT,0.730,6
+BAP1,CAMK2D_Q13557,0.350,1
+BAP1,NBN,0.370,1
+BAP1,NOLC1,0.270,1
+BAP1,PSMD11,0.350,1
+BAP1,PAX6,0.270,1
+BAP1,dctA,0.370,1
+BAP1,VPS25,0.350,1
+BAP1,CBX1,0.350,1
+BAP1,BCAR3,0.370,1
+BAP1,E2F1,0.270,1
+BAP1,XRCC3,0.370,1
+BAP1,ZRANB2,0.270,1
+BAP1,RAD23A,0.350,1
+BAP1,CDH5,0.270,1
+BAP1,NFIX,0.270,1
+BAP1,ELF2,0.270,1
+BAP1,PSMD8,0.350,1
+BAP1,ABT1,0.350,1
+BAP1,SMNDC1,0.270,1
+BAP1,CBX3,0.350,1
+BAP1,FBXW7,0.270,1
+BAP1,PSME3_P61289_2,0.350,1
+BAP1,ANKHD1,0.530,2
+BAP1,MYB,0.270,1
+BAP1,PSMD4,0.350,1
+BAP1,PPM1G,0.350,1
+BAP1,HNF4A,0.270,1
+BAP1,CEBPD,0.350,2
+BAP1,PSME3_P61289,0.530,3
+BAP1,HNRNPC,0.270,1
+BAP1,ANKRD17,0.350,1
+BAP1,FEV,0.270,1
+BAP1,PSMC5,0.350,1
+BAP1,LYZL6,0.350,1
+BAP1,Map3k1,0.440,1
+BAP1,P0C6X7_PRO_0000037314,0.370,1
+BAP1,SPOP,0.270,4
+BAP1,FHL2,0.350,1
+BAP1,MBD5,0.350,1
+BAP1,IPO5,0.350,1
+BAP1,BRCA1_P38398,0.540,3
+BAP1,IGF1R,0.370,1
+BAP1,PSMC2,0.350,1
+BAP1,ELF1,0.270,1
+BAP1,PSMC4,0.350,1
+BAP1,BRAF,0.550,4
+BAP1,LIN28A,0.350,1
+BAP1,HNF1B,0.270,1
+BAP1,ELF4,0.270,1
+BAP1,ETS1,0.270,1
+BAP1,FOXK2,0.790,7
+BAP1,TLX1,0.270,1
+BAP1,KDM1B,0.640,4
+BAP1,PRPS2,0.350,1
+BAP1,SRSF7,0.270,1
+BAP1,CAMK2D_Q13557_10,0.350,1
+BAP1,ELK3,0.270,1
+BAP1,KLF16,0.270,1
+BAP1,NFYC,0.270,1
+BAP1,FOXK1,0.790,6
+BAP1,UBE2O,0.730,5
+BAP1,ZC3H8,0.270,1
+BAP1,RBBP7,0.350,1
+BAP1,TUBA1C,0.350,1
+BAP1,RAVER1,0.270,1
+BAP1,ASXL2_Q76L83_2,0.350,1
+BAP1,MYOD1,0.270,1
+BAP1,PTEN,0.270,1
+BAP1,MTA1,0.350,1
+BAP1,MYC,0.270,1
+BAP1,BRCA1_P38398_5,0.400,2
+BAP1,SMAD4,0.270,3
+BAP1,ATG10,0.270,1
+BAP1,HACD3,0.350,1
+BAP1,CBX5,0.490,2
+BAP1,ATF1,0.350,2
+BAP1,PTPRJ,0.370,1
+BAP1,SSR4,0.350,1
+BAP1,ESR1,0.370,1
+BAP1,CBLC,0.490,2
+BAP1,AKT1,0.270,1
+BAP1,IPO4,0.350,1
+BAP1,AHCYL2,0.350,1
+BAP1,CUL4B,0.350,1
+BAP1,AGGF1,0.270,1
+BAP1,GOPC_Q9HD26,0.350,1
+BAP1,ASXL3,0.350,1
+BAP1,CAMK2A,0.350,2
+BAP1,EN1,0.270,1
+BAP1,BAG4,0.370,1
+BAP1,CASP8,0.370,1
+BAP1,PGAM5,0.350,1
+BAP1,AR,0.270,1
+BAP1,TPX2,0.350,1
+BAP1,ANAPC7,0.350,1
+BAP1,ITPR3,0.640,12
+BAP1,CREB1,0.350,1
+BAP1,PSMD3,0.350,1
+BAP1,EGFR,0.270,1
+BAP1,HCFC2,0.640,3
+BAP1,HAT1,0.530,2
+BAP1,MBD6,0.350,1
+BAP1,TBR1,0.270,1
+BAP1,ASXL1,0.830,9
+BAP1,PTPN11,0.270,1
+BAP1,PSMD2,0.350,1
+BAP1,PSMC6,0.350,1
+BAP1,Bap1,0.400,1
+BAP1,PSMD7,0.350,1
+MAP1LC3C,NBR1_Q14596_1,0.270,1
+MAP1LC3C,NBR1_Q14596,0.680,3
+CTBP2,BRCA1_P38398,0.270,1
+TTR,PHF11,0.350,1
+RB1CC1,NBR1_Q14596_1,0.270,1
+VCAM1,BRCA1_P38398,0.270,1
+NELFCD_Q8IXH7,NELFB,0.640,3
+TEKT4,ABRAXAS1_Q6UWZ7,0.530,2
+TEKT4,PHF11,0.560,3
+DCTN1,UIMC1_Q96RL1_2,0.560,3
+CCNC,ZNF350,0.350,1
+ASXL2_Q76L83,Bap1,0.400,1
+HCFC1_P51610,Bap1,0.400,1
+ABLIM3,BRCA1_P38398,0.350,1
+XRCC6,BARD1_Q99728,0.400,1
+SDR16C5,PHF11,0.350,1
+POT1,BRCA1_P38398,0.270,1
+ANKRD11,BRCC3_P46736,0.560,3
+HMMR,BRCA1_P38398,0.500,4
+GNL2,UIMC1_Q96RL1,0.350,1
+KIR2DL4,NELFB,0.350,1
+TLK2,BRIP1,0.270,1
+TLK2,NELFB,0.270,2
+CORO7,NBR1_Q14596,0.270,1
+H2AX,BRCA1_P38398,0.710,4
+H2AX,UIMC1_Q96RL1,0.270,1
+NIPSNAP2,NBR1_Q14596,0.270,1
+hsa_mir_205_5p,mrna_brca1,0.280,1
+RNF168,BRCA1_P38398,0.270,1
+AXIN2,BARD1_Q99728,0.560,3
+PIN1,BARD1_Q99728_1,0.500,4
+PIN1,BRCA1_P38398,0.400,1
+PIN1,BRCA1_P38398_1,0.400,4
+H4C16,BRCA1_P38398,0.400,1
+ACD,BRCA1_P38398,0.270,1
+SMARCA4,BRIP1,0.270,4
+SMARCA4,BABAM2,0.270,4
+SMARCA4,BARD1_Q99728,0.270,2
+SMARCA5,NELFB,0.400,1
+SNAPC5,BRCC3_P46736,0.370,1
+CCND1,BRCA1_P38398,0.460,3
+Brat1_Q9VDE8,Ino80,0.350,1
+Brat1_Q9VDE8,sala,0.370,1
+Brat1_Q9VDE8,PpD3,0.350,1
+Brat1_Q9VDE8,N,0.350,1
+RAB5A,PHF11,0.350,1
+a0a1d6lxl2_maize,LOC100193132,0.370,1
+ESR2,BRCA1_P38398,0.400,4
+POLR2D,NELFB,0.490,2
+NCK1,BRCA1_P38398,0.400,1
+NCK1,NELFB,0.400,6
+PMS2,BRIP1,0.690,5
+PPP1CB,BRCA1_P38398,0.580,3
+CRTAC1_Q9NQ79,BRIP1,0.350,1
+NBN,BRCA1_P38398,0.270,1
+M_P0DOF2,NELFB,0.350,1
+KIF23,BRCA1_P38398,0.270,1
+Brcc3,Hmga2,0.350,1
+Brcc3,Cenpc,0.350,1
+FGG,PHF11,0.350,1
+ZBTB1,BRCA1_P38398,0.270,1
+sh2d3a_1,Babam2,0.350,1
+NOLC1,BRCA1_P38398,0.270,1
+E7_P03129,BRCA1_P38398,0.540,5
+CASP6,PHF11,0.350,1
+STK11,BABAM1,0.350,2
+NDRG2,PHF11,0.350,1
+WWP2,BABAM2,0.350,2
+WWP2,BABAM1,0.350,2
+NDST1,Brca1,0.350,1
+Tp53_P10361,Bard1,0.400,1
+H2BC10,BABAM2,0.270,1
+H2BC10,BRCA1_P38398,0.270,1
+H2BC10,BARD1_Q99728,0.270,1
+H2BC10,UIMC1_Q96RL1,0.270,1
+ACBD5,NBR1_Q14596,0.270,1
+PML,BRCA1_P38398,0.270,1
+TFPT,BRCA1_P38398,0.350,2
+TFPT,BRCC3_P46736,0.530,4
+Nelfa,NELFB,0.350,1
+ZCCHC8,BRCA1_P38398,0.520,2
+THEM5,NBR1_Q14596,0.350,2
+SLF1,BRCA1_P38398,0.270,1
+UBXN1,BABAM1,0.350,1
+CHMP5,BRCA1_P38398,0.270,1
+FANCM,BRCA1_P38398,0.270,1
+q96be0_human,BRCA1_Q9NQR3,0.400,1
+CCDC85A,BARD1_Q99728,0.350,1
+ARHGAP1,PHF11,0.350,1
+TCERG1,BARD1_Q99728,0.510,2
+MDH9.17,TCP14,0.370,1
+MDH9.17,TCP13,0.370,1
+MDH9.17,o82638_arath,0.370,2
+PPP1R9B,BRCA1_P38398,0.500,4
+hsa_mir_484,mrna_brca1,0.400,1
+caly,Asx,0.520,2
+AXIN1_A0A0S2Z4M1,NBR1_Q14596_2,0.560,3
+HMG20A,BRAP,0.370,1
+AASDHPPT,BABAM1,0.350,1
+TIMM23,BABAM1,0.350,1
+hsa_mir_181a_5p,mrna_brca1,0.400,1
+HTR1E,BRAT1,0.350,1
+FGB,PHF11,0.350,1
+BLMH,Brca1,0.350,1
+POLD1,BRCA1_P38398,0.270,1
+USP7,BABAM2,0.350,1
+USP7,BABAM1,0.350,1
+USP7,BRCC3_P46736,0.350,1
+SLC30A7,BABAM1,0.350,1
+SLC30A7,BRCC3_P46736,0.350,1
+PIAS1,BRCA1_P38398,0.270,1
+PA,BRAT1,0.350,1
+DST,BRCA1_P38398,0.350,1
+POLR2I,NELFB,0.350,1
+TCEAL2,NELFB,0.400,1
+MED12,BRCA1_P38398,0.270,1
+SNRPA1,NBR2,0.400,1
+SERPINB3,PHF11,0.350,1
+ITIH1,PHF11,0.350,1
+MICU1,BABAM1,0.350,1
+FXYD3,BRAT1,0.350,1
+USHBP1,BRAT1,0.560,3
+TOP2A,BRCA1_P38398,0.520,3
+VCL,BRCA1_P38398,0.350,1
+HRG,PHF11,0.350,1
+BCL2,BRCA1_P38398,0.380,6
+SYK,BABAM2,0.350,1
+SYK,BABAM1,0.350,1
+SULT2B1,PHF11,0.350,1
+SUPT16H,BRCC3_P46736,0.350,1
+IGHG2,PHF11,0.350,1
+ZGRF1,BRCA1_P38398,0.580,4
+UBE2U,BARD1_Q99728,0.370,1
+NAGK,PHF11,0.350,1
+NOL4,BRIP1,0.350,1
+GOLGA2,BARD1_Q99728,0.720,6
+FANCD2,BRCA1_P38398,0.580,3
+KIF20B,BRCA1_P38398,0.270,1
+UGGT2,BABAM2,0.350,1
+UGGT2,BABAM1,0.350,1
+FTL,MRPL36,0.530,2
+SQSTM1_Q13501,NBR1_Q14596_1,0.270,1
+SQSTM1_Q13501,NBR1_Q14596,0.770,7
+ALDH3A2,BRAT1,0.350,1
+Dmel\CG5555,Ino80,0.350,1
+Dmel\CG5555,odd,0.370,1
+Dmel\CG5555,N,0.350,1
+Dmel\CG5555,Targ2,0.370,1
+Dmel\CG5555,RpS15Aa,0.370,1
+Dmel\CG5555,Dmel\CG6333,0.370,1
+LGR5,NBR1_Q14596,0.350,1
+AMOT,UIMC1_Q96RL1,0.350,1
+MRE11,BRCA1_P38398,0.270,1
+PEX5_P50542_4,NBR1_Q14596,0.270,1
+MACROH2A1,PHF11,0.350,1
+HPR,PHF11,0.350,1
+ING5,BARD1_Q99728,0.370,1
+DVL2,UIMC1_Q96RL1_2,0.370,1
+DVL2,UIMC1_Q96RL1,0.670,4
+SLC25A13,BABAM2,0.350,1
+SLC25A13,BABAM1,0.350,1
+AFG2B,BABAM1,0.350,1
+KIF4A,BRCA1_P38398,0.270,1
+E6_P06463,BRCA1_P38398,0.370,1
+NBR1_Q14596_1,MAP1LC3B,0.270,1
+NBR1_Q14596_1,GABARAP_Q6IAW1,0.270,1
+NBR1_Q14596_1,ATG16L1_Q676U5,0.270,1
+NBR1_Q14596_1,GABARAPL1,0.270,1
+NBR1_Q14596_1,GABARAPL2,0.270,1
+NBR1_Q14596_1,MAP1LC3A,0.270,1
+GPR55,BRAT1,0.350,1
+Xrcc6,Bard1,0.400,1
+GC,PHF11,0.350,1
+TREX2,PHF11,0.350,1
+SF3B4,BABAM1,0.270,1
+SLX4IP,BRCA1_P38398,0.270,1
+TRIM29,PHF11,0.350,1
+cvhsa_oligo,Nelfb,0.350,1
+cvhsa_oligo,NELFB,0.350,1
+IGHA1,PHF11,0.350,1
+Ewsr1,Brca1,0.370,1
+SRSF1,NELFB,0.350,1
+Nek1,BRAP,0.350,1
+SCGN,NBR1_Q14596,0.350,1
+SCGN,NBR1_Q14596_2,0.350,1
+GTSE1,NBR1_Q14596_2,0.350,1
+PTH2R,BRAT1,0.350,1
+q6zwh1_human,LRRK2,0.350,2
+NPTN,BRAT1,0.350,1
+a0a1d6e647_maize,a0a1d6jp38_maize,0.370,1
+NRSN1,NBR1_Q14596,0.350,1
+SERPINF1,PHF11,0.350,1
+CEP70,BARD1_Q99728,0.560,3
+LRRK2,NELFB,0.350,2
+NPM1,BRIP1,0.270,1
+NPM1,BRCA1_P38398,0.270,1
+MTUS2,BARD1_Q99728,0.560,3
+DDX39A,BABAM1,0.350,1
+NAPA,PHF11,0.350,1
+MRPL53,BABAM1,0.350,1
+SQSTM1_Q13501_2,NBR1_Q14596,0.270,1
+ABCE1,Brca1,0.350,1
+HSPA9,NELFB,0.520,2
+AGT,PHF11,0.350,1
+EVPL,PHF11,0.350,1
+znuC,NBR1_Q14596,0.370,1
+mrna_brca1,AGO1,0.350,1
+mrna_brca1,AGO2,0.350,1
+mrna_brca1,hsa_mir_638,0.280,2
+mrna_brca1,hsa_mir_182_5p,0.280,1
+mrna_brca1,hsa_mir_146a_5p,0.430,4
+mrna_brca1,hsa_mir_146b_5p,0.280,1
+mrna_brca1,'(human) hsamir99b3p',0.400,1
+CUL1,BABAM2,0.350,1
+DDB1,BRAP,0.370,1
+TF,PHF11,0.350,1
+KSR2,BRCC3_P46736,0.350,3
+ANLN,BRCA1_P38398,0.270,1
+RBM12,BRAP,0.370,1
+GNAL,BABAM1,0.350,1
+COMMD8,UIMC1_Q96RL1_2,0.350,1
+COMMD8,UIMC1_Q96RL1,0.350,1
+Brat1_Q8C3R1,DISC1,0.350,1
+ANK1_P16157_10,NELFB,0.350,1
+SPRTN,BRAP,0.350,1
+CARNMT1,BRIP1,0.640,3
+a0a6l7hg24_bacan,UIMC1_Q96RL1,0.370,1
+KRT40,BARD1_Q99728,0.560,3
+SDC1,NBR1_Q14596_2,0.400,1
+VAPB,BRIP1,0.640,4
+VAPB,NBR1_Q14596,0.350,2
+VAPB,NBR1_Q14596_2,0.350,1
+FOXRED2,BABAM2,0.350,1
+q83d60_coxbu,ZNF350,0.370,1
+BRIP1,PSME1,0.350,1
+BRIP1,CDK8,0.270,2
+BRIP1,ABRAXAS1_Q6UWZ7,0.350,1
+BRIP1,CRTAC1_Q9NQ79_2,0.350,1
+BRIP1,OC90,0.350,1
+BRIP1,CIAO2B,0.440,1
+BRIP1,LYPD4_Q6UWN0,0.350,1
+BRIP1,ZRANB2,0.270,1
+BRIP1,SNAP91,0.350,1
+BRIP1,VWA5A_O00534_3,0.350,1
+BRIP1,MLH1,0.940,21
+BRIP1,TULP2,0.530,2
+BRIP1,RAD51D,0.350,1
+BRIP1,BLM,0.670,16
+BRIP1,FBXW7,0.270,4
+BRIP1,MAGEA9,0.350,1
+BRIP1,NCAPH2_Q6IBW4,0.350,1
+BRIP1,PALB2,0.350,1
+BRIP1,SKP1,0.350,1
+BRIP1,AVIL_O75366,0.350,1
+BRIP1,HNRNPC,0.270,1
+BRIP1,SPOP,0.270,4
+BRIP1,BRCA1_P38398,0.980,33
+BRIP1,HSD17B14,0.670,4
+BRIP1,FHL3,0.530,3
+BRIP1,VWA5A_O00534,0.350,1
+BRIP1,BRAF,0.270,1
+BRIP1,IL17RA,0.350,1
+BRIP1,LIN28B,0.270,1
+BRIP1,PRPS2,0.350,1
+BRIP1,LIPH,0.530,2
+BRIP1,MMS19,0.580,4
+BRIP1,POMK,0.530,2
+BRIP1,PIAS4,0.350,1
+BRIP1,ELAVL1,0.400,1
+BRIP1,SMAD4,0.270,2
+BRIP1,LYPD4_Q6UWN0_2,0.350,1
+BRIP1,GATD1_Q8NB37_2,0.350,1
+BRIP1,AKT1,0.270,1
+BRIP1,PTGES3,0.350,1
+BRIP1,DOCK5_Q9H7D0_2,0.350,1
+BRIP1,NCAPH2_Q6IBW4_2,0.350,1
+BRIP1,AGGF1,0.270,1
+BRIP1,GPKOW,0.270,1
+BRIP1,PMS1,0.350,1
+BRIP1,PPP4R1L,0.350,1
+BRIP1,SLC31A1,0.350,1
+BRIP1,DOCK5_Q9H7D0,0.350,1
+BRIP1,SPANXN3,0.350,1
+BRIP1,EGFR,0.270,1
+BRIP1,DRC3,0.350,1
+BRIP1,HDAC6,0.400,1
+BRIP1,NDOR1,0.350,1
+BRIP1,GATD1_Q8NB37,0.350,1
+BRIP1,GFOD1,0.530,2
+BRIP1,TRIM52,0.350,1
+BRIP1,AVIL_O75366_2,0.350,1
+BRIP1,CRYL1,0.350,1
+SOD1,NBR1_Q14596,0.270,1
+H3_7,PHF11,0.350,1
+IGHG3,PHF11,0.350,1
+Lamtor2,NBR1_Q14596,0.370,1
+CDK8,ZNF350,0.350,1
+GSTM3,BRAT1,0.350,1
+RMI2,BRCA1_P38398,0.270,1
+PHLPP1_O60346,BRAP,0.440,2
+FCGBP,PHF11,0.350,1
+HNRNPAB,BRCA1_P38398,0.270,1
+ABRAXAS1_Q6UWZ7,TP53BP1,0.270,1
+ABRAXAS1_Q6UWZ7,RAD51_Q06609,0.270,1
+ABRAXAS1_Q6UWZ7,PSMC5,0.530,2
+ABRAXAS1_Q6UWZ7,BABAM2,0.350,1
+ABRAXAS1_Q6UWZ7,BABAM1,0.640,4
+ABRAXAS1_Q6UWZ7,RABGGTB,0.530,2
+ABRAXAS1_Q6UWZ7,RBBP8,0.400,1
+ABRAXAS1_Q6UWZ7,BRCA1_P38398,0.860,16
+ABRAXAS1_Q6UWZ7,BRCC3_P46736,0.640,4
+ABRAXAS1_Q6UWZ7,MANF,0.400,1
+ABRAXAS1_Q6UWZ7,BLOC1S6,0.350,1
+ABRAXAS1_Q6UWZ7,WTAP,0.530,2
+ABRAXAS1_Q6UWZ7,UIMC1_Q96RL1,0.680,9
+ABRAXAS1_Q6UWZ7,CFTR,0.520,3
+ABRAXAS1_Q6UWZ7,UIMC1_Q96RL1_1,0.660,4
+ABRAXAS1_Q6UWZ7,LAMC1,0.530,2
+ABRAXAS1_Q6UWZ7,ALDH6A1,0.530,2
+SLC25A11,BABAM1,0.350,1
+MSN,BARD1_Q99728,0.440,1
+PLG,PHF11,0.350,1
+HP,PHF11,0.350,1
+TNFAIP3,BRAP,0.270,2
+TNFAIP3,BRCC3_P46736,0.350,1
+TP53BP1,BABAM2,0.270,1
+TP53BP1,BABAM1,0.270,1
+TP53BP1,BRCA1_P38398,0.700,5
+TP53BP1,NELFB,0.270,1
+TP53BP1,BARD1_Q99728,0.270,1
+TP53BP1,BRCC3_P46736,0.270,1
+TP53BP1,UIMC1_Q96RL1,0.450,2
+PRKAG1,BABAM1,0.350,1
+PRDX5,BABAM1,0.350,1
+CBX1,BARD1_Q99728,0.350,1
+RPL27A,UIMC1_Q96RL1,0.350,1
+NPRL2,BRAT1,0.350,1
+HSPD1,BRCA1_P38398,0.510,2
+CCNO,NBR1_Q14596,0.350,1
+PNOC,BABAM1,0.350,1
+KHSRP,BRCA1_P38398,0.270,1
+SETDB1,BARD1_Q99728,0.370,1
+ORM2,PHF11,0.350,1
+TRIM28,BRCA1_P38398,0.270,1
+TRIM28,ZNF350,0.560,2
+CTR9,NBR1_Q14596_2,0.560,3
+SMC1A,BRCA1_P38398,0.400,1
+CKAP4,PHF11,0.350,1
+HAL,PHF11,0.350,1
+POLR2J,NELFB,0.350,1
+TRIM46,BRCA1_P38398,0.370,1
+PPIL4,BRCA1_P38398,0.270,1
+PYCR3,BABAM1,0.350,1
+PYCR3,UIMC1_Q96RL1,0.350,1
+POLR2H,NELFB,0.350,1
+DNAJC25,BABAM2,0.350,1
+DNAJC25,BABAM1,0.350,1
+DNAJC25,BRCC3_P46736,0.350,1
+LCN2,PHF11,0.350,1
+CSTF2,BRCA1_P38398,0.350,2
+CSTF2,BARD1_Q99728,0.700,8
+ssdna_dtdc,NELFB,0.350,1
+ssdna_dtdg,NELFB,0.350,1
+KPNA2,BRCA1_P38398,0.510,3
+FXYD6,BRAT1,0.350,1
+PIK3R1,BRCA1_P38398,0.400,1
+PIK3R1,NELFB,0.400,2
+LTBR,NBR1_Q14596_2,0.350,1
+AGPAT2,PHF11,0.370,1
+IKZF1,BARD1_Q99728,0.560,3
+HIVEP1,BRCA1_P38398,0.370,1
+ORC3,BRCA1_P38398,0.400,1
+SLC27A5,BRAT1,0.350,1
+VPS4B,BABAM1,0.350,1
+a8k7j6_human,MRPL36,0.320,1
+CALML3,PHF11,0.350,1
+ZNF207,BRCA1_P38398,0.270,1
+DEF6,BABAM2,0.530,2
+DEF6,BABAM1,0.530,2
+DEF6,BRCC3_P46736,0.350,1
+ZRANB2,BRCA1_P38398,0.270,1
+RPS6KA4,BRCA1_P38398,0.350,1
+CPSF6,BRCA1_P38398,0.270,1
+BARD1_Q99728_1,BRCA1_P38398,0.350,1
+BARD1_Q99728_1,BRCA1_P38398_1,0.350,1
+RAD23A,UIMC1_Q96RL1_2,0.560,3
+FAM210A,BABAM1,0.350,1
+YJU2,BRAP,0.560,3
+RAD23B,BRCA1_P38398,0.400,1
+TGM3,PHF11,0.350,1
+SNAP91,BRCA1_P38398,0.530,2
+ZHX1,BRCA1_P38398,0.270,1
+ZHX1,BARD1_Q99728,0.370,1
+HPX,PHF11,0.350,1
+ANK1_P16157,NELFB,0.350,1
+YWHAE,NELFB,0.530,2
+GYPA,NELFB,0.350,1
+Nedd1,BRCC3_P46736,0.350,1
+NMI,BRAT1,0.560,3
+TONSL,BRCA1_P38398,0.270,1
+UXT,Brca1,0.350,1
+CDKN3,BRCA1_P38398,0.350,1
+FANCI,BRCA1_P38398,0.270,1
+LSM8,PHF11,0.370,1
+MGST1,NELFB,0.520,2
+'1_phosphatidyl_1d_myo_inositol 4,5_bisphosphate',BABAM2,0.350,1
+SERPINB13_Q9UIV8,PHF11,0.350,1
+SERPINB13_Q9UIV8,BRAP,0.350,1
+brap_2,jkk_1,0.370,1
+GMPS,BABAM1,0.350,1
+40038273,NELFB,0.400,1
+BAG6,BRCC3_P46736,0.350,1
+IGFBP3,NBR1_Q14596,0.350,1
+PARK7,BABAM1,0.350,1
+JAK2,BRCA1_P38398,0.400,1
+FANCA,BRCA1_P38398,0.750,5
+SLC67A1,BRAT1,0.350,1
+UBXN6,BRAT1,0.350,1
+ubiq_human,BRCA1_P38398,0.440,1
+ubiq_human,UIMC1_Q96RL1_1,0.620,2
+TRIM41,PHF11,0.560,3
+TRIM41,BRAP,0.370,1
+MLH1,BRCA1_P38398,0.610,3
+ZNF827,BRCA1_P38398,0.270,1
+GPT2,BABAM1,0.350,1
+DCTPP1,Bap1,0.350,1
+POLR2C,NELFB,0.350,1
+U2AF1,BRCA1_P38398,0.270,1
+VPS35,NELFB,0.350,1
+VPS35,BARD1_Q99728,0.350,1
+CETN2,Brca1,0.350,1
+VCP,BRCA1_P38398,0.350,1
+RMI1,BRCA1_P38398,0.270,1
+FANCF,BRCA1_P38398,0.270,1
+SMARCE1,BRAP,0.370,1
+ORM1,PHF11,0.350,1
+NEK1,ZNF350,0.370,1
+NDUFA5,BABAM1,0.350,1
+P2RX5_Q93086_4,BRAT1,0.350,1
+TP53,BABAM2,0.270,1
+TP53,BRCA1_P38398,0.540,2
+TP53,BARD1_Q99728,0.540,2
+TP53,Bard1,0.460,2
+TP53,BRCC3_P46736,0.370,1
+ATR,BRCA1_P38398,0.270,1
+TNIK,BRCC3_P46736,0.370,1
+APOA4,PHF11,0.350,1
+PPP1CC,BRCA1_P38398,0.520,2
+JUN,NBR1_Q14596,0.460,2
+JUN,BRCA1_P38398,0.350,2
+JUN,NELFB,0.350,2
+JUN,brca1_human_cre_site_dna_probe,0.400,1
+JUN,BARD1_Q99728,0.350,1
+JUN,brca1_human_gene,0.350,1
+PSMA4,BABAM1,0.350,1
+ELP1,BARD1_Q99728,0.370,1
+TOP3A,BRCA1_P38398,0.270,1
+APCS,PHF11,0.350,1
+CUL2,BRAP,0.350,1
+SHCBP1L,BRAP,0.370,1
+SSR3,BABAM2,0.350,1
+NUMA1,BRAP,0.370,1
+NUMA1,BARD1_Q99728,0.350,1
+ERP44,UIMC1_Q96RL1,0.350,1
+M_P59596,BRAT1,0.350,1
+NDUFAB1,MRPL36,0.320,1
+KDR,Babam2,0.350,2
+HDLBP,BRCA1_P38398,0.350,1
+E2F5,BRCC3_P46736,0.350,1
+PTN,BARD1_Q99728,0.370,1
+GLUL,PHF11,0.350,1
+GSDMA,PHF11,0.350,1
+SHMT2,BABAM2,0.640,4
+SHMT2,BABAM1,0.640,4
+SHMT2,BRCC3_P46736,0.720,4
+HOMEZ,Bap1,0.350,1
+SERPINB7,PHF11,0.350,1
+S100A7A,PHF11,0.350,1
+RIF1,BRCA1_P38398,0.270,1
+AXIN1_O15169,NBR1_Q14596_2,0.370,1
+UVRAG,BRCC3_P46736,0.350,1
+UBC,NBR1_Q14596,0.640,3
+UBC,BRAP,0.370,1
+UBC,BRCC3_P46736,0.400,1
+UBC,Nbr1,0.440,1
+TRAPPC9,NBR1_Q14596,0.270,1
+BLM,BRCA1_P38398,0.270,1
+BLM,UIMC1_Q96RL1,0.400,2
+CCNE1,BRCA1_P38398,0.400,2
+IFI16,BRCA1_P38398,0.560,9
+STAT3,PHF11,0.350,1
+VPS4A,BABAM1,0.350,1
+GADD45GIP1,MRPL36,0.320,1
+CLPX,BABAM1,0.350,1
+E6_P03126,BRCA1_P38398,0.540,7
+FBXW7,BABAM2,0.270,4
+FBXW7,BARD1_Q99728,0.270,4
+PHF11,ANXA8,0.350,1
+PHF11,'fla FIII',0.370,1
+PHF11,NT5C3A,0.350,1
+PHF11,NUTF2,0.560,3
+PHF11,PLA2G4E,0.350,1
+PHF11,H1_5,0.350,1
+PHF11,LGALS7,0.350,1
+PHF11,ARL8B,0.350,1
+PHF11,CRYAB,0.350,1
+PHF11,TMEM40,0.350,1
+PHF11,KLK6,0.350,1
+PHF11,AHSG,0.350,1
+PHF11,ITIH2,0.350,1
+PHF11,SERPINA3,0.350,1
+PHF11,IL1RN,0.350,1
+PHF11,A1BG,0.350,1
+PHF11,S100A7,0.350,1
+PHF11,IGHG4,0.350,1
+PHF11,KLK7,0.350,1
+PHF11,ACP3,0.350,1
+PHF11,ALOX12B,0.350,1
+PHF11,IL36G,0.350,1
+PHF11,SERPINB2,0.350,1
+PHF11,ACP7,0.350,1
+PHF11,a0a5p8yj66_yerpe,0.370,1
+PHF11,CBR1,0.350,1
+PHF11,A2M,0.350,1
+PHF11,KLK10,0.350,1
+PHF11,SBSN,0.350,1
+PHF11,AKR1B10,0.350,1
+PHF11,IGLL5,0.350,1
+PHF11,QSOX1,0.350,1
+PHF11,PLA2G4D,0.350,1
+PHF11,C3,0.350,1
+PHF11,SERPINB4,0.350,1
+PHF11,PIAS4,0.370,1
+PHF11,IGHA2,0.350,1
+PHF11,a0a3g5l8e4_yerpe,0.370,1
+PHF11,GM2A,0.350,1
+PHF11,S100A9,0.350,1
+PHF11,APOA2,0.350,1
+PHF11,FGA,0.350,1
+PHF11,SULT1A2,0.400,1
+PHF11,TYMP,0.350,1
+PHF11,PKP1,0.350,1
+PHF11,TGM1,0.350,1
+PHF11,MAB21L4,0.350,1
+PHF11,APOB,0.350,1
+PHF11,TIGAR,0.350,1
+PHF11,HMGCS1,0.350,1
+PHF11,CFH,0.350,1
+PHF11,A2ML1,0.350,1
+PHF11,IL36RN,0.350,1
+PHF11,PON1,0.350,1
+PHF11,ECE1,0.370,1
+PHF11,IGKC,0.350,1
+PHF11,MCPH1,0.370,1
+PHF11,CSNK2B,0.370,1
+PHF11,C4BPA,0.350,1
+PHF11,ALB,0.350,1
+PHF11,ITIH4,0.350,1
+PHF11,IGHG1,0.350,1
+PHF11,SERPING1,0.350,1
+PHF11,C4B,0.350,1
+PHF11,CP,0.350,1
+PHF11,APOA1,0.350,1
+PHF11,IGHM,0.350,1
+PHF11,S100A8,0.350,1
+PHF11,SERPIND1,0.350,1
+PHF11,ENDOU,0.350,1
+PHF11,CFB,0.350,1
+PHF11,KNG1,0.350,1
+PHF11,SERPINA1,0.350,1
+PHF11,AHNAK2,0.350,1
+PHF11,CALML5,0.350,1
+PHF11,CRYBG1,0.350,1
+PHF11,HMOX1,0.350,1
+PHF11,HIP1R,0.350,1
+PHF11,IVL,0.350,1
+PHF11,POF1B,0.350,1
+PHF11,NCCRP1,0.350,1
+PHF11,PPL,0.350,1
+PHF11,RNASE7,0.350,1
+PHF11,CERS3,0.350,1
+PHF11,C5,0.350,1
+PHF11,SPATC1L,0.560,3
+TIAM1,ZNF350,0.370,1
+NELFE,NELFB,0.920,10
+TTC28,BABAM2,0.350,1
+TEKTL1,BRAP,0.370,1
+LAMTOR2,BABAM1,0.400,2
+Olig1,Brca1,0.370,1
+Tcf3,Brca1,0.370,1
+SKIL,UIMC1_Q96RL1,0.370,1
+ssdna_dc,NELFB,0.350,1
+PALB2,BRCA1_P38398,0.910,27
+RRAS,MRPL36,0.370,1
+Hap1,BARD1_Q99728,0.370,1
+Ubb,NBR1_Q14596,0.370,1
+PMS2P3,BRCA1_P38398,0.270,1
+BRCA1_P38398_2,JUNB,0.350,1
+BRCA1_P38398_2,BARD1_Q99728,0.400,1
+BRCA1_P38398_2,IFI30,0.350,1
+CIAO2A,BRAT1,0.350,1
+SUPT5H,NELFB,0.350,1
+PFAS,UIMC1_Q96RL1,0.350,1
+MTCH1,NBR1_Q14596,0.350,1
+NELFCD_Q8IXH7_4,NELFB,0.400,1
+PHB1,BABAM2,0.350,1
+EFHC1,BRAP,0.660,3
+PSME3_P61289,MRPL36,0.350,2
+HNRNPC,BRCA1_P38398,0.270,1
+TOLLIP,NBR1_Q14596,0.400,1
+RHAMM,tpx2_a,0.350,1
+RHAMM,brca1.L,0.350,2
+Tmed10,NBR1_Q14596,0.370,1
+KLHL22,BABAM1,0.350,1
+POMGNT1,BRCA1_P38398,0.370,1
+RPA1,BRCA1_P38398,0.650,3
+ZNF655,BARD1_Q99728,0.560,3
+TEAD1,UIMC1_Q96RL1,0.270,1
+Brap,Dnmt1,0.400,1
+Brap,Phlpp1_Q8CHE4_1,0.350,1
+Brap,Phlpp1_Q8CHE4_2,0.350,1
+Brap,Phlpp1_Q8CHE4,0.400,1
+Brap,Akap3,0.540,3
+RAD51_Q06609,BRCA1_P38398,0.720,6
+RAD51_Q06609,NELFB,0.370,1
+RAD51_Q06609,UIMC1_Q96RL1,0.270,1
+SFXN4,BABAM1,0.350,1
+LONRF1,BRCA1_P38398,0.370,1
+CAPZB,UIMC1_Q96RL1,0.350,1
+PRKACG,UIMC1_Q96RL1,0.350,1
+SPPL2B,NBR1_Q14596,0.350,1
+SPPL2B,NBR1_Q14596_2,0.350,1
+BRAT1,KLF11,0.560,3
+BRAT1,UNC93A,0.350,1
+BRAT1,PLBD1,0.350,1
+BRAT1,COMTD1,0.350,1
+BRAT1,SLC35E4,0.350,1
+BRAT1,LPAR6,0.350,1
+BRAT1,EEF1AKMT3,0.350,1
+BRAT1,MFSD4A,0.350,1
+BRAT1,BRCA1_P38398,0.600,6
+BRAT1,NPAS1,0.350,1
+BRAT1,HTR2C,0.350,1
+BRAT1,FFAR1,0.350,1
+BRAT1,APLNR,0.640,4
+BRAT1,SLC27A6,0.350,1
+BRAT1,INTS9,0.350,2
+BRAT1,OPRM1_P35372_10,0.350,1
+BRAT1,DNAI2,0.350,1
+BRAT1,CD40,0.350,1
+BRAT1,INF2,0.350,1
+BRAT1,GPR17,0.350,1
+BRAT1,MAS1,0.350,1
+BRAT1,CHRM4,0.530,2
+BRAT1,CD80,0.350,1
+BRAT1,RFXANK,0.350,1
+BRAT1,SLC7A11,0.350,1
+BRAT1,ENKD1,0.560,3
+BRAT1,CYB5B,0.350,1
+BRAT1,SLC35G1,0.350,1
+BRAT1,OPRM1_P35372,0.350,1
+BRAT1,TMEM108,0.530,2
+BRAT1,SLC35E1,0.350,1
+BRAT1,VIPR2,0.530,2
+BRAT1,KRAS,0.350,2
+BRAT1,SLC16A11,0.350,1
+BRAT1,PHF8,0.350,1
+BRAT1,AVPR2,0.350,1
+BRAT1,SLC39A9,0.350,1
+BRAT1,P2RY8,0.350,1
+BRAT1,CXCR3,0.350,1
+BRAT1,MSGN1,0.560,3
+BRAT1,KLK15,0.350,1
+BRAT1,ATM,0.460,3
+BRAT1,F2RL1,0.350,1
+BRAT1,SLC22A11,0.350,1
+BRAT1,CFTR,0.350,3
+BRAT1,ADGRG5,0.530,2
+BRAT1,FPR1,0.530,3
+BRAT1,CD70,0.350,1
+BRAT1,HCST,0.350,1
+BRAT1,GPR45,0.350,1
+BRAT1,P2RY10,0.350,2
+BRAT1,LY86,0.350,1
+BRAT1,NCBP1,0.350,1
+BRAT1,ILVBL,0.350,1
+BRAT1,HNRNPCL2,0.350,1
+BRAT1,Nipbl,0.350,1
+BRAT1,SLC2A1,0.350,1
+BRAT1,P2RX5_Q93086,0.350,1
+BRAT1,ns4a_cvh22,0.350,1
+BRAT1,GPR182,0.350,2
+BRAT1,PSG11,0.350,1
+BRAT1,PSMD7,0.530,2
+BRAT1,NXPH3,0.350,1
+AP2M1,BRCA1_P38398,0.440,1
+CORO6_Q6QEF8,NBR1_Q14596,0.350,1
+ap3a_sars2,NBR1_Q14596,0.350,1
+MLF1,BRCA1_Q9NQR3,0.400,1
+TRIM27,BABAM1,0.780,7
+TRIM27,BRCA1_P38398,0.270,1
+FKBP8,BABAM2,0.350,1
+RANGAP1,BABAM1,0.350,1
+SYNE2,BRAP,0.370,1
+FAM168A,BABAM2,0.350,1
+FAM168A,BABAM1,0.350,1
+Rps27a,Nbr1,0.270,1
+Rps27a,Brca1,0.440,1
+Rps27a,Uimc1,0.560,2
+CENPA,BRCC3_P46736,0.350,1
+Suz12,Brca1,0.350,1
+ERAP1,BRCA1_P38398,0.350,1
+a0a1d6gwc0_maize,a0a1d6jpd5_maize,0.370,1
+HMGA1,BARD1_Q99728,0.350,1
+NSMCE3,BRCA1_P38398,0.270,1
+ZCCHC10,NBR1_Q14596,0.530,3
+P0DTD1_PRO_0000449623,BRCA1_P38398,0.270,1
+P0DTD1_PRO_0000449624,NBR1_Q14596,0.350,1
+Pcbd1,Bard1,0.370,1
+HNRNPA2B1,BRCA1_P38398,0.270,1
+RNF40,Bap1,0.350,1
+ITSN1,BRCC3_P46736,0.370,1
+AARSD1,BRCA1_Q9NQR3,0.400,1
+PRC1,BRCA1_P38398,0.270,1
+LRRC47,BABAM1,0.350,1
+CCNA2,UIMC1_Q96RL1,0.350,1
+SPOP,BABAM2,0.270,4
+SPOP,BARD1_Q99728,0.270,4
+CAPZA1,UIMC1_Q96RL1,0.350,1
+LDLRAD4,UIMC1_Q96RL1_2,0.350,1
+POLR2B,NELFB,0.350,1
+NBR1_Q14596,USP8,0.540,3
+NBR1_Q14596,HAP1,0.350,1
+NBR1_Q14596,NME4,0.270,1
+NBR1_Q14596,UBB,0.270,1
+NBR1_Q14596,MAP1LC3B,0.770,9
+NBR1_Q14596,EDDM3B,0.350,1
+NBR1_Q14596,OBSL1,0.270,1
+NBR1_Q14596,SNAPC4,0.350,1
+NBR1_Q14596,JUNB,0.530,2
+NBR1_Q14596,GSK3B_P49841_2,0.270,1
+NBR1_Q14596,TMEM74,0.350,1
+NBR1_Q14596,CLTA,0.350,1
+NBR1_Q14596,Map1lc3a,0.370,1
+NBR1_Q14596,CEP135,0.270,1
+NBR1_Q14596,SSH3,0.270,1
+NBR1_Q14596,NIPA1,0.350,1
+NBR1_Q14596,TOM1L2,0.270,1
+NBR1_Q14596,Map1lc3b,0.430,2
+NBR1_Q14596,RGS9BP,0.350,1
+NBR1_Q14596,MRPL41,0.350,1
+NBR1_Q14596,CEP85,0.270,1
+NBR1_Q14596,ns3b_sars,0.350,1
+NBR1_Q14596,HTT,0.460,3
+NBR1_Q14596,TOM1,0.270,1
+NBR1_Q14596,NUDT1,0.270,1
+NBR1_Q14596,GSK3B_P49841,0.650,4
+NBR1_Q14596,DIP2A,0.270,1
+NBR1_Q14596,RNF149,0.350,1
+NBR1_Q14596,TMEM31,0.350,1
+NBR1_Q14596,GABARAP_O95166,0.780,6
+NBR1_Q14596,DUSP16,0.350,1
+NBR1_Q14596,UBXN4,0.270,1
+NBR1_Q14596,RO60,0.350,1
+NBR1_Q14596,CFTR,0.270,3
+NBR1_Q14596,MAP7,0.350,1
+NBR1_Q14596,MAVS,0.270,1
+NBR1_Q14596,NIPSNAP1,0.270,1
+NBR1_Q14596,TNIP1,0.350,2
+NBR1_Q14596,TBC1D5,0.270,1
+NBR1_Q14596,GABARAPL1,0.700,4
+NBR1_Q14596,GABARAPL2,0.720,11
+NBR1_Q14596,Sqstm1,0.430,2
+NBR1_Q14596,INSR,0.350,1
+NBR1_Q14596,LY86,0.350,2
+NBR1_Q14596,VTA1,0.370,1
+NBR1_Q14596,RRAGA,0.270,1
+NBR1_Q14596,GSK3A,0.840,8
+NBR1_Q14596,SLC66A1LP,0.350,1
+NBR1_Q14596,TMEM160,0.270,1
+NBR1_Q14596,MAP1LC3A,0.680,5
+NBR1_Q14596,ATP5IF1,0.530,2
+NBR1_Q14596,RIPK1,0.350,1
+NBR1_Q14596,Ube2o,0.370,1
+BABAM2,BABAM1,0.920,17
+BABAM2,MAPT,0.350,2
+BABAM2,BRCA1_P38398,0.480,2
+BABAM2,LRPPRC,0.350,1
+BABAM2,MFAP4,0.350,1
+BABAM2,RNF166,0.350,1
+BABAM2,BRAF,0.470,2
+BABAM2,Tnks2,0.350,1
+BABAM2,MMS19,0.350,1
+BABAM2,BRCC3_P46736,0.670,4
+BABAM2,RPN2,0.350,1
+BABAM2,ABRAXAS2,0.670,3
+BABAM2,CHI3L1,0.530,2
+BABAM2,TMX3,0.350,1
+BABAM2,ATG2A,0.350,1
+BABAM2,PTEN,0.270,1
+BABAM2,LOXL4,0.350,1
+BABAM2,SMAD4,0.550,5
+BABAM2,UIMC1_Q96RL1,0.350,2
+BABAM2,ESR1,0.350,2
+BABAM2,GRB2,0.350,1
+BABAM2,AKT1,0.270,1
+BABAM2,DHRS7B,0.350,1
+BABAM2,DCX,0.350,1
+BABAM2,CIMIP6,0.350,1
+BABAM2,C9orf85,0.350,2
+BABAM2,CFTR,0.270,3
+BABAM2,EGFR,0.480,2
+BABAM2,PTPN11,0.270,1
+BABAM2,MDC1,0.270,1
+BABAM2,SPINK14,0.350,1
+BABAM2,DPP9,0.350,1
+BABAM1,BRCA1_P38398,0.480,2
+BABAM1,Mta1,0.350,1
+BABAM1,Tnks2,0.350,1
+BABAM1,BRCC3_P46736,0.530,4
+BABAM1,TERF2IP,0.510,2
+BABAM1,ABRAXAS2,0.730,5
+BABAM1,PBDC1,0.350,1
+BABAM1,ZNF653,0.350,1
+BABAM1,DIS3,0.350,1
+BABAM1,SLC30A8,0.350,1
+BABAM1,SNW1,0.350,1
+BABAM1,BVLF1,0.350,1
+BABAM1,UIMC1_Q96RL1_2,0.350,1
+BABAM1,PRKAR2B,0.350,1
+BABAM1,NSF,0.350,1
+BABAM1,ARF4,0.350,1
+BABAM1,UIMC1_Q96RL1,0.530,4
+BABAM1,SPATA2,0.350,1
+BABAM1,ESR1,0.350,2
+BABAM1,PDHA1,0.350,1
+BABAM1,MELK,0.350,1
+BABAM1,ATAD1,0.350,1
+BABAM1,GPKOW,0.270,1
+BABAM1,CIMIP6,0.350,2
+BABAM1,C9orf85,0.530,3
+BABAM1,MAP2K2,0.350,1
+BABAM1,BRCC3_P46736_2,0.350,1
+BABAM1,TNKS2,0.760,7
+BABAM1,Vps41,0.350,1
+BABAM1,WASHC3,0.350,1
+BABAM1,TNS1,0.350,1
+BABAM1,PLK1,0.350,1
+BABAM1,PMF1,0.400,3
+BABAM1,SLIRP,0.350,1
+BABAM1,MDC1,0.270,1
+BABAM1,TNKS,0.640,4
+BABAM1,NCBP2,0.350,1
+CASK,UIMC1_Q96RL1,0.350,1
+NSMCE1,BRCA1_P38398,0.270,1
+FHL2,BRCA1_P38398,0.710,6
+SNCA,UIMC1_Q96RL1_2,0.560,3
+FAM9B,BARD1_Q99728,0.560,3
+FBXO28,BRAP,0.370,1
+a0a1d6pwb6_maize,LOC100193132,0.370,1
+Paxip1,BRCC3_P46736,0.350,1
+FANCL,BRCA1_P38398,0.270,1
+E6_P06929,BRCA1_P38398,0.370,1
+WRN,BRCA1_P38398,0.270,1
+brd_1,brc_1_B6VQ60,0.530,4
+brd_1,tac_1,0.370,1
+brd_1,ubc_9,0.510,4
+brd_1,rad_51,0.400,1
+brd_1,ubq_1,0.400,1
+brd_1,smo_1,0.370,3
+brd_1,brc_1_EBI_8480911,0.400,1
+CCDC30,BRAP,0.370,1
+RAD51B,BRCA1_P38398,0.270,1
+XYLT1,NELFB,0.350,1
+RBBP8,BRCA1_P38398,0.930,15
+RBBP8,UIMC1_Q96RL1,0.350,1
+RBBP8,BRCA1_Q90Z51,0.400,1
+CEBPE,NELFB,0.370,1
+RECQL4,BRCA1_P38398,0.270,1
+ZBTB48,BRCA1_P38398,0.270,1
+SCLT1,Brca1,0.350,1
+DBP,BRCA1_P38398,0.430,2
+NSMCE2,BRCA1_P38398,0.270,1
+PACSIN1,NELFB,0.400,1
+NFIC,BRCA1_P38398,0.270,1
+UBB,BRAP,0.370,1
+BRCA1_P38398,NELFB,0.600,5
+BRCA1_P38398,BRAP,0.510,3
+BRCA1_P38398,mdm2_human_probe,0.350,1
+BRCA1_P38398,NSMCE4A,0.270,1
+BRCA1_P38398,HUS1,0.270,1
+BRCA1_P38398,CABIN1,0.270,1
+BRCA1_P38398,cdkn1a_human_gene,0.350,1
+BRCA1_P38398,KIF2C,0.270,1
+BRCA1_P38398,PPHLN1,0.350,1
+BRCA1_P38398,EPM2AIP1,0.270,1
+BRCA1_P38398,NCAPG2,0.270,1
+BRCA1_P38398,RAD52,0.270,1
+BRCA1_P38398,DHX38,0.270,1
+BRCA1_P38398,RAD1,0.270,1
+BRCA1_P38398,BRAF,0.270,1
+BRCA1_P38398,H2BC21,0.350,1
+BRCA1_P38398,HNRNPA1,0.270,1
+BRCA1_P38398,MAP1LC3B,0.440,1
+BRCA1_P38398,FAM83H,0.270,1
+BRCA1_P38398,SUZ12,0.350,1
+BRCA1_P38398,SMTN,0.270,1
+BRCA1_P38398,JUNB,0.350,1
+BRCA1_P38398,ABL1,0.370,1
+BRCA1_P38398,FOSL2,0.270,1
+BRCA1_P38398,MMS22L,0.270,1
+BRCA1_P38398,HMGN5,0.350,1
+BRCA1_P38398,BARD1_Q99728,0.960,20
+BRCA1_P38398,ITM2B,0.350,1
+BRCA1_P38398,SAGE1,0.270,1
+BRCA1_P38398,sptf,0.440,1
+BRCA1_P38398,CDK16,0.350,1
+BRCA1_P38398,BRCC3_P46736,0.610,3
+BRCA1_P38398,TERF2,0.270,1
+BRCA1_P38398,TERF2IP,0.270,1
+BRCA1_P38398,bach1peptide,0.440,1
+BRCA1_P38398,CT45A3,0.270,1
+BRCA1_P38398,RECQL,0.270,1
+BRCA1_P38398,RPL13,0.370,1
+BRCA1_P38398,RECQL5,0.270,1
+BRCA1_P38398,SP7,0.270,1
+BRCA1_P38398,RNF169,0.270,1
+BRCA1_P38398,IFI30,0.350,1
+BRCA1_P38398,JUP,0.370,1
+BRCA1_P38398,E6_P06930,0.370,1
+BRCA1_P38398,KPNA1,0.370,1
+BRCA1_P38398,FUS,0.270,1
+BRCA1_P38398,Palb2,0.350,1
+BRCA1_P38398,PRAME,0.270,1
+BRCA1_P38398,ETV6,0.270,1
+BRCA1_P38398,CIP2A,0.270,1
+BRCA1_P38398,SLF2,0.270,1
+BRCA1_P38398,TOPBP1,0.270,1
+BRCA1_P38398,FANCG,0.270,1
+BRCA1_P38398,FAAP24,0.270,1
+BRCA1_P38398,NR2F2,0.270,1
+BRCA1_P38398,STAG1,0.270,1
+BRCA1_P38398,TFG,0.350,1
+BRCA1_P38398,ERCC4,0.270,1
+BRCA1_P38398,FANCC,0.270,1
+BRCA1_P38398,PEX5_P50542,0.370,1
+BRCA1_P38398,RNF8,0.270,2
+BRCA1_P38398,SLX4,0.270,1
+BRCA1_P38398,ATRIP,0.270,1
+BRCA1_P38398,EWSR1,0.270,1
+BRCA1_P38398,SGO2,0.270,1
+BRCA1_P38398,BRCA2,0.730,8
+BRCA1_P38398,UIMC1_Q96RL1,0.780,13
+BRCA1_P38398,CENPI,0.270,1
+BRCA1_P38398,MCPH1,0.270,1
+BRCA1_P38398,par,0.430,3
+BRCA1_P38398,DCLRE1A,0.270,1
+BRCA1_P38398,ESR1,0.810,16
+BRCA1_P38398,RPA2,0.270,1
+BRCA1_P38398,ZNF350,0.580,3
+BRCA1_P38398,LUZP1,0.270,1
+BRCA1_P38398,RHNO1,0.270,1
+BRCA1_P38398,KRAS,0.350,1
+BRCA1_P38398,ERCC1,0.270,1
+BRCA1_P38398,AFG2A,0.350,1
+BRCA1_P38398,GTF2I,0.610,5
+BRCA1_P38398,AKT1,0.400,1
+BRCA1_P38398,TRIM33,0.270,1
+BRCA1_P38398,RBM45,0.270,1
+BRCA1_P38398,WRNIP1,0.270,1
+BRCA1_P38398,RPA3,0.270,1
+BRCA1_P38398,EME1,0.270,1
+BRCA1_P38398,GGA1,0.440,1
+BRCA1_P38398,FANCE,0.270,1
+BRCA1_P38398,PLEKHA2,0.350,1
+BRCA1_P38398,ydisqvfpf,0.400,1
+BRCA1_P38398,CUL4B,0.350,1
+BRCA1_P38398,AURKA,0.350,2
+BRCA1_P38398,DDX42,0.270,1
+BRCA1_P38398,ATM,0.270,1
+BRCA1_P38398,EGR3,0.270,1
+BRCA1_P38398,CHEK2,0.350,1
+BRCA1_P38398,MUS81,0.270,1
+BRCA1_P38398,RAD9A,0.270,1
+BRCA1_P38398,ETAA1,0.270,1
+BRCA1_P38398,USP28,0.350,2
+BRCA1_P38398,PPP1CA,0.520,2
+BRCA1_P38398,POLE,0.270,1
+BRCA1_P38398,SUMO1,0.600,3
+BRCA1_P38398,LMNA,0.350,3
+BRCA1_P38398,JAK1,0.400,1
+BRCA1_P38398,ACACA_Q13085_1,0.360,1
+BRCA1_P38398,RAD50,0.270,1
+BRCA1_P38398,CHEK1,0.460,3
+BRCA1_P38398,FAM111A,0.270,1
+BRCA1_P38398,SETX,0.270,1
+BRCA1_P38398,RAD18,0.270,1
+BRCA1_P38398,UIMC1_Q96RL1_1,0.400,2
+BRCA1_P38398,RNF6,0.270,1
+BRCA1_P38398,MORF4L1,0.350,3
+BRCA1_P38398,TPX2,0.480,4
+BRCA1_P38398,Ezh2,0.590,5
+BRCA1_P38398,KIF18A,0.270,1
+BRCA1_P38398,UBE2J1,0.370,1
+BRCA1_P38398,PLK1,0.270,1
+BRCA1_P38398,FUBP1,0.270,1
+BRCA1_P38398,KIFC1,0.270,1
+BRCA1_P38398,CTC1,0.270,1
+BRCA1_P38398,CREB1,0.440,1
+BRCA1_P38398,ARID1A,0.270,1
+BRCA1_P38398,CENPU,0.270,1
+BRCA1_P38398,MORC3,0.270,1
+BRCA1_P38398,DCLRE1B,0.270,1
+BRCA1_P38398,SUMO2,0.590,2
+BRCA1_P38398,MDC1,0.630,4
+BRCA1_P38398,SMCHD1,0.270,1
+BRCA1_P38398,TERF1,0.270,1
+BRCA1_P38398,EGLN3,0.350,1
+BRCA1_P38398,EZH2,0.350,1
+BRCA1_P38398,KNL1,0.270,1
+BRCA1_P38398,STN1,0.270,1
+BRCA1_P38398,TINF2,0.270,1
+BRCA1_P38398,TRIM74,0.370,1
+BRCA1_P38398,RAD54L2,0.270,1
+BRCA1_P38398,Bap1,0.370,2
+BRCA1_P38398,HMBOX1,0.270,1
+MEF2C,ZNF350,0.370,1
+DNMT1,BRAP,0.370,1
+NELFB,NELFCD_Q8IXH7_1,0.350,1
+NELFB,YWHAZ,0.530,2
+NELFB,INTS9,0.350,1
+NELFB,ABL1,0.400,1
+NELFB,SSRP1,0.350,1
+NELFB,POLR2E,0.350,1
+NELFB,H3C1,0.270,1
+NELFB,POLR2F,0.350,1
+NELFB,FYN,0.400,2
+NELFB,SNW1,0.350,1
+NELFB,CENPM,0.350,1
+NELFB,S100A6,0.350,1
+NELFB,POLR2K,0.350,1
+NELFB,Ncbp2,0.350,2
+NELFB,DISC1,0.370,1
+NELFB,CDC5L,0.350,1
+NELFB,FECH_P22830,0.350,1
+NELFB,CYP2J2,0.350,1
+NELFB,GRB2,0.400,2
+NELFB,YWHAQ,0.350,2
+NELFB,PPP2CA,0.350,1
+NELFB,PLCG1,0.400,1
+NELFB,ssrna_ug,0.350,1
+NELFB,NELFA,0.860,8
+NELFB,PRSS3,0.350,1
+NELFB,YWHAH,0.350,2
+NELFB,KHDRBS3,0.520,2
+NELFB,HCST,0.350,1
+NELFB,INSR,0.350,2
+NELFB,ssrna_ag,0.350,1
+NELFB,DENR,0.520,2
+NELFB,NCBP1,0.530,3
+NELFB,YWHAB,0.640,3
+NELFB,NCBP2,0.530,3
+NELFB,MAPK6,0.370,1
+NELFB,YWHAG,0.530,3
+NELFB,FECH_P22830_2,0.350,1
+BRAP,ZNF526,0.350,1
+BRAP,ZNF521,0.370,1
+BRAP,SERPINB13_Q9UIV8_2,0.350,1
+BRAP,PHLPP1_O60346_1,0.400,1
+BRAP,Dnmt1,0.400,1
+BRAP,TWIST1,0.350,1
+BRAP,FAM184A,0.370,1
+BRAP,TRIM55,0.370,1
+BRAP,M6pr,0.350,1
+BRAP,Ncbp2,0.350,1
+BRAP,UBE2H,0.370,1
+BRAP,KSR1,0.400,1
+BRAP,APOA1,0.370,1
+BRAP,TEX35,0.370,1
+BRAP,ATMIN,0.370,1
+BRAP,Pten,0.350,1
+BRAP,Orc2,0.350,1
+BRAP,TRIM8,0.370,1
+BRAP,CPLANE1,0.370,1
+BRAP,BRK1,0.370,1
+BRAP,ZNF382,0.370,1
+BRAP,PRODH_O43272,0.350,1
+BRAP,PHLPP1_O60346_2,0.400,1
+BRAP,ZNF479,0.370,1
+BRAP,TANC2,0.370,1
+BRAP,AKAP3,0.510,2
+Plcg2,Nbr1,0.370,1
+HSF2BP,BARD1_Q99728,0.560,3
+CORO6_Q6QEF8_5,NBR1_Q14596_2,0.350,1
+S100A2,UIMC1_Q96RL1,0.350,1
+DDOST,BRCC3_P46736,0.350,1
+RABEP1,BARD1_Q99728,0.560,3
+BECN1,BRCA1_P38398_6,0.560,3
+tpx2_a,brca1.L,0.400,1
+tpx2_a,numa1.S,0.350,1
+RNF166,BRCC3_P46736,0.350,1
+Brip1,Tlx3,0.370,1
+BRCA1_P38398_1,BARD1_Q99728,0.520,3
+BRCA1_P38398_1,RAD51_Q06609_1,0.500,3
+BHLH27,o82638_arath,0.370,1
+BRCA1_P38398_6,HTT,0.560,3
+WDR48,UIMC1_Q96RL1,0.350,1
+WDR48,BRCA1_Q8IZK2,0.350,1
+brca1_human_cre_site_dna_probe,FOSL2,0.400,1
+H2BC21,BARD1_Q99728,0.350,1
+CIDEB,MRPL36,0.560,3
+MAP1LC3B,Nbr1,0.400,2
+Tnks2,BRCC3_P46736,0.350,1
+BRCA1_A5A751,ORF1b,0.350,1
+Hoxa2,Brca1,0.370,1
+SHC1,BRCC3_P46736,0.350,2
+RCAN1,ZNF350,0.370,1
+KAT7,BARD1_Q99728,0.510,2
+JUNB,BRCC3_P46736,0.530,2
+JUNB,NBR1_Q14596_2,0.350,1
+KDM1B,Bap1,0.350,1
+UBA3,UIMC1_Q96RL1,0.350,1
+LRIF1,BARD1_Q99728,0.370,1
+FOSL2,brca1_human_gene,0.350,1
+PRKN,UIMC1_Q96RL1_2,0.560,3
+CPNE1,UIMC1_Q96RL1,0.350,1
+GPRASP2,BARD1_Q99728,0.370,1
+HMGN5,BARD1_Q99728,0.350,1
+BARD1_Q99728,MKI67,0.350,1
+BARD1_Q99728,CEP126,0.510,2
+BARD1_Q99728,PIAS4,0.370,1
+BARD1_Q99728,H3C1,0.270,1
+BARD1_Q99728,CHD3,0.510,2
+BARD1_Q99728,POLR1A,0.400,1
+BARD1_Q99728,PTEN,0.270,1
+BARD1_Q99728,TRAF1,0.560,3
+BARD1_Q99728,'ccsb orf id: 52859',0.560,3
+BARD1_Q99728,LDOC1,0.780,7
+BARD1_Q99728,EXOC5,0.560,3
+BARD1_Q99728,CSTF1,0.580,4
+BARD1_Q99728,FEZ1,0.370,1
+BARD1_Q99728,UIMC1_Q96RL1,0.350,1
+BARD1_Q99728,par,0.650,9
+BARD1_Q99728,adp_ribose,0.560,2
+BARD1_Q99728,Brca1,0.350,1
+BARD1_Q99728,AFG2A,0.350,1
+BARD1_Q99728,AKT1,0.550,3
+BARD1_Q99728,KAT5,0.370,1
+BARD1_Q99728,BRD7,0.370,1
+BARD1_Q99728,PARN,0.580,4
+BARD1_Q99728,PCNA,0.400,1
+BARD1_Q99728,GIT1,0.510,2
+BARD1_Q99728,KIFC3,0.560,3
+BARD1_Q99728,OST4,0.350,1
+BARD1_Q99728,EGFR,0.270,1
+BARD1_Q99728,PTPN11,0.270,1
+BARD1_Q99728,MDC1,0.270,1
+BARD1_Q99728,KBTBD7,0.370,1
+BARD1_Q99728,HMGN2,0.350,1
+Bard1,Tp53_P02340,0.400,1
+NAE1,UIMC1_Q96RL1,0.350,1
+ipi00260209,UIMC1_Q96RL1,0.350,1
+FOXK1,Bap1,0.350,1
+DNAAF5,Bap1,0.350,1
+PIPSL,MRPL36,0.350,1
+BRCC3_P46736,ABRAXAS2,0.690,8
+BRCC3_P46736,UBL4B,0.350,1
+BRCC3_P46736,BACH1,0.370,1
+BRCC3_P46736,UIMC1_Q96RL1,0.350,2
+BRCC3_P46736,TFDP3,0.350,1
+BRCC3_P46736,CAND1,0.350,1
+BRCC3_P46736,LRRC73,0.350,1
+BRCC3_P46736,NDUFA10,0.350,1
+BRCC3_P46736,CIMIP6,0.350,1
+BRCC3_P46736,C9orf85,0.530,2
+BRCC3_P46736,CFTR,0.270,2
+BRCC3_P46736,UIMC1_Q96RL1_1,0.690,4
+BRCC3_P46736,MCM2,0.350,1
+BRCC3_P46736,TNS1,0.350,1
+BRCC3_P46736,YWHAH,0.350,1
+BRCC3_P46736,Rpl35,0.350,1
+BRCC3_P46736,ODF2,0.350,1
+BRCC3_P46736,DNAL4,0.350,1
+BRCC3_P46736,MDC1,0.270,1
+BRCC3_P46736,EXOC8,0.350,1
+BRCC3_P46736,YWHAG,0.350,1
+LOC100193132,a0a3l6dk31_maize,0.370,1
+F7,UIMC1_Q96RL1,0.350,1
+PRPF38A,Brca1,0.350,1
+RIOX2_Q8IUF8_4,UIMC1_Q96RL1_2,0.400,1
+ABRAXAS2,UIMC1_Q96RL1,0.350,1
+H3C1,UIMC1_Q96RL1,0.270,1
+ATF7IP,ZNF350,0.370,1
+CSNK1E,Bap1,0.350,1
+RFC4,UIMC1_Q96RL1,0.350,1
+NRDC,UIMC1_Q96RL1,0.350,1
+MRPL41,NBR1_Q14596_2,0.350,1
+RASIP1,Bap1,0.350,1
+LIN7C,UIMC1_Q96RL1,0.350,1
+KDM5B,brca1_human_gene,0.350,1
+MYC,brca1_human_gene,0.350,2
+UIMC1_Q96RL1_2,RNF11,0.560,3
+brca1.L,Xpo1,0.350,1
+brca1.L,numa1.S,0.350,2
+brca1.L,bard1.L,0.400,2
+F9I5.13,o82638_arath,0.370,1
+E7_P36817,MRPL36,0.370,1
+RBM15,UIMC1_Q96RL1,0.270,1
+brcc3,Xpo1,0.350,1
+KINB1,o82638_arath,0.270,1
+LYPD4_Q6UWN0_2,NBR1_Q14596_2,0.350,1
+GSK3B_P49841,Nbr1,0.370,1
+DNPH1,Brca1,0.350,1
+Nbr1,GABARAPL2,0.400,1
+Nbr1,Sqstm1,0.430,3
+Nbr1,GSK3A,0.370,1
+ENTREP1,UIMC1_Q96RL1,0.370,1
+CDPF1,UIMC1_Q96RL1,0.350,1
+SLC35E1,Bap1,0.350,1
+UIMC1_Q96RL1,SPATA2,0.350,1
+UIMC1_Q96RL1,ESR1,0.350,2
+UIMC1_Q96RL1,ALB,0.350,1
+UIMC1_Q96RL1,SSU72,0.350,1
+UIMC1_Q96RL1,COPS2,0.350,1
+UIMC1_Q96RL1,BRCA1_Q8IZK2,0.350,1
+UIMC1_Q96RL1,THNSL1,0.350,1
+UIMC1_Q96RL1,INO80B,0.370,1
+UIMC1_Q96RL1,Junb,0.350,1
+UIMC1_Q96RL1,MAP2K2,0.350,1
+UIMC1_Q96RL1,NOP53,0.350,1
+UIMC1_Q96RL1,UBE2I,0.370,1
+UIMC1_Q96RL1,BAG5,0.350,1
+UIMC1_Q96RL1,G3BP2,0.350,1
+UIMC1_Q96RL1,MDC1,0.270,1
+UIMC1_Q96RL1,G3BP1,0.350,1
+UIMC1_Q96RL1,DPY30,0.350,1
+HCFC1_A6NEM2,Bap1,0.350,1
+par,adp_ribose,0.440,1
+ZNF350,RNF11,0.370,1
+ZNF350,MTNR1A,0.370,1
+ZNF350,ATG16L1_Q676U5_1,0.350,1
+ZNF350,PTCHD1,0.370,1
+Brca1,MYH6,0.350,1
+Brca1,BAD,0.350,1
+Brca1,Ezh2,0.350,2
+Brca1,MSH5,0.350,1
+Brca1,SMCHD1,0.350,1
+GAMMAHV.ORF31,UIMC1_Q96RL1_1,0.370,1
+DDX42,Bap1,0.350,1
+METAP1,NBR1_Q14596_2,0.560,3
+COG1,Bap1,0.350,1
+brca1_human_gene,GABPA,0.350,1
+ufo,Babam2,0.350,1
+CHEK1,CDC25C,0.620,1
+numa1.S,bard1.L,0.350,1
+UIMC1_Q96RL1_1,MDC1,0.400,1
+PRR14L,Bap1,0.350,1
+CPAP,Bap1,0.350,1
+ASXL1,Bap1,0.560,3
+ATXR5,o82638_arath,0.370,2

@@ -34,7 +34,8 @@ export type Seg =
   | { e: number; t: string; ends?: [[number, string], [number, string]] }
   | { g: Seg[]; a?: string; x?: ["n" | "e", number][]; q?: string };   // q: a query naming the members   // x: more members, linked but not shown
 
-export interface HullRec { i: number; nodes: number[]; c: number; a: number }
+/** sh: the shape around the group (absent: convex hull); rot: turned to fit; pad: room around the nodes */
+export interface HullRec { i: number; nodes: number[]; c: number; a: number; sh?: "box" | "ellipse"; rot?: boolean; pad?: number }
 
 /** k: node, edge or hull swatch; "x" a text-only line ("… 32 more") */
 export interface LegendEntry {

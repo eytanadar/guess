@@ -23,6 +23,9 @@ are in the cookbooks' `data` folder:
 | file | what it is |
 |---|---|
 | `yeast-modules.gdf` | 134 budding-yeast genes from seven well-known complexes and pathways (`module`), with the 1,320 interactions STRING scores at 0.7 or more. Edge `score` is STRING's combined confidence, and `experiments`, `databases`, `textmining` and `coexpression` are the evidence behind it. From string-db.org, CC BY 4.0. |
+| `brca1-intact.gdf` | BRCA1's interaction neighbourhood from IntAct: 1,228 proteins (`uniprot`, `species`, `description`) and 1,439 interacting pairs, with IntAct's `miscore` and the number of experiments behind each (`evidence`). Taken from the Cytoscape export in LUMINA's demo data. From IntAct (EMBL-EBI), CC BY 4.0. |
+| `brca2-intact.mitab` | The 188 IntAct records of interactions involving BRCA2 in any species, in PSI-MI TAB 2.7, as IntAct's PSICQUIC service returns them (November 2026). From IntAct (EMBL-EBI), CC BY 4.0. |
+| `WP707-dna-damage.gpml` | WikiPathways' "DNA damage response" pathway (WP707), as drawn there. From wikipathways.org, CC0. |
 | `yeast-go-slim.csv` | Gene Ontology slim terms for those genes (gene, aspect, term), from the Saccharomyces Genome Database, CC BY 4.0. |
 | `pheromone-pathway.csv` | A simplified, directed and signed map of the yeast mating-pheromone pathway, drawn from textbook accounts: who `activates` or `inhibits` whom. For teaching, not a curated resource. |
 | `pheromone-expression-SIMULATED.csv` | **Simulated** log2 fold changes at 15, 30 and 60 minutes after pheromone, for the 134 genes. They are shaped like the known response (mating genes up, G1 cyclins down) but invented: use them to learn the recipes, never as results. |
@@ -62,6 +65,46 @@ co-expression edges link genes that are studied together or switched on
 together. For physical interactions, keep the edges with strong
 experimental evidence, `showOnly(experiments > 0.5)`, or build from
 a physical-interaction database.
+
+## Open interactions from IntAct or BioGRID [Basic]{.level}
+
+**You have** interactions downloaded from a molecular interaction database,
+in the PSI-MI format they share. **You want** a network with the evidence
+behind each tie.
+
+::: ingredients
+**Ingredients:** `brca2-intact.mitab` · `makeFromFile` · `species` · `evidence`
+:::
+
+```python
+makeFromFile("brca2-intact.mitab")
+colorize(species)
+legendFor(species)
+[(n.name, n.degree) for n in highest(degree, 3)]
+len(species == "Homo sapiens")
+motifLayout()
+```
+
+**How it works.** IntAct, BioGRID, MINT and the other IMEx databases export
+interactions as PSI-MI TAB ("MITAB"): one line per experiment, each naming
+two interactors, the detection method, the publication and a confidence
+score. `makeFromFile` recognises the format whatever the file is called
+(here `makeFromMITAB` would do the same). Proteins are named by gene name,
+with `ident`, `taxid`, `species` and `aliases`. Repeated evidence for the
+same pair becomes one edge, with how many records support it in
+`evidence`, the methods and publications joined with `|`, and IntAct's
+`miscore`; `makeFromMITAB(file, merge=false)` keeps one edge per record.
+
+The 188 records give 101 proteins and 99 interactions. Human BRCA2
+(`BRCA2_P51587`) has 78 partners; 78 of the proteins are human, the rest
+come from experiments in mice, flies, plants and other organisms. Most of
+the ties come from co-immunoprecipitation with a tagged bait.
+
+**Pitfalls.** One gene can appear as several interactors: human BRCA2 as
+the protein (`BRCA2_P51587`) and as its gene (`BRCA2_ENSG00000139618`),
+and its counterparts in other species. Names that clash get their
+identifier added, so check `aliases` before merging them with
+`mergeNodes`.
 
 ## Open the yeast network and add measurements [Basic]{.level}
 
@@ -240,7 +283,90 @@ keeps proteins with a single tie into it.
 - **MCL needs memory.** It refuses connected pieces of more than 3,000
   proteins; filter by `score` first on big networks.
 
+## Untangle a bait-and-prey network [Intermediate]{.level}
+
+**You have** interactions from pull-down experiments: a few bait proteins,
+each with dozens of partners found only with it. **You want** a drawing in
+which every protein can be seen.
+
+::: ingredients
+**Ingredients:** `brca1-intact.gdf` · `motifLayout` · `motif` · `encircleBy`
+:::
+
+```python
+makeFromGDF("brca1-intact.gdf")
+motifLayout(outline=true)
+[(n.name, n.degree) for n in highest(degree, 4)]
+len([n for n in g.nodes if n.motif.startswith("star")])
+```
+
+**How it works.** A force layout pulls every partner of a bait towards it,
+so a bait with 100 partners becomes a solid blob. `motifLayout()` (a port of
+LUMINA, the IntAct team's layout) recognises the shapes that cause this: a
+protein with partners that have no other partners is a *star*, drawn with
+those partners in rings around it; proteins that share exactly the same
+partners are *parallel* and line up in a grid between them; *cycles* become
+circles and *chains* small rings. Each shape is laid out as one large node,
+so the drawing still keeps the distances of the network, and the 17
+separate pieces are packed side by side. Here 46 stars hold 1,052 of the
+1,228 proteins: BRCA1 itself (`BRCA1_P38398`) has 275 partners, then PHF11,
+BAP1 and NBR1. The field `motif` says which shape each protein is in.
+
+**Variations.** `colorize(motif)` colours the shapes instead of outlining
+them; `motifLayout(spacing=40)` spreads each shape out; `minStar=5` keeps
+hubs with fewer leaves out of the star treatment.
+
+**Pitfalls.**
+
+- **It's for sparse, hub-rich networks.** On dense ones such as
+  `yeast-modules.gdf`, built from complexes where everyone binds everyone,
+  it finds almost no shapes and draws like a plain stress layout.
+- **Merge repeated evidence first.** IntAct and STRING exports often list
+  one pair many times; `simplify()` merges them, or the repeats are drawn
+  as bundles of curves.
+
 # Pathways and regulation
+
+## Open a pathway from WikiPathways or KEGG [Basic]{.level}
+
+**You want** a curated pathway diagram as a network you can analyse,
+drawn as its curators drew it.
+
+::: ingredients
+**Ingredients:** `WP707-dna-damage.gpml` · `makeFromFile` · `kind` · `arrow`
+:::
+
+```python
+makeFromFile("WP707-dna-damage.gpml")
+center()
+(arrow == "TBar").color = red
+[n.label for n in g.nodes if n.kind == "GeneProduct"][:8]
+```
+
+**How it works.** WikiPathways stores its pathways as GPML, PathVisio's
+format; `makeFromFile` (or `makeFromGPML`) keeps the positions, sizes and
+colours of the diagram. Each box becomes a node with its `kind`
+(GeneProduct, Metabolite, Pathway, …) and database cross-reference, and
+each line a directed edge whose `arrow` says what it means: here 75 arrows
+(activation, conversion) and 22 "T bars" (inhibition), coloured red above.
+Where a line ends on another line, as a catalysis does on a reaction,
+GUESS puts a small `anchor` node; lines that end on nothing get a small
+`point` node, so no edge is lost.
+
+**Variations.** KEGG maps (KGML, from the KEGG API) open the same way, as
+do SBML models (BioModels) and BioPAX pathways (Reactome, Pathway
+Commons):
+
+```{.python .norun}
+makeFromFile("hsa04115.xml")                 # KEGG p53 signalling (KGML)
+makeFromFile("BIOMD0000000010.xml")          # an SBML model: species and reactions
+makeFromBioPAX("R-HSA-69620.owl")            # a Reactome pathway, as a simple network
+```
+
+**Pitfalls.** A pathway diagram is a drawing: some boxes stand for groups
+or other pathways (`kind` "group" or "Pathway"), and a gene can appear
+twice. `removeNode` the decorations, or `mergeNodes` the repeats, before
+measuring centrality.
 
 ## Draw a signalling pathway [Basic]{.level}
 

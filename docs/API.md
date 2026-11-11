@@ -20,18 +20,21 @@ Commands can be called without parentheses when they take no arguments
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
 - [Layouts](#layouts) (33)
+- [Structure-aware layout (motifLayout, after LUMINA)](#structure-aware-layout-motiflayout-after-lumina) (1)
 - [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
-- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (33)
+- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (35)
 - [Styles and visual mappings](#styles-and-visual-mappings) (12)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
 - [Several graphs: subgraphs and tabs](#several-graphs-subgraphs-and-tabs) (7)
 - [Time: ranges, years and the timeline](#time-ranges-years-and-the-timeline) (1)
 - [Presentations (slides)](#presentations-slides) (6)
-- [Data from the web: URLs, SPARQL, NDEx, Neo4j, packages](#data-from-the-web-urls-sparql-ndex-neo4j-packages) (9)
+- [Data from the web: URLs, SPARQL, NDEx, Neo4j, packages](#data-from-the-web-urls-sparql-ndex-neo4j-packages) (10)
 - [Standalone web pages (exportHTML)](#standalone-web-pages-exporthtml) (1)
 - [Live graph streams (Gephi streaming protocol)](#live-graph-streams-gephi-streaming-protocol) (2)
 - [AI assistants (MCP bridge)](#ai-assistants-mcp-bridge) (2)
+- [Cytoscape formats: SIF, NNF, Cytoscape.js JSON, CX/CX2, XGMML, .cys sessions](#cytoscape-formats-sif-nnf-cytoscape.js-json-cx/cx2-xgmml-.cys-sessions) (7)
+- [Biology formats: PSI-MI (MITAB, XML), SBML, BioPAX, KEGG KGML, WikiPathways GPML](#biology-formats-psi-mi-mitab-xml-sbml-biopax-kegg-kgml-wikipathways-gpml) (6)
 - [Import and export: Excel, RDF, Bluesky, JSON, KML, shapefiles, standalone HTML](#import-and-export-excel-rdf-bluesky-json-kml-shapefiles-standalone-html) (7)
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
@@ -378,7 +381,7 @@ Nodes get `function` (Class.name or name), `cls`, `lines`, `params`
 and `public` (no leading underscore); edges get `weight`, the number
 of call sites.
 
-### `makeFromCSV(filename, nodes=None, directed=False)`
+### `makeFromCSV(filename, nodes=None, directed=False, source=None, target=None, interaction=None, weight=None, header=True)`
 
 makeFromCSV("edges.csv") replaces the graph with a spreadsheet table as
 Gephi reads it: an edge table (Source, Target[, Type, Weight, Label, ...]),
@@ -387,6 +390,13 @@ an adjacency matrix or an adjacency list. makeFromCSV("edges.csv",
 table adds its columns to the current graph's nodes (matched by Id).
 Other columns become fields; directed=true makes edges without a Type
 directed.
+
+As in Cytoscape, any columns can hold the edges: source= and target=
+name them (by header, or number from 0), interaction= the type of
+interaction (stored in the edge field `interaction`) and weight= the
+weight: makeFromCSV("ppi.tsv", source="gene_a", target="gene_b",
+interaction="type"). header=false reads a table without a header row
+(columns col1, col2, …; source=0, target=1 pick them).
 
 ### `makeFromDL(filename)`
 
@@ -1735,6 +1745,30 @@ with each edge's natural length mapped linearly from its `weight`
 (lowest weight -> minLength, highest -> maxLength). Iterations as for
 springLayout.
 
+## Structure-aware layout (motifLayout, after LUMINA)
+
+### `motifLayout(spacing=None, minStar=3, minCycle=3, maxCycle=40, minChain=2, minParallel=2, leavesAround=True, gap=2.0, iterations=300, outline=False, seed=0)`
+
+motifLayout() is a structure-aware layout (a port of LUMINA, the
+IntAct team's layout for protein networks). It finds four shapes and
+gives each its own arrangement: cycles become circles, chains (paths
+ending in a leaf) hang off their anchor as small rings, a node with
+leaves becomes a star with the leaves in rings around it, and nodes
+sharing exactly the same neighbours (parallel) line up in a grid
+between them. Each shape is treated as one big node while the whole
+is laid out by stress majorization, so the drawing keeps graph
+distances; components are turned to fit and packed. Each node's shape
+is stored in the field `motif` ("star 3", "cycle 1", …), so
+colorize(motif) or groupBy(motif) work.
+
+spacing= the distance between neighbouring nodes in a shape (default:
+from node sizes); gap= the room between shapes, in spacings;
+minStar= the leaves a node needs to be a star (leavesAround=false
+leaves smaller groups of leaves to the layout); minCycle/maxCycle and
+minChain set the sizes of rings and chains; outline=true draws an
+ellipse or box around each shape (removeConvexHulls() clears them).
+Fixed nodes keep their positions.
+
 ## More layouts: multipartite, concentric, ordered, circle packing, isometric layers
 
 ### `circlePackLayout(*fields, padding=4, outlines=True)`
@@ -1818,9 +1852,14 @@ room for it and stays as you zoom further in, so zooming in reveals more
 labels. Labels inside nodes keep fitting their nodes.
 constantLabelSize(false) turns it off.
 
-### `createConvexHull(seq, color='200,200,255,90')`
+### `createConvexHull(seq, color='200,200,255,90', shape='hull', rotate=False, padding=6)`
 
-Shade the convex hull around the nodes in seq (edges contribute their endpoints).
+createConvexHull(seq) shades the convex hull around the nodes in seq
+(edges contribute their endpoints). shape="box" or "ellipse" draws a
+box or an ellipse around them instead; rotate=true turns the box or
+ellipse to fit the group (the smallest box at any angle) rather than
+keeping it upright; padding= is the room left around the nodes.
+encircle(seq) is the same with an ellipse.
 
 ### `curvedEdges(on=True)`
 
@@ -1835,6 +1874,21 @@ lines; curvedEdges(k) sets the curvature: the arc radius is edge length / k
 edgeLabelsAlong() turns edge labels to run along their edges (kept
 upright, so they read left to right); edgeLabelsAlong(false) keeps them
 horizontal (the default).
+
+### `encircle(seq, shape='ellipse', color=None, rotate=True, padding=10)`
+
+encircle(seq) draws a shaded ellipse around a group of nodes, turned
+to fit it; encircle(seq, "box") a box, encircle(seq, "hull") the
+convex hull. rotate=false keeps the shape upright. Without a color,
+each group gets its own (light) colour. Returns the shape: .color,
+.shape, .rotate and .padding change it; removeConvexHull removes it.
+
+### `encircleBy(field, shape='ellipse', rotate=True, padding=10, smallest=2)`
+
+encircleBy(field) draws one shape around each group of nodes that
+share a value of a node field (with at least `smallest` members), each
+in its own colour: encircleBy(louvain_class), encircleBy(dept, "box").
+Returns the shapes.
 
 ### `excentricLens(on=True, radius=None, autoSize=None, maxLabels=None)`
 
@@ -2224,6 +2278,15 @@ makeFromCypher(query, url, user, password) runs a Cypher query on a
 Neo4j server's HTTP API and builds the graph from the nodes and
 relationships it returns (properties become fields).
 
+### `makeFromFile(filename)`
+
+makeFromFile(filename) opens a graph file in any format GUESS reads,
+choosing the reader from the file's extension or, when the extension
+doesn't say (.xml, .txt, .json, …), from its content: GraphML, XGMML,
+SBML, PSI-MI, KGML or GPML in .xml; PSI-MI TAB, SIF or CSV in .txt;
+Cytoscape.js JSON or CX in .json. Opening a file in the page (File →
+Open, or dropping it) does this.
+
 ### `makeFromNDEx(uuid, server='https://www.ndexbio.org')`
 
 makeFromNDEx(uuid) opens a public network from the NDEx repository
@@ -2264,8 +2327,9 @@ or one string separated by spaces/commas. Nodes get `description`,
 ### `makeFromURL(url, format=None)`
 
 makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV,
-RDF (Turtle, N-Triples, RDF/XML), a .guess session or a .py script) and opens it; format=".gexf" etc. when
-the URL doesn't end in the extension.
+RDF (Turtle, N-Triples, RDF/XML), Cytoscape's SIF, NNF, Cytoscape.js JSON, CX/CX2 and XGMML, PSI-MI TAB or XML, SBML, BioPAX, KEGG KGML, WikiPathways GPML, a .guess
+session or a .py script) and opens it; format=".gexf" etc. when the URL doesn't end in the extension (the
+biological formats are also recognised by their content).
 
 ### `makeFromWikipedia(title, limit=150, lang='en')`
 
@@ -2329,6 +2393,147 @@ disconnectAssistant() ends it. port= must match GUESS_MCP_PORT.
 
 disconnectAssistant() disconnects the AI assistant (see connectAssistant).
 
+## Cytoscape formats: SIF, NNF, Cytoscape.js JSON, CX/CX2, XGMML, .cys sessions
+
+### `exportCYJS(filename='graph.cyjs')`
+
+exportCYJS("graph.cyjs") writes the graph as Cytoscape.js JSON, which
+Cytoscape (File → Import → Network from File) and Cytoscape.js read:
+every field as data, positions, and each node's colour, size and
+shape as data (color, width, height, shape) for a style to map.
+
+### `makeFromCX(filename, directed=True)`
+
+makeFromCX("network.cx2") replaces the graph with a network in CX2
+or CX (version 1), the formats of NDEx and Cytoscape's exchange
+format: attributes (typed as declared), node positions, and the
+default and per-node colours, sizes and shapes. Nodes are named by
+their `name` (a name two nodes share gets the id added). CX edges have
+a direction, as in Cytoscape; directed=false loads them undirected.
+
+### `makeFromCYJS(filename)`
+
+makeFromCYJS("network.cyjs") replaces the graph with Cytoscape.js
+JSON, as Cytoscape exports for the web (File → Export → Network to
+File → Cytoscape.js JSON) and as Cytoscape.js uses: each node's and
+edge's data become fields, positions are kept, and compound (group)
+nodes become the field `parent` of their members. Nodes are named by
+their `name` (or label); a name two nodes share gets the node's id
+added. exportCYJS writes the format.
+
+### `makeFromCYS(filename, network=None)`
+
+makeFromCYS("session.cys") opens a network from a Cytoscape session
+file: its attributes, and positions, colours, sizes and shapes from
+its view. A session can hold several networks: the first opens and
+the others are listed; makeFromCYS(file, "name") or
+makeFromCYS(file, 2) opens another, and makeFromCYS(file, "all") opens
+each as a graph of its own (tabs above the graph; use(name) switches).
+Styles (Cytoscape's visual mappings) aren't read.
+
+### `makeFromNNF(filename)`
+
+makeFromNNF("nested.nnf") replaces the graph with a Cytoscape nested
+network file: lines `network node` (a node in a network) and `network
+source type target` (an edge), # comments. Every network's nodes and
+edges are loaded together: `network` says which network(s) each node
+and edge is in, and a node named after a network (one that stands for
+it, nested inside another) has that name in `nested`. So
+showOnly(network == 'M1') shows one network, and
+collapse(network == 'M1') folds a nested network into a node.
+
+### `makeFromSIF(filename, directed=False)`
+
+makeFromSIF("network.sif") replaces the graph with a Cytoscape SIF
+file (simple interaction format): each line is `source type target
+[target …]`, or a lone node name. If the file has tabs, fields are
+tab-separated and names may contain spaces; otherwise names are
+separated by spaces. The type goes in the edge field `interaction`
+(colorize(interaction) shows it). directed=true makes every edge run
+from source to target.
+
+### `makeFromXGMML(filename)`
+
+makeFromXGMML("network.xgmml") replaces the graph with an XGMML file,
+Cytoscape's XML format: node and edge attributes (typed: string,
+integer, real, boolean; lists joined with '; '), and each node's
+graphics: position, size, fill and outline colour and shape. Files
+with bare '&' characters (a common fault) are repaired as they are
+read.
+
+## Biology formats: PSI-MI (MITAB, XML), SBML, BioPAX, KEGG KGML, WikiPathways GPML
+
+### `makeFromBioPAX(filename, mode='sif')`
+
+makeFromBioPAX("pathway.owl") opens a BioPAX level 3 pathway (as
+Reactome, Pathway Commons and WikiPathways export them) as a simple
+network of molecules, after Pathway Commons' SIF rules: a reaction
+links what it uses to what it produces ("used-to-produce"); the
+controller of a reaction (a catalysis or other control) links to what
+it changes ("controls-state-change-of", or "controls-production-of"
+for small molecules) with the `sign` (activation, inhibition); the
+regulator of a gene's expression links to its product
+("controls-expression-of"); molecular interactions link their
+participants ("interacts-with"); and each complex is a node linked
+to its components ("in-complex-with"). Forms of the same protein
+(states, places) are one node. mode="reactions" keeps the reactions
+as small nodes instead, with left, right, controller and participant
+edges.
+
+### `makeFromGPML(filename)`
+
+makeFromGPML("WP707.gpml") opens a WikiPathways pathway (GPML 2013a
+or 2021), drawn as on WikiPathways: data nodes at their positions,
+with their colours, shapes and database references (`xref_db`,
+`xref_id`). Interactions become edges with their `arrow`
+(mim-conversion, mim-catalysis, mim-inhibition, Arrow, TBar, …). An
+interaction that ends on another one (a catalysis on a conversion)
+meets it at a small anchor node; groups that interactions point at
+become nodes, and members have the group in `group`.
+
+### `makeFromKGML(filename)`
+
+makeFromKGML("hsa04115.xml") opens a KEGG pathway map (KGML), drawn
+as on KEGG: genes, compounds and linked maps at their positions, in
+their colours and shapes, labelled with the first name. Relations
+become directed edges with `kind` (PPrel, GErel, ECrel, PCrel) and
+`subtype` (activation, inhibition, phosphorylation, …); reactions
+become edges from substrates to products with the `enzyme`. Entries
+in a group (a complex) have the group in `group`.
+
+### `makeFromMITAB(filename, merge=True)`
+
+makeFromMITAB("interactions.txt") opens molecular interactions in
+PSI-MI TAB (MITAB 2.5, 2.6 or 2.7), as IntAct, BioGRID, MINT and the
+IMEx databases export them. Each interactor becomes a node named by
+its gene name when the file gives one (else its short label or
+identifier), with `ident`, `taxid`, `species`, `kind` and `aliases`.
+Each pair becomes an edge with the detection `method`, `kind`
+(interaction type), `pubmed`, `author`, `sourcedb`, `interaction` ids
+and IntAct's `miscore`; repeated evidence for a pair is merged into
+one edge with an `evidence` count (merge=false keeps one edge per
+line). An interactor paired with itself is a self-loop.
+
+### `makeFromPSIMI(filename, merge=True)`
+
+makeFromPSIMI("interactions.xml") opens molecular interactions in
+PSI-MI XML (2.5 or 3.0), with the same nodes and fields as
+makeFromMITAB. An interaction with more than two participants is
+expanded into pairs: from the bait to each prey when a bait is named
+(spoke expansion), otherwise between every pair (matrix expansion);
+the edge field `expansion` says which.
+
+### `makeFromSBML(filename, reactions='nodes')`
+
+makeFromSBML("model.xml") opens a systems biology model (SBML level
+2 or 3). Species become nodes (`compartment`, `initial` amount or
+concentration, `sbo`); each reaction becomes a small grey node, with
+directed edges from its reactants and modifiers and to its products
+(`role`, `stoichiometry`). reactions="edges" draws each reaction as
+edges from reactants (and modifiers) to products instead. A species
+name used in two compartments gets the compartment added, as
+"ATP [cytosol]". Positions from the SBML layout package are kept.
+
 ## Import and export: Excel, RDF, Bluesky, JSON, KML, shapefiles, standalone HTML
 
 ### `exportJSON(filename='graph.json', format='graphology')`
@@ -2380,7 +2585,7 @@ in); edges `weight` (rows they share). Works on .csv, .tsv and .xlsx
 first; default: the first column whose cells hold lists). keep=true
 also adds a node for a value that never shares a row.
 
-### `makeFromExcel(filename, sheet=None, nodes=None, directed=False)`
+### `makeFromExcel(filename, sheet=None, nodes=None, directed=False, source=None, target=None, interaction=None, weight=None, header=True)`
 
 makeFromExcel("data.xlsx") replaces the graph with an Excel workbook
 read as makeFromCSV reads tables: an edge sheet (Source, Target[, Type,
@@ -2389,6 +2594,8 @@ Weight, Label, ...]), an adjacency matrix or list; with a node sheet
 sheet by name or number (0 = first); nodes= names the node sheet, or
 another file (.xlsx or .csv). Other columns become fields; directed=true
 makes edges without a Type directed. makeFromCSV("data.xlsx") does the same.
+source=, target=, interaction=, weight= and header= choose the edge
+sheet's columns as in makeFromCSV.
 
 ### `makeFromRDF(filename, format=None, types=True)`
 
@@ -2764,6 +2971,19 @@ hideOverlappingLabels()
 createConvexHull(dept == 'dept1', '200,200,255,90')
 ```
 
+**Ellipse or box around a group**
+
+```python
+encircle(dept == 'dept1')
+encircle(dept == 'dept2', 'box')
+```
+
+**A shape around every group**
+
+```python
+encircleBy(dept)
+```
+
 **Dark background**
 
 ```python
@@ -2906,6 +3126,12 @@ forceAtlas2Layout(gravitySources=[v1, v73])
 
 ```python
 rescaleLayout(dept == 'dept1', 1.5)
+```
+
+**Stars, rings and grids (structure-aware)**
+
+```python
+motifLayout(outline=true)
 ```
 
 ### Analysis
@@ -3334,6 +3560,91 @@ makeWattsStrogatz(100, 4, 0.1)
 
 ```python
 makeFromExcel('network.xlsx')
+```
+
+**Open any network file**
+
+```python
+makeFromFile('network.xml')
+```
+
+**Choose the edge columns**
+
+```python
+makeFromCSV('ppi.tsv', source='gene_a', target='gene_b', interaction='type')
+```
+
+**Open a Cytoscape SIF file**
+
+```python
+makeFromSIF('network.sif')
+colorize(interaction)
+```
+
+**Open Cytoscape.js JSON**
+
+```python
+makeFromCYJS('network.cyjs')
+```
+
+**Export for Cytoscape**
+
+```python
+exportCYJS('graph.cyjs')
+```
+
+**Open a CX or CX2 network**
+
+```python
+makeFromCX('network.cx2')
+```
+
+**Open XGMML**
+
+```python
+makeFromXGMML('network.xgmml')
+```
+
+**Networks from a Cytoscape session**
+
+```python
+makeFromCYS('analysis.cys', 'all')
+```
+
+**Interactions from IntAct (MITAB)**
+
+```python
+makeFromMITAB('intact.txt')
+```
+
+**PSI-MI XML interactions**
+
+```python
+makeFromPSIMI('interactions.xml')
+```
+
+**A systems biology model (SBML)**
+
+```python
+makeFromSBML('model.xml')
+```
+
+**A Reactome pathway (BioPAX)**
+
+```python
+makeFromBioPAX('pathway.owl')
+```
+
+**A KEGG map**
+
+```python
+makeFromKGML('hsa04115.xml')
+```
+
+**A WikiPathways pathway**
+
+```python
+makeFromGPML('WP707.gpml')
 ```
 
 **Co-authors from a list column**

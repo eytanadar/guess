@@ -776,20 +776,26 @@ export class Renderer {
     }
   }
 
+  /** The outline of a hull record: its convex hull, box or ellipse (upright or turned to fit). */
+  hullOutline(h: HullRec): [number, number][] {
+    const pts: [number, number][] = [];
+    const pad = h.pad ?? 6;
+    for (const id of h.nodes) {
+      const n = this.nodes.get(id);
+      if (!n || !n.v) continue;
+      pts.push([n.x - pad, n.y - pad], [n.x + n.w + pad, n.y - pad],
+               [n.x - pad, n.y + n.h + pad], [n.x + n.w + pad, n.y + n.h + pad]);
+    }
+    if (!pts.length) return [];
+    return groupOutline(pts, h.sh ?? "hull", !!h.rot);
+  }
+
   private drawHulls() {
     const g = this.hullG;
     g.clear();
     for (const h of this.hulls) {
-      const pts: [number, number][] = [];
-      for (const id of h.nodes) {
-        const n = this.nodes.get(id);
-        if (!n || !n.v) continue;
-        const pad = 6;
-        pts.push([n.x - pad, n.y - pad], [n.x + n.w + pad, n.y - pad],
-                 [n.x - pad, n.y + n.h + pad], [n.x + n.w + pad, n.y + n.h + pad]);
-      }
-      if (!pts.length) continue;
-      const hull = convexHull(pts);
+      const hull = this.hullOutline(h);
+      if (!hull.length) continue;
       g.poly(hull.flat());
       g.fill({ color: h.c, alpha: h.a });
       g.stroke({ width: 1, color: darken(h.c), alpha: Math.min(1, h.a + 0.2), join: "round" });
@@ -1765,12 +1771,8 @@ export class Renderer {
       }
     }
     for (const h of this.hulls) {
-      const pts: [number, number][] = [];
-      for (const id of h.nodes) {
-        const n = this.nodes.get(id);
-        if (n?.v) pts.push([n.x - 6, n.y - 6], [n.x + n.w + 6, n.y - 6], [n.x - 6, n.y + n.h + 6], [n.x + n.w + 6, n.y + n.h + 6]);
-      }
-      if (pts.length) out.push(`<polygon points="${convexHull(pts).map((p) => p.join(",")).join(" ")}" fill="${col(h.c)}" fill-opacity="${h.a}" stroke="${col(darken(h.c))}"/>`);
+      const outline = this.hullOutline(h);
+      if (outline.length) out.push(`<polygon points="${outline.map((p) => p.map((v) => v.toFixed(2)).join(",")).join(" ")}" fill="${col(h.c)}" fill-opacity="${h.a}" stroke="${col(darken(h.c))}"/>`);
     }
     for (const e of this.edges.values()) {
       const a = this.nodes.get(e.s), b = this.nodes.get(e.t);
@@ -1856,6 +1858,57 @@ async function loadTexture(url: string): Promise<Texture> {
 }
 
 /** Andrew's monotone chain. */
+/** The smallest rectangle around a convex polygon at any angle (rotating
+ *  calipers): its angle (radians) and its extent in that frame. */
+function minAreaRect(hull: [number, number][]): { a: number; x0: number; x1: number; y0: number; y1: number } {
+  let best = { a: 0, x0: 0, x1: 0, y0: 0, y1: 0 }, bestArea = Infinity;
+  const k = hull.length;
+  for (let i = 0; i < Math.max(k, 1); i++) {
+    const [ax, ay] = hull[i], [bx, by] = hull[(i + 1) % k];
+    const a = k > 1 ? Math.atan2(by - ay, bx - ax) : 0;
+    const c = Math.cos(a), s = Math.sin(a);
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const [x, y] of hull) {
+      const u = x * c + y * s, v = -x * s + y * c;
+      x0 = Math.min(x0, u); x1 = Math.max(x1, u); y0 = Math.min(y0, v); y1 = Math.max(y1, v);
+    }
+    const area = (x1 - x0) * (y1 - y0);
+    if (area < bestArea - 1e-9) { bestArea = area; best = { a, x0, x1, y0, y1 }; }
+  }
+  return best;
+}
+
+/** Outline of a group: "hull" (convex hull), "box" or "ellipse"; rotate turns
+ *  the box or ellipse to the group's smallest enclosing rectangle. The ellipse
+ *  is the rectangle's, scaled just enough to contain every point. */
+export function groupOutline(points: [number, number][], shape: string, rotate: boolean): [number, number][] {
+  const hull = convexHull(points);
+  if (shape === "hull" || hull.length < 1) return hull;
+  const r = rotate && hull.length >= 3 ? minAreaRect(hull) : (() => {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const [x, y] of hull) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    return { a: 0, x0, x1, y0, y1 };
+  })();
+  const c = Math.cos(r.a), s = Math.sin(r.a);
+  const back = (u: number, v: number): [number, number] => [u * c - v * s, u * s + v * c];
+  if (shape === "box") return [back(r.x0, r.y0), back(r.x1, r.y0), back(r.x1, r.y1), back(r.x0, r.y1)];
+  // ellipse: centred on the rectangle, its axes in the rectangle's ratio, grown to hold every point
+  const cu = (r.x0 + r.x1) / 2, cv = (r.y0 + r.y1) / 2;
+  const a0 = Math.max((r.x1 - r.x0) / 2, 1e-6), b0 = Math.max((r.y1 - r.y0) / 2, 1e-6);
+  let k = 1;
+  for (const [x, y] of hull) {
+    const u = x * c + y * s - cu, v = -x * s + y * c - cv;
+    k = Math.max(k, Math.hypot(u / a0, v / b0));
+  }
+  const out: [number, number][] = [];
+  const N = 72;
+  for (let i = 0; i < N; i++) {
+    const t = (2 * Math.PI * i) / N;
+    out.push(back(cu + k * a0 * Math.cos(t), cv + k * b0 * Math.sin(t)));
+  }
+  return out;
+}
+
 function convexHull(points: [number, number][]): [number, number][] {
   const p = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   if (p.length < 3) return p;

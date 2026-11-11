@@ -548,7 +548,7 @@ test("open GML and DOT files; delete selected nodes (key, menu, right-click)", a
   const errors = await boot(page);
   const gml = 'graph [ node [ id 1 label "a" ] node [ id 2 label "b" ] node [ id 3 label "c" ] edge [ source 1 target 2 ] edge [ source 2 target 3 ] ]';
   await page.locator("#file").setInputFiles({ name: "t.gml", mimeType: "text/plain", buffer: Buffer.from(gml) });
-  await expect(page.locator(".cell").last()).toContainText('makeFromGML("t.gml")');
+  await expect(page.locator(".cell").last()).toContainText('makeFromFile("t.gml")');
   await expect(page.locator(".cell").last()).toContainText("loaded 3 nodes, 2 edges from t.gml (GML)");
   const dot = "digraph { p -> q -> r; r -> w; w [color=red] }";
   await page.locator("#file").setInputFiles({ name: "t.dot", mimeType: "text/plain", buffer: Buffer.from(dot) });
@@ -921,4 +921,33 @@ test("streamFrom applies Gephi streaming events to the graph", async ({ page }) 
   await expect(page.locator(".result").last()).toContainText("Streamed one");
   await expect(page.locator(".result").last()).toContainText("new");
   expect(await lastError(page)).toBeNull();
+});
+
+test("boxes and ellipses, upright or turned, enclose their groups", async ({ page }) => {
+  await boot(page);
+  await run(page, "center()\na = encircle(dept == 'dept1')\nb = encircle(dept == 'dept4', 'box')\nc = createConvexHull(dept == 'dept6', shape='box', rotate=false)");
+  const shapes = await page.evaluate(() => {
+    const r = (window as any).__guess.renderer;
+    return r.hulls.map((h: any) => {
+      const out = r.hullOutline(h);
+      // every member's centre is inside the outline (crossing-number test)
+      const inside = (x: number, y: number) => {
+        let k = false;
+        for (let i = 0, j = out.length - 1; i < out.length; j = i++) {
+          const [xi, yi] = out[i], [xj, yj] = out[j];
+          if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) k = !k;
+        }
+        return k;
+      };
+      const all = h.nodes.map((id: number) => r.nodes.get(id)).every((n: any) => inside(n.x + n.w / 2, n.y + n.h / 2));
+      const upright = out.length === 4 && out.every((p: number[], i: number) => p[0] === out[(i + 1) % 4][0] || p[1] === out[(i + 1) % 4][1]);
+      return { sh: h.sh ?? "hull", rot: !!h.rot, points: out.length, all, upright };
+    });
+  });
+  expect(shapes).toEqual([
+    { sh: "ellipse", rot: true, points: 72, all: true, upright: false },
+    { sh: "box", rot: true, points: 4, all: true, upright: expect.any(Boolean) },
+    { sh: "box", rot: false, points: 4, all: true, upright: true },
+  ]);
+  await page.screenshot({ path: test.info().outputPath("shapes.png") });
 });

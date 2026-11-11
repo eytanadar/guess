@@ -426,10 +426,56 @@ sometimes written on one line. Both forms load.
   `predicate`; literal values become node fields. Classes are nodes too
   (`types=false` keeps them as a `type` field).
 
+As in Cytoscape's table import, any columns can hold the edges:
+`makeFromCSV("ppi.tsv", source="gene_a", target="gene_b",
+interaction="type", weight="score")` (by header, or by number from 0;
+`header=false` for a table without one). The interaction type goes in the
+edge field `interaction`.
+
 ```{.python .norun}
 makeFromExcel("network.xlsx", sheet="edges", nodes="people")
 makeFromCooccurrence("papers.csv", "authors", ";")
 makeFromRDF("foaf.ttl")
+```
+
+**Cytoscape's formats.** GUESS opens what Cytoscape opens:
+
+| format | command |
+|---|---|
+| SIF (simple interaction file) | `makeFromSIF`: the type goes in `interaction` |
+| Cytoscape.js JSON (`.cyjs`, Cytoscape's web export) | `makeFromCYJS`; `exportCYJS` writes one for Cytoscape |
+| CX and CX2 (NDEx) | `makeFromCX` |
+| XGMML (Cytoscape's XML) | `makeFromXGMML` |
+| a session (`.cys`) | `makeFromCYS(file)` opens its first network and lists the rest; `makeFromCYS(file, "all")` opens each as its own graph |
+| NNF (nested networks) | `makeFromNNF`: `network` says where each node and edge belongs, `nested` which network a node stands for |
+
+Attributes become typed fields, and positions, colours, sizes and shapes
+come along; Cytoscape's style mappings don't. A name two nodes share gets the
+node's id added, and the original stays as the label.
+
+**Biological formats.**
+
+| format | command |
+|---|---|
+| PSI-MI TAB (MITAB 2.5–2.7: IntAct, BioGRID, IMEx) | `makeFromMITAB` |
+| PSI-MI XML 2.5 and 3.0 | `makeFromPSIMI`: complexes are expanded around their bait (spoke), or to every pair |
+| SBML (systems biology models) | `makeFromSBML`: species, and reactions as small grey nodes (`reactions="edges"` for edges instead) |
+| BioPAX level 3 (Reactome, Pathway Commons) | `makeFromBioPAX`: a simple network of molecules, after Pathway Commons' rules (`mode="reactions"` keeps the reactions) |
+| KEGG KGML, WikiPathways GPML | `makeFromKGML`, `makeFromGPML`: the map as drawn |
+
+Interaction files name proteins by gene name, with `ident`, `taxid` and
+`species`; repeated evidence for a pair becomes one edge with an `evidence`
+count, the methods and publications, and IntAct's `miscore`
+(`merge=false` keeps every record).
+
+**Any file.** `makeFromFile(name)` picks the reader by extension, or by
+content when the extension doesn't say (`.xml`, `.txt`, `.json`), which is
+how *File → Open* and dropping a file work. `makeFromURL` does the same for
+downloads.
+
+```python
+exportCYJS("sample.cyjs")
+makeFromFile("sample.cyjs")
 ```
 
 ## 4.4 Data from the web
@@ -759,6 +805,7 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `circlePackLayout(field, …)` | nodes packed into nested, labelled circles by one or more fields |
 | `isometricLayout(field)` | the current layout stacked into tilted layers by a field (the layer is stored in `zlayer`) |
 | `hairballLayout()` | the Hairball Buster plot: nodes by degree rank, with a tick under each neighbour |
+| `motifLayout()` | structure-aware: rings for cycles, stars for hubs with leaves, grids for nodes with the same neighbours (below) |
 | `binPackLayout()` | packs the connected components side by side |
 | `removeOverlap()` | separate overlapping nodes while keeping the layout's shape (Graphviz PRISM); works after any layout |
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
@@ -820,6 +867,25 @@ gemLayout()
 isometricLayout(dept)                  # the layout as stacked, tilted planes
 orderedLayout(degree)                  # x from degree, y untangled by forces
 forceAtlas2Layout(gravitySources=[v1, v73])   # two centres of gravity
+```
+
+**Structure-aware layout.** Protein interaction networks, and many others,
+are full of hubs with dozens of partners that touch nothing else. A force
+layout piles those partners into blobs. `motifLayout()` (a port of LUMINA,
+the IntAct team's layout) finds four shapes and gives each its own tidy
+arrangement: a node and its leaves become a *star* with the leaves in rings,
+nodes linked to exactly the same others form a *parallel* grid between them,
+*cycles* become circles and *chains* (paths ending in a leaf) small rings.
+Each shape is treated as one big node while the whole is laid out by stress
+majorization, then the components are turned to fit and packed. The field
+`motif` says which shape each node is in, and `outline=true` draws an
+ellipse or box around every shape.
+
+```python
+motifLayout()
+colorize(motif)
+motifLayout(outline=true, spacing=40)
+removeConvexHulls()
 ```
 
 `orderedLayout` suits anything with an order, such as citations by year
@@ -1460,6 +1526,23 @@ removeConvexHulls()
 ```
 
 Hulls follow their nodes when you move them or run a layout.
+
+A group can also be marked by a box or an ellipse: `shape="box"` or
+`"ellipse"`, upright or, with `rotate=true`, turned to fit the group (the
+smallest box at any angle, and the ellipse around it). `encircle` does this
+with a turned ellipse and a colour of its own; `encircleBy` draws one shape
+per value of a field. The shape, rotation and padding can be changed later:
+
+```python
+e = encircle(dept == 'dept4')                 # a turned ellipse
+encircle(dept == 'dept6', "box")              # a turned box
+createConvexHull(dept == 'dept9', shape="box", rotate=false)   # an upright box
+e.shape = "box"
+e.padding = 20
+removeConvexHulls()
+encircleBy(dept)                              # one ellipse per department
+removeConvexHulls()
+```
 
 ![Hulls around three departments.](img/hulls.png){width=75%}
 

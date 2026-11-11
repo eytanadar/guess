@@ -873,16 +873,25 @@ def install(session):
         print(f"wrote {nn} points and {ne} lines to {os.path.basename(filename)}{note}")
 
     @cmd
-    def makeFromExcel(filename, sheet=None, nodes=None, directed=False):
+    def makeFromExcel(filename, sheet=None, nodes=None, directed=False, source=None, target=None,
+                      interaction=None, weight=None, header=True):
         """makeFromExcel("data.xlsx") replaces the graph with an Excel workbook
         read as makeFromCSV reads tables: an edge sheet (Source, Target[, Type,
         Weight, Label, ...]), an adjacency matrix or list; with a node sheet
         (Id[, Label, ...]) too when the workbook has one. sheet= picks the edge
         sheet by name or number (0 = first); nodes= names the node sheet, or
         another file (.xlsx or .csv). Other columns become fields; directed=true
-        makes edges without a Type directed. makeFromCSV("data.xlsx") does the same."""
+        makes edges without a Type directed. makeFromCSV("data.xlsx") does the same.
+        source=, target=, interaction=, weight= and header= choose the edge
+        sheet's columns as in makeFromCSV."""
         g = session.graph
         sheets = read_xlsx(filename)
+        cols = dict(source=source, target=target, interaction=interaction, weight=weight)
+        if any(v is not None for v in cols.values()) or not header:
+            name = next(iter(sheets)) if sheet is None else _pick_sheet(sheets, sheet, filename)
+            sheets[name] = gexf.choose_columns([[str(c).strip() for c in r] for r in sheets[name]],
+                                               header=header, **cols)
+            sheet = name
         if not sheets:
             raise GuessError(f"{os.path.basename(filename)} has no sheets")
         kinds = {name: gexf.rows_kind([[c.strip() for c in r] for r in rows])[0] if rows else "empty"

@@ -113,7 +113,8 @@ def _data(session, g, nodes, edges, nidx, eidx, subset=False):
         "ranges": [["n", nidx[id(x)], iv] if isinstance(x, Node) else ["e", eidx[id(x)], iv]
                    for x, iv in g.ranges.items() if id(x) in nidx or id(x) in eidx],
         "bends": [[eidx[id(e)], pts] for e, pts in g.bends.items() if id(e) in eidx],
-        "hulls": [{"nodes": [nidx[id(n)] for n in h._nodes if id(n) in nidx], "color": h._color}
+        "hulls": [{"nodes": [nidx[id(n)] for n in h._nodes if id(n) in nidx], "color": h._color,
+                   **({"shape": h._shape, "rotate": h._rotate, "padding": h._pad} if h._shape != "hull" or h._rotate or h._pad != 6 else {})}
                   for h in (() if subset else view.hulls.values())],
         "legends": [lg.record() for lg in view.legends.values()],
         "groups": [[nidx[id(g._node_ids[mid])], [nidx[id(n)] for n in info["members"]],
@@ -188,7 +189,8 @@ def load(session, data):
                                              "edges": [edges[i] for i in eds], "centre": tuple(centre)}
     from .visuals import ConvexHull, Legend
     for h in data.get("hulls", []):
-        hull = ConvexHull(view, view.next_id(), [nodes[i] for i in h["nodes"]], h["color"])
+        hull = ConvexHull(view, view.next_id(), [nodes[i] for i in h["nodes"]], h["color"],
+                          h.get("shape", "hull"), h.get("rotate", False), h.get("padding", 6))
         view.hulls[hull._id] = hull
     for rec in data.get("legends", []):
         lg = Legend(view, view.next_id())

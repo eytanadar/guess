@@ -15,14 +15,30 @@ from .model import NODE, Edge, GSet, GuessError, Node, elements_of
 DEFAULT_CURVATURE = 1.2    # Gephi's default arc curviness (radius = length / curvature)
 
 
-class ConvexHull:
-    """A shaded hull around a group of nodes. Returned by createConvexHull."""
+HULL_SHAPES = ("hull", "box", "ellipse")
 
-    def __init__(self, view, hid, nodes, color):
+
+def _hull_shape(shape):
+    s = str(shape).lower()
+    if s not in HULL_SHAPES:
+        raise GuessError('the shape around a group is "hull", "box" or "ellipse"')
+    return s
+
+
+class ConvexHull:
+    """A shaded shape around a group of nodes: its convex hull (the default),
+    a box or an ellipse, either upright or turned to fit the group (rotate).
+    Returned by createConvexHull and encircle; .color, .shape, .rotate and
+    .padding can be changed."""
+
+    def __init__(self, view, hid, nodes, color, shape="hull", rotate=False, padding=6):
         object.__setattr__(self, "_view", view)
         object.__setattr__(self, "_id", hid)
         object.__setattr__(self, "_nodes", nodes)
         object.__setattr__(self, "_color", colors.normalize(color))
+        object.__setattr__(self, "_shape", _hull_shape(shape))
+        object.__setattr__(self, "_rotate", bool(rotate))
+        object.__setattr__(self, "_pad", float(padding))
 
     @property
     def nodes(self):
@@ -32,18 +48,45 @@ class ConvexHull:
     def color(self):
         return self._color
 
+    @property
+    def shape(self):
+        return self._shape
+
+    @property
+    def rotate(self):
+        return self._rotate
+
+    @property
+    def padding(self):
+        return self._pad
+
     def __setattr__(self, name, value):
-        if name != "color":
-            raise GuessError(f"convex hulls have no settable attribute '{name}'")
-        object.__setattr__(self, "_color", colors.normalize(value))
+        if name == "color":
+            object.__setattr__(self, "_color", colors.normalize(value))
+        elif name == "shape":
+            object.__setattr__(self, "_shape", _hull_shape(value))
+        elif name == "rotate":
+            object.__setattr__(self, "_rotate", bool(value))
+        elif name == "padding":
+            object.__setattr__(self, "_pad", float(value))
+        else:
+            raise GuessError(f"convex hulls have no settable attribute '{name}' (color, shape, rotate, padding)")
         self._view.changed()
 
     def __repr__(self):
-        return f"<hull {self._id}: {len(self._nodes)} nodes>"
+        kind = "hull" if self._shape == "hull" else ("turned " if self._rotate else "") + self._shape
+        return f"<{kind} {self._id}: {len(self._nodes)} nodes>"
 
     def record(self):
         rgb, a = colors.to_rgba_int(self._color)
-        return {"i": self._id, "nodes": [n._id for n in self._nodes], "c": rgb, "a": a}
+        r = {"i": self._id, "nodes": [n._id for n in self._nodes], "c": rgb, "a": a}
+        if self._shape != "hull":
+            r["sh"] = self._shape
+        if self._rotate:
+            r["rot"] = True
+        if self._pad != 6:
+            r["pad"] = self._pad
+        return r
 
 
 class Legend:
@@ -214,7 +257,7 @@ class View:
 
     def capture(self):
         """Everything undo needs to put the view back as it is now."""
-        return {"hulls": [(h, h._color, list(h._nodes)) for h in self.hulls.values()],
+        return {"hulls": [(h, h._color, list(h._nodes), (h._shape, h._rotate, h._pad)) for h in self.hulls.values()],
                 "legends": [(lg, list(lg._entries), lg._ramp, lg._auto) for lg in self.legends.values()],
                 "background": self.background, "image": self.image, "arrow": dict(self.arrow),
                 "curvature": self.curvature, "edge_color": self.edge_color, "labels": dict(self.labels),
@@ -227,8 +270,13 @@ class View:
 
     def restore(self, snap):
         self.hulls = {}
-        for h, color, nodes in snap["hulls"]:
+        for h, color, nodes, *look in snap["hulls"]:
             object.__setattr__(h, "_color", color)
+            if look:
+                shape, rotate, pad = look[0]
+                object.__setattr__(h, "_shape", shape)
+                object.__setattr__(h, "_rotate", rotate)
+                object.__setattr__(h, "_pad", pad)
             h._nodes[:] = nodes
             self.hulls[h._id] = h
         self.legends = {}
@@ -282,8 +330,7 @@ def install(session):
     session.view = view
     reg = session.register_command
 
-    def createConvexHull(seq, color="200,200,255,90"):
-        """Shade the convex hull around the nodes in seq (edges contribute their endpoints)."""
+    def _hull_nodes(seq):
         nodes = []
         seen = set()
         for x in elements_of(seq):
@@ -292,11 +339,46 @@ def install(session):
                     seen.add(id(n))
                     nodes.append(n)
         if not nodes:
-            raise GuessError("createConvexHull needs nodes or edges")
-        h = ConvexHull(view, view.next_id(), nodes, color)
+            raise GuessError("a shape around a group needs nodes or edges")
+        return nodes
+
+    def createConvexHull(seq, color="200,200,255,90", shape="hull", rotate=False, padding=6):
+        """createConvexHull(seq) shades the convex hull around the nodes in seq
+        (edges contribute their endpoints). shape="box" or "ellipse" draws a
+        box or an ellipse around them instead; rotate=true turns the box or
+        ellipse to fit the group (the smallest box at any angle) rather than
+        keeping it upright; padding= is the room left around the nodes.
+        encircle(seq) is the same with an ellipse."""
+        h = ConvexHull(view, view.next_id(), _hull_nodes(seq), color, shape, rotate, padding)
         view.hulls[h._id] = h
         view.changed()
         return h
+
+    def encircle(seq, shape="ellipse", color=None, rotate=True, padding=10):
+        """encircle(seq) draws a shaded ellipse around a group of nodes, turned
+        to fit it; encircle(seq, "box") a box, encircle(seq, "hull") the
+        convex hull. rotate=false keeps the shape upright. Without a color,
+        each group gets its own (light) colour. Returns the shape: .color,
+        .shape, .rotate and .padding change it; removeConvexHull removes it."""
+        if color is None:
+            pal = colors.distinctColors(12)
+            color = f"{pal[len(view.hulls) % len(pal)]},55"
+        return createConvexHull(seq, color, shape, rotate, padding)
+
+    def encircleBy(field, shape="ellipse", rotate=True, padding=10, smallest=2):
+        """encircleBy(field) draws one shape around each group of nodes that
+        share a value of a node field (with at least `smallest` members), each
+        in its own colour: encircleBy(louvain_class), encircleBy(dept, "box").
+        Returns the shapes."""
+        from .model import NODE, as_field, group_by
+        f = as_field(session.graph, field, "encircleBy")
+        if f.kind != NODE:
+            raise GuessError("encircleBy needs a node field")
+        groups = [grp for grp in sorted(group_by(f.elements(), f), key=len, reverse=True)
+                  if len(grp) >= int(smallest) and f.get(grp[0]) not in (None, "")]
+        pal = colors.distinctColors(max(1, min(len(groups), 24)))
+        out = [createConvexHull(grp, f"{pal[i % len(pal)]},55", shape, rotate, padding) for i, grp in enumerate(groups)]
+        return out
 
     def removeConvexHull(hull):
         """Remove one hull."""
@@ -546,7 +628,7 @@ def install(session):
                          "of the current view inside the file. For vector output use exportSVG.")
         reg(f.__name__, f)
 
-    for fn in (createConvexHull, removeConvexHull, removeConvexHulls, getConvexHulls,
+    for fn in (createConvexHull, encircle, encircleBy, removeConvexHull, removeConvexHulls, getConvexHulls,
                setDisplayBackground, getDisplayBackground, setBackgroundImage,
                removeBackgroundImage, overrideArrowLength, overrideArrowWidth, curvedEdges,
                setEdgeColorMode, labelOutlines, hideOverlappingLabels, edgeLabelsAlong, raiseChanged, hoverFields,

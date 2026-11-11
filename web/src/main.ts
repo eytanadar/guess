@@ -1124,18 +1124,11 @@ $<HTMLInputElement>("#file").addEventListener("change", async (ev) => {
 });
 
 const LOADERS: [RegExp, string][] = [
-  [/\.gdf$/i, "makeFromGDF"],
-  [/\.(net|paj)$/i, "makeFromPajek"],
-  [/\.(graphml|xml)$/i, "makeFromGraphML"],
-  [/\.gml$/i, "makeFromGML"],
-  [/\.(dot|gv)$/i, "makeFromDOT"],
-  [/\.dl$/i, "makeFromDL"],
-  [/\.gexf$/i, "makeFromGEXF"],
-  [/\.(csv|tsv)$/i, "makeFromCSV"],
-  [/\.(xlsx|xlsm)$/i, "makeFromExcel"],
-  [/\.(ttl|nt|n3|rdf|owl)$/i, "makeFromRDF"],
   [/\.py$/i, "execfile"],
   [/\.guess$/i, "makeFromSession"],
+  // every graph format: makeFromFile picks the reader by extension, or by
+  // content when the extension doesn't say (.xml, .txt, .json)
+  [/\.(gdf|net|paj|graphml|xml|gml|dot|gv|dl|gexf|csv|tsv|txt|tab|json|xlsx|xlsm|ttl|nt|n3|rdf|owl|sif|nnf|cyjs|cx|cx2|xgmml|cys|mitab|psimitab|mif|psi|sbml|kgml|gpml|biopax)$/i, "makeFromFile"],
 ];
 
 async function openFile(file: File) {

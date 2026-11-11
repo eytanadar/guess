@@ -55,7 +55,55 @@ _LOADERS = [(".gdf", "makeFromGDF"), (".gexf", "makeFromGEXF"), (".graphml", "ma
             (".dl", "makeFromDL"), (".csv", "makeFromCSV"), (".tsv", "makeFromCSV"),
             (".ttl", "makeFromRDF"), (".nt", "makeFromRDF"), (".n3", "makeFromRDF"), (".rdf", "makeFromRDF"),
             (".owl", "makeFromRDF"),
-            (".guess", "makeFromSession"), (".py", "execfile")]
+            (".sif", "makeFromSIF"), (".nnf", "makeFromNNF"), (".cyjs", "makeFromCYJS"),
+            (".cx", "makeFromCX"), (".cx2", "makeFromCX"), (".xgmml", "makeFromXGMML"),
+            (".guess", "makeFromSession"), (".py", "execfile"),
+            (".mitab", "makeFromMITAB"), (".psimitab", "makeFromMITAB"), (".mif", "makeFromPSIMI"),
+            (".psi", "makeFromPSIMI"), (".sbml", "makeFromSBML"), (".kgml", "makeFromKGML"),
+            (".gpml", "makeFromGPML"), (".biopax", "makeFromBioPAX")]
+
+
+# extensions that don't say which format a file is in: look inside
+_AMBIGUOUS = {"", ".xml", ".txt", ".tab", ".json", ".owl", ".rdf", ".dat", ".tsv", ".csv"}
+
+
+def detect_format(text, ext, forced=False):
+    """The loader extension for a file's text: its own extension when that
+    names one format, otherwise what the content looks like (the biological
+    formats, XGMML, CX, Cytoscape.js JSON, GEXF, GraphML, RDF, …)."""
+    from . import bioformats
+    ext = (ext or "").lower()
+    if not forced:
+        ext = bioformats.sniff(text, ext) or ext       # PSI-MI, SBML, BioPAX, KGML, GPML by content
+    if ext in dict(_LOADERS) and (forced or ext not in _AMBIGUOUS - {".csv", ".tsv", ".rdf", ".owl"}):
+        return ext
+    head = text.lstrip()[:200].lower()
+    return (".gexf" if "<gexf" in head else ".graphml" if "<graphml" in head
+            else ".xgmml" if "xgmml" in text[:2000].lower()
+            else ".cx" if head.startswith("[") and any(k in text[:3000].lower() for k in (
+                '"cxversion"', '"numberverification"', '"metadata"', '"attributedeclarations"'))
+            else ".cyjs" if head.startswith(("{", "[")) and ('"elements"' in text[:5000] or '"group"' in text[:3000])
+            else ".rdf" if "<rdf:rdf" in head
+            else ".ttl" if re.match(r"(#[^\n]*\n\s*)*(@prefix|@base|prefix\s)", head)
+            else ".gdf" if head.startswith("nodedef") else ".net" if head.startswith("*vertices")
+            else ".gml" if re.match(r"(#[^\n]*\n\s*)*(creator\s|version\s|graph\s*\[)", head)
+            else ".dot" if re.match(r"(strict\s+)?(di)?graph\b[^{]*\{", head)
+            else ".guess" if '"guess-session"' in text[:400]
+            else ".sif" if ext in ("", ".txt", ".tab", ".dat") and _looks_like_sif(text)
+            else ext if ext in dict(_LOADERS) else ".csv")
+
+
+def _looks_like_sif(text):
+    """Cytoscape SIF: every line one name, or source, type and targets; no
+    commas, and no header naming Source/Target columns."""
+    lines = [ln for ln in text.splitlines()[:40] if ln.strip()]
+    if not lines or "," in "".join(lines):
+        return False
+    if any(h in lines[0].lower().split() for h in ("source", "target", "id")):
+        return False
+    sep = "\t" if any("\t" in ln for ln in lines) else None
+    counts = [len(ln.split(sep)) for ln in lines]
+    return all(c == 1 or c >= 3 for c in counts) and any(c >= 3 for c in counts)
 
 
 def install(session):
@@ -71,28 +119,45 @@ def install(session):
     @cmd
     def makeFromURL(url, format=None):
         """makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV,
-        RDF (Turtle, N-Triples, RDF/XML), a .guess session or a .py script) and opens it; format=".gexf" etc. when
-        the URL doesn't end in the extension."""
+        RDF (Turtle, N-Triples, RDF/XML), Cytoscape's SIF, NNF, Cytoscape.js JSON, CX/CX2 and XGMML, PSI-MI TAB or XML, SBML, BioPAX, KEGG KGML, WikiPathways GPML, a .guess
+        session or a .py script) and opens it; format=".gexf" etc. when the URL doesn't end in the extension (the
+        biological formats are also recognised by their content)."""
         text = http(url)
         path = urllib.parse.urlparse(url).path
         ext = (format or os.path.splitext(path)[1] or "").lower()
         if not ext.startswith("."):
             ext = "." + ext
-        if ext not in dict(_LOADERS):
-            head = text.lstrip()[:200].lower()
-            ext = (".gexf" if "<gexf" in head else ".graphml" if "<graphml" in head
-                   else ".rdf" if "<rdf:rdf" in head
-                   else ".ttl" if re.match(r"(#[^\n]*\n\s*)*(@prefix|@base|prefix\s)", head)
-                   else ".gdf" if head.startswith("nodedef") else ".net" if head.startswith("*vertices")
-                   else ".gml" if re.match(r"(#[^\n]*\n\s*)*(creator\s|version\s|graph\s*\[)", head)
-                   else ".dot" if re.match(r"(strict\s+)?(di)?graph\b[^{]*\{", head)
-                   else ".guess" if '"guess-session"' in text[:400] else ".csv")
+        ext = detect_format(text, ext, forced=bool(format))
         name = os.path.basename(path) or "download"
         if not name.lower().endswith(ext):
             name += ext
         with open(name, "w", encoding="utf-8") as fh:
             fh.write(text)
         loader(dict(_LOADERS)[ext])(name)
+
+    @cmd
+    def makeFromFile(filename):
+        """makeFromFile(filename) opens a graph file in any format GUESS reads,
+        choosing the reader from the file's extension or, when the extension
+        doesn't say (.xml, .txt, .json, …), from its content: GraphML, XGMML,
+        SBML, PSI-MI, KGML or GPML in .xml; PSI-MI TAB, SIF or CSV in .txt;
+        Cytoscape.js JSON or CX in .json. Opening a file in the page (File →
+        Open, or dropping it) does this."""
+        name = str(filename)
+        ext = os.path.splitext(name)[1].lower()
+        binary = {".xlsx": "makeFromExcel", ".xlsm": "makeFromExcel", ".cys": "makeFromCYS"}
+        if ext in binary:
+            return loader(binary[ext])(name)
+        if not os.path.exists(name):
+            raise GuessError(f"no file named {name!r}")
+        with open(name, encoding="utf-8", errors="replace") as fh:
+            text = fh.read(262144)
+        found = detect_format(text, ext)
+        if found not in dict(_LOADERS):
+            raise GuessError(f"GUESS can't tell what kind of file {name} is")
+        if found != ext:
+            print(f"{os.path.basename(name)}: reading it as {found[1:].upper()}")
+        loader(dict(_LOADERS)[found])(name)
 
     # ---- SPARQL ---------------------------------------------------------------
     WIKIDATA = "https://query.wikidata.org/sparql"
@@ -134,42 +199,15 @@ def install(session):
     def makeFromNDEx(uuid, server="https://www.ndexbio.org"):
         """makeFromNDEx(uuid) opens a public network from the NDEx repository
         (Cytoscape's network commons), with its attributes and layout."""
+        from . import cyformats
         cx = json.loads(http(f"{server}/v3/networks/{uuid}"))
-        aspects = {}
-        for a in cx:
-            for k, v in a.items():
-                aspects.setdefault(k, []).extend(v if isinstance(v, list) else [v])
-        nodes, edges = aspects.get("nodes", []), aspects.get("edges", [])
-        if not nodes:
+        net, title = cyformats.cx_net(cx, names="id", directed=True)
+        if not net.nodes:
             raise GuessError("no nodes in that network (is it public?)")
         g.clear()
-        decl = (aspects.get("attributeDeclarations") or [{}])[0]
-        for kind, add in (("nodes", g.addNodeField), ("edges", g.addEdgeField)):
-            for attr, spec in (decl.get(kind) or {}).items():
-                t = {"integer": INT, "long": INT, "double": DOUBLE}.get(spec.get("d"), STRING)
-                if attr not in ("name",):
-                    add(_ident(attr), t, None)
-        index = {}
-        for nrec in nodes:
-            v = nrec.get("v", {})
-            label = v.get("name", str(nrec["id"]))
-            n = g.addNode(f"n{nrec['id']}")
-            n.label = str(label)
-            for k, val in v.items():
-                if k != "name":
-                    _set(n, _ident(k), val)
-            if "x" in nrec:
-                n.x, n.y = float(nrec["x"]), float(nrec.get("y", 0))
-            else:
-                n.x, n.y = random.random() * 800, random.random() * 800
-            index[nrec["id"]] = n
-        for erec in edges:
-            e = g.addEdge(index[erec["s"]], index[erec["t"]], True)
-            for k, val in erec.get("v", {}).items():
-                _set(e, _ident(k), val)
+        cyformats.build(g, net, scatter=800)
         session.scene()
-        name = (aspects.get("networkAttributes") or [{}])[0].get("name", uuid)
-        print(f"loaded NDEx network {name!r}: {len(g._nodes)} nodes, {len(g._edges)} edges")
+        print(f"loaded NDEx network {title or uuid!r}: {len(g._nodes)} nodes, {len(g._edges)} edges")
 
     @cmd
     def makeFromSTRING(genes, species=9606, score=0.7, add=0, server="https://string-db.org"):

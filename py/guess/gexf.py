@@ -304,6 +304,56 @@ def rows_kind(rows):
     return "list", rows
 
 
+def choose_columns(rows, source=None, target=None, interaction=None, weight=None, header=True):
+    """Rename an edge table's columns as Cytoscape's import does: the columns
+    holding the source and target nodes, the interaction type and the weight,
+    each given by header name (any case) or number (0 = first). header=False:
+    the first row is data, and columns are named col1, col2, … . Other columns
+    already called Source/Target/Weight are renamed so they stay fields."""
+    from .model import GuessError
+    rows = [list(r) for r in rows]
+    if not rows:
+        return rows
+    if not header:
+        width = max(len(r) for r in rows)
+        rows.insert(0, [f"col{k + 1}" for k in range(width)])
+    head = rows[0]
+    low = [h.lower() for h in head]
+
+    def index(spec, what):
+        if spec is None:
+            return None
+        if isinstance(spec, bool):
+            raise GuessError(f"{what}= needs a column name or number")
+        if isinstance(spec, int):
+            if not 0 <= spec < len(head):
+                raise GuessError(f"{what}={spec}: the table has columns 0 to {len(head) - 1}")
+            return spec
+        name = str(spec).lower()
+        if name not in low:
+            import difflib
+            close = difflib.get_close_matches(str(spec), head, n=1)
+            hint = f" (did you mean '{close[0]}'?)" if close else ""
+            raise GuessError(f"no column '{spec}' in the table{hint}; columns: {', '.join(head)}")
+        return low.index(name)
+    want = {"Source": index(source, "source"), "Target": index(target, "target"),
+            "Weight": index(weight, "weight"), "interaction": index(interaction, "interaction")}
+    chosen = {k: v for k, v in want.items() if v is not None}
+    if not chosen:
+        return rows
+    taken = set(chosen.values())
+    new = list(head)
+    for k, h in enumerate(head):              # a column already called Source etc. that isn't chosen
+        if k not in taken and h.lower() in {c.lower() for c in chosen if c != "interaction"}:
+            new[k] = h + "_"
+    for name, k in chosen.items():
+        new[k] = name
+    if "Source" not in new or "Target" not in new:
+        raise GuessError("choose both source= and target= (or keep columns named Source and Target)")
+    rows[0] = new
+    return rows
+
+
 _EDGE_COLS = {"source", "target", "type", "weight", "label", "id"}
 _NODE_COLS = {"id", "label"}
 

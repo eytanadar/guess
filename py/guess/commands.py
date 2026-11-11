@@ -77,21 +77,41 @@ def install(session):
         _load(filename, gexf.read_gexf, "GEXF")
 
     @cmd
-    def makeFromCSV(filename, nodes=None, directed=False):
+    def makeFromCSV(filename, nodes=None, directed=False, source=None, target=None, interaction=None,
+                    weight=None, header=True):
         """makeFromCSV("edges.csv") replaces the graph with a spreadsheet table as
         Gephi reads it: an edge table (Source, Target[, Type, Weight, Label, ...]),
         an adjacency matrix or an adjacency list. makeFromCSV("edges.csv",
         "nodes.csv") also reads a node table (Id[, Label, ...]). Opening just a node
         table adds its columns to the current graph's nodes (matched by Id).
         Other columns become fields; directed=true makes edges without a Type
-        directed."""
+        directed.
+
+        As in Cytoscape, any columns can hold the edges: source= and target=
+        name them (by header, or number from 0), interaction= the type of
+        interaction (stored in the edge field `interaction`) and weight= the
+        weight: makeFromCSV("ppi.tsv", source="gene_a", target="gene_b",
+        interaction="type"). header=false reads a table without a header row
+        (columns col1, col2, …; source=0, target=1 pick them)."""
+        cols = dict(source=source, target=target, interaction=interaction, weight=weight)
+        chosen = any(v is not None for v in cols.values()) or not header
         if str(filename).lower().endswith((".xlsx", ".xlsm")):
-            return session.system["makeFromExcel"][0](filename, nodes=nodes, directed=directed)
+            return session.system["makeFromExcel"][0](filename, nodes=nodes, directed=directed,
+                                                      **({**cols, "header": header} if chosen else {}))
 
         def read(name):
             with open(name, encoding="utf-8", errors="replace") as fh:
                 return fh.read()
         text = read(filename)
+        if chosen:
+            rows = gexf.choose_columns(gexf._rows(text), header=header, **cols)
+            g.clear()
+            _kind, _nn, ne = gexf.read_csv(g, None, bool(directed), rows=rows)
+            if nodes is not None:
+                gexf.read_csv(g, read(nodes))
+            session.scene()
+            print(f"loaded {len(g._nodes)} nodes, {ne} edges from {os.path.basename(filename)} (CSV edge table)")
+            return
         kind, _rows = gexf.table_kind(text)
         if kind == "nodes" and nodes is None and len(g._nodes):
             _k, added, _ne = gexf.read_csv(g, text)

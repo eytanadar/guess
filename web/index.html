@@ -21,7 +21,7 @@
         <div class="menu-root">
           <button class="menu-title" aria-haspopup="menu" aria-expanded="false">File</button>
           <div class="menu-pop" role="menu" hidden>
-            <button role="menuitem" id="open" title="Open a graph (.gdf, .gexf, .graphml, .gml, .dot, .net, .dl, .csv), a .py script, or an image — or drop files on the page">Open…<kbd>⌘O</kbd></button>
+            <button role="menuitem" id="open" title="Open a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, CSV, Excel, Cytoscape SIF, .cyjs, CX, XGMML and .cys, PSI-MI, SBML, BioPAX, KEGG, WikiPathways, RDF), a .py script, or an image — or drop files on the page">Open…<kbd>⌘O</kbd></button>
             <button role="menuitem" id="sample">Sample graph</button>
             <button role="menuitem" id="fresh-start" title="Forget everything GUESS saved in this browser (the autosaved session, command history, settings) and reload empty">Start fresh…</button>
             <button role="menuitem" id="open-url">Open from URL…</button>
@@ -39,6 +39,7 @@
             <button role="menuitem" id="svg">Vector image (SVG)</button>
             <button role="menuitem" data-run='exportGEXF("graph.gexf")'>GEXF for Gephi</button>
             <button role="menuitem" data-run='exportGraphML("graph.graphml")'>GraphML</button>
+            <button role="menuitem" data-run='exportCYJS("graph.cyjs")' title="Cytoscape.js JSON, which Cytoscape imports (exportCYJS)">Cytoscape (.cyjs)</button>
             <button role="menuitem" data-run='exportGML("graph.gml")'>GML</button>
             <button role="menuitem" data-run='exportDOT("graph.dot")'>Graphviz DOT</button>
             <button role="menuitem" data-run='exportCSV("edges.csv"); exportCSV("nodes.csv", "nodes")'>CSV tables</button>
@@ -163,7 +164,7 @@
           </div>
         </div>
       </nav>
-      <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.gml,.dot,.gv,.dl,.csv,.tsv,.xlsx,.xlsm,.ttl,.nt,.n3,.rdf,.owl,.py,image/*" multiple hidden />
+      <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.gml,.dot,.gv,.dl,.csv,.tsv,.txt,.tab,.json,.xlsx,.xlsm,.ttl,.nt,.n3,.rdf,.owl,.sif,.nnf,.cyjs,.cx,.cx2,.xgmml,.cys,.mitab,.psimitab,.mif,.psi,.sbml,.kgml,.gpml,.biopax,.py,image/*" multiple hidden />
       <span class="toolgroup" role="group" aria-label="Click tool">
         <button data-tool="select" aria-pressed="true" title="Click a node to highlight its neighbourhood (again, or Esc, to clear); shift-drag box, alt-drag lasso">Select</button>
         <button data-tool="lens" aria-pressed="false" title="Excentric lens (L switches between Select and Lens): lists the labels of the nodes under it; wheel resizes, click pins it to select or filter">◎ Lens</button>

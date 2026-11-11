@@ -298,6 +298,10 @@ doesn’t work as printed, that’s a bug: please report it.</p>
 them replace the current graph, turn the file’s attributes into fields,
 and keep the file’s positions if it has them:</p>
 <table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
 <thead>
 <tr>
 <th>format</th>
@@ -337,11 +341,36 @@ and keep the file’s positions if it has them:</p>
 <td>CSV / TSV</td>
 <td><code>makeFromCSV</code> (next recipe)</td>
 </tr>
+<tr>
+<td>Excel <code>.xlsx</code></td>
+<td><code>makeFromExcel</code></td>
+</tr>
+<tr>
+<td>Cytoscape: SIF, Cytoscape.js JSON, CX / CX2, XGMML, session
+<code>.cys</code>, nested networks</td>
+<td><code>makeFromSIF</code>, <code>makeFromCYJS</code>,
+<code>makeFromCX</code>, <code>makeFromXGMML</code>,
+<code>makeFromCYS</code>, <code>makeFromNNF</code></td>
+</tr>
+<tr>
+<td>Biology: PSI-MI TAB and XML, SBML, BioPAX, KEGG, WikiPathways</td>
+<td><code>makeFromMITAB</code>, <code>makeFromPSIMI</code>,
+<code>makeFromSBML</code>, <code>makeFromBioPAX</code>,
+<code>makeFromKGML</code>, <code>makeFromGPML</code></td>
+</tr>
+<tr>
+<td>RDF (Turtle, N-Triples, RDF/XML)</td>
+<td><code>makeFromRDF</code></td>
+</tr>
 </tbody>
 </table>
-<p><em>File → Open</em> picks the loader from the file’s extension. In a
-script, <code>makeFromURL(&quot;https://…/graph.gexf&quot;)</code> downloads and
-opens a file in one step.</p>
+<p><code>makeFromFile</code> picks the loader for you: from the
+extension, or from the content when the extension doesn’t say
+(<code>.xml</code>, <code>.txt</code>, <code>.json</code>), and <em>File
+→ Open</em> and dropping a file use it. In a script,
+<code>makeFromURL(&quot;https://…/graph.gexf&quot;)</code> downloads and opens a
+file in one step. <code>exportCYJS(&quot;g.cyjs&quot;)</code> writes a file
+Cytoscape opens.</p>
 <p><strong>Variations.</strong> <code>makeSample()</code> lists the
 classic networks GUESS has built in (the karate club, <em>Les
 Misérables</em>, Florentine families, Davis’s southern women…).

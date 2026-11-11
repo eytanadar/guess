@@ -56,9 +56,16 @@ positions if it has them:
 | Pajek `.net` | `makeFromPajek` |
 | UCINET DL | `makeFromDL` |
 | CSV / TSV | `makeFromCSV` (next recipe) |
+| Excel `.xlsx` | `makeFromExcel` |
+| Cytoscape: SIF, Cytoscape.js JSON, CX / CX2, XGMML, session `.cys`, nested networks | `makeFromSIF`, `makeFromCYJS`, `makeFromCX`, `makeFromXGMML`, `makeFromCYS`, `makeFromNNF` |
+| Biology: PSI-MI TAB and XML, SBML, BioPAX, KEGG, WikiPathways | `makeFromMITAB`, `makeFromPSIMI`, `makeFromSBML`, `makeFromBioPAX`, `makeFromKGML`, `makeFromGPML` |
+| RDF (Turtle, N-Triples, RDF/XML) | `makeFromRDF` |
 
-*File → Open* picks the loader from the file's extension. In a script,
+`makeFromFile` picks the loader for you: from the extension, or from the
+content when the extension doesn't say (`.xml`, `.txt`, `.json`), and
+*File → Open* and dropping a file use it. In a script,
 `makeFromURL("https://…/graph.gexf")` downloads and opens a file in one step.
+`exportCYJS("g.cyjs")` writes a file Cytoscape opens.
 
 **Variations.** `makeSample()` lists the classic networks GUESS has built in
 (the karate club, *Les Misérables*, Florentine families, Davis's southern
