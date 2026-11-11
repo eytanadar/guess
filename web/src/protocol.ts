@@ -31,7 +31,7 @@ export type Seg =
   | string
   | { n: number; t: string }
   | { e: number; t: string }
-  | { g: Seg[]; a?: string };
+  | { g: Seg[]; a?: string; x?: ["n" | "e", number][] };   // x: more members, linked but not shown
 
 export interface HullRec { i: number; nodes: number[]; c: number; a: number }
 
@@ -90,7 +90,7 @@ export interface PanelRec extends WidgetRec { children: WidgetRec[] }
 export interface ChartMsg {
   type: "chart"; id: string; kind: "bar" | "pie" | "distrib" | "line";
   title: string; xlabel: string; ylabel: string;
-  items: { label: string; value: number; color: number; ids: ["n" | "e", number][] }[];
+  items: { label: string; value: number; color: number; ids: ["n" | "e", number][]; q?: string }[];
   /** line charts: one polyline per series, x and y in data units */
   series?: { name: string; color: number; points: [number, number][] }[];
 }

@@ -71,14 +71,18 @@ def install(session):
         buckets = [[] for _ in range(bins)]
         for e, v in zip(elems, vals):
             buckets[min(bins - 1, int((v - lo) / width))].append(e)
+        def q(i):
+            a, b = lo + i * width, lo + (i + 1) * width
+            return f"({f.name} >= {a!r}) & ({f.name} {'<=' if i == bins - 1 else '<'} {b!r})"
         items = [{"label": f"{_label(lo + i * width)}–{_label(lo + (i + 1) * width)}",
-                  "value": len(b), "color": _color(b), "ids": _ids(b)} for i, b in enumerate(buckets)]
+                  "value": len(b), "color": _color(b), "ids": _ids(b), "q": q(i)} for i, b in enumerate(buckets)]
         return emit("bar", f"Histogram of {f.name}", f.name, f"number of {what(f)}", items)
 
     def _sizes(f):
         groups = sorted(group_by(f.elements(), f), key=len, reverse=True)
         return [{"label": _label(getattr(grp[0], f.name)), "value": len(grp),
-                 "color": _color(grp), "ids": _ids(grp)} for grp in groups]
+                 "color": _color(grp), "ids": _ids(grp), "q": f"{f.name} == {getattr(grp[0], f.name)!r}"}
+                for grp in groups]
 
     def plotSizes(field):
         """Bar chart of how many elements share each value of field (largest first)."""

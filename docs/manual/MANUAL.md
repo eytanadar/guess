@@ -475,10 +475,12 @@ edge fields are listed by `getNodeSchema()` and `getEdgeSchema()`. The
 Fields know a little about themselves:
 
 ```python
-freq.min, freq.max, freq.avg, freq.sum
+freq.min, freq.max, freq.avg, freq.sum, freq.median
+max(freq)                      # a field is also its list of values
 dept.distinct                  # every value, once each
 dept.find('eng')               # the nodes whose dept is 'eng' (same as dept == 'eng')
-sortBy(freq)[-5:]              # the five edges with the highest freq
+highest(freq, 5)               # the five edges with the highest freq (lowest(...) too)
+sortBy(freq, descending=true)  # every edge, highest freq first
 groupBy(dept)                  # a set of sets, one per value
 groupAndSortBy(dept)           # the same, largest group first
 ```
@@ -505,13 +507,24 @@ dept != 'dept3'
 freq > freq.avg                  # compare with a statistic
 ```
 
-Sets combine with `&` (intersection) and `|` (union), and with `.difference(...)`:
+Sets combine with `&` (intersection) and `|` (union), and with `.difference(...)`.
+`and`, `or` and `not` do the same on sets, a chained comparison is the
+intersection of its parts, and `in` asks for any of several values:
 
 ```python
 (dept == 'dept1') & (totaldegree > 3)
+(dept == 'dept1') and (totaldegree > 3)  # the same
 (dept == 'dept1') | (dept == 'dept2')
-g.nodes.difference(dept == 'dept1')
+dept in ('dept1', 'dept2')               # the same
+3 < totaldegree <= 6                     # (totaldegree > 3) & (totaldegree <= 6)
+not (dept == 'dept1')                    # every other node
+g.nodes.difference(dept == 'dept1')      # the same
 ```
+
+Put each comparison in parentheses when you use `&` or `|`:
+`dept == 'dept1' & totaldegree > 3` means something else, and GUESS says so.
+In the test of an `if` or `while`, `and`, `or` and `not` keep their usual
+meaning (`if s and t:` asks whether both are non-empty).
 
 A tuple or list of nodes also works as a set: `(v1, v2, v3).color = green`.
 
@@ -523,6 +536,7 @@ a field from a set gives a list of values:
 (dept == 'dept3').size = 20          # size sets width and height together
 (dept == 'dept3').labelvisible = true
 (dept == 'dept3').totaldegree        # a list, one value per node
+(dept == 'dept3').totaldegree.avg    # ... with .avg, .sum, .min, .max, .median, .distinct
 ```
 
 **Edges between sets.** The edge operators work between nodes and between sets
@@ -848,7 +862,10 @@ build them by hand.
 ## 7.5 Charts
 
 Charts are linked to the graph. Hover over a bar or a slice and its nodes
-light up; click and they're selected.
+light up, along with the console output and table rows that mention them;
+click and they're selected (shift-click adds). Right-click for the element
+menu: on a histogram bin or a bar it acts on the bin's query, such as
+`(degree >= 0) & (degree < 4.75)`.
 
 ```python
 plotSizesPie(dept)           # how many in each department
@@ -1266,6 +1283,7 @@ useful.
 | click a node | focus on it and its neighbours (click again or Esc to clear) |
 | double-click a node or edge | zoom to it |
 | hover a node or edge in the console output | highlight it in the graph; click to select and zoom to it |
+| hover a node, a table row, a legend row or a chart bar | mark everywhere else it appears: console output, table rows, legend rows and chart bars |
 
 ![Hovering an edge rings both endpoints.](../../web/public/help/hover-edge.png){width=60%}
 
@@ -1563,8 +1581,11 @@ Gython is Python 3 with these additions:
 | addition | meaning |
 |---|---|
 | `field == value` (and `!=`, `<`, `>`, `<=`, `>=`, `like`) | a query: the set of matching nodes or edges |
+| `3 < field < 6`, `field in (a, b)` | the matching set (Python would give a bool or the wrong set) |
 | `set.field = value` | sets the field on every member |
-| `a & b`, `a \| b` | intersection and union of sets |
+| `set.field.avg` (`.sum`, `.min`, `.max`, `.median`) | summaries of the members' values |
+| `a & b`, `a \| b`; `a and b`, `a or b`, `not a` | intersection, union and complement of sets (in an `if` test, `and`/`or`/`not` are plain Python) |
+| `print(f"... {node} ...")` | the nodes and edges in an f-string stay linked in the output |
 | `->`, `<-`, `<->`, `-`, `?` | edges between nodes or sets |
 | `Node rcontains x`, `roverlaps`, `rcontained` | range queries |
 | `field['state']` | values in a saved state |

@@ -474,6 +474,9 @@ def _fmt(v):
 def _query_value(field, v):
     if isinstance(v, (Node, Edge)):
         return v
+    if isinstance(v, (int, float)) and not isinstance(v, bool) and str(field.type).upper() in (
+            "INTEGER", "INT", "DOUBLE", "FLOAT", "REAL", "BIGINT", "SMALLINT", "TINYINT", "DECIMAL", "NUMERIC"):
+        return v                      # numbers compare as given: degree < 4.75 is not degree < 4
     try:
         return coerce(field.type, v)
     except (TypeError, ValueError):

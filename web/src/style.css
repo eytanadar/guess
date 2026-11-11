@@ -209,6 +209,11 @@ body { display: flex; flex-direction: column; }
 .obj.edge { color: var(--link-edge); }
 .grp.hot, .obj.hot { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
 .obj.hot { background: rgba(255, 31, 107, 0.1); }
+/* output that mentions what's hovered elsewhere (graph, table, chart, legend) */
+.obj.linked { background: rgba(255, 31, 107, 0.14); box-shadow: 0 0 0 1px rgba(255, 31, 107, 0.45); border-radius: 2px; }
+.dtable-row.linked { box-shadow: inset 3px 0 0 var(--accent); background: rgba(255, 31, 107, 0.08); }
+.legend-row.linked { box-shadow: inset 3px 0 0 var(--accent); background: rgba(255, 31, 107, 0.08); }
+.chart .mark { cursor: pointer; }
 .console-out [data-k] { cursor: pointer; }
 
 .tip {

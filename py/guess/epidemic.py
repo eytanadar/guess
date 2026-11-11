@@ -177,7 +177,8 @@ def install(session):
         number) or from the given nodes. immune=nodes (vaccinated, isolated)
         can't be infected or start an outbreak; weight=field makes long
         contacts riskier (see spread). Stores each node's share of runs it was
-        reached in `risk` (name=...), charts the final sizes, and returns them
+        reached in `risk` (name=...), charts the final sizes (hover a bar to see
+        where those outbreaks started), and returns them
         (.mean, .median, .large = share of runs reaching more than `large` of
         the nodes)."""
         gr = g()
@@ -193,7 +194,7 @@ def install(session):
             raise GuessError("every node is immune")
         rng = random.Random(seed)
         hits = {n: 0 for n in nodes}
-        sizes = []
+        sizes, starts = [], []
         runs = max(1, int(runs))
         for _ in range(runs):
             start = fixed if fixed is not None else rng.sample(pool, min(len(pool), max(1, int(seeds))))
@@ -202,6 +203,7 @@ def install(session):
             for n in reached:
                 hits[n] += 1
             sizes.append(len(reached))
+            starts.append(start)
         f = gr.addNodeField(str(name), DOUBLE, 0.0)
         for n in nodes:
             f.set(n, hits[n] / runs)
@@ -212,10 +214,14 @@ def install(session):
             bins = 10
             width = max(1.0, len(nodes) / bins)
             counts = [0] * bins
-            for x in sizes:
-                counts[min(bins - 1, int(x / width))] += 1
-            items = [{"label": f"{round(i * width)}–{round((i + 1) * width)}", "value": c, "color": 0xd7191c, "ids": []}
-                     for i, c in enumerate(counts)]
+            seeds = [dict() for _ in range(bins)]     # bar -> the people those runs started from
+            for x, st in zip(sizes, starts):
+                b = min(bins - 1, int(x / width))
+                counts[b] += 1
+                for n in st:
+                    seeds[b][n._id] = None
+            items = [{"label": f"{round(i * width)}–{round((i + 1) * width)}", "value": c, "color": 0xd7191c,
+                      "ids": [["n", i_] for i_ in seeds[i]]} for i, c in enumerate(counts)]
             session.emit({"type": "chart", "id": "chart:bar:outbreaks", "kind": "bar", "title": "Outbreak sizes",
                           "xlabel": "nodes reached", "ylabel": "runs", "items": items})
         return res

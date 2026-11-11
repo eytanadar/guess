@@ -73,9 +73,8 @@ repeat and the weak ones change.
 
 ```python
 makeFromGDF("school-contacts-SIMULATED.gdf")
-import statistics
-mine = statistics.mean(n.degree for n in g.nodes)
-theirs = statistics.mean(statistics.mean(m.degree for m in n.getNeighbors()) for n in g.nodes)
+mine = g.nodes.degree.avg
+theirs = sum(n.getNeighbors().degree.avg for n in g.nodes) / len(g.nodes)
 round(mine, 1), round(theirs, 1)
 ```
 
@@ -168,9 +167,8 @@ large outbreak in this school.
 
 ```python
 makeFromGDF("school-contacts-SIMULATED.gdf")
-import statistics
-k = statistics.mean(n.degree for n in g.nodes)
-k2 = statistics.mean(n.degree ** 2 for n in g.nodes)
+k = degree.avg
+k2 = sum(d ** 2 for d in degree) / len(g.nodes)
 for b in [0.01, 0.02, 0.03, 0.05]:
     T = b / (b + 0.2 - b * 0.2)
     sz = outbreaks(200, beta=b, gamma=0.2, show=False)
@@ -208,13 +206,15 @@ zero (Pastor-Satorras and Vespignani 2001).
 
 ```python
 makeFromGDF("school-contacts-SIMULATED.gdf")
-for n in sortBy(degree)[-2:] + sortBy(degree)[:2]:
+for n in highest(degree, 2) + lowest(degree, 2):
     print(n.name, n.degree, outbreaks(100, seeds=[n], beta=0.03, gamma=0.2, show=False).large)
 ```
 
-**How it works.** `seeds=[n]` starts every run from the same person.
-Started from one of the best-connected pupils (37 or 38 contacts), 81%
-to 90% of outbreaks take off. Started from the least connected (2 or 3
+**How it works.** `seeds=[n]` starts every run from the same person, and
+`highest(degree, 2)` and `lowest(degree, 2)` pick the two best and least
+connected.
+Started from one of the best-connected pupils (38 or 37 contacts), 75%
+to 81% of outbreaks take off. Started from the least connected (2 or 3
 contacts), 14% to 20% do. A well-connected first case gets many chances
 before recovering.
 
@@ -239,7 +239,7 @@ makeFromGDF("school-contacts-SIMULATED.gdf")
 import random
 rng = random.Random(1)
 dose = round(0.2 * len(g.nodes))
-chosen = {"random": rng.sample(list(g.nodes), dose), "most contacts": sortBy(degree)[-dose:]}
+chosen = {"random": rng.sample(list(g.nodes), dose), "most contacts": highest(degree, dose)}
 acq = set()
 while len(acq) < dose:
     acq.add(rng.choice(list(rng.choice(list(g.nodes)).getNeighbors())))
@@ -256,7 +256,7 @@ vaccine, outbreaks reach 116 people on average:
 | nobody | 116 | 56% |
 | 51 people at random | 62 | 48% |
 | a random contact of 51 random people | 42 | 42% |
-| the 51 with the most contacts | 12 | 14% |
+| the 51 with the most contacts | 14 | 17% |
 
 Targeting the best-connected people is by far the best, but it needs the
 whole contact network, which is rarely known. *Acquaintance immunisation*
@@ -469,8 +469,7 @@ whoever infected them?
 ```python
 makeFromCSV("outbreak-transmissions-SIMULATED.csv", "outbreak-cases-SIMULATED.csv", directed=true)
 o = offspring(show=False)
-import statistics
-round(o.R, 2), round(statistics.mean(e.node1.offspring for e in g.edges), 1)
+round(o.R, 2), round(g.edges.node1.offspring.avg, 1)
 ```
 
 A typical case infected 0.88 people (R over the whole outbreak). The
@@ -511,7 +510,7 @@ def choose(strategy, share):
     if strategy == "random":
         return rng.sample(list(g.nodes), dose)
     if strategy == "most contacts":
-        return sortBy(degree)[len(g.nodes) - dose:]
+        return highest(degree, dose)
     if strategy == "acquaintance":
         acq = set()
         while len(acq) < dose:

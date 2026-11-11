@@ -532,7 +532,8 @@ outbreak is an anecdote. Each run starts from `seeds` random nodes (a
 number) or from the given nodes. immune=nodes (vaccinated, isolated)
 can't be infected or start an outbreak; weight=field makes long
 contacts riskier (see spread). Stores each node's share of runs it was
-reached in `risk` (name=...), charts the final sizes, and returns them
+reached in `risk` (name=...), charts the final sizes (hover a bar to see
+where those outbreaks started), and returns them
 (.mean, .median, .large = share of runs reaching more than `large` of
 the nodes).
 

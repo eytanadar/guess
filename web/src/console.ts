@@ -65,6 +65,7 @@ export class Console {
   private currentCell: HTMLElement | null = null;
   private currentCode = "";
   private hot: HTMLElement | null = null;
+  private linkedEls: HTMLElement[] = [];
   private lastText: HTMLElement | null = null;
   docs: Record<string, string> = {};
   private vimMode = new Compartment();
@@ -704,6 +705,20 @@ export class Console {
     }
   }
 
+  /** Mark the output that mentions these elements (hovered in the graph, a table, a chart or a legend). */
+  highlight(items: Item[] | null) {
+    for (const el of this.linkedEls) el.classList.remove("linked");
+    this.linkedEls = [];
+    if (!items || !items.length || items.length > 5000) return;
+    const keys = new Set(items.map(([k, id]) => k + id));
+    this.out.querySelectorAll<HTMLElement>("[data-k=n],[data-k=e]").forEach((x) => {
+      if (keys.has(x.dataset.k! + x.dataset.id) && x !== this.hot) {
+        x.classList.add("linked");
+        this.linkedEls.push(x);
+      }
+    });
+  }
+
   // ---- linked hovering ---------------------------------------------------------------
   private onOver(ev: MouseEvent) {
     const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-k]");
@@ -762,6 +777,7 @@ export function renderSeg(s: Seg): Node {
     const span = el("span", "grp");
     span.dataset.k = "g";
     if (s.a) span.dataset.a = s.a;
+    if (s.x?.length) span.dataset.x = JSON.stringify(s.x);
     for (const c of s.g) span.append(renderSeg(c));
     return span;
   }
@@ -779,6 +795,10 @@ export function collect(t: HTMLElement): Item[] {
   t.querySelectorAll<HTMLElement>("[data-k=n],[data-k=e]").forEach((x) => {
     out.push([x.dataset.k as "n" | "e", Number(x.dataset.id)]);
   });
+  // members past the display limit, and the elements behind a summary
+  for (const g of [t, ...t.querySelectorAll<HTMLElement>("[data-x]")]) {
+    if (g.dataset.x) for (const it of JSON.parse(g.dataset.x) as Item[]) out.push(it);
+  }
   return out;
 }
 

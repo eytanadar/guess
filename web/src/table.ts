@@ -2,6 +2,8 @@
 // fields as sortable, searchable columns, linked to the graph selection, with
 // inline editing that writes Gython.
 
+type Item = ["n" | "e", number];
+
 export interface TableData {
   fields: { name: string; type: string; editable: boolean }[];
   rows: (string | number | boolean | null)[][];   // [id, name, ...field values]
@@ -130,6 +132,14 @@ export class DataTable {
     if (this.kind !== "n") return;
     for (const row of this.rowsEl.children as HTMLCollectionOf<HTMLElement>) {
       row.classList.toggle("selected", this.selection.has(Number(row.dataset.id)));
+    }
+  }
+
+  /** Mark the rows of elements hovered elsewhere (graph, console, chart, legend). */
+  highlight(items: Item[] | null) {
+    const ids = new Set((items ?? []).filter((i) => i[0] === this.kind).map((i) => i[1]));
+    for (const row of this.rowsEl.children as HTMLCollectionOf<HTMLElement>) {
+      row.classList.toggle("linked", ids.has(Number(row.dataset.id)));
     }
   }
 

@@ -8,6 +8,10 @@ export interface DockHost {
   event(target: string, name: string, value: unknown): void;
   /** Hovering a chart mark: highlight its elements (null = clear). */
   hover(items: Item[] | null, title: string, lines: string[], ev: MouseEvent | null): void;
+  /** Clicking a mark selects its elements (shift adds). */
+  click(items: Item[], ev: MouseEvent): void;
+  /** Right-clicking a mark: the element menu (on its query, when the chart knows one). */
+  context(items: Item[], ev: MouseEvent, expr: string | undefined, title: string): void;
 }
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -198,6 +202,15 @@ export class Dock {
         el.classList.remove("hot");
         this.host.hover(null, "", [], null);
       });
+      if (it.ids.length) {
+        el.addEventListener("click", (ev) => this.host.click(it.ids as Item[], ev));
+        el.addEventListener("contextmenu", (ev) => {
+          ev.preventDefault();
+          this.host.context(it.ids as Item[], ev, it.q, it.label);
+        });
+      } else {
+        el.style.cursor = "default";
+      }
       svg.append(el);
     };
     if (c.kind === "line") {

@@ -248,14 +248,53 @@ const dock = new Dock($("#dock-bottom"), $("#dock-right"), {
     tipToken++;
     showTip(title, lines, ev.clientX, ev.clientY);
   },
+  click: (items, ev) => selectItems(items, ev.shiftKey),
+  context: (items, ev, expr, title) => {
+    highlightItems(null);
+    openMenu(items, ev.clientX, ev.clientY, expr ? { expr: `(${expr})`, title } : { title });
+  },
 });
 
-/** Highlight elements in the graph and any linked charts. */
+/** Highlight elements in the graph, and mark them wherever else they appear:
+ *  chart marks, console output, table rows and legend rows. */
 function highlightItems(items: Item[] | null, charts = true) {
   const list = items ?? [];
   renderer.highlight(list.filter((i) => i[0] === "n").map((i) => i[1]),
                      list.filter((i) => i[0] === "e").map((i) => i[1]));
   if (charts) dock.highlight(items);
+  term.highlight(items);
+  dataTable.highlight(items);
+  highlightLegendRows(items);
+}
+
+/** Select elements (edges select their endpoints; shift adds) and show them. */
+function selectItems(items: Item[], add: boolean) {
+  const nodes = new Set<number>(add ? renderer.selection : []);
+  for (const [k, id] of items) {
+    if (k === "n") nodes.add(id);
+    else {
+      const e = renderer.edges.get(id);
+      if (e) nodes.add(e.s).add(e.t);
+    }
+  }
+  renderer.setSelection(nodes);
+  syncSelection([...renderer.selection]);
+  renderer.center(items.filter((i) => i[0] === "n").map((i) => i[1]), items.filter((i) => i[0] === "e").map((i) => i[1]));
+}
+
+// legend rows that stand for elements, so hovering those elements elsewhere marks the row
+let legendRows: { row: HTMLElement; items: () => Item[]; keys?: Set<string> }[] = [];
+
+function highlightLegendRows(items: Item[] | null) {
+  const keys = items && items.length <= 5000 ? items.map(([k, id]) => k + id) : [];
+  for (const r of legendRows) {
+    let hit = false;
+    if (keys.length) {
+      r.keys ??= new Set(r.items().map(([k, id]) => k + id));
+      hit = keys.some((k) => r.keys!.has(k));
+    }
+    r.row.classList.toggle("linked", hit);
+  }
 }
 
 function onUi(m: Extract<FromWorker, { type: "ui" }>) {
@@ -324,19 +363,7 @@ const term = new Console($("#console"), {
   hover: (items, el, ev) => onConsoleHover(items, el, ev),
   context: (items, ev) => openMenu(items, ev.clientX, ev.clientY),
   // clicking a node, edge or group in the output selects it (shift: adds) and shows it
-  click: (items, ev) => {
-    const nodes = new Set<number>(ev.shiftKey ? renderer.selection : []);
-    for (const [k, id] of items) {
-      if (k === "n") nodes.add(id);
-      else {
-        const e = renderer.edges.get(id);
-        if (e) nodes.add(e.s).add(e.t);
-      }
-    }
-    renderer.setSelection(nodes);
-    syncSelection([...renderer.selection]);
-    renderer.center(items.filter((i) => i[0] === "n").map((i) => i[1]), items.filter((i) => i[0] === "e").map((i) => i[1]));
-  },
+  click: (items, ev) => selectItems(items, ev.shiftKey),
 });
 
 worker.onmessage = (ev: MessageEvent<FromWorker>) => {
@@ -512,7 +539,14 @@ function onGraphHover(hit: Hit, x: number, y: number) {
   }
   lastGraphHit = key;
   if (hit.kind === "n" ? defaultHighlight : defaultEdgeHighlight) highlightItems([[hit.kind, hit.id]]);
-  else dock.highlight([[hit.kind, hit.id]]);
+  else {
+    // graph highlighting is off for this kind: still mark it in the other views
+    const it: Item[] = [[hit.kind, hit.id]];
+    dock.highlight(it);
+    term.highlight(it);
+    dataTable.highlight(it);
+    highlightLegendRows(it);
+  }
   const name = hit.kind === "n" ? renderer.nodes.get(hit.id)?.name : edgeName(hit.id);
   status.textContent = name ?? "";
   describeTip(hit.kind, hit.id, x, y);
@@ -752,6 +786,7 @@ const expandedLegends = new Set<number>();
 let lastLegends: LegendRec[] = [];
 
 function renderLegends(legends: LegendRec[]) {
+  legendRows = [];
   lastLegends = legends;
   const host = $("#legends");
   // keep each legend's scroll position across re-renders
@@ -830,6 +865,7 @@ function renderLegends(legends: LegendRec[]) {
       // live rows: hover highlights what the row stands for; right-click acts on it
       const items = legendItems(e, lg);
       if (items.length) {
+        legendRows.push({ row, items: () => legendItems(e, lg) });
         row.classList.add("live");
         row.title = `${items.length} ${items[0][0] === "n" ? "node" : "edge"}${items.length === 1 ? "" : "s"} · right-click for actions`;
         row.addEventListener("mouseenter", () => highlightItems(legendItems(e, lg)));
