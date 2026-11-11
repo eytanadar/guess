@@ -89,16 +89,16 @@ def install(session):
         return meta
 
     @cmd
-    def collapseBy(field, minimum=2):
+    def collapseBy(field, smallest=2):
         """collapseBy(field) collapses each group of nodes sharing a value of field
-        (with at least `minimum` members) into a meta-node named after the value."""
+        (with at least `smallest` members) into a meta-node named after the value."""
         from .model import Field, NODE, group_by
         if not isinstance(field, Field) or field.kind != NODE:
             raise GuessError("collapseBy needs a node field, e.g. collapseBy(dept)")
         made = GSet(annotation=f"groups by {field.name}")
         for grp in group_by(field.elements(), field):
             live = [n for n in grp if alive(n)]
-            if len(live) >= int(minimum):
+            if len(live) >= int(smallest):
                 made.append(collapse(live, f"{field.name}_{field.get(live[0])}"))
         return made
 

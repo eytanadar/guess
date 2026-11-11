@@ -46,6 +46,7 @@ class Session:
         self.graph.listeners.append(self)
         self.ns = {"__name__": "__console__", "__builtins__": __builtins__}
         self.system = {}          # name -> object for protected bindings
+        self._shadowed = {}       # system names replaced by the user's own imports
         self.ns.update(runtime.HELPERS)
         self.ns["__display__"] = self.display
         self.ns["__gnot__"] = self._gnot
@@ -177,7 +178,28 @@ class Session:
             self.ns.pop(name, None)
 
     def is_protected(self, name):
-        return name in self.system
+        """The kind of system name this is ("command", "color", "field", "node",
+        "graph"), or None."""
+        cur = self.system.get(name)
+        return cur[1] if cur is not None else None
+
+    def _builtin_name(self, name):
+        import builtins
+        return not name.startswith("_") and hasattr(builtins, name) and name not in self.system
+
+    def _take_over(self, names):
+        """`from math import log`: an explicit import replaces a GUESS name for the
+        session (del log brings it back)."""
+        for name in names:
+            cur = self.system.pop(name, None)
+            if cur is None:
+                continue
+            self._shadowed[name] = cur
+            what = {"command": f"the command {name}()", "color": f"the colour {name}",
+                    "field": f"the field {name} (still Node.{name} / Edge.{name})",
+                    "node": f"the node {name} (still g.getNodeByName({name!r}))"}.get(cur[1], name)
+            self.emit({"type": "text", "text": f"note: {name} is now your import, not {what}; "
+                                               f"del {name} brings it back\n"})
 
     def register_command(self, name, fn):
         runtime.command(fn)
@@ -186,7 +208,9 @@ class Session:
     # graph listener callbacks
     def on_node_added(self, node):
         name = node._name
-        if name.isidentifier() and not keyword.iskeyword(name):
+        # a node named len or max would hide the Python builtin: reach it with
+        # g.getNodeByName('len') instead
+        if name.isidentifier() and not keyword.iskeyword(name) and not self._builtin_name(name):
             self._bind(name, node, kind="node")
 
     def on_node_removed(self, node):
@@ -211,12 +235,18 @@ class Session:
     def on_field_added(self, field):
         if field.kind == EDGE and field.name in self.graph.node_schema:
             return  # node field wins; use Edge.<name>
+        if self._builtin_name(field.name) or keyword.iskeyword(field.name):
+            return  # a field called type, id or class: use Node.type, n.type, Node.class_
         self._bind(field.name, field, kind="field")
 
     def _restore_system(self):
         for name, (obj, _kind) in self.system.items():
             if self.ns.get(name) is not obj:
                 self.ns[name] = obj
+        # `del log` after `from math import log`: the GUESS name comes back
+        for name in [n for n in self._shadowed if n not in self.ns or self.ns[n] is self._shadowed[n][0]]:
+            obj, kind = self._shadowed.pop(name)
+            self._bind(name, obj, kind)
 
     # ---- execution --------------------------------------------------------
     def run(self, source, *, interactive=True, filename="<console>"):
@@ -248,9 +278,11 @@ class Session:
         sys.stdout = sys.stderr = _Writer(self)
         ok = True
         try:
-            names = set()
+            names, imports = set(), set()
             code = compiler.compile_gython(source, is_protected=self.is_protected,
-                                           interactive=interactive, filename=filename, names=names)
+                                           interactive=interactive, filename=filename, names=names,
+                                           imports=imports)
+            self._take_over(imports)
             self._prepare_fields(names)
             exec(code, self.ns)
             if self.log_lines is not None and interactive:

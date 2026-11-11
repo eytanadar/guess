@@ -49,7 +49,7 @@ export const GESTURE_SECTIONS: { title: string; items: Gesture[] }[] = [
         what: "The node stays on the ring and the others make room; dropping it runs ringMove(node, position).", img: "ring" },
       { id: "edge", title: "Draw an edge", how: "Alt/Option-drag from one node to another",
         what: "A rubber band snaps to the nearest node; releasing adds the edge with addEdge(a, b).", img: "edge" },
-      { id: "scatter", title: "Edit values by position", when: "after scatterLayout(xfield, yfield)",
+      { id: "scatter", title: "Edit values by position", when: "after scatterLayout(x, y)",
         how: "Drag a node in the scatter plot",
         what: "The status bar shows the values under the pointer; dropping sets both fields (when they are editable).", img: "scatter" },
       { id: "expand", title: "Expand a group", when: "after collapse(…) or collapseBy(field)",

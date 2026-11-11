@@ -151,21 +151,21 @@ def _lab_to_rgb(L, A, B):
     return np.where(lin <= 0.0031308, 12.92 * lin, 1.055 * np.abs(lin) ** (1 / 2.4) - 0.055)
 
 
-def distinctColors(n, seed=1):
-    """distinctColors(n): n clearly different colours (as "r,g,b" strings), the
+def distinctColors(count, seed=1):
+    """distinctColors(count): count clearly different colours (as "r,g,b" strings), the
     most different first — the categorical palette colorize(field) uses."""
     import numpy as np
-    n = int(n)
-    if n <= 0:
+    count = int(count)
+    if count <= 0:
         return []
-    key = (n, seed)
+    key = (count, seed)
     if key in _PALETTE_CACHE:
         return list(_PALETTE_CACHE[key])
     if "cand" not in _PALETTE_CACHE:
         _PALETTE_CACHE["cand"] = _lab_candidates()
     lab, rgb = _PALETTE_CACHE["cand"]
     rng = np.random.default_rng(seed)
-    k = min(n, len(lab))
+    k = min(count, len(lab))
     # k-means++ seeding, then Lloyd iterations
     cent = [lab[rng.integers(len(lab))]]
     d2 = ((lab - cent[0]) ** 2).sum(1)
@@ -196,7 +196,7 @@ def distinctColors(n, seed=1):
         dist = np.minimum(dist, ((lab_sel - lab_sel[j]) ** 2).sum(1))
     out = [",".join(str(int(round(v * 255))) for v in cols[j]) for j in order]
     # more groups than candidates (thousands): cycle
-    out = [out[i % len(out)] for i in range(n)]
+    out = [out[i % len(out)] for i in range(count)]
     _PALETTE_CACHE[key] = out
     return list(out)
 

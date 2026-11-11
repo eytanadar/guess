@@ -3,11 +3,11 @@ bundling (Cytoscape's enhancedGraphics, Gephi's edge bundling).
 
     pieChart([sales, support, rnd])     each node a pie of those numeric fields
     pieNeighbors(dept)                  each node a pie of its neighbours' depts
-    pieOff()
+    removePies()
     borderBy(dept)                      a border colour per value (wider borders)
     bundleEdges(modularity_class)       route edges between groups through
                                         their centres, so parallel flows merge
-    unbundleEdges()
+    removeBundles()
 """
 import math
 from collections import Counter
@@ -26,10 +26,9 @@ def install(session):
         session.register_command(fn.__name__, fn)
         return fn
 
-    def field(f, what, kind=NODE):
-        if not isinstance(f, Field) or f.kind != kind:
-            raise GuessError(f"{what} needs a node field")
-        return f
+    def _field_arg(f, what, kind=NODE):
+        from .model import as_field
+        return as_field(session.graph, f, what, (kind,))
 
     def mark_all():
         for n in g._nodes_list():
@@ -52,7 +51,7 @@ def install(session):
     def pieChart(fields, palette=None):
         """pieChart([f1, f2, ...]) draws each node as a pie whose slices are the
         node's values of those numeric fields; palette=[colors] sets slice colours."""
-        fs = [field(f, "pieChart") for f in (fields if isinstance(fields, (list, tuple)) else [fields])]
+        fs = [_field_arg(f, "pieChart") for f in (fields if isinstance(fields, (list, tuple)) else [fields])]
         if not fs:
             raise GuessError("pieChart needs at least one field")
         cols = list(palette) if palette else colors.distinctColors(len(fs))
@@ -61,10 +60,10 @@ def install(session):
         mark_all()
 
     @cmd
-    def pieNeighbors(fld):
+    def pieNeighbors(field):
         """pieNeighbors(field) draws each node as a pie of its neighbours' values of
         a categorical field (the most common values; the rest as "other")."""
-        f = field(fld, "pieNeighbors")
+        f = _field_arg(field, "pieNeighbors")
         common = [v for v, _ in Counter(f.get(n) for n in g._nodes_list()).most_common()]
         keep = common[:MAX_SLICES - 1] if len(common) > MAX_SLICES else common
         labels = [str(v) for v in keep] + (["other"] if len(common) > len(keep) else [])
@@ -73,16 +72,16 @@ def install(session):
         mark_all()
 
     @cmd
-    def pieOff():
+    def removePies():
         """Draw nodes normally again (after pieChart / pieNeighbors)."""
         view.pie = None
         mark_all()
 
     @cmd
-    def borderBy(fld, width=2.5):
+    def borderBy(field, width=2.5):
         """borderBy(field) gives node borders a distinct colour per value of a
         field (as colorize does for fills) and widens them."""
-        f = field(fld, "borderBy")
+        f = _field_arg(field, "borderBy")
         grps = sorted(group_by(f.elements(), f), key=len, reverse=True)
         for grp, c in zip(grps, colors.distinctColors(len(grps), seed=7)):
             grp.strokecolor = c
@@ -90,7 +89,7 @@ def install(session):
         view.changed()
 
     @cmd
-    def bundleEdges(fld=None, strength=0.85, method=None, neighbors=10, angleStrength=1.2,
+    def bundleEdges(field=None, strength=0.85, method=None, neighbors=10, angleStrength=1.2,
                     stiffness=0.1, compatibility=0.6, cycles=6):
         """bundleEdges() bundles edges that run alike, so the main flows stand
         out of a hairball. Three methods:
@@ -103,17 +102,17 @@ def install(session):
         strength 0..1 blends toward straight lines (0 = straight). MINGLE:
         neighbors (edges compared with each), angleStrength (higher allows
         sharper turns). FDEB: stiffness (of each edge), compatibility (0..1, how
-        alike edges must be to attract), cycles. Layouts and unbundleEdges()
+        alike edges must be to attract), cycles. Layouts and removeBundles()
         straighten them again."""
         beta = min(max(float(strength), 0.0), 1.0)
-        if fld is None or method is not None:
+        if field is None or method is not None:
             m = str(method or "mingle").lower()
             if m not in ("mingle", "fdeb"):
                 raise GuessError('method should be "mingle" or "fdeb" (or give a field to bundle by groups)')
             _bundle_geometric(m, beta, neighbors=int(neighbors), angle_strength=float(angleStrength),
                               stiffness=float(stiffness), threshold=float(compatibility), cycles=int(cycles))
             return
-        f = field(fld, "bundleEdges")
+        f = _field_arg(field, "bundleEdges")
         beta = min(max(float(strength), 0.0), 1.0)
         cent = {}
         for grp in group_by(f.elements(), f):
@@ -176,7 +175,7 @@ def install(session):
         print(f"bundled {bundled} edges ({'MINGLE' if method == 'mingle' else 'FDEB'})")
 
     @cmd
-    def unbundleEdges():
+    def removeBundles():
         """Draw edges straight again after bundleEdges."""
         g.clear_bends()
 

@@ -191,15 +191,13 @@ def install(session):
         return session.graph
 
     def field(f, kind_ok=("node",)):
+        return _field_of(f, kind_ok)
+
+    def _field_of(f, kind_ok=("node",)):
         if f is None:
             return None
-        if isinstance(f, Field):
-            return f
-        if isinstance(f, str):
-            sch = g().node_schema if "node" in kind_ok else g().edge_schema
-            if f in sch:
-                return sch[f]
-        raise GuessError(f"expected a field, got {f!r}")
+        from .model import as_field
+        return as_field(g(), f, "this", tuple(kind_ok))
 
     def run_layout(engine, attrs, *, clusters=None, with_pos=False, nop=0, len_field=None,
                    route=False, align=False):
@@ -259,15 +257,15 @@ def install(session):
                    clusters=cluster_arg(clusters), route=bool(route))
 
     @cmd
-    def neatoLayout(mode="major", model="shortpath", lenField=None, overlap="prism"):
+    def neatoLayout(mode="major", model="shortpath", field=None, overlap="prism"):
         """neatoLayout() places nodes so their distances on screen follow their
         distances in the graph (stress majorization: the best-quality layout up
         to a few thousand nodes). mode: "major" (default), "sgd" (faster),
         "KK" (Kamada-Kawai); model="circuit" uses resistance distance;
-        lenField=weight makes an edge field the preferred edge length;
+        field=weight makes an edge field the preferred edge length;
         overlap="prism" (default) then removes node overlaps (overlap="true"
         leaves them)."""
-        lf = field(lenField, ("edge",)) if lenField is not None else None
+        lf = _field_of(field, ("edge",)) if field is not None else None
         run_layout("neato", {"mode": mode, "model": model, "overlap": overlap, "sep": "+4"}, len_field=lf)
 
     @cmd

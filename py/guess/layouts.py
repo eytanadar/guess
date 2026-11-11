@@ -521,13 +521,8 @@ def _node_arg(graph, x, what="node"):
 
 
 def _field_arg(graph, f):
-    if isinstance(f, Field):
-        return f
-    if isinstance(f, str):
-        got = graph.node_schema.get(f) or graph.edge_schema.get(f)
-        if got is not None:
-            return got
-    raise GuessError(f"expected a field (e.g. freq, dept), got {f!r}")
+    from .model import as_field
+    return as_field(graph, f)
 
 
 # --------------------------------------------------------------------------
@@ -2447,39 +2442,39 @@ def install(session):
         lay.run(s, _jung_kk_gen(s, rng(), D, 2000))
 
     @cmd
-    def springLayout(max=None):
+    def springLayout(iterations=None):
         """springLayout() runs the GUESS spring layout from the current positions
         until it settles or for 1000 iterations (fewer on graphs over 1000
         nodes: 1000 * 1000 / nodes, at least 100); springLayout(n) runs exactly
         n iterations. Stop it early with the Stop button."""
         s = lay.snap()
-        n = _iters(max, _scaled(1000, s.n))
-        lay.run(s, _spring_gen(s, n, rng(), tol=0.05 if max is None else -1))
+        n = _iters(iterations, _scaled(1000, s.n))
+        lay.run(s, _spring_gen(s, n, rng(), tol=0.05 if iterations is None else -1))
 
     @cmd
-    def jSpringLayout(max=None):
+    def jSpringLayout(iterations=None):
         """jSpringLayout() runs the JUNG spring layout from random positions until
         it settles or for 500 iterations (fewer on graphs over 1000 nodes);
         jSpringLayout(n) runs exactly n iterations."""
         s = lay.snap()
-        n = _iters(max, _scaled(500, s.n))
-        lay.run(s, _jspring_gen(s, n, rng(), tol=0.05 if max is None else -1))
+        n = _iters(iterations, _scaled(500, s.n))
+        lay.run(s, _jspring_gen(s, n, rng(), tol=0.05 if iterations is None else -1))
 
     @cmd
-    def weightedSpringLayout(minLength, maxLength, max=None):
+    def weightedSpringLayout(minLength, maxLength, iterations=None):
         """weightedSpringLayout(minLength, maxLength[, iterations]) is springLayout
         with each edge's natural length mapped linearly from its `weight`
         (lowest weight -> minLength, highest -> maxLength). Iterations as for
         springLayout."""
         s = lay.snap()
-        n = _iters(max, _scaled(1000, s.n))
+        n = _iters(iterations, _scaled(1000, s.n))
         w = s.weight
         lo, hi = float(minLength), float(maxLength)
         if len(w) and w.max() > w.min():
             lengths = lo + (w - w.min()) / (w.max() - w.min()) * (hi - lo)
         else:
             lengths = np.full(len(w), lo)
-        lay.run(s, _spring_gen(s, n, rng(), lengths, tol=0.05 if max is None else -1))
+        lay.run(s, _spring_gen(s, n, rng(), lengths, tol=0.05 if iterations is None else -1))
 
     @cmd
     def gemLayout(seed=None):
@@ -2489,19 +2484,19 @@ def install(session):
         lay.run(s, _gem_gen(s, rng(None if seed is None else int(seed))))
 
     @cmd
-    def isomLayout(max=None):
+    def isomLayout(iterations=None):
         """isomLayout() runs the JUNG ISOM (self-organising map) layout for 2000
         epochs; isomLayout(n) runs n epochs."""
         s = lay.snap()
-        lay.run(s, _isom_gen(s, rng(), _iters(max, 2000)))
+        lay.run(s, _isom_gen(s, rng(), _iters(iterations, 2000)))
 
     @cmd
-    def physicsLayout(max=None):
+    def physicsLayout(iterations=None):
         """physicsLayout() runs the graphopt physics layout (charged nodes, springs)
         for 500 steps from the current positions (fewer on graphs over 1000
         nodes); physicsLayout(n) runs n steps."""
         s = lay.snap()
-        lay.run(s, _physics_gen(s, _iters(max, _scaled(500, s.n)), rng()))
+        lay.run(s, _physics_gen(s, _iters(iterations, _scaled(500, s.n)), rng()))
 
     @cmd
     def mdsLayout():
@@ -2627,11 +2622,11 @@ def install(session):
         session.view.changed()
 
     @cmd
-    def scatterLayout(xfield, yfield, width=1000, height=1000):
-        """scatterLayout(xfield, yfield) places nodes by two numeric fields (x to the
+    def scatterLayout(x, y, width=1000, height=1000):
+        """scatterLayout(x, y) places nodes by two numeric fields (x to the
         right, y upwards) in a width x height area. Dragging a node then edits
         those two values."""
-        fx, fy = _field_arg(g, xfield), _field_arg(g, yfield)
+        fx, fy = _field_arg(g, x), _field_arg(g, y)
         s = lay.snap()
         P = s.pos.copy()
         vx = np.array([_num(fx.get(nd), np.nan) for nd in s.nodes])
@@ -2815,17 +2810,17 @@ def install(session):
         lay.apply(s, lo + (P - lo) * (fx, fy))
 
     @cmd
-    def translateLayout(newX, newY):
+    def translateLayout(dx, dy):
         """translateLayout(dx, dy) moves every node by (dx, dy)."""
         s = lay.snap()
-        lay.apply(s, s.pos + (float(newX), float(newY)))
+        lay.apply(s, s.pos + (float(dx), float(dy)))
 
     @cmd
-    def moveLayout(newX, newY):
+    def moveLayout(x, y):
         """moveLayout(x, y) moves the layout so its top-left corner is at (x, y)."""
         s = lay.snap()
         if s.n == 0:
             return lay.finish()
-        lay.apply(s, s.pos - s.pos.min(0) + (float(newX), float(newY)))
+        lay.apply(s, s.pos - s.pos.min(0) + (float(x), float(y)))
 
     return lay

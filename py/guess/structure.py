@@ -3,7 +3,7 @@ two partitions agree.
 
     bridges(); cutNodes()                    edges / nodes whose removal disconnects the graph
     spanningTree(maximum=False)              the backbone (minimum or maximum spanning forest)
-    ancestors(n); descendants(n)             upstream / downstream along directed edges
+    ancestors(node); descendants(node)       upstream / downstream along directed edges
     transitiveReduction(); feedbackEdges()   implied edges of a DAG; edges that make cycles
     assortativity(dept); mixingMatrix(dept)  do similar nodes link?
     triadCensus(); reciprocity(); transitivity()
@@ -158,6 +158,9 @@ def install(session):
         return session.graph
 
     def node(x):
+        return _node_of(x)
+
+    def _node_of(x):
         if isinstance(x, Node):
             return x
         if isinstance(x, str) and x in g()._nodes:
@@ -210,20 +213,20 @@ def install(session):
 
     # ---- directed structure --------------------------------------------------
     @cmd
-    def ancestors(n):
-        """ancestors(n): every node with a directed path to n (upstream: what n
+    def ancestors(node):
+        """ancestors(node): every node with a directed path to node (upstream: what it
         depends on or cites, transitively). Undirected edges count both ways."""
         nx = _nx()
-        n = node(n)
-        return GSet(sorted(nx.ancestors(_directed(g()), n), key=lambda m: m._id), f"ancestors of {n._name}")
+        node = _node_of(node)
+        return GSet(sorted(nx.ancestors(_directed(g()), node), key=lambda m: m._id), f"ancestors of {node._name}")
 
     @cmd
-    def descendants(n):
-        """descendants(n): every node reachable from n along directed edges
-        (downstream: what depends on n, or what n leads to)."""
+    def descendants(node):
+        """descendants(node): every node reachable from node along directed edges
+        (downstream: what depends on it, or what it leads to)."""
         nx = _nx()
-        n = node(n)
-        return GSet(sorted(nx.descendants(_directed(g()), n), key=lambda m: m._id), f"descendants of {n._name}")
+        node = _node_of(node)
+        return GSet(sorted(nx.descendants(_directed(g()), node), key=lambda m: m._id), f"descendants of {node._name}")
 
     @cmd
     def feedbackEdges():
@@ -543,8 +546,8 @@ def install(session):
         return float(nx.transitivity(_undirected(g())))
 
     @cmd
-    def blockmodel(k=4, show=True):
-        """blockmodel(k) groups the nodes into k positions of structurally
+    def blockmodel(count=4, show=True):
+        """blockmodel(count) groups the nodes into count positions of structurally
         equivalent nodes: nodes tied to the same others (in the same
         directions), whether or not they're tied to each other, which is a
         role (teacher, broker, follower), not a community. Profiles are
@@ -558,8 +561,8 @@ def install(session):
         gr = g()
         nodes = gr._nodes_list()
         n = len(nodes)
-        k = int(k)
-        if n < 2 or not 1 <= k <= n:
+        count = int(count)
+        if n < 2 or not 1 <= count <= n:
             raise GuessError(f"blockmodel needs 1 <= k <= the number of nodes ({n})")
         idx = {x._id: i for i, x in enumerate(nodes)}
         A = np.zeros((n, n))
@@ -596,7 +599,7 @@ def install(session):
         np.fill_diagonal(D, np.inf)
         size = np.ones(n)
         members = {i: [i] for i in range(n)}
-        for _ in range(n - k):
+        for _ in range(n - count):
             a, b = np.unravel_index(np.argmin(D), D.shape)
             a, b = min(a, b), max(a, b)
             merged = (size[a] * D[a] + size[b] * D[b]) / (size[a] + size[b])
@@ -615,21 +618,21 @@ def install(session):
             for i in members:
                 f.set(nodes[i], p)
                 pos[i] = p
-        image = np.zeros((k, k))
-        for p in range(k):
-            for q in range(k):
+        image = np.zeros((count, count))
+        for p in range(count):
+            for q in range(count):
                 rows, cols = pos == p, pos == q
                 block = A[np.ix_(rows, cols)]
                 cells = rows.sum() * cols.sum() - (rows.sum() if p == q else 0)
                 image[p, q] = block.sum() / cells if cells else 0.0
         if show:
-            head = "position  size  " + "  ".join(f"{q:>5}" for q in range(k))
+            head = "position  size  " + "  ".join(f"{q:>5}" for q in range(count))
             print("tie density from each position (row) to each other (column)")
             print(head)
-            for p in range(k):
-                print(f"{p:>8}  {len(groups[p]):>4}  " + "  ".join(f"{image[p, q]:5.2f}" for q in range(k)))
+            for p in range(count):
+                print(f"{p:>8}  {len(groups[p]):>4}  " + "  ".join(f"{image[p, q]:5.2f}" for q in range(count)))
         return GSet([GSet([nodes[i] for i in grp], annotation=f"position {p}")
-                     for p, grp in enumerate(groups)], annotation=f"{k} positions")
+                     for p, grp in enumerate(groups)], annotation=f"{count} positions")
 
     @cmd
     def compareClusters(field1, field2, method="nmi"):

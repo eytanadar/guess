@@ -5,11 +5,15 @@ import os
 import random
 
 from . import colors, formats, gdf, gexf
-from .model import EDGE, NODE, Edge, Field, GSet, GuessError, Node, elements_of, group_by, sort_by
+from .model import EDGE, NODE, Edge, Field, GSet, GuessError, Node, as_field, elements_of, group_by, sort_by
 
 
 def install(session):
     g = session.graph
+
+    def _field(f):
+        """A field, or a field's name: sizeBy(degree) and sizeBy("degree") both work."""
+        return as_field(session.graph, f)
 
     def cmd(fn, name=None):
         session.register_command(name or fn.__name__, fn)
@@ -220,12 +224,12 @@ def install(session):
         return g.add(seq)
 
     @cmd
-    def removeNode(n):
+    def removeNode(node):
         """Remove one node and its edges (undo with add(g.deleted) or undo()).
         Its name still refers to it, so addNode(n) puts it back."""
         g._keep_names = True
         try:
-            return g.removeNode(n)
+            return g.removeNode(node)
         finally:
             g._keep_names = False
 
@@ -235,14 +239,14 @@ def install(session):
         return g.removeEdge(e)
 
     @cmd
-    def addNodeField(fieldName, sqlType="VARCHAR", defaultValue=None):
+    def addNodeField(name, type="VARCHAR", default=None):
         """Create a node field, e.g. addNodeField("score", DOUBLE, 0)."""
-        return g.addNodeField(fieldName, sqlType, defaultValue)
+        return g.addNodeField(name, type, default)
 
     @cmd
-    def addEdgeField(fieldName, sqlType="VARCHAR", defaultValue=None):
+    def addEdgeField(name, type="VARCHAR", default=None):
         """Create an edge field, e.g. addEdgeField("kind", VARCHAR, "")."""
-        return g.addEdgeField(fieldName, sqlType, defaultValue)
+        return g.addEdgeField(name, type, default)
 
     @cmd
     def removeSelfLoops():
@@ -428,25 +432,25 @@ def install(session):
         seq, f = _seq_field(d, "sortBy")
         return sort_by(seq, _field(f), bool(descending))
 
-    def _extreme(field, k, seq, largest):
+    def _extreme(field, count, seq, largest):
         f = _field(field)
         pool = f.elements() if seq is None else list(elements_of(seq))
         pool = [x for x in pool if f.get(x) is not None]
-        out = sort_by(pool, f, largest)[:max(0, int(k))]
-        return GSet(out, annotation=f"{'highest' if largest else 'lowest'} {int(k)} by {f.name}")
+        out = sort_by(pool, f, largest)[:max(0, int(count))]
+        return GSet(out, annotation=f"{'highest' if largest else 'lowest'} {int(count)} by {f.name}")
 
     @cmd
-    def highest(field, k=10, seq=None):
+    def highest(field, count=10, seq=None):
         """highest(degree) is the 10 nodes (or edges) with the largest degree,
         largest first; highest(degree, 5), or highest(degree, 5, seq) within a
         set. Elements without a value are left out."""
-        return _extreme(field, k, seq, True)
+        return _extreme(field, count, seq, True)
 
     @cmd
-    def lowest(field, k=10, seq=None):
+    def lowest(field, count=10, seq=None):
         """lowest(degree, 5): the 5 with the smallest degree, smallest first
         (see highest)."""
-        return _extreme(field, k, seq, False)
+        return _extreme(field, count, seq, False)
 
     # ---- visual mapping ---------------------------------------------------------
     @cmd
@@ -471,24 +475,24 @@ def install(session):
             grp.color = c
 
     @cmd
-    def resizeLinear(field, start, end):
-        """Size nodes (or edge widths) by rank of field value, from start to end."""
+    def resizeLinear(field, smallest, largest):
+        """Size nodes (or edge widths) by rank of field value, from smallest to largest."""
         field = _field(field)
         groups = group_by(field.elements(), field, sort=True)
         k = len(groups)
         attr = "size" if field.kind == NODE else "width"
         for i, grp in enumerate(groups):
-            size = start if k == 1 else start + (end - start) * i / (k - 1)
+            size = smallest if k == 1 else smallest + (largest - smallest) * i / (k - 1)
             for e in grp:
                 setattr(e, attr, size)
 
     @cmd
-    def resizeRandom(field, start, end):
-        """Give each distinct value of field a random size (or edge width) between start and end."""
+    def resizeRandom(field, smallest, largest):
+        """Give each distinct value of field a random size (or edge width) between smallest and largest."""
         field = _field(field)
         attr = "size" if field.kind == NODE else "width"
         for grp in group_by(field.elements(), field):
-            size = start + random.random() * (end - start)
+            size = smallest + random.random() * (largest - smallest)
             for e in grp:
                 setattr(e, attr, size)
 
@@ -524,8 +528,8 @@ def install(session):
 
     @cmd
     def sizeBy(field, smallest, largest, scale="linear"):
-        """sizeBy(field, min, max) sizes nodes (or edge widths, for an edge field) in
-        proportion to a numeric field's value, from min to max. scale may be
+        """sizeBy(field, smallest, largest) sizes nodes (or edge widths, for an edge field) in
+        proportion to a numeric field's value, from smallest to largest. scale may be
         "linear", "log", "sqrt" or "rank" (as in Gephi's ranking). Compare
         resizeLinear, which spaces distinct values evenly."""
         field = _field(field)
@@ -662,6 +666,4 @@ def _minus(a, b):
 
 
 def _field(f):
-    if not isinstance(f, Field):
-        raise GuessError(f"expected a field (e.g. dept, freq), got {f!r}")
-    return f
+    return as_field(None, f)

@@ -467,6 +467,29 @@ class Field:
         return out
 
 
+def as_field(graph, f, what="this", kinds=(NODE, EDGE)):
+    """A field from a Field or its name ("degree"); a clear error otherwise,
+    with a suggestion for a misspelt name."""
+    if isinstance(f, Field):
+        if f.kind not in kinds:
+            raise GuessError(f"{what} needs a {' or '.join(kinds)} field, not the {f.kind} field '{f.name}'")
+        return f
+    if isinstance(f, str) and graph is not None:
+        for kind in kinds:
+            sch = graph.node_schema if kind == NODE else graph.edge_schema
+            if f in sch:
+                return sch[f]
+        for kind in kinds:                       # a computed field not used yet ("pagerank")
+            if (kind, f) in getattr(graph, "lazy_fields", {}):
+                return graph._lazy_field(kind, f)
+        import difflib
+        pool = [n for kind in kinds for n in (graph.node_schema if kind == NODE else graph.edge_schema)]
+        close = difflib.get_close_matches(f, pool, n=1, cutoff=0.7)
+        hint = f" (did you mean '{close[0]}'?)" if close else ""
+        raise GuessError(f"there's no {' or '.join(kinds)} field '{f}'{hint}")
+    raise GuessError(f"{what} needs a field (e.g. dept, or \"dept\"), got {f!r}")
+
+
 def _fmt(v):
     return v.name if isinstance(v, Field) else repr(v)
 

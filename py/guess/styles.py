@@ -28,9 +28,8 @@ def install(session):
         return fn
 
     def field_arg(f, what):
-        if not isinstance(f, Field):
-            raise GuessError(f"{what} needs a field, e.g. {what}(dept)")
-        return f
+        from .model import as_field
+        return as_field(session.graph, f, what)
 
     @cmd
     def labelBy(field, show=True):

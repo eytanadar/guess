@@ -23,7 +23,7 @@ test("hovering grouped output highlights the group and shows its annotation", as
 test("system names are protected", async ({ page }) => {
   await boot(page);
   await run(page, "g = 5");
-  expect(await lastError(page)).toContain("system name");
+  expect(await lastError(page)).toContain("is the graph");
 });
 
 test("blocks, completion and doc hovers", async ({ page }) => {

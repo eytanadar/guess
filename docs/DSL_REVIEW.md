@@ -267,8 +267,32 @@ Started 2026-11-10; the first four items were done 2026-11-11, with tests
      name in the recipes.
    - The Epidemiology book uses them.
 
-Waiting for a decision: argument renames (O), the meaning of `-` (D), and
-loosening reserved names (J). Still open from the linking list: insert as
-code (2), hover-linking inside code (6), provenance (7), previews (8),
-tagging stale output with its graph (part of 9), and live watched results
-(10).
+Decided 2026-11-11 and done:
+
+- **Renames (O), outright, old scripts may break.**
+  - One shared helper (`model.as_field`) turns an argument into a field. It
+    accepts a field or its name, computes a not-yet-used computed field
+    (`"pagerank"`), and suggests close names. Commands, charts, glyphs,
+    igraph, Graphviz, layouts and styles all use it.
+  - Arguments follow the conventions now in Appendix B of the manual:
+    `field`; `x`/`y`; `smallest`/`largest` for sizes; `start`/`end` for
+    colours; `count`; `node`; `iterations`; `addNodeField(name, type,
+    default)`.
+  - `pieOff` is now `removePies` and `unbundleEdges` is `removeBundles`;
+    `biComponentCluster` is removed.
+  - Manual Appendix C lists every rename. Two workarounds in the core
+    cookbook are simplified.
+- **`-` (D): kept as the 2006 edge operator.** `-=` now does the same, and
+  the result's label points to `a.difference(b)`.
+- **Reserved names (J), points 1–4.**
+  1. Nodes and fields named after Python builtins don't hide them.
+  2. Errors say what kind of name it is.
+  3. An explicit import replaces a command for the session, with a note;
+     `del` brings the command back. The graph `g` can never be replaced.
+  4. `for` loop variables may reuse node names for the cell.
+  - Plain assignments to commands and colours are still errors (point 5,
+    not done).
+
+Still open from the linking list: insert as code (2), hover-linking inside
+code (6), provenance (7), previews (8), tagging stale output with its
+graph (part of 9), and live watched results (10).

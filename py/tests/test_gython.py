@@ -139,9 +139,13 @@ def test_patch_emitted_for_visual_changes(s):
 def test_protected_names(s):
     s.rec.clear()
     assert not s.run("g = 5")
-    assert "system name" in s.rec.of("error")[0]["text"]
+    assert "is the graph" in s.rec.of("error")[0]["text"]
     assert not s.run("bob = 1")
+    assert "is a node of this graph" in s.rec.of("error")[-1]["text"]
     assert not s.run("red = 1")
+    assert "colour" in s.rec.of("error")[-1]["text"]
+    assert not s.run("center = 1")
+    assert "command center()" in s.rec.of("error")[-1]["text"]
     assert s.run("def f():\n    g = 5\n    return g\n")  # locals are fine
     assert s.run("myvar = bob")
 

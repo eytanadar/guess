@@ -64,7 +64,7 @@ def test_bundle_edges_command_sets_and_clears_bends():
     for cmd in ("bundleEdges()", "bundleEdges(method='fdeb')", "bundleEdges(method='fdeb', strength=0.5)"):
         assert s.run(cmd), rec.of("error")
         assert len(s.graph.bends) > 100, cmd
-    assert s.run("unbundleEdges()") and not s.graph.bends
+    assert s.run("removeBundles()") and not s.graph.bends
     assert not s.run("bundleEdges(method='nope')")
     # bundling by groups still works as before
     assert s.run("addNodeField('side', VARCHAR, 'l')\nfor n in g.nodes: n.side = n.name[0]\nbundleEdges(side)")

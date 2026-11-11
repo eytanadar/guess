@@ -172,10 +172,22 @@ def gbool(op, first, *thunks):
 
 def gsub(a, b):
     """``a - b`` on nodes is the original GUESS edge operator: the undirected
-    edges between a and b (same as ``a <-> b``). Use ``.difference()`` for sets."""
+    edges between a and b (same as ``a <-> b``). Use ``.difference()`` or
+    ``not`` for sets."""
     if _graphish(a) and _graphish(b):
-        return gop("bi", a, b)
+        out = gop("bi", a, b)
+        if isinstance(out, GSet) and not isinstance(a, (Node, Edge)):     # a single edge stays itself
+            out.annotation = "edges between (a - b is a <-> b; for a set difference: a.difference(b))"
+        return out
     return a - b
+
+
+def gisub(a, b):
+    """``a -= b``: as ``a = a - b`` between node sets, otherwise Python's ``-=``."""
+    if _graphish(a) and _graphish(b):
+        return gsub(a, b)
+    a -= b
+    return a
 
 
 def autocall(x):
@@ -195,5 +207,6 @@ HELPERS = {
     "__gin__": gin,
     "__gbool__": gbool,
     "__gsub__": gsub,
+    "__gisub__": gisub,
     "__autocall__": autocall,
 }

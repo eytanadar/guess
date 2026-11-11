@@ -51,9 +51,8 @@ def install(session):
         return Chart(session, cid, title)
 
     def need_field(f):
-        if not isinstance(f, Field):
-            raise GuessError(f"expected a field, got {f!r}")
-        return f
+        from .model import as_field
+        return as_field(session.graph, f)
 
     def what(f):
         return "nodes" if f.kind == NODE else "edges"

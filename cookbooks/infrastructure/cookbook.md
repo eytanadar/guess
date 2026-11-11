@@ -116,7 +116,7 @@ bundles, which turns a hairball of routes into a flow map: the
 transcontinental corridors, the north–south spines along each coast, and
 the fans around each hub (*Kitchen: Outline groups and bundle the
 hairball*). `method="fdeb"` gives smoother, more organic curves.
-`unbundleEdges()` goes back to straight lines.
+`removeBundles()` goes back to straight lines.
 
 **Pitfalls.** Bundling distorts geography on purpose: a bundled edge no
 longer shows the route it takes. Use it to show where flows concentrate,

@@ -1188,7 +1188,7 @@ group</td>
 <td>a hive plot (below)</td>
 </tr>
 <tr>
-<td><code>scatterLayout(xfield, yfield)</code></td>
+<td><code>scatterLayout(x, y)</code></td>
 <td>a scatter plot of two fields</td>
 </tr>
 <tr>
@@ -1247,7 +1247,8 @@ e.g. <code>graphvizLayout(&quot;neato&quot;, mode=&quot;sgd&quot;)</code></td>
 </tr>
 <tr>
 <td><code>rotateLayout(90)</code>, <code>mirrorLayout()</code>,
-<code>rescaleLayout(0.5)</code>, <code>translateLayout(x, y)</code></td>
+<code>rescaleLayout(0.5)</code>, <code>translateLayout(dx, dy)</code>,
+<code>moveLayout(x, y)</code></td>
 <td>transform the current layout</td>
 </tr>
 </tbody>
@@ -1346,9 +1347,9 @@ code:</p>
 <p>A few more ways to show values on nodes:</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>pieChart([indegree, outdegree])     <span class="co"># each node becomes a pie of several fields</span></span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>pieNeighbors(dept)                  <span class="co"># a pie of the neighbours&#39; departments</span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>pieOff()</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>removePies()</span>
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>bundleEdges(dept)                   <span class="co"># bundle edges that run between the same groups</span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>unbundleEdges()</span></code></pre></div>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>removeBundles()</span></code></pre></div>
 <p>Edge bundling also works without groups. <code>bundleEdges()</code>
 uses MINGLE (Gansner et al. 2011): edges that run alike merge, level by
 level, into bundles that share a trunk, saving “ink”. It is fast enough
@@ -1360,7 +1361,7 @@ run between the same regions, and <code>strength=</code> (0 to 1)
 relaxes the bundles toward straight lines. The View menu has both.</p>
 <div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>bundleEdges()                       <span class="co"># MINGLE</span></span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>bundleEdges(method<span class="op">=</span><span class="st">&quot;fdeb&quot;</span>, strength<span class="op">=</span><span class="fl">0.7</span>)</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>unbundleEdges()</span></code></pre></div>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>removeBundles()</span></code></pre></div>
 <h2 id="field-graph-node-and-edge-statistics">7.3 Field, graph, node and
 edge statistics</h2>
 <p>These node fields are computed the first time you use them. Use them
@@ -1514,9 +1515,9 @@ number:</p>
 default (0 to 1); <code>method=&quot;ari&quot;</code> (adjusted Rand),
 <code>&quot;rand&quot;</code> and <code>&quot;vi&quot;</code> are the alternatives.</p>
 <p>For directed graphs such as citations or dependencies,
-<code>ancestors(n)</code> and <code>descendants(n)</code> follow the
-arrows, the <code>generation</code> field gives each node’s step in the
-hierarchy, <code>transitiveReduction()</code> returns the edges that
+<code>ancestors(node)</code> and <code>descendants(node)</code> follow
+the arrows, the <code>generation</code> field gives each node’s step in
+the hierarchy, <code>transitiveReduction()</code> returns the edges that
 longer paths already imply (hide them to see the backbone), and
 <code>feedbackEdges()</code> returns edges that close cycles.</p>
 <h2 id="networkx-from-the-console">7.8 networkx from the console</h2>
@@ -1582,9 +1583,10 @@ groups</td>
 one</td>
 </tr>
 <tr>
-<td><code>eigenvectorClusters()</code>, <code>fluidClusters(k)</code>,
-<code>voronoiClusters()</code></td>
-<td>spectral; exactly k groups; around central nodes</td>
+<td><code>eigenvectorClusters()</code>,
+<code>fluidClusters(count)</code>, <code>voronoiClusters()</code></td>
+<td>spectral; exactly <code>count</code> groups; around central
+nodes</td>
 </tr>
 <tr>
 <td><code>spinglassClusters()</code>, <code>optimalClusters()</code>,
@@ -2279,8 +2281,8 @@ console.</p>
 The names are variables, so <code>v1.color = wildstrawberry</code> needs
 no quotes. <code>averageColor(c1, c2)</code>,
 <code>generateColors(start, end, n)</code>,
-<code>distinctColors(n)</code> and <code>randomColor()</code> make new
-colours.</p>
+<code>distinctColors(count)</code> and <code>randomColor()</code> make
+new colours.</p>
 <p>The named colours from 2006 are below (case doesn’t matter). The
 standard web colour names work as well.</p>
 <table style="width:100%;">
@@ -2594,6 +2596,36 @@ Python)</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Command conventions.</strong> - <strong>Fields.</strong> An
+argument that takes a field also takes its name:
+<code>sizeBy(degree)</code> and <code>sizeBy(&quot;degree&quot;)</code> are the
+same. A command with one field argument calls it <code>field</code>; one
+with several names them by role (<code>scatterLayout(x, y)</code>). -
+<strong>Ranges.</strong> Sizes run from <code>smallest</code> to
+<code>largest</code>, colours from <code>start</code> to
+<code>end</code>. - <strong>Counts.</strong> A number of things to make
+or return is <code>count</code>, and a node argument is
+<code>node</code>. - <strong>Switching things off.</strong> A display
+mode takes <code>on=</code> (<code>curvedEdges(false)</code>); something
+drawn on top is removed with a matching <code>remove…</code> command
+(<code>removePies()</code>, <code>removeBundles()</code>,
+<code>removeConvexHulls()</code>, <code>removeLegends()</code>,
+<code>removeMap()</code>). - <strong><code>name=</code></strong> always
+names what the command creates: a field, a graph or a node.</p>
+<p><strong>Names.</strong> GUESS’s own names (commands, colours, fields,
+node names, <code>g</code>) are protected, and assigning to one is an
+error that says what the name is. Three exceptions: - an explicit import
+replaces a command for the session (<code>from math import   log</code>;
+<code>del log</code> brings the command back); - a <code>for</code> loop
+variable may reuse a node’s name for that cell; - nodes and fields named
+after a Python builtin (<code>len</code>, <code>type</code>) don’t hide
+it: use <code>g.getNodeByName(&#39;len&#39;)</code> or
+<code>Node.type</code>.</p>
+<p><code>a - b</code> between node sets is the 2006 edge operator (the
+edges between them, like <code>a &lt;-&gt; b</code>), and
+<code>a -= b</code> does the same. For the nodes in <code>a</code> but
+not in <code>b</code>, use <code>a.difference(b)</code> or
+<code>a &amp; (not b)</code>.</p>
 <p>Things to know if you’re coming from the 2006 version (Jython, i.e.
 Python 2):</p>
 <ul>
@@ -2639,6 +2671,38 @@ between two nodes, not just three.</li>
 <li><strong>Defaults.</strong> Nodes are cornflowerblue ellipses and
 edges are dandelion, as the 2006 code had them (the 2006 manual says
 blue and green).</li>
+<li><strong>Names made consistent (2026).</strong>
+<ul>
+<li><code>pieOff()</code> is now <code>removePies()</code>, and
+<code>unbundleEdges()</code> is <code>removeBundles()</code>.
+<code>biComponentCluster()</code> is gone: use
+<code>biComponentClusters()</code>.</li>
+<li><code>addNodeField(name, type, default)</code> and
+<code>addEdgeField(...)</code> (were <code>fieldName</code>,
+<code>sqlType</code>, <code>defaultValue</code>).</li>
+<li><code>resizeLinear(field, smallest, largest)</code> and
+<code>resizeRandom(...)</code> (were <code>start</code>,
+<code>end</code>).</li>
+<li><code>springLayout(iterations=...)</code> and the other force
+layouts (was <code>max</code>).</li>
+<li><code>moveLayout(x, y)</code> and
+<code>translateLayout(dx, dy)</code> (were <code>newX</code>,
+<code>newY</code>).</li>
+<li>Keyword arguments named <code>fld</code>, <code>kindField</code>,
+<code>typeField</code>, <code>seedField</code> and <code>lenField</code>
+are now <code>field</code>, <code>scatterLayout(xfield, yfield)</code>
+is <code>scatterLayout(x, y)</code>, <code>minimum=</code> (motifs,
+<code>collapseBy</code>) is <code>smallest=</code>, and <code>k</code>
+or <code>n</code> (a number of groups or colours) is
+<code>count</code>.</li>
+</ul>
+These only matter when an argument is given by name, as in
+<code>resizeLinear(degree, start=5, end=30)</code>.</li>
+<li><strong>Language.</strong> <code>3 &lt; degree &lt; 6</code>,
+<code>field in (...)</code>, and <code>and</code>, <code>or</code> and
+<code>not</code> on sets now do what they say (Appendix B). A node or
+field named after a Python builtin (<code>len</code>, <code>type</code>)
+no longer hides it.</li>
 </ul>
 <p><code>docs/MANUAL_COMPARISON.md</code> goes through the 2006 manual
 section by section.</p>
@@ -2654,24 +2718,22 @@ structure, loading and saving, mapping, view</h2>
 <p>Add a directed edge from node1 to node2.</p>
 <h3 id="addedgenode1-node2-attrs"><code>addEdge(node1, node2, **attrs)</code></h3>
 <p>Add an undirected edge.</p>
-<h3 id="addedgefieldfieldname-sqltypevarchar-defaultvaluenone"><code>addEdgeField(fieldName, sqlType=&#39;VARCHAR&#39;, defaultValue=None)</code></h3>
+<h3 id="addedgefieldname-typevarchar-defaultnone"><code>addEdgeField(name, type=&#39;VARCHAR&#39;, default=None)</code></h3>
 <p>Create an edge field, e.g. addEdgeField(“kind”, VARCHAR, ““).</p>
 <h3 id="addnodename-attrs"><code>addNode(name, **attrs)</code></h3>
 <p>Add a node (or return the existing one with that name). addNode(vx)
 with a removed node puts it back, with its field values.</p>
-<h3 id="addnodefieldfieldname-sqltypevarchar-defaultvaluenone"><code>addNodeField(fieldName, sqlType=&#39;VARCHAR&#39;, defaultValue=None)</code></h3>
+<h3 id="addnodefieldname-typevarchar-defaultnone"><code>addNodeField(name, type=&#39;VARCHAR&#39;, default=None)</code></h3>
 <p>Create a node field, e.g. addNodeField(“score”, DOUBLE, 0).</p>
 <h3 id="addundirectededgenode1-node2-attrs"><code>addUndirectedEdge(node1, node2, **attrs)</code></h3>
 <p>Add an undirected edge between two nodes (by node or name).</p>
 <h3 id="averageedgecoloredgesnone"><code>averageEdgeColor(edges=None)</code></h3>
 <p>Color edges the average of their endpoint colors (all edges by
 default).</p>
-<h3 id="bicomponentcluster"><code>biComponentCluster()</code></h3>
-<p>Same as biComponentClusters() (the manual’s spelling).</p>
 <h3 id="centerd"><code>center(*d)</code></h3>
 <p>center() fits the whole graph; center(seq) zooms to the given
 elements.</p>
-<h3 id="collapsemotifskindfan-minimum3"><code>collapseMotifs(kind=&#39;fan&#39;, minimum=3)</code></h3>
+<h3 id="collapsemotifskindfan-smallest3"><code>collapseMotifs(kind=&#39;fan&#39;, smallest=3)</code></h3>
 <p>collapseMotifs(“fan”) collapses every motif found by findMotifs into
 one meta-node (labelled with the kind and its size), which simplifies
 the drawing without losing anything: expand(node) or expandAll() bring
@@ -2788,13 +2850,13 @@ of entity). Default field: label. Returns (node, node, score) for review
 and mergeNodes; it never merges anything itself.</p>
 <h3 id="findedgesseq"><code>findEdges(seq)</code></h3>
 <p>The edges among the members of a (possibly mixed) set.</p>
-<h3 id="findmotifskindfan-minimum3-showtrue"><code>findMotifs(kind=&#39;fan&#39;, minimum=3, show=True)</code></h3>
+<h3 id="findmotifskindfan-smallest3-showtrue"><code>findMotifs(kind=&#39;fan&#39;, smallest=3, show=True)</code></h3>
 <p>findMotifs(“fan”) finds NodeXL-style motifs, the small repeated
 shapes that clutter big drawings: “fan” several leaves (nodes with one
 neighbour) on the same node “connector” several nodes linked to exactly
 the same 2-4 others and nothing else (e.g. people who all know the same
 two) “clique” groups where everyone is linked to everyone (each node in
-at most one, largest first) with at least <code>minimum</code> members.
+at most one, largest first) with at least <code>smallest</code> members.
 Returns the groups (members only); collapseMotifs(kind) replaces each
 with one meta-node.</p>
 <h3 id="findnodesseq"><code>findNodes(seq)</code></h3>
@@ -2852,7 +2914,7 @@ F1 or Cmd/Ctrl+K for the command palette); help(command) prints that
 command’s documentation and shows it in the browser.</p>
 <h3 id="hidedisconnected"><code>hideDisconnected()</code></h3>
 <p>Hide nodes with no edges other than self loops.</p>
-<h3 id="highestfield-k10-seqnone"><code>highest(field, k=10, seq=None)</code></h3>
+<h3 id="highestfield-count10-seqnone"><code>highest(field, count=10, seq=None)</code></h3>
 <p>highest(degree) is the 10 nodes (or edges) with the largest degree,
 largest first; highest(degree, 5), or highest(degree, 5, seq) within a
 set. Elements without a value are left out.</p>
@@ -2863,7 +2925,7 @@ set. Elements without a value are left out.</p>
 an edge field) in proportion to a numeric field: 1 is the normal size.
 Sets the labelsize field; scale as in sizeBy (“linear”, “log”, “sqrt”,
 “rank”).</p>
-<h3 id="lowestfield-k10-seqnone"><code>lowest(field, k=10, seq=None)</code></h3>
+<h3 id="lowestfield-count10-seqnone"><code>lowest(field, count=10, seq=None)</code></h3>
 <p>lowest(degree, 5): the 5 with the smallest degree, smallest first
 (see highest).</p>
 <h3 id="makefromcallstarget"><code>makeFromCalls(target)</code></h3>
@@ -2993,7 +3055,7 @@ merged).</p>
 Direction is followed for directed edges; an undirected edge can carry
 flow either way. Stores each edge’s flow in <code>flow</code> and
 returns the total cost (an error if the amount can’t get through).</p>
-<h3 id="nestednesskindfield-rowsnone"><code>nestedness(kindField, rows=None)</code></h3>
+<h3 id="nestednessfield-rowsnone"><code>nestedness(field, rows=None)</code></h3>
 <p>nestedness(kind) measures how nested a two-mode network is (NODF,
 Almeida-Neto et al. 2008; 0 = not at all, 100 = perfectly): in a nested
 plant-pollinator network, the specialists interact with subsets of the
@@ -3048,7 +3110,7 @@ removed.</p>
 <h3 id="removemap"><code>removeMap()</code></h3>
 <p>removeMap() removes the map drawn by geoLayout (the positions
 stay).</p>
-<h3 id="removenoden"><code>removeNode(n)</code></h3>
+<h3 id="removenodenode"><code>removeNode(node)</code></h3>
 <p>Remove one node and its edges (undo with add(g.deleted) or undo()).
 Its name still refers to it, so addNode(n) puts it back.</p>
 <h3 id="removeselfloops"><code>removeSelfLoops()</code></h3>
@@ -3061,12 +3123,12 @@ PageRank, and the communities if any have been found (modularity_class,
 leiden_class, infomap_class). report(“summary.html”) saves it as a web
 page (offered as a download in the browser) and report(“summary.md”) as
 Markdown; with no name it’s printed. Returns the Markdown.</p>
-<h3 id="resizelinearfield-start-end"><code>resizeLinear(field, start, end)</code></h3>
-<p>Size nodes (or edge widths) by rank of field value, from start to
-end.</p>
-<h3 id="resizerandomfield-start-end"><code>resizeRandom(field, start, end)</code></h3>
+<h3 id="resizelinearfield-smallest-largest"><code>resizeLinear(field, smallest, largest)</code></h3>
+<p>Size nodes (or edge widths) by rank of field value, from smallest to
+largest.</p>
+<h3 id="resizerandomfield-smallest-largest"><code>resizeRandom(field, smallest, largest)</code></h3>
 <p>Give each distinct value of field a random size (or edge width)
-between start and end.</p>
+between smallest and largest.</p>
 <h3 id="richclubnormalizedtrue-trials5-seed0-showtrue"><code>richClub(normalized=True, trials=5, seed=0, show=True)</code></h3>
 <p>richClub() asks whether the well-connected nodes are densely linked
 to each other: for each degree k, the rich-club coefficient is the
@@ -3082,10 +3144,10 @@ interruptible).</p>
 <p>Repeatedly replace degree-2 nodes by an edge between their
 neighbours. Returns [removed, added].</p>
 <h3 id="sizebyfield-smallest-largest-scalelinear"><code>sizeBy(field, smallest, largest, scale=&#39;linear&#39;)</code></h3>
-<p>sizeBy(field, min, max) sizes nodes (or edge widths, for an edge
-field) in proportion to a numeric field’s value, from min to max. scale
-may be “linear”, “log”, “sqrt” or “rank” (as in Gephi’s ranking).
-Compare resizeLinear, which spaces distinct values evenly.</p>
+<p>sizeBy(field, smallest, largest) sizes nodes (or edge widths, for an
+edge field) in proportion to a numeric field’s value, from smallest to
+largest. scale may be “linear”, “log”, “sqrt” or “rank” (as in Gephi’s
+ranking). Compare resizeLinear, which spaces distinct values evenly.</p>
 <h3 id="skitterfield"><code>skitter(field)</code></h3>
 <p>Nodes around a circle ordered by field; radius shrinks with
 outdegree.</p>
@@ -3259,9 +3321,9 @@ graph.</p>
 <h2 id="structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions">Structure:
 bridges, cut nodes, backbones, directed graphs, mixing, comparing
 partitions</h2>
-<h3 id="ancestorsn"><code>ancestors(n)</code></h3>
-<p>ancestors(n): every node with a directed path to n (upstream: what n
-depends on or cites, transitively). Undirected edges count both
+<h3 id="ancestorsnode"><code>ancestors(node)</code></h3>
+<p>ancestors(node): every node with a directed path to node (upstream:
+what it depends on or cites, transitively). Undirected edges count both
 ways.</p>
 <h3 id="assortativityfieldnone"><code>assortativity(field=None)</code></h3>
 <p>assortativity() is the degree assortativity of the graph: positive
@@ -3269,17 +3331,17 @@ when hubs link to hubs, negative when hubs link to small nodes.
 assortativity(dept) measures homophily by a field: near 1 = ties stay
 within the same value, 0 = random mixing, negative = ties cross values.
 Numeric fields use the correlation of values across edges.</p>
-<h3 id="blockmodelk4-showtrue"><code>blockmodel(k=4, show=True)</code></h3>
-<p>blockmodel(k) groups the nodes into k positions of structurally
-equivalent nodes: nodes tied to the same others (in the same
-directions), whether or not they’re tied to each other, which is a role
-(teacher, broker, follower), not a community. Profiles are compared by
-correlation and merged by average-linkage clustering. Stores each node’s
-position in <code>position</code> (0 = largest), prints the image matrix
-(the density of ties from each position to each other; a dense diagonal
-means cohesive positions, dense off-diagonals mean roles that serve each
-other) and returns the positions. Try colorize(position), then
-collapseBy(position) for the reduced graph. Fine up to a couple of
+<h3 id="blockmodelcount4-showtrue"><code>blockmodel(count=4, show=True)</code></h3>
+<p>blockmodel(count) groups the nodes into count positions of
+structurally equivalent nodes: nodes tied to the same others (in the
+same directions), whether or not they’re tied to each other, which is a
+role (teacher, broker, follower), not a community. Profiles are compared
+by correlation and merged by average-linkage clustering. Stores each
+node’s position in <code>position</code> (0 = largest), prints the image
+matrix (the density of ties from each position to each other; a dense
+diagonal means cohesive positions, dense off-diagonals mean roles that
+serve each other) and returns the positions. Try colorize(position),
+then collapseBy(position) for the reduced graph. Fine up to a couple of
 thousand nodes.</p>
 <h3 id="bridges"><code>bridges()</code></h3>
 <p>bridges(): the edges whose removal would split a connected part of
@@ -3294,9 +3356,9 @@ identical). Works for edge fields too.</p>
 <h3 id="cutnodes"><code>cutNodes()</code></h3>
 <p>cutNodes(): the nodes whose removal would split a connected part of
 the graph (articulation points; direction ignored).</p>
-<h3 id="descendantsn"><code>descendants(n)</code></h3>
-<p>descendants(n): every node reachable from n along directed edges
-(downstream: what depends on n, or what n leads to).</p>
+<h3 id="descendantsnode"><code>descendants(node)</code></h3>
+<p>descendants(node): every node reachable from node along directed
+edges (downstream: what depends on it, or what it leads to).</p>
 <h3 id="feedbackedges"><code>feedbackEdges()</code></h3>
 <p>feedbackEdges(): directed edges that close cycles (back edges of a
 depth-first search, plus self-loops); removing or reversing them leaves
@@ -3391,7 +3453,7 @@ networkx as nx setField(nx.katz_centrality(toNetworkX()), “katz”)</p>
 <h2 id="igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows">igraph:
 communities, large-graph layouts, similarity, patterns, cuts and
 flows</h2>
-<h3 id="bipartitelayouttypefield-hgap1-vgap1"><code>bipartiteLayout(typeField, hgap=1, vgap=1)</code></h3>
+<h3 id="bipartitelayoutfield-hgap1-vgap1"><code>bipartiteLayout(field, hgap=1, vgap=1)</code></h3>
 <p>bipartiteLayout(field) draws a two-mode network in two rows (by a
 field with two values, e.g. bipartite in makeSample(“davis”)), ordering
 each row to reduce edge crossings.</p>
@@ -3436,16 +3498,16 @@ triangles, or a networkx graph (nx.cycle_graph(4), nx.star_graph(3)).
 induced=True requires no extra edges among the matched nodes. Returns up
 to <code>limit</code> matches, each a set of nodes; the same nodes
 matched in another order count once.</p>
-<h3 id="fluidclustersk-seed0"><code>fluidClusters(k, seed=0)</code></h3>
-<p>fluidClusters(k) splits a connected graph into exactly k communities
-(fluid communities). On a graph in pieces run it on one part, e.g. in
-subgraph(giantComponent()). Stored in fluid_class.</p>
+<h3 id="fluidclusterscount-seed0"><code>fluidClusters(count, seed=0)</code></h3>
+<p>fluidClusters(count) splits a connected graph into exactly count
+communities (fluid communities). On a graph in pieces run it on one
+part, e.g. in subgraph(giantComponent()). Stored in fluid_class.</p>
 <h3 id="infomapclusterstrials10-seed0"><code>infomapClusters(trials=10, seed=0)</code></h3>
 <p>infomapClusters() finds communities by Infomap (how a random walker’s
 flow stays inside groups), following edge direction and weights; a good
 choice for directed networks such as citations or web links. Stored in
 infomap_class.</p>
-<h3 id="labelpropagationclustersseedfieldnone-seed0"><code>labelPropagationClusters(seedField=None, seed=0)</code></h3>
+<h3 id="labelpropagationclustersfieldnone-seed0"><code>labelPropagationClusters(field=None, seed=0)</code></h3>
 <p>labelPropagationClusters() finds communities very fast (linear time)
 by letting each node adopt its neighbours’ most common label; good for
 very large graphs, rougher than Leiden. labelPropagationClusters(field)
@@ -3471,7 +3533,7 @@ tree-like networks.</p>
 as capacities (capacity=None: 1 per edge), following edge direction when
 the graph has directed edges. Each edge’s flow is stored in the edge
 field <code>flow</code>; returns the total.</p>
-<h3 id="maxmatchingtypefieldnone"><code>maxMatching(typeField=None)</code></h3>
+<h3 id="maxmatchingfieldnone"><code>maxMatching(field=None)</code></h3>
 <p>maxMatching() returns a largest set of edges with no node in two of
 them (pairs everyone it can); maxMatching(field) matches across the two
 values of a field in a two-mode network, using weights.</p>
@@ -3504,7 +3566,7 @@ travel with the swapped ends. keep=field only swaps ends that share that
 field’s value, so the edges between each pair of values stay the same in
 number: rewire(keep=kind) keeps a two-mode network two-mode (plants
 still only link to pollinators).</p>
-<h3 id="similarton-methodjaccard-top10"><code>similarTo(n, method=&#39;jaccard&#39;, top=10)</code></h3>
+<h3 id="similartonode-methodjaccard-top10"><code>similarTo(node, method=&#39;jaccard&#39;, top=10)</code></h3>
 <p>similarTo(v1) scores every node by how much its neighbourhood
 overlaps v1’s, stores the score in the field <code>similarity</code> and
 returns the <code>top</code> most similar nodes. method: “jaccard”
@@ -3563,14 +3625,13 @@ dot, neato, fdp, sfdp, circo, twopi, osage or patchwork. Keyword
 arguments become Graphviz graph attributes, e.g. graphvizLayout(“neato”,
 mode=“sgd”, overlap=“prism”) or graphvizLayout(“dot”, rankdir=“LR”,
 ranksep=1). Pinned (fixed) nodes stay put in neato and fdp.</p>
-<h3 id="neatolayoutmodemajor-modelshortpath-lenfieldnone-overlapprism"><code>neatoLayout(mode=&#39;major&#39;, model=&#39;shortpath&#39;, lenField=None, overlap=&#39;prism&#39;)</code></h3>
+<h3 id="neatolayoutmodemajor-modelshortpath-fieldnone-overlapprism"><code>neatoLayout(mode=&#39;major&#39;, model=&#39;shortpath&#39;, field=None, overlap=&#39;prism&#39;)</code></h3>
 <p>neatoLayout() places nodes so their distances on screen follow their
 distances in the graph (stress majorization: the best-quality layout up
 to a few thousand nodes). mode: “major” (default), “sgd” (faster), “KK”
-(Kamada-Kawai); model=“circuit” uses resistance distance;
-lenField=weight makes an edge field the preferred edge length;
-overlap=“prism” (default) then removes node overlaps (overlap=“true”
-leaves them).</p>
+(Kamada-Kawai); model=“circuit” uses resistance distance; field=weight
+makes an edge field the preferred edge length; overlap=“prism” (default)
+then removes node overlaps (overlap=“true” leaves them).</p>
 <h3 id="osagelayoutclusters"><code>osageLayout(clusters)</code></h3>
 <p>osageLayout(dept) packs each value’s nodes into a rectangle and packs
 the rectangles together: a compact overview of the groups.</p>
@@ -3641,7 +3702,7 @@ between axes. scale is “rank” (default; evenly spread), “linear” or
 leaves / connectors / hubs by degree. The axes are drawn with their
 labels; any later layout removes them. E.g. hiveLayout(dept, pagerank)
 or hiveLayout(modularity_class, axes=5)</p>
-<h3 id="isomlayoutmaxnone"><code>isomLayout(max=None)</code></h3>
+<h3 id="isomlayoutiterationsnone"><code>isomLayout(iterations=None)</code></h3>
 <p>isomLayout() runs the JUNG ISOM (self-organising map) layout for 2000
 epochs; isomLayout(n) runs n epochs.</p>
 <h3 id="jfrlayout"><code>jfrLayout()</code></h3>
@@ -3654,7 +3715,7 @@ node.</p>
 <h3 id="jkklayout2"><code>jkkLayout2()</code></h3>
 <p>jkkLayout2() runs the JUNG Kamada-Kawai layout with integer distances
 (same algorithm as jkkLayout1).</p>
-<h3 id="jspringlayoutmaxnone"><code>jSpringLayout(max=None)</code></h3>
+<h3 id="jspringlayoutiterationsnone"><code>jSpringLayout(iterations=None)</code></h3>
 <p>jSpringLayout() runs the JUNG spring layout from random positions
 until it settles or for 500 iterations (fewer on graphs over 1000
 nodes); jSpringLayout(n) runs exactly n iterations.</p>
@@ -3673,14 +3734,14 @@ moved.</p>
 <h3 id="mirrorlayouthorizontaltrue"><code>mirrorLayout(horizontal=True)</code></h3>
 <p>mirrorLayout() flips the layout left-right; mirrorLayout(false) flips
 it upside down.</p>
-<h3 id="movelayoutnewx-newy"><code>moveLayout(newX, newY)</code></h3>
+<h3 id="movelayoutx-y"><code>moveLayout(x, y)</code></h3>
 <p>moveLayout(x, y) moves the layout so its top-left corner is at (x,
 y).</p>
 <h3 id="noverlaplayoutmargin5-ratio1.2"><code>noverlapLayout(margin=5, ratio=1.2)</code></h3>
 <p>noverlapLayout() nudges nodes apart until none overlap (Gephi’s
 Noverlap): each node is treated as a disc of ratio x its size plus
 margin.</p>
-<h3 id="physicslayoutmaxnone"><code>physicsLayout(max=None)</code></h3>
+<h3 id="physicslayoutiterationsnone"><code>physicsLayout(iterations=None)</code></h3>
 <p>physicsLayout() runs the graphopt physics layout (charged nodes,
 springs) for 500 steps from the current positions (fewer on graphs over
 1000 nodes); physicsLayout(n) runs n steps.</p>
@@ -3705,11 +3766,11 @@ the circle does).</p>
 <h3 id="rotatelayoutdegrees90"><code>rotateLayout(degrees=90)</code></h3>
 <p>rotateLayout(degrees) turns the layout clockwise about its
 centre.</p>
-<h3 id="scatterlayoutxfield-yfield-width1000-height1000"><code>scatterLayout(xfield, yfield, width=1000, height=1000)</code></h3>
-<p>scatterLayout(xfield, yfield) places nodes by two numeric fields (x
-to the right, y upwards) in a width x height area. Dragging a node then
-edits those two values.</p>
-<h3 id="springlayoutmaxnone"><code>springLayout(max=None)</code></h3>
+<h3 id="scatterlayoutx-y-width1000-height1000"><code>scatterLayout(x, y, width=1000, height=1000)</code></h3>
+<p>scatterLayout(x, y) places nodes by two numeric fields (x to the
+right, y upwards) in a width x height area. Dragging a node then edits
+those two values.</p>
+<h3 id="springlayoutiterationsnone"><code>springLayout(iterations=None)</code></h3>
 <p>springLayout() runs the GUESS spring layout from the current
 positions until it settles or for 1000 iterations (fewer on graphs over
 1000 nodes: 1000 * 1000 / nodes, at least 100); springLayout(n) runs
@@ -3722,7 +3783,7 @@ routes long edges through dummy positions.</p>
 <h3 id="sugiyamalayout2"><code>sugiyamaLayout2()</code></h3>
 <p>sugiyamaLayout2() is a simpler layered layout: levels 200 apart, each
 node given horizontal room in proportion to its children.</p>
-<h3 id="translatelayoutnewx-newy"><code>translateLayout(newX, newY)</code></h3>
+<h3 id="translatelayoutdx-dy"><code>translateLayout(dx, dy)</code></h3>
 <p>translateLayout(dx, dy) moves every node by (dx, dy).</p>
 <h3 id="treelayoutrootnone-horizontalfalse-spacingnone"><code>treeLayout(root=None, horizontal=False, spacing=None)</code></h3>
 <p>treeLayout() draws each connected component as a tidy tree (a
@@ -3732,7 +3793,7 @@ right; spacing sets the distance between neighbouring leaves.</p>
 <h3 id="weightedkklayout"><code>weightedKKLayout()</code></h3>
 <p>weightedKKLayout() runs the JUNG Kamada-Kawai layout using shortest
 paths where each edge’s <code>weight</code> is its length.</p>
-<h3 id="weightedspringlayoutminlength-maxlength-maxnone"><code>weightedSpringLayout(minLength, maxLength, max=None)</code></h3>
+<h3 id="weightedspringlayoutminlength-maxlength-iterationsnone"><code>weightedSpringLayout(minLength, maxLength, iterations=None)</code></h3>
 <p>weightedSpringLayout(minLength, maxLength[, iterations]) is
 springLayout with each edge’s natural length mapped linearly from its
 <code>weight</code> (lowest weight -&gt; minLength, highest -&gt;
@@ -3904,10 +3965,10 @@ those nodes or edges (e.g. table(sel), table(freq &gt; 10),
 table(g.edges)).</p>
 <h2 id="pie-nodes-borders-and-edge-bundling">Pie nodes, borders and edge
 bundling</h2>
-<h3 id="borderbyfld-width2.5"><code>borderBy(fld, width=2.5)</code></h3>
+<h3 id="borderbyfield-width2.5"><code>borderBy(field, width=2.5)</code></h3>
 <p>borderBy(field) gives node borders a distinct colour per value of a
 field (as colorize does for fills) and widens them.</p>
-<h3 id="bundleedgesfldnone-strength0.85-methodnone-neighbors10-anglestrength1.2-stiffness0.1-compatibility0.6-cycles6"><code>bundleEdges(fld=None, strength=0.85, method=None, neighbors=10, angleStrength=1.2, stiffness=0.1, compatibility=0.6, cycles=6)</code></h3>
+<h3 id="bundleedgesfieldnone-strength0.85-methodnone-neighbors10-anglestrength1.2-stiffness0.1-compatibility0.6-cycles6"><code>bundleEdges(field=None, strength=0.85, method=None, neighbors=10, angleStrength=1.2, stiffness=0.1, compatibility=0.6, cycles=6)</code></h3>
 <p>bundleEdges() bundles edges that run alike, so the main flows stand
 out of a hairball. Three methods: bundleEdges() MINGLE (multilevel,
 saves “ink”): fast, tree-like bundles; good for large graphs
@@ -3917,25 +3978,25 @@ the centres of the groups of a node field strength 0..1 blends toward
 straight lines (0 = straight). MINGLE: neighbors (edges compared with
 each), angleStrength (higher allows sharper turns). FDEB: stiffness (of
 each edge), compatibility (0..1, how alike edges must be to attract),
-cycles. Layouts and unbundleEdges() straighten them again.</p>
+cycles. Layouts and removeBundles() straighten them again.</p>
 <h3 id="piechartfields-palettenone"><code>pieChart(fields, palette=None)</code></h3>
 <p>pieChart([f1, f2, …]) draws each node as a pie whose slices are the
 node’s values of those numeric fields; palette=<a href="#colors">colors</a> sets slice colours.</p>
-<h3 id="pieneighborsfld"><code>pieNeighbors(fld)</code></h3>
+<h3 id="pieneighborsfield"><code>pieNeighbors(field)</code></h3>
 <p>pieNeighbors(field) draws each node as a pie of its neighbours’
 values of a categorical field (the most common values; the rest as
 “other”).</p>
-<h3 id="pieoff"><code>pieOff()</code></h3>
-<p>Draw nodes normally again (after pieChart / pieNeighbors).</p>
-<h3 id="unbundleedges"><code>unbundleEdges()</code></h3>
+<h3 id="removebundles"><code>removeBundles()</code></h3>
 <p>Draw edges straight again after bundleEdges.</p>
+<h3 id="removepies"><code>removePies()</code></h3>
+<p>Draw nodes normally again (after pieChart / pieNeighbors).</p>
 <h2 id="grouping-collapse-and-expand">Grouping: collapse and expand</h2>
 <h3 id="collapseseq-namenone"><code>collapse(seq, name=None)</code></h3>
 <p>collapse(seq) replaces those nodes with one meta-node (see module
 help); collapse(seq, “name”) names it. Returns the meta-node.</p>
-<h3 id="collapsebyfield-minimum2"><code>collapseBy(field, minimum=2)</code></h3>
+<h3 id="collapsebyfield-smallest2"><code>collapseBy(field, smallest=2)</code></h3>
 <p>collapseBy(field) collapses each group of nodes sharing a value of
-field (with at least <code>minimum</code> members) into a meta-node
+field (with at least <code>smallest</code> members) into a meta-node
 named after the value.</p>
 <h3 id="expandmeta"><code>expand(meta)</code></h3>
 <p>expand(metaNode) brings back the nodes a meta-node stands for (also:
@@ -3952,7 +4013,7 @@ tabs</h2>
 <p>The graphs in this session; the current one first.</p>
 <h3 id="newgraphnameuntitled"><code>newGraph(name=&#39;untitled&#39;)</code></h3>
 <p>newGraph(name) starts an empty graph and switches to it.</p>
-<h3 id="projectkindfield-keep-methodcount-namenone"><code>project(kindField, keep, method=&#39;count&#39;, name=None)</code></h3>
+<h3 id="projectfield-keep-methodcount-namenone"><code>project(field, keep, method=&#39;count&#39;, name=None)</code></h3>
 <p>project(kind, “woman”) turns a two-mode network (people and the
 events, groups or papers they belong to) into a one-mode network of just
 the nodes whose <code>kind</code> is “woman”: two are linked when they
@@ -4178,10 +4239,10 @@ or deleting rows is not supported — use addNode/remove.</p>
 <h2 id="colors">Colors</h2>
 <h3 id="averagecolorc1-c2"><code>averageColor(c1, c2)</code></h3>
 <p>The color halfway between two colors.</p>
-<h3 id="distinctcolorsn-seed1"><code>distinctColors(n, seed=1)</code></h3>
-<p>distinctColors(n): n clearly different colours (as “r,g,b” strings),
-the most different first — the categorical palette colorize(field)
-uses.</p>
+<h3 id="distinctcolorscount-seed1"><code>distinctColors(count, seed=1)</code></h3>
+<p>distinctColors(count): count clearly different colours (as “r,g,b”
+strings), the most different first — the categorical palette
+colorize(field) uses.</p>
 <h3 id="generatecolorsargs"><code>generateColors(*args)</code></h3>
 <p>generateColors(start, end, n) or generateColors(start, middle, end,
 n).</p>

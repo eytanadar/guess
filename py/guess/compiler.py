@@ -161,19 +161,36 @@ def _thunk(expr):
     return ast.Lambda(args=args, body=expr)
 
 
+_WHAT = {
+    "command": "'{n}' is the GUESS command {n}(); call yours something else ({n}_, say), "
+               "or import your own explicitly (from module import {n})",
+    "color": "'{n}' is a GUESS colour; call yours something else ({n}_, say)",
+    "field": "'{n}' is a field of this graph (n.{n} on a node, Node.{n} for the field); "
+             "call yours something else",
+    "node": "'{n}' is a node of this graph (write {n}.color = red to change it); call yours something else",
+    "graph": "'{n}' is the graph; call yours something else",
+}
+
+
 class _Transformer(ast.NodeTransformer):
-    def __init__(self, is_protected, interactive):
+    def __init__(self, is_protected, interactive, imports=None):
         self.is_protected = is_protected or (lambda name: False)
         self.interactive = interactive
+        self.imports = imports           # protected names an import takes over (filled in)
+        self.loop_target = False
         self.scope = 0                 # >0 inside function/class/lambda bodies
         self.globals_stack = [set()]   # names declared `global` in the current function
 
     # ---- protected names -------------------------------------------------
     def _check_store(self, name, node):
         at_module = self.scope == 0 or name in self.globals_stack[-1]
-        if at_module and self.is_protected(name):
-            err = ProtectedNameError(
-                f"'{name}' is a GUESS system name (graph, node, field or color) and cannot be reassigned")
+        kind = self.is_protected(name) if at_module else None
+        if kind and self.loop_target and kind == "node":
+            return          # for n in g.nodes: is fine even with a node called n (for this cell)
+        if kind:
+            text = _WHAT.get(kind if isinstance(kind, str) else "", "'{n}' is a GUESS system name "
+                             "(graph, node, field or color) and cannot be reassigned").format(n=name)
+            err = ProtectedNameError(text)
             err.lineno = getattr(node, "lineno", None)
             err.offset = getattr(node, "col_offset", 0) + 1
             raise err
@@ -243,8 +260,24 @@ class _Transformer(ast.NodeTransformer):
     def visit_alias(self, node):
         name = node.asname or node.name.split(".")[0]
         if name != "*":
-            self._check_store(name, node)
+            at_module = self.scope == 0 or name in self.globals_stack[-1]
+            kind = self.is_protected(name) if at_module else None
+            if kind and kind != "graph" and self.imports is not None:
+                self.imports.add(name)       # an explicit import wins (the session says so)
+            else:
+                self._check_store(name, node)
         return node
+
+    def visit_For(self, node):
+        self.loop_target = True
+        node.target = self.visit(node.target)
+        self.loop_target = False
+        node.iter = self.visit(node.iter)
+        node.body = _flatten_stmts([self.visit(s) for s in node.body])
+        node.orelse = _flatten_stmts([self.visit(s) for s in node.orelse])
+        return node
+
+    visit_AsyncFor = visit_For
 
     # ---- graph operators -----------------------------------------------
     def visit_Compare(self, node):
@@ -395,6 +428,11 @@ class _Transformer(ast.NodeTransformer):
             return ast.copy_location(ast.Expr(_call(
                 "__gaugattr__", self.visit(node.target.value), ast.Constant(node.target.attr),
                 ast.Constant(op), node.value)), node)
+        if isinstance(node.op, ast.Sub) and isinstance(node.target, ast.Name):
+            # s -= t means s = s - t, as `-` does (edges between node sets)
+            target = self.visit(node.target)
+            load = ast.Name(id=target.id, ctx=ast.Load())
+            return ast.copy_location(ast.Assign(targets=[target], value=_call("__gisub__", load, node.value)), node)
         node.target = self.visit(node.target)
         return node
 
@@ -428,18 +466,22 @@ def _flatten_stmts(stmts):
     return out
 
 
-def transform(source, *, is_protected=None, interactive=True, filename="<console>"):
+def transform(source, *, is_protected=None, interactive=True, filename="<console>", imports=None):
     rewritten = rewrite_tokens(source)
     tree = ast.parse(rewritten, filename=filename, mode="exec")
-    tree = _Transformer(is_protected, interactive).visit(tree)
+    tree = _Transformer(is_protected, interactive, imports).visit(tree)
     ast.fix_missing_locations(tree)
     return tree
 
 
-def compile_gython(source, *, is_protected=None, interactive=True, filename="<console>", names=None):
+def compile_gython(source, *, is_protected=None, interactive=True, filename="<console>", names=None,
+                   imports=None):
     """Compile Gython to a code object. If `names` is a set, the bare names the
-    code reads are added to it (so computed fields can be prepared first)."""
-    tree = transform(source, is_protected=is_protected, interactive=interactive, filename=filename)
+    code reads are added to it (so computed fields can be prepared first). If
+    `imports` is a set, protected names that the code imports are added to it
+    (and allowed); otherwise importing one is an error."""
+    tree = transform(source, is_protected=is_protected, interactive=interactive, filename=filename,
+                     imports=imports)
     if names is not None:
         names.update(n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load))
     return compile(tree, filename, "exec")

@@ -655,7 +655,7 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `radialLayout(v1)` | rings around a node by distance |
 | `circleLayout()` | a circle; `circleLayout(dept)` makes one circle per group |
 | `hiveLayout(axis, position)` | a hive plot (below) |
-| `scatterLayout(xfield, yfield)` | a scatter plot of two fields |
+| `scatterLayout(x, y)` | a scatter plot of two fields |
 | `randomLayout()` | random positions |
 | `drlLayout()`, `lglLayout()`, `umapLayout()` | for large graphs (igraph, section 7.9): DrL (tens of thousands of nodes, clusters well apart), LGL (grown from a root), UMAP (tight islands) |
 | `dhLayout()` | Davidson–Harel: even spacing, few crossings; small graphs |
@@ -667,7 +667,7 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `binPackLayout()` | packs the connected components side by side |
 | `removeOverlap()` | separate overlapping nodes while keeping the layout's shape (Graphviz PRISM); works after any layout |
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
-| `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(x, y)` | transform the current layout |
+| `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(dx, dy)`, `moveLayout(x, y)` | transform the current layout |
 
 The Graphviz and igraph layouts are loaded in the background a few seconds
 after GUESS starts (about 2 MB together). If you run one sooner, GUESS says
@@ -779,9 +779,9 @@ A few more ways to show values on nodes:
 ```python
 pieChart([indegree, outdegree])     # each node becomes a pie of several fields
 pieNeighbors(dept)                  # a pie of the neighbours' departments
-pieOff()
+removePies()
 bundleEdges(dept)                   # bundle edges that run between the same groups
-unbundleEdges()
+removeBundles()
 ```
 
 Edge bundling also works without groups. `bundleEdges()` uses MINGLE
@@ -796,7 +796,7 @@ relaxes the bundles toward straight lines. The View menu has both.
 ```python
 bundleEdges()                       # MINGLE
 bundleEdges(method="fdeb", strength=0.7)
-unbundleEdges()
+removeBundles()
 ```
 
 ## 7.3 Field, graph, node and edge statistics
@@ -906,8 +906,8 @@ compareClusters(modularity_class, dept)   # do the communities match departments
 `compareClusters` gives normalized mutual information by default (0 to 1);
 `method="ari"` (adjusted Rand), `"rand"` and `"vi"` are the alternatives.
 
-For directed graphs such as citations or dependencies, `ancestors(n)` and
-`descendants(n)` follow the arrows, the `generation` field gives each node's
+For directed graphs such as citations or dependencies, `ancestors(node)` and
+`descendants(node)` follow the arrows, the `generation` field gives each node's
 step in the hierarchy, `transitiveReduction()` returns the edges that longer
 paths already imply (hide them to see the backbone), and `feedbackEdges()`
 returns edges that close cycles.
@@ -956,7 +956,7 @@ the modularity:
 | `infomapClusters()` | Infomap: random-walk flow, best for directed graphs |
 | `walktrapClusters(count)`, `fastGreedyClusters(count)` | hierarchies; `cutDendrogram(n)` re-cuts them into n groups |
 | `labelPropagationClusters(field)` | very fast; given a field, spreads its values to the nodes without one |
-| `eigenvectorClusters()`, `fluidClusters(k)`, `voronoiClusters()` | spectral; exactly k groups; around central nodes |
+| `eigenvectorClusters()`, `fluidClusters(count)`, `voronoiClusters()` | spectral; exactly `count` groups; around central nodes |
 | `spinglassClusters()`, `optimalClusters()`, `cohesiveBlocks()` | small graphs: signed networks; the exact optimum; nested cohesive groups |
 
 ```python
@@ -1566,7 +1566,7 @@ file next to `index.html`. Add `&app=1` to hide the console.
 Colours can be given by name (`red`, `cornflowerblue`), as `"r,g,b"` or
 `"r,g,b,a"` strings (0–255), or as `"#rrggbb"`. The names are variables, so
 `v1.color = wildstrawberry` needs no quotes. `averageColor(c1, c2)`,
-`generateColors(start, end, n)`, `distinctColors(n)` and `randomColor()` make
+`generateColors(start, end, n)`, `distinctColors(count)` and `randomColor()` make
 new colours.
 
 The named colours from 2006 are below (case doesn't matter). The standard
@@ -1592,6 +1592,34 @@ Gython is Python 3 with these additions:
 | `true`, `false` | the same as `True`, `False` |
 | a command name on its own (`center`) | calls it |
 | node names, field names, commands, colours | predefined, protected variables |
+
+**Command conventions.**
+- **Fields.** An argument that takes a field also takes its name: `sizeBy(degree)` and
+  `sizeBy("degree")` are the same. A command with one field argument calls
+  it `field`; one with several names them by role (`scatterLayout(x, y)`).
+- **Ranges.** Sizes run from `smallest` to `largest`, colours from `start` to
+  `end`.
+- **Counts.** A number of things to make or return is `count`, and a node
+  argument is `node`.
+- **Switching things off.** A display mode takes `on=`
+  (`curvedEdges(false)`); something drawn on top is removed with a
+  matching `remove…` command (`removePies()`, `removeBundles()`,
+  `removeConvexHulls()`, `removeLegends()`, `removeMap()`).
+- **`name=`** always names what the command creates: a field, a graph or
+  a node.
+
+**Names.** GUESS's own names (commands, colours, fields, node names, `g`)
+are protected, and assigning to one is an error that says what the name
+is. Three exceptions:
+- an explicit import replaces a command for the session (`from math import
+  log`; `del log` brings the command back);
+- a `for` loop variable may reuse a node's name for that cell;
+- nodes and fields named after a Python builtin (`len`, `type`) don't hide
+  it: use `g.getNodeByName('len')` or `Node.type`.
+
+`a - b` between node sets is the 2006 edge operator (the edges between
+them, like `a <-> b`), and `a -= b` does the same. For the nodes in `a`
+but not in `b`, use `a.difference(b)` or `a & (not b)`.
 
 Things to know if you're coming from the 2006 version (Jython, i.e.
 Python 2):
@@ -1627,6 +1655,26 @@ unchanged except where Python 3 differs. The main differences:
   just three.
 - **Defaults.** Nodes are cornflowerblue ellipses and edges are dandelion, as
   the 2006 code had them (the 2006 manual says blue and green).
+- **Names made consistent (2026).**
+  - `pieOff()` is now `removePies()`, and `unbundleEdges()` is
+    `removeBundles()`. `biComponentCluster()` is gone: use
+    `biComponentClusters()`.
+  - `addNodeField(name, type, default)` and `addEdgeField(...)` (were
+    `fieldName`, `sqlType`, `defaultValue`).
+  - `resizeLinear(field, smallest, largest)` and `resizeRandom(...)` (were
+    `start`, `end`).
+  - `springLayout(iterations=...)` and the other force layouts (was `max`).
+  - `moveLayout(x, y)` and `translateLayout(dx, dy)` (were `newX`, `newY`).
+  - Keyword arguments named `fld`, `kindField`, `typeField`, `seedField` and
+    `lenField` are now `field`, `scatterLayout(xfield, yfield)` is
+    `scatterLayout(x, y)`, `minimum=` (motifs, `collapseBy`) is
+    `smallest=`, and `k` or `n` (a number of groups or colours) is `count`.
+
+  These only matter when an argument is given by name, as in
+  `resizeLinear(degree, start=5, end=30)`.
+- **Language.** `3 < degree < 6`, `field in (...)`, and `and`, `or` and
+  `not` on sets now do what they say (Appendix B). A node or field named
+  after a Python builtin (`len`, `type`) no longer hides it.
 
 `docs/MANUAL_COMPARISON.md` goes through the 2006 manual section by section.
 

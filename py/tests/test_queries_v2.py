@@ -88,3 +88,46 @@ def test_highest_lowest_and_descending():
     assert [n.degree for n in ev(s, "sortBy(degree, descending=true)[:3]")] == [n.degree for n in hi]
     within = ev(s, "highest(degree, 2, dept == 'dept1')")
     assert all(n.dept == "dept1" for n in within) and len(within) == 2
+
+
+def test_reserved_names_loosened():
+    s = _s()
+    # an explicit import replaces a command for the session; del brings it back
+    assert s.run("from math import log\n__r = log(100, 10)"), s.rec.of("error")
+    assert s.ns["__r"] == 2.0 and "now your import" in s.rec.of("text")[-1]["text"]
+    assert s.run("del log") and getattr(s.ns["log"], "_guess_command", False)
+    assert not s.run("import g")                     # never the graph
+    # loop variables may reuse a node's name, for the cell
+    s.run("addNode('n')")
+    assert s.run("for n in g.nodes[:3]: pass"), s.rec.of("error")
+    assert ev(s, "n.name") == "n"                     # the node again afterwards
+    assert not s.run("n = 5")                         # plain assignment is still protected
+    # nodes and fields never hide Python's builtins
+    s.run("addNode('len'); addNodeField('type', VARCHAR, 'a')")
+    assert ev(s, "len([1, 2, 3])") == 3
+    assert ev(s, "type(3).__name__") == "int"
+    assert len(ev(s, "Node.type == 'a'")) == len(s.graph.nodes)
+    assert ev(s, "g.getNodeByName('len').name") == "len"
+
+
+def test_minus_assign_matches_minus():
+    s = _s()
+    assert ev(s, "(lambda a: a)(5)") == 5
+    s.run("a = (dept == 'dept1')\na -= (dept == 'dept2')")
+    assert list(s.ns["a"]) == list(ev(s, "(dept == 'dept1') - (dept == 'dept2')"))
+    assert "a.difference(b)" in s.ns["a"].annotation
+    s.run("k = 10\nk -= 3\nst = {1, 2}\nst2 = st\nst -= {1}")
+    assert s.ns["k"] == 7 and s.ns["st2"] == {2} and s.ns["st"] is s.ns["st2"]
+
+
+def test_field_names_as_strings_and_renamed_commands():
+    s = _s()
+    assert s.run("sizeBy('degree', 4, 20)\ncolorBy('pagerank', yellow, red)\nlegendFor('dept')\n"
+                 "__r = len(highest('degree', 3))"), s.rec.of("error")
+    assert s.ns["__r"] == 3
+    assert not s.run("sizeBy('degre', 4, 20)")
+    assert "did you mean 'degree'" in s.rec.of("error")[-1]["summary"]
+    assert s.run("resizeLinear(degree, smallest=5, largest=30)"), s.rec.of("error")
+    assert s.run("addNodeField(name='score', type=DOUBLE, default=1.5)") and ev(s, "v1.score") == 1.5
+    assert s.run("pieChart(dept)\nremovePies()\nbundleEdges()\nremoveBundles()"), s.rec.of("error")
+    assert not s.run("pieOff()") and not s.run("unbundleEdges()")

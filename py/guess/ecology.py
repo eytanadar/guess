@@ -199,7 +199,7 @@ def install(session):
         return results
 
     @cmd
-    def nestedness(kindField, rows=None):
+    def nestedness(field, rows=None):
         """nestedness(kind) measures how nested a two-mode network is (NODF,
         Almeida-Neto et al. 2008; 0 = not at all, 100 = perfectly): in a
         nested plant-pollinator network, the specialists interact with
@@ -209,7 +209,7 @@ def install(session):
         the columns). Compare with a randomised network (rewire()) to judge
         whether a value is high."""
         gr = g()
-        f = kindField if isinstance(kindField, Field) else gr.node_schema.get(str(kindField))
+        f = field if isinstance(field, Field) else gr.node_schema.get(str(field))
         if f is None:
             raise GuessError("nestedness needs the field that says which side each node is on")
         vals = [v for v in f.distinct if v is not None]

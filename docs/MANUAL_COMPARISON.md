@@ -52,7 +52,7 @@ are ordinary variables, not protected names, so a script can still say
 |---|---|
 | `g.gemLayout()`, `g.frLayout()`, `g.radialLayout(v5)`, `g.colorize(…)` (§6, §7.3, §16.2) | every command is also a method of `g` |
 | `random()`, `random(w, h)` (§6) | calling `random` runs the random layout; `random.choice(…)` etc. still reach Python's module |
-| `biComponentCluster()` (§7.1) | alias of `biComponentClusters()` |
+| `biComponentCluster()` (§7.1) | removed in 2026: use `biComponentClusters()` |
 | `findEdges(set)`, `findNodes(set)` (§5.1) | the edges / nodes among a set's members. (`set.edges` / `set.nodes` also include incident edges / endpoints) |
 | `Types.INTEGER`, `Integer(0)`, `Double`, `String`, … (§8) | accepted |
 | `Morpher.setNodeDisappearBy(.2)` etc. (§11) | accepted (the plain functions also work) |

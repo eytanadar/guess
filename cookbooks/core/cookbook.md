@@ -487,7 +487,7 @@ forceAtlas2Layout()
 | one node's view of the world | `radialLayout(node)`, `twopiLayout()` |
 | groups on a circle | `circleLayout()`, `circoLayout()`, `hiveLayout(field)` |
 | two kinds of node | `bipartiteLayout(field)` |
-| attributes as coordinates | `scatterLayout(xfield, yfield)` |
+| attributes as coordinates | `scatterLayout(x, y)` |
 
 Layouts start from the current positions, so running one twice refines it.
 `removeOverlap()` (or `noverlapLayout()`) pushes overlapping nodes apart
@@ -559,7 +559,7 @@ bundleEdges()
 nodes. `bundleEdges()` gathers edges that run in the same direction into
 bundles (MINGLE). `method="fdeb"` gives smoother curves, and passing a
 field (`bundleEdges(modularity_class)`) bundles within groups.
-`unbundleEdges()` undoes it.
+`removeBundles()` undoes it.
 
 ## Simplify a hairball with motifs [Intermediate]{.level}
 
@@ -702,16 +702,15 @@ numbers = [f.name for f in fields if all(isinstance(v, (int, float)) for v in f.
 numbers = numbers + ["degree", "betweenness", "pagerank"]
 
 def colour_by(name):
-    fld = getNodeSchema()[[f.name for f in getNodeSchema()].index(name)]
     if name in numbers and name not in categories:
-        colorBy(fld, lightgray, red)
+        colorBy(name, lightgray, red)
     else:
-        colorize(fld)
-    legendFor(fld)
+        colorize(name)
+    legendFor(name)
     StatusBar.setStatus(f"colour: {name}")
 
 def size_by(name):
-    sizeBy(getNodeSchema()[[f.name for f in getNodeSchema()].index(name)], 4, 30)
+    sizeBy(name, 4, 30)
 
 def min_degree(v):
     showOnly(degree >= int(v))
@@ -739,7 +738,7 @@ graphevents.clickNode = details
 item = NodeEditorPopup.addItem("Focus on neighbourhood")
 item.menuEvent = lambda n: showOnly(egoNetwork(n, 2))
 min_degree(0)
-colour_by(max(categories, key=lambda c: len(getNodeSchema()[[f.name for f in getNodeSchema()].index(c)].distinct)) if categories else "degree")
+colour_by(max(categories, key=lambda c: len(getattr(Node, c).distinct)) if categories else "degree")
 size_by("degree")
 center()
 ```
@@ -753,7 +752,8 @@ center()
   sorts the data's fields into categories (few distinct values) and
   numbers, adds three computed measures, and offers them in two
   `Dropdown`s. Choosing one calls `colorize` or
-  `colorBy` (with a live legend), or `sizeBy`.
+  `colorBy` (with a live legend), or `sizeBy`, with the field's name:
+  every command that takes a field also takes its name as a string.
 - **Filtering.** The `Slider` calls `showOnly(degree >= v)`, a query
   built from its value.
 - **The rest.** The buttons wrap commands from this book. `graphevents`

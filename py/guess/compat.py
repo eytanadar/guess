@@ -3,7 +3,6 @@ examples run unchanged (see docs/MANUAL_COMPARISON.md).
 
     g.gemLayout(), g.colorize(…)        every command is also a Graph method
     random(), random(w, h)              the random layout (and still Python's random module)
-    biComponentCluster()                the manual's spelling
     findNodes(set), findEdges(set)      the nodes / edges in a mixed set
     Types.INTEGER, Integer(0), …        Java type names
     Morpher.setNodeDisappearBy(.2) …    morph timing
@@ -198,9 +197,6 @@ def install(session):
         return None
     g.command_lookup = command
 
-    def biComponentCluster():
-        """Same as biComponentClusters() (the manual's spelling)."""
-        return cmd_lookup["biComponentClusters"][0]()
 
     def findNodes(seq):
         """The nodes among the members of a (possibly mixed) set."""
@@ -224,7 +220,7 @@ def install(session):
         """For old applet scripts: .showDocument(url) opens a browser window."""
         return _AppletContext(session)
 
-    for fn in (biComponentCluster, findNodes, findEdges, readjustEdges, setSynchronous, infowindow, getAppletContext):
+    for fn in (findNodes, findEdges, readjustEdges, setSynchronous, infowindow, getAppletContext):
         reg(fn.__name__, fn)
 
     # plain variables (not protected): scripts may rebind them

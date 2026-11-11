@@ -31,7 +31,7 @@ def names(seq):
 
 def test_graph_methods_and_aliases(big):
     for code in ("g.gemLayout()", "g.circleLayout()", "g.radialLayout(v5)", "g.colorize(Node.betweenness, red, blue)",
-                 "random()", "random(800, 600)", "biComponentCluster()", "readjustEdges()", "setSynchronous(true)",
+                 "random()", "random(800, 600)", "readjustEdges()", "setSynchronous(true)",
                  "g.circleLayout(freq, v5)", "infowindow()", "InfoWindow.details('v1')"):
         assert big.run(code), (code, big.rec.of("error"))
     assert 0 <= ev(big, "random.random()") < 1                  # still Python's random module

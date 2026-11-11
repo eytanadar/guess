@@ -136,7 +136,7 @@ def install(session):
         return groups
 
     @cmd
-    def findMotifs(kind="fan", minimum=3, show=True):
+    def findMotifs(kind="fan", smallest=3, show=True):
         """findMotifs("fan") finds NodeXL-style motifs, the small repeated
         shapes that clutter big drawings:
           "fan"        several leaves (nodes with one neighbour) on the same node
@@ -144,26 +144,26 @@ def install(session):
                        nothing else (e.g. people who all know the same two)
           "clique"     groups where everyone is linked to everyone (each node
                        in at most one, largest first)
-        with at least `minimum` members. Returns the groups (members only);
+        with at least `smallest` members. Returns the groups (members only);
         collapseMotifs(kind) replaces each with one meta-node."""
-        groups = motifs(kind, int(minimum))
+        groups = motifs(kind, int(smallest))
         if show:
-            print(f"{len(groups)} {kind} motifs of {minimum}+ nodes, covering {sum(len(m) for _a, m in groups)} nodes")
+            print(f"{len(groups)} {kind} motifs of {smallest}+ nodes, covering {sum(len(m) for _a, m in groups)} nodes")
         return GSet([GSet(m, annotation=f"{kind} {i + 1}") for i, (_a, m) in enumerate(groups)],
                     annotation=f"{kind} motifs")
 
     @cmd
-    def collapseMotifs(kind="fan", minimum=3):
+    def collapseMotifs(kind="fan", smallest=3):
         """collapseMotifs("fan") collapses every motif found by findMotifs into
         one meta-node (labelled with the kind and its size), which simplifies
         the drawing without losing anything: expand(node) or expandAll() bring
         the members back. Returns the meta-nodes."""
-        groups = motifs(kind, int(minimum))
+        groups = motifs(kind, int(smallest))
         collapse = session.ns["collapse"]
         metas = []
         for i, (_a, members) in enumerate(groups):
             members = [m for m in members if g()._node_ids.get(m._id) is m]
-            if len(members) >= int(minimum):
+            if len(members) >= int(smallest):
                 meta = collapse(members, f"{kind}{i + 1}")
                 meta.label = f"{kind} ({len(members)})"
                 metas.append(meta)

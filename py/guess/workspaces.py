@@ -71,7 +71,7 @@ def install(session):
         print(f"now in graph '{ws['current']}' ({len(ids)} nodes); use({persist_lit(ws['stored'] and next(iter(ws['stored'])) or 'main')}) to go back")
 
     @cmd
-    def project(kindField, keep, method="count", name=None):
+    def project(field, keep, method="count", name=None):
         """project(kind, "woman") turns a two-mode network (people and the
         events, groups or papers they belong to) into a one-mode network of
         just the nodes whose `kind` is "woman": two are linked when they share
@@ -87,7 +87,7 @@ def install(session):
         neighbours. E.g. project(kind, "event") gives the event network."""
         from .model import Field
         gr = session.graph
-        f = kindField if isinstance(kindField, Field) else gr.node_schema.get(str(kindField))
+        f = field if isinstance(field, Field) else gr.node_schema.get(str(field))
         if f is None or f.kind != "node":
             raise GuessError("project needs a node field that says which kind each node is")
         if method not in ("count", "jaccard", "newman"):

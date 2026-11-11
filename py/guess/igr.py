@@ -210,6 +210,9 @@ def install(session):
         return session.graph
 
     def node(x):
+        return _node_of(x)
+
+    def _node_of(x):
         if isinstance(x, Node):
             return x
         if isinstance(x, str) and x in g()._nodes:
@@ -217,11 +220,8 @@ def install(session):
         raise GuessError(f"expected a node, got {x!r}")
 
     def field_arg(f, what):
-        if isinstance(f, Field):
-            return f
-        if isinstance(f, str) and f in g().node_schema:
-            return g().node_schema[f]
-        raise GuessError(f"{what} needs a node field")
+        from .model import NODE, as_field
+        return as_field(g(), f, what, (NODE,))
 
     @cmd
     def useIgraph(on=True):
@@ -340,7 +340,7 @@ def install(session):
         return store(I, cut(dendrogram, I, count).membership, fieldname, label)
 
     @cmd
-    def labelPropagationClusters(seedField=None, seed=0):
+    def labelPropagationClusters(field=None, seed=0):
         """labelPropagationClusters() finds communities very fast (linear time) by
         letting each node adopt its neighbours' most common label; good for very
         large graphs, rougher than Leiden. labelPropagationClusters(field)
@@ -349,8 +349,8 @@ def install(session):
         need("labelPropagationClusters")
         I = undirected()
         initial = fixed = None
-        if seedField is not None:
-            f = field_arg(seedField, "labelPropagationClusters")
+        if field is not None:
+            f = field_arg(field, "labelPropagationClusters")
             codes = {}
             initial = []
             for n in I.nodes:
@@ -375,8 +375,8 @@ def install(session):
         return store(I, cl.membership, "eigen_class", "community")
 
     @cmd
-    def fluidClusters(k, seed=0):
-        """fluidClusters(k) splits a connected graph into exactly k communities
+    def fluidClusters(count, seed=0):
+        """fluidClusters(count) splits a connected graph into exactly count communities
         (fluid communities). On a graph in pieces run it on one part, e.g. in
         subgraph(giantComponent()). Stored in fluid_class."""
         need("fluidClusters")
@@ -386,7 +386,7 @@ def install(session):
         G = I.G.copy()
         del G.es["weight"]                   # the algorithm takes no weights
         with _Seeded(seed):
-            cl = G.community_fluid_communities(no_of_communities=int(k))
+            cl = G.community_fluid_communities(no_of_communities=int(count))
         return store(I, cl.membership, "fluid_class", "community")
 
     @cmd
@@ -540,12 +540,12 @@ def install(session):
         place(I, layout, s)
 
     @cmd
-    def bipartiteLayout(typeField, hgap=1, vgap=1):
+    def bipartiteLayout(field, hgap=1, vgap=1):
         """bipartiteLayout(field) draws a two-mode network in two rows (by a field
         with two values, e.g. bipartite in makeSample("davis")), ordering each
         row to reduce edge crossings."""
         need("bipartiteLayout")
-        f = field_arg(typeField, "bipartiteLayout")
+        f = field_arg(field, "bipartiteLayout")
         s, I = layout_graph()
         vals = [f.get(n) for n in I.nodes]
         kinds = sorted({v for v in vals if v is not None}, key=str)
@@ -561,7 +561,7 @@ def install(session):
 
     # ---- similarity and link prediction --------------------------------------
     @cmd
-    def similarTo(n, method="jaccard", top=10):
+    def similarTo(node, method="jaccard", top=10):
         """similarTo(v1) scores every node by how much its neighbourhood overlaps
         v1's, stores the score in the field `similarity` and returns the `top`
         most similar nodes. method: "jaccard" (shared neighbours / all
@@ -569,7 +569,7 @@ def install(session):
         "adamic_adar" (shared neighbours, rare ones counting more). Direction
         is ignored."""
         gr = g()
-        me = node(n)
+        me = _node_of(node)
         nbrs = {}
         for e in gr._edges_list():
             if e._n1 is e._n2:
@@ -782,13 +782,13 @@ def install(session):
         return GSet(out, f"{len(out)} largest cliques")
 
     @cmd
-    def maxMatching(typeField=None):
+    def maxMatching(field=None):
         """maxMatching() returns a largest set of edges with no node in two of
         them (pairs everyone it can); maxMatching(field) matches across the two
         values of a field in a two-mode network, using weights."""
         need("maxMatching")
         I = undirected()
-        if typeField is None:
+        if field is None:
             # general graphs: networkx's blossom algorithm (O(n^3), fine to a few thousand nodes)
             from .algorithms import _nx
             nx = _nx()
@@ -800,7 +800,7 @@ def install(session):
                 out.append(I.pairs[I.G.get_eid(v, w)][0])
             return GSet(sorted(out, key=lambda e: e._id), f"{len(out)} matched pairs")
         else:
-            f = field_arg(typeField, "maxMatching")
+            f = field_arg(field, "maxMatching")
             vals = [f.get(n) for n in I.nodes]
             kinds = sorted({v for v in vals if v is not None}, key=str)
             if len(kinds) != 2:
