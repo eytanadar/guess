@@ -48,6 +48,8 @@ class Session:
         self.system = {}          # name -> object for protected bindings
         self.ns.update(runtime.HELPERS)
         self.ns["__display__"] = self.display
+        self.ns["__gnot__"] = self._gnot
+        self.ns["__gfstr__"] = fstring
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
@@ -439,6 +441,17 @@ class Session:
             msg["line"] = line
         return msg
 
+    def _gnot(self, v):
+        """``not s`` used as a value: on a set of nodes (or edges), the others."""
+        if not isinstance(v, GSet):
+            return not v
+        items = list(v)
+        g = items[0]._g if items and isinstance(items[0], (Node, Edge)) else self.graph
+        every = g._edges_list() if items and isinstance(items[0], Edge) else g._nodes_list()
+        keep = set(map(id, items))
+        ann = getattr(v, "annotation", None)
+        return GSet((x for x in every if id(x) not in keep), annotation=f"not ({ann})" if ann else None)
+
     def _suggest(self, e):
         import difflib
         name, pool = None, []
@@ -462,7 +475,10 @@ class Session:
                     pool = []
         if not name:
             return None
-        close = difflib.get_close_matches(name, [p for p in pool if not p.startswith("_")], n=1, cutoff=0.75)
+        if isinstance(e, AttributeError) and "'NoneType'" in str(e):
+            return None                   # the object is missing, not misspelt (e.g. no such node)
+        close = difflib.get_close_matches(name, [p for p in pool if not p.startswith("_") and p != name],
+                                          n=1, cutoff=0.75)
         return f"'{close[0]}'" if close else None
 
     def help_index(self):
@@ -491,7 +507,7 @@ class Session:
         states and styles, for the Variables panel."""
         import types
         out = []
-        hidden = set(runtime.HELPERS) | {"__name__", "__builtins__", "__display__", "_", "print", "__result__"}
+        hidden = set(runtime.HELPERS) | {"__name__", "__builtins__", "__display__", "__gnot__", "__gfstr__", "_", "print", "__result__"}
         for name, v in self.ns.items():
             if name in hidden or name.startswith("__") or name in self.system:
                 continue
@@ -613,15 +629,16 @@ class Session:
         output (hover to highlight, click to select) like displayed values."""
         import builtins
         if (file is not None or end != "\n" or not isinstance(sep, str)
-                or not any(isinstance(a, (Node, Edge)) or (isinstance(a, (GSet, list, tuple)) and _contains_elements(a))
-                           for a in args)):
+                or not any(_linkable(a) for a in args)):
             return builtins.print(*args, sep=sep, end=end, file=file, flush=flush)
         segs = []
         for i, a in enumerate(args):
             if i:
                 segs.append(sep)
-            linked = isinstance(a, (Node, Edge)) or (isinstance(a, (GSet, list, tuple)) and _contains_elements(a))
-            segs.append(segment(a) if linked else str(a))
+            if isinstance(a, LinkedStr) and a.linked:
+                segs.extend(a.segs)            # printed text: no quotes
+            else:
+                segs.append(segment(a) if _linkable(a) else str(a))
         self.emit({"type": "out", "segs": segs})
 
     def display(self, value):
@@ -823,6 +840,37 @@ def _short(v):
 # Structured output
 # --------------------------------------------------------------------------
 
+MAX_EXTRA = 20000      # elements beyond MAX_ITEMS still linked (hover, select), just not shown
+
+_PLAIN_REPRS = {list.__repr__, tuple.__repr__, dict.__repr__, set.__repr__, frozenset.__repr__}
+
+
+def _custom_repr(value):
+    """A container subclass that prints a summary of itself (e.g. offspring())."""
+    return type(value).__repr__ not in _PLAIN_REPRS and not isinstance(value, GSet)
+
+
+def _all_items(value, limit=MAX_EXTRA):
+    out = []
+    for x in _walk_elements(value):
+        out.append(["n" if isinstance(x, Node) else "e", x._id])
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _walk_elements(value, depth=0):
+    if isinstance(value, (Node, Edge)):
+        yield value
+    elif depth < 20 and isinstance(value, dict):
+        for k, v in value.items():
+            yield from _walk_elements(k, depth + 1)
+            yield from _walk_elements(v, depth + 1)
+    elif depth < 20 and isinstance(value, (list, tuple, set, frozenset)):
+        for x in value:
+            yield from _walk_elements(x, depth + 1)
+
+
 def segment(value, depth=0):
     if isinstance(value, Node):
         return {"n": value._id, "t": value._name}
@@ -830,21 +878,38 @@ def segment(value, depth=0):
         return {"e": value._id, "t": repr(value)}
     if isinstance(value, Field):
         return f"{value.name}"
-    if isinstance(value, (GSet, list, tuple)) and _contains_elements(value) and depth < 20:
-        open_, close = ("(", ")") if isinstance(value, tuple) else ("[", "]")
+    if isinstance(value, LinkedStr) and value.linked:
+        return {"g": ["'", *value.segs, "'"]}
+    linkable = (isinstance(value, (GSet, list, tuple, dict, set, frozenset))
+                and depth < 20 and _contains_elements(value))
+    if linkable and _custom_repr(value):
+        # keep the object's own summary, but link every element it holds
+        return {"g": [_safe_repr(value)], "x": _all_items(value)}
+    if linkable:
+        if isinstance(value, dict):
+            open_, close, entries = "{", "}", list(value.items())
+        else:
+            open_, close = (("(", ")") if isinstance(value, tuple)
+                            else ("{", "}") if isinstance(value, (set, frozenset)) else ("[", "]"))
+            entries = list(value)
         parts = [open_]
-        for i, x in enumerate(value):
+        out = {"g": parts}
+        for i, x in enumerate(entries):
             if i:
                 parts.append(", ")
             if i >= MAX_ITEMS:
-                parts.append(f"... {len(value) - MAX_ITEMS} more")
+                parts.append(f"... {len(entries) - MAX_ITEMS} more")
+                rest = entries[MAX_ITEMS:]
+                out["x"] = _all_items(rest)
                 break
-            parts.append(segment(x, depth + 1))
+            if isinstance(value, dict):
+                parts.extend([segment(x[0], depth + 1), ": ", segment(x[1], depth + 1)])
+            else:
+                parts.append(segment(x, depth + 1))
         if isinstance(value, tuple) and len(value) == 1:
             parts.append(",")
         parts.append(close)
-        out = {"g": parts}
-        ann = getattr(value, "annotation", None)
+        ann = getattr(value, "annotation", None) if isinstance(value, GSet) else None
         if ann:
             out["a"] = ann
         return out
@@ -853,6 +918,10 @@ def segment(value, depth=0):
         if value.annotation:
             out["a"] = value.annotation
         return out
+    return _safe_repr(value)
+
+
+def _safe_repr(value):
     try:
         text = repr(value)
     except Exception as ex:  # noqa: BLE001
@@ -860,6 +929,57 @@ def segment(value, depth=0):
     if len(text) > 20000:
         text = text[:20000] + " ..."
     return text
+
+
+class LinkedStr(str):
+    """The value of an f-string in Gython: an ordinary string, which also
+    remembers the nodes and edges written into it, so print() can link them."""
+
+    def __new__(cls, text, segs):
+        obj = super().__new__(cls, text)
+        obj.segs = segs
+        obj.linked = any(isinstance(sg, dict) for sg in segs)
+        return obj
+
+
+def fstring(*parts):
+    """__gfstr__: build an f-string, keeping the elements in it as segments."""
+    texts, segs = [], []
+    for p in parts:
+        if isinstance(p, str):
+            texts.append(p)
+            if segs and isinstance(segs[-1], str):
+                segs[-1] += p
+            else:
+                segs.append(p)
+            continue
+        v, conv, spec = p
+        if conv == 114:
+            t = repr(v)
+        elif conv == 115:
+            t = str(v)
+        elif conv == 97:
+            t = ascii(v)
+        else:
+            t = None
+        if t is not None:
+            t = format(t, spec) if spec else t
+        else:
+            t = format(v, spec) if spec else format(v)
+        texts.append(t)
+        plain = conv == -1 and not spec
+        if plain and isinstance(v, (Node, Edge)):
+            segs.append({"n": v._id, "t": t} if isinstance(v, Node) else {"e": v._id, "t": t})
+        elif plain and isinstance(v, LinkedStr) and v.linked:
+            segs.extend(v.segs)
+        elif plain and isinstance(v, (GSet, list, tuple, set, frozenset, dict)) and _contains_elements(v):
+            segs.append({"g": [t], "x": _all_items(v), **({"a": v.annotation}
+                                                         if isinstance(v, GSet) and v.annotation else {})})
+        elif segs and isinstance(segs[-1], str):
+            segs[-1] += t
+        else:
+            segs.append(t)
+    return LinkedStr("".join(texts), segs)
 
 
 def _flatten(seq, depth=0):
@@ -870,13 +990,24 @@ def _flatten(seq, depth=0):
             yield x
 
 
-def _contains_elements(seq):
+def _contains_elements(seq, depth=0):
+    if depth > 20:
+        return False
+    if isinstance(seq, dict):
+        seq = [x for kv in seq.items() for x in kv]
     for x in seq:
         if isinstance(x, (Node, Edge)):
             return True
-        if isinstance(x, (GSet, list, tuple)) and _contains_elements(x):
+        if isinstance(x, LinkedStr) and x.linked:
+            return True
+        if isinstance(x, (GSet, list, tuple, set, frozenset, dict)) and _contains_elements(x, depth + 1):
             return True
     return False
+
+
+def _linkable(a):
+    return (isinstance(a, (Node, Edge)) or (isinstance(a, LinkedStr) and a.linked)
+            or (isinstance(a, (GSet, list, tuple, set, frozenset, dict)) and _contains_elements(a)))
 
 
 # --------------------------------------------------------------------------

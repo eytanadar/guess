@@ -10,6 +10,13 @@ Stage 2 (AST):
   * attribute load / store  -> ``__ggetattr__`` / ``__gsetattr__`` (broadcast over tuples/lists)
   * ``a & b``, ``a | b``    -> ``__gand__`` / ``__gor__`` (set algebra on tuples of nodes)
   * ``a - b``               -> ``__gsub__`` (undirected edges between, as in the original)
+  * ``3 < degree < 6``      -> ``__gchain__`` (query sets intersect; plain values compare as usual)
+  * ``degree in (1, 2)``    -> ``__gin__`` (a membership query when the left side is a field)
+  * f-strings               -> ``__gfstr__`` (the same text, remembering the nodes and
+    edges in it, so print() can link them)
+  * ``a and b``, ``a or b``, ``not a`` used as values -> ``__gbool__`` / ``__gnot__``
+    (on query sets: intersection, union, complement). In the test of an if, while,
+    conditional expression, assert or comprehension filter they stay plain Python.
   * bare-name statement     -> ``__autocall__(name)`` (``randomLayout`` without parens)
   * top-level expressions   -> ``__display__(value)`` (interactive echo)
   * rebinding a protected name (``g = 5``) at module scope is a compile error
@@ -140,6 +147,20 @@ def _is_marker(node):
     return isinstance(node, ast.Name) and node.id in MARKERS
 
 
+_NO_THUNK = (ast.NamedExpr, ast.Yield, ast.YieldFrom, ast.Await)
+
+
+def _thunkable(*nodes):
+    """Whether these expressions can be wrapped in ``lambda: ...`` unchanged."""
+    return not any(isinstance(n, _NO_THUNK) for x in nodes for n in ast.walk(x))
+
+
+def _thunk(expr):
+    args = ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None,
+                         defaults=[])
+    return ast.Lambda(args=args, body=expr)
+
+
 class _Transformer(ast.NodeTransformer):
     def __init__(self, is_protected, interactive):
         self.is_protected = is_protected or (lambda name: False)
@@ -231,7 +252,7 @@ class _Transformer(ast.NodeTransformer):
         operands = [node.left] + list(node.comparators)
         ops = list(node.ops)
         if not any(_is_marker(o) for o in operands):
-            return node
+            return self._plain_compare(node)
         i = 0
         while i < len(ops):
             if i + 1 < len(operands) and _is_marker(operands[i + 1]):
@@ -247,6 +268,80 @@ class _Transformer(ast.NodeTransformer):
         if len(operands) == 1:
             return ast.copy_location(operands[0], node)
         return ast.copy_location(ast.Compare(left=operands[0], ops=ops, comparators=operands[1:]), node)
+
+    def _plain_compare(self, node):
+        ops = node.ops
+        if len(ops) == 1 and isinstance(ops[0], (ast.In, ast.NotIn)):
+            return ast.copy_location(_call("__gin__", node.left, node.comparators[0],
+                                           ast.Constant(isinstance(ops[0], ast.NotIn))), node)
+        if len(ops) > 1 and _thunkable(*node.comparators):
+            pairs = [ast.Tuple(elts=[ast.Constant(type(op).__name__), _thunk(c)], ctx=ast.Load())
+                     for op, c in zip(ops, node.comparators)]
+            return ast.copy_location(_call("__gchain__", node.left, *pairs), node)
+        return node
+
+    # ---- f-strings ------------------------------------------------------------
+    def visit_JoinedStr(self, node):
+        parts = []
+        for v in node.values:
+            if isinstance(v, ast.FormattedValue):
+                spec = self.visit(v.format_spec) if v.format_spec is not None else ast.Constant(None)
+                parts.append(ast.Tuple(elts=[self.visit(v.value), ast.Constant(v.conversion), spec],
+                                       ctx=ast.Load()))
+            else:
+                parts.append(v)
+        return ast.copy_location(_call("__gfstr__", *parts), node)
+
+    # ---- and / or / not ----------------------------------------------------
+    def _visit_test(self, expr):
+        """The boolean skeleton of a test stays plain Python (``if s and t:``)."""
+        if isinstance(expr, ast.BoolOp):
+            expr.values = [self._visit_test(v) for v in expr.values]
+            return expr
+        if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
+            expr.operand = self._visit_test(expr.operand)
+            return expr
+        return self.visit(expr)
+
+    def visit_BoolOp(self, node):
+        node.values = [self.visit(v) for v in node.values]
+        if not _thunkable(*node.values[1:]):
+            return node
+        op = "and" if isinstance(node.op, ast.And) else "or"
+        return ast.copy_location(_call("__gbool__", ast.Constant(op), node.values[0],
+                                       *[_thunk(v) for v in node.values[1:]]), node)
+
+    def visit_UnaryOp(self, node):
+        node.operand = self.visit(node.operand)
+        if isinstance(node.op, ast.Not):
+            return ast.copy_location(_call("__gnot__", node.operand), node)
+        return node
+
+    def visit_If(self, node):
+        node.test = self._visit_test(node.test)
+        node.body = _flatten_stmts([self.visit(s) for s in node.body])
+        node.orelse = _flatten_stmts([self.visit(s) for s in node.orelse])
+        return node
+
+    visit_While = visit_If
+
+    def visit_IfExp(self, node):
+        node.test = self._visit_test(node.test)
+        node.body = self.visit(node.body)
+        node.orelse = self.visit(node.orelse)
+        return node
+
+    def visit_Assert(self, node):
+        node.test = self._visit_test(node.test)
+        if node.msg is not None:
+            node.msg = self.visit(node.msg)
+        return node
+
+    def visit_comprehension(self, node):
+        node.target = self.visit(node.target)
+        node.iter = self.visit(node.iter)
+        node.ifs = [self._visit_test(t) for t in node.ifs]
+        return node
 
     def generic_visit_compare(self, node):
         node.left = self._visit_operand(node.left)

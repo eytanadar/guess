@@ -422,10 +422,31 @@ def install(session):
         return group_by(seq, _field(f), sort=True)
 
     @cmd
-    def sortBy(*d):
-        """sortBy(field) or sortBy(seq, field)."""
+    def sortBy(*d, descending=False):
+        """sortBy(field) or sortBy(seq, field), smallest first;
+        descending=true for largest first."""
         seq, f = _seq_field(d, "sortBy")
-        return sort_by(seq, _field(f))
+        return sort_by(seq, _field(f), bool(descending))
+
+    def _extreme(field, k, seq, largest):
+        f = _field(field)
+        pool = f.elements() if seq is None else list(elements_of(seq))
+        pool = [x for x in pool if f.get(x) is not None]
+        out = sort_by(pool, f, largest)[:max(0, int(k))]
+        return GSet(out, annotation=f"{'highest' if largest else 'lowest'} {int(k)} by {f.name}")
+
+    @cmd
+    def highest(field, k=10, seq=None):
+        """highest(degree) is the 10 nodes (or edges) with the largest degree,
+        largest first; highest(degree, 5), or highest(degree, 5, seq) within a
+        set. Elements without a value are left out."""
+        return _extreme(field, k, seq, True)
+
+    @cmd
+    def lowest(field, k=10, seq=None):
+        """lowest(degree, 5): the 5 with the smallest degree, smallest first
+        (see highest)."""
+        return _extreme(field, k, seq, False)
 
     # ---- visual mapping ---------------------------------------------------------
     @cmd

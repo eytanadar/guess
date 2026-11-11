@@ -53,7 +53,8 @@ def ggetattr(o, name):
         return getattr(o, name)
     except AttributeError:
         if _is_plain_seq(o) and o:
-            return [ggetattr(x, name) for x in o]
+            from .model import Values
+            return Values(ggetattr(x, name) for x in o)
         raise
 
 
@@ -85,16 +86,88 @@ def _graphish(o):
     return False
 
 
+def _precedence_hint(a, b, sym):
+    """`dept == "x" & degree > 3` parses as dept == ("x" & degree) > 3."""
+    if isinstance(a, Field) or isinstance(b, Field):
+        f = a if isinstance(a, Field) else b
+        raise GuessError(f"'{sym}' binds tighter than comparisons: put each query in parentheses, "
+                         f"e.g. ({f.name} == ...) {sym} (...)")
+
+
+def _label(a, b, sym):
+    la, lb = getattr(a, "annotation", None), getattr(b, "annotation", None)
+    if la and lb:
+        return f"({la}) {sym} ({lb})"
+    return None
+
+
 def gand(a, b):
     if _graphish(a) and _graphish(b):
-        return GSet(elements_of(a)) & GSet(elements_of(b))
+        return GSet(GSet(elements_of(a)) & GSet(elements_of(b)), annotation=_label(a, b, "&"))
+    _precedence_hint(a, b, "&")
     return a & b
 
 
 def gor(a, b):
     if _graphish(a) and _graphish(b):
-        return GSet(elements_of(a)) | GSet(elements_of(b))
+        return GSet(GSet(elements_of(a)) | GSet(elements_of(b)), annotation=_label(a, b, "|"))
+    _precedence_hint(a, b, "|")
     return a | b
+
+
+_CMP = {
+    "Eq": operator.eq, "NotEq": operator.ne, "Lt": operator.lt, "LtE": operator.le,
+    "Gt": operator.gt, "GtE": operator.ge, "Is": operator.is_, "IsNot": operator.is_not,
+    "In": lambda a, b: gin(a, b, False), "NotIn": lambda a, b: gin(a, b, True),
+}
+
+
+def gchain(first, *pairs):
+    """``3 < degree < 6``: Python would compute ``(3 < degree) and (degree < 6)``,
+    which for query sets is just the second set. Query sets intersect instead;
+    plain values compare (and short-circuit) as usual."""
+    prev, acc, r = first, None, True
+    for opname, thunk in pairs:
+        b = thunk()
+        r = _CMP[opname](prev, b)
+        if isinstance(r, GSet):
+            acc = r if acc is None else gand(acc, r)
+        elif not r:
+            return GSet() if acc is not None else r
+        prev = b
+    return acc if acc is not None else r
+
+
+def gin(a, b, negate=False):
+    """``degree in (1, 2)``: the elements whose value is one of those."""
+    if isinstance(a, Field):
+        q = a.isin(b)
+        if negate:
+            keep = set(map(id, q))
+            q = GSet((e for e in a.elements() if id(e) not in keep),
+                     annotation=f"{a.name} not in {list(b) if not isinstance(b, str) else b!r}")
+        return q
+    return (a not in b) if negate else (a in b)
+
+
+def gbool(op, first, *thunks):
+    """``a and b`` / ``a or b`` used as a value: on two query sets, their
+    intersection / union (Python would give one of the two sets)."""
+    v = first
+    for t in thunks:
+        if isinstance(v, GSet):
+            w = t()
+            if isinstance(w, GSet):
+                v = gand(v, w) if op == "and" else gor(v, w)
+            elif op == "and":
+                v = w if v else v
+            else:
+                v = v if v else w
+            continue
+        if (op == "and" and not v) or (op == "or" and v):
+            return v
+        v = t()
+    return v
 
 
 def gsub(a, b):
@@ -118,6 +191,9 @@ HELPERS = {
     "__gaugattr__": gaugattr,
     "__gand__": gand,
     "__gor__": gor,
+    "__gchain__": gchain,
+    "__gin__": gin,
+    "__gbool__": gbool,
     "__gsub__": gsub,
     "__autocall__": autocall,
 }

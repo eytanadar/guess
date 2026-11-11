@@ -76,6 +76,57 @@ class GuessError(Exception):
 # Sets of graph elements
 # --------------------------------------------------------------------------
 
+class Values(list):
+    """The values of one field over a set, e.g. ``(dept == "x").degree``: a list
+    with summaries (.avg, .sum, .min, .max, .median, .distinct, .count)."""
+
+    def _numeric(self):
+        return [v for v in self if isinstance(v, (int, float)) and not isinstance(v, bool)]
+
+    @property
+    def count(self):
+        return len(self)
+
+    @property
+    def sum(self):
+        return sum(self._numeric())
+
+    @property
+    def avg(self):
+        vals = self._numeric()
+        return sum(vals) / len(vals) if vals else None
+
+    mean = avg
+
+    @property
+    def median(self):
+        vals = sorted(self._numeric())
+        if not vals:
+            return None
+        m = len(vals) // 2
+        return vals[m] if len(vals) % 2 else (vals[m - 1] + vals[m]) / 2
+
+    @property
+    def min(self):
+        vals = [v for v in self if v is not None]
+        return min(vals) if vals else None
+
+    @property
+    def max(self):
+        vals = [v for v in self if v is not None]
+        return max(vals) if vals else None
+
+    @property
+    def distinct(self):
+        out, seen = [], set()
+        for v in self:
+            k = v if v.__hash__ is not None else id(v)
+            if k not in seen:
+                seen.add(k)
+                out.append(v)
+        return out
+
+
 class GSet(list):
     """An ordered collection of nodes/edges (or of other GSets).
 
@@ -92,7 +143,7 @@ class GSet(list):
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
-        return [getattr(x, name) for x in self]
+        return Values(getattr(x, name) for x in self)
 
     def __setattr__(self, name, value):
         if name == "annotation":
@@ -323,6 +374,18 @@ class Field:
         return sum(self._numeric())
 
     @property
+    def median(self):
+        return Values(self.values()).median
+
+    @property
+    def count(self):
+        return len(self.values())
+
+    def __iter__(self):
+        """``max(degree)``, ``for v in dept``: the field's values."""
+        return iter(self.values())
+
+    @property
     def distinct(self):
         out = []
         seen = set()
@@ -378,6 +441,20 @@ class Field:
         """``dept.find('eng')``: the elements whose value is 'eng' (the same
         as ``dept == 'eng'``)."""
         return self._query("==", value)
+
+    def isin(self, values):
+        """``dept in ("a", "b")`` in Gython: the elements whose value is one of
+        values."""
+        if isinstance(values, (str, Field)) or not hasattr(values, "__iter__"):
+            values = [values]
+        want = [_query_value(self, v) for v in values]
+        shown = ", ".join(_fmt(v) for v in values)
+        out = GSet(annotation=f"{self.name} in ({shown})")
+        for e in self.elements():
+            v = self.get(e)
+            if any(_safe(operator.eq, v, w) for w in want):
+                out.append(e)
+        return out
 
     def like(self, pattern):
         """SQL LIKE: ``%`` matches any run, ``_`` any single character."""

@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (92)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (94)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -325,6 +325,12 @@ command's documentation and shows it in the browser.
 
 Hide nodes with no edges other than self loops.
 
+### `highest(field, k=10, seq=None)`
+
+highest(degree) is the 10 nodes (or edges) with the largest degree,
+largest first; highest(degree, 5), or highest(degree, 5, seq) within a
+set. Elements without a value are left out.
+
 ### `infowindow()`
 
 Open the data table (the Jython version's information window).
@@ -334,6 +340,11 @@ Open the data table (the Jython version's information window).
 labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
 edge field) in proportion to a numeric field: 1 is the normal size. Sets
 the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank").
+
+### `lowest(field, k=10, seq=None)`
+
+lowest(degree, 5): the 5 with the smallest degree, smallest first
+(see highest).
 
 ### `makeFromCalls(target)`
 
@@ -620,9 +631,10 @@ resizeLinear, which spaces distinct values evenly.
 
 Nodes around a circle ordered by field; radius shrinks with outdegree.
 
-### `sortBy(*d)`
+### `sortBy(*d, descending=False)`
 
-sortBy(field) or sortBy(seq, field).
+sortBy(field) or sortBy(seq, field), smallest first;
+descending=true for largest first.
 
 ### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None)`
 
