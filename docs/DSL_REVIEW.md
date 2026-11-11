@@ -381,5 +381,17 @@ Also added (requests on 2026-11-11):
   relabelling by default, ids counting up (or typed), labelled/left shown as preview
   colours and counts; each lasso is an undoable `labelCluster(...)`.
 
+- **Altair charts** (`nodeData`, `edgeData`, `showChart`; a cell whose
+  value is a chart shows it in the dock). Marks link to their element, or
+  through the query they're grouped by; brushes select; the graph's hover
+  fades unrelated points. Recipes in the Core, SNA and Epidemiology books.
+- **Live charts**: *● Live* on a chart (or `liveCharts()`) recomputes it,
+  isolated, after every change, undo and history move.
+
+- **demo()**: a 17-step guided tour (Basic → Intermediate → Advanced) in a
+  panel below the graph; each step runs as a console cell. The code box's
+  hint suggests `demo()` on a first visit, then rotates commands that suit
+  the graph showing (its own fields and node names).
+
 Still open: previews of a command's effect (8), and linking help examples to
 a preview.

@@ -92,7 +92,7 @@ def install(session):
                       {"name": "infected", "color": 0xd7191c, "points": [[t, i] for t, _s, i, _r in counts]}]
             if m == "sir":
                 series.append({"name": "recovered", "color": 0x1a9641, "points": [[t, r] for t, _s, _i, r in counts]})
-            session.emit({"type": "chart", "id": "chart:line:spread", "kind": "line", "title": f"Spread ({model})",
+            session.chart_out({"type": "chart", "id": "chart:line:spread", "kind": "line", "title": f"Spread ({model})",
                           "xlabel": "step", "ylabel": "nodes", "items": [], "series": series,
                           "xq": "(infected_at >= 0) & (infected_at <= {x})"})
         return counts

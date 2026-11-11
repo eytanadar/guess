@@ -339,3 +339,24 @@ test("Altair charts show in the dock and link to the graph", async ({ page }) =>
   await run(page, "nodeData('pagerank')");
   expect(await lastError(page)).toBeNull();
 });
+
+test("a live chart recomputes after changes", async ({ page }) => {
+  await boot(page);
+  await run(page, "plotSizes(dept)");
+  const panel = page.locator(".panel", { has: page.locator("header", { hasText: "dept group sizes" }) });
+  const live = panel.locator(".panel-live");
+  await expect(live).toHaveAttribute("aria-pressed", "false");
+  const bars = panel.locator("rect.mark");
+  const before = await bars.count();
+  await live.click();
+  await expect(live).toHaveAttribute("aria-pressed", "true");
+  await run(page, "remove(dept == 'dept1')");
+  await expect(bars).toHaveCount(before - 1);
+  await run(page, "undo()");
+  await expect(bars).toHaveCount(before);
+  await live.click();
+  await expect(live).toHaveAttribute("aria-pressed", "false");
+  await run(page, "remove(dept == 'dept2')");
+  await expect(bars).toHaveCount(before);
+  expect(await lastError(page)).toBeNull();
+});

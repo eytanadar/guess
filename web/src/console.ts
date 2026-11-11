@@ -78,6 +78,13 @@ export class Console {
   private lastText: HTMLElement | null = null;
   docs: Record<string, string> = {};
   private vimMode = new Compartment();
+  /** the code box's hint: demo() on a first visit, then commands suited to the graph, in turn */
+  private hintComp = new Compartment();
+  private hints: string[] = [];
+  private hintAt = 0;
+  private hintTimer = 0;
+  private newcomer = false;
+  private runsThisVisit = 0;
   /** watched cells: re-run (quietly, in place) after every other command */
   private watched = new Map<HTMLElement, { code: string; n: number; out: HTMLElement; cellOut: HTMLElement; pinned: boolean }>();
   private selTimer = 0;
@@ -212,7 +219,7 @@ export class Console {
       closeBrackets(),
       indentOnInput(),
       EditorView.lineWrapping,
-      placeholder("Gython — e.g. colorize(dept)"),
+      this.hintComp.of(placeholder(this.firstHint())),
       autocompletion({
         override: [(ctx) => this.complete(ctx)],
         activateOnTyping: true,
@@ -268,6 +275,38 @@ export class Console {
       update: (old, tr) => (tr.docChanged || tr.selection ? compute(tr.state) : old),
       provide: (f) => showTooltip.from(f),
     });
+  }
+
+  /** First visit (nothing remembered in this browser): suggest the tour. */
+  private firstHint(): string {
+    try {
+      this.newcomer = !localStorage.getItem("guess.visited");
+      localStorage.setItem("guess.visited", "1");
+    } catch {
+      this.newcomer = false;
+    }
+    this.hintTimer = window.setInterval(() => {
+      if (!this.view?.state.doc.length && !this.busy) this.nextHint();
+    }, 12_000);
+    return this.newcomer ? "Gython — new here? try demo()" : "Gython — e.g. help()";
+  }
+
+  /** Commands suited to the graph showing now (short ones; they rotate in the hint). */
+  setHints(hints: string[]) {
+    this.hints = hints.filter((h) => h.length <= 40);
+    this.hintAt = 0;
+    if (!this.showingDemoHint()) this.nextHint();
+  }
+
+  /** A newcomer keeps seeing demo() until they run it or a few other commands. */
+  private showingDemoHint() {
+    return this.newcomer && this.runsThisVisit < 4;
+  }
+
+  private nextHint() {
+    if (this.showingDemoHint() || !this.hints.length || !this.view) return;
+    const h = this.hints[this.hintAt++ % this.hints.length];
+    this.view.dispatch({ effects: this.hintComp.reconfigure(placeholder(`Gython — e.g. ${h}`)) });
   }
 
   private toggleWatch(root: HTMLElement, code: string, n: number, out: HTMLElement, btn: HTMLElement) {
@@ -602,6 +641,9 @@ export class Console {
         cell.root.querySelector(".cell-actions")!.before(t);
       }
       if (!cell.out.childElementCount) cell.root.classList.add("empty");
+      this.runsThisVisit++;
+      if (/\bdemo\(/.test(code)) this.newcomer = false;
+      this.nextHint();
       if (this.watched.size) await this.runWatched();
       else this.host.afterRun?.();
       if (!hidden) this.focus();

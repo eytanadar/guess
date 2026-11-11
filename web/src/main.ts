@@ -5,6 +5,7 @@ import { Renderer, type DragBehaviour, type DragFrame, type Hit } from "./render
 import { Dock } from "./dock";
 import { HistoryPanel, type HistoryStep } from "./history";
 import { ClusterTool, type ClusterInfo } from "./cluster";
+import { Tour } from "./tour";
 import { ask, choose } from "./dialog";
 import { toGIF, toPDF, toPS } from "./rasterexport";
 import { HelpPanel, type HelpIndex } from "./help";
@@ -340,6 +341,7 @@ const dock = new Dock($("#dock-bottom"), $("#dock-right"), {
   resolve: async (expr) => (await request<PeekInfo | null>((id) => ({ type: "peek", id, expr })))?.items ?? [],
   brush: (expr) => brushFromChart(expr),
   dark: () => isDark(),
+  live: (chart, on) => request<boolean>((id) => ({ type: "live", id, chart, on })),
   lineAt: (expr, title, lines, ev, click) => void lineAt(expr, title, lines, ev, click),
 });
 
@@ -504,6 +506,7 @@ const term = new Console($("#console"), {
   pin: (id, title, onClose) => dock.pane(id, title, "right", onClose),
   unpin: (id) => dock.close(id),
   afterRun: () => {
+    void refreshHints();
     void historyPanel.refresh();
     void clusterTool.refresh();
   },
@@ -537,6 +540,21 @@ function isDark() {
   const t = document.documentElement.dataset.theme;
   return t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
 }
+
+// the code box's rotating hint: commands that work on the graph showing now
+// (its own fields and node names), re-read after commands that may add fields
+let hintRuns = 0;
+async function refreshHints(force = false) {
+  if (!force && hintRuns++ % 4 !== 0) return;
+  const hints = await request<string[]>((id) => ({ type: "query", id, what: "suggest" }));
+  if (Array.isArray(hints)) term.setHints(hints);
+}
+
+// ---- the guided tour (demo()) ----------------------------------------------------------
+const tour = new Tour(dock, {
+  run: (code) => term.submit(code),
+  edit: (code) => term.edit(code),
+});
 
 // ---- the history scrubber (Edit → History…) ------------------------------------------
 const historyPanel = new HistoryPanel(dock, {
@@ -614,6 +632,7 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     case "scene":
       if (m.gid !== undefined) term.setGraph(m.gid, m.gname ?? "");
+      void refreshHints(true);
       if (renderer.selection.size) syncSelection([]);
       renderer.setScene(m.nodes, m.edges);
       requestAnimationFrame(() => renderer.center([], [], false));
@@ -675,6 +694,12 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     case "vega":
       void dock.vega(m);
+      break;
+    case "demo":
+      tour.start(m.steps, m.at);
+      break;
+    case "liveState":
+      dock.setLive(m.id, m.live);
       break;
     case "movie":
       if (m.op === "start") startMovie(m.fps, m.name);
@@ -1973,8 +1998,10 @@ async function onReady() {
 }
 
 function showWelcome() {
-  term.note("GUESS — write Gython in the cell below and press Shift+Enter. Click an example to try it:");
+  term.note("GUESS — write Gython in the cell below and press Shift+Enter. New here? demo() takes you on a tour. " +
+    "Or click an example to try it:");
   term.examples([
+    "demo()",
     "(freq > 100).color = red",
     "colorize(dept)",
     "groupBy(dept)",

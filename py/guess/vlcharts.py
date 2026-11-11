@@ -9,7 +9,7 @@ one per node (edge), carrying its id in `_node` (`_edge`), so marks for single
 elements link to them. Marks that summarise many (a bar of count() by dept,
 a bin) link through a query built from the fields they're grouped by.
 """
-from .model import EDGE, NODE, Edge, Field, GSet, GuessError, Node, elements_of
+from .model import EDGE, NODE, Edge, Field, GuessError, Node, elements_of
 
 # Vega-Lite types for GUESS field types
 _VL_TYPE = {"INTEGER": "quantitative", "DOUBLE": "quantitative", "BOOLEAN": "nominal", "VARCHAR": "nominal"}
@@ -23,13 +23,21 @@ class GraphData(dict):
     data). .rows is the list; .types the Vega-Lite type of each field, so
     shorthand like x="degree" knows degree is a number."""
 
-    def __init__(self, rows, types, kind, others=(), call="nodeData"):
+    def __init__(self, rows, types, kind, others=(), call="nodeData", remake=None):
         super().__init__(values=rows)
+        self._remake = remake
         self.rows = rows
         self.types = types
         self.kind = kind
         self.others = set(others)     # graph fields not in these rows (for a clear error)
         self.call = call
+
+    def refresh(self):
+        """Recompute the rows from the graph as it is now (live charts)."""
+        if self._remake is not None:
+            new = self._remake()
+            self["values"] = self.rows = new.rows
+            self.types = new.types
 
     def __repr__(self):
         cols = list(self.rows[0]) if self.rows else []
@@ -68,6 +76,27 @@ def _rows(g, kind, elems, fields):
     lazy = [name for (k, name) in getattr(g, "lazy_fields", {}) if k == ("node" if kind == NODE else "edge")]
     others = [n for n in [*schema, *lazy] if n not in types]
     return GraphData(rows, types, kind, others, "nodeData" if kind == NODE else "edgeData")
+
+
+def _graph_datas(chart):
+    """The GraphData rows anywhere in a chart (layers, concatenations, facets)."""
+    out, todo, seen = [], [chart], set()
+    while todo:
+        c = todo.pop()
+        if id(c) in seen:
+            continue
+        seen.add(id(c))
+        d = getattr(c, "data", None)
+        if isinstance(d, GraphData):
+            out.append(d)
+        for attr in ("layer", "hconcat", "vconcat", "concat"):
+            v = getattr(c, attr, None)
+            if isinstance(v, list):
+                todo.extend(v)
+        sp = getattr(c, "spec", None)
+        if sp is not None and hasattr(sp, "to_dict"):
+            todo.append(sp)
+    return out
 
 
 def _patch_altair(alt):
@@ -114,6 +143,25 @@ def is_altair(v):
     return (t.__module__ or "").startswith("altair.") and t.__name__.endswith("Chart") and hasattr(v, "to_dict")
 
 
+def _auto_title(spec):
+    """A panel title from the encoding: "pagerank vs degree", "count by dept"."""
+    enc = spec.get("encoding") or {}
+    def name(ch):
+        d = enc.get(ch)
+        if not isinstance(d, dict):
+            return None
+        agg, f = d.get("aggregate"), d.get("field")
+        if agg == "count":
+            return "count"
+        if agg and f:
+            return f"{agg} of {f}"
+        return f
+    x, y = name("x"), name("y")
+    if x and y:
+        return f"{y} by {x}" if enc["y"].get("aggregate") or enc["x"].get("aggregate") == "count" else f"{y} vs {x}"
+    return x or y or "Chart"
+
+
 def _fill_types(spec, types):
     """Any encoding field still without a type gets one from the graph schema."""
     if isinstance(spec, dict):
@@ -140,22 +188,34 @@ def install(session):
         for an Altair chart, with `name`, the fields given (all data fields when
         none are) and `_node`, the node's id, which links each mark to its node.
         alt.Chart(nodeData("degree", "dept")).mark_point().encode(x="degree", y="dept")"""
-        g = session.graph
         nodes = None
         if args and not isinstance(args[0], (str, Field)):
             nodes, args = args[0], args[1:]
-        elems = g._nodes_list() if nodes is None else [x for x in elements_of(nodes) if isinstance(x, Node)]
-        return _rows(g, NODE, elems, list(args))
+        fixed = None if nodes is None else [x for x in elements_of(nodes) if isinstance(x, Node)]
+
+        def make():
+            gr = session.graph
+            elems = gr._nodes_list() if fixed is None else [n for n in fixed if gr._nodes.get(n._name) is n]
+            return _rows(gr, NODE, elems, list(args))
+        d = make()
+        d._remake = make
+        return d
 
     def edgeData(*args):
         """edgeData(field, ...) or edgeData(edges, field, ...): one row per edge
         (`name` is "a-b"), with `_edge`, the edge's id, for linking."""
-        g = session.graph
         edges = None
         if args and not isinstance(args[0], (str, Field)):
             edges, args = args[0], args[1:]
-        elems = g._edges_list() if edges is None else [x for x in elements_of(edges) if isinstance(x, Edge)]
-        return _rows(g, EDGE, elems, list(args))
+        fixed = None if edges is None else [x for x in elements_of(edges) if isinstance(x, Edge)]
+
+        def make():
+            gr = session.graph
+            elems = gr._edges_list() if fixed is None else [e for e in fixed if e._id in gr._edges]
+            return _rows(gr, EDGE, elems, list(args))
+        d = make()
+        d._remake = make
+        return d
 
     def showChart(chart, title=None):
         """showChart(chart, title=None) shows an Altair chart in the dock (a cell
@@ -166,6 +226,9 @@ def install(session):
             raise GuessError("showChart needs an Altair chart (alt.Chart(...))")
         import altair as alt
         _patch_altair(alt)
+        if session._refreshing is not None:
+            for d in _graph_datas(chart):
+                d.refresh()
         spec = chart.to_dict()
         g = session.graph
         types = {}
@@ -175,16 +238,18 @@ def install(session):
         _fill_types(spec, types)
         if title is None:
             t = spec.get("title")
-            title = t if isinstance(t, str) else (t.get("text") if isinstance(t, dict) else None) or "Chart"
+            title = t if isinstance(t, str) else (t.get("text") if isinstance(t, dict) else None) or _auto_title(spec)
             if isinstance(title, list):
                 title = " ".join(map(str, title))
         cell = session.running_cell
         count[0] += 1
-        # the same cell re-run (Run again, a watched or live cell) updates its chart in place
-        key = (cell, session.chart_seq)
-        session.chart_seq += 1
-        cid = f"vega:{cell}:{key[1]}" if cell is not None else f"vega:x{count[0]}"
-        session.emit({"type": "vega", "id": cid, "title": str(title), "spec": spec, "cell": cell,
+        if session._refreshing is not None:
+            cid = session._refreshing               # a live chart recomputing: same panel
+        else:
+            # the same cell re-run (Run again, a watched cell) updates its chart in place
+            cid = f"vega:{cell}:{session.chart_seq}" if cell is not None else f"vega:x{count[0]}"
+            session.chart_seq += 1
+        session.chart_out({"type": "vega", "id": cid, "title": str(title), "spec": spec, "cell": cell,
                       "fields": {"n": list(g.node_schema), "e": list(g.edge_schema)}})
         return None
 

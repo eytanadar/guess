@@ -42,11 +42,11 @@ def install(session):
     count = [0]
 
     def emit(kind, title, xlabel, ylabel, items):
-        # the same chart (kind + title) re-plotted updates its panel in place,
-        # so a watched cell like plotHistogram(pagerank) is a live chart
+        # the same chart (kind + title) re-plotted updates its panel in place
+        # (a live chart recomputing, a watched cell, Run again)
         count[0] += 1
         cid = f"chart:{kind}:{title}"
-        session.emit({"type": "chart", "id": cid, "kind": kind, "title": title,
+        session.chart_out({"type": "chart", "id": cid, "kind": kind, "title": title,
                       "xlabel": xlabel, "ylabel": ylabel, "items": items})
         return Chart(session, cid, title)
 
@@ -101,5 +101,19 @@ def install(session):
                   "color": _color([e]), "ids": _ids([e])} for e in order]
         return emit("distrib", f"Distribution of {f.name}", f"rank-ordered {what(f)}", f.name, items)
 
-    for fn in (plotHistogram, plotSizes, plotSizesPie, plotDistrib):
+    def liveCharts(on=True):
+        """liveCharts() makes every chart live, now and from now on: each is
+        recomputed after any command that changes the graph or the display.
+        liveCharts(False) turns that off. (The Live button on a chart does it
+        for one chart.)"""
+        session.all_live = bool(on)
+        if on:
+            session.live_charts.update(session.chart_recipes)
+            session._refresh_live()
+        else:
+            for cid in list(session.live_charts):
+                session.emit({"type": "liveState", "id": cid, "live": False})
+            session.live_charts.clear()
+
+    for fn in (plotHistogram, plotSizes, plotSizesPie, plotDistrib, liveCharts):
         session.register_command(fn.__name__, fn)

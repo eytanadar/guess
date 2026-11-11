@@ -181,6 +181,40 @@ organisation.
 what they know. Check that the groups are meaningful before celebrating the
 brokers.
 
+## Brush the brokers out of a chart [Intermediate]{.level}
+
+**You have** the brokers from the last recipe. **You want** to see how they
+stand out, and pick them by eye.
+
+::: ingredients
+**Ingredients:** `sample.gdf` · `nodeData` · an Altair brush
+:::
+
+```python
+makeFromGDF("sample.gdf")
+addNodeField("ndepts", INTEGER, 0)
+for n in g.nodes: n.ndepts = len(set(m.dept for m in n.getNeighbors()))
+corner = alt.selection_interval()
+alt.Chart(nodeData("constraint", "betweenness", "ndepts")).mark_point().encode(
+    x="constraint", y="betweenness", color="ndepts:O", tooltip="name").add_params(corner)
+```
+
+![Constraint against betweenness, coloured by how many departments each person's contacts span](img/app-sna-brokers-chart.png)
+
+**How it works.** Brokers sit in the top-left corner: their contacts don't
+know each other (low constraint), and many shortest paths run through them
+(high betweenness). v30 has the highest betweenness, and v73 the lowest
+constraint (0.064, with 19 contacts). The colours show `ndepts`: the 25
+people whose contacts span three or more departments average a betweenness
+of 6720, against 482 for everyone else. Drag a box over the corner. The
+people inside light up in the graph while you drag, and are selected when
+you let go, so `sel.color = orange` marks them. Pointing at a single dot
+shows who it is.
+
+**Pitfalls.** 23 people have no constraint (no contacts, or only one), so
+they're missing from the chart. A corner is a judgement call: the brush
+shows exactly which people your judgement includes.
+
 # Cohesive subgroups
 
 ## Cores, cliques and cohesive blocks [Intermediate]{.level}

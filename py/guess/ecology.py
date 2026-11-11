@@ -193,7 +193,7 @@ def install(session):
             palette = [0x2c7bb6, 0xd7191c, 0x1a9641, 0x8e5fbf, 0xfdae61]
             series = [{"name": k, "color": palette[i % 5], "points": [[round(x, 4), round(y, 4)] for x, y in v]}
                       for i, (k, v) in enumerate(results.items())]
-            session.emit({"type": "chart", "id": "chart:line:extinctions", "kind": "line",
+            session.chart_out({"type": "chart", "id": "chart:line:extinctions", "kind": "line",
                           "title": "Extinction cascades", "xlabel": "share of species removed",
                           "ylabel": "share surviving", "items": [], "series": series})
         return results

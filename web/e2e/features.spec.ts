@@ -814,3 +814,29 @@ test("lens: L toggles it from the toolbar's Select, no hover popups while on", a
   await expect(page.locator("button[data-tool=select]")).toHaveAttribute("aria-pressed", "true");
   expect(errors).toEqual([]);
 });
+
+test("demo() walks through the tour, running each step as a cell", async ({ page }) => {
+  await boot(page);
+  // the welcome example puts demo() in the working cell
+  await page.locator(".console-out .example", { hasText: "demo()" }).first().click();
+  await page.keyboard.press("Shift+Enter");
+  const panel = page.locator(".tour-body");
+  await expect(panel).toContainText("1. Meet the graph");
+  await expect(panel.locator(".tour-chip")).toHaveText("Basic");
+  await panel.locator(".tour-run").click();
+  await expect(page.locator(".cell").last().locator(".cell-code")).toContainText('makeFromGDF("sample.gdf")');
+  await expect(panel.locator(".tour-notice")).toBeVisible();
+  await expect(panel.locator(".tour-run")).toHaveText("Run again");
+  await panel.locator(".tour-next").click();
+  await expect(panel).toContainText("2. Every node is a variable");
+  await panel.locator(".tour-run").click();
+  await expect.poll(() => page.evaluate(() =>
+    [...(window as any).__guess.renderer.nodes.values()].find((n: any) => n.name === "v1")?.c)).toBe(0xff0000);
+  // jump to the advanced steps from the progress bar
+  await panel.locator(".tour-level-jump", { hasText: "Advanced" }).click();
+  await expect(panel.locator(".tour-chip")).toHaveText("Advanced");
+  await panel.locator(".tour-run").click();
+  await expect(panel.locator(".tour-notice")).toBeVisible();
+  await expect(page.locator(".cell").last()).toContainText("pieces");
+  expect(await lastError(page)).toBeNull();
+});

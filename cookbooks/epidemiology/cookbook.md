@@ -126,6 +126,37 @@ infected by day 10; drag a slider over it to replay the outbreak.
 minutes: an edge of 20 minutes then transmits with probability
 1 − 0.998²⁰, about 4% a day.
 
+## An epidemic curve you can click [Basic]{.level}
+
+**You want** the classic epidemic curve, new cases per day, split by who
+they were, and to find the people behind each bar.
+
+::: ingredients
+**Ingredients:** a contact network · `spread` · `nodeData` · Altair (`alt`)
+:::
+
+```python
+makeFromGDF("school-contacts-SIMULATED.gdf")
+spread([p001], "SIR", beta=0.03, gamma=0.2, seed=1);
+alt.Chart(nodeData("infected_at", "role")).transform_filter("datum.infected_at >= 0").mark_bar().encode(
+    x=alt.X("infected_at:O", title="day infected", axis=alt.Axis(labelOverlap=True, labelAngle=0)),
+    y="count()", color="role")
+```
+
+![New infections per day, pupils and teachers](img/app-epi-curve.png)
+
+**How it works.** `nodeData` gives one row per person with the day they were
+infected and their role; the filter drops those never infected (−1), and
+`count()` stacks the rest by day. The busiest day is day 15, with 20 new
+cases, 19 of them pupils. 6 of the 10 teachers are infected, and the last new case is
+on day 39. Each bar segment stands for a query, such as
+`(infected_at == 15) & (role == 'pupil')`. Pointing at it lights those
+people up in the school network, and clicking selects them, ready for
+`center(sel)` or a closer look at whom they were in contact with.
+
+**Variations.** Click *● Live* on the chart, then run `spread` again from
+another pupil or with another `seed`: the curve redraws for each run.
+
 ## One run is an anecdote [Intermediate]{.level}
 
 **You want** the distribution of outcomes, not one story, and to know who

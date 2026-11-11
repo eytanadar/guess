@@ -113,6 +113,17 @@ options, or put it in a script.
 
 There are several ways in:
 
+- **Help → Take the tour**, or `demo()` in the console, is a guided tour for
+  newcomers. In 17 steps it goes from selecting nodes, through colouring,
+  charts, centrality, communities and paths, to a what-if analysis, an Altair
+  chart, a contagion model and a small app. Each step explains one idea and
+  shows its code. *Run it* runs the code as a normal console cell (*Edit
+  first* lets you change it), and a note then says what to look for.
+  `demo(9)` starts at step 9; `demo("advanced")` at the advanced steps.
+- **The code box's hint** suggests `demo()` on your first visit. After that
+  it shows, in turn, short commands that work on the graph you have open,
+  using its own fields and names: `colorize(club)` on the karate club,
+  `plotHistogram(freq)` on the sample graph.
 - **Help → Help and examples** (or **F1**) opens a panel with two tabs. *Commands &
   examples* is a searchable list of every command and a set of worked
   examples; click an example to put it in the console. *Mouse & gestures*
@@ -916,6 +927,53 @@ plotDistrib(totaldegree)     # each value in rank order
 ```
 
 ![plotSizesPie(dept)](img/chart.png)
+
+**Live charts.** A chart shows the graph as it was when you made it. Click
+*● Live* in its header and it is recomputed after every command that changes
+the graph or the display, including undo and the history scrubber.
+`liveCharts()` makes every chart live, now and from then on;
+`liveCharts(False)` stops them all. Recomputing only redraws the chart: a
+command like `spread` that colours nodes when you run it doesn't recolour
+them when its chart updates. A chart that can no longer be made (its field
+has no numbers left, say) stops being live and says so. Legends made by
+`colorize` and `legendFor` follow the colours by themselves.
+
+**Altair charts.** For any other chart, use [Altair](https://altair-viz.github.io).
+`nodeData(...)` gives one row per node with the fields you name (all data
+fields when you name none), and `edgeData(...)` one row per edge. A cell whose
+value is a chart shows it in the dock, like the charts above. `alt` is
+imported the first time you use it, which takes a few seconds once.
+
+```python
+alt.Chart(nodeData("degree", "pagerank", "dept")).mark_point().encode(
+    x="degree", y="pagerank", color="dept", tooltip="name")
+
+alt.Chart(nodeData("dept")).mark_bar().encode(x="dept", y="count()")
+
+alt.Chart(nodeData(dept == "dept3", "degree")).mark_bar().encode(
+    alt.X("degree", bin=True), y="count()")
+```
+
+Field types come from the graph, so `x="degree"` is a number and `x="dept"`
+a category, without `:Q` or `:N`. A chart that uses a field missing from its
+data says how to add it.
+
+Altair charts are linked like the others. Each row carries its element's id,
+so a point for one node highlights that node, clicking selects it, and
+right-clicking opens its menu. Hovering nodes anywhere else fades the other
+points. A mark that summarises several nodes stands for the query it was
+grouped by: a `count()` bar for `dept == 'dept1'`, or a bin for
+`(degree >= 4) & (degree < 6)`. Selections you add with Altair link too:
+dragging an `alt.selection_interval()` brush highlights the nodes inside it,
+and selects them when you stop. A point selection on a field (a clickable
+legend) does the same for the values chosen.
+
+`showChart(chart, title)` shows a chart from inside a script or function.
+Running the same cell again redraws its chart in place. Altair charts can be
+live too: their `nodeData` and `edgeData` rows are rebuilt from the graph
+each time. The *…* menu on a chart saves it as SVG or
+PNG. Data frames work too (`import pandas`), but only `nodeData` and
+`edgeData` rows link to the graph.
 
 ## 7.6 Random graph generation
 

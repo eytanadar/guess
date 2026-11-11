@@ -339,6 +339,48 @@ plotDistrib(betweenness)
 heavy tails (a few hubs, many small nodes) obvious. The charts appear in a
 panel and can be saved as images.
 
+## Charts of your own with Altair [Intermediate]{.level}
+
+**You want** a chart GUESS has no command for, such as one measure plotted
+against another, and you want it linked to the graph like the built-in charts.
+
+::: ingredients
+**Ingredients:** `lesmis.gdf` · `nodeData` · Altair (`alt`)
+:::
+
+```python
+makeFromGDF("lesmis.gdf")
+louvainClusters();
+alt.Chart(nodeData("degree", "betweenness", "louvain_class")).mark_circle(size=60).encode(
+    x="degree", y="betweenness", color="louvain_class:N", tooltip="name")
+```
+
+```python
+alt.Chart(nodeData("louvain_class")).mark_bar().encode(
+    x="louvain_class:N", y="count()")
+```
+
+![Two Altair charts in the dock: betweenness against degree, and community sizes](img/app-altair.png)
+
+**How it works.** `nodeData(...)` gives one row per character with the
+fields you name, and [Altair](https://altair-viz.github.io) turns rows into
+any chart. A cell whose value is a chart shows it in the dock. `alt` is
+imported the first time you use it. GUESS knows `degree` is a number and
+`louvain_class` a field, so plain `x="degree"` works; the `:N` asks for the
+community numbers to be treated as categories. Valjean stands far above
+everyone in the scatter: betweenness 1624 with 36 contacts. Each row carries
+its character's id, so pointing at a dot highlights that character in the
+graph and clicking selects them. A bar stands for the query it counts
+(`louvain_class == 2`): pointing at it lights up the whole community, and
+clicking selects it.
+
+**Variations.** Add `.add_params(alt.selection_interval())` to the scatter
+and drag a box over it: the characters inside are selected, and `sel` holds
+them. Click *● Live* on a chart and it redraws after every change. Run
+`louvainClusters();` again and the bar chart follows. `nodeData(dept ==
+"x", ...)` charts just some nodes, and `edgeData("weight")` gives one row
+per edge.
+
 ## Paths and distances [Basic]{.level}
 
 ```python

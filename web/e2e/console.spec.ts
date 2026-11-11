@@ -153,3 +153,27 @@ test("File → Start fresh forgets the autosave, history and settings", async ({
     expect.not.arrayContaining(["guess.theme", "guess.history"]));
   expect(await page.evaluate(() => localStorage.getItem("guess.theme"))).toBeNull();
 });
+
+test("the code box suggests demo() on a first visit, then commands that fit the graph", async ({ page }) => {
+  await boot(page);
+  const hint = page.locator(".console-in .cm-placeholder");
+  await expect(hint).toHaveText("Gython — new here? try demo()");
+  // a later visit: commands for this graph, in turn
+  await page.reload();
+  await expect(page.locator(".console-out")).toContainText(/loaded/, { timeout: 90_000 });
+  await expect(hint).toHaveText(/^Gython — e\.g\. /);
+  const seen = new Set<string>();
+  for (let i = 0; i < 6; i++) {
+    seen.add(await hint.innerText());
+    await run(page, "1");
+  }
+  expect(seen.size).toBeGreaterThan(3);
+  // another graph: suggestions use its fields (karate has club, not dept)
+  await run(page, 'makeFromGDF("karate.gdf")');
+  const karate: string[] = [];
+  for (let i = 0; i < 12; i++) {
+    karate.push(await hint.innerText());
+    await run(page, "1");
+  }
+  expect(karate.join(" ")).not.toContain("dept");
+});

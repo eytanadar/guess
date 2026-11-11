@@ -679,6 +679,39 @@ body.app .view-col { flex: 1 1 auto; }
 
 /* Altair (Vega-Lite) charts in the dock */
 .panel-body.vega-body { padding: 6px; overflow: auto; max-height: 60vh; }
-.vega-body .vega-embed { display: block; }
+.vega-body .vega-embed { display: block; width: 100%; }
+.vega-body > div { width: 100%; }
 .vega-body .vega-embed summary { opacity: 0.6; }
 .vega-error { color: var(--error); font-size: 12px; }
+
+/* the Live toggle in a chart's header */
+.panel-live { font: 11px system-ui, sans-serif; border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+  color: var(--muted); padding: 0 7px; cursor: pointer; margin-left: auto; margin-right: 6px; }
+.panel-live[aria-pressed=true] { color: #1a9641; border-color: #1a9641; }
+.panel-live[aria-pressed=false]::first-letter { color: var(--muted); }
+
+/* the guided tour (demo()), below the graph */
+.panel-body.tour-body { display: block; padding: 8px 12px 10px; font-size: 13px; }
+.tour-progress { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; margin-bottom: 8px; }
+.tour-level-jump { font: 11px system-ui, sans-serif !important; border: 0 !important; background: none !important; color: var(--muted); padding: 0 4px 0 8px !important; cursor: pointer; }
+.tour-level-jump:first-child { padding-left: 0 !important; }
+.tour-dot { width: 14px; height: 6px; padding: 0 !important; border-radius: 3px !important; border: 1px solid var(--border) !important; background: var(--surface) !important; cursor: pointer; }
+.tour-dot.done { background: var(--link-node) !important; border-color: var(--link-node) !important; opacity: 0.6; }
+.tour-dot.current { background: var(--accent) !important; border-color: var(--accent) !important; opacity: 1; }
+.tour-main { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.tour-left { flex: 1 1 280px; min-width: 0; }
+.tour-right { flex: 1 1 320px; min-width: 0; }
+.tour-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.tour-chip { font-size: 10.5px; padding: 1px 7px; border-radius: 9px; border: 1px solid currentColor; }
+.tour-chip.basic { color: #1a9641; }
+.tour-chip.intermediate { color: #d97706; }
+.tour-chip.advanced { color: #c2185b; }
+.tour-text, .tour-notice { margin: 4px 0; line-height: 1.45; }
+.tour-notice { padding: 5px 8px; border-left: 3px solid var(--link-node); background: var(--panel); border-radius: 0 4px 4px 0; }
+.tour-text code, .tour-notice code { font: 12px var(--mono); }
+.tour-code { margin: 0 0 8px; padding: 7px 9px; font: 12px/1.45 var(--mono); background: var(--panel); border: 1px solid var(--border); border-radius: 5px; white-space: pre-wrap; max-height: 9.5em; overflow: auto; }
+.tour-buttons { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.tour-buttons button { font: inherit; padding: 3px 10px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); cursor: pointer; }
+.tour-buttons button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tour-buttons button:disabled { opacity: 0.5; cursor: default; }
+.tour-count { margin-left: auto; color: var(--muted); font: 11px var(--mono); }

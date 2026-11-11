@@ -22,6 +22,8 @@ export interface DockHost {
   brush?(expr: string | null): void;
   /** dark theme now? (Altair charts pick their theme when drawn) */
   dark?(): boolean;
+  /** make a chart live or not; resolves with its state */
+  live?(id: string, on: boolean): Promise<boolean>;
 }
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -56,6 +58,38 @@ export class Dock {
     const done = this.onClose.get(id);
     this.onClose.delete(id);
     done?.();
+  }
+
+  /** The ● Live toggle in a chart's header (charts that know how they were made). */
+  private liveButton(id: string, can: boolean, on: boolean) {
+    const head = this.panels.get(id)?.querySelector("header");
+    if (!head) return;
+    let b = head.querySelector<HTMLButtonElement>(".panel-live");
+    if (!can) {
+      b?.remove();
+      return;
+    }
+    if (!b) {
+      b = document.createElement("button");
+      b.className = "panel-live";
+      b.textContent = "● Live";
+      b.onclick = async () => {
+        const want = b!.getAttribute("aria-pressed") !== "true";
+        const state = this.host.live ? await this.host.live(id, want) : false;
+        this.setLive(id, state);
+      };
+      head.querySelector(".panel-close")?.before(b);
+    }
+    this.setLive(id, on);
+  }
+
+  /** Show whether a chart is live (Python says when one stops). */
+  setLive(id: string, on: boolean) {
+    const b = this.panels.get(id)?.querySelector<HTMLButtonElement>(".panel-live");
+    if (!b) return;
+    b.setAttribute("aria-pressed", String(on));
+    b.title = on ? "Live: recomputed after every change to the graph (click to stop)"
+      : "Make this chart live: recompute it after every change to the graph";
   }
 
   /** A panel for the page's own use (a pinned cell, the history): its body. */
@@ -210,6 +244,7 @@ export class Dock {
   // ---- charts ----------------------------------------------------------------------
   chart(c: ChartMsg) {
     const body = this.frame(c.id, c.title, "right");
+    this.liveButton(c.id, !!c.canLive, !!c.live);
     body.classList.add("chart-body");
     const W = 300, H = c.kind === "pie" ? 230 : 190;
     const svg = document.createElementNS(SVG, "svg");
@@ -482,6 +517,7 @@ export class Dock {
   /** An Altair chart: drawn by Vega (loaded on first use); the same id redraws in place. */
   async vega(m: VegaMsg) {
     const body = this.frame(m.id, m.title, "right");
+    this.liveButton(m.id, !!m.canLive, !!m.live);
     body.classList.add("vega-body");
     this.vegas.get(m.id)?.destroy();
     this.vegas.delete(m.id);

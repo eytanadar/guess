@@ -14,6 +14,8 @@ export interface VegaMsg {
   spec: any;
   cell: number | null;
   fields: { n: string[]; e: string[] };
+  live?: boolean;
+  canLive?: boolean;
 }
 
 export interface VegaHooks {
@@ -98,6 +100,11 @@ export async function renderVega(body: HTMLElement, m: VegaMsg, hooks: VegaHooks
   const sels = selections(spec);
   const hasTooltip = JSON.stringify(spec).includes('"tooltip"');
   spec.background ??= "transparent";
+  // a single (or layered) view with no width of its own fits the panel
+  if ((spec.mark || spec.layer) && spec.width === undefined) {
+    spec.width = "container";
+    spec.autosize ??= { type: "fit-x", contains: "padding" };
+  }
 
   // a datum -> the element(s) it stands for, or the query for them
   const linkOf = (d: any): { items: Item[]; expr: string | null; title: string } | null => {
@@ -172,7 +179,8 @@ export async function renderVega(body: HTMLElement, m: VegaMsg, hooks: VegaHooks
         for (const [k, v] of Object.entries<any>(value ?? {})) {
           if (k.startsWith("vl") || !fields.has(k) || !Array.isArray(v) || !v.length) continue;
           if (type === "interval" && v.length === 2 && v.every((x) => typeof x === "number")) {
-            const [a, b] = [Math.min(v[0], v[1]), Math.max(v[0], v[1])];
+            const round = (x: number) => Number(x.toPrecision(6));
+            const [a, b] = [round(Math.min(v[0], v[1])), round(Math.max(v[0], v[1]))];
             parts.push(`(${k} >= ${a}) & (${k} <= ${b})`);
           } else {
             const vals = v.map(lit).filter((x): x is string => x !== null);

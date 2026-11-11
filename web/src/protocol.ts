@@ -89,6 +89,8 @@ export interface PanelRec extends WidgetRec { children: WidgetRec[] }
 
 export interface ChartMsg {
   type: "chart"; id: string; kind: "bar" | "pie" | "distrib" | "line";
+  /** live: recomputed after every change; canLive: it knows how it was made */
+  live?: boolean; canLive?: boolean;
   title: string; xlabel: string; ylabel: string;
   items: { label: string; value: number; color: number; ids: ["n" | "e", number][]; q?: string }[];
   /** line charts: a query for the elements at a point, with {x} for its x value
@@ -135,7 +137,12 @@ export type FromWorker =
   | { type: "text"; text: string }
   /** summary: one line (with a "did you mean" hint); line: the cell line it happened on */
   /** an Altair (Vega-Lite) chart for the dock; cell: the console cell that made it */
-  | { type: "vega"; id: string; title: string; spec: any; cell: number | null; fields: { n: string[]; e: string[] } }
+  | { type: "vega"; id: string; title: string; spec: any; cell: number | null; fields: { n: string[]; e: string[] };
+      live?: boolean; canLive?: boolean }
+  /** a chart stopped (or started) being live */
+  | { type: "liveState"; id: string; live: boolean }
+  /** demo(): the guided tour's steps, starting at `at` */
+  | { type: "demo"; steps: { level: string; title: string; text: string; code: string; notice: string }[]; at: number }
   | { type: "error"; text: string; summary?: string; line?: number;
       /** the summary with the nodes and edges it names linked; gid: the graph they belong to */
       segs?: Seg[]; gid?: number }
@@ -189,6 +196,8 @@ export type ToWorker =
   | { type: "tableQuery"; id: number; expr: string; kind: "n" | "e"; full: boolean }
   /** the Cluster tool: which nodes are labelled in a field */
   | { type: "clusterInfo"; id: number; field: string }
+  /** make a chart live (recomputed after every change) or not */
+  | { type: "live"; id: number; chart: string; on: boolean }
   | { type: "assign"; id: number; name: string; items: ["n" | "e", number][] }
   /** nodes dragged on the display, as [id, x, y, id, x, y, ...] (one undo step) */
   | { type: "select"; nodes: number[] }
@@ -197,7 +206,7 @@ export type ToWorker =
   | { type: "click"; x: number; y: number }
   | { type: "writeFile"; id: number; name: string; data: Uint8Array }
   /** help index, field summaries (filters/style panel) or data-table rows */
-  | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace" | "timeline"; kind?: string; ids?: number[] | null };
+  | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace" | "timeline" | "suggest"; kind?: string; ids?: number[] | null };
 
 export interface DragContext {
   /** circleLayout(): nodes slide around the ring and reorder */

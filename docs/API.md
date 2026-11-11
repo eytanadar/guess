@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (91)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (95)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -28,7 +28,7 @@ Commands can be called without parentheses when they take no arguments
 - [Data from the web: URLs, SPARQL, NDEx, Neo4j, packages](#data-from-the-web-urls-sparql-ndex-neo4j-packages) (9)
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
-- [Charts](#charts) (4)
+- [Charts](#charts) (5)
 - [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (11)
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
@@ -113,6 +113,14 @@ shortcutNodes until nothing changes. Returns [removed, added].
 
 Create node `name` with all field values copied from `template`.
 
+### `demo(step=1)`
+
+demo() starts a guided tour of GUESS for newcomers, from selecting
+nodes to communities, what-if analysis, Altair charts, a contagion model
+and a small app. Each step explains an idea and runs its code as a
+normal console cell. demo(9) starts at step 9; demo("advanced") at the
+first step of that level (basic, intermediate, advanced).
+
 ### `density()`
 
 Edges divided by the number of possible undirected node pairs.
@@ -120,6 +128,11 @@ Edges divided by the number of possible undirected node pairs.
 ### `distance(node1, node2)`
 
 Euclidean distance between two nodes' positions.
+
+### `edgeData(*args)`
+
+edgeData(field, ...) or edgeData(edges, field, ...): one row per edge
+(`name` is "a-b"), with `_edge`, the edge's id, for linking.
 
 ### `effectiveDistance(origin, weight='weight', name='eff_distance')`
 
@@ -515,6 +528,13 @@ whether a value is high.
 
 All nodes not in seq.
 
+### `nodeData(*args)`
+
+nodeData(field, ...) or nodeData(nodes, field, ...): one row per node
+for an Altair chart, with `name`, the fields given (all data fields when
+none are) and `_node`, the node's id, which links each mark to its node.
+alt.Chart(nodeData("degree", "dept")).mark_point().encode(x="degree", y="dept")
+
 ### `offspring(cases=None, show=True)`
 
 offspring() reads a transmission tree (directed edges from infector
@@ -613,6 +633,13 @@ each other. Prints a table and returns {k: value}.
 
 Repeatedly replace degree-2 nodes by an edge between their neighbours.
 Returns [removed, added].
+
+### `showChart(chart, title=None)`
+
+showChart(chart, title=None) shows an Altair chart in the dock (a cell
+whose value is a chart does this by itself). Hovering a mark highlights
+its nodes, clicking selects them, right-click opens the element menu;
+interval selections (brushes) select what they cover.
 
 ### `sizeBy(field, smallest, largest, scale='linear')`
 
@@ -2034,6 +2061,13 @@ Nodes and edges whose range equals the given range.
 Nodes and edges whose range overlaps the given range.
 
 ## Charts
+
+### `liveCharts(on=True)`
+
+liveCharts() makes every chart live, now and from now on: each is
+recomputed after any command that changes the graph or the display.
+liveCharts(False) turns that off. (The Live button on a chart does it
+for one chart.)
 
 ### `plotDistrib(field, sortField=None)`
 

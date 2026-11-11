@@ -222,7 +222,7 @@ def install(session):
                     seeds[b][n._id] = None
             items = [{"label": f"{round(i * width)}–{round((i + 1) * width)}", "value": c, "color": 0xd7191c,
                       "ids": [["n", i_] for i_ in seeds[i]]} for i, c in enumerate(counts)]
-            session.emit({"type": "chart", "id": "chart:bar:outbreaks", "kind": "bar", "title": "Outbreak sizes",
+            session.chart_out({"type": "chart", "id": "chart:bar:outbreaks", "kind": "bar", "title": "Outbreak sizes",
                           "xlabel": "nodes reached", "ylabel": "runs", "items": items})
         return res
 
@@ -260,7 +260,7 @@ def install(session):
             hi = max(xs) if xs else 0
             items = [{"label": str(c), "value": sum(1 for x in xs if x == c), "color": 0xd7191c,
                       "ids": [n._id for n in nodes if kids[n] == c]} for c in range(hi + 1)]
-            session.emit({"type": "chart", "id": "chart:bar:offspring", "kind": "bar", "title": "Offspring",
+            session.chart_out({"type": "chart", "id": "chart:bar:offspring", "kind": "bar", "title": "Offspring",
                           "xlabel": "people infected", "ylabel": "cases", "items": items})
         return res
 

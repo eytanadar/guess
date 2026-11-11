@@ -207,6 +207,9 @@ function handle(msg: ToWorker) {
     case "historyGoto":
       post({ type: "reply", id: msg.id, value: call("history_goto", msg.at) });
       break;
+    case "live":
+      post({ type: "reply", id: msg.id, value: call("set_live", msg.chart, msg.on) });
+      break;
     case "clusterInfo":
       post({ type: "reply", id: msg.id, value: call("cluster_info", msg.field) });
       break;

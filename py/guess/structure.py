@@ -523,7 +523,7 @@ def install(session):
             for k, v in results.items():
                 half = next((x for x, y in v if y < 0.5), 1.0)
                 print(f"{k:>12}: largest piece below half after removing {half:.0%} of nodes")
-            session.emit({"type": "chart", "id": "chart:line:robustness", "kind": "line",
+            session.chart_out({"type": "chart", "id": "chart:line:robustness", "kind": "line",
                           "title": "Robustness", "xlabel": "share of nodes removed",
                           "ylabel": "share in the largest piece", "items": [], "series": series})
         return results

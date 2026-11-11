@@ -56,6 +56,12 @@ class Session:
         self.cell_items = {}      # cell -> [(kind, id)] it changed
         self.running_cell = None  # the console cell being run (charts made by it are keyed by it)
         self.chart_seq = 0        # charts made so far by the running cell
+        # live charts: how each chart was made (command, args), and which recompute after changes
+        self.chart_recipes = {}   # chart id -> (fn, args, kwargs)
+        self.live_charts = set()
+        self.all_live = False     # liveCharts(): every chart is live
+        self._recipe = None       # the chart command running now
+        self._refreshing = None   # the chart id being recomputed
         self.ns.update(runtime.HELPERS)
         self.ns["__display__"] = self.display
         self.ns["__gnot__"] = self._gnot
@@ -68,6 +74,8 @@ class Session:
         charts.install(self)
         from . import vlcharts
         vlcharts.install(self)
+        from . import demo as demo_mod
+        demo_mod.install(self)
         persist.install(self)
         from . import sqlquery
         sqlquery.install(self)
@@ -212,9 +220,106 @@ class Session:
             self.emit({"type": "text", "text": f"note: {name} is now your import, not {what}; "
                                                f"del {name} brings it back\n"})
 
+    # commands that draw a chart: they record how they were called, so the chart can be live
+    CHART_COMMANDS = {"plotHistogram", "plotSizes", "plotSizesPie", "plotDistrib", "showChart",
+                      "extinctions", "outbreaks", "offspring", "spread", "robustness"}
+
     def register_command(self, name, fn):
+        if name in self.CHART_COMMANDS:
+            fn = self._recording(fn)
         runtime.command(fn)
         self._bind(name, fn, kind="command")
+
+    def _recording(self, fn):
+        import functools
+
+        @functools.wraps(fn)
+        def chart_command(*args, **kwargs):
+            outer = self._recipe
+            if outer is None:
+                self._recipe = (fn, args, kwargs)
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                self._recipe = outer
+        return chart_command
+
+    # ---- live charts ------------------------------------------------------------
+    MAX_RECIPES = 100
+
+    def chart_out(self, msg):
+        """Send a chart (or Altair chart) message, noting how it was made so it
+        can be live."""
+        cid = msg["id"]
+        if self._recipe is not None and self._refreshing is None:
+            self.chart_recipes.pop(cid, None)
+            self.chart_recipes[cid] = self._recipe
+            while len(self.chart_recipes) > self.MAX_RECIPES:
+                old = next(iter(self.chart_recipes))
+                del self.chart_recipes[old]
+                self.live_charts.discard(old)
+            if self.all_live:
+                self.live_charts.add(cid)
+        msg["canLive"] = cid in self.chart_recipes
+        msg["live"] = cid in self.live_charts
+        self.emit(msg)
+
+    def set_live(self, cid, on=True):
+        """Make a chart live (recomputed after every change) or not. Returns its state."""
+        if cid not in self.chart_recipes:
+            return False
+        if on:
+            self.live_charts.add(cid)
+            self._refresh_live([cid])
+        else:
+            self.live_charts.discard(cid)
+        return cid in self.live_charts
+
+    def _refresh_live(self, ids=None):
+        """Recompute live charts from their recipes. Isolated: whatever a chart
+        command changes in the graph (spread colours nodes, say) is put back, and
+        only chart messages get out."""
+        ids = [c for c in (ids if ids is not None else list(self.live_charts)) if c in self.chart_recipes]
+        if not ids or self._refreshing is not None:
+            return
+        g = self.graph
+        before = self._undo_snapshot()
+        outer, g.journal = g.journal, Journal()
+        emit = self.emit
+        self.emit = lambda m: emit(m) if m.get("type") in ("chart", "vega") else None
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = sys.stderr = io.StringIO()
+        failed = []
+        try:
+            for cid in ids:
+                fn, args, kwargs = self.chart_recipes[cid]
+                self._refreshing = cid
+                try:
+                    fn(*args, **kwargs)
+                except Exception as e:  # noqa: BLE001 - a chart that can't be recomputed stops being live
+                    failed.append((cid, e))
+                finally:
+                    self._refreshing = None
+        finally:
+            sys.stdout, sys.stderr = old_out, old_err
+            self.emit = emit
+            j, g.journal = g.journal, outer
+            if self.graph is g:
+                if j:
+                    g.revert(j)
+                if self.view.version != before["view_version"]:
+                    self.view.restore(before["view"])
+                g.states.clear()
+                g.states.update(before["states"])
+                g.ranges.clear()
+                g.ranges.update(before["ranges"])
+        for cid, e in failed:
+            self.live_charts.discard(cid)
+            self.emit({"type": "liveState", "id": cid, "live": False})
+            self.emit({"type": "text", "text": f"note: a live chart stopped updating ({type(e).__name__}: {e})\n"})
+        if j:
+            self.flush()
+
 
     # graph listener callbacks
     def on_node_added(self, node):
@@ -287,6 +392,9 @@ class Session:
             if not self._history_op and not quiet:
                 self._record_undo(source, j, before, cell)
             self._edge_colour_hint(j)
+            if self.live_charts and (j or self._history_op or self.view.version != before["view_version"]
+                                     or self.graph is not g):
+                self._refresh_live()
         return ok
 
     def _run(self, source, interactive, filename):
@@ -498,6 +606,7 @@ class Session:
         except Exception:   # noqa: BLE001 - a stale legend must never break the scrubber
             pass
         self.flush()
+        self._refresh_live()
         return at
 
     def history(self):
@@ -780,6 +889,8 @@ class Session:
     def panel_data(self, what, kind="n", ids=None):
         """Data for the page's panels: "table" rows, "fields" summaries or "workspace"."""
         from . import styles
+        if what == "suggest":
+            return self.suggestions()
         if what == "workspace":
             return self.workspace()
         if what == "timeline":
@@ -1117,6 +1228,69 @@ class Session:
                 nums.append(v)
         nxt = int(max(nums)) + 1 if nums else 1
         return {"exists": True, "type": f.type, "labels": labels, "next": nxt, "total": len(self.graph.nodes)}
+
+    # display plumbing: never suggested
+    _PLUMBING = {"x", "y", "visible", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "image",
+                 "labelvisible", "labelsize", "labelpos", "label", "color", "name", "node1", "node2", "source",
+                 "destination", "size"}
+
+    def suggestions(self, limit=12):
+        """Short commands worth trying on the graph showing now, for the code
+        box's rotating hint: they use its own fields (a category to colour by,
+        a number to rank by) and node names, so each one works as written."""
+        import random
+        g = self.graph
+        if not g._nodes:
+            return ['makeFromGDF("sample.gdf")', "demo()", "help()"]
+        nodes = g._nodes_list()[:2000]
+
+        def usable(name):
+            return name.isidentifier() and not keyword.iskeyword(name) and \
+                self.is_protected(name) in (None, "field") and name not in self._PLUMBING
+
+        cats, nums = [], []
+        for name, f in g.node_schema.items():
+            if not usable(name) or getattr(f, "builtin", False) and name not in ("degree",):
+                continue
+            vals = [n._vals.get(name, f.default) for n in nodes]
+            vals = [v for v in vals if v not in (None, "")]
+            if not vals:
+                continue
+            if f.type == "VARCHAR" or f.type == "BOOLEAN":
+                k = len(set(vals))
+                if 2 <= k <= 40 and k < len(vals):
+                    cats.append(name)
+            elif f.type in ("INTEGER", "DOUBLE") and name != "degree" and len(set(vals)) > 2 \
+                    and name.lower() not in ("lat", "lon", "lng", "latitude", "longitude", "id", "year"):
+                nums.append(name)
+        enums = [name for name, f in g.edge_schema.items()
+                 if usable(name) and f.type in ("INTEGER", "DOUBLE") and not getattr(f, "builtin", False)]
+        named = [n._name for n in nodes if n._name.isidentifier() and not keyword.iskeyword(n._name)
+                 and self.ns.get(n._name) is n]
+        degs = sorted(n.degree for n in nodes)
+        cut = degs[int(len(degs) * 0.9)] if degs else 5
+
+        out = []
+        for c in cats[:2]:
+            out += [f"colorize({c})", f"groupBy({c})", f"plotSizes({c})", f"interEdges({c}).color = red"]
+        for v in nums[:2]:
+            out += [f"highest({v}, 5)", f"plotHistogram({v})"]
+        for e in enums[:1]:
+            out += [f"plotHistogram({e})", f"({e} > {e}.median).color = red"]
+        if named:
+            a = named[0]
+            out += [f"{a}.getNeighbors()", f"center({a})"]
+            if len(named) > 1:
+                out.append(f"shortestPath({a}, {named[-1]}).color = red")
+        out += [f"(degree > {cut}).color = orange", "highest(betweenness, 5)", "louvainClusters()",
+                "plotHistogram(degree)", "gemLayout()", "resizeLinear(degree, 5, 30)", "demo('advanced')"]
+        seen, uniq = set(), []
+        for c in out:
+            if c not in seen and len(c) <= 40:
+                seen.add(c)
+                uniq.append(c)
+        random.shuffle(uniq)
+        return uniq[:limit]
 
     def table_query(self, expr, kind="n", full=False):
         """Filter the data table with Gython: the ids (of kind "n" or "e") of
