@@ -134,6 +134,8 @@ export type FromWorker =
   | { type: "out"; segs: Seg[]; gid?: number }
   | { type: "text"; text: string }
   /** summary: one line (with a "did you mean" hint); line: the cell line it happened on */
+  /** an Altair (Vega-Lite) chart for the dock; cell: the console cell that made it */
+  | { type: "vega"; id: string; title: string; spec: any; cell: number | null; fields: { n: string[]; e: string[] } }
   | { type: "error"; text: string; summary?: string; line?: number;
       /** the summary with the nodes and edges it names linked; gid: the graph they belong to */
       segs?: Seg[]; gid?: number }

@@ -1,5 +1,6 @@
 // Dock area: user widget panels (from the Python `ui` API) and linked charts.
 import type { ChartMsg, PanelRec, WidgetRec } from "./protocol";
+import type { VegaChart, VegaMsg } from "./vegachart";
 
 export type Item = ["n" | "e", number];
 
@@ -15,6 +16,12 @@ export interface DockHost {
   /** Pointing at a line chart: the values there, and (with a query) the elements
    *  it stands for; ev null = left the chart. click: true when clicked. */
   lineAt(expr: string | null, title: string, lines: string[], ev: MouseEvent | null, click?: boolean): void;
+  /** Altair charts: the elements a query gives now */
+  resolve?(expr: string): Promise<Item[]>;
+  /** Altair charts: a selection (brush) changed; null when cleared */
+  brush?(expr: string | null): void;
+  /** dark theme now? (Altair charts pick their theme when drawn) */
+  dark?(): boolean;
 }
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -27,6 +34,8 @@ export class Dock {
   private marks = new Map<string, { el: SVGElement; keys: Set<string> }[]>();
   /** panels that want to know when they are closed (pinned cells, history) */
   private onClose = new Map<string, () => void>();
+  /** Altair charts by panel id */
+  private vegas = new Map<string, VegaChart>();
 
   constructor(private bottom: HTMLElement, private right: HTMLElement, private host: DockHost) {}
 
@@ -38,6 +47,8 @@ export class Dock {
   }
 
   close(id: string) {
+    this.vegas.get(id)?.destroy();
+    this.vegas.delete(id);
     this.panels.get(id)?.remove();
     this.panels.delete(id);
     this.marks.delete(id);
@@ -468,8 +479,40 @@ export class Dock {
     }, true);
   }
 
+  /** An Altair chart: drawn by Vega (loaded on first use); the same id redraws in place. */
+  async vega(m: VegaMsg) {
+    const body = this.frame(m.id, m.title, "right");
+    body.classList.add("vega-body");
+    this.vegas.get(m.id)?.destroy();
+    this.vegas.delete(m.id);
+    const holder = document.createElement("div");
+    body.replaceChildren(holder);
+    const h = this.host;
+    const resolve = (expr: string) => (h.resolve ? h.resolve(expr) : Promise.resolve([] as Item[]));
+    try {
+      const { renderVega } = await import("./vegachart");
+      const chart = await renderVega(holder, m, {
+        hover: (items, _expr, title, lines, ev) => h.hover(items && items.length ? items : null, title, lines, ev),
+        click: (items, expr, ev) => {
+          if (items.length) h.click(items, ev, expr ?? undefined);
+        },
+        context: (items, expr, title, ev) => h.context(items, ev, expr ?? undefined, title),
+        brush: (expr) => h.brush?.(expr),
+        resolve,
+      }, h.dark?.() ?? false);
+      if (body.firstChild === holder) this.vegas.set(m.id, chart);
+      else chart.destroy();
+    } catch (e) {
+      const err = document.createElement("div");
+      err.className = "vega-error";
+      err.textContent = `Couldn't draw this chart: ${String(e).split("\n")[0]}`;
+      body.replaceChildren(err);
+    }
+  }
+
   /** Highlight marks whose elements intersect the given ones (from graph/console hover). */
   highlight(items: Item[] | null) {
+    for (const v of this.vegas.values()) v.highlight(items);
     const keys = new Set((items ?? []).map(([k, id]) => k + id));
     for (const marks of this.marks.values()) {
       for (const m of marks) {

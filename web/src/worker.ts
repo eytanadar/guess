@@ -91,10 +91,46 @@ session = Session(lambda m: __js_emit(json.dumps(m)))
 // Pyodide's networkx recipe depends on matplotlib (and numpy, Pillow, ...).
 // We only need the pure-Python core, so load the wheel by URL, which skips
 // dependency resolution.
+let lockPromise: Promise<any> | null = null;
+function pyodideLock(): Promise<any> {
+  lockPromise ??= fetch(PYODIDE_URL + "pyodide-lock.json").then((r) => r.json());
+  return lockPromise;
+}
+
 async function loadWithoutDeps(py: Py, names: string[]) {
-  const lock = await (await fetch(PYODIDE_URL + "pyodide-lock.json")).json();
+  const lock = await pyodideLock();
   const urls = names.map((n) => PYODIDE_URL + lock.packages[n].file_name);
   await py.loadPackage(urls);
+}
+
+/** Before a cell runs: load the Pyodide packages it imports (altair, pandas,
+ *  scipy, …), and Altair when it uses `alt.` without importing it. Packages
+ *  GUESS loads itself (networkx, igraph) are left alone. */
+const ALT_USE = /(?<![\w.])alt\./;
+const SKIP = new Set(["networkx", "igraph"]);
+const loaded = new Set<string>();
+async function loadImports(code: string) {
+  let mods: string[] = [];
+  try {
+    py!.globals.set("__src", code);
+    const found = py!.runPython("from pyodide.code import find_imports as __fi\n__fi(__src)") as any;
+    mods = found?.toJs ? found.toJs() : [];
+    found?.destroy?.();
+  } catch {
+    /* a syntax error: the run reports it */
+  }
+  if (ALT_USE.test(code)) mods.push("altair");
+  if (!mods.length) return;
+  const lock = await pyodideLock();
+  const byImport = new Map<string, string>();
+  for (const [name, rec] of Object.entries<any>(lock.packages)) for (const m of rec.imports ?? []) byImport.set(m, name);
+  const want = [...new Set(mods.map((m) => byImport.get(m.split(".")[0])).filter((n): n is string => !!n))]
+    .filter((n) => !SKIP.has(n) && !loaded.has(n) && !(n in ((py as any).loadedPackages ?? {})));
+  if (!want.length) return;
+  post({ type: "text", text: `loading ${want.join(", ")} (first use)…\n` });
+  await py!.loadPackage(want);
+  for (const n of want) loaded.add(n);
+  py!.runPython("import importlib; importlib.invalidate_caches()");
 }
 
 /** installPackage(): micropip, in the background (between commands). */
@@ -123,10 +159,17 @@ function call(fn: string, ...args: unknown[]): unknown {
 function handle(msg: ToWorker) {
   switch (msg.type) {
     case "run": {
-      session.current_cell = msg.cell ?? null;
-      session.quiet_next = !!msg.quiet;
-      const ok = call("run", msg.code) as boolean;
-      post({ type: "done", id: msg.id, ok });
+      const go = () => {
+        session.current_cell = msg.cell ?? null;
+        session.quiet_next = !!msg.quiet;
+        const ok = call("run", msg.code) as boolean;
+        post({ type: "done", id: msg.id, ok });
+      };
+      // packages it imports load first (a few seconds, once); then it runs
+      loadImports(msg.code).then(go, (e) => {
+        post({ type: "error", text: `could not load a package: ${String(e).split("\n").filter(Boolean).pop()}` });
+        go();
+      });
       break;
     }
     case "complete":

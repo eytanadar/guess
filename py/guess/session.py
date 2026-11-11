@@ -54,6 +54,8 @@ class Session:
         self.provenance = {}      # ("n"|"e", id) -> {aspect: cell} : which cell last changed what
         self.cell_code = {}       # cell -> its code (first line), for "color <- [12] colorize(dept)"
         self.cell_items = {}      # cell -> [(kind, id)] it changed
+        self.running_cell = None  # the console cell being run (charts made by it are keyed by it)
+        self.chart_seq = 0        # charts made so far by the running cell
         self.ns.update(runtime.HELPERS)
         self.ns["__display__"] = self.display
         self.ns["__gnot__"] = self._gnot
@@ -64,6 +66,8 @@ class Session:
         from . import algorithms, analysis, builders, charts, codegraphs, compat, connectors, ecology, enrichment, epidemic, extras, geo, glyphs, investigate, groups, gui, gv, igr, interop, layouts, persist, ranges, slides, states, structure, styles, timeline, visuals, workspaces
         gui.install(self)
         charts.install(self)
+        from . import vlcharts
+        vlcharts.install(self)
         persist.install(self)
         from . import sqlquery
         sqlquery.install(self)
@@ -267,6 +271,7 @@ class Session:
             return self._run(source, interactive, filename)
         g = self.graph
         cell, self.current_cell = self.current_cell, None
+        self.running_cell, self.chart_seq = cell, 0
         quiet, self.quiet_next = self.quiet_next, False
         before = self._undo_snapshot()
         g.journal = Journal()
@@ -295,6 +300,9 @@ class Session:
                                            imports=imports)
             self._take_over(imports)
             self._prepare_fields(names)
+            if "alt" not in self.ns and _ALT_USE.search(source):
+                from . import vlcharts
+                vlcharts.ensure_alt(self)
             exec(code, self.ns)
             if self.log_lines is not None and interactive:
                 self.log_lines.append(source)
@@ -872,6 +880,10 @@ class Session:
         if value is None:
             return
         self.ns["_"] = value
+        from .vlcharts import is_altair
+        if is_altair(value):
+            self.system["showChart"][0](value)
+            return
         self.emit({"type": "out", "segs": [segment(value)], "gid": self.graph_gen})
 
     # ---- render state ---------------------------------------------------------
@@ -1522,6 +1534,9 @@ def _format_exception(e):
     lines = (["Traceback (most recent call last):\n"] + traceback.format_list(frames) if frames else []) + \
         traceback.format_exception_only(type(e), e)
     return "".join(lines).rstrip()
+
+
+_ALT_USE = re.compile(r"(?<![\w.])alt\.")
 
 
 def _has_call(tree):

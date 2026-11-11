@@ -337,6 +337,9 @@ const dock = new Dock($("#dock-bottom"), $("#dock-right"), {
     highlightItems(null);
     openMenu(items, ev.clientX, ev.clientY, expr ? { expr: `(${expr})`, title } : { title });
   },
+  resolve: async (expr) => (await request<PeekInfo | null>((id) => ({ type: "peek", id, expr })))?.items ?? [],
+  brush: (expr) => brushFromChart(expr),
+  dark: () => isDark(),
   lineAt: (expr, title, lines, ev, click) => void lineAt(expr, title, lines, ev, click),
 });
 
@@ -506,6 +509,35 @@ const term = new Console($("#console"), {
   },
 });
 
+// a selection drawn on an Altair chart: the graph shows what it covers while it
+// changes, and selects it once it settles
+let brushTimer = 0;
+let brushToken = 0;
+async function brushFromChart(expr: string | null) {
+  const token = ++brushToken;
+  clearTimeout(brushTimer);
+  if (!expr) {
+    highlightItems(null);
+    return;
+  }
+  const items = (await request<PeekInfo | null>((id) => ({ type: "peek", id, expr })))?.items ?? [];
+  if (token !== brushToken) return;
+  highlightItems(items.length ? items : null);
+  brushTimer = window.setTimeout(async () => {
+    const q = await request<QueryResult | null>((id) => ({ type: "tableQuery", id, expr, kind: "n", full: false }));
+    if (token !== brushToken) return;
+    const ids = q && "ids" in q ? q.ids : items.filter((i) => i[0] === "n").map((i) => i[1]);
+    renderer.setSelection(ids);
+    syncSelection([...renderer.selection]);
+    status.textContent = `${ids.length} selected by the chart's selection: ${expr}`;
+  }, 400);
+}
+
+function isDark() {
+  const t = document.documentElement.dataset.theme;
+  return t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+}
+
 // ---- the history scrubber (Edit → History…) ------------------------------------------
 const historyPanel = new HistoryPanel(dock, {
   steps: () => request<{ steps: HistoryStep[]; at: number }>((id) => ({ type: "historySteps", id })),
@@ -640,6 +672,9 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     case "chart":
       dock.chart(m);
+      break;
+    case "vega":
+      void dock.vega(m);
       break;
     case "movie":
       if (m.op === "start") startMovie(m.fps, m.name);
