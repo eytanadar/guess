@@ -1732,6 +1732,18 @@ Edges divided by the number of possible undirected node pairs.
 
 Euclidean distance between two nodes' positions.
 
+### `effectiveDistance(origin, weight='weight', name='eff_distance')`
+
+effectiveDistance(origin) measures how 'close' every node is to the
+origin through a travel network, as an epidemic would see it
+(Brockmann and Helbing, Science 2013). From node m, the share of m's
+traffic (weight) that goes to n is P; the step m -> n costs
+1 - ln P, so busy routes are short and a route among many is long.
+Stores the shortest total in `eff_distance` (name=...; unreachable
+nodes get None) and marks the edges of the shortest-path tree in the
+edge field `eff_tree`. Arrival times of real epidemics grow almost
+linearly with it. Returns the field.
+
 ### `einverse(seq)`
 
 All edges not in seq.
@@ -2098,6 +2110,28 @@ whether a value is high.
 
 All nodes not in seq.
 
+### `offspring(cases=None, show=True)`
+
+offspring() reads a transmission tree (directed edges from infector
+to infected) and counts how many each case infected (its outdegree).
+Returns them with R (the mean), the dispersion k of a negative
+binomial fitted to them (small k, below 1: a few superspreaders cause
+most transmission), the share who infected no one, and the share of
+transmissions caused by the top 20% of cases. offspring(cases) uses
+only those cases, e.g. offspring(onset < 28); their infections count
+wherever they lead. Stores the count in the field `offspring`.
+
+### `outbreaks(runs=200, seeds=1, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, immune=None, weight=None, steps=1000, large=0.1, seed=0, name='risk', show=True)`
+
+outbreaks(runs) repeats spread() many times, because one simulated
+outbreak is an anecdote. Each run starts from `seeds` random nodes (a
+number) or from the given nodes. immune=nodes (vaccinated, isolated)
+can't be infected or start an outbreak; weight=field makes long
+contacts riskier (see spread). Stores each node's share of runs it was
+reached in `risk` (name=...), charts the final sizes, and returns them
+(.mean, .median, .large = share of runs reaching more than `large` of
+the nodes).
+
 ### `readjustEdges()`
 
 Kept for old scripts: parallel edges are always drawn as separate curves.
@@ -2197,7 +2231,7 @@ Nodes around a circle ordered by field; radius shrinks with outdegree.
 
 sortBy(field) or sortBy(seq, field).
 
-### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True)`
+### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None)`
 
 spread([v1, v2], model="SIR") simulates something spreading from
 the seed nodes, one step at a time:
@@ -2209,11 +2243,14 @@ the seed nodes, one step at a time:
                (probability beta) to activate each neighbour
   "threshold"  a node becomes active when at least `threshold` of its
                neighbours are (complex contagion: ideas, adoption)
-Directed edges are followed in their direction. Stores `infected_at`
-(the step a node was reached; -1 = never) and `state` (S, I or R at the
-end), plots how many are in each state at each step, and returns those
-counts. Replay it with showTime(t, infected_at); compare seeds and
-parameters by running it again.
+Directed edges are followed in their direction. immune=nodes can't be
+infected (vaccinated, say: state V). weight=field makes long contacts
+riskier: beta is then the chance per unit of weight, so an edge of
+weight w transmits with chance 1 - (1 - beta)**w per step. Stores
+`infected_at` (the step a node was reached; -1 = never) and `state`
+(S, I, R or V at the end), plots how many are in each state at each
+step, and returns those counts. Replay it with showTime(t,
+infected_at); outbreaks() repeats it many times.
 
 ### `travelingSalesman(stops=None, weight='weight', cycle=True)`
 
