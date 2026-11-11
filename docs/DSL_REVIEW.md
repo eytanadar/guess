@@ -351,5 +351,34 @@ Done 2026-11-11, the small and medium items (tests in
   - Charts mark each other's bars.
   - `n in set` is a cached hash lookup.
 
-Still open: previews of a command's effect (8), live watched results (10),
-and a history scrubber.
+Done 2026-11-11 (the rest of the list, except previews):
+
+- **Live watched results (10).** *Pin* moves a watched cell's live output
+  into a side panel; watched cells that use `sel` re-run when the display
+  selection changes.
+- **History scrubber.** *Edit → History…*: a slider and list over the undo
+  history; moving undoes or redoes to that point and highlights each step
+  crossed; hovering a step highlights what it changed.
+- **Brushing.** Dragging across bars selects all of them (the query is the
+  bars' queries joined with `|`).
+- **The data table** scrolls to an element hovered elsewhere.
+- **Errors** link the nodes and edges they name.
+- **Java-era names removed:** `Types`, `Integer` and the other Java type
+  names, `Morpher`, `InfoWindow`/`infowindow`, `getAppletContext`, the
+  display object `v` (`lastClick()` replaces `v.getLastClickedPosition()`),
+  `readjustEdges`, `setSynchronous`, and the `exportSWF/JAVA/CGM/EMF` stubs.
+  `NodeEditorPopup` and friends stay: they are the API for adding menu items.
+
+Also added (requests on 2026-11-11):
+
+- **Gython in the data table's filter box.** Queries filter as you type;
+  expressions with calls run on Enter, isolated (their changes are reverted).
+- **The element menu on table rows** (right-click; several selected rows at
+  once), an *Actions ▾* button for the selected or shown rows, and *Select* /
+  *Add to selection (sel)* in every element menu.
+- **The Cluster tool**: one lasso per cluster into a field (default
+  `cluster`), ids counting up (or typed), labelled/left shown as preview
+  colours and counts; each lasso is an undoable `labelCluster(...)`.
+
+Still open: previews of a command's effect (8), and linking help examples to
+a preview.

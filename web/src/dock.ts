@@ -25,6 +25,8 @@ export class Dock {
   private widgets = new Map<string, HTMLElement>();
   /** chart id -> marks (each with the elements it stands for) */
   private marks = new Map<string, { el: SVGElement; keys: Set<string> }[]>();
+  /** panels that want to know when they are closed (pinned cells, history) */
+  private onClose = new Map<string, () => void>();
 
   constructor(private bottom: HTMLElement, private right: HTMLElement, private host: DockHost) {}
 
@@ -40,6 +42,20 @@ export class Dock {
     this.panels.delete(id);
     this.marks.delete(id);
     this.layoutChanged();
+    const done = this.onClose.get(id);
+    this.onClose.delete(id);
+    done?.();
+  }
+
+  /** A panel for the page's own use (a pinned cell, the history): its body. */
+  pane(id: string, title: string, where: "bottom" | "right" = "right", onClose?: () => void): HTMLElement {
+    const body = this.frame(id, title, where);
+    if (onClose) this.onClose.set(id, onClose);
+    return body;
+  }
+
+  has(id: string) {
+    return this.panels.has(id);
   }
 
   private frame(id: string, title: string, where: "bottom" | "right"): HTMLElement {
@@ -368,9 +384,88 @@ export class Dock {
       xl.setAttribute("class", "axis-label");
       xl.textContent = c.kind === "distrib" ? c.xlabel : "";
       svg.append(xl);
+      this.brush(svg, W, left, top, pw, ph, bw, items, c);
     }
     body.replaceChildren(svg);
     this.marks.set(c.id, marks);
+  }
+
+  /** Drag across bars to pick a range of them: while dragging, the graph shows
+   *  their elements; letting go selects them (shift adds). The query is the
+   *  bars' queries joined with |, when every bar has one. */
+  private brush(svg: SVGSVGElement, W: number, left: number, top: number, pw: number, ph: number, bw: number,
+                items: ChartMsg["items"], c: ChartMsg) {
+    if (items.length < 2 || !items.some((it) => it.ids.length)) return;
+    const band = document.createElementNS(SVG, "rect");
+    band.setAttribute("class", "brush");
+    band.setAttribute("y", String(top));
+    band.setAttribute("height", String(ph));
+    band.style.display = "none";
+    svg.append(band);
+    const toX = (ev: MouseEvent) => {
+      const r = svg.getBoundingClientRect();
+      return ((ev.clientX - r.left) / r.width) * W;
+    };
+    const bar = (x: number) => Math.max(0, Math.min(items.length - 1, Math.floor((x - left) / bw)));
+    let start: number | null = null, dragging = false, swallowClick = false;
+    const range = (ev: MouseEvent) => {
+      const a = bar(start!), b = bar(toX(ev));
+      return [Math.min(a, b), Math.max(a, b)] as const;
+    };
+    const picked = (lo: number, hi: number) => {
+      const chosen = items.slice(lo, hi + 1);
+      const ids = chosen.flatMap((it) => it.ids) as Item[];
+      const qs = chosen.filter((it) => it.ids.length).map((it) => it.q);
+      const expr = qs.length && qs.every(Boolean) ? (qs.length === 1 ? qs[0] : qs.map((q) => `(${q})`).join(" | ")) : undefined;
+      const total = chosen.reduce((t, it) => t + it.value, 0);
+      const title = hi > lo ? `${chosen[0].label} … ${chosen[chosen.length - 1].label}` : chosen[0].label;
+      return { ids, expr, title, lines: [`${hi - lo + 1} bars · ${c.ylabel}: ${fmt(total)}`] };
+    };
+    const move = (ev: MouseEvent) => {
+      if (start === null) return;
+      if (!dragging && Math.abs(toX(ev) - start) < 4) return;
+      dragging = true;
+      svg.classList.add("brushing");
+      const [lo, hi] = range(ev);
+      band.setAttribute("x", String(left + lo * bw));
+      band.setAttribute("width", String((hi - lo + 1) * bw));
+      band.style.display = "";
+      const p = picked(lo, hi);
+      this.host.hover(p.ids, p.title, p.lines, ev);
+    };
+    const up = (ev: MouseEvent) => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      if (start === null) return;
+      const was = dragging;
+      dragging = false;
+      svg.classList.remove("brushing");
+      band.style.display = "none";
+      if (was) {
+        const [lo, hi] = range(ev);
+        const p = picked(lo, hi);
+        this.host.hover(null, "", [], null);
+        if (p.ids.length) this.host.click(p.ids, ev, p.expr);
+        swallowClick = true;          // the click that follows this mouseup isn't a bar click
+      }
+      start = null;
+    };
+    svg.addEventListener("mousedown", (ev) => {
+      if (ev.button !== 0) return;
+      const x = toX(ev);
+      if (x < left || x > left + pw) return;
+      start = x;
+      dragging = false;
+      swallowClick = false;
+      ev.preventDefault();
+      window.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", up);
+    });
+    svg.addEventListener("click", (ev) => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      ev.stopPropagation();
+    }, true);
   }
 
   /** Highlight marks whose elements intersect the given ones (from graph/console hover). */

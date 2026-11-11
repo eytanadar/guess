@@ -51,6 +51,7 @@
           <div class="menu-pop" role="menu" hidden>
             <button role="menuitem" id="undo" title="Undo the last command">Undo<kbd>⌘Z</kbd></button>
             <button role="menuitem" id="redo" title="Redo">Redo<kbd>⇧⌘Z</kbd></button>
+            <button role="menuitemcheckbox" id="btn-history" aria-pressed="false" title="Step back and forward through the undo history; hover a step to see what it changed">History…</button>
             <hr />
             <button role="menuitem" data-run="select(g.nodes)">Select all nodes</button>
             <button role="menuitem" data-run="select(ninverse(sel))">Invert selection</button>
@@ -160,6 +161,7 @@
         <button data-tool="path" aria-pressed="false" title="Click two nodes to colour a shortest path between them">Path</button>
         <button data-tool="heat" aria-pressed="false" title="Click a node to colour every node by its distance from it">Heat</button>
         <button data-tool="paint" aria-pressed="false" title="Click nodes to paint them (shift-click paints the neighbours too)">Paint</button>
+        <button data-tool="cluster" aria-pressed="false" title="Label clusters by hand: each lasso puts the nodes it catches in the next cluster (asks for the field first)">Cluster</button>
         <input type="color" id="paint-color" value="#e8384f" title="Colour for Path and Paint" />
       </span>
       <button id="search" class="search-btn" title="Search commands, examples, nodes and values (Cmd/Ctrl+K)">Search<kbd>⌘K</kbd></button>

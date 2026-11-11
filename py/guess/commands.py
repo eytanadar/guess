@@ -244,6 +244,37 @@ def install(session):
         return g.addNodeField(name, type, default)
 
     @cmd
+    def labelCluster(nodes, value, field="cluster", relabel=True):
+        """labelCluster(nodes, value, field="cluster") puts `value` in `field` for
+        each of the nodes (a set, or a list of node names), making the field if
+        needed: INTEGER for a number, VARCHAR for text; nodes not labelled hold
+        None. relabel=False leaves nodes that already have a value alone. The
+        Cluster tool writes one of these per selection. Returns the nodes labelled."""
+        if not str(field).isidentifier():
+            raise GuessError(f"invalid field name: {field!r}")
+        members = []
+        for x in (nodes if isinstance(nodes, (list, tuple, set, frozenset, GSet)) else [nodes]):
+            n = g._nodes.get(x) if isinstance(x, str) else x
+            if isinstance(n, Node):
+                members.append(n)
+            elif isinstance(x, str):
+                raise GuessError(f"no node named {x!r}")
+        f = g.node_schema.get(field)
+        if f is None:
+            kind = "INTEGER" if isinstance(value, int) and not isinstance(value, bool) else \
+                "DOUBLE" if isinstance(value, float) else "VARCHAR"
+            g.addNodeField(field, kind, None)
+        elif f.type in ("INTEGER", "DOUBLE") and isinstance(value, str):
+            raise GuessError(f"{field} holds numbers; use a number for the cluster, or another field for names")
+        done = []
+        for n in members:
+            if not relabel and n._vals.get(field) not in (None, ""):
+                continue
+            setattr(n, field, value)
+            done.append(n)
+        return GSet(done, f"{field} = {value!r}")
+
+    @cmd
     def addEdgeField(name, type="VARCHAR", default=None):
         """Create an edge field, e.g. addEdgeField("kind", VARCHAR, "")."""
         return g.addEdgeField(name, type, default)
@@ -620,6 +651,13 @@ def install(session):
         session.emit({"type": "center",
                       "nodes": [x._id for x in items if isinstance(x, Node)],
                       "edges": [x._id for x in items if isinstance(x, Edge)]})
+
+    @cmd
+    def lastClick():
+        """lastClick() is where the display was last clicked, as (x, y) in graph
+        coordinates, or None before the first click."""
+        p = getattr(session, "last_click", None)
+        return None if p is None else (float(p[0]), float(p[1]))
 
     # ---- help -------------------------------------------------------------------
     @cmd

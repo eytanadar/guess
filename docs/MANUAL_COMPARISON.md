@@ -54,8 +54,8 @@ are ordinary variables, not protected names, so a script can still say
 | `random()`, `random(w, h)` (§6) | calling `random` runs the random layout; `random.choice(…)` etc. still reach Python's module |
 | `biComponentCluster()` (§7.1) | removed in 2026: use `biComponentClusters()` |
 | `findEdges(set)`, `findNodes(set)` (§5.1) | the edges / nodes among a set's members. (`set.edges` / `set.nodes` also include incident edges / endpoints) |
-| `Types.INTEGER`, `Integer(0)`, `Double`, `String`, … (§8) | accepted |
-| `Morpher.setNodeDisappearBy(.2)` etc. (§11) | accepted (the plain functions also work) |
+| `Types.INTEGER`, `Integer(0)`, `Double`, `String`, … (§8) | removed (2026): use `INTEGER`, `0` |
+| `Morpher.setNodeDisappearBy(.2)` etc. (§11) | removed (2026): use `setNodeDisappearBy(.2)` |
 | fields `degrank`, `hits`, `rwbetweenness` (§7.3) | added: degree rank (degree / total degree), HITS authority, and Newman's random-walk (current-flow) betweenness |
 | `weight['_deleted'] > 5` (§8) | the `_deleted` pseudo-state can be queried by subscript |
 | `removeNode(vx)` … `addNode(vx)` (§8) | a node removed with `remove`/`removeNode` keeps its name, so `addNode(vx)` puts it back. Undo, loading a state, `removeComplete` and loading a new graph still drop the names of nodes that are gone |
@@ -63,11 +63,11 @@ are ordinary variables, not protected names, so a script can still say
 | `GradientLegend(red, yellow, min, max, 10)` (§12) | the 5th argument sets the tick spacing |
 | `vf.defaultEdgeHighlights(…)`, `vf.defaultEdgeZooming(…)` (§15.5.1) | added: they turn the endpoint highlight on hover and the zoom on double-click on or off |
 | `NodeEditorPopup.addItem("…")` with `item.menuEvent = f` (§15.5.2); `EdgeEditorPopup`, `GraphElementPopup` | items appear in the right-click menu; `f` receives the element (or the selection) |
-| `v.setBackgroundImage(f[, x, y])`, `v.repaint()`, `v.getLastClickedPosition()`, `v.center(…)` (§15.5) | a `v` display object; `getLastClickedPosition()` returns the last click in graph coordinates (`.getX()`, `.getY()`); `repaint()` is accepted (drawing is automatic) |
-| `getAppletContext().showDocument(url[, name])` (§16.3) | opens the URL in a new window |
-| `infowindow()`, `InfoWindow.details(name)` (§5.2) | open the data table (on that element) |
-| `readjustEdges()`, `setSynchronous(state)` (§6) | accepted; parallel edges are always drawn as separate curves, and layouts always run in order |
-| `exportGIF/PDF/PS/EPS` (§9) | added (each holds an image of the view; `exportSVG` is the vector format). `exportSWF/JAVA/CGM/EMF` give an error suggesting SVG or PDF |
+| `v.setBackgroundImage(f[, x, y])`, `v.repaint()`, `v.getLastClickedPosition()`, `v.center(…)` (§15.5) | removed (2026): use `setBackgroundImage(…)`, `center(…)` and `lastClick()`; drawing is automatic |
+| `getAppletContext().showDocument(url[, name])` (§16.3) | removed (2026): use `openURL(url)` |
+| `infowindow()`, `InfoWindow.details(name)` (§5.2) | removed (2026): use `table()`, `table(x)` |
+| `readjustEdges()`, `setSynchronous(state)` (§6) | removed (2026); they did nothing: parallel edges are always separate curves, and layouts always run in order |
+| `exportGIF/PDF/PS/EPS` (§9) | added (each holds an image of the view; `exportSVG` is the vector format). `exportSWF/JAVA/CGM/EMF` are not defined |
 | Visibility rules (§5): hiding a node hides its edges; showing an edge shows its endpoints | implemented as the manual's one-step rule (and undoable) |
 
 **Where the manual is wrong.** §11.2 says `Node roverlaps (2,5)` gives

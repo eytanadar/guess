@@ -134,7 +134,9 @@ export type FromWorker =
   | { type: "out"; segs: Seg[]; gid?: number }
   | { type: "text"; text: string }
   /** summary: one line (with a "did you mean" hint); line: the cell line it happened on */
-  | { type: "error"; text: string; summary?: string; line?: number }
+  | { type: "error"; text: string; summary?: string; line?: number;
+      /** the summary with the nodes and edges it names linked; gid: the graph they belong to */
+      segs?: Seg[]; gid?: number }
   | { type: "help"; topic: string | null }
   | { type: "slides"; slides: { note: string }[]; index: number | null }
   /** move the camera: [centre x, centre y, zoom] in graph coordinates */
@@ -177,6 +179,14 @@ export type ToWorker =
   | { type: "describe"; id: number; kind: "n" | "e"; ident: number }
   | { type: "cellChanges"; id: number; cell: number }
   | { type: "peek"; id: number; expr: string }
+  /** the history scrubber: list the undo steps, a step's elements, move to a position */
+  | { type: "historySteps"; id: number }
+  | { type: "historyItems"; id: number; step: number }
+  | { type: "historyGoto"; id: number; at: number }
+  /** filter the data table with a Gython expression (full: run calls too, isolated) */
+  | { type: "tableQuery"; id: number; expr: string; kind: "n" | "e"; full: boolean }
+  /** the Cluster tool: which nodes are labelled in a field */
+  | { type: "clusterInfo"; id: number; field: string }
   | { type: "assign"; id: number; name: string; items: ["n" | "e", number][] }
   /** nodes dragged on the display, as [id, x, y, id, x, y, ...] (one undo step) */
   | { type: "select"; nodes: number[] }

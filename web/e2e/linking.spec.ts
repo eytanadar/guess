@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { boot, clickNode, input, lastError, run } from "./helpers";
+import { boot, clickNode, input, lastError, menu, run } from "./helpers";
 
 test("dicts, sets and f-strings in output link to the graph", async ({ page }) => {
   await boot(page);
@@ -136,4 +136,167 @@ test("the edge table marks edges between selected nodes", async ({ page }) => {
   await run(page, "table(g.edges)");
   await run(page, "select(dept == 'dept1')");
   await expect(page.locator(".dtable-row.selected").first()).toBeVisible();
+});
+
+const selCount = (page: import("@playwright/test").Page) =>
+  page.evaluate(() => (window as any).__guess.renderer.selection.size as number);
+
+test("dragging across histogram bars selects every bar in the range", async ({ page }) => {
+  await boot(page);
+  await run(page, "plotHistogram(degree, 4)");
+  const bars = page.locator(".chart rect.mark");
+  const a = (await bars.nth(0).boundingBox())!, b = (await bars.nth(1).boundingBox())!;
+  const y = a.y + a.height - 2;
+  await page.mouse.move(a.x + 2, y);
+  await page.mouse.down();
+  await page.mouse.move(b.x + b.width / 2, y, { steps: 5 });
+  await expect(page.locator(".chart .brush")).toBeVisible();
+  await expect.poll(() => hlCount(page)).toBeGreaterThan(0);
+  await page.mouse.up();
+  // the two lowest bins: every node with degree below the third bin's start
+  await run(page, "len(sel)");
+  const n = Number(await page.locator(".result").last().innerText());
+  expect(await selCount(page)).toBe(n);
+  expect(n).toBeGreaterThan(0);
+  expect(await lastError(page)).toBeNull();
+});
+
+test("hovering a node elsewhere scrolls the data table to its row", async ({ page }) => {
+  await boot(page);
+  await run(page, "table()");
+  await expect(page.locator(".dtable-row").first()).toBeVisible();
+  await run(page, "g.nodes[-1]");
+  await page.locator(".result .obj.node").last().hover();
+  const last = await page.locator(".result .obj.node").last().innerText();
+  await expect(page.locator(".dtable-row.linked .dtable-name", { hasText: new RegExp(`^${last}$`) })).toBeVisible();
+});
+
+test("errors link the nodes they name", async ({ page }) => {
+  await boot(page);
+  await run(page, "v1.nosuchfield");
+  const link = page.locator(".error .obj.node").last();
+  await expect(link).toHaveText("v1");
+  await link.hover();
+  await expect.poll(() => hlCount(page)).toBe(1);
+});
+
+test("a pinned watched cell shows live output in a side panel and follows the selection", async ({ page }) => {
+  await boot(page);
+  await run(page, "print(len(sel), 'selected')");
+  const cell = page.locator(".cell").last();
+  await cell.hover();
+  await cell.locator(".cell-watch").click();
+  await cell.locator(".cell-pin").click();
+  const pane = page.locator(".panel-body.watch-body");
+  await expect(pane).toContainText("0 selected");
+  await expect(cell.locator(".cell-out")).toContainText("Pinned");
+  // a selection made on the display (not a command) re-runs it
+  await clickNode(page, "v73");
+  await page.keyboard.down("Shift");
+  await clickNode(page, "v1");
+  await page.keyboard.up("Shift");
+  await expect(pane).toContainText(/[12] selected/);
+  // closing the panel brings the output back to the cell
+  await page.locator(".panel", { has: pane }).locator(".panel-close").click();
+  await expect(cell.locator(".cell-out")).toContainText("selected");
+  await expect(cell.locator(".cell-out")).not.toContainText("Pinned");
+});
+
+test("the history panel steps back and forward and shows what each step changed", async ({ page }) => {
+  await boot(page);
+  await run(page, "v1.size = 60");
+  await run(page, "addNode('fresh')");
+  await menu(page, "Edit", "#btn-history");
+  const steps = page.locator(".history-step");
+  await expect(steps.last()).toContainText("addNode('fresh')");
+  await expect(page.locator(".history-where")).toContainText("addNode('fresh')");
+  // hovering a step highlights what it touched
+  await steps.filter({ hasText: "v1.size = 60" }).hover();
+  await expect.poll(() => hlCount(page)).toBe(1);
+  // clicking the start undoes everything; the cells are struck through
+  await steps.filter({ hasText: "v1.size = 60" }).click();
+  await expect(steps.last()).toHaveClass(/undone/);
+  await expect(page.locator(".cell.undone")).toHaveCount(1);
+  await run(page, "print('fresh' in [n.name for n in g.nodes], v1.size)");
+  await expect(page.locator(".stdout").last()).toHaveText("False 60.0");
+  // the slider goes forward again
+  const slider = page.locator(".history-slider");
+  await slider.focus();
+  await page.keyboard.press("End");
+  await expect(page.locator(".cell.undone")).toHaveCount(0);
+  await expect(steps.last()).not.toHaveClass(/undone/);
+  expect(await lastError(page)).toBeNull();
+});
+
+test("the table filters with Gython and its rows have the element menu", async ({ page }) => {
+  await boot(page);
+  await run(page, "table()");
+  const search = page.locator(".dtable-bar input[type=search]");
+  await search.fill("dept == 'dept1' and degree > 3");
+  await expect(search).toHaveClass(/query/);
+  await run(page, "len((dept == 'dept1') & (degree > 3))");
+  const want = await page.locator(".result").last().innerText();
+  await expect(page.locator(".dtable-count")).toContainText(`${want} of 402 nodes`);
+  // plain text still searches
+  await search.fill("dept7");
+  await expect(search).not.toHaveClass(/query/);
+  // Enter runs calls (on a scratch copy)
+  await search.fill("highest(degree, 5)");
+  await search.press("Enter");
+  await expect(page.locator(".dtable-count")).toContainText("5 of 402 nodes");
+  // right-click a row: the element menu; "Add to selection" fills sel
+  await page.locator(".dtable-rows .dtable-row").first().click({ button: "right" });
+  await expect(page.locator("#menu .menu-head")).toBeVisible();
+  await page.locator("#menu button", { hasText: "Add to selection (sel)" }).click();
+  await expect.poll(() => selCount(page)).toBe(1);
+  // Actions with nothing else selected but one row: acts on the selected row; clear and act on all 5 shown
+  await run(page, "select()");
+  await page.locator(".dtable-actions").click();
+  await expect(page.locator("#menu .menu-head")).toContainText("5 nodes shown");
+  await page.locator("#menu button", { hasText: "Select these" }).click();
+  await expect.poll(() => selCount(page)).toBe(5);
+  expect(await lastError(page)).toBeNull();
+});
+
+test("the Cluster tool labels one lasso per cluster and shows what's left", async ({ page }) => {
+  await boot(page);
+  await page.locator("[data-tool=cluster]").click();
+  await expect(page.locator(".ask-dialog input")).toHaveValue("cluster");
+  await page.locator(".ask-dialog button.primary").click();
+  const bar = page.locator(".cluster-bar");
+  await expect(bar).toBeVisible();
+  await expect(bar.locator(".cluster-next")).toHaveValue("1");
+  await expect(bar.locator(".cluster-left")).toContainText("402 left");
+  const c = (await page.locator("#graph canvas").boundingBox())!;
+  // a plain drag draws a lasso: the nodes inside become cluster 1
+  const lasso = async (x0: number, x1: number) => {
+    // (starting below the tool's bar, which sits over the top of the graph)
+    await page.mouse.move(c.x + c.width * x0, c.y + c.height * 0.3);
+    await page.mouse.down();
+    for (const [fx, fy] of [[x0, 0.02], [x1, 0.02], [x1, 0.98], [x0, 0.98], [x0, 0.32]]) {
+      await page.mouse.move(c.x + c.width * fx, c.y + c.height * fy, { steps: 4 });
+    }
+    await page.mouse.up();
+  };
+  await lasso(0.02, 0.5);
+  await expect(bar.locator(".cluster-next")).toHaveValue("2");
+  await expect(bar.locator(".cluster-counts")).toContainText("1 cluster ·");
+  // the second, overlapping one skips nodes already labelled
+  await lasso(0.3, 0.98);
+  await expect(bar.locator(".cluster-next")).toHaveValue("3");
+  await expect(bar.locator(".cluster-counts")).toContainText("2 clusters");
+  await run(page, "print(len(cluster == 1) + len(cluster == 2), len(g.nodes) - len(cluster == None))");
+  const [a, b] = (await page.locator(".stdout").last().innerText()).split(" ").map(Number);
+  expect(a).toBe(b);
+  expect(a).toBeGreaterThan(300);
+  await expect(bar.locator(".cluster-counts")).toContainText(`${a} labelled`);
+  // overriding the id: text ids count up too
+  await bar.locator(".cluster-next").fill("10");
+  await run(page, "undo()");
+  await expect(bar.locator(".cluster-counts")).toContainText("1 cluster ·");
+  await page.keyboard.press("Escape");
+  await page.locator("#graph canvas").click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press("Escape");
+  await expect(bar).toBeHidden();
+  expect(await lastError(page)).toBeNull();
 });

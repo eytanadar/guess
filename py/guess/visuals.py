@@ -507,18 +507,6 @@ def install(session):
                          "of the current view inside the file. For vector output use exportSVG.")
         reg(f.__name__, f)
 
-    def _unsupported(fmt):
-        def fn(filename=None):
-            raise GuessError(f"{fmt.upper()} export isn't available in the browser; use exportSVG "
-                             "(vector), exportPDF or exportPNG")
-        fn.__name__ = f"export{fmt.upper()}"
-        fn.__doc__ = f"Not available in the browser (the Java version wrote {fmt.upper()}); use exportSVG or exportPDF."
-        return fn
-
-    for fmt in ("swf", "java", "cgm", "emf"):
-        f = _unsupported(fmt)
-        reg(f.__name__, f)
-
     for fn in (createConvexHull, removeConvexHull, removeConvexHulls, getConvexHulls,
                setDisplayBackground, getDisplayBackground, setBackgroundImage,
                removeBackgroundImage, overrideArrowLength, overrideArrowWidth, curvedEdges,

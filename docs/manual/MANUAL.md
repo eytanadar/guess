@@ -99,8 +99,8 @@ The window has three parts:
   You can drag the divider between the graph and the console. On a narrow
   screen the console moves below the graph.
 - **The menu bar** (top): *File*, *Edit*, *View*, *Layout*, *Analyze* and
-  *Help*, then the click tools (*Select*, *Path*, *Heat*, *Paint* and a paint
-  colour), a *Search* box, *Stop*, and a status line.
+  *Help*, then the click tools (*Select*, *Lens*, *Path*, *Heat*, *Paint*,
+  *Cluster* and a paint colour), a *Search* box, *Stop*, and a status line.
 
 ![The menus collect the commands you'd otherwise type. Every menu item runs a command, and the command shows up in the console, so you can learn the language by using the menus.](img/menus.png){width=70%}
 
@@ -626,9 +626,30 @@ below the graph. `table(dept == 'dept3')` shows just those. You can sort by a
 column, filter, and double-click a cell to edit it. An edit is an ordinary
 command and can be undone. Selecting rows selects the nodes, and vice versa;
 in the edge table, the edges between selected nodes are marked. Hovering a
-node anywhere marks its row.
-`InfoWindow.details(v1)` (from the 2006 version) opens the table on one
-element.
+node anywhere marks its row, and scrolls the table to it.
+
+The filter box takes text or Gython. Text keeps the rows with a matching
+cell. A query keeps the rows it gives, and the box turns blue to say it was
+read as one:
+
+```{.python .norun}
+degree > 5
+dept == 'dept1' and degree > 3
+sel                     # the selection
+hubs                    # any variable holding nodes or edges
+```
+
+Queries are re-read as you type and whenever the graph changes. Expressions
+with calls, such as `highest(degree, 20)` or `(dept == 'dept1').neighbors`,
+run when you press Enter. They run on a scratch copy, so even
+`remove(...)` changes nothing. A query for edges typed in the node table
+(say `weight > 2`) says how many edges it found, so you can switch tabs.
+
+Right-click a row for the same menu as on the graph: colour, labels, size,
+hide, *Select*, *Add to selection (sel)*, *Assign to variable…* and the rest.
+When the row is one of several selected rows, the menu acts on all of them.
+*Actions ▾* opens the menu for the selected rows or, with none selected, for
+every row shown, so a filter followed by *Actions* acts on what it found.
 
 ![table(dept == 'dept3'): the data table below the graph.](img/table.png)
 
@@ -878,7 +899,8 @@ build them by hand.
 
 Charts are linked to the graph. Hover over a bar or a slice and its nodes
 light up, along with the console output and table rows that mention them;
-click and they're selected (shift-click adds). Right-click for the element
+click and they're selected (shift-click adds). Drag across several bars of a
+bar chart or histogram to select them all at once. Right-click for the element
 menu: on a histogram bin or a bar it acts on the bin's query, such as
 `(degree >= 0) & (degree < 4.75)`. Hovering a bar also marks the bars of
 other charts that share its elements. On a line chart (`spread`,
@@ -1040,8 +1062,7 @@ addEdgeField("kind", VARCHAR, "email")
 v128.seniority = 10
 ```
 
-The types are `INTEGER`, `DOUBLE`, `VARCHAR` and `BOOLEAN`, as in GDF
-(`Types.INTEGER` from 2006 also works).
+The types are `INTEGER`, `DOUBLE`, `VARCHAR` and `BOOLEAN`, as in GDF.
 
 **Grouping.** You can collapse a set of nodes into one *meta-node* and expand
 it again. This is useful for showing the structure between groups:
@@ -1125,7 +1146,7 @@ getStates()
 During a morph, nodes and edges that only exist in one of the two states fade
 in or out. `setNodeDisappearBy(.2)`, `setNodeAppearAfter(.8)`,
 `setEdgeDisappearBy(…)` and `setEdgeAppearAfter(…)` say when, as a fraction of
-the morph. (The 2006 form `Morpher.setNodeDisappearBy(.2)` also works.)
+the morph.
 
 States can be saved under numbers too (`ss(1999)`, `ss(2000)`), which
 suits a series of snapshots over time.
@@ -1385,9 +1406,24 @@ The tools next to the menus turn clicks into commands:
   lens is on. `excentricLens(radius=80,
   autoSize=true)` turns it on from code; with `autoSize` it grows over sparse
   areas and shrinks over dense ones.
+- **Cluster**: label clusters by hand. It first asks which field to use
+  (`cluster` unless you say otherwise; it's made if it doesn't exist). Then
+  every lasso you draw puts the nodes it catches in the next cluster: 1,
+  then 2, and so on. Type in *next id* to choose a number or a name
+  yourself (`a7` is followed by `a8`). Plain drag draws a lasso, shift-drag
+  a box, and Space-drag pans. While the tool is on, labelled nodes show in
+  their cluster's colour and the rest are grey. The bar counts the clusters,
+  the labelled nodes and those left: hover *left* to highlight them, click
+  it to zoom to them. A new lasso skips nodes that already have a cluster,
+  so quick lassos can overlap; tick *relabel* to move them instead.
+  Cmd/Ctrl-drag, or clicking a node, adds to the last cluster. *Colour by
+  it* runs `colorize(cluster)`; *Done* or Esc ends the tool.
 
 Each click runs a command in the console (`shortestPath(v1, v14)`,
-`heatMap(v3)`, `paint(v5, red)`), so you can edit it and run it again.
+`heatMap(v3)`, `paint(v5, red)`), so you can edit it and run it again. The
+Cluster tool's lassos run `labelCluster(["v1", "v7", …], 3, "cluster")`
+as hidden cells, like node drags: they can be undone, and `history()` and
+`saveHistory()` include them.
 
 ## 13.5 Responding to clicks in code
 
@@ -1405,7 +1441,7 @@ Setting one to `None` turns it off. `vf.defaultNodeHighlights(false)`,
 `vf.defaultNodeZooming(false)`, `vf.defaultEdgeHighlights(false)` and
 `vf.defaultEdgeZooming(false)` turn off the built-in hover highlight and
 double-click zoom. Do this when your own handlers should be the only thing
-that happens. `v.getLastClickedPosition()` gives the last place clicked, in
+that happens. `lastClick()` gives the last place clicked, as `(x, y)` in
 graph coordinates.
 
 You can add items to the right-click menu, too:
@@ -1436,7 +1472,8 @@ several things are selected, the function receives the selection.
 | Shift+Cmd/Ctrl+F | find in the console output |
 | **Edit** on a cell (or double-click its code) | copy it into the working cell |
 | **Run again** on a cell | run it again, as a new cell at the bottom |
-| **Watch** on a cell | re-run it whenever the graph changes |
+| **Watch** on a cell | re-run it whenever the graph changes, or when you select nodes on the display (if the code uses `sel`) |
+| **Pin** on a watched cell | show its live output in a side panel, which stays in view as the console scrolls; close the panel to put it back |
 | `[n]` | fold or unfold a cell's output; hover it to highlight everything that cell changed |
 | `;` at the end of a line | don't print its value (`louvainClusters();`) |
 
@@ -1477,10 +1514,18 @@ you redo them. Undo covers the graph, the fields, states, ranges, hulls,
 legends, styles and the display. It doesn't cover Python variables you made,
 or files you've downloaded.
 
+*Edit → History…* opens the undo history as a list with a slider. Drag the
+slider, or click a step, to undo or redo to that point; the graph changes as
+you go, and each step you cross is highlighted. Hovering a step highlights
+the nodes and edges it changed, and its `[n]` scrolls the console to the
+cell. Running a new command after going back discards the steps after it,
+as with `undo()`.
+
 **History.** The cells on the screen are the session's history, in the order
 you ran them. `history()` lists them and `saveHistory("work.py")` downloads
 them as a script that rebuilds your work. Errors have a red bar, and the
-line that failed is underlined.
+line that failed is underlined. Nodes and edges an error names are links,
+like printed output: hover to see them, click to select them.
 
 \newpage
 
@@ -1561,8 +1606,7 @@ of 2006.
 ## 15.5 Code bits
 
 - `execfile("file.py")` runs a script you've opened.
-- `openURL(url)` opens a web page, and `getAppletContext().showDocument(url)`
-  (2006) does the same.
+- `openURL(url)` opens a web page.
 - `installPackage("name")` installs a pure-Python package from PyPI into the
   page, so you can `import` it.
 - Presentations: `addSlide("note")` saves the current view as a slide, and
@@ -1710,6 +1754,14 @@ unchanged except where Python 3 differs. The main differences:
   editing) are replaced by the click tools and the drag gestures of section 13.
 - **Output.** SWF, Java, CGM and EMF export are gone. Use SVG or PDF. Movies
   are WebM instead of QuickTime.
+- **Java-only names are gone (2026).** `Types.INTEGER` and `Integer(0)`:
+  use `INTEGER` and `0`. `Morpher.setNodeDisappearBy(…)`: use
+  `setNodeDisappearBy(…)`. `InfoWindow.details(x)` and `infowindow()`: use
+  `table(x)` and `table()`. `getAppletContext().showDocument(url)`: use
+  `openURL(url)`. The display object `v`: use `setBackgroundImage(…)`,
+  `center(…)` and `lastClick()` (for `v.getLastClickedPosition()`);
+  `v.repaint()` isn't needed. `readjustEdges()` and `setSynchronous()` did
+  nothing and are gone too.
 - **Interface building** uses `Panel`, `Button`, `Slider` and timers instead
   of Java Swing classes, threads and sockets.
 - **Not available**: the R interface, applet signing and `jythonc`, the

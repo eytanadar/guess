@@ -37,6 +37,11 @@ export interface ConsoleHost {
   cellHover?(cell: number | null): void;
   /** Hovering a name or a query in executed code: what it means now (null: left it). */
   peek?(expr: string | null, ev: MouseEvent | null): void;
+  /** Pin a watched cell's output in a side panel; onClose runs when the panel is closed. */
+  pin?(id: string, title: string, onClose: () => void): HTMLElement;
+  unpin?(id: string): void;
+  /** After every command and watched-cell refresh (e.g. the history panel follows). */
+  afterRun?(): void;
 }
 
 const MAX_TIP_ITEMS = 15;
@@ -74,7 +79,8 @@ export class Console {
   docs: Record<string, string> = {};
   private vimMode = new Compartment();
   /** watched cells: re-run (quietly, in place) after every other command */
-  private watched = new Map<HTMLElement, { code: string; n: number; out: HTMLElement }>();
+  private watched = new Map<HTMLElement, { code: string; n: number; out: HTMLElement; cellOut: HTMLElement; pinned: boolean }>();
+  private selTimer = 0;
   private findBar = el("div", "console-find");
   private findInput = el("input") as HTMLInputElement;
   private findCount = el("span", "console-find-count");
@@ -265,23 +271,78 @@ export class Console {
   }
 
   private toggleWatch(root: HTMLElement, code: string, n: number, out: HTMLElement, btn: HTMLElement) {
-    if (this.watched.has(root)) {
+    const w = this.watched.get(root);
+    if (w) {
+      if (w.pinned) this.togglePin(root);
       this.watched.delete(root);
       root.classList.remove("watched");
       btn.textContent = "Watch";
     } else {
-      this.watched.set(root, { code, n, out });
+      this.watched.set(root, { code, n, out, cellOut: out, pinned: false });
       root.classList.add("watched");
       btn.textContent = "Unwatch";
     }
   }
 
-  private async runWatched() {
+  /** Pin a watched cell: its live output moves to a side panel that stays in
+   *  view while the console scrolls; closing the panel (or Unpin) brings it back. */
+  private togglePin(root: HTMLElement) {
+    const w = this.watched.get(root);
+    if (!w || !this.host.pin) return;
+    const id = `watch-${w.n}`;
+    const btn = root.querySelector<HTMLElement>(".cell-pin");
+    const unpinned = () => {
+      w.pinned = false;
+      w.out = w.cellOut;
+      root.classList.remove("pinned");
+      if (btn) btn.textContent = "Pin";
+      void this.refreshWatched(root);
+    };
+    if (w.pinned) {
+      this.host.unpin?.(id);      // its onClose restores the cell
+      return;
+    }
+    const line = w.code.split("\n").find((l) => l.trim()) ?? "";
+    const body = this.host.pin(id, `[${w.n}] ${line.length > 40 ? line.slice(0, 39) + "…" : line}`, unpinned);
+    body.classList.add("watch-body");
+    w.out = body;
+    w.pinned = true;
+    root.classList.add("pinned");
+    w.cellOut.replaceChildren();
+    const note = el("div", "note");
+    note.textContent = "Pinned to the side panel (live).";
+    w.cellOut.append(note);
+    if (btn) btn.textContent = "Unpin";
+    void this.refreshWatched(root);
+  }
+
+  /** Re-run watched cells now (in order with other commands): all of them, or one. */
+  refreshWatched(only?: HTMLElement): Promise<unknown> {
+    const run = this.queue.then(() => this.runWatched(only ? (r) => r === only : undefined));
+    this.queue = run.catch(() => false);
+    return run;
+  }
+
+  /** The display selection changed: refresh watched cells that use `sel`
+   *  (after a short pause, so dragging a box doesn't re-run them constantly). */
+  selectionChanged() {
+    clearTimeout(this.selTimer);
+    if (![...this.watched.values()].some((w) => /\bsel\b/.test(w.code))) return;
+    this.selTimer = window.setTimeout(() => {
+      const uses = new Set([...this.watched].filter(([, w]) => /\bsel\b/.test(w.code)).map(([r]) => r));
+      const run = this.queue.then(() => this.runWatched((r) => uses.has(r)));
+      this.queue = run.catch(() => false);
+    }, 200);
+  }
+
+  private async runWatched(which?: (root: HTMLElement) => boolean) {
     for (const [root, w] of [...this.watched]) {
       if (!root.isConnected) {
+        if (w.pinned) this.host.unpin?.(`watch-${w.n}`);
         this.watched.delete(root);
         continue;
       }
+      if (which && !which(root)) continue;
       w.out.replaceChildren();
       this.current = w.out;
       this.currentCell = root;
@@ -297,6 +358,7 @@ export class Console {
         this.currentCell = null;
       }
     }
+    this.host.afterRun?.();
   }
 
   /** The executed cells, for notebook and report export. */
@@ -541,6 +603,7 @@ export class Console {
       }
       if (!cell.out.childElementCount) cell.root.classList.add("empty");
       if (this.watched.size) await this.runWatched();
+      else this.host.afterRun?.();
       if (!hidden) this.focus();
     }
   }
@@ -577,7 +640,11 @@ export class Console {
     watch.textContent = "Watch";
     watch.title = "Re-run this cell after every command (live statistics, charts, legends)";
     watch.onclick = () => this.toggleWatch(root, code, n, out, watch);
-    actions.append(editBtn, rerun, watch);
+    const pin = el("button", "cell-pin");
+    pin.textContent = "Pin";
+    pin.title = "Show this watched cell's live output in a side panel";
+    pin.onclick = () => this.togglePin(root);
+    actions.append(editBtn, rerun, watch, pin);
     head.append(num, src, actions);
     const out = el("div", "cell-out");
     root.append(head, out);
@@ -697,13 +764,24 @@ export class Console {
 
   /** An error: the one-line summary, with the full traceback behind "details";
    *  `line` marks that line of the running cell. */
-  error(t: string, summary?: string, line?: number) {
+  error(t: string, summary?: string, line?: number, segs?: Seg[], gid?: number) {
     const d = el("div", "error");
     const short = summary && summary.trim() !== t.trim() ? summary : null;
     const where = line && this.currentCell && this.currentCode.split("\n").length > 1 ? `Line ${line}: ` : "";
+    // nodes and edges the message names are links, like printed output
+    const linked = (into: HTMLElement) => {
+      into.append(where);
+      for (const sg of segs!) into.append(renderSeg(sg));
+      d.classList.add("result");
+      if (gid !== undefined) {
+        d.dataset.gid = String(gid);
+        if (this.graph && gid !== this.graph.gid) d.classList.add("stale");
+      }
+    };
     if (short) {
       const s = el("span", "error-summary");
-      s.textContent = where + short;
+      if (segs?.length) linked(s);
+      else s.textContent = where + short;
       const more = el("button", "error-more");
       more.textContent = "details";
       more.title = "Show the full traceback";
@@ -715,6 +793,8 @@ export class Console {
         more.textContent = full.hidden ? "details" : "hide";
       };
       d.append(s, " ", more, full);
+    } else if (segs?.length) {
+      linked(d);
     } else {
       d.textContent = where + t;
     }

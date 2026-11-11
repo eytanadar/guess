@@ -33,8 +33,8 @@ export interface RendererEvents {
   context(hit: Hit, clientX: number, clientY: number): void;
   moved(id: number, x: number, y: number): void;
   click(hit: Hit, shift: boolean, alt?: boolean): void;
-  /** the selection changed by a box or lasso gesture */
-  selected(ids: number[]): void;
+  /** the selection changed by a box or lasso gesture (add: Cmd/Ctrl held, extending it) */
+  selected(ids: number[], add?: boolean): void;
   /** double-click; return true if handled (otherwise it zooms) */
   dblclick?(hit: Hit): boolean;
   /** any click on the graph, in graph coordinates */
@@ -222,6 +222,10 @@ export class Renderer {
   readonly selection = new Set<number>();
   /** box / lasso being drawn, in world coordinates */
   private marquee: { mode: "box" | "lasso"; pts: number[] } | null = null;
+  /** a tool that selects by dragging (Cluster): a plain drag on the background
+   *  draws this instead of panning; hold Space to pan */
+  dragSelects: "box" | "lasso" | null = null;
+  private spaceDown = false;
   /** display background set from Python (null: the theme's) */
   private userBg: number | null = null;
   private dark = false;
@@ -1430,7 +1434,21 @@ export class Renderer {
 
   private bindInput() {
     const el = this.app.canvas;
-    let drag: { mode: "pan" | "node" | "box" | "lasso"; id?: number; hit: Hit; lx: number; ly: number; moved: boolean; add?: boolean;
+    const typing = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.(".cm-editor, input, textarea, select, [contenteditable=true], dialog");
+    window.addEventListener("keydown", (ev) => {
+      if (ev.code === "Space" && this.dragSelects && !typing(ev.target)) {
+        this.spaceDown = true;
+        el.style.cursor = "grab";
+        ev.preventDefault();
+      }
+    });
+    window.addEventListener("keyup", (ev) => {
+      if (ev.code === "Space" && this.spaceDown) {
+        this.spaceDown = false;
+        el.style.cursor = "";
+      }
+    });
+    let drag: { mode: "pan" | "node" | "box" | "lasso"; id?: number; hit: Hit; lx: number; ly: number; moved: boolean; add?: boolean; tool?: boolean;
       beh?: DragBehaviour | null; frame?: DragFrame; saved?: Map<number, [number, number]>; grab?: [number, number] } | null = null;
     const local = (ev: PointerEvent | WheelEvent | MouseEvent) => {
       const r = el.getBoundingClientRect();
@@ -1443,11 +1461,13 @@ export class Renderer {
       this.tween = null;
       this.fitted = null;
       el.setPointerCapture(ev.pointerId);
-      if (hit?.kind !== "n" && (ev.shiftKey || ev.altKey)) {
+      // with a selecting tool on, a drag draws its lasso even when it starts on a node
+      const toolDrag = this.dragSelects !== null && !this.spaceDown;
+      if (toolDrag || (hit?.kind !== "n" && (ev.shiftKey || ev.altKey))) {
         // shift-drag: box, alt-drag: lasso (add Cmd/Ctrl to extend the selection)
         const w = this.toWorld(sx, sy);
-        const mode = ev.altKey ? "lasso" : "box";
-        drag = { mode, hit, lx: sx, ly: sy, moved: false, add: ev.metaKey || ev.ctrlKey };
+        const mode = ev.altKey ? "lasso" : ev.shiftKey ? "box" : this.dragSelects!;
+        drag = { mode, hit, lx: sx, ly: sy, moved: false, add: ev.metaKey || ev.ctrlKey, tool: toolDrag };
         this.marquee = { mode, pts: [w.x, w.y] };
         el.style.cursor = "crosshair";
         return;
@@ -1531,9 +1551,10 @@ export class Renderer {
           const inside = this.nodesInside(m.mode, m.pts);
           if (!drag.add) this.selection.clear();
           for (const id of inside) this.selection.add(id);
-          this.events.selected([...this.selection]);
+          this.events.selected([...this.selection], drag.add);
         } else {
-          this.events.click(null, ev.shiftKey);
+          // a click: with a selecting tool, on whatever was under the pointer
+          this.events.click(drag.tool ? drag.hit : null, ev.shiftKey, ev.altKey);
         }
         this.drawOverlay();
       } else if (drag && !drag.moved) this.events.click(drag.hit, ev.shiftKey, ev.altKey);
@@ -1571,7 +1592,7 @@ export class Renderer {
       if (hit) this.center(hit.kind === "n" ? [hit.id] : [], hit.kind === "e" ? [hit.id] : []);
       else this.center();
     });
-    // remember where the user last clicked (v.getLastClickedPosition())
+    // remember where the user last clicked (lastClick())
     el.addEventListener("click", (ev) => {
       const { sx, sy } = local(ev);
       const w = this.toWorld(sx, sy);

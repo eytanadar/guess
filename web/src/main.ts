@@ -3,11 +3,13 @@ import { Console, groupTip, type Item } from "./console";
 import type { DragContext, FromWorker, Info, LegendEntry, LegendRec, PeekInfo, ToWorker } from "./protocol";
 import { Renderer, type DragBehaviour, type DragFrame, type Hit } from "./renderer";
 import { Dock } from "./dock";
-import { ask } from "./dialog";
+import { HistoryPanel, type HistoryStep } from "./history";
+import { ClusterTool, type ClusterInfo } from "./cluster";
+import { ask, choose } from "./dialog";
 import { toGIF, toPDF, toPS } from "./rasterexport";
 import { HelpPanel, type HelpIndex } from "./help";
 import { Palette, type PaletteItem } from "./palette";
-import { DataTable, type TableData } from "./table";
+import { DataTable, type QueryResult, type TableData } from "./table";
 import { TimelineBar, type TimelineInfo } from "./timeline";
 import { ExcentricLens } from "./lens";
 import { FilterPanel, StylePanel, VarsPanel, pyLit, type FieldInfo, type PanelHost, type Workspace } from "./panels";
@@ -86,7 +88,7 @@ const renderer = new Renderer($("#graph"), {
     if (alt && hit) void insertItems([[hit.kind, hit.id]]);
     else onGraphClick(hit, shift);
   },
-  selected: (ids) => syncSelection(ids),
+  selected: (ids, add) => (tool === "cluster" ? clusterTool.selected(ids, !!add) : syncSelection(ids)),
   clickedAt: (x, y) => send({ type: "click", x, y }),
   dragBehaviour: (id, alt) => (tool === "select" ? dragBehaviour(id, alt) : null),
   wheel: (ev) => tool === "lens" && lens.wheel(ev),
@@ -103,13 +105,14 @@ const renderer = new Renderer($("#graph"), {
 
 /** Tell Python about a selection made on the display (bound to `sel`). */
 function syncSelection(ids: number[]) {
+  term.selectionChanged();
   send({ type: "select", nodes: ids });
   dataTable.setSelection(ids, edgesAmong(ids));
   status.textContent = ids.length ? `${ids.length} selected — sel in the console` : "";
 }
 
 // ---- click tools (Gephi's toolbar: neighbourhood highlight, shortest path, heat map, painter) ----
-type Tool = "select" | "path" | "heat" | "paint" | "lens";
+type Tool = "select" | "path" | "heat" | "paint" | "lens" | "cluster";
 let tool: Tool = "select";
 let pathStart: number | null = null;
 const paintColor = $<HTMLInputElement>("#paint-color");
@@ -122,14 +125,87 @@ function nodeExpr(id: number): string {
 }
 
 function setTool(t: Tool) {
+  if (t === "cluster" && tool !== "cluster") {
+    void startClustering();
+    return;
+  }
+  if (tool === "cluster" && t !== "cluster") clusterTool.stop();
   tool = t;
   pathStart = null;
   renderer.setFocus(null);
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-tool]")) b.setAttribute("aria-pressed", String(b.dataset.tool === t));
   $("#graph").dataset.tool = t;
   status.textContent = { select: "", path: "Path: click the first node", heat: "Heat map: click a node", paint: "Paint: click nodes (shift-click: with neighbours)",
-    lens: "Lens: point at nodes to list them · wheel resizes · Shift+wheel scrolls · click pins it, then select or filter · L or Esc: back to Select" }[t];
+    lens: "Lens: point at nodes to list them · wheel resizes · Shift+wheel scrolls · click pins it, then select or filter · L or Esc: back to Select",
+    cluster: "Cluster: lasso nodes to label them · Esc or Done: back to Select" }[t];
   lens.setActive(t === "lens");
+}
+
+// the Cluster tool (src/cluster.ts): label clusters by hand, one lasso per cluster
+const clusterTool = new ClusterTool($("#graph"), renderer, {
+  info: (field) => request<ClusterInfo>((id) => ({ type: "clusterInfo", id, field })),
+  run: (code) => term.submit(code, { hidden: true }),
+  submit: (code) => void term.submit(code),
+  nodeName: (id) => renderer.nodes.get(id)?.name,
+  hover: (ids) => highlightItems(ids ? ids.map((i) => ["n", i] as Item) : null),
+  center: (ids) => renderer.center(ids),
+  askField: (current) => askClusterField(current),
+  done: () => setTool("select"),
+});
+
+/** A field name not in use yet: cluster, else cluster1, cluster2, … */
+async function freeClusterField(base = "cluster"): Promise<string> {
+  for (let i = 0; i < 1000; i++) {
+    const name = i ? `${base}${i}` : base;
+    const info = await request<ClusterInfo>((id) => ({ type: "clusterInfo", id, field: name }));
+    if (!info.exists) return name;
+  }
+  return base;
+}
+
+/** Ask for the field to put cluster ids in. A new name suggests itself
+ *  (cluster, or cluster1, … when that exists); choosing a field that already
+ *  has values asks whether to clear it first. */
+async function askClusterField(current?: string): Promise<string | null> {
+  const suggestion = current ?? await freeClusterField();
+  const f = await ask({ title: "Cluster by hand", label: "Field for the cluster ids (made if it doesn't exist)", value: suggestion });
+  const name = f?.trim();
+  if (!name) return null;
+  if (!/^[A-Za-z_]\w*$/.test(name)) {
+    term.note(`"${name}" can't be a field name: use letters, digits and _`);
+    return null;
+  }
+  const info = await request<ClusterInfo>((id) => ({ type: "clusterInfo", id, field: name }));
+  if (info.exists && info.labels.length) {
+    const ids = new Set(info.labels.map((l) => l[1]));
+    const how = await choose({
+      title: `${name} already has values`,
+      note: `${info.labels.length} of ${info.total} nodes have a value in ${name} (${ids.size} different). ` +
+        "Clear it and start from 1, or keep the values and add to them?",
+      choices: [{ label: "Keep and add", value: "keep" }, { label: `Clear ${name}`, value: "clear" }],
+    });
+    if (!how) return null;
+    if (how === "clear" && !(await term.submit(`g.nodes.${name} = None`))) return null;
+  }
+  return name;
+}
+
+async function startClustering() {
+  const field = await askClusterField();
+  if (!field) return;
+  if (tool !== "select") setTool("select");
+  tool = "cluster";
+  pathStart = null;
+  renderer.setFocus(null);
+  lens.setActive(false);
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-tool]")) b.setAttribute("aria-pressed", String(b.dataset.tool === "cluster"));
+  $("#graph").dataset.tool = "cluster";
+  status.textContent = "Cluster: lasso nodes to label them · Esc or Done: back to Select";
+  if (renderer.selection.size) {
+    renderer.setSelection([]);
+    syncSelection([]);
+  }
+  await clusterTool.start(field);
 }
 
 // excentric labelling lens (src/lens.ts): a click tool that lists and selects the nodes under it
@@ -164,6 +240,10 @@ document.addEventListener("keydown", (ev) => {
 function onGraphClick(hit: Hit, shift: boolean) {
   if (tool === "lens") {
     lens.click();
+    return;
+  }
+  if (tool === "cluster") {
+    if (hit?.kind === "n") clusterTool.click(hit.id);
     return;
   }
   if (tool !== "select") {
@@ -418,15 +498,45 @@ const term = new Console($("#console"), {
   click: (items, ev, expr) => (ev.altKey ? void insertItems(items, expr ? `(${expr})` : null) : selectItems(items, ev.shiftKey)),
   cellHover: (cell) => void cellHover(cell),
   peek: (expr, ev) => void peekCode(expr, ev),
+  pin: (id, title, onClose) => dock.pane(id, title, "right", onClose),
+  unpin: (id) => dock.close(id),
+  afterRun: () => {
+    void historyPanel.refresh();
+    void clusterTool.refresh();
+  },
 });
+
+// ---- the history scrubber (Edit → History…) ------------------------------------------
+const historyPanel = new HistoryPanel(dock, {
+  steps: () => request<{ steps: HistoryStep[]; at: number }>((id) => ({ type: "historySteps", id })),
+  items: (step) => request<Item[]>((id) => ({ type: "historyItems", id, step })),
+  goto: async (at) => {
+    const reached = await request<number>((id) => ({ type: "historyGoto", id, at }));
+    scheduleAutosave();
+    return reached;
+  },
+  hover: (items) => highlightItems(items),
+  reveal: (cell) => term.reveal(cell),
+  moved: () => {
+    void term.refreshWatched();
+    void clusterTool.refresh();
+  },
+  toggled: (open) => $("#btn-history").setAttribute("aria-pressed", String(open)),
+});
+$("#btn-history").addEventListener("click", () => historyPanel.toggle());
 
 // hovering a name or a query in executed code: its current members in the graph,
 // or for a field, a preview of colouring by it (nothing is changed)
 let peekToken = 0;
+/** Back to the real colours, or to the Cluster tool's labelled/left colours while it is on. */
+function clearPreview() {
+  if (clusterTool.active) void clusterTool.refresh();
+  else renderer.setPreviewColors(null);
+}
 async function peekCode(expr: string | null, ev: MouseEvent | null) {
   const token = ++peekToken;
   if (!expr || !ev) {
-    renderer.setPreviewColors(null);
+    clearPreview();
     highlightItems(null);
     hideTip();
     return;
@@ -435,13 +545,14 @@ async function peekCode(expr: string | null, ev: MouseEvent | null) {
   const info = await request<PeekInfo | null>((id) => ({ type: "peek", id, expr }));
   if (token !== peekToken) return;
   if (!info) {
-    renderer.setPreviewColors(null);
+    clearPreview();
     highlightItems(null);
     hideTip();
     return;
   }
   const c = info.colors;
-  renderer.setPreviewColors(c?.n ? new Map(c.n) : null, c?.e ? new Map(c.e) : null);
+  if (c?.n || c?.e) renderer.setPreviewColors(c?.n ? new Map(c.n) : null, c?.e ? new Map(c.e) : null);
+  else clearPreview();
   highlightItems(info.items.length ? info.items : null);
   tipToken++;
   showTip(info.title, info.lines, x, y);
@@ -485,7 +596,7 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       term.text(m.text);
       break;
     case "error":
-      term.error(m.text, m.summary, m.line);
+      term.error(m.text, m.summary, m.line, m.segs, m.gid);
       break;
     case "help":
       void openSide("help", m.topic);
@@ -792,6 +903,8 @@ function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; ti
     sw.append(b);
   }
   menu.append(sw);
+  act(items.length === 1 ? "Select" : "Select these", () => selectItems(items, false));
+  act("Add to selection (sel)", () => selectItems(items, true));
   if (nodes) {
     act("Show labels", runOn((t) => `${t}.labelvisible = true`));
     act("Hide labels", runOn((t) => `${t}.labelvisible = false`));
@@ -1670,6 +1783,11 @@ $(".sidebar-close").addEventListener("click", () => void openSide(null));
 const edgeExpr = (id: number) => `g.edge_by_id(${id})`;
 const dataTable = new DataTable($("#table-body"), {
   load: (kind, ids) => request<TableData>((id) => ({ type: "query", id, what: "table", kind, ids })),
+  query: (expr, kind, full) => request<QueryResult | null>((id) => ({ type: "tableQuery", id, expr, kind, full })),
+  context: (items, ev, opts) => {
+    highlightItems(null);
+    openMenu(items, ev.clientX, ev.clientY, opts.expr ? { expr: `(${opts.expr})`, title: opts.title } : { title: opts.title });
+  },
   insert: (kind, id) => void insertItems([[kind, id]]),
   select: (kind, ids, add) => {
     const nodes = new Set<number>(add ? renderer.selection : []);

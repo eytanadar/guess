@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (93)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (91)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -18,7 +18,7 @@ Commands can be called without parentheses when they take no arguments
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
 - [Layouts](#layouts) (33)
-- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (35)
+- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (31)
 - [Styles and visual mappings](#styles-and-visual-mappings) (10)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
@@ -281,10 +281,6 @@ light or dark grey to suit the theme). The layout fits nodes into
 `width` units across; nodes without coordinates are set in a row
 below. Outlines: Natural Earth 1:110m, public domain.
 
-### `getAppletContext()`
-
-For old applet scripts: .showDocument(url) opens a browser window.
-
 ### `getEdgeSchema()`
 
 The edge fields.
@@ -327,15 +323,24 @@ highest(degree) is the 10 nodes (or edges) with the largest degree,
 largest first; highest(degree, 5), or highest(degree, 5, seq) within a
 set. Elements without a value are left out.
 
-### `infowindow()`
+### `labelCluster(nodes, value, field='cluster', relabel=True)`
 
-Open the data table (the Jython version's information window).
+labelCluster(nodes, value, field="cluster") puts `value` in `field` for
+each of the nodes (a set, or a list of node names), making the field if
+needed: INTEGER for a number, VARCHAR for text; nodes not labelled hold
+None. relabel=False leaves nodes that already have a value alone. The
+Cluster tool writes one of these per selection. Returns the nodes labelled.
 
 ### `labelSizeBy(field, smallest=0.8, largest=2.0, scale='linear')`
 
 labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
 edge field) in proportion to a numeric field: 1 is the normal size. Sets
 the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank").
+
+### `lastClick()`
+
+lastClick() is where the display was last clicked, as (x, y) in graph
+coordinates, or None before the first click.
 
 ### `lowest(field, count=10, seq=None)`
 
@@ -533,10 +538,6 @@ where those outbreaks started), and returns them
 (.mean, .median, .large = share of runs reaching more than `large` of
 the nodes).
 
-### `readjustEdges()`
-
-Kept for old scripts: parallel edges are always drawn as separate curves.
-
 ### `readSets(filename, item=None, set=None, where=None)`
 
 readSets("go.csv") reads a table with one row per (item, set) pair,
@@ -607,10 +608,6 @@ divides it by the same coefficient in degree-preserving random
 networks (averaged over `trials`): above 1 = a rich club (hubs prefer
 each other, as in airline or scientific elites), below 1 = hubs avoid
 each other. Prints a table and returns {k: value}.
-
-### `setSynchronous(state=True)`
-
-Kept for old scripts: layouts always run in order (animated, interruptible).
 
 ### `shortcutNodes()`
 
@@ -1548,14 +1545,6 @@ the list. radius in pixels; autoSize=true sizes the lens to the
 density under it; maxLabels per side. excentricLens(false) turns it
 off.
 
-### `exportCGM(filename=None)`
-
-Not available in the browser (the Java version wrote CGM); use exportSVG or exportPDF.
-
-### `exportEMF(filename=None)`
-
-Not available in the browser (the Java version wrote EMF); use exportSVG or exportPDF.
-
 ### `exportEPS(filename='guess.eps')`
 
 Save the display as EPS (downloaded by the browser): an image of the current view inside the file. For vector output use exportSVG.
@@ -1563,10 +1552,6 @@ Save the display as EPS (downloaded by the browser): an image of the current vie
 ### `exportGIF(filename='guess.gif')`
 
 Save the display as GIF (downloaded by the browser): an image of the current view inside the file. For vector output use exportSVG.
-
-### `exportJAVA(filename=None)`
-
-Not available in the browser (the Java version wrote JAVA); use exportSVG or exportPDF.
 
 ### `exportJPG(filename='guess.jpg')`
 
@@ -1587,10 +1572,6 @@ Save the display as PS (downloaded by the browser): an image of the current view
 ### `exportSVG(filename='guess.svg')`
 
 Save the display as SVG (downloaded by the browser). Vector: the whole graph, not just the visible area.
-
-### `exportSWF(filename=None)`
-
-Not available in the browser (the Java version wrote SWF); use exportSVG or exportPDF.
 
 ### `getConvexHulls()`
 

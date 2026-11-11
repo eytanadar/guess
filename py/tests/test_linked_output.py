@@ -146,3 +146,80 @@ def test_peek_is_safe_and_describes_names_and_queries():
         assert s.peek(bad) is None
     assert len(s.graph.nodes) == n
     assert "__peek__" not in s.ns
+
+
+def test_errors_link_the_nodes_and_edges_they_name():
+    s = _s()
+    s.run("v1.foo")
+    err = s.rec.of("error")[-1]
+    assert {"n": 0, "t": "v1"} in err["segs"] and err["gid"] == s.graph_gen
+    assert "".join(x if isinstance(x, str) else x["t"] for x in err["segs"]) == err["summary"]
+    s.run("raise ValueError(v1, v2)")
+    assert ids(s.rec.of("error")[-1]["segs"]) == [("n", 0), ("n", 1)]
+    s.run("raise ValueError('no such thing')")
+    assert "segs" not in s.rec.of("error")[-1]
+    s.run("remove(v3)\nraise ValueError(\"node 'v3' is gone\")")
+    assert "segs" not in s.rec.of("error")[-1]         # removed: nothing to link to
+
+
+def test_history_scrubber_moves_through_undo_steps():
+    s = _s()
+    s.current_cell = 2
+    s.run("colorize(dept)")
+    s.current_cell = 3
+    s.run("v1.size = 40")
+    s.current_cell = 4
+    s.run("addNode('zz')")
+    h = s.history_steps()
+    assert h["at"] == len(h["steps"]) and [x["cell"] for x in h["steps"][-3:]] == [2, 3, 4]
+    i = len(h["steps"]) - 2
+    assert s.history_items(i) == [["n", 0]] and h["steps"][i]["count"] == 1
+    assert s.history_goto(i) == i                       # before v1.size = 40
+    assert s.ns["v1"].size != 40 and "zz" not in s.graph._nodes
+    h = s.history_steps()
+    assert h["at"] == i and [x["done"] for x in h["steps"][-2:]] == [False, False]
+    undone = [m for m in s.rec.of("undone")]
+    assert [m["cell"] for m in undone[-2:]] == [4, 3] and all(m["undone"] for m in undone[-2:])
+    assert s.history_goto(i + 2) == i + 2
+    assert s.ns["v1"].size == 40 and "zz" in s.graph._nodes
+    assert s.history_goto(10_000) == i + 2 and s.history_goto(-5) == 0
+    assert s.history_items(999) == []
+
+
+def test_last_click():
+    s = _s()
+    assert ev_(s, "lastClick()") is None
+    s.last_click = (1, 2.5)
+    assert ev_(s, "lastClick()") == (1.0, 2.5)
+
+
+def test_table_query_filters_with_gython_and_changes_nothing():
+    s = _s()
+    q = s.table_query("degree > 10", "n")
+    assert len(q["ids"]) == len(ev_(s, "degree > 10")) and q["other"] == 0
+    assert s.table_query("v1", "n") is None                 # a bare node name: text search
+    assert s.table_query("dept1", "n") is None              # not a name: text search
+    assert s.table_query("highest(degree, 5)", "n") is None  # calls wait for Enter
+    assert len(s.table_query("highest(degree, 5)", "n", full=True)["ids"]) == 5
+    assert s.table_query("weight > 0", "n")["other"] > 0     # edges: the other tab
+    assert "error" in s.table_query("nonsense(", "n", full=True)
+    assert "isn't a set" in s.table_query("3", "n", full=True)["error"]
+    n, steps = len(s.graph.nodes), len(s.undo_stack)
+    s.rec.clear()
+    q = s.table_query("[(remove(v1), v2)[1]]", "n", full=True)
+    assert q["ids"] == [1] and len(s.graph.nodes) == n and "v1" in s.graph._nodes
+    assert len(s.undo_stack) == steps and not s.rec.of("error")
+
+
+def test_label_cluster_and_cluster_info():
+    s = _s()
+    assert s.cluster_info("cluster") == {"exists": False, "type": None, "labels": [], "next": 1, "total": 402}
+    assert s.run('labelCluster(["v1", "v2"], 1)') and s.run('labelCluster(["v2", "v3"], 2, relabel=False)')
+    info = s.cluster_info("cluster")
+    assert info["type"] == "INTEGER" and info["labels"] == [[0, 1], [1, 1], [2, 2]] and info["next"] == 3
+    assert not s.run('labelCluster(["v4"], "a")')                  # a number field keeps numbers
+    assert "holds numbers" in s.rec.of("error")[-1]["summary"]
+    assert s.run('labelCluster(["v4"], "north", "region")') and s.cluster_info("region")["type"] == "VARCHAR"
+    assert not s.run('labelCluster(["nobody"], 1)')
+    s.run("undo()")
+    assert s.cluster_info("region")["exists"] is False

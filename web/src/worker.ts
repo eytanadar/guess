@@ -155,6 +155,21 @@ function handle(msg: ToWorker) {
     case "cellChanges":
       post({ type: "reply", id: msg.id, value: call("cell_changes", msg.cell) });
       break;
+    case "historySteps":
+      post({ type: "reply", id: msg.id, value: call("history_steps") });
+      break;
+    case "historyItems":
+      post({ type: "reply", id: msg.id, value: call("history_items", msg.step) });
+      break;
+    case "historyGoto":
+      post({ type: "reply", id: msg.id, value: call("history_goto", msg.at) });
+      break;
+    case "clusterInfo":
+      post({ type: "reply", id: msg.id, value: call("cluster_info", msg.field) });
+      break;
+    case "tableQuery":
+      post({ type: "reply", id: msg.id, value: call("table_query", msg.expr, msg.kind, msg.full) });
+      break;
     case "assign": {
       py!.globals.set("__items", JSON.stringify(msg.items));
       py!.globals.set("__name", msg.name);

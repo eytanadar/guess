@@ -16,6 +16,7 @@ Output segments: a str, or {"n": id, "t": text} (node), {"e": id, "t": text}
 """
 import io
 import keyword
+import re
 import sys
 import time
 import traceback
@@ -420,11 +421,7 @@ class Session:
         if not self.undo_stack:
             print("nothing to undo")
             return
-        entry = self.undo_stack.pop()
-        self.redo_stack.append(self._revert(entry))
-        print(f"undid: {_first_line(entry['label'])}")
-        if entry.get("cell") is not None:
-            self.emit({"type": "undone", "cell": entry["cell"], "undone": True})
+        print(f"undid: {_first_line(self._step(back=True)['label'])}")
 
     def redo(self):
         """Re-apply the last command undone with undo()."""
@@ -432,11 +429,68 @@ class Session:
         if not self.redo_stack:
             print("nothing to redo")
             return
-        entry = self.redo_stack.pop()
-        self.undo_stack.append(self._revert(entry))
-        print(f"redid: {_first_line(entry['label'])}")
+        print(f"redid: {_first_line(self._step(back=False)['label'])}")
+
+    def _step(self, back):
+        """One undo (back) or redo step; returns the entry it reversed."""
+        src, dst = (self.undo_stack, self.redo_stack) if back else (self.redo_stack, self.undo_stack)
+        entry = src.pop()
+        dst.append(self._revert(entry))
         if entry.get("cell") is not None:
-            self.emit({"type": "undone", "cell": entry["cell"], "undone": False})
+            self.emit({"type": "undone", "cell": entry["cell"], "undone": back})
+        return entry
+
+    # ---- the history scrubber ------------------------------------------------
+    MAX_STEP_ITEMS = 5000
+
+    @staticmethod
+    def _journal_items(journal):
+        """The nodes and edges a recorded step touched (changed, added or removed)."""
+        seen = {}
+        for elem, _name, _old in journal.values.values():
+            if isinstance(elem, (Node, Edge)):
+                seen[("n" if isinstance(elem, Node) else "e", elem._id)] = None
+        for op in journal.ops:
+            if op[0] in ("add", "rem") and isinstance(op[1], (Node, Edge)):
+                seen[("n" if isinstance(op[1], Node) else "e", op[1]._id)] = None
+        return list(seen)
+
+    def history_steps(self):
+        """The undo history for the scrubber: every recorded step, oldest first
+        (undone ones after `at`), with the elements each touched."""
+        def info(entry, done):
+            items = self._journal_items(entry["journal"])
+            what = []
+            if "view" in entry:
+                what.append("display")
+            if "states" in entry:
+                what.append("states")
+            return {"label": _first_line(entry["label"])[:90], "cell": entry.get("cell"), "done": done,
+                    "count": len(items), "also": what}
+        steps = [info(e, True) for e in self.undo_stack] + [info(e, False) for e in reversed(self.redo_stack)]
+        return {"steps": steps, "at": len(self.undo_stack), "gid": self.graph_gen}
+
+    def history_items(self, i):
+        """The elements step i (as listed by history_steps) touched."""
+        steps = self.undo_stack + self.redo_stack[::-1]
+        if not 0 <= i < len(steps):
+            return []
+        return [list(k) for k in self._journal_items(steps[i]["journal"])[:self.MAX_STEP_ITEMS]]
+
+    def history_goto(self, at):
+        """Undo or redo until `at` steps are applied (the scrubber); quietly,
+        then redraw. Returns the new position."""
+        at = max(0, min(int(at), len(self.undo_stack) + len(self.redo_stack)))
+        while len(self.undo_stack) > at:
+            self._step(back=True)
+        while len(self.undo_stack) < at:
+            self._step(back=False)
+        try:
+            self.view.refresh_legends()
+        except Exception:   # noqa: BLE001 - a stale legend must never break the scrubber
+            pass
+        self.flush()
+        return at
 
     def history(self):
         """Every command run in this session, in order (including Run again)."""
@@ -528,7 +582,91 @@ class Session:
         msg = {"type": "error", "text": text, "summary": summary}
         if line:
             msg["line"] = line
+        try:
+            segs = self._link_text(summary, e)
+        except Exception:   # noqa: BLE001 - linking must never hide the error itself
+            segs = None
+        if segs:
+            msg["segs"], msg["gid"] = segs, self.graph_gen
         return msg
+
+    # a quoted name, an edge written a-b or a->b, or a plain name
+    _LINK_TOKEN = re.compile(r"""'([^'\n]{1,80})'|"([^"\n]{1,80})"|\b([A-Za-z_]\w*)(?:(->|-)([A-Za-z_]\w*))?\b""")
+    MAX_ERROR_LINKS = 40
+
+    def _link_text(self, text, e=None):
+        """The text with the nodes and edges it names made into links (hover
+        highlights them; click selects), or None when it names none. A name
+        links when it is quoted and is a node's name, when it is a variable
+        holding that node (v1), or when the exception carries the element."""
+        g = self.graph
+        carried = {}
+        for a in getattr(e, "args", ()) or ():
+            for x in (a if isinstance(a, (list, tuple, set, frozenset, GSet)) else [a]):
+                if isinstance(x, Node):
+                    carried[x._name] = x
+                elif isinstance(x, Edge):
+                    carried[repr(x)] = x
+
+        def node(name, quoted):
+            el = carried.get(name)
+            if isinstance(el, Node):
+                return el
+            if quoted:
+                return g._nodes.get(name)
+            v = self.ns.get(name)
+            return v if isinstance(v, Node) and v._name == name else None
+
+        def alive(el):
+            if isinstance(el, Node):
+                return g._nodes.get(el._name) is el
+            return el is not None and alive(el._n1) and alive(el._n2) and \
+                any(x is el for x in el._n1._inc.values())
+
+        def edge(a, arrow, b):
+            el = carried.get(f"{a}{arrow}{b}")
+            if isinstance(el, Edge):
+                return el
+            na, nb = g._nodes.get(a), g._nodes.get(b)
+            if na is None or nb is None:
+                return None
+            for x in na._inc.values():
+                if x.opposite(na) is nb and (arrow == "-") != x._directed:
+                    if arrow == "-" or x._n1 is na:
+                        return x
+            return None
+
+        segs, pos, links = [], 0, 0
+        for m in self._LINK_TOKEN.finditer(text):
+            if links >= self.MAX_ERROR_LINKS:
+                break
+            quoted = m.group(1) or m.group(2)
+            el = None
+            if quoted is not None:
+                el = node(quoted, True)
+                if el is None and quoted in carried:
+                    el = carried[quoted]
+            elif m.group(4):
+                el = edge(m.group(3), m.group(4), m.group(5))
+            else:
+                el = node(m.group(3), False)
+            if el is None or not alive(el):
+                continue
+            if m.start() > pos:
+                segs.append(text[pos:m.start()])
+            seg = {"n": el._id, "t": el._name} if isinstance(el, Node) else {"e": el._id, "t": repr(el)}
+            if quoted is not None:
+                q = text[m.start()]
+                segs += [q, seg, q]
+            else:
+                segs.append(seg)
+            pos = m.end()
+            links += 1
+        if not links:
+            return None
+        if pos < len(text):
+            segs.append(text[pos:])
+        return segs
 
     def _gnot(self, v):
         """``not s`` used as a value: on a set of nodes (or edges), the others."""
@@ -951,6 +1089,100 @@ class Session:
             return None
         return self._peek_value(expr, value)
 
+    def cluster_info(self, field):
+        """For the Cluster tool: the nodes labelled in `field` ([[id, value], ...]),
+        the field's type, and the next numeric id (one past the largest)."""
+        f = self.graph.node_schema.get(str(field))
+        if f is None:
+            return {"exists": False, "type": None, "labels": [], "next": 1, "total": len(self.graph.nodes)}
+        labels, nums = [], []
+        for n in self.graph._nodes_list():
+            v = n._vals.get(f.name, f.default)
+            if v is None or v == "":
+                continue
+            labels.append([n._id, v])
+            if isinstance(v, (int, float)) and not isinstance(v, bool):
+                nums.append(v)
+        nxt = int(max(nums)) + 1 if nums else 1
+        return {"exists": True, "type": f.type, "labels": labels, "next": nxt, "total": len(self.graph.nodes)}
+
+    def table_query(self, expr, kind="n", full=False):
+        """Filter the data table with Gython: the ids (of kind "n" or "e") of
+        the nodes or edges `expr` gives. Plain queries (names, comparisons,
+        & | and or not in) are evaluated as they're typed (full=False); with
+        full=True (Enter) any expression runs, calls included, inside a scratch
+        copy of the graph with output muted, so it changes nothing.
+        Returns {ids, other, title} or {error} (or None: not a query; the
+        table then matches the text instead)."""
+        import ast
+        expr = str(expr).strip()
+        if not expr:
+            return None
+        try:
+            tree = ast.parse(expr, mode="eval")
+        except SyntaxError as e:
+            return {"error": f"syntax error: {e.msg}"} if full else None
+        body = tree.body
+        if isinstance(body, ast.Name):
+            v = self.ns.get(body.id)
+            if isinstance(v, (Node, Edge)) or v is None:
+                return None              # a bare name: v1 matches v1, v10, … as text
+        if not full:
+            info = self.peek(expr)
+            if info is None or not info.get("items") and "empty now" not in info.get("title", ""):
+                return None
+            value_items = [tuple(x) for x in info["items"]]
+            if len(value_items) >= MAX_EXTRA:      # peek caps its items: evaluate fully
+                return self.table_query(expr, kind, full=True) if not _has_call(tree) else None
+        else:
+            value_items = self._eval_isolated(expr)
+            if isinstance(value_items, str):
+                return {"error": value_items}
+        ids = [i for k, i in value_items if k == kind]
+        other = sum(1 for k, _i in value_items if k != kind)
+        return {"ids": ids, "other": other, "title": expr}
+
+    def _eval_isolated(self, expr):
+        """Evaluate an expression with output muted and its changes to the graph
+        and display reverted (as undo would): its elements as [(kind, id)], or
+        an error message."""
+        g = self.graph
+        before = self._undo_snapshot()
+        outer, g.journal = g.journal, Journal()
+        emit, self.emit = self.emit, (lambda msg: None)
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = sys.stderr = io.StringIO()
+        try:
+            names = set()
+            code = compiler.compile_gython(f"__tq__ = ({expr})", is_protected=self.is_protected,
+                                           interactive=False, names=names)
+            self._prepare_fields(names)
+            exec(code, self.ns)
+            value = self.ns.pop("__tq__", None)
+            if isinstance(value, (Node, Edge)):
+                value = [value]
+            if not isinstance(value, (GSet, list, tuple, set, frozenset, dict)):
+                return f"{expr} isn't a set of nodes or edges"
+            return [("n" if isinstance(x, Node) else "e", x._id) for x in _walk_elements(value) if x._g is g]
+        except Exception as e:  # noqa: BLE001 - shown in the table, not raised
+            return str(e) if isinstance(e, GuessError) else f"{type(e).__name__}: {e}"
+        finally:
+            sys.stdout, sys.stderr = old_out, old_err
+            self.ns.pop("__tq__", None)
+            j, g.journal = g.journal, outer
+            if self.graph is g:
+                if j:
+                    g.revert(j)
+                if self.view.version != before["view_version"]:
+                    self.view.restore(before["view"])
+                g.states.clear()
+                g.states.update(before["states"])
+                g.ranges.clear()
+                g.ranges.update(before["ranges"])
+            self.emit = emit
+            if j:
+                self.flush()        # whatever it touched is redrawn as it was
+
     def _peek_value(self, expr, value):
         def item(x):
             return ["n" if isinstance(x, Node) else "e", x._id]
@@ -1290,6 +1522,11 @@ def _format_exception(e):
     lines = (["Traceback (most recent call last):\n"] + traceback.format_list(frames) if frames else []) + \
         traceback.format_exception_only(type(e), e)
     return "".join(lines).rstrip()
+
+
+def _has_call(tree):
+    import ast
+    return any(isinstance(n, ast.Call) for n in ast.walk(tree))
 
 
 def _first_line(src):

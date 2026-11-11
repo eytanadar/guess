@@ -31,8 +31,7 @@ def names(seq):
 
 def test_graph_methods_and_aliases(big):
     for code in ("g.gemLayout()", "g.circleLayout()", "g.radialLayout(v5)", "g.colorize(Node.betweenness, red, blue)",
-                 "random()", "random(800, 600)", "readjustEdges()", "setSynchronous(true)",
-                 "g.circleLayout(freq, v5)", "infowindow()", "InfoWindow.details('v1')"):
+                 "random()", "random(800, 600)", "g.circleLayout(freq, v5)"):
         assert big.run(code), (code, big.rec.of("error"))
     assert 0 <= ev(big, "random.random()") < 1                  # still Python's random module
     assert ev(big, "random.choice([7])") == 7
@@ -40,9 +39,12 @@ def test_graph_methods_and_aliases(big):
 
 
 def test_types_morpher_and_fields(big):
-    assert big.run("addNodeField('shortest', Types.INTEGER, Integer(0))")
+    assert big.run("addNodeField('shortest', INTEGER, 0)")
     assert big.graph.node_schema["shortest"].type == "INTEGER"
-    assert big.run("Morpher.setNodeDisappearBy(.2)") and big.morph_timing["nodeDisappearBy"] == 0.2
+    assert big.run("setNodeDisappearBy(.2)") and big.morph_timing["nodeDisappearBy"] == 0.2
+    for gone in ("Types.INTEGER", "Integer(0)", "Morpher", "InfoWindow", "infowindow()", "getAppletContext()",
+                 "readjustEdges()", "setSynchronous(true)", "exportSWF('x.swf')", "v.repaint()"):
+        assert not big.run(gone), gone
     assert 0 < ev(big, "v1.degrank") < 1
     assert abs(sum(ev(big, "[n.degrank for n in g.nodes]")) - 1) < 1e-9
     assert ev(big, "v1.hits") == pytest.approx(ev(big, "v1.authority"))
@@ -112,9 +114,9 @@ def test_source_destination_and_gradient_ticks(s):
 
 def test_display_object_popups_and_exports(s):
     s.rec.clear()
-    assert s.run("v.repaint()\nv.setBackgroundImage('https://example.org/m.png', 5, 6)\nprint(v.getLastClickedPosition())")
+    assert ev(s, "lastClick()") is None
     s.last_click = (12.5, 3)
-    assert ev(s, "v.getLastClickedPosition().getX()") == 12.5
+    assert ev(s, "lastClick()") == (12.5, 3.0)
     assert s.run("item = NodeEditorPopup.addItem('Say name')\nseen = []\nitem.menuEvent = lambda n: seen.append(n.name)")
     menu = [m for m in s.rec.of("ui") if m["op"] == "menu"][-1]
     assert menu["items"] == [{"id": menu["items"][0]["id"], "label": "Say name", "scope": "n"}]
@@ -124,15 +126,13 @@ def test_display_object_popups_and_exports(s):
         s.rec.clear()
         assert s.run(f"export{fmt}('x.{fmt.lower()}')")
         assert s.rec.of("export")[-1]["format"] == fmt.lower()
-    assert not s.run("exportSWF('x.swf')")
-    assert s.run("getAppletContext().showDocument('https://example.org')")
     assert s.run("vf.defaultEdgeHighlights(false)\nvf.defaultEdgeZooming(false)")
     ui = [m for m in s.rec.of("ui") if m["op"] == "events"][-1]
     assert ui["defaults"]["edgeHighlight"] is False and ui["defaults"]["edgeZoom"] is False
 
 
 def test_shortest_path_example_from_manual(big):
-    assert big.run("addNodeField('shortest', Types.INTEGER, Integer(0))\n"
+    assert big.run("addNodeField('shortest', INTEGER, 0)\n"
                    "for n in g.nodes:\n    n.shortest = len(v4.unweightedShortestPath(n))\n"
                    "colorize(shortest, pink, black)")
     assert ev(big, "v4.shortest") == 0 and ev(big, "max(shortest.values())") > 3
