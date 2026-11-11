@@ -281,7 +281,8 @@ test("the Cluster tool labels one lasso per cluster and shows what's left", asyn
   await lasso(0.02, 0.5);
   await expect(bar.locator(".cluster-next")).toHaveValue("2");
   await expect(bar.locator(".cluster-counts")).toContainText("1 cluster ·");
-  // the second, overlapping one skips nodes already labelled
+  await expect(bar.locator(".cluster-bar input[type=checkbox], input[type=checkbox]").first()).toBeChecked();
+  // the second, overlapping one takes over the nodes it catches (relabel is on)
   await lasso(0.3, 0.98);
   await expect(bar.locator(".cluster-next")).toHaveValue("3");
   await expect(bar.locator(".cluster-counts")).toContainText("2 clusters");
@@ -298,5 +299,16 @@ test("the Cluster tool labels one lasso per cluster and shows what's left", asyn
   await page.locator("#graph canvas").click({ position: { x: 5, y: 5 } });
   await page.keyboard.press("Escape");
   await expect(bar).toBeHidden();
+  // again: "cluster" is taken, so it suggests cluster1
+  await page.locator("[data-tool=cluster]").click();
+  await expect(page.locator(".ask-dialog input")).toHaveValue("cluster1");
+  // choosing the existing field asks whether to clear it
+  await page.locator(".ask-dialog input").fill("cluster");
+  await page.locator(".ask-dialog button.primary").click();
+  await expect(page.locator(".ask-dialog")).toContainText("cluster already has values");
+  await page.locator(".ask-dialog button", { hasText: "Clear cluster" }).click();
+  await expect(bar).toBeVisible();
+  await expect(bar.locator(".cluster-next")).toHaveValue("1");
+  await expect(bar.locator(".cluster-left")).toContainText("402 left");
   expect(await lastError(page)).toBeNull();
 });

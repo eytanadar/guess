@@ -1406,16 +1406,20 @@ The tools next to the menus turn clicks into commands:
   lens is on. `excentricLens(radius=80,
   autoSize=true)` turns it on from code; with `autoSize` it grows over sparse
   areas and shrinks over dense ones.
-- **Cluster**: label clusters by hand. It first asks which field to use
-  (`cluster` unless you say otherwise; it's made if it doesn't exist). Then
+- **Cluster**: label clusters by hand. It first asks which field to use:
+  `cluster`, or `cluster1`, `cluster2`, … when that is taken. The field is
+  made if it doesn't exist. If you name one that already has values, it asks
+  whether to clear it (`g.nodes.cluster = None`, undoable) or keep the values
+  and add to them. Then
   every lasso you draw puts the nodes it catches in the next cluster: 1,
   then 2, and so on. Type in *next id* to choose a number or a name
   yourself (`a7` is followed by `a8`). Plain drag draws a lasso, shift-drag
   a box, and Space-drag pans. While the tool is on, labelled nodes show in
   their cluster's colour and the rest are grey. The bar counts the clusters,
   the labelled nodes and those left: hover *left* to highlight them, click
-  it to zoom to them. A new lasso skips nodes that already have a cluster,
-  so quick lassos can overlap; tick *relabel* to move them instead.
+  it to zoom to them. A new lasso moves the nodes it catches to the new
+  cluster, even if they had one. Untick *relabel* to make it skip labelled
+  nodes, so quick lassos can overlap.
   Cmd/Ctrl-drag, or clicking a node, adds to the last cluster. *Colour by
   it* runs `colorize(cluster)`; *Done* or Esc ends the tool.
 

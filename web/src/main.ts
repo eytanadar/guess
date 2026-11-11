@@ -176,7 +176,7 @@ async function askClusterField(current?: string): Promise<string | null> {
     return null;
   }
   const info = await request<ClusterInfo>((id) => ({ type: "clusterInfo", id, field: name }));
-  if (info.exists && info.labels.length) {
+  if (info.exists && info.labels.length && name !== current) {
     const ids = new Set(info.labels.map((l) => l[1]));
     const how = await choose({
       title: `${name} already has values`,

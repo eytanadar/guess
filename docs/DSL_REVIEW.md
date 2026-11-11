@@ -377,7 +377,8 @@ Also added (requests on 2026-11-11):
   once), an *Actions ▾* button for the selected or shown rows, and *Select* /
   *Add to selection (sel)* in every element menu.
 - **The Cluster tool**: one lasso per cluster into a field (default
-  `cluster`), ids counting up (or typed), labelled/left shown as preview
+  `cluster`, else `cluster1`, …; an existing field can be cleared first),
+  relabelling by default, ids counting up (or typed), labelled/left shown as preview
   colours and counts; each lasso is an undoable `labelCluster(...)`.
 
 Still open: previews of a command's effect (8), and linking help examples to
