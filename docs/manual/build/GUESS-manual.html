@@ -967,12 +967,14 @@ fields are listed by <code>getNodeSchema()</code> and
 <code>getEdgeSchema()</code>. The <em>View → Data table</em> shows them
 all.</p>
 <p>Fields know a little about themselves:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>freq.<span class="bu">min</span>, freq.<span class="bu">max</span>, freq.avg, freq.<span class="bu">sum</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>dept.distinct                  <span class="co"># every value, once each</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>dept.find(<span class="st">&#39;eng&#39;</span>)               <span class="co"># the nodes whose dept is &#39;eng&#39; (same as dept == &#39;eng&#39;)</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>sortBy(freq)[<span class="op">-</span><span class="dv">5</span>:]              <span class="co"># the five edges with the highest freq</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>groupBy(dept)                  <span class="co"># a set of sets, one per value</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>groupAndSortBy(dept)           <span class="co"># the same, largest group first</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>freq.<span class="bu">min</span>, freq.<span class="bu">max</span>, freq.avg, freq.<span class="bu">sum</span>, freq.median</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">max</span>(freq)                      <span class="co"># a field is also its list of values</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>dept.distinct                  <span class="co"># every value, once each</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>dept.find(<span class="st">&#39;eng&#39;</span>)               <span class="co"># the nodes whose dept is &#39;eng&#39; (same as dept == &#39;eng&#39;)</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>highest(freq, <span class="dv">5</span>)               <span class="co"># the five edges with the highest freq (lowest(...) too)</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>sortBy(freq, descending<span class="op">=</span>true)  <span class="co"># every edge, highest freq first</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>groupBy(dept)                  <span class="co"># a set of sets, one per value</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>groupAndSortBy(dept)           <span class="co"># the same, largest group first</span></span></code></pre></div>
 <p>Some node fields aren’t stored but computed the first time you use
 them: <code>indegree</code>, <code>outdegree</code> and
 <code>totaldegree</code>, and the network statistics in section 7.3,
@@ -991,10 +993,23 @@ the set of matching nodes or edges:</p>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>dept <span class="op">!=</span> <span class="st">&#39;dept3&#39;</span></span>
 <span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>freq <span class="op">&gt;</span> freq.avg                  <span class="co"># compare with a statistic</span></span></code></pre></div>
 <p>Sets combine with <code>&amp;</code> (intersection) and
-<code>|</code> (union), and with <code>.difference(...)</code>:</p>
+<code>|</code> (union), and with <code>.difference(...)</code>.
+<code>and</code>, <code>or</code> and <code>not</code> do the same on
+sets, a chained comparison is the intersection of its parts, and
+<code>in</code> asks for any of several values:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept1&#39;</span>) <span class="op">&amp;</span> (totaldegree <span class="op">&gt;</span> <span class="dv">3</span>)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept1&#39;</span>) <span class="op">|</span> (dept <span class="op">==</span> <span class="st">&#39;dept2&#39;</span>)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>g.nodes.difference(dept <span class="op">==</span> <span class="st">&#39;dept1&#39;</span>)</span></code></pre></div>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept1&#39;</span>) <span class="kw">and</span> (totaldegree <span class="op">&gt;</span> <span class="dv">3</span>)  <span class="co"># the same</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept1&#39;</span>) <span class="op">|</span> (dept <span class="op">==</span> <span class="st">&#39;dept2&#39;</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>dept <span class="kw">in</span> (<span class="st">&#39;dept1&#39;</span>, <span class="st">&#39;dept2&#39;</span>)               <span class="co"># the same</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="dv">3</span> <span class="op">&lt;</span> totaldegree <span class="op">&lt;=</span> <span class="dv">6</span>                     <span class="co"># (totaldegree &gt; 3) &amp; (totaldegree &lt;= 6)</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="kw">not</span> (dept <span class="op">==</span> <span class="st">&#39;dept1&#39;</span>)                    <span class="co"># every other node</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>g.nodes.difference(dept <span class="op">==</span> <span class="st">&#39;dept1&#39;</span>)      <span class="co"># the same</span></span></code></pre></div>
+<p>Put each comparison in parentheses when you use <code>&amp;</code> or
+<code>|</code>: <code>dept == &#39;dept1&#39; &amp; totaldegree &gt; 3</code>
+means something else, and GUESS says so. In the test of an
+<code>if</code> or <code>while</code>, <code>and</code>, <code>or</code>
+and <code>not</code> keep their usual meaning (<code>if s and t:</code>
+asks whether both are non-empty).</p>
 <p>A tuple or list of nodes also works as a set:
 <code>(v1, v2, v3).color = green</code>.</p>
 <p><strong>Broadcasting.</strong> Setting a field on a set sets it on
@@ -1002,7 +1017,8 @@ every member. Reading a field from a set gives a list of values:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>).color <span class="op">=</span> orange</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>).size <span class="op">=</span> <span class="dv">20</span>          <span class="co"># size sets width and height together</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>).labelvisible <span class="op">=</span> true</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>).totaldegree        <span class="co"># a list, one value per node</span></span></code></pre></div>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>).totaldegree        <span class="co"># a list, one value per node</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>).totaldegree.avg    <span class="co"># ... with .avg, .sum, .min, .max, .median, .distinct</span></span></code></pre></div>
 <p><strong>Edges between sets.</strong> The edge operators work between
 nodes and between sets of nodes:</p>
 <table>
@@ -1462,7 +1478,11 @@ hand.</p>
 </figure>
 <h2 id="charts">7.5 Charts</h2>
 <p>Charts are linked to the graph. Hover over a bar or a slice and its
-nodes light up; click and they’re selected.</p>
+nodes light up, along with the console output and table rows that
+mention them; click and they’re selected (shift-click adds). Right-click
+for the element menu: on a histogram bin or a bar it acts on the bin’s
+query, such as
+<code>(degree &gt;= 0) &amp; (degree &lt; 4.75)</code>.</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>plotSizesPie(dept)           <span class="co"># how many in each department</span></span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>plotSizes(dept)              <span class="co"># the same, as bars</span></span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>plotHistogram(pagerank)      <span class="co"># distribution of a number</span></span>
@@ -1906,6 +1926,11 @@ first time a gesture becomes useful.</p>
 <tr>
 <td>hover a node or edge in the console output</td>
 <td>highlight it in the graph; click to select and zoom to it</td>
+</tr>
+<tr>
+<td>hover a node, a table row, a legend row or a chart bar</td>
+<td>mark everywhere else it appears: console output, table rows, legend
+rows and chart bars</td>
 </tr>
 </tbody>
 </table>
@@ -2518,12 +2543,28 @@ standard web colour names work as well.</p>
 <td>a query: the set of matching nodes or edges</td>
 </tr>
 <tr>
+<td><code>3 &lt; field &lt; 6</code>, <code>field in (a, b)</code></td>
+<td>the matching set (Python would give a bool or the wrong set)</td>
+</tr>
+<tr>
 <td><code>set.field = value</code></td>
 <td>sets the field on every member</td>
 </tr>
 <tr>
-<td><code>a &amp; b</code>, <code>a \| b</code></td>
-<td>intersection and union of sets</td>
+<td><code>set.field.avg</code> (<code>.sum</code>, <code>.min</code>,
+<code>.max</code>, <code>.median</code>)</td>
+<td>summaries of the members’ values</td>
+</tr>
+<tr>
+<td><code>a &amp; b</code>, <code>a \| b</code>; <code>a and b</code>,
+<code>a or b</code>, <code>not a</code></td>
+<td>intersection, union and complement of sets (in an <code>if</code>
+test, <code>and</code>/<code>or</code>/<code>not</code> are plain
+Python)</td>
+</tr>
+<tr>
+<td><code>print(f&quot;... {node} ...&quot;)</code></td>
+<td>the nodes and edges in an f-string stay linked in the output</td>
 </tr>
 <tr>
 <td><code>-&gt;</code>, <code>&lt;-</code>, <code>&lt;-&gt;</code>,
@@ -2811,6 +2852,10 @@ F1 or Cmd/Ctrl+K for the command palette); help(command) prints that
 command’s documentation and shows it in the browser.</p>
 <h3 id="hidedisconnected"><code>hideDisconnected()</code></h3>
 <p>Hide nodes with no edges other than self loops.</p>
+<h3 id="highestfield-k10-seqnone"><code>highest(field, k=10, seq=None)</code></h3>
+<p>highest(degree) is the 10 nodes (or edges) with the largest degree,
+largest first; highest(degree, 5), or highest(degree, 5, seq) within a
+set. Elements without a value are left out.</p>
 <h3 id="infowindow"><code>infowindow()</code></h3>
 <p>Open the data table (the Jython version’s information window).</p>
 <h3 id="labelsizebyfield-smallest0.8-largest2.0-scalelinear"><code>labelSizeBy(field, smallest=0.8, largest=2.0, scale=&#39;linear&#39;)</code></h3>
@@ -2818,6 +2863,9 @@ command’s documentation and shows it in the browser.</p>
 an edge field) in proportion to a numeric field: 1 is the normal size.
 Sets the labelsize field; scale as in sizeBy (“linear”, “log”, “sqrt”,
 “rank”).</p>
+<h3 id="lowestfield-k10-seqnone"><code>lowest(field, k=10, seq=None)</code></h3>
+<p>lowest(degree, 5): the 5 with the smallest degree, smallest first
+(see highest).</p>
 <h3 id="makefromcallstarget"><code>makeFromCalls(target)</code></h3>
 <p>makeFromCalls(“package.module”) builds a call graph of a module (a
 module name or a .py file): a node per function and method, an edge from
@@ -2971,9 +3019,10 @@ outbreak is an anecdote. Each run starts from <code>seeds</code> random
 nodes (a number) or from the given nodes. immune=nodes (vaccinated,
 isolated) can’t be infected or start an outbreak; weight=field makes
 long contacts riskier (see spread). Stores each node’s share of runs it
-was reached in <code>risk</code> (name=…), charts the final sizes, and
-returns them (.mean, .median, .large = share of runs reaching more than
-<code>large</code> of the nodes).</p>
+was reached in <code>risk</code> (name=…), charts the final sizes (hover
+a bar to see where those outbreaks started), and returns them (.mean,
+.median, .large = share of runs reaching more than <code>large</code> of
+the nodes).</p>
 <h3 id="readjustedges"><code>readjustEdges()</code></h3>
 <p>Kept for old scripts: parallel edges are always drawn as separate
 curves.</p>
@@ -3040,8 +3089,9 @@ Compare resizeLinear, which spaces distinct values evenly.</p>
 <h3 id="skitterfield"><code>skitter(field)</code></h3>
 <p>Nodes around a circle ordered by field; radius shrinks with
 outdegree.</p>
-<h3 id="sortbyd"><code>sortBy(*d)</code></h3>
-<p>sortBy(field) or sortBy(seq, field).</p>
+<h3 id="sortbyd-descendingfalse"><code>sortBy(*d, descending=False)</code></h3>
+<p>sortBy(field) or sortBy(seq, field), smallest first; descending=true
+for largest first.</p>
 <h3 id="spreadseeds-modelsir-beta0.3-gamma0.1-threshold0.5-steps100-seed0-showtrue-immunenone-weightnone"><code>spread(seeds, model=&#39;SIR&#39;, beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None)</code></h3>
 <p>spread([v1, v2], model=“SIR”) simulates something spreading from the
 seed nodes, one step at a time: “SI” each step, every infected node
