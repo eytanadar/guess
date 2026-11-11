@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { boot, clickNode, lastError, menu, run } from "./helpers";
+import { boot, clickNode, lastError, menu, nodePoint, run } from "./helpers";
 
 test("layouts run without errors", async ({ page }) => {
   await boot(page);
@@ -839,4 +839,64 @@ test("demo() walks through the tour, running each step as a cell", async ({ page
   await expect(panel.locator(".tour-notice")).toBeVisible();
   await expect(page.locator(".cell").last()).toContainText("pieces");
   expect(await lastError(page)).toBeNull();
+});
+
+test("changed nodes and edges are drawn on top unless raiseChanged(false)", async ({ page }) => {
+  await boot(page);
+  const top = () => page.evaluate(() => {
+    const r = (window as any).__guess.renderer;
+    const n = r.nodes.get(r.order[r.order.length - 1]);
+    const e = [...r.edges.values()].pop();
+    return [n.name, `${r.nodes.get(e.s).name}\u2013${r.nodes.get(e.t).name}`];
+  });
+  await run(page, "v5.color = red");
+  await expect.poll(async () => (await top())[0]).toBe("v5");
+  await run(page, "ed = list(g.edges)[100]\ned.color = red\ned");
+  const shown = (await page.locator(".result").last().innerText()).trim();
+  await expect.poll(async () => (await top())[1]).toBe(shown);
+  // moving a node doesn't raise it
+  await run(page, "v9.x = v9.x + 5");
+  await expect.poll(async () => (await top())[0]).toBe("v5");
+  // off: the order stays put; the View menu shows the setting
+  await run(page, "raiseChanged(false)");
+  await expect(page.locator("#raise-changed")).toHaveAttribute("aria-pressed", "false");
+  await run(page, "v11.color = blue");
+  await expect.poll(async () => (await top())[0]).toBe("v5");
+  await run(page, "raiseChanged()");
+  await run(page, "v11.size = 30");
+  await expect.poll(async () => (await top())[0]).toBe("v11");
+});
+
+test("the hover tooltip shows the label at once and every field after a moment", async ({ page }) => {
+  await boot(page);
+  await run(page, "center()");
+  const tip = page.locator("#tip");
+  const hover = async (name: string) => {
+    await page.mouse.move(5, 5);
+    const [x, y] = await nodePoint(page, name);
+    await page.mouse.move(x, y);
+  };
+  await hover("v73");
+  await expect(tip).toBeVisible();
+  await expect(tip.locator(".tip-title")).toHaveText("v73");
+  expect(await tip.locator("div:not(.tip-title)").count()).toBe(0);    // the label only, at first
+  await expect(tip).toContainText("dept:");                           // then everything
+  await expect(tip).toContainText("degree:");
+  // the dialog picks the instant fields
+  await menu(page, "View", "Hover fields…");
+  await page.locator(".pick-fields input[data-field=dept]").first().check();
+  await page.locator(".pick-fields button", { hasText: "Apply" }).click();
+  await expect(page.locator(".cell-code").last()).toContainText('hoverFields(nodes=["dept"], edges=[])');
+  await hover("v73");
+  await expect(tip).toContainText("dept:");
+  expect(await tip.innerText()).not.toContain("degree:");              // not yet the full tooltip
+  await expect(tip).toContainText("degree:");
+  // select all / none
+  await menu(page, "View", "Hover fields…");
+  await page.locator(".pick-fields button", { hasText: "Select all" }).click();
+  expect(await page.locator(".pick-fields input:not(:checked)").count()).toBe(0);
+  await page.locator(".pick-fields button", { hasText: "Select none" }).click();
+  expect(await page.locator(".pick-fields input:checked").count()).toBe(0);
+  await page.locator(".pick-fields button", { hasText: "Apply" }).click();
+  await expect(page.locator(".cell-code").last()).toHaveText("hoverFields()");
 });

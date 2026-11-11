@@ -771,7 +771,7 @@ class Session:
                 continue
             if m.start() > pos:
                 segs.append(text[pos:m.start()])
-            seg = {"n": el._id, "t": el._name} if isinstance(el, Node) else {"e": el._id, "t": repr(el)}
+            seg = {"n": el._id, "t": el._name} if isinstance(el, Node) else edge_seg(el)
             if quoted is not None:
                 q = text[m.start()]
                 segs += [q, seg, q]
@@ -1489,11 +1489,21 @@ def _walk_elements(value, depth=0):
             yield from _walk_elements(x, depth + 1)
 
 
+def edge_seg(e, t=None):
+    """An edge's output segment. Shown as "a-b" (or "a->b"), it also names its
+    ends, so the page links each end to its node and the connector to the edge."""
+    t = repr(e) if t is None else t
+    seg = {"e": e._id, "t": t}
+    if t == repr(e):
+        seg["ends"] = [[e._n1._id, e._n1._name], [e._n2._id, e._n2._name]]
+    return seg
+
+
 def segment(value, depth=0):
     if isinstance(value, Node):
         return {"n": value._id, "t": value._name}
     if isinstance(value, Edge):
-        return {"e": value._id, "t": repr(value)}
+        return edge_seg(value)
     if isinstance(value, Field):
         return f"{value.name}"
     if isinstance(value, LinkedStr) and value.linked:
@@ -1640,7 +1650,7 @@ def fstring(*parts):
         texts.append(t)
         plain = conv == -1 and not spec
         if plain and isinstance(v, (Node, Edge)):
-            segs.append({"n": v._id, "t": t} if isinstance(v, Node) else {"e": v._id, "t": t})
+            segs.append({"n": v._id, "t": t} if isinstance(v, Node) else edge_seg(v, t))
         elif plain and isinstance(v, LinkedStr) and v.linked:
             segs.extend(v.segs)
         elif plain and isinstance(v, (GSet, list, tuple, set, frozenset, dict)) and _contains_elements(v):

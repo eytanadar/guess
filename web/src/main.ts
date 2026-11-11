@@ -6,7 +6,7 @@ import { Dock } from "./dock";
 import { HistoryPanel, type HistoryStep } from "./history";
 import { ClusterTool, type ClusterInfo } from "./cluster";
 import { Tour } from "./tour";
-import { ask, choose } from "./dialog";
+import { ask, choose, pickFields } from "./dialog";
 import { toGIF, toPDF, toPS } from "./rasterexport";
 import { HelpPanel, type HelpIndex } from "./help";
 import { Palette, type PaletteItem } from "./palette";
@@ -678,6 +678,8 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       $("#curved").setAttribute("aria-pressed", String(m.curvature > 0));
       $("#label-outlines").setAttribute("aria-pressed", String(!!m.labels?.outline));
       $("#label-cull").setAttribute("aria-pressed", String(!!m.labels?.cull));
+      $("#raise-changed").setAttribute("aria-pressed", String(m.raiseChanged ?? true));
+      hoverFields = { n: m.hoverFields?.n ?? [], e: m.hoverFields?.e ?? [] };
       savedStyles = m.styles ?? [];
       dragCtx = m.drag ?? {};
       tipsForDragContext(dragCtx);
@@ -769,11 +771,44 @@ function hideTip() {
   tip.hidden = true;
 }
 
+/** hoverFields(): the fields a node's (edge's) tooltip shows at once; the rest
+ *  follow after FULL_TIP_MS of keeping the pointer on it */
+let hoverFields: { n: string[]; e: string[] } = { n: [], e: [] };
+const FULL_TIP_MS = 650;
+let tipAt = { x: 0, y: 0 };
+
+/** "a-b" / "a->b" as typeset in the output: an en dash or an arrow. */
+function prettyEdge(t: string) {
+  return t.replace(/^(.+?)(<->|->|<-|-)(.+)$/, (_m, a, c, b) =>
+    a + ({ "-": "\u2013", "->": "\u2192", "<->": "\u2194", "<-": "\u2190" } as Record<string, string>)[c] + b);
+}
+
+/** The instant tooltip's title: the label (or, without one, the name). */
+function quickTitle(kind: "n" | "e", ident: number): string | null {
+  if (kind === "n") {
+    const n = renderer.nodes.get(ident);
+    return n ? n.l || n.name : null;
+  }
+  const e = renderer.edges.get(ident);
+  return e ? e.l || edgeName(ident) : null;
+}
+
+/** A tooltip in two stages: the label and the hoverFields() fields at once,
+ *  every field (and the code that changed it) after a moment. */
 async function describeTip(kind: "n" | "e", ident: number, x: number, y: number) {
   const token = ++tipToken;
+  tipAt = { x, y };
+  const quick = quickTitle(kind, ident);
+  if (quick) showTip(quick, [], x, y);
   const info = await request<Info | null>((id) => ({ type: "describe", id, kind, ident }));
   if (token !== tipToken || !info) return;
   const rows = info.rows.filter(([k, v]) => v !== "" && !HIDDEN_ROWS.has(k));
+  const byName = new Map(info.rows);
+  const quickLines = hoverFields[kind].filter((f) => byName.has(f)).map((f) => `${f}: ${byName.get(f)}`);
+  const title = kind === "e" ? prettyEdge(info.title) : info.title;
+  showTip(quick ?? title, quickLines, tipAt.x, tipAt.y);
+  await new Promise((r) => setTimeout(r, FULL_TIP_MS));
+  if (token !== tipToken) return;
   const lines = rows.map(([k, v]) => `${k}: ${v}`);
   // where its look came from: the cells that last changed it (newest first)
   const byCell = new Map<number, { aspects: string[]; code: string }>();
@@ -784,7 +819,7 @@ async function describeTip(kind: "n" | "e", ident: number, x: number, y: number)
   }
   if (byCell.size) lines.push("──");
   for (const [cell, b] of [...byCell].slice(0, 6)) lines.push(`${b.aspects.join(", ")} ← [${cell}] ${b.code}`);
-  showTip(info.title, lines, x, y);
+  showTip(title, lines, tipAt.x, tipAt.y);
 }
 
 const HIDDEN_ROWS = new Set(["name", "image", "labelcolor", "strokecolor", "node1", "node2", "source", "destination"]);
@@ -837,6 +872,7 @@ function graphEnterLeave(prev: string, next: string) {
 }
 
 function showTipPosition(x: number, y: number) {
+  tipAt = { x, y };
   const r = tip.getBoundingClientRect();
   const px = Math.min(x + 14, window.innerWidth - r.width - 8);
   const py = y + 16 + r.height > window.innerHeight ? y - r.height - 10 : y + 16;
@@ -846,7 +882,7 @@ function showTipPosition(x: number, y: number) {
 function edgeName(id: number) {
   const e = renderer.edges.get(id);
   if (!e) return "";
-  return `${renderer.nodes.get(e.s)?.name}${e.d ? "->" : "-"}${renderer.nodes.get(e.t)?.name}`;
+  return `${renderer.nodes.get(e.s)?.name}${e.d ? "\u2192" : "\u2013"}${renderer.nodes.get(e.t)?.name}`;
 }
 
 let lastConsoleEl: HTMLElement | null = null;
@@ -1325,6 +1361,24 @@ document.addEventListener("keydown", (ev) => {
   }
 });
 $("#label-outlines").addEventListener("click", () => term.submit(`labelOutlines(${$("#label-outlines").getAttribute("aria-pressed") === "true" ? "false" : "true"})`));
+$("#hover-fields").addEventListener("click", async () => {
+  const [n, e] = await Promise.all([loadFields("n"), loadFields("e")]);
+  const skip = (f: FieldInfo) => HIDDEN_ROWS.has(f.name) || f.name === "label";
+  const picked = await pickFields({
+    title: "Fields shown on hover",
+    note: "The tooltip shows the label and these fields as soon as the pointer is on a node or edge; " +
+      "every field follows after a moment.",
+    groups: [
+      { key: "n", label: "Nodes", fields: n.filter((f) => !skip(f)).map((f) => f.name), checked: hoverFields.n },
+      { key: "e", label: "Edges", fields: e.filter((f) => !skip(f)).map((f) => f.name), checked: hoverFields.e },
+    ],
+  });
+  if (!picked) return;
+  const list = (xs: string[]) => `[${xs.map((x) => JSON.stringify(x)).join(", ")}]`;
+  term.submit(!picked.n.length && !picked.e.length ? "hoverFields()"
+    : `hoverFields(nodes=${list(picked.n)}, edges=${list(picked.e)})`);
+});
+$("#raise-changed").addEventListener("click", () => term.submit(`raiseChanged(${$("#raise-changed").getAttribute("aria-pressed") === "true" ? "false" : "true"})`));
 $("#label-cull").addEventListener("click", () => term.submit(`hideOverlappingLabels(${$("#label-cull").getAttribute("aria-pressed") === "true" ? "false" : "true"})`));
 document.addEventListener("keydown", (ev) => {
   if (!(ev.metaKey || ev.ctrlKey) || ev.altKey || ev.shiftKey) return;

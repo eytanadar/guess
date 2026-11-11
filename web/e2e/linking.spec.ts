@@ -360,3 +360,39 @@ test("a live chart recomputes after changes", async ({ page }) => {
   await expect(bars).toHaveCount(before);
   expect(await lastError(page)).toBeNull();
 });
+
+test("an edge in the output links its ends to their nodes and its connector to the edge", async ({ page }) => {
+  await boot(page);
+  await run(page, "list(g.edges)[0]");
+  const edge = page.locator(".result").last().locator(".obj.edge");
+  const ends = edge.locator(".obj.node.end");
+  await expect(ends).toHaveCount(2);
+  await expect(edge).toHaveText(/^\w+\u2013\w+$/);   // an en dash, not "-"
+  const hl = () => page.evaluate(() => {
+    const h = (window as any).__guess.renderer.hl;
+    return [h.nodes.size, h.edges.size];
+  });
+  await ends.first().hover();
+  await expect.poll(hl).toEqual([1, 0]);
+  // the connector: the edge span's own text, between the two ends
+  await edge.locator(".conn").hover();
+  await expect.poll(hl).toEqual([0, 1]);
+  // a set of edges still counts edges only
+  await run(page, "list(g.edges)[:3]");
+  await page.locator(".result").last().locator(".grp").first().hover();
+  await expect.poll(() => page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size)).toBe(0);
+});
+
+test("hovering hidden nodes and edges elsewhere draws ghosts of them in the graph", async ({ page }) => {
+  await boot(page);
+  const drawn = () => page.evaluate(() => (window as any).__guess.renderer.overlay.getLocalBounds().width);
+  await run(page, "(dept == 'dept1').visible = false\ndept == 'dept1'");
+  expect(await drawn()).toBe(0);
+  await page.locator(".result").last().locator(".grp, .obj").first().hover();
+  await expect.poll(drawn).toBeGreaterThan(0);
+  await page.mouse.move(5, 5);
+  await expect.poll(drawn).toBe(0);
+  await run(page, "showAll()\nedg = [k for k in g.edges if v73 in (k.node1, k.node2)][:2]\nfor k in edg: k.visible = false\nedg");
+  await page.locator(".result").last().locator(".obj.edge .conn").first().hover();
+  await expect.poll(drawn).toBeGreaterThan(0);
+});

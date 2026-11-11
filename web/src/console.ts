@@ -1002,6 +1002,11 @@ function docDom(doc: string) {
   return d;
 }
 
+/** An edge's connector as typeset: an en dash for "-", arrows for "->" and "<->". */
+function connector(c: string): string {
+  return ({ "-": "\u2013", "->": "\u2192", "<->": "\u2194", "<-": "\u2190" } as Record<string, string>)[c] ?? c;
+}
+
 export function renderSeg(s: Seg): Node {
   if (typeof s === "string") return document.createTextNode(s);
   if ("g" in s) {
@@ -1016,7 +1021,23 @@ export function renderSeg(s: Seg): Node {
   const span = el("span", "n" in s ? "obj node" : "obj edge");
   span.dataset.k = "n" in s ? "n" : "e";
   span.dataset.id = String("n" in s ? s.n : s.e);
-  span.textContent = s.t;
+  // an edge shown as "a-b": each end is its node, the connector the edge
+  const ends = "e" in s ? s.ends : undefined;
+  const [a, b] = ends ?? [];
+  if (a && b && s.t.length > a[1].length + b[1].length && s.t.startsWith(a[1]) && s.t.endsWith(b[1])) {
+    const end = (id: number, name: string) => {
+      const x = el("span", "obj node end");
+      x.dataset.k = "n";
+      x.dataset.id = String(id);
+      x.textContent = name;
+      return x;
+    };
+    const conn = el("span", "conn");
+    conn.textContent = connector(s.t.slice(a[1].length, s.t.length - b[1].length));
+    span.append(end(a[0], a[1]), conn, end(b[0], b[1]));
+  } else {
+    span.textContent = s.t;
+  }
   return span;
 }
 
@@ -1024,7 +1045,8 @@ export function renderSeg(s: Seg): Node {
 export function collect(t: HTMLElement): Item[] {
   if (t.dataset.k === "n" || t.dataset.k === "e") return [[t.dataset.k, Number(t.dataset.id)]];
   const out: Item[] = [];
-  t.querySelectorAll<HTMLElement>("[data-k=n],[data-k=e]").forEach((x) => {
+  // (an edge's ends stand for the edge here, not for their nodes)
+  t.querySelectorAll<HTMLElement>("[data-k=n]:not(.end),[data-k=e]").forEach((x) => {
     out.push([x.dataset.k as "n" | "e", Number(x.dataset.id)]);
   });
   // members past the display limit, and the elements behind a summary

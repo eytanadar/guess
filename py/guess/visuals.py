@@ -170,6 +170,8 @@ class View:
         self.map = None             # geoLayout's outlines: {"rings", "fill", "stroke"}
         self.guides_note = ""
         self.border_width = 0.75
+        self.raise_changed = True   # a node or edge whose appearance changes is drawn on top
+        self.hover_fields = {"n": [], "e": []}   # fields the hover tooltip shows at once (hoverFields)
         self._next = 1
         self.dirty = True
         self.version = 0
@@ -220,7 +222,8 @@ class View:
                 "pie": self.pie, "border_width": self.border_width,
                 "slides": [dict(s) for s in getattr(self, "slides", [])],
                 "guides": [dict(x) for x in self.guides], "guides_note": self.guides_note,
-                "map": self.map}
+                "map": self.map, "raise_changed": self.raise_changed,
+                "hover_fields": {k: list(v) for k, v in self.hover_fields.items()}}
 
     def restore(self, snap):
         self.hulls = {}
@@ -241,6 +244,8 @@ class View:
         self.guides = [dict(x) for x in snap.get("guides", [])]
         self.guides_note = snap.get("guides_note", "")
         self.map = snap.get("map")
+        self.raise_changed = snap.get("raise_changed", True)
+        self.hover_fields = {k: list(v) for k, v in snap.get("hover_fields", {"n": [], "e": []}).items()}
         self.session.emit({"type": "slides", "slides": [{"note": s["note"]} for s in self.slides], "index": None})
         for n in self.session.graph._nodes_list():
             self.session.graph._mark(n)
@@ -260,7 +265,8 @@ class View:
         return {"type": "overlay", "background": bg, "image": self.image, "arrow": self.arrow,
                 "curvature": self.curvature, "edgeColor": self.edge_color, "labels": dict(self.labels), "styles": list(self.styles),
                 "pie": [colors.to_rgba_int(c)[0] for c in self.pie["colors"]] if self.pie else None,
-                "borderWidth": self.border_width, "drag": self._drag_record(),
+                "borderWidth": self.border_width, "raiseChanged": self.raise_changed,
+                "hoverFields": {k: list(v) for k, v in self.hover_fields.items()}, "drag": self._drag_record(),
                 "guides": self.guides, "guidesNote": self.guides_note, "map": self.map, "hulls": hulls, "legends": [l.record() for l in self.legends.values()]}
 
 
@@ -391,6 +397,39 @@ def install(session):
         view.labels["outline"] = bool(on)
         view.changed()
 
+    def raiseChanged(on=True):
+        """raiseChanged() (the default) draws a node or edge on top of the others
+        once its appearance changes (colour, size, shape, label, visibility),
+        so what you just changed isn't hidden under its neighbours; edges stay
+        under nodes. raiseChanged(false) keeps the drawing order fixed."""
+        view.raise_changed = bool(on)
+        view.changed()
+
+    def hoverFields(*fields, nodes=None, edges=None):
+        """hoverFields(dept, degree) sets the fields the tooltip shows as soon as
+        the pointer is on a node or edge; by default it shows only the label.
+        Waiting a moment shows every field. Node fields go to nodes' tooltips
+        and edge fields to edges'; a kind you don't mention keeps its fields.
+        hoverFields(nodes=["dept"], edges=["weight"]) names them by kind (for a
+        field both have, such as color); hoverFields() goes back to labels
+        only. View → Hover fields… picks them from a list."""
+        from .model import EDGE, NODE, as_field
+        g = session.graph
+        new = {}
+        for f in fields:
+            fld = as_field(g, f, "hoverFields")
+            new.setdefault("n" if fld.kind == NODE else "e", []).append(fld.name)
+        for key, kind, given in (("n", NODE, nodes), ("e", EDGE, edges)):
+            if given is not None:
+                if isinstance(given, str) or not hasattr(given, "__iter__"):
+                    given = [given]
+                new[key] = [as_field(g, f, "hoverFields", kinds=(kind,)).name for f in given]
+        if not fields and nodes is None and edges is None:
+            new = {"n": [], "e": []}
+        for key, names in new.items():
+            view.hover_fields[key] = list(dict.fromkeys(names))
+        view.changed()
+
     def edgeLabelsAlong(on=True):
         """edgeLabelsAlong() turns edge labels to run along their edges (kept
         upright, so they read left to right); edgeLabelsAlong(false) keeps them
@@ -510,7 +549,7 @@ def install(session):
     for fn in (createConvexHull, removeConvexHull, removeConvexHulls, getConvexHulls,
                setDisplayBackground, getDisplayBackground, setBackgroundImage,
                removeBackgroundImage, overrideArrowLength, overrideArrowWidth, curvedEdges,
-               setEdgeColorMode, labelOutlines, hideOverlappingLabels, edgeLabelsAlong,
+               setEdgeColorMode, labelOutlines, hideOverlappingLabels, edgeLabelsAlong, raiseChanged, hoverFields,
                labelPlacement, constantLabelSize, optimizeLabels, excentricLens, select):
         reg(fn.__name__, fn)
     # Legend()/GradientLegend() are constructors: don't auto-call on a bare name

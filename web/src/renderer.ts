@@ -173,6 +173,10 @@ function contrastText(fill: number) {
   return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? 0x1a1a1a : 0xffffff;
 }
 
+/** record fields that place an element rather than style it */
+const NODE_PLACE = new Set(["x", "y"]);
+const EDGE_PLACE = new Set(["b", "s", "t"]);
+
 export class Renderer {
   readonly app = new Application();
   private world = new Container();
@@ -239,7 +243,9 @@ export class Renderer {
 
   nodes = new Map<number, NodeRec>();
   edges = new Map<number, EdgeRec>();
-  private order: number[] = [];          // node draw order
+  private order: number[] = [];          // node draw order (edges: this.edges' insertion order)
+  /** raiseChanged(): a node or edge whose appearance changes moves to the top */
+  private raiseChanged = true;
   private dirty = true;
   /** render on demand: only frames where something changed are drawn */
   private needsRender = true;
@@ -332,6 +338,7 @@ export class Renderer {
         }
       }
     }
+    if (this.raiseChanged) this.raise(nodes, edges);
     if (morph && morph.duration > 0) {
       this.startAnim(nodes, edges, removedNodes, removedEdges, morph);
       return;
@@ -349,6 +356,39 @@ export class Renderer {
     }
     for (const e of edges) this.edges.set(e.i, e);
     this.invalidate(true);
+  }
+
+  /** Move the nodes and edges whose appearance changes in this patch to the top of
+   *  the drawing order, keeping their order among themselves (so colouring
+   *  everything changes nothing). Moves alone (x, y, bends) don't count. */
+  private raise(nodes: NodeRec[], edges: EdgeRec[]) {
+    const differs = (a: object, b: object, skip: Set<string>) => {
+      const ka = Object.keys(a).filter((k) => !skip.has(k)), kb = Object.keys(b).filter((k) => !skip.has(k));
+      if (ka.length !== kb.length) return true;
+      return ka.some((k) => JSON.stringify((a as any)[k]) !== JSON.stringify((b as any)[k]));
+    };
+    const up = new Set<number>();
+    for (const n of nodes) {
+      const cur = this.nodes.get(n.i);
+      if (cur && differs(cur, n, NODE_PLACE)) up.add(n.i);
+    }
+    if (up.size && up.size < this.order.length) {
+      this.order = [...this.order.filter((id) => !up.has(id)), ...this.order.filter((id) => up.has(id))];
+      this.dirty = true;
+    }
+    const upE = edges.filter((e) => {
+      const cur = this.edges.get(e.i);
+      return cur && differs(cur, e, EDGE_PLACE);
+    }).map((e) => e.i);
+    if (upE.length && upE.length < this.edges.size) {
+      const set = new Set(upE);
+      const moved = [...this.edges.values()].filter((e) => set.has(e.i));
+      for (const e of moved) {
+        this.edges.delete(e.i);
+        this.edges.set(e.i, e);
+      }
+      this.dirty = true;
+    }
   }
 
   // ---- morph animation (ls with tweening) ---------------------------------------
@@ -440,6 +480,7 @@ export class Renderer {
     this.arrowWidth = ov.arrow.width;
     this.curvature = ov.curvature ?? 0;
     this.edgeColorMode = ov.edgeColor ?? "original";
+    this.raiseChanged = ov.raiseChanged ?? true;
     const outline = !!ov.labels?.outline, cull = !!ov.labels?.cull, along = !!ov.labels?.along;
     const method = ov.labels?.placement === "particles" ? "particles" : "candidates";
     const constant = !!ov.labels?.screen;
@@ -1357,6 +1398,33 @@ export class Renderer {
       g.stroke({ width: 1.25 * px, color: SELECT, alpha: 0.9 });
     }
     if (!this.hl.nodes.size && !this.hl.edges.size) return;
+    // hidden elements hovered elsewhere (console, table, chart): a ghost, dashed, so it's clear they're there
+    const dash = 5 * px, gap = 4 * px;
+    const ghostNode = (n: NodeRec, grow: number) => {
+      // at least 14 screen pixels across, so a tiny hidden node still reads as a dashed shape
+      const min = 14 * px, w = Math.max(n.w + 2 * grow, min), h = Math.max(n.h + 2 * grow, min);
+      const o = outlinePoints({ s: n.s, x: n.x + n.w / 2 - w / 2, y: n.y + n.h / 2 - h / 2, w, h });
+      g.poly(o);
+      g.fill({ color: HIGHLIGHT, alpha: 0.08 });
+      let per = 0;
+      for (let k = 0; k < o.length; k += 2) per += Math.hypot(o[(k + 2) % o.length] - o[k], o[(k + 3) % o.length] - o[k + 1]);
+      const d = Math.min(dash, per / 14);
+      dashed(g, o, true, d, d * 0.8);
+      g.stroke({ width: 1.75 * px, color: HIGHLIGHT, alpha: 0.95 });
+    };
+    for (const id of this.hl.edges) {
+      const e = this.edges.get(id);
+      const a = e && this.nodes.get(e.s), b = e && this.nodes.get(e.t);
+      if (!e || !a || !b || (e.v && a.v && b.v)) continue;
+      const p = a === b ? outlinePoints({ x: a.x, y: a.y - Math.max(a.w, a.h) * 1.2, w: Math.max(a.w, a.h) * 1.2, h: Math.max(a.w, a.h) * 1.2, s: 2 })
+        : this.edgePoints(e, a, b);
+      dashed(g, p, a === b, dash, gap);
+      g.stroke({ width: Math.max(e.w, 2 * px), color: HIGHLIGHT, alpha: 0.9 });
+    }
+    for (const id of this.hl.nodes) {
+      const n = this.nodes.get(id);
+      if (n && !n.v) ghostNode(n, 0);
+    }
     for (const id of this.hl.edges) {
       const e = this.edges.get(id);
       const a = e && this.nodes.get(e.s), b = e && this.nodes.get(e.t);
@@ -1373,6 +1441,7 @@ export class Renderer {
     }
     for (const id of ends) {
       const n = this.nodes.get(id);
+      if (n && !n.v && !this.hl.nodes.has(id)) ghostNode(n, 0);
       if (!n || !n.v) continue;
       // at least 7 screen pixels, so tiny nodes are still easy to spot when zoomed out
       const r = Math.max(Math.max(n.w, n.h) / 2 + 6 * px, 9 * px);
@@ -1792,6 +1861,45 @@ function convexHull(points: [number, number][]): [number, number][] {
     upper.push(q);
   }
   return lower.slice(0, -1).concat(upper.slice(0, -1));
+}
+
+/** A node shape's outline as a closed polygon (ellipses sampled). */
+function outlinePoints(n: { x: number; y: number; w: number; h: number; s: number }): number[] {
+  const poly = polyPoints(n);
+  if (poly) return poly;
+  if (n.s === 2 || n.s === 5 || n.s === 9) {
+    const out: number[] = [], cx = n.x + n.w / 2, cy = n.y + n.h / 2;
+    for (let i = 0; i < 48; i++) {
+      const t = (i / 48) * 2 * Math.PI;
+      out.push(cx + (n.w / 2) * Math.cos(t), cy + (n.h / 2) * Math.sin(t));
+    }
+    return out;
+  }
+  return [n.x, n.y, n.x + n.w, n.y, n.x + n.w, n.y + n.h, n.x, n.y + n.h];
+}
+
+/** Dashes along a polyline (closed: back to the start), as moveTo/lineTo
+ *  segments for one stroke; Pixi has no dashed strokes of its own. */
+function dashed(g: Graphics, pts: number[], closed: boolean, dash: number, gap: number) {
+  const p = closed ? [...pts, pts[0], pts[1]] : pts;
+  let on = true, left = dash;
+  for (let k = 0; k + 3 < p.length; k += 2) {
+    let x = p[k], y = p[k + 1];
+    const x1 = p[k + 2], y1 = p[k + 3];
+    let len = Math.hypot(x1 - x, y1 - y);
+    if (!len) continue;
+    const ux = (x1 - x) / len, uy = (y1 - y) / len;
+    while (len > 0) {
+      const step = Math.min(left, len);
+      const nx = x + ux * step, ny = y + uy * step;
+      if (on) g.moveTo(x, y).lineTo(nx, ny);
+      x = nx; y = ny; len -= step; left -= step;
+      if (left <= 1e-9) {
+        on = !on;
+        left = on ? dash : gap;
+      }
+    }
+  }
 }
 
 function shape(g: Graphics, n: { x: number; y: number; w: number; h: number; s: number }) {

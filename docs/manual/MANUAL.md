@@ -1325,6 +1325,11 @@ Hulls follow their nodes when you move them or run a layout.
   background. `hideOverlappingLabels()` drops labels that would collide,
   keeping the bigger nodes' labels. `edgeLabelsAlong()` turns edge labels to
   run along their edges.
+- **Drawing order**: a node or edge whose colour, size, shape, label or
+  visibility changes is drawn on top of the others (edges stay under nodes),
+  so what you just changed isn't hidden. Moving a node doesn't raise it.
+  `raiseChanged(false)` or *View → Bring changed elements to the front*
+  keeps the order fixed.
 - **Background image**: `setBackgroundImage("map.png", x, y)` puts an image
   under the graph (a map, say), and `removeBackgroundImage()` takes it away.
 - **Arrows**: `overrideArrowLength(12)`, `overrideArrowWidth(6)`.
@@ -1390,13 +1395,28 @@ useful.
 | drag the background | pan |
 | wheel or pinch | zoom |
 | double-click the background | fit the graph |
-| hover a node or edge | its fields in a tooltip; an edge rings its two endpoints |
+| hover a node or edge | its label at once, then (after a moment) all its fields; an edge rings its two endpoints |
 | click a node | focus on it and its neighbours (click again or Esc to clear) |
 | double-click a node or edge | zoom to it |
 | hover a node or edge in the console output | highlight it in the graph; click to select and zoom to it |
 | hover a node, a table row, a legend row or a chart bar | mark everywhere else it appears: console output, table rows, legend rows and chart bars |
 
 ![Hovering an edge rings both endpoints.](../../web/public/help/hover-edge.png){width=60%}
+
+The tooltip comes in two stages: the label straight away, so it doesn't
+get in the way as you sweep across the graph, and every field (with the
+code that last changed the element) once you stay on it for a moment. To
+see some fields at once, pick them in *View → Hover fields…* or name them:
+
+```python
+hoverFields(dept, degree)               # node fields; edge fields go to edges
+hoverFields(nodes=["dept"], edges=["weight"])
+hoverFields()                           # back to the label only
+```
+
+Hovering a hidden node or edge somewhere else (the console output, the
+table, a chart) draws a ghost of it in the graph, a dashed outline, so you
+can see where it is.
 
 ## 13.2 Selecting
 
@@ -1549,7 +1569,9 @@ communities from `louvainClusters()`) shows as `21 groups (402 elements):
 
 - **Output.** Nodes, edges, sets, dicts, f-strings and `dept.distinct`
   values in the output highlight what they stand for. Hover `'dept1'` in
-  `dept.distinct` to see the nodes in dept1.
+  `dept.distinct` to see the nodes in dept1. An edge prints as `v1–v2`
+  (`v1→v2` when directed): hover either name for that node, or the dash or
+  arrow between them for the edge.
 - **Executed code.** Hover a name or a query in code you've run to see what
   it means *now*: a variable's members, the matches of `degree > 5` (or of
   the whole of `3 < degree < 6`), a node, or a value. Hovering a field shows

@@ -18,7 +18,7 @@ Commands can be called without parentheses when they take no arguments
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
 - [Layouts](#layouts) (33)
-- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (31)
+- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (33)
 - [Styles and visual mappings](#styles-and-visual-mappings) (10)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
@@ -1618,6 +1618,16 @@ shows the ramp from min to max, with a tick mark every tickEvery units.
 hideOverlappingLabels() hides labels that would overlap a label of a
 bigger node, rechecked as you zoom; hideOverlappingLabels(false) shows all.
 
+### `hoverFields(*fields, nodes=None, edges=None)`
+
+hoverFields(dept, degree) sets the fields the tooltip shows as soon as
+the pointer is on a node or edge; by default it shows only the label.
+Waiting a moment shows every field. Node fields go to nodes' tooltips
+and edge fields to edges'; a kind you don't mention keeps its fields.
+hoverFields(nodes=["dept"], edges=["weight"]) names them by kind (for a
+field both have, such as color); hoverFields() goes back to labels
+only. View → Hover fields… picks them from a list.
+
 ### `labelOutlines(on=True)`
 
 labelOutlines() draws a halo in the background colour around labels so
@@ -1654,6 +1664,13 @@ Fix the arrowhead length (graph units) for all directed edges; None resets.
 ### `overrideArrowWidth(width)`
 
 Fix the arrowhead width (graph units) for all directed edges; None resets.
+
+### `raiseChanged(on=True)`
+
+raiseChanged() (the default) draws a node or edge on top of the others
+once its appearance changes (colour, size, shape, label, visibility),
+so what you just changed isn't hidden under its neighbours; edges stay
+under nodes. raiseChanged(false) keeps the drawing order fixed.
 
 ### `removeBackgroundImage()`
 

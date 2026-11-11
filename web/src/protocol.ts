@@ -30,7 +30,8 @@ export interface EdgeRec {
 export type Seg =
   | string
   | { n: number; t: string }
-  | { e: number; t: string }
+  /** ends: [id, name] of each end when t is "a-b" / "a->b" (each end links to its node) */
+  | { e: number; t: string; ends?: [[number, string], [number, string]] }
   | { g: Seg[]; a?: string; x?: ["n" | "e", number][]; q?: string };   // q: a query naming the members   // x: more members, linked but not shown
 
 export interface HullRec { i: number; nodes: number[]; c: number; a: number }
@@ -65,6 +66,10 @@ export interface Overlay {
   /** pie-chart node slice colours (node records then carry `p`, the slice sizes) */
   pie?: number[] | null;
   borderWidth?: number;
+  /** draw a node or edge on top once its appearance changes (raiseChanged()) */
+  raiseChanged?: boolean;
+  /** hoverFields(): the fields the tooltip shows at once, by kind (the rest after a moment) */
+  hoverFields?: { n: string[]; e: string[] };
   /** labelled lines under the graph (hive plot axes) */
   guides?: { x1: number; y1: number; x2: number; y2: number; label: string }[];
   /** a map drawn under the graph (geoLayout): outlines as flat [x0, y0, x1, y1, …]

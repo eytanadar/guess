@@ -207,6 +207,8 @@ body { display: flex; flex-direction: column; }
 .obj { border-radius: 2px; cursor: default; }
 .obj.node { color: var(--link-node); }
 .obj.edge { color: var(--link-edge); }
+/* an edge's connector: a little room so it is easy to point at */
+.obj.edge > .conn { padding: 0 0.12em; }
 .grp.hot, .obj.hot { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
 .obj.hot { background: rgba(255, 31, 107, 0.1); }
 /* output about a graph that's no longer shown: not linked */
@@ -597,6 +599,12 @@ body.app .view-col { flex: 1 1 auto; }
 .ask-dialog { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); width: min(440px, calc(100vw - 32px)); padding: 14px 16px; }
 .ask-dialog::backdrop { background: rgba(0, 0, 0, 0.3); }
 .ask-dialog h3 { margin: 0 0 6px; font-size: 15px; }
+.pick-fields { width: min(520px, calc(100vw - 32px)); }
+.pick-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.pick-cols fieldset { border: 1px solid var(--border); border-radius: 6px; margin: 0; padding: 4px 8px 8px; max-height: 50vh; overflow: auto; font-size: 12.5px; }
+.pick-cols legend { font-weight: 600; padding: 0 4px; }
+.pick-cols label { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+@media (max-width: 480px) { .pick-cols { grid-template-columns: 1fr; } }
 .ask-dialog p { margin: 0 0 8px; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
 .ask-label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .ask-label input { flex: 1; font: inherit; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--console-bg); color: var(--text); }

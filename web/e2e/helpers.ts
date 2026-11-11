@@ -44,6 +44,12 @@ export async function menu(page: Page, title: string, item: string) {
  *  inside the node that the renderer's own hit test gives to that node (so a
  *  bigger neighbour drawn on top can't steal the click). */
 export async function clickNode(page: Page, name: string) {
+  const [x, y] = await nodePoint(page, name);
+  await page.mouse.click(x, y);
+}
+
+/** A point on the page inside a node that the renderer's hit test gives to it. */
+export async function nodePoint(page: Page, name: string): Promise<number[]> {
   const at = await page.waitForFunction((name) => {
     const g = (window as any).__guess;
     const r = g.renderer;
@@ -62,6 +68,5 @@ export async function clickNode(page: Page, name: string) {
     }
     return null;
   }, name, { timeout: 15000 });
-  const [x, y] = (await at.jsonValue()) as number[];
-  await page.mouse.click(x, y);
+  return (await at.jsonValue()) as number[];
 }

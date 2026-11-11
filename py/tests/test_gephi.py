@@ -178,6 +178,33 @@ def test_label_settings_roundtrip(s):
     assert roundtrip(s).view.labels == {"outline": True, "cull": True, "along": False, "placement": "candidates", "screen": False}
 
 
+def test_raise_changed_setting(s):
+    assert s.view.raise_changed is True       # on by default
+    assert s.run("raiseChanged(false)")
+    s.flush()
+    assert s.rec.of("overlay")[-1]["raiseChanged"] is False
+    assert roundtrip(s).view.raise_changed is False
+    assert s.run("undo()")
+    assert s.view.raise_changed is True
+
+
+def test_hover_fields(s):
+    assert s.view.hover_fields == {"n": [], "e": []}      # label only by default
+    assert s.run("hoverFields(dept)")
+    assert s.view.hover_fields["n"] == ["dept"]
+    assert s.run('hoverFields(nodes=["degree"], edges=["color"])')
+    assert s.view.hover_fields == {"n": ["degree"], "e": ["color"]}
+    assert not s.run('hoverFields("dpet")')                   # a clear error, nothing changed
+    assert s.view.hover_fields["n"] == ["degree"]
+    s.flush()
+    assert s.rec.of("overlay")[-1]["hoverFields"] == {"n": ["degree"], "e": ["color"]}
+    assert roundtrip(s).view.hover_fields == {"n": ["degree"], "e": ["color"]}
+    assert s.run("hoverFields()")
+    assert s.view.hover_fields == {"n": [], "e": []}
+    assert s.run("undo()")
+    assert s.view.hover_fields == {"n": ["degree"], "e": ["color"]}
+
+
 # ---- formats -----------------------------------------------------------------
 
 def test_gexf_roundtrip(s, tmp_path):
