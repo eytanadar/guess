@@ -123,7 +123,7 @@ def write_index():
     for md in sorted(cb.glob("*/cookbook.md")):
         meta = dict(re.findall(r'^(title|subtitle): "?(.*?)"?$', md.read_text().split("---")[1], flags=re.M))
         books.append((md.parent.name, meta.get("title", md.parent.name), meta.get("subtitle", "")))
-    order = ["core", "sna", "biology", "text", "infrastructure", "software", "investigations", "ecology"]
+    order = ["core", "sna", "biology", "text", "infrastructure", "software", "investigations", "ecology", "epidemiology"]
     books.sort(key=lambda b: order.index(b[0]) if b[0] in order else len(order))
     sys.path.insert(0, str(ROOT / "cookbooks" / "tools"))
     from datasets import used_by

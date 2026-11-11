@@ -46,7 +46,8 @@ def install(session):
 
     # ---- spreading -------------------------------------------------------------
     @cmd
-    def spread(seeds, model="SIR", beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True):
+    def spread(seeds, model="SIR", beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True,
+               immune=None, weight=None):
         """spread([v1, v2], model="SIR") simulates something spreading from
         the seed nodes, one step at a time:
           "SI"         each step, every infected node infects each susceptible
@@ -57,57 +58,27 @@ def install(session):
                        (probability beta) to activate each neighbour
           "threshold"  a node becomes active when at least `threshold` of its
                        neighbours are (complex contagion: ideas, adoption)
-        Directed edges are followed in their direction. Stores `infected_at`
-        (the step a node was reached; -1 = never) and `state` (S, I or R at the
-        end), plots how many are in each state at each step, and returns those
-        counts. Replay it with showTime(t, infected_at); compare seeds and
-        parameters by running it again."""
+        Directed edges are followed in their direction. immune=nodes can't be
+        infected (vaccinated, say: state V). weight=field makes long contacts
+        riskier: beta is then the chance per unit of weight, so an edge of
+        weight w transmits with chance 1 - (1 - beta)**w per step. Stores
+        `infected_at` (the step a node was reached; -1 = never) and `state`
+        (S, I, R or V at the end), plots how many are in each state at each
+        step, and returns those counts. Replay it with showTime(t,
+        infected_at); outbreaks() repeats it many times."""
+        from . import epidemic
         gr = g()
         start = nodes_of(seeds, "spread")
         m = str(model).lower()
-        if m not in ("si", "sir", "cascade", "threshold"):
+        if m not in epidemic.MODELS:
             raise GuessError('model should be "SI", "SIR", "cascade" or "threshold"')
         rng = random.Random(seed)
-        out = neighbours(gr)
-        incoming = neighbours(gr) if not any(e._directed for e in gr._edges_list()) else None
-        if incoming is None:            # who can infect whom: reverse adjacency for thresholds
-            incoming = {n: [] for n in gr._nodes_list()}
-            for a, bs in out.items():
-                for b in bs:
-                    incoming[b].append(a)
-        state = {n: "S" for n in gr._nodes_list()}
-        when = {n: -1 for n in gr._nodes_list()}
-        for n in start:
-            state[n], when[n] = "I", 0
-        fresh = list(start)
-        counts = [(0, sum(1 for v in state.values() if v == "S"), len(start), 0)]
-        for t in range(1, int(steps) + 1):
-            new = []
-            if m == "threshold":
-                for n in gr._nodes_list():
-                    if state[n] == "S" and incoming[n]:
-                        frac = sum(1 for p in incoming[n] if state[p] == "I") / len(incoming[n])
-                        if frac >= float(threshold):
-                            new.append(n)
-            else:
-                sources = fresh if m == "cascade" else [n for n in gr._nodes_list() if state[n] == "I"]
-                for n in sources:
-                    for nb in out[n]:
-                        if state[nb] == "S" and nb not in new and rng.random() < float(beta):
-                            new.append(nb)
-            recovered = []
-            if m == "sir":
-                recovered = [n for n in gr._nodes_list() if state[n] == "I" and rng.random() < float(gamma)]
-            for n in new:
-                state[n], when[n] = "I", t
-            for n in recovered:
-                state[n] = "R"
-            fresh = new
-            s_ = sum(1 for v in state.values() if v == "S")
-            i_ = sum(1 for v in state.values() if v == "I")
-            counts.append((t, s_, i_, len(state) - s_ - i_))
-            if not new and (m != "sir" or i_ == 0):
-                break
+        if isinstance(weight, str):
+            weight = gr.edge_schema.get(weight) or session.ns.get(weight)
+        out, inc = epidemic.contacts(gr, beta, weight)
+        imm = nodes_of(immune, "immune") if immune is not None else []
+        state, when, counts = epidemic.simulate(gr._nodes_list(), out, inc, start, m, gamma, threshold,
+                                                steps, rng, imm)
         f_at = gr.addNodeField("infected_at", INT, -1)
         f_st = gr.addNodeField("state", STRING, None)
         for n in gr._nodes_list():

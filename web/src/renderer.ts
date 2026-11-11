@@ -242,6 +242,9 @@ export class Renderer {
   private labelsDirty = true;
   private hl = { nodes: new Set<number>(), edges: new Set<number>() };
   private tween: { from: number[]; to: number[]; t0: number; ms: number } | null = null;
+  // the last center() request, so a panel or chart that opens just after it
+  // (and shrinks the graph area) doesn't leave the graph cut off
+  private fitted: { nodes: number[]; edges: number[]; at: number } | null = null;
   private hulls: HullRec[] = [];
   private arrowLen: number | null = null;
   private arrowWidth: number | null = null;
@@ -276,6 +279,15 @@ export class Renderer {
     new ResizeObserver(() => {
       this.app.queueResize();
       this.needsRender = true;
+      const f = this.fitted;
+      if (f && performance.now() - f.at < 2000) {
+        requestAnimationFrame(() => {
+          if (this.fitted !== f) return;           // the user has moved the camera since
+          this.app.resize();
+          this.center(f.nodes, f.edges, !!this.tween);
+          this.fitted = f;                          // keep the original time window
+        });
+      }
     }).observe(this.host);
     // draw only when something changed (idle graphs cost nothing)
     this.app.ticker.remove(this.app.render, this.app);
@@ -534,6 +546,11 @@ export class Renderer {
   }
 
   center(nodeIds: number[] = [], edgeIds: number[] = [], animate = true) {
+    this.fitted = { nodes: nodeIds, edges: edgeIds, at: performance.now() };
+    // a panel may have opened in this same batch: measure the graph area now,
+    // not at the next frame's queued resize
+    const r = this.host.getBoundingClientRect();
+    if (Math.round(r.width) !== Math.round(this.app.screen.width) || Math.round(r.height) !== Math.round(this.app.screen.height)) this.app.resize();
     const ids = new Set(nodeIds);
     for (const eid of edgeIds) {
       const e = this.edges.get(eid);
@@ -577,6 +594,7 @@ export class Renderer {
   }
 
   setView([cx, cy, s]: number[], ms = 600) {
+    this.fitted = null;
     const W = this.app.screen.width / 2, H = this.app.screen.height / 2;
     const to = [W - cx * s, H - cy * s, s];
     if (ms <= 0) this.setCamera(to);
@@ -1411,6 +1429,7 @@ export class Renderer {
       const { sx, sy } = local(ev);
       const hit = this.hitTest(sx, sy);
       this.tween = null;
+      this.fitted = null;
       el.setPointerCapture(ev.pointerId);
       if (hit?.kind !== "n" && (ev.shiftKey || ev.altKey)) {
         // shift-drag: box, alt-drag: lasso (add Cmd/Ctrl to extend the selection)
@@ -1519,6 +1538,7 @@ export class Renderer {
       ev.preventDefault();
       if (this.events.wheel?.(ev)) return;
       this.tween = null;
+      this.fitted = null;
       const { sx, sy } = local(ev);
       const before = this.toWorld(sx, sy);
       const factor = Math.exp(-ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0015));

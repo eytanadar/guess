@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / "docs" / "manual"))
 from build import font_args  # noqa: E402  (the manual's font picker)
 sys.path.insert(0, str(HERE))
 
-VOLUMES = ["core", "sna", "biology", "text", "infrastructure", "software", "investigations", "ecology"]   # reading order
+VOLUMES = ["core", "sna", "biology", "text", "infrastructure", "software", "investigations", "ecology", "epidemiology"]   # reading order
 
 
 def volumes():
