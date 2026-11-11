@@ -2662,6 +2662,16 @@ shortcutNodes until nothing changes. Returns [removed, added].</p>
 <p>Edges divided by the number of possible undirected node pairs.</p>
 <h3 id="distancenode1-node2"><code>distance(node1, node2)</code></h3>
 <p>Euclidean distance between two nodes’ positions.</p>
+<h3 id="effectivedistanceorigin-weightweight-nameeff_distance"><code>effectiveDistance(origin, weight=&#39;weight&#39;, name=&#39;eff_distance&#39;)</code></h3>
+<p>effectiveDistance(origin) measures how ‘close’ every node is to the
+origin through a travel network, as an epidemic would see it (Brockmann
+and Helbing, Science 2013). From node m, the share of m’s traffic
+(weight) that goes to n is P; the step m -&gt; n costs 1 - ln P, so busy
+routes are short and a route among many is long. Stores the shortest
+total in <code>eff_distance</code> (name=…; unreachable nodes get None)
+and marks the edges of the shortest-path tree in the edge field
+<code>eff_tree</code>. Arrival times of real epidemics grow almost
+linearly with it. Returns the field.</p>
 <h3 id="einverseseq"><code>einverse(seq)</code></h3>
 <p>All edges not in seq.</p>
 <h3 id="embeddims8-walks10-length40-window5-p1.0-q1.0-seed0-nameemb"><code>embed(dims=8, walks=10, length=40, window=5, p=1.0, q=1.0, seed=0, name=&#39;emb&#39;)</code></h3>
@@ -2945,6 +2955,25 @@ Returns (NODF, NODF of the rows, NODF of the columns). Compare with a
 randomised network (rewire()) to judge whether a value is high.</p>
 <h3 id="ninverseseq"><code>ninverse(seq)</code></h3>
 <p>All nodes not in seq.</p>
+<h3 id="offspringcasesnone-showtrue"><code>offspring(cases=None, show=True)</code></h3>
+<p>offspring() reads a transmission tree (directed edges from infector
+to infected) and counts how many each case infected (its outdegree).
+Returns them with R (the mean), the dispersion k of a negative binomial
+fitted to them (small k, below 1: a few superspreaders cause most
+transmission), the share who infected no one, and the share of
+transmissions caused by the top 20% of cases. offspring(cases) uses only
+those cases, e.g. offspring(onset &lt; 28); their infections count
+wherever they lead. Stores the count in the field
+<code>offspring</code>.</p>
+<h3 id="outbreaksruns200-seeds1-modelsir-beta0.3-gamma0.1-threshold0.5-immunenone-weightnone-steps1000-large0.1-seed0-namerisk-showtrue"><code>outbreaks(runs=200, seeds=1, model=&#39;SIR&#39;, beta=0.3, gamma=0.1, threshold=0.5, immune=None, weight=None, steps=1000, large=0.1, seed=0, name=&#39;risk&#39;, show=True)</code></h3>
+<p>outbreaks(runs) repeats spread() many times, because one simulated
+outbreak is an anecdote. Each run starts from <code>seeds</code> random
+nodes (a number) or from the given nodes. immune=nodes (vaccinated,
+isolated) can’t be infected or start an outbreak; weight=field makes
+long contacts riskier (see spread). Stores each node’s share of runs it
+was reached in <code>risk</code> (name=…), charts the final sizes, and
+returns them (.mean, .median, .large = share of runs reaching more than
+<code>large</code> of the nodes).</p>
 <h3 id="readjustedges"><code>readjustEdges()</code></h3>
 <p>Kept for old scripts: parallel edges are always drawn as separate
 curves.</p>
@@ -3013,7 +3042,7 @@ Compare resizeLinear, which spaces distinct values evenly.</p>
 outdegree.</p>
 <h3 id="sortbyd"><code>sortBy(*d)</code></h3>
 <p>sortBy(field) or sortBy(seq, field).</p>
-<h3 id="spreadseeds-modelsir-beta0.3-gamma0.1-threshold0.5-steps100-seed0-showtrue"><code>spread(seeds, model=&#39;SIR&#39;, beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True)</code></h3>
+<h3 id="spreadseeds-modelsir-beta0.3-gamma0.1-threshold0.5-steps100-seed0-showtrue-immunenone-weightnone"><code>spread(seeds, model=&#39;SIR&#39;, beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None)</code></h3>
 <p>spread([v1, v2], model=“SIR”) simulates something spreading from the
 seed nodes, one step at a time: “SI” each step, every infected node
 infects each susceptible neighbour with probability beta “SIR” the same,
@@ -3022,11 +3051,14 @@ probability gamma “cascade” independent cascade: a newly active node
 gets one chance (probability beta) to activate each neighbour
 “threshold” a node becomes active when at least <code>threshold</code>
 of its neighbours are (complex contagion: ideas, adoption) Directed
-edges are followed in their direction. Stores <code>infected_at</code>
-(the step a node was reached; -1 = never) and <code>state</code> (S, I
-or R at the end), plots how many are in each state at each step, and
-returns those counts. Replay it with showTime(t, infected_at); compare
-seeds and parameters by running it again.</p>
+edges are followed in their direction. immune=nodes can’t be infected
+(vaccinated, say: state V). weight=field makes long contacts riskier:
+beta is then the chance per unit of weight, so an edge of weight w
+transmits with chance 1 - (1 - beta)**w per step. Stores
+<code>infected_at</code> (the step a node was reached; -1 = never) and
+<code>state</code> (S, I, R or V at the end), plots how many are in each
+state at each step, and returns those counts. Replay it with showTime(t,
+infected_at); outbreaks() repeats it many times.</p>
 <h3 id="travelingsalesmanstopsnone-weightweight-cycletrue"><code>travelingSalesman(stops=None, weight=&#39;weight&#39;, cycle=True)</code></h3>
 <p>travelingSalesman(stops) finds a short route that visits every node
 in <code>stops</code> (default: all) and returns to the start
