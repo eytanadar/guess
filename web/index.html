@@ -78,7 +78,7 @@
             <button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges())">Curved edges</button>
             <button role="menuitem" data-run="bundleEdges()" title="MINGLE: merge edges that run alike into bundles (good for large graphs)">Bundle edges (MINGLE)</button>
             <button role="menuitem" data-run="bundleEdges(method='fdeb')" title="Force-directed edge bundling: smooth, organic bundles">Bundle edges (force-directed)</button>
-            <button role="menuitem" data-run="unbundleEdges()">Straighten edges</button>
+            <button role="menuitem" data-run="removeBundles()">Straighten edges</button>
             <button role="menuitemcheckbox" id="label-outlines" aria-pressed="false">Label outlines</button>
             <button role="menuitemcheckbox" id="label-cull" aria-pressed="false">Hide overlapping labels</button>
             <hr />
@@ -125,7 +125,7 @@
           <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Analyze</button>
           <div class="menu-pop" role="menu" hidden>
             <button role="menuitem" data-run="graphStats()">Graph statistics</button>
-            <button role="menuitem" data-run="cl = louvainClusters()&#10;colorize(modularity_class)&#10;legendFor(modularity_class)">Find communities</button>
+            <button role="menuitem" data-run="cl = louvainClusters()&#10;colorize(louvain_class)&#10;legendFor(louvain_class)">Find communities</button>
             <button role="menuitem" data-run="cl = leidenClusters()&#10;colorize(leiden_class)&#10;legendFor(leiden_class)" title="igraph Leiden: every community internally connected">Find communities (Leiden)</button>
             <hr />
             <button role="menuitem" data-run="sizeBy(pagerank, 5, 40, 'sqrt')">Size by PageRank</button>
