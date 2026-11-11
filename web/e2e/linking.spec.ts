@@ -312,3 +312,30 @@ test("the Cluster tool labels one lasso per cluster and shows what's left", asyn
   await expect(bar.locator(".cluster-left")).toContainText("402 left");
   expect(await lastError(page)).toBeNull();
 });
+
+test("Altair charts show in the dock and link to the graph", async ({ page }) => {
+  test.setTimeout(180_000);
+  await boot(page);
+  // alt is imported on first use (Pyodide loads altair the first time)
+  await run(page, "alt.Chart(nodeData('degree', 'dept')).mark_point().encode(x='degree', y='dept', color='dept')");
+  const marks = page.locator(".vega-body svg path.mark-symbol, .vega-body svg .mark-symbol path");
+  await expect(marks.first()).toBeVisible({ timeout: 90_000 });
+  expect(await lastError(page)).toBeNull();
+  // one mark per node: hovering it highlights that node
+  await marks.first().hover({ force: true });
+  await expect.poll(() => hlCount(page)).toBe(1);
+  // a summary chart: a bar of count() by dept links through a query
+  await run(page, "alt.Chart(nodeData('dept')).mark_bar().encode(x='dept', y='count()').properties(title='by dept')");
+  await expect(page.locator(".panel header", { hasText: "by dept" })).toBeVisible();
+  const bars = page.locator(".panel", { has: page.locator("header", { hasText: "by dept" }) }).locator("svg .mark-rect path");
+  await expect(bars.first()).toBeVisible();
+  await bars.first().hover({ force: true });
+  await expect.poll(() => hlCount(page)).toBeGreaterThan(1);
+  await bars.first().click({ force: true });
+  await run(page, "print(len(sel), len(dept == 'dept0'))");
+  const [a, b] = (await page.locator(".stdout").last().innerText()).split(" ").map(Number);
+  expect(a).toBe(b);
+  // the graph's hover fades the other points of the scatter plot
+  await run(page, "nodeData('pagerank')");
+  expect(await lastError(page)).toBeNull();
+});
