@@ -676,3 +676,9 @@ body.app .view-col { flex: 1 1 auto; }
 .cluster-left.finished { border-color: var(--border) !important; color: var(--muted) !important; }
 .cluster-hint { margin-top: 3px; color: var(--muted); font-size: 11px; }
 @media (max-width: 700px) { .cluster-hint { display: none; } }
+
+/* Altair (Vega-Lite) charts in the dock */
+.panel-body.vega-body { padding: 6px; overflow: auto; max-height: 60vh; }
+.vega-body .vega-embed { display: block; }
+.vega-body .vega-embed summary { opacity: 0.6; }
+.vega-error { color: var(--error); font-size: 12px; }
