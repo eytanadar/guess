@@ -27,7 +27,10 @@
     "@hpcc-js/wasm-graphviz": "1.30.0",
     "@lezer/highlight": "1.2.5",
     "@replit/codemirror-vim": "6.3.0",
-    "pixi.js": "8.22.0"
+    "pixi.js": "8.22.0",
+    "vega": "6.4.0",
+    "vega-embed": "7.3.0",
+    "vega-lite": "6.4.3"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "1.1.0",
