@@ -237,6 +237,71 @@ club's dense centre. *Cohesive blocks* (Moody and White) are nested groups
 that stay connected after removing any *k*−1 members, so they catch groups
 held together by many independent paths.
 
+## Members of several groups at once [Intermediate]{.level}
+
+**You want** groups that may overlap, because people belong to more than
+one.
+
+::: ingredients
+**Ingredients:** `karate.gdf` · `cliquePercolationClusters` · `showOverlaps`
+:::
+
+```python
+makeFromGDF("karate.gdf")
+frLayout()
+cs = cliquePercolationClusters(3)
+showOverlaps(cs, hulls=true)
+[(n.label, n.cpm_classes) for n in (cpm_count > 1)]
+```
+
+**How it works.** Clique percolation (Palla et al., 2005) chains triangles
+that share an edge into one community. Community detection usually gives
+each person one group; here a person can sit in several. The club splits
+into a large core of 25 and two small groups, one on each side of the
+split. Two people are in two communities at once: the instructor (`m1`),
+who also anchors a small circle of his own students, and `m32`, a member
+of the officer's side who also belongs to a three-person cluster.
+`showOverlaps` colours each community, draws the members of several as
+pies, one slice per group, and with `hulls=true` shades each group.
+
+**Variations.** `cliquePercolationClusters(4)` asks for groups built from
+4-cliques: smaller, tighter groups. `linkCommunities()` clusters ties
+rather than people (Ahn et al., 2010), which suits people who belong to
+many contexts, such as family, work and sport. Each tie gets one context
+(`link_class`) and each person all of theirs (`link_classes`).
+
+**Pitfalls.** People in no community (`cpm_count == 0`) are not isolates:
+they have ties, just none that close a triangle.
+
+## Bridges with few ties [Intermediate]{.level}
+
+**You want** the people who connect parts of a network without being
+busy hubs themselves.
+
+::: ingredients
+**Ingredients:** `karate.gdf` · `bridging` · `betweenness`
+:::
+
+```python
+makeFromGDF("karate.gdf")
+[(n.label, round(n.bridging, 1), n.degree) for n in highest(bridging, 3)]
+[(n.label, round(n.betweenness, 1), n.degree) for n in highest(betweenness, 3)]
+colorBy(bridging, lightgray, red)
+```
+
+**How it works.** `betweenness` rewards lying on shortest paths, and the
+busiest nodes win: the instructor (`m1`) and the officer (`m34`).
+Bridging centrality (Hwang et al., 2006) multiplies betweenness by a
+*bridging coefficient* that is high when a person's contacts are better
+connected than they are. The top bridge is `m20`, with only three ties:
+one each to the instructor, his student `m2` and the officer. Next is `m9`,
+tied to both leaders and to the officer's side. Those are the people
+through whom the two factions could still talk.
+
+**Variations.** `weightedBridging()` treats heavy ties as short ones, for
+networks whose weights mean closeness. `bridging_coef` on its own is the
+coefficient without betweenness.
+
 ## Communities and the split they predict [Basic]{.level}
 
 ```python

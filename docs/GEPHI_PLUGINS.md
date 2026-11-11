@@ -29,7 +29,27 @@ and the code.
 | M | a few days |
 | L | a week or more |
 
-## Summary
+## Status: implemented (November 2026)
+
+The plan at the end of this document has been carried out. Every row below
+marked ◐ or ✗ now has a GUESS command, except true 3D (an isometric
+projection stands in for it), and the rows marked n/a or ?.
+
+| area | new in GUESS |
+|---|---|
+| measures | computed fields `katz`, `domain_prestige`, `proximity_prestige`, `rank_prestige`, `bridging_coef`, `bridging`, `wclustering`; `weightedBridging`, `cliques`, `mds`, `geoVectors`, `kBrace`, `evaluateLinks`, `predictLinks(add=true)` |
+| clustering | `chineseWhispersClusters`, `mclClusters`, `dbscanClusters`, `mcodeClusters`, `cliquePercolationClusters`, `linkCommunities`, and `showOverlaps` for overlapping communities (pies and hulls) |
+| layouts | `multipartiteLayout`, `concentricLayout`, `dualCircleLayout`, `orderedLayout`, `hairballLayout`, `circlePackLayout`, `isometricLayout`; `rescaleLayout(nodes, …)`, `forceAtlas2Layout(gravitySources=…)` |
+| generators | `makeWattsStrogatz`, `makeBarabasiAlbertAging`, `makeGeometricRandom`, `makePowerlawCluster` |
+| import | `makeFromExcel` (and `.xlsx` in `makeFromCSV`), `makeFromCooccurrence`, `makeFromRDF` (Turtle, N-Triples, RDF/XML), `makeFromBluesky`, `streamFrom` / `stopStream` (Gephi streaming protocol over HTTP or WebSocket) |
+| export | `exportHTML` (standalone interactive page), `exportJSON` (graphology / sigma), `exportKML`, `exportSHP` |
+| display and tools | `polygon(n)` and `polygonBy(field)` (regular polygons), `wordCloud(field)`, `castField`, `readNames`, `copyColors` |
+| AI assistants | `mcp/guess-mcp.mjs` (MCP server, no dependencies) with `connectAssistant()` / `disconnectAssistant()` |
+
+The manual and the cookbooks cover these, with new recipes in the biology,
+SNA, text, infrastructure and core books.
+
+## Summary (before implementation)
 
 | status | count | plugins |
 |---|---|---|

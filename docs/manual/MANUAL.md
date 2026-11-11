@@ -413,6 +413,24 @@ sometimes written on one line. Both forms load.
   become edge fields. A node table has `Id`, optionally `Label`, and other
   columns. GUESS also recognises adjacency matrices and adjacency lists.
   Opening only a node table adds its columns to the current graph's nodes.
+- **Excel** workbooks (`.xlsx`) open the same way: `makeFromExcel("data.xlsx")`
+  reads an edge sheet (or a matrix or list), and a node sheet with `Id` when
+  there is one; `sheet=` and `nodes=` choose the sheets. `makeFromCSV` hands
+  `.xlsx` files to it.
+- **Lists in a column.** `makeFromCooccurrence("papers.csv", "authors", ";")`
+  links the values that share a cell (co-authors, co-occurring keywords):
+  nodes get `count`, edges `weight`. It reads CSV, TSV and Excel.
+- **RDF** (Turtle, N-Triples, RDF/XML): `makeFromRDF("data.ttl")`. Resources
+  become nodes, labelled by `rdfs:label` or `foaf:name`, with the IRI in
+  `uri`; links between resources become edges with the property in
+  `predicate`; literal values become node fields. Classes are nodes too
+  (`types=false` keeps them as a `type` field).
+
+```{.python .norun}
+makeFromExcel("network.xlsx", sheet="edges", nodes="people")
+makeFromCooccurrence("papers.csv", "authors", ";")
+makeFromRDF("foaf.ttl")
+```
 
 ## 4.4 Data from the web
 
@@ -433,6 +451,26 @@ the second (Wikidata is the default endpoint). Columns ending in `Label` name
 the nodes, and the remaining columns become fields. `sparql(query)` returns
 the rows without building a graph. A server must allow requests from web pages
 (CORS) for the browser to reach it; Wikidata and NDEx do.
+
+**Bluesky.** `makeFromBluesky("handle")` builds the follow network of an
+account from Bluesky's public API: who it follows (`mode="followers"` or
+`"both"` for the other directions), and with `depth=2` who they follow in
+turn, up to `maxNodes` accounts. Nodes carry `handle`, `followers`,
+`follows`, `posts` and `description`.
+
+**Live streams.** `streamFrom(url)` follows a graph that changes as you watch,
+in the format of Gephi's Graph Streaming plugin: one JSON event per line
+(over HTTP) or per message (over a `ws://` WebSocket), adding, changing and
+removing nodes and edges. Events are applied between commands, new nodes
+appear next to a neighbour, and streamed changes are not undo steps.
+`stopStream()` stops following.
+
+```{.python .norun}
+makeFromBluesky("bsky.app", limit=50)
+streamFrom("http://localhost:8080/workspace1?operation=getGraph")   # Gephi's streaming server
+# each line: {"an": {"A": {"label": "Alice"}}}  {"ae": {"AB": {"source": "A", "target": "B"}}}
+stopStream()
+```
 
 ## 4.5 Building graphs in code
 
@@ -463,8 +501,11 @@ lists them.
 There are also random graph generators: `makeSimpleRandom(nodes, edges)`,
 `makeErdosRenyiRandom(n, p)`, `makeBarabasiAlbertRandom(start, add, steps)`,
 `makeKleinbergRandom(side, exponent)`, `makeLattice1DRandom(n, toroidal)`,
-`makeLattice2DRandom(side, toroidal)`, `makeEppsteinRandom(n, e, r)` and
-`makeSimpleDirectedRandom(n, e)`. Each one replaces the current graph.
+`makeLattice2DRandom(side, toroidal)`, `makeEppsteinRandom(n, e, r)`,
+`makeSimpleDirectedRandom(n, e)`, `makeWattsStrogatz(n, k, p)` (small world),
+`makeBarabasiAlbertAging(n, m, aging)` (preferential attachment that fades
+with a node's age), `makeGeometricRandom(n, radius)` and
+`makePowerlawCluster(n, m, p)`. Each one replaces the current graph.
 
 \newpage
 
@@ -711,10 +752,17 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `sfdpLayout()`, `fdpLayout(clusters=)`, `circoLayout()`, `twopiLayout(root)`, `osageLayout(field)` | other Graphviz engines: multilevel force (large graphs), force with cluster boxes, circles, rings around a root, packed groups |
 | `graphvizLayout(engine, **attrs)` | any Graphviz engine with any graph attributes, e.g. `graphvizLayout("neato", mode="sgd")` |
 | `bipartiteLayout(field)` | a two-mode network in two rows |
+| `multipartiteLayout(field)` | one column per value of a field, each ordered to reduce crossings (`vertical=true` for rows) |
+| `concentricLayout(field)` | rings by a field's value, the highest in the centre |
+| `dualCircleLayout(count)` | the `count` busiest nodes on an inner circle, the rest outside, near the hubs they link to |
+| `orderedLayout(field)` | one axis fixed by a field (a year, a step), ForceAtlas2 on the other |
+| `circlePackLayout(field, …)` | nodes packed into nested, labelled circles by one or more fields |
+| `isometricLayout(field)` | the current layout stacked into tilted layers by a field (the layer is stored in `zlayer`) |
+| `hairballLayout()` | the Hairball Buster plot: nodes by degree rank, with a tick under each neighbour |
 | `binPackLayout()` | packs the connected components side by side |
 | `removeOverlap()` | separate overlapping nodes while keeping the layout's shape (Graphviz PRISM); works after any layout |
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
-| `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(dx, dy)`, `moveLayout(x, y)` | transform the current layout |
+| `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(dx, dy)`, `moveLayout(x, y)` | transform the current layout; `rescaleLayout(nodes, 1.5)` spreads out just those nodes |
 
 The Graphviz and igraph layouts are loaded in the background a few seconds
 after GUESS starts (about 2 MB together). If you run one sooner, GUESS says
@@ -761,6 +809,25 @@ go away when you run another layout or load another graph.
 **Scatter plots.** `scatterLayout(betweenness, pagerank)` places nodes by two
 fields, with axes. Dragging a node then edits those two fields (section 13).
 
+**Groups, rings and layers.** These place nodes by a field, so the picture
+says what the field means:
+
+```python
+multipartiteLayout(dept)               # a column per department
+concentricLayout(degree)               # the best connected in the middle
+circlePackLayout(dept)                 # departments as packed circles
+gemLayout()
+isometricLayout(dept)                  # the layout as stacked, tilted planes
+orderedLayout(degree)                  # x from degree, y untangled by forces
+forceAtlas2Layout(gravitySources=[v1, v73])   # two centres of gravity
+```
+
+`orderedLayout` suits anything with an order, such as citations by year
+or events by step, and works like Gephi's Ordered Layout and Event Graph
+Layout. `isometricLayout` stands in for 3D views such as Gephi's Network
+Splitter 3D: each value of the field gets its own plane. Running it again
+with another field starts from the flat layout.
+
 **Old names.** The 2006 names still work. `random()` is the random layout,
 and `jfrLayout`, `jkkLayout1`, `jkkLayout2` and `jSpringLayout` are the
 JUNG versions of the force layouts. Every command is also a method of `g`,
@@ -785,6 +852,37 @@ biComponentClusters()              # biconnected components
 groupsOfSize(dept, 40)             # groups with at least 40 members
 ```
 
+More algorithms, each storing its result in a field named after it:
+
+| command | finds |
+|---|---|
+| `chineseWhispersClusters()` | fast, parameter-free communities: each node repeatedly takes its neighbours' most common class (`cw_class`) |
+| `mclClusters(inflation=2)` | Markov clustering: random-walk flow sharpened until it stays in clusters; higher inflation, smaller clusters (`mcl_class`) |
+| `dbscanClusters()` | nodes close together in the layout, or in any numeric fields, with the rest marked noise (-1) (`dbscan_class`) |
+| `mcodeClusters()` | MCODE's dense complexes (Bader & Hogue), best first (`mcode_class`, `mcode_score`) |
+
+```python
+chineseWhispersClusters()
+colorize(cw_class)
+dbscanClusters((degree, pagerank), minPts=5)       # clusters in two fields, not positions
+```
+
+**Overlapping communities.** In real networks people belong to several
+groups at once. `cliquePercolationClusters(k)` chains cliques of k nodes that
+share k-1 of them; `linkCommunities()` clusters the edges instead of the nodes
+and cuts where partition density peaks. A node can then be in several
+communities: they're listed in a text field (`cpm_classes`, `link_classes`,
+as in `"0;3"`) with a count (`cpm_count`, `link_count`). `showOverlaps`
+colours each community and draws the nodes in several as pies, one slice per
+community; `removePies()` goes back to plain nodes.
+
+```python
+cs = cliquePercolationClusters(3)
+showOverlaps(cs, hulls=true)
+cpm_count > 1                      # the people in more than one community
+removePies()
+```
+
 ## 7.2 Visualizing fields
 
 The quickest way to see a field is to map it to colour, size, a label or a
@@ -798,10 +896,16 @@ sizeBy(pagerank, 5, 40)                 # node size (or edge width) from a numbe
 resizeLinear(totaldegree, 5, 30)        # the 2006 version
 labelBy(dept)                           # labels from a field
 shapeBy(dept)                           # a shape per value
+polygonBy(dept, 3, 8)                   # a regular polygon per value (3 to 8 sides)
 borderBy(dept)                          # a border colour per value
 legendFor(dept)                         # a legend for the current colours
 GradientLegend(yellow, red, betweenness.min, betweenness.max)
 ```
+
+`polygon(sides)` is the shape code for any regular polygon, as in
+`(dept == 'dept1').style = polygon(5)`; `polygonBy(field)` takes the number
+of sides from a whole-number field, or gives each value of another field its
+own polygon.
 
 `colorize` and `colorBy` work on node fields and on edge fields (they colour
 whichever the field belongs to). `colorize(freq, blue, red)` with two colours
@@ -868,6 +972,10 @@ other field:
 | `component`, `strongcomponent` | which (strongly) connected component |
 | `constraint`, `effsize` | Burt's structural holes: low constraint and a large effective size mark brokers |
 | `generation` | the step in a directed hierarchy (0 = nothing points to it) |
+| `katz` | Katz centrality: walks of every length, the longer ones counting less |
+| `domain_prestige`, `proximity_prestige`, `rank_prestige` | prestige in directed networks: the share that can reach a node, also rewarding short distances, and being pointed at by prestigious nodes |
+| `bridging_coef`, `bridging` | Hwang's bridging coefficient, and betweenness × bridging coefficient (bridging centrality) |
+| `wclustering` | clustering weighted by edge weights |
 
 ```python
 (pagerank > 0.01).labelvisible = true
@@ -883,6 +991,20 @@ Whole-graph measures are commands: `density()`, `diameter()`,
 `averagePathLength()`, `averageClustering()`, `transitivity()`,
 `assortativity()` (do hubs link to hubs?), `reciprocity()` (directed edges),
 `triadCensus()`, and `graphStats()` for a summary. `distance(v1, v2)` is the distance between two nodes on the screen.
+
+A few more commands measure and store:
+
+```python
+weightedBridging()                 # wbetweenness and wbridging, heavy edges as short ones
+cliques(4)                         # every maximal clique of 4 or more
+mds(3)                             # mds1, mds2, mds3: coordinates from graph distances
+showOnly(kBrace(2))                # edges whose ends share 2+ neighbours, after pruning
+showAll()
+```
+
+`geoVectors()` (for nodes with latitude and longitude) stores each edge's
+`bearing` and length in `km` and summarises the edges' mean length and their
+overall direction.
 
 ## 7.4 Paths and filters
 
@@ -975,6 +1097,16 @@ each time. The *…* menu on a chart saves it as SVG or
 PNG. Data frames work too (`import pandas`), but only `nodeData` and
 `edgeData` rows link to the graph.
 
+**Word clouds.** `wordCloud(field)` shows the most frequent words of a text
+field, sized by how often they occur, with common English words left out
+(`stopwords=[...]` adds more). Hovering a word lights up the nodes whose
+text contains it; clicking selects them. Like the other charts it can be
+live.
+
+```python
+wordCloud(dept)
+```
+
 ## 7.6 Random graph generation
 
 See section 4.5 for the generators. A typical use is to compare a network
@@ -1065,6 +1197,7 @@ colorize(leiden_class)
 compareClusters(leiden_class, dept)
 similarTo(v1)                              # nodes whose neighbours overlap v1's
 predictLinks(5)                            # likely missing edges
+evaluateLinks("all")                       # how well each method finds hidden edges
 findPattern([("a", "b"), ("b", "c"), ("c", "a")])   # every triangle
 minCut(v1, v14)                            # fewest edges separating two nodes
 personalizedPagerank(v1)                   # relevance to v1, in the field ppr
@@ -1099,6 +1232,11 @@ addNode(v10)
 
 `removeComplete(x)` removes something for good (it doesn't go to
 `g.deleted`). Undo works either way.
+
+Three field tools: `castField(score, INTEGER)` changes a field's type and
+converts its values; `showOnly(readNames("keep.txt"))` keeps the nodes
+listed in a file (one name per line); `copyColors("other")` copies node
+colours, matched by name, from another graph of the session (section 10).
 
 Other structural commands:
 
@@ -1145,6 +1283,9 @@ expands it.
 | `exportPDF("g.pdf")`, `exportPS(...)`, `exportEPS(...)` | an image of the view in a PDF / PostScript page |
 | `exportSVG("g.svg")` | the whole graph as vector graphics |
 | `exportGDF("g.gdf")`, `exportGEXF(...)`, `exportGraphML(...)`, `exportGML(...)`, `exportDOT(...)`, `exportCSV(...)` | the graph and its fields |
+| `exportHTML("g.html")` | one self-contained, interactive web page (below) |
+| `exportJSON("g.json")` | graphology JSON for sigma.js and other web libraries (`format="sigma"` for the older sigma format) |
+| `exportKML("g.kml")`, `exportSHP("g.zip")` | for Google Earth, and point and line shapefiles for QGIS or ArcGIS, from latitude and longitude fields |
 | `saveSession("s.guess")` | everything: graph, fields, states, styles, legends, hulls, view, slides |
 | `saveHistory("work.py")` | every command you ran, as a script |
 | `startMovie(30, "m.webm")` … `stopMovie()` | a movie of the display |
@@ -1159,6 +1300,18 @@ downloads folder. The *File* menu has the common ones, plus:
 - **Share link** makes a URL that contains the whole session. Anyone who opens
   it sees your graph as you left it. **Share as viewer** does the same, but
   hides the console.
+
+**A page anyone can open.** `exportHTML("graph.html")` writes the graph as
+one web page with nothing else to install: open it from disk, email it or put
+it on any web server. It shows the graph as drawn here (colours, sizes,
+shapes, labels, legends, images) and lets the reader pan and zoom, search
+for a node, hover to read its fields and click to see its neighbours. It
+follows the reader's light or dark setting. `fields=false` leaves the data
+fields out; `hidden=true` includes hidden nodes and edges.
+
+```python
+exportHTML("organisation.html", title="Who works with whom")
+```
 
 `history()` lists every command you've run this session. `log("work.py")`
 starts writing commands to a file as you go, and `stoplog()` stops.
@@ -1746,6 +1899,33 @@ nginx, Caddy, Netlify and GitHub Pages.
 
 To open a graph straight away, link to `index.html?load=mygraph.gdf`, with the
 file next to `index.html`. Add `&app=1` to hide the console.
+
+## 16.5 Working with an AI assistant
+
+An AI assistant that speaks the Model Context Protocol (Claude Desktop,
+Claude Code and others) can work in GUESS with you. It runs Gython in your
+session, reads a summary of the graph and the command help, and looks at the
+view. Everything it runs appears in the console as a cell marked
+**assistant**, so you see each step and can undo it.
+
+The bridge is `mcp/guess-mcp.mjs` in the GUESS source, a small Node program
+with nothing to install. Add it to your assistant's MCP settings, for example
+for Claude Desktop (`claude_desktop_config.json`):
+
+```{.python .norun}
+{"mcpServers": {"guess": {"command": "node", "args": ["/path/to/guess/mcp/guess-mcp.mjs"]}}}
+```
+
+or for Claude Code: `claude mcp add guess -- node /path/to/guess/mcp/guess-mcp.mjs`.
+Then, in GUESS, choose *File → Connect AI assistant* or run
+`connectAssistant()`; *● assistant* in the toolbar shows the connection,
+and clicking it (or `disconnectAssistant()`) ends it.
+
+The bridge listens only on your own computer (127.0.0.1, port 7777, or
+`GUESS_MCP_PORT`) and accepts only GUESS pages: from `localhost` by default,
+or the addresses you list in `GUESS_ORIGINS` (for a GUESS you host,
+`GUESS_ORIGINS=https://guess.example.org`). The assistant's own service sees
+what its tools return: command output, the graph summary and screenshots.
 
 \newpage
 

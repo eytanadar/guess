@@ -127,6 +127,44 @@ level, counting back through chains of citation.
 `removeDisconnected()` drops the 265 papers with no citation links to the
 rest of the set.
 
+## What is this collection about? [Basic]{.level}
+
+**You want** a quick look at what a set of documents covers, and anything
+that doesn't belong.
+
+::: ingredients
+**Ingredients:** `vis-papers.gdf` · `wordCloud`
+:::
+
+```python
+makeFromGDF("vis-papers.gdf")
+wordCloud(title, top=60)
+```
+
+**How it works.** `wordCloud(field)` counts the words of a text field,
+leaves out common English words, and draws the most frequent ones sized by
+count. It is linked like the other charts: hover a word to light up the
+papers whose title contains it, and click it to select them.
+
+Most of the words are what you'd expect from graph drawing, such as
+"graph", "visualization", "layout" and "force". But "forcing", "radiative"
+and "aerosol" are there too. Ninety of the papers are climate science about
+the "direct radiative forcing" of aerosols: the OpenAlex title search for
+"force-directed" that helped collect the set matched them too. Hovering
+"radiative" shows they form an island of their own: 247 citations among
+themselves and none to or from the rest. Leave out the words you've
+already understood to see what comes next:
+
+```python
+makeFromGDF("vis-papers.gdf")
+wordCloud(title, stopwords=["graph", "graphs", "visualization", "drawing", "network", "networks"])
+offtopic = [n for n in g.nodes if "forcing" in n.title.lower()]
+len(offtopic)
+```
+
+**Pitfalls.** Counts are of words, not ideas: "network" and "networks" are
+separate, and short phrases such as "force-directed" break into two words.
+
 ## Find the main path of a field [Intermediate]{.level}
 
 **You want** the backbone of a field's history: the chain of papers through

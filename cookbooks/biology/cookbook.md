@@ -190,6 +190,56 @@ for grp in groupBy(leiden_class):
   (`compareClusters(leiden_class, module)` is 1.0). Real gene lists give
   messier modules, and that's when enrichment earns its keep.
 
+## Find protein complexes with MCODE and MCL [Intermediate]{.level}
+
+**You want** the tightly knit complexes in an interaction network, the way
+Cytoscape users do with MCODE or MCL.
+
+::: ingredients
+**Ingredients:** `yeast-modules.gdf` · `mcodeClusters` · `mclClusters` · `compareClusters`
+:::
+
+```python
+makeFromGDF("yeast-modules.gdf")
+mcodeClusters()
+colorize(mcode_class)
+(mcode_class == 0).labelvisible = true
+[(c, len(mcode_class == c), sorted({n.module for n in (mcode_class == c)})) for c in range(4)]
+```
+
+**How it works.** MCODE (Bader and Hogue, 2003) was designed for protein
+networks. It weights each protein by how dense the core of its
+neighbourhood is, grows complexes outward from the heaviest seeds, and
+scores each complex by density × size. Here it finds nine; the best
+(`mcode_class == 0`, score 31) is the proteasome, all 31 of its genes, and
+the next is the small ribosomal subunit. `mcode_score` holds each protein's
+weight. Four proteins belong to no complex (`mcode_class == -1`).
+
+MCL (van Dongen, 2000) takes a different route: it simulates random walks,
+alternately spreading them out and sharpening them, until the flow stays
+inside clusters. Every protein ends up in exactly one cluster:
+
+```python
+makeFromGDF("yeast-modules.gdf")
+mclClusters(inflation=2)
+compareClusters(mcl_class, module)
+```
+
+**Variations.** Higher `inflation` gives more, smaller clusters. MCODE's
+`fluff=true` adds the dense neighbours of each complex, and `haircut=false`
+keeps proteins with a single tie into it.
+
+**Pitfalls.**
+
+- **These modules are easy.** MCL reproduces the seven modules exactly
+  (`compareClusters` is 1.0), because the genes were chosen from well-known
+  complexes. MCODE splits the cell-cycle genes into three complexes and
+  merges one with the pheromone pathway, which is closer to what real
+  data look like: the complexes it reports are dense cores, not whole
+  pathways.
+- **MCL needs memory.** It refuses connected pieces of more than 3,000
+  proteins; filter by `score` first on big networks.
+
 # Pathways and regulation
 
 ## Draw a signalling pathway [Basic]{.level}

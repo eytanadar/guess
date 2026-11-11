@@ -707,6 +707,52 @@ assortativity, the top nodes by degree, betweenness and PageRank, and any
 communities found so far. `report("name.html")` (or `.md`) saves it as a
 page to share. In the browser, it's offered as a download.
 
+## A web page anyone can open [Basic]{.level}
+
+**You want** to share an interactive network with people who don't use
+GUESS.
+
+```python
+makeFromGDF("karate.gdf")
+louvainClusters(); colorize(louvain_class)
+legendFor(louvain_class)
+sizeBy(betweenness, 8, 30)
+exportHTML("karate.html", title="The karate club")
+```
+
+**How it works.** `exportHTML` writes one self-contained page: the graph,
+its fields and legends, and a small viewer, with nothing to install and no
+connection needed. Readers can pan and zoom, search for a node, hover to
+read its fields and click to see its neighbours. It follows their light or
+dark setting. Email it, or put it on any web server.
+`exportJSON("karate.json")` writes the same graph for sigma.js and other
+web libraries.
+
+**Pitfalls.** The page holds all the data fields. `fields=false` leaves
+them out when some shouldn't travel.
+
+## Work with an AI assistant [Basic]{.level}
+
+**You want** an assistant such as Claude to help explore a network, in
+your session, where you can see and undo what it does.
+
+```python
+connectAssistant()
+```
+
+**How it works.** The assistant reaches GUESS through `mcp/guess-mcp.mjs`,
+a small bridge it starts itself once you add it to its MCP settings (see
+the manual, *Working with an AI assistant*). After `connectAssistant()`,
+*● assistant* shows in the toolbar. The assistant can run Gython, read a
+summary of the graph and the command help, and look at the view.
+Everything it runs appears in the console as a cell marked **assistant**,
+so `undo()` and *Edit → History…* work on its steps as on yours.
+`disconnectAssistant()` ends it.
+
+**Pitfalls.** The assistant's service sees what its tools return, including
+screenshots and summaries of your data. Don't connect it to data you
+couldn't share with that service.
+
 ## Save your work and your method [Basic]{.level}
 
 ```python

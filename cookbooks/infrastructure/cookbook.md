@@ -93,6 +93,35 @@ Frankfurt, Paris and Istanbul, then Atlanta. By betweenness the list
 changes to Paris, Los Angeles, Anchorage, Dubai and Frankfurt. These are
 the connectors between world regions.
 
+## Take the network to Google Earth or a GIS [Basic]{.level}
+
+**You want** the airports and routes in Google Earth, QGIS or ArcGIS, with
+their data.
+
+::: ingredients
+**Ingredients:** `us-airports.gdf` · `exportKML` · `exportSHP` · `geoVectors`
+:::
+
+```python
+makeFromGDF("us-airports.gdf")
+colorBy(betweenness, lightgray, red)
+exportKML("us-airports.kml")
+exportSHP("us-airports.zip")
+geoVectors()
+```
+
+**How it works.** Both exports take positions from the `latitude` and
+`longitude` fields, not from the layout, so they're right whatever the
+picture looks like. `exportKML` writes a placemark per airport and a line
+per route, in their GUESS colours, with every field in the placemark's
+data: open it in Google Earth. `exportSHP` writes a zip of two shapefiles
+(points for airports, lines for routes) in WGS 84, with the fields as
+attribute columns: drop it on QGIS or ArcGIS. `geoVectors()` stores each
+route's length in `km` and its `bearing`, and prints the mean route length.
+
+**Pitfalls.** Shapefile column names are cut to 10 characters, so long
+field names come out shortened (and numbered when two would clash).
+
 ## Draw flows, not lines [Intermediate]{.level}
 
 **You want** the big corridors of a network to stand out from the clutter

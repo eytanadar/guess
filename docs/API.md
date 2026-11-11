@@ -9,23 +9,30 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (95)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (96)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
+- [More measures: Katz, prestige, bridging, cliques, MDS, k-brace; field tools and generators](#more-measures-katz-prestige-bridging-cliques-mds-k-brace;-field-tools-and-generators) (13)
+- [More clustering: Chinese Whispers, MCL, DBSCAN, MCODE, overlapping communities](#more-clustering-chinese-whispers-mcl-dbscan-mcode-overlapping-communities) (7)
 - [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (16)
 - [networkx bridge and sample graphs](#networkx-bridge-and-sample-graphs) (4)
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
 - [Layouts](#layouts) (33)
+- [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (33)
-- [Styles and visual mappings](#styles-and-visual-mappings) (10)
+- [Styles and visual mappings](#styles-and-visual-mappings) (12)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
 - [Several graphs: subgraphs and tabs](#several-graphs-subgraphs-and-tabs) (7)
 - [Time: ranges, years and the timeline](#time-ranges-years-and-the-timeline) (1)
 - [Presentations (slides)](#presentations-slides) (6)
 - [Data from the web: URLs, SPARQL, NDEx, Neo4j, packages](#data-from-the-web-urls-sparql-ndex-neo4j-packages) (9)
+- [Standalone web pages (exportHTML)](#standalone-web-pages-exporthtml) (1)
+- [Live graph streams (Gephi streaming protocol)](#live-graph-streams-gephi-streaming-protocol) (2)
+- [AI assistants (MCP bridge)](#ai-assistants-mcp-bridge) (2)
+- [Import and export: Excel, RDF, Bluesky, JSON, KML, shapefiles, standalone HTML](#import-and-export-excel-rdf-bluesky-json-kml-shapefiles-standalone-html) (7)
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
 - [Charts](#charts) (5)
@@ -697,6 +704,15 @@ mean level of what it eats), `omnivory` (the spread of its food's
 levels: 0 = eats on one level) and `role` (basal: eats nothing here;
 top: nothing eats it; else intermediate). Prints a summary.
 
+### `wordCloud(field, top=80, stopwords=None, minLength=3)`
+
+wordCloud(field) shows the most frequent words in a text field as a
+word cloud in the dock (as Gephi's Word Cloud plugin), sized by how
+many times each occurs. Hovering a word lights up the nodes (or edges)
+whose text contains it; clicking selects them. Common English words
+are left out; stopwords=[...] adds more, top= sets how many words,
+minLength= the shortest word kept.
+
 ## Undo, redo, history and logging
 
 ### `history()`
@@ -885,6 +901,183 @@ makeSimpleRandom(nodes, edges): uniform random undirected graph.
 ### `weakComponentClusters()`
 
 Connected components (ignoring edge direction).
+
+## More measures: Katz, prestige, bridging, cliques, MDS, k-brace; field tools and generators
+
+### `castField(field, type)`
+
+castField(field, INTEGER) changes a field's type (INTEGER, DOUBLE,
+BOOLEAN or VARCHAR) and converts its values: "12" becomes 12, 3.7
+becomes 3, "yes" becomes true. Values that can't be converted are
+counted and left empty. One undo step.
+
+### `cliques(minSize=3, limit=1000)`
+
+cliques(minSize=3) finds every maximal clique (a group where everyone
+is linked to everyone, that no other node could join) with at least
+minSize nodes, ignoring edge direction; largest first, up to `limit`.
+largestCliques() gives just the biggest ones.
+
+### `copyColors(fromGraph, field='name')`
+
+copyColors("other") gives each node the colour of the node with the
+same name (or the same value of field=...) in another graph of this
+session, so the same people look the same in both (Gephi's Node Color
+Manager). Nodes with no match keep their colour. One undo step.
+
+### `evaluateLinks(method='adamic_adar', hide=0.1, seed=0, show=True)`
+
+evaluateLinks() tests how well predictLinks would have done: it hides
+a share of the edges (hide=0.1), scores the unlinked pairs from what's
+left, and reports precision (of the top-scored pairs, as many as were
+hidden, how many are hidden edges) and AUC (how often a hidden edge
+outscores a pair that was never linked; 0.5 is chance). The graph
+isn't changed. method as in predictLinks, or "all" to compare them.
+
+### `geoVectors(edges=None, lat=None, lon=None)`
+
+geoVectors() stores each edge's compass bearing (degrees from north,
+from node1 to node2) in `bearing` and its great-circle length in `km`,
+and summarises the edges (all, or the given ones): their mean length and
+its standard deviation, and the resultant vector (the edges added up
+as arrows, as east and north kilometres) with its size and bearing.
+Latitude and longitude fields are found as geoLayout finds them, or
+named: geoVectors(lat=y, lon=x). Returns the summary as a dict.
+
+### `kBrace(k=2)`
+
+kBrace(k) is the k-brace: what's left after repeatedly removing every
+edge whose two ends have fewer than k neighbours in common (an edge's
+embeddedness), ignoring direction. Weakly embedded ties go; the dense
+core stays. showOnly(kBrace(2)) shows it. (It equals the (k+2)-truss:
+each remaining edge lies in at least k triangles.) Returns the edges.
+
+### `makeBarabasiAlbertAging(n, m, aging=1.0, seed=0)`
+
+makeBarabasiAlbertAging(n, m, aging=1) grows a preferential-attachment
+network in which old nodes lose their appeal: each new node links to m
+existing ones, chosen with probability proportional to degree x
+age^-aging (age in steps since the node arrived). aging=0 is plain
+Barabási-Albert; larger values favour recent nodes (Dorogovtsev and
+Mendes' model).
+
+### `makeGeometricRandom(n, radius, seed=0)`
+
+makeGeometricRandom(n, radius) scatters n nodes in the unit square
+and links every two closer than radius (a random geometric graph:
+sensor and contact networks). Nodes are drawn where they fell.
+
+### `makePowerlawCluster(n, m, p, seed=0)`
+
+makePowerlawCluster(n, m, p) grows a scale-free network with
+clustering (Holme and Kim): preferential attachment with m edges per
+new node, each followed with probability p by a triangle-closing edge.
+
+### `makeWattsStrogatz(n, k, p, seed=0)`
+
+makeWattsStrogatz(n, k, p) replaces the graph with a Watts-Strogatz
+small world: n nodes on a ring, each linked to its k nearest
+neighbours, then each edge rewired with probability p (0 keeps the
+ring lattice; 1 is close to random). Nodes are drawn on the ring.
+
+### `mds(dims=2, weight=None, name='mds')`
+
+mds(dims=2) places the nodes in `dims` dimensions by classical
+multidimensional scaling of their shortest-path distances (hops; with
+weight=... an edge field read as a distance), storing the coordinates
+in fields mds1, mds2, ... (or name=...). Unreachable pairs count as one
+more than the longest distance. scatterLayout(mds1, mds2) draws them;
+mdsLayout() does both in one go.
+
+### `readNames(filename, field='name')`
+
+readNames("keep.txt") is the nodes whose name (or field=...) appears
+in a text file: one per line, or separated by commas, semicolons, tabs
+or spaces. showOnly(readNames("keep.txt")) keeps just them (Gephi's
+FilterFromFile). Says how many listed names matched no node.
+
+### `weightedBridging(weight='weight', name='wbridging')`
+
+weightedBridging() is bridging centrality for weighted networks: a
+strong tie (big weight) counts as a short one (distance 1/weight), so
+shortest paths prefer strong ties. Stores the weighted betweenness in
+`wbetweenness` and weighted betweenness x bridging_coef in `wbridging`
+(or name=...). Edges with weight 0 or less are left out.
+
+## More clustering: Chinese Whispers, MCL, DBSCAN, MCODE, overlapping communities
+
+### `chineseWhispersClusters(iterations=20, weighted=True, seed=0)`
+
+chineseWhispersClusters() finds communities by Chinese Whispers
+(Biemann 2006): every node starts in its own class and repeatedly takes
+the class with the most (weighted) ties among its neighbours. Fast and
+parameter-free; the number of communities isn't chosen in advance.
+Stores cw_class (0 = largest) and returns the communities.
+weighted=False ignores edge weights; seed=None varies the result.
+
+### `cliquePercolationClusters(k=3)`
+
+cliquePercolationClusters(k=3) finds overlapping communities by
+clique percolation (Palla et al. 2005): a community is a chain of
+k-cliques that share k-1 nodes, so a node can be in several (and many
+nodes are in none). Stores cpm_classes (e.g. "0;2"; "" for none) and
+cpm_count; returns the communities, largest first. showOverlaps(...)
+draws them.
+
+### `dbscanClusters(fields=('x', 'y'), eps=None, minPts=4)`
+
+dbscanClusters() groups nodes that lie close together on screen with
+DBSCAN (Ester et al. 1996): a cluster is a dense region (at least
+minPts nodes within eps of each other), and nodes in sparse areas are
+noise (dbscan_class -1). fields: numeric node fields to measure
+distance in, by default the positions (x, y); e.g.
+dbscanClusters((degree, pagerank)). Fields aren't rescaled, so give
+them comparable ranges. eps=None picks it from the knee of the sorted
+k-distance curve and prints it.
+
+### `linkCommunities(threshold=None, minEdges=2)`
+
+linkCommunities() finds overlapping communities by clustering edges
+(Ahn, Bagrow & Lehmann 2010): two edges sharing a node are similar when
+their other ends have similar neighbourhoods; edges are merged by
+single linkage and the dendrogram is cut where partition density is
+highest (or at similarity `threshold`, 0-1). Each edge gets link_class;
+a node belongs to the communities of its edges (link_classes "0;3",
+link_count). Communities of fewer than minEdges edges are dropped
+(link_class -1). Returns node communities, largest first.
+
+### `mclClusters(inflation=2.0, expansion=2, loops=True, iterations=100)`
+
+mclClusters() finds clusters by the Markov Cluster algorithm (MCL,
+van Dongen 2000): random walks are expanded and then "inflated" until
+flow stays inside clusters. inflation (1.2-5, default 2) sets the
+granularity: higher gives more, smaller clusters. Uses edge weights;
+loops=True adds self loops (recommended). Stores mcl_class.
+Works on connected pieces of up to 3000 nodes.
+
+### `mcodeClusters(degreeCutoff=2, scoreCutoff=0.2, haircut=True, fluff=False, fluffDensity=0.1, kCore=2, maxDepth=100)`
+
+mcodeClusters() finds densely connected regions with MCODE (Bader &
+Hogue 2003), made for protein complexes in interaction networks. Each
+node is weighted by the density of the highest k-core of its
+neighbourhood; complexes grow from the heaviest seeds through
+neighbours weighing at least (1 - scoreCutoff) of the seed's. Defaults
+are the paper's: degreeCutoff 2, scoreCutoff 0.2, haircut (keep only
+the 2-core) on, fluff (add dense neighbours, fluffDensity) off, kCore 2,
+maxDepth 100. Stores mcode_class (0 = best scoring, -1 = in none) and
+mcode_score (the node weight); returns the complexes, best first, and
+prints their scores (density x size).
+
+### `showOverlaps(communities, hulls=False, none='lightgray')`
+
+showOverlaps(communities) shows overlapping communities: each gets
+its own colour, a node in one takes that colour, a node in several is
+drawn as a pie with a slice per community, and nodes in none are
+lightgray (none=...). communities: the result of
+cliquePercolationClusters()/linkCommunities(), any set of sets, or a
+field listing them (cpm_classes, link_classes, or a class field).
+hulls=True also shades each community. removePies() goes back to
+plain nodes.
 
 ## Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions
 
@@ -1191,13 +1384,16 @@ restarting at the given nodes reaches it: relevance to a chosen set
 (e.g. personalizedPagerank(sel) or personalizedPagerank(v1)). Stored in
 the field `ppr`.
 
-### `predictLinks(top=20, method='adamic_adar', show=True)`
+### `predictLinks(top=20, method='adamic_adar', show=True, add=False)`
 
 predictLinks() lists likely missing edges: pairs of nodes that aren't
 linked but share neighbours, scored by "adamic_adar" (shared neighbours,
 rare ones counting more), "jaccard", "common" (count of shared
 neighbours) or "resource" (resource allocation). Returns the `top`
-pairs as (node, node, score), best first.
+pairs as (node, node, score), best first. add=true also adds them as
+edges, marked with the method's name in the edge field `predicted`
+(showOnly(predicted != None) shows them; undo() takes them away).
+evaluateLinks() tests how well a method would have predicted.
 
 ### `rewire(times=None, name=None, seed=0, keep=None)`
 
@@ -1353,7 +1549,7 @@ keeping each node on a horizontal line for its level (sources at the
 top), for 500 iterations (fewer on graphs over 1000 nodes). Cycles are
 broken first.
 
-### `forceAtlas2Layout(iterations=None, scaling=None, gravity=1.0, strongGravity=False, linLog=False, dissuadeHubs=False, preventOverlap=False, edgeWeightInfluence=1.0)`
+### `forceAtlas2Layout(iterations=None, scaling=None, gravity=1.0, strongGravity=False, linLog=False, dissuadeHubs=False, preventOverlap=False, edgeWeightInfluence=1.0, gravitySources=None)`
 
 forceAtlas2Layout() runs Gephi's ForceAtlas2 from the current positions
 (animated; Stop ends it early). Options, by keyword:
@@ -1365,6 +1561,10 @@ forceAtlas2Layout() runs Gephi's ForceAtlas2 from the current positions
   dissuadeHubs=true    pushes hubs to the periphery (authorities central)
   preventOverlap=true  keep node discs apart (best run after a first pass)
   edgeWeightInfluence  0 ignores weights, 1 uses them, >1 exaggerates
+  gravitySources       nodes that act as extra centres of gravity: every
+                       node is pulled toward the nearest of them (in
+                       hops) instead of the centre, so the graph forms
+                       a cluster around each (MultiGravity ForceAtlas2)
 E.g. forceAtlas2Layout(linLog=true, preventOverlap=true)
 
 ### `frLayout(width=None, height=None)`
@@ -1472,7 +1672,10 @@ randomLayout(width, height) uses a width x height area.
 rescaleLayout(percent) scales the layout by percent (0.5 = half size)
 about its top-left corner; rescaleLayout(xpercent, ypercent) scales each
 axis separately; rescaleLayout(width, height) with integers fits the
-layout into a width x height box at the origin.
+layout into a width x height box at the origin. rescaleLayout(nodes,
+percent) or rescaleLayout(nodes, xpercent, ypercent) spreads out (or
+draws together) just those nodes about their centre, leaving the rest
+where they are (Gephi's Scale layout).
 
 ### `ringMove(node, index)`
 
@@ -1531,6 +1734,79 @@ weightedSpringLayout(minLength, maxLength[, iterations]) is springLayout
 with each edge's natural length mapped linearly from its `weight`
 (lowest weight -> minLength, highest -> maxLength). Iterations as for
 springLayout.
+
+## More layouts: multipartite, concentric, ordered, circle packing, isometric layers
+
+### `circlePackLayout(*fields, padding=4, outlines=True)`
+
+circlePackLayout(field) packs the nodes as circles inside one circle
+per value of a field; circlePackLayout(field1, field2, ...) nests them
+(each value of field2 a circle inside its field1 circle, and so on). Each
+node keeps its size, so nothing overlaps; padding is the gap between
+circles. The group circles are drawn and labelled (outlines=false
+leaves them out); any later layout removes them. Without a field all
+nodes are packed into one circle. (Bostock's d3 circle packing.)
+
+### `concentricLayout(field, rings=None)`
+
+concentricLayout(field) puts the nodes on rings by their value of a
+field, the highest value in the centre (degree, a score, a level). A
+numeric field with many values is cut into `rings` equal ranges
+(default 8); a text field gets one ring per value. Each ring is ordered
+so neighbours of the ring inside sit near them, and spaced to fit the
+nodes' sizes. Compare twopiLayout(root), rings by distance from one node.
+
+### `dualCircleLayout(count=None, field='degree')`
+
+dualCircleLayout(count) puts the `count` nodes with the highest value
+of field (default degree) on an inner circle and everyone else on an
+outer circle, each outer node near the inner nodes it links to (Gephi's
+Dual Circle Layout). count defaults to the square root of the number of
+nodes.
+
+### `hairballLayout(neighbors=True, logX=False, logY=False, width=1000, height=1000)`
+
+hairballLayout() draws a Hairball Buster plot (node-neighbour
+centrality, Matties et al., JHU/APL): nodes sorted by degree, the
+busiest on the left, each at x = its rank and y = its degree (upwards),
+with a short tick, level with each node, under the rank of every one of
+its neighbours, so each row of ticks shows who a node is tied to. Hubs
+tied mostly to hubs, to leaves, or to a clique stand out at a glance,
+and two graphs can be compared plot to plot. Edges are left as they are:
+g.edges.visible = false shows the plot alone. neighbors=false leaves
+out the ticks (drawn for up to 5000 edges); logX/logY use log scales.
+Any later layout removes the axes and ticks.
+
+### `isometricLayout(field, layers=None, angle=30, gap=None)`
+
+isometricLayout(field) stacks the graph in layers by a node field and
+shows them at an angle, as planes one above the other: each layer keeps
+the current layout's shape, squashed into a diamond, the lowest value at
+the bottom (Gephi's Isometric Layout and Network Splitter 3D). Edges
+between layers run between the planes. A text field gives one layer per
+value; a numeric field with many values is cut into `layers` equal
+ranges (default 5). angle tilts the planes (30 = isometric; smaller is
+flatter); gap is the distance between layers. The layer number goes in
+the zlayer field, and the planes are outlined; run it again to change
+the field or angle without compounding. Any other layout removes the
+outlines.
+
+### `multipartiteLayout(field, gap=None, vertical=False)`
+
+multipartiteLayout(field) puts the nodes in one column per value of a
+node field (in value order: kind, year, level, ...), ordering each column
+to reduce edge crossings; vertical=true makes rows instead. gap is the
+distance between columns (default: they fill 1000 units). The
+multipartite version of bipartiteLayout.
+
+### `orderedLayout(field, axis='x', iterations=None, inverted=False, length=1000, gravity=1.0)`
+
+orderedLayout(field) fixes each node's position on one axis by a
+numeric field (a year, a step, an order) and runs a ForceAtlas2 force
+on the other axis only, so connected nodes come together without
+breaking the order (Gephi's Ordered Layout and EventGraphLayout).
+axis="y" orders from top to bottom; inverted=true reverses; length is
+the span of the ordered axis. Nodes without a value go in the middle.
 
 ## Display: hulls, legends, background, edges, labels, selection, export
 
@@ -1744,6 +2020,20 @@ one entry per value (for categories, as after colorize), or a gradient
 from the lowest to the highest value (for numbers, as after colorBy).
 The legend follows the colours: run colorize or colorBy again and it
 updates (until you add or remove entries yourself).
+
+### `polygon(sides)`
+
+polygon(sides) is the node style for a regular polygon with that many
+sides (3 to 64), a corner at the top: (dept == 'dept1').style = polygon(5).
+polygonBy(field) sets one per node from a field.
+
+### `polygonBy(field, smallest=3, largest=12)`
+
+polygonBy(field) draws each node as a regular polygon whose number of
+sides comes from a node field (as Gephi's Polygon Shaped Nodes): a whole
+number field gives the sides directly (kept within smallest..largest);
+any other field gives each value its own polygon, 3, 4, 5, … sides, the
+most common value first.
 
 ### `removeLegend(legend)`
 
@@ -1973,8 +2263,8 @@ or one string separated by spaces/commas. Nodes get `description`,
 
 ### `makeFromURL(url, format=None)`
 
-makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV, a
-.guess session or a .py script) and opens it; format=".gexf" etc. when
+makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV,
+RDF (Turtle, N-Triples, RDF/XML), a .guess session or a .py script) and opens it; format=".gexf" etc. when
 the URL doesn't end in the extension.
 
 ### `makeFromWikipedia(title, limit=150, lang='en')`
@@ -1993,6 +2283,123 @@ link structure is what's loaded here.
 
 sparql(query[, endpoint]) runs a SPARQL query (Wikidata by default) and
 returns the rows as a list of {variable: value} dicts.
+
+## Standalone web pages (exportHTML)
+
+### `exportHTML(filename='graph.html', title=None, hidden=False, fields=True)`
+
+exportHTML("graph.html") writes the graph as one self-contained web
+page: open it in any browser, from disk or a web server, with nothing
+else to install. It shows the graph as drawn here (colours, sizes,
+shapes, labels, legends, images) and lets the reader pan and zoom,
+search by name, hover for a node's fields and click to see its
+neighbours. hidden=true includes hidden nodes and edges; fields=false
+leaves the data fields out (a smaller, more private page).
+
+## Live graph streams (Gephi streaming protocol)
+
+### `stopStream()`
+
+stopStream() stops every stream started with streamFrom.
+
+### `streamFrom(url)`
+
+streamFrom(url) follows a live graph stream in the Gephi streaming
+format (Gephi's Graph Streaming plugin): an HTTP URL that sends one
+JSON event per line, such as Gephi's own
+"http://localhost:8080/workspace1?operation=getGraph", or a ws:// or
+wss:// WebSocket sending one event per message. Nodes and edges are
+added, changed and removed as events arrive (between commands, so a
+long command delays them); new nodes appear next to a neighbour.
+Streamed changes are not undo steps. stopStream() stops it. The
+server must allow cross-origin requests (CORS) from this page.
+
+## AI assistants (MCP bridge)
+
+### `connectAssistant(port=7777)`
+
+connectAssistant() connects this page to an AI assistant through the
+GUESS MCP bridge (mcp/guess-mcp.mjs, which the assistant starts; see
+the manual). The assistant can then run Gython here, read a summary
+of the graph and the command help, and see the view. Everything it
+runs appears in the console marked "assistant" and can be undone.
+disconnectAssistant() ends it. port= must match GUESS_MCP_PORT.
+
+### `disconnectAssistant()`
+
+disconnectAssistant() disconnects the AI assistant (see connectAssistant).
+
+## Import and export: Excel, RDF, Bluesky, JSON, KML, shapefiles, standalone HTML
+
+### `exportJSON(filename='graph.json', format='graphology')`
+
+exportJSON("graph.json") writes the graph for sigma.js and graphology
+(graph.import(data)): nodes with label, x, y, size, colour and every data
+field, edges with weight, size, colour and fields; hidden elements are
+marked hidden. format="sigma" writes the older sigma.js JSON ({nodes:
+[{id, label, x, y, size, color, attributes}], edges: [...]}) that
+Gephi's JSON Exporter makes. Offered as a download.
+
+### `exportKML(filename='graph.kml', lat=None, lon=None)`
+
+exportKML("graph.kml") writes the graph for Google Earth and other
+maps: each node with coordinates a placemark (its colour, label and
+fields), each edge between two placed nodes a line (its colour and
+width). Coordinates come from the latitude/lat and longitude/lon/lng
+fields, or name them: exportKML("x.kml", lat="y", lon="x"). Offered as
+a download.
+
+### `exportSHP(filename='graph.zip', lat=None, lon=None)`
+
+exportSHP("graph.zip") writes shapefiles for GIS (QGIS, ArcGIS) in a
+zip: nodes.shp (points, with name, label, colour and the node fields)
+and edges.shp (lines between placed nodes, with source, target,
+weight, colour and the edge fields), in WGS 84 longitude/latitude.
+Coordinates come from latitude/lat and longitude/lon/lng fields, or
+name them with lat= and lon=. Field names are cut to 10 characters,
+as the format requires. Offered as a download.
+
+### `makeFromBluesky(handle, depth=1, limit=100, mode='follows', maxNodes=500)`
+
+makeFromBluesky("alice.bsky.social") opens a Bluesky account's
+network from the public API: the account and up to `limit` accounts it
+follows, with directed "follows" edges. mode="followers" fetches who
+follows it instead, "both" both. depth=2 also fetches the same for
+each account found, adding the ties among them and new accounts, up
+to maxNodes accounts in all. Nodes get handle, did, followers,
+follows, posts and description; labels are display names.
+
+### `makeFromCooccurrence(filename, column=None, separator=';', sheet=None, keep=True)`
+
+makeFromCooccurrence("papers.csv", "authors") builds a network of the
+values that share a cell: each row's list (split at separator, ";" by
+default; also "," or "|") links every pair in it, as co-authors on a
+paper or keywords on an article. Nodes get `count` (rows they appear
+in); edges `weight` (rows they share). Works on .csv, .tsv and .xlsx
+(sheet= picks a sheet); column= is a header name or a number (0 =
+first; default: the first column whose cells hold lists). keep=true
+also adds a node for a value that never shares a row.
+
+### `makeFromExcel(filename, sheet=None, nodes=None, directed=False)`
+
+makeFromExcel("data.xlsx") replaces the graph with an Excel workbook
+read as makeFromCSV reads tables: an edge sheet (Source, Target[, Type,
+Weight, Label, ...]), an adjacency matrix or list; with a node sheet
+(Id[, Label, ...]) too when the workbook has one. sheet= picks the edge
+sheet by name or number (0 = first); nodes= names the node sheet, or
+another file (.xlsx or .csv). Other columns become fields; directed=true
+makes edges without a Type directed. makeFromCSV("data.xlsx") does the same.
+
+### `makeFromRDF(filename, format=None, types=True)`
+
+makeFromRDF("data.ttl") replaces the graph with RDF data (Turtle,
+N-Triples or RDF/XML, by extension or content; format="turtle", "nt"
+or "xml" to say). Each resource becomes a node (labelled by rdfs:label,
+foaf:name, skos:prefLabel or its local name; its IRI in `uri`), each
+property linking two resources an edge (its name in `predicate`), and
+each literal property a node field (numbers and booleans typed).
+types=false keeps rdf:type as a `type` field instead of edges to class
+nodes. For SPARQL endpoints use makeFromSPARQL.
 
 ## States and morphing
 
@@ -2370,6 +2777,19 @@ defineStyle('by dept', ['colorize(dept)', 'legendFor(dept)'])
 applyStyle('by dept')
 ```
 
+**Polygon nodes**
+
+```python
+(dept == 'dept1').style = polygon(5)
+polygonBy(dept, 3, 8)
+```
+
+**Word cloud of a text field**
+
+```python
+wordCloud(dept)
+```
+
 ### Layouts
 
 **ForceAtlas2**
@@ -2431,6 +2851,61 @@ binPackLayout()
 ```python
 rotateLayout(90)
 mirrorLayout()
+```
+
+**One column per group**
+
+```python
+multipartiteLayout(dept)
+```
+
+**Rings by importance**
+
+```python
+concentricLayout(degree)
+```
+
+**Hubs inside, the rest outside**
+
+```python
+dualCircleLayout(10)
+```
+
+**Order by a field, untangle the rest**
+
+```python
+orderedLayout(degree)
+```
+
+**Hairball Buster plot**
+
+```python
+hairballLayout()
+g.edges.visible = false
+```
+
+**Nested circles by group**
+
+```python
+circlePackLayout(dept)
+```
+
+**Layers in 3D-style planes**
+
+```python
+isometricLayout(dept)
+```
+
+**Two centres of gravity**
+
+```python
+forceAtlas2Layout(gravitySources=[v1, v73])
+```
+
+**Spread out part of a layout**
+
+```python
+rescaleLayout(dept == 'dept1', 1.5)
 ```
 
 ### Analysis
@@ -2646,6 +3121,88 @@ labelBy(freq)
 edgeLabelsAlong()
 ```
 
+**Katz and prestige**
+
+```python
+highest(katz, 5)
+highest(domain_prestige, 5)
+```
+
+**Bridging centrality**
+
+```python
+colorBy(bridging, yellow, red)
+highest(bridging, 5)
+```
+
+**Weighted bridging**
+
+```python
+weightedBridging()
+highest(wbridging, 5)
+```
+
+**Maximal cliques**
+
+```python
+cliques(4)
+```
+
+**Test link prediction**
+
+```python
+evaluateLinks('all')
+```
+
+**Coordinates from MDS**
+
+```python
+mds(2)
+scatterLayout(mds1, mds2)
+```
+
+**Chinese Whispers communities**
+
+```python
+chineseWhispersClusters()
+colorize(cw_class)
+```
+
+**Markov clustering (MCL)**
+
+```python
+mclClusters(inflation=2)
+colorize(mcl_class)
+```
+
+**Clusters of nearby nodes**
+
+```python
+dbscanClusters()
+colorize(dbscan_class)
+```
+
+**Dense complexes (MCODE)**
+
+```python
+mcodeClusters()
+(mcode_class == 0).color = red
+```
+
+**Overlapping communities**
+
+```python
+cs = cliquePercolationClusters(3)
+showOverlaps(cs)
+```
+
+**Communities of edges**
+
+```python
+linkCommunities()
+showOverlaps(link_classes)
+```
+
 **Bundle edges**
 
 ```python
@@ -2688,6 +3245,18 @@ showOnly(intraEdges(louvain_class))
 
 ```python
 showAll()
+```
+
+**The k-brace core**
+
+```python
+showOnly(kBrace(2))
+```
+
+**Keep nodes listed in a file**
+
+```python
+showOnly(readNames('keep.txt'))
 ```
 
 **Select from code**
@@ -2753,6 +3322,78 @@ morph('before', 2000)
 
 ```python
 makeBarabasiAlbertRandom(5, 2, 300)
+```
+
+**Small-world graph**
+
+```python
+makeWattsStrogatz(100, 4, 0.1)
+```
+
+**Open an Excel workbook**
+
+```python
+makeFromExcel('network.xlsx')
+```
+
+**Co-authors from a list column**
+
+```python
+makeFromCooccurrence('papers.csv', 'authors', ';')
+```
+
+**Open RDF / Turtle**
+
+```python
+makeFromRDF('foaf.ttl')
+```
+
+**A Bluesky follow network**
+
+```python
+makeFromBluesky('bsky.app', limit=50)
+```
+
+**Change a field's type**
+
+```python
+castField(year, INTEGER)
+```
+
+**An interactive web page**
+
+```python
+exportHTML('graph.html')
+```
+
+**Export for sigma.js**
+
+```python
+exportJSON('graph.json')
+```
+
+**Export to Google Earth**
+
+```python
+exportKML('graph.kml')
+```
+
+**Export shapefiles for GIS**
+
+```python
+exportSHP('graph.zip')
+```
+
+**Follow a live stream**
+
+```python
+streamFrom('http://localhost:8080/workspace1?operation=getGraph')
+```
+
+**Let an AI assistant help**
+
+```python
+connectAssistant()
 ```
 
 ### Interface building
