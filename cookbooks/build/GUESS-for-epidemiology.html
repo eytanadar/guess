@@ -283,10 +283,9 @@ within-class ties repeat and the weak ones change.</p>
 <h2 data-number="2.2" id="your-contacts-have-more-contacts-than-you-basic"><span class="header-section-number">2.2</span> Your contacts have more
 contacts than you <span class="level">Basic</span></h2>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;school-contacts-SIMULATED.gdf&quot;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statistics</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>mine <span class="op">=</span> statistics.mean(n.degree <span class="cf">for</span> n <span class="kw">in</span> g.nodes)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>theirs <span class="op">=</span> statistics.mean(statistics.mean(m.degree <span class="cf">for</span> m <span class="kw">in</span> n.getNeighbors()) <span class="cf">for</span> n <span class="kw">in</span> g.nodes)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">round</span>(mine, <span class="dv">1</span>), <span class="bu">round</span>(theirs, <span class="dv">1</span>)</span></code></pre></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>mine <span class="op">=</span> g.nodes.degree.avg</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>theirs <span class="op">=</span> <span class="bu">sum</span>(n.getNeighbors().degree.avg <span class="cf">for</span> n <span class="kw">in</span> g.nodes) <span class="op">/</span> <span class="bu">len</span>(g.nodes)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">round</span>(mine, <span class="dv">1</span>), <span class="bu">round</span>(theirs, <span class="dv">1</span>)</span></code></pre></div>
 <p><strong>How it works.</strong> The average person here has 16.6
 contacts, but the average contact of a person has 19.9. That’s the
 <em>friendship paradox</em> (Feld 1991): well-connected people appear in
@@ -363,13 +362,12 @@ the same network, not to forecast case counts.</p>
 <p><strong>You want</strong> to know how contagious an infection must be
 to cause a large outbreak in this school.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;school-contacts-SIMULATED.gdf&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statistics</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> statistics.mean(n.degree <span class="cf">for</span> n <span class="kw">in</span> g.nodes)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>k2 <span class="op">=</span> statistics.mean(n.degree <span class="op">**</span> <span class="dv">2</span> <span class="cf">for</span> n <span class="kw">in</span> g.nodes)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> b <span class="kw">in</span> [<span class="fl">0.01</span>, <span class="fl">0.02</span>, <span class="fl">0.03</span>, <span class="fl">0.05</span>]:</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    T <span class="op">=</span> b <span class="op">/</span> (b <span class="op">+</span> <span class="fl">0.2</span> <span class="op">-</span> b <span class="op">*</span> <span class="fl">0.2</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    sz <span class="op">=</span> outbreaks(<span class="dv">200</span>, beta<span class="op">=</span>b, gamma<span class="op">=</span><span class="fl">0.2</span>, show<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(b, <span class="bu">round</span>(T <span class="op">*</span> (k2 <span class="op">-</span> k) <span class="op">/</span> k, <span class="dv">2</span>), sz.large)</span></code></pre></div>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> degree.avg</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>k2 <span class="op">=</span> <span class="bu">sum</span>(d <span class="op">**</span> <span class="dv">2</span> <span class="cf">for</span> d <span class="kw">in</span> degree) <span class="op">/</span> <span class="bu">len</span>(g.nodes)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> b <span class="kw">in</span> [<span class="fl">0.01</span>, <span class="fl">0.02</span>, <span class="fl">0.03</span>, <span class="fl">0.05</span>]:</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    T <span class="op">=</span> b <span class="op">/</span> (b <span class="op">+</span> <span class="fl">0.2</span> <span class="op">-</span> b <span class="op">*</span> <span class="fl">0.2</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    sz <span class="op">=</span> outbreaks(<span class="dv">200</span>, beta<span class="op">=</span>b, gamma<span class="op">=</span><span class="fl">0.2</span>, show<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(b, <span class="bu">round</span>(T <span class="op">*</span> (k2 <span class="op">-</span> k) <span class="op">/</span> k, <span class="dv">2</span>), sz.large)</span></code></pre></div>
 <p><strong>How it works.</strong> The <em>basic reproduction number</em>
 R₀ is the number of people a typical case infects in a fully susceptible
 population. Above 1, an outbreak can take off. On a network it depends
@@ -424,13 +422,15 @@ close to zero (Pastor-Satorras and Vespignani 2001).</p>
 <h2 data-number="3.4" id="where-an-outbreak-starts-matters-intermediate"><span class="header-section-number">3.4</span> Where an outbreak starts
 matters <span class="level">Intermediate</span></h2>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;school-contacts-SIMULATED.gdf&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> sortBy(degree)[<span class="op">-</span><span class="dv">2</span>:] <span class="op">+</span> sortBy(degree)[:<span class="dv">2</span>]:</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> highest(degree, <span class="dv">2</span>) <span class="op">+</span> lowest(degree, <span class="dv">2</span>):</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(n.name, n.degree, outbreaks(<span class="dv">100</span>, seeds<span class="op">=</span>[n], beta<span class="op">=</span><span class="fl">0.03</span>, gamma<span class="op">=</span><span class="fl">0.2</span>, show<span class="op">=</span><span class="va">False</span>).large)</span></code></pre></div>
 <p><strong>How it works.</strong> <code>seeds=[n]</code> starts every
-run from the same person. Started from one of the best-connected pupils
-(37 or 38 contacts), 81% to 90% of outbreaks take off. Started from the
-least connected (2 or 3 contacts), 14% to 20% do. A well-connected first
-case gets many chances before recovering.</p>
+run from the same person, and <code>highest(degree, 2)</code> and
+<code>lowest(degree, 2)</code> pick the two best and least connected.
+Started from one of the best-connected pupils (38 or 37 contacts), 75%
+to 81% of outbreaks take off. Started from the least connected (2 or 3
+contacts), 14% to 20% do. A well-connected first case gets many chances
+before recovering.</p>
 <p><strong>Variations.</strong> Seeding from each person in turn and
 storing the share (<code>n.reach = ...</code>) maps who would spread an
 infection furthest. Kitsak et al. (2010) found that
@@ -448,7 +448,7 @@ degree in many networks. Try both.</p>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> random.Random(<span class="dv">1</span>)</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>dose <span class="op">=</span> <span class="bu">round</span>(<span class="fl">0.2</span> <span class="op">*</span> <span class="bu">len</span>(g.nodes))</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>chosen <span class="op">=</span> {<span class="st">&quot;random&quot;</span>: rng.sample(<span class="bu">list</span>(g.nodes), dose), <span class="st">&quot;most contacts&quot;</span>: sortBy(degree)[<span class="op">-</span>dose:]}</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>chosen <span class="op">=</span> {<span class="st">&quot;random&quot;</span>: rng.sample(<span class="bu">list</span>(g.nodes), dose), <span class="st">&quot;most contacts&quot;</span>: highest(degree, dose)}</span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>acq <span class="op">=</span> <span class="bu">set</span>()</span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="bu">len</span>(acq) <span class="op">&lt;</span> dose:</span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    acq.add(rng.choice(<span class="bu">list</span>(rng.choice(<span class="bu">list</span>(g.nodes)).getNeighbors())))</span>
@@ -484,8 +484,8 @@ average:</p>
 </tr>
 <tr>
 <td>the 51 with the most contacts</td>
-<td>12</td>
-<td>14%</td>
+<td>14</td>
+<td>17%</td>
 </tr>
 </tbody>
 </table>
@@ -731,8 +731,7 @@ Should they look <em>forward</em>, for the people this case may have
 infected, or <em>backward</em>, for whoever infected them?</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>makeFromCSV(<span class="st">&quot;outbreak-transmissions-SIMULATED.csv&quot;</span>, <span class="st">&quot;outbreak-cases-SIMULATED.csv&quot;</span>, directed<span class="op">=</span>true)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>o <span class="op">=</span> offspring(show<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statistics</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="bu">round</span>(o.R, <span class="dv">2</span>), <span class="bu">round</span>(statistics.mean(e.node1.offspring <span class="cf">for</span> e <span class="kw">in</span> g.edges), <span class="dv">1</span>)</span></code></pre></div>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="bu">round</span>(o.R, <span class="dv">2</span>), <span class="bu">round</span>(g.edges.node1.offspring.avg, <span class="dv">1</span>)</span></code></pre></div>
 <p>A typical case infected 0.88 people (R over the whole outbreak). The
 person who infected a typical case had infected 5.6. That’s the
 friendship paradox once more: a case is most likely to come from a large
@@ -768,7 +767,7 @@ how contagious the infection is;</li>
 <span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> strategy <span class="op">==</span> <span class="st">&quot;random&quot;</span>:</span>
 <span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> rng.sample(<span class="bu">list</span>(g.nodes), dose)</span>
 <span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> strategy <span class="op">==</span> <span class="st">&quot;most contacts&quot;</span>:</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> sortBy(degree)[<span class="bu">len</span>(g.nodes) <span class="op">-</span> dose:]</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> highest(degree, dose)</span>
 <span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> strategy <span class="op">==</span> <span class="st">&quot;acquaintance&quot;</span>:</span>
 <span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>        acq <span class="op">=</span> <span class="bu">set</span>()</span>
 <span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="bu">len</span>(acq) <span class="op">&lt;</span> dose:</span>
