@@ -776,3 +776,15 @@ body.no-menus .menubar { display: none; }
 /* an app with its own toolbar: the header keeps the title, menus and status */
 body.has-app-toolbar header.toolbar > .toolgroup, body.has-app-toolbar header.toolbar > #search,
 body.has-app-toolbar header.toolbar > #stop { display: none; }
+.app-source { font: 12px system-ui, sans-serif; padding: 2px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); cursor: pointer; margin-left: 8px; }
+.app-source[hidden] { display: none; }
+.app-source:hover { border-color: var(--hover-border); }
+.source-dialog { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); width: min(860px, calc(100vw - 32px)); height: min(80vh, 760px); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.source-dialog:not([open]) { display: none; }
+.source-dialog::backdrop { background: rgba(0, 0, 0, 0.35); }
+.source-dialog h3 { margin: 0 0 6px; font-size: 15px; }
+.source-note { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.source-code { flex: 1; overflow: auto; margin: 0; padding: 10px 12px; background: var(--console-bg); border: 1px solid var(--border); border-radius: 6px; font: 12.5px/1.5 var(--mono); white-space: pre; tab-size: 4; }
+.source-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.source-actions button { font: inherit; padding: 4px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); cursor: pointer; }
+.source-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }

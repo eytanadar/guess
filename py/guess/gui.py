@@ -304,10 +304,10 @@ class Action:
     "save", "png", "svg", "sample", "share-link", "share-viewer", "table",
     "style", "filter", "variables", "help", "history", "search", "stop",
     "tour", "manual", "fit", the tools "tool:select", "tool:lens",
-    "tool:path", "tool:heat", "tool:paint", "tool:cluster", and "tools"
-    (the whole tool strip, for a toolbar)."""
+    "tool:path", "tool:heat", "tool:paint", "tool:cluster", "tools"
+    (the whole tool strip, for a toolbar) and "source" (an app's code)."""
     NAMES = ("open", "save", "png", "svg", "sample", "share-link", "share-viewer", "table", "style", "filter",
-             "variables", "help", "history", "search", "stop", "tour", "manual", "fit", "tools",
+             "variables", "help", "history", "search", "stop", "tour", "manual", "fit", "tools", "source",
              "tool:select", "tool:lens", "tool:path", "tool:heat", "tool:paint", "tool:cluster")
 
     def __init__(self, name, label=None):

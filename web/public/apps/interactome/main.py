@@ -64,7 +64,7 @@ ui.menubar(
          MenuItem("Complexes (MCODE)", onClick=complexes),
          MenuItem("Communities (Louvain)", onClick=communities),
          MenuItem("Hubs", run="highest(degree, 10).labelvisible = true"),
-         "-", MenuItem("Summary", run="graphStats()")),
+         "-", MenuItem("Summary", run="graphStats()"), "-", Action("source", "How this app is built")),
     keep=["Help"])
 ui.toolbar(Action("tools"), "|", Action("fit"), Action("search"))
 ui.statusbar(Label(lambda: f"{len([n for n in g.nodes if n.visible])} proteins shown · {len(g.edges)} interactions"),

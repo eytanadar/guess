@@ -54,5 +54,5 @@ Yellow was reached early, red late, grey never."""),
     sizes={"left": 300},
 )
 ui.menubar(Menu("Outbreak", MenuItem("Run", onClick=run), MenuItem("Reset colours", onClick=reset),
-                "-", Action("png")), keep=["Help"])
+                "-", Action("png"), "-", Action("source", "How this app is built")), keep=["Help"])
 ui.statusbar(Label(lambda: f"{len(g.nodes)} people · {len(g.edges)} contacts"))

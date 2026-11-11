@@ -36,6 +36,25 @@ test("an app from ?app= arranges the window and its controls work", async ({ pag
   await expect(page.locator("#dock-left .w-markdown").nth(1)).toContainText("Breast cancer type 1 susceptibility protein");
 });
 
+test("an app shows the code that built it", async ({ page }) => {
+  await page.goto("/?app=apps/outbreak/manifest.json");
+  await ready(page);
+  await page.locator("#app-source").click();
+  const dlg = page.locator(".source-dialog");
+  await expect(dlg).toBeVisible();
+  await expect(dlg.locator(".w-tabbar button")).toHaveText(["main.py", "manifest.json"]);
+  await expect(dlg.locator(".source-code")).toContainText('makeFromFile("school-contacts-SIMULATED.gdf")');
+  await expect(dlg.locator(".source-code .tok-keyword").first()).toBeVisible();       // highlighted
+  await dlg.locator(".w-tabbar button", { hasText: "manifest.json" }).click();
+  await expect(dlg.locator(".source-code")).toContainText('"name": "Outbreak Explorer"');
+  await dlg.locator("button", { hasText: "Close" }).click();
+  await expect(dlg).toHaveCount(0);
+  // the same from the app's own menu
+  await page.locator(".menubar .menu-title", { hasText: "Outbreak" }).click();
+  await page.locator(".menubar .menu-pop button", { hasText: "How this app is built" }).click();
+  await expect(page.locator(".source-dialog")).toBeVisible();
+});
+
 test("an app's script error shows the console", async ({ page }) => {
   await page.route("**/apps/broken/manifest.json", (r) => r.fulfill({ json: { name: "Broken", code: "makeFromGDF('karate.gdf')\nui.title('Broken')\nnosuch()" } }));
   await page.goto("/?app=apps/broken/manifest.json");

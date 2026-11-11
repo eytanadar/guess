@@ -70,5 +70,5 @@ main network turn red."""),
     sizes={"right": 300},
 )
 ui.menubar()
-ui.toolbar(Action("tool:select"), Action("tool:lens"), "|", Action("fit"), Action("png"))
+ui.toolbar(Action("tool:select"), Action("tool:lens"), "|", Action("fit"), Action("png"), "|", Action("source", "How this app is built"))
 ui.statusbar(Label(lambda: f"{len(g.nodes)} airports open"))

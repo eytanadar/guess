@@ -2,8 +2,13 @@
 // sizes, as an app's script arranges them (ui.menubar, ui.toolbar, ui.statusbar,
 // ui.title, ui.console, ui.layout). Built-in actions reuse the page's own menu
 // items and tool buttons, so they behave exactly as they do in GUESS.
+import { pythonLanguage } from "@codemirror/lang-python";
+import { classHighlighter, highlightCode } from "@lezer/highlight";
 import type { BarItem, WidgetRec } from "./protocol";
 import type { Dock } from "./dock";
+
+/** A file an app is made of, for "Source". */
+export interface AppFile { name: string; text: string }
 
 export interface AppHost {
   dock: Dock;
@@ -21,7 +26,7 @@ export const ACTIONS: Record<string, string> = {
   "share-link": "#share-link", "share-viewer": "#share-viewer",
   table: "#btn-table", style: "#btn-style", filter: "#btn-filter", variables: "#btn-vars",
   help: "#btn-help", history: "#btn-history", search: "#search", stop: "#stop",
-  tour: '[data-run="demo()"]', manual: "#btn-manual",
+  tour: '[data-run="demo()"]', manual: "#btn-manual", source: "#app-source",
 };
 
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
@@ -35,9 +40,11 @@ function labelOf(el: HTMLElement): string {
 export class AppChrome {
   private toolsHome: Comment | null = null;
   private customMenus: HTMLElement[] = [];
+  private files: AppFile[] = [];
   consoleMode: "hidden" | "toggle" | "shown" = "shown";
 
   constructor(private host: AppHost) {
+    $("#app-source")?.addEventListener("click", () => this.showSource());
     document.addEventListener("keydown", (ev) => {
       if (this.consoleMode === "toggle" && ev.ctrlKey && ev.key === "`") {
         ev.preventDefault();
@@ -166,6 +173,93 @@ export class AppChrome {
     document.body.classList.toggle("no-menus", !menus.length && !wanted.size);
   }
 
+  /** The files the app was built from; shows the Source button. */
+  setSource(files: AppFile[], show: boolean) {
+    this.files = files;
+    const b = $("#app-source");
+    if (b) b.hidden = !show || !files.length;
+  }
+
+  /** A dialog with the app's script (highlighted) and manifest. */
+  showSource(which = 0) {
+    if (!this.files.length) return;
+    const dlg = document.createElement("dialog");
+    dlg.className = "source-dialog";
+    const head = document.createElement("div");
+    head.className = "source-head";
+    const h = document.createElement("h3");
+    h.textContent = `How ${document.title} is built`;
+    const tabs = document.createElement("div");
+    tabs.className = "w-tabbar";
+    tabs.setAttribute("role", "tablist");
+    const pre = document.createElement("pre");
+    pre.className = "source-code";
+    const note = document.createElement("p");
+    note.className = "source-note";
+    note.textContent = "An app is a manifest and a Gython script that arranges GUESS's window (ui.layout, ui.menubar, …). " +
+      "Copy it to start your own; the manual's Apps section explains each part.";
+    let current = which;
+    const show = (k: number) => {
+      current = k;
+      for (const [i, b] of [...tabs.children].entries()) b.setAttribute("aria-selected", String(i === k));
+      const f = this.files[k];
+      pre.replaceChildren();
+      if (/\.py$/.test(f.name)) {
+        const tree = pythonLanguage.parser.parse(f.text);
+        highlightCode(f.text, tree, classHighlighter, (text, classes) => {
+          const span = document.createElement("span");
+          if (classes) span.className = classes;
+          span.textContent = text;
+          pre.append(span);
+        }, () => pre.append("\n"));
+      } else {
+        pre.textContent = f.text;
+      }
+      pre.scrollTop = 0;
+    };
+    this.files.forEach((f, i) => {
+      const b = document.createElement("button");
+      b.setAttribute("role", "tab");
+      b.textContent = f.name;
+      b.onclick = () => show(i);
+      tabs.append(b);
+    });
+    const actions = document.createElement("div");
+    actions.className = "source-actions";
+    const copy = document.createElement("button");
+    copy.textContent = "Copy";
+    copy.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(this.files[current].text);
+        copy.textContent = "Copied";
+      } catch {
+        copy.textContent = "Copy failed";
+      }
+      setTimeout(() => (copy.textContent = "Copy"), 1500);
+    };
+    const save = document.createElement("button");
+    save.textContent = "Download";
+    save.onclick = () => {
+      const f = this.files[current];
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([f.text], { type: "text/plain" }));
+      a.download = f.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    };
+    const close = document.createElement("button");
+    close.className = "primary";
+    close.textContent = "Close";
+    close.onclick = () => dlg.close();
+    actions.append(copy, save, close);
+    head.append(h, tabs);
+    dlg.append(head, note, pre, actions);
+    dlg.addEventListener("close", () => dlg.remove());
+    document.body.append(dlg);
+    show(which);
+    dlg.showModal();
+  }
+
   title(text: string, subtitle: string | null) {
     const brand = $(".brand")!;
     brand.textContent = text;
@@ -244,4 +338,6 @@ export interface AppManifest {
   script?: string;
   /** or the code itself */
   code?: string;
+  /** false: no Source button (the files the app is built from) */
+  source?: boolean;
 }

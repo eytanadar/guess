@@ -399,10 +399,12 @@ async function loadApp(url: string) {
     return;
   }
   let m: AppManifest;
+  let manifestText = "";
   try {
     const res = await fetch(base);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    m = await res.json();
+    manifestText = await res.text();
+    m = JSON.parse(manifestText);
   } catch (e) {
     appChrome.console("shown");
     term.error(`Could not load the app at ${url}: ${e}`);
@@ -437,6 +439,10 @@ async function loadApp(url: string) {
       return;
     }
   }
+  // "Source": the files the app is built from
+  const scriptName = m.script ? decodeURIComponent(new URL(m.script, base).pathname.split("/").pop() || "main.py") : "code.py";
+  appChrome.setSource([{ name: scriptName, text: code }, { name: base.pathname.split("/").pop() || "manifest.json", text: manifestText }],
+    m.source !== false);
   // the script sets the app up: not an undo step, and not in the history
   const ok = await request<boolean>((id) => ({ type: "run", id, code, quiet: true, cell: undefined }));
   if (!ok) {

@@ -2724,8 +2724,8 @@ Action(name): one of GUESS's own commands for a menu or toolbar: "open",
 "save", "png", "svg", "sample", "share-link", "share-viewer", "table",
 "style", "filter", "variables", "help", "history", "search", "stop",
 "tour", "manual", "fit", the tools "tool:select", "tool:lens",
-"tool:path", "tool:heat", "tool:paint", "tool:cluster", and "tools"
-(the whole tool strip, for a toolbar).
+"tool:path", "tool:heat", "tool:paint", "tool:cluster", "tools"
+(the whole tool strip, for a toolbar) and "source" (an app's code).
 
 ### `after(seconds, fn)`
 
