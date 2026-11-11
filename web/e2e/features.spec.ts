@@ -891,6 +891,8 @@ test("the hover tooltip shows the label at once and every field after a moment",
   await expect(tip).toContainText("dept:");
   expect(await tip.innerText()).not.toContain("degree:");              // not yet the full tooltip
   await expect(tip).toContainText("degree:");
+  // expanded: the chosen field stays first, the rest follow
+  await expect(tip.locator("div:not(.tip-title)").first()).toHaveText(/^dept: /);
   // select all / none
   await menu(page, "View", "Hover fields…");
   await page.locator(".pick-fields button", { hasText: "Select all" }).click();

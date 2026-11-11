@@ -809,7 +809,9 @@ async function describeTip(kind: "n" | "e", ident: number, x: number, y: number)
   showTip(quick ?? title, quickLines, tipAt.x, tipAt.y);
   await new Promise((r) => setTimeout(r, FULL_TIP_MS));
   if (token !== tipToken) return;
-  const lines = rows.map(([k, v]) => `${k}: ${v}`);
+  // the hoverFields() ones stay on top, in their order; the rest follow
+  const chosen = new Set(hoverFields[kind]);
+  const lines = [...quickLines, ...rows.filter(([k]) => !chosen.has(k)).map(([k, v]) => `${k}: ${v}`)];
   // where its look came from: the cells that last changed it (newest first)
   const byCell = new Map<number, { aspects: string[]; code: string }>();
   for (const [aspect, cell, code] of info.prov ?? []) {
