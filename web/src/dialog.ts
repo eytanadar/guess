@@ -63,3 +63,52 @@ export function ask(opts: AskOptions): Promise<string | null> {
     input.select();
   });
 }
+
+/** A modal question answered with one of several buttons (the last is the
+ *  default). Resolves to the chosen button's value, or null if cancelled. */
+export function choose(opts: { title: string; note?: string; choices: { label: string; value: string }[] }): Promise<string | null> {
+  return new Promise((resolve) => {
+    const dlg = document.createElement("dialog");
+    dlg.className = "ask-dialog";
+    const form = document.createElement("form");
+    form.method = "dialog";
+    const h = document.createElement("h3");
+    h.textContent = opts.title;
+    form.append(h);
+    if (opts.note) {
+      const p = document.createElement("p");
+      p.textContent = opts.note;
+      form.append(p);
+    }
+    const actions = document.createElement("div");
+    actions.className = "ask-actions";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.textContent = "Cancel";
+    actions.append(cancel);
+    let result: string | null = null;
+    const buttons = opts.choices.map((c, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = c.label;
+      b.dataset.value = c.value;
+      if (i === opts.choices.length - 1) b.className = "primary";
+      b.onclick = () => {
+        result = c.value;
+        dlg.close();
+      };
+      return b;
+    });
+    actions.append(...buttons);
+    form.append(actions);
+    dlg.append(form);
+    document.body.append(dlg);
+    cancel.addEventListener("click", () => dlg.close());
+    dlg.addEventListener("close", () => {
+      dlg.remove();
+      resolve(result);
+    });
+    dlg.showModal();
+    buttons[buttons.length - 1]?.focus();
+  });
+}
