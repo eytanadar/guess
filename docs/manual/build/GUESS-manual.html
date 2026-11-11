@@ -2094,19 +2094,23 @@ releases it. Hover popups are off while the lens is on.
 code; with <code>autoSize</code> it grows over sparse areas and shrinks
 over dense ones.</li>
 <li><strong>Cluster</strong>: label clusters by hand. It first asks
-which field to use (<code>cluster</code> unless you say otherwise; it’s
-made if it doesn’t exist). Then every lasso you draw puts the nodes it
+which field to use: <code>cluster</code>, or <code>cluster1</code>,
+<code>cluster2</code>, … when that is taken. The field is made if it
+doesn’t exist. If you name one that already has values, it asks whether
+to clear it (<code>g.nodes.cluster = None</code>, undoable) or keep the
+values and add to them. Then every lasso you draw puts the nodes it
 catches in the next cluster: 1, then 2, and so on. Type in <em>next
 id</em> to choose a number or a name yourself (<code>a7</code> is
 followed by <code>a8</code>). Plain drag draws a lasso, shift-drag a
 box, and Space-drag pans. While the tool is on, labelled nodes show in
 their cluster’s colour and the rest are grey. The bar counts the
 clusters, the labelled nodes and those left: hover <em>left</em> to
-highlight them, click it to zoom to them. A new lasso skips nodes that
-already have a cluster, so quick lassos can overlap; tick
-<em>relabel</em> to move them instead. Cmd/Ctrl-drag, or clicking a
-node, adds to the last cluster. <em>Colour by it</em> runs
-<code>colorize(cluster)</code>; <em>Done</em> or Esc ends the tool.</li>
+highlight them, click it to zoom to them. A new lasso moves the nodes it
+catches to the new cluster, even if they had one. Untick
+<em>relabel</em> to make it skip labelled nodes, so quick lassos can
+overlap. Cmd/Ctrl-drag, or clicking a node, adds to the last cluster.
+<em>Colour by it</em> runs <code>colorize(cluster)</code>; <em>Done</em>
+or Esc ends the tool.</li>
 </ul>
 <p>Each click runs a command in the console
 (<code>shortestPath(v1, v14)</code>, <code>heatMap(v3)</code>,
