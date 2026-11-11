@@ -6,6 +6,7 @@ import { Dock } from "./dock";
 import { HistoryPanel, type HistoryStep } from "./history";
 import { ClusterTool, type ClusterInfo } from "./cluster";
 import { Tour } from "./tour";
+import { AssistantLink } from "./assistant";
 import { ask, choose, pickFields } from "./dialog";
 import { toGIF, toPDF, toPS } from "./rasterexport";
 import { HelpPanel, type HelpIndex } from "./help";
@@ -556,6 +557,31 @@ const tour = new Tour(dock, {
   edit: (code) => term.edit(code),
 });
 
+// ---- AI assistants (connectAssistant; mcp/guess-mcp.mjs) ----------------------------
+const assistantStatus = $("#assistant-status");
+assistantStatus.addEventListener("click", () => void term.submit("disconnectAssistant()"));
+const assistantLink = new AssistantLink({
+  run: (code) => term.submitRead(code, "assistant"),
+  summary: () => request<string>((id) => ({ type: "query", id, what: "summary" })),
+  help: async (name) => {
+    const docs = await request<Record<string, string>>((id) => ({ type: "docs", id }));
+    if (name) {
+      const want = name.replace(/\(.*$/, "").trim();
+      return docs[want] ?? `No command named ${want}. Close matches: ` +
+        Object.keys(docs).filter((k) => k.toLowerCase().includes(want.toLowerCase())).slice(0, 12).join(", ");
+    }
+    return Object.entries(docs).sort(([a], [b]) => a.localeCompare(b))
+      .map(([, d]) => { const [sig, ...rest] = d.split("\n"); return `${sig} — ${(rest.join(" ").trim().split(/(?<=\.)\s/)[0] || "").slice(0, 160)}`; })
+      .join("\n");
+  },
+  screenshot: () => renderer.exportImage("png"),
+  status: (text) => {
+    assistantStatus.hidden = !text;
+    assistantStatus.textContent = text ?? "";
+  },
+  note: (text) => term.note(text),
+});
+
 // ---- the history scrubber (Edit → History…) ------------------------------------------
 const historyPanel = new HistoryPanel(dock, {
   steps: () => request<{ steps: HistoryStep[]; at: number }>((id) => ({ type: "historySteps", id })),
@@ -725,7 +751,13 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     }
     case "download":
-      download(m.name, new Blob([m.text], { type: "text/plain" }));
+      download(m.name, m.b64
+        ? new Blob([Uint8Array.from(atob(m.b64), (c) => c.charCodeAt(0))], { type: "application/zip" })
+        : new Blob([m.text], { type: "text/plain" }));
+      break;
+    case "assistant":
+      if (m.op === "connect" && m.url) assistantLink.connect(m.url);
+      else assistantLink.disconnect();
       break;
     case "undone":
       term.markUndone(m.cell, m.undone);
@@ -1100,6 +1132,8 @@ const LOADERS: [RegExp, string][] = [
   [/\.dl$/i, "makeFromDL"],
   [/\.gexf$/i, "makeFromGEXF"],
   [/\.(csv|tsv)$/i, "makeFromCSV"],
+  [/\.(xlsx|xlsm)$/i, "makeFromExcel"],
+  [/\.(ttl|nt|n3|rdf|owl)$/i, "makeFromRDF"],
   [/\.py$/i, "execfile"],
   [/\.guess$/i, "makeFromSession"],
 ];

@@ -70,8 +70,8 @@ def install(session):
 
     @cmd
     def makeFromURL(url, format=None):
-        """makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV, a
-        .guess session or a .py script) and opens it; format=".gexf" etc. when
+        """makeFromURL(url) downloads a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, DL, CSV,
+        RDF (Turtle, N-Triples, RDF/XML), a .guess session or a .py script) and opens it; format=".gexf" etc. when
         the URL doesn't end in the extension."""
         text = http(url)
         path = urllib.parse.urlparse(url).path

@@ -306,7 +306,7 @@ def install(session):
                     "update": {"fillOpacity": {"value": 1}},
                     "hover": {"fillOpacity": {"value": 0.6}},
                 },
-                "transform": [{"type": "wordcloud", "size": [520, 320], "text": {"field": "text"},
+                "transform": [{"type": "wordcloud", "size": [{"signal": "width"}, {"signal": "height"}], "text": {"field": "text"},
                                "rotate": {"field": "datum.angle"}, "font": "Helvetica Neue, Arial, sans-serif",
                                "fontSize": {"field": "datum.count"}, "fontWeight": "bold",
                                "fontSizeRange": [11, 54], "padding": 2}],

@@ -606,12 +606,15 @@ def install(session):
         return GSet(ranked[:int(top)], f"most similar to {me._name}")
 
     @cmd
-    def predictLinks(top=20, method="adamic_adar", show=True):
+    def predictLinks(top=20, method="adamic_adar", show=True, add=False):
         """predictLinks() lists likely missing edges: pairs of nodes that aren't
         linked but share neighbours, scored by "adamic_adar" (shared neighbours,
         rare ones counting more), "jaccard", "common" (count of shared
         neighbours) or "resource" (resource allocation). Returns the `top`
-        pairs as (node, node, score), best first."""
+        pairs as (node, node, score), best first. add=true also adds them as
+        edges, marked with the method's name in the edge field `predicted`
+        (showOnly(predicted != None) shows them; undo() takes them away).
+        evaluateLinks() tests how well a method would have predicted."""
         need("predictLinks")
         I = undirected()
         G = I.G
@@ -637,6 +640,12 @@ def install(session):
         if show:
             for a, b, s in out:
                 print(f"{a._name:>14} - {b._name:<14} {s}")
+        if add and out:
+            gr = g()
+            f = gr.addEdgeField("predicted", "VARCHAR", None)
+            for a, b, _s in out:
+                f.set(gr.addEdge(a, b, False), m)
+            print(f"added {len(out)} predicted edges (predicted = {m!r})")
         return out
 
     # ---- patterns, cuts, flows -------------------------------------------------

@@ -902,3 +902,23 @@ test("the hover tooltip shows the label at once and every field after a moment",
   await page.locator(".pick-fields button", { hasText: "Apply" }).click();
   await expect(page.locator(".cell-code").last()).toHaveText("hoverFields()");
 });
+
+test("streamFrom applies Gephi streaming events to the graph", async ({ page }) => {
+  await boot(page);
+  const events = [
+    { an: { S1: { label: "Streamed one", size: 20, r: 1, g: 0, b: 0 } } },
+    { an: { S2: {} } },
+    { ae: { E12: { source: "S1", target: "S2", directed: true } } },
+    { ae: { E1v: { source: "S1", target: "v1" } } },
+    { cn: { S2: { kind: "new" } } },
+  ].map((e) => JSON.stringify(e)).join("\n");
+  const count = () => page.evaluate(() => (window as any).__guess.renderer.nodes.size);
+  const before = await count();
+  await run(page, `streamFrom(${JSON.stringify("data:text/plain," + encodeURIComponent(events))})`);
+  await expect.poll(count).toBe(before + 2);
+  await expect(page.locator(".console-out, #console").getByText(/stream from data:.* ended \(5 events applied\)/).first()).toBeVisible();
+  await run(page, "S1.label, S2.kind, len(S1.getNeighbors())");
+  await expect(page.locator(".result").last()).toContainText("Streamed one");
+  await expect(page.locator(".result").last()).toContainText("new");
+  expect(await lastError(page)).toBeNull();
+});

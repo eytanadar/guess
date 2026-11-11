@@ -2013,11 +2013,14 @@ def _close_pairs(C, reach):
 
 
 def _fa2_gen(snap, iters, rng, scaling=None, gravity=1.0, strong=False, linlog=False,
-             dissuade=False, overlap=False, weight_influence=1.0, jitter=None):
+             dissuade=False, overlap=False, weight_influence=1.0, jitter=None, lock=None, anchors=None):
     """ForceAtlas2 (Jacomy et al. 2014; Gephi's ForceAtlas2.java): degree+1 masses,
     repulsion k_r m_i m_j / d, linear (or lin-log) attraction, gravity toward the
     centre, and Gephi's adaptive global/local speed. Repulsion beyond the
-    nearest cells uses the grid approximation (the role of Barnes-Hut)."""
+    nearest cells uses the grid approximation (the role of Barnes-Hut).
+    lock (0 = x, 1 = y): that axis never moves (orderedLayout). anchors: for
+    each node the index of the node its gravity pulls toward, or -1 for the
+    centre (MultiGravity ForceAtlas2's several gravity sources)."""
     n = snap.n
     if n == 0:
         return
@@ -2049,13 +2052,17 @@ def _fa2_gen(snap, iters, rng, scaling=None, gravity=1.0, strong=False, linlog=F
                 d = C[ii] - C[jj]
                 f = (100 * kr * mass[ii] * mass[jj])[:, None] * d
                 F += _accumulate(n, ii, jj, f)
-        # gravity toward the centre
+        # gravity toward the centre (or each node's anchor)
         if g:
+            G = C if anchors is None else C - np.where((anchors >= 0)[:, None], C[np.maximum(anchors, 0)], 0.0)
+            if lock is not None:
+                G = G.copy()
+                G[:, lock] = 0          # only the free axis feels gravity
             if strong:
-                F -= (mass * g)[:, None] * C
+                F -= (mass * g)[:, None] * G
             else:
-                dist = np.hypot(C[:, 0], C[:, 1])
-                F -= ((mass * g) / np.where(dist > 0, dist, 1))[:, None] * C
+                dist = np.hypot(G[:, 0], G[:, 1])
+                F -= ((mass * g) / np.where(dist > 0, dist, 1))[:, None] * G
         # attraction along edges
         if len(a):
             d = C[a] - C[b]
@@ -2074,6 +2081,8 @@ def _fa2_gen(snap, iters, rng, scaling=None, gravity=1.0, strong=False, linlog=F
                 fac = fac / mass[a]
             F += _accumulate(n, a, b, d * fac[:, None])
         F[~mov] = 0
+        if lock is not None:
+            F[:, lock] = 0
         # adaptive speed (ForceAtlas2.java)
         swing = mass * np.hypot(*(F - Fold).T)
         traction = 0.5 * mass * np.hypot(*(F + Fold).T)
@@ -2309,6 +2318,7 @@ def _label_adjust_gen(snap, rng, margin=2.0, max_iter=600):
 
 def install(session):
     lay = _Layouts(session)
+    session._layouts = lay          # shared with morelayouts (centerAfterLayout applies to all)
     g = session.graph
 
     def cmd(fn):
@@ -2548,7 +2558,7 @@ def install(session):
     @cmd
     def forceAtlas2Layout(iterations=None, scaling=None, gravity=1.0, strongGravity=False,
                           linLog=False, dissuadeHubs=False, preventOverlap=False,
-                          edgeWeightInfluence=1.0):
+                          edgeWeightInfluence=1.0, gravitySources=None):
         """forceAtlas2Layout() runs Gephi's ForceAtlas2 from the current positions
         (animated; Stop ends it early). Options, by keyword:
           iterations           steps to run (default 500, fewer on big graphs)
@@ -2559,9 +2569,31 @@ def install(session):
           dissuadeHubs=true    pushes hubs to the periphery (authorities central)
           preventOverlap=true  keep node discs apart (best run after a first pass)
           edgeWeightInfluence  0 ignores weights, 1 uses them, >1 exaggerates
+          gravitySources       nodes that act as extra centres of gravity: every
+                               node is pulled toward the nearest of them (in
+                               hops) instead of the centre, so the graph forms
+                               a cluster around each (MultiGravity ForceAtlas2)
         E.g. forceAtlas2Layout(linLog=true, preventOverlap=true)"""
         s = lay.snap()
-        js = _js_fa2() if s.n >= _JS_FA2_MIN else None
+        anchors = None
+        if gravitySources is not None:
+            srcs = [x for x in elements_of(gravitySources) if isinstance(x, Node)] \
+                if not isinstance(gravitySources, (Node, str)) else [gravitySources]
+            idx = []
+            for x in srcs:
+                nd = _node_arg(g, x, "gravity source")
+                if nd._id in s.index and s.index[nd._id] not in idx:
+                    idx.append(s.index[nd._id])
+            if not idx:
+                raise GuessError("gravitySources should be one or more nodes, e.g. gravitySources=[v1, v2]")
+            if s.n:
+                indptr, ind = s.csr
+                D = _bfs_hops(indptr, ind, s.n, idx).astype(float)
+                D[D < 0] = np.inf
+                near = np.argmin(D, 0)
+                anchors = np.where(np.isfinite(D.min(0)), np.array(idx)[near], -1)
+                anchors[idx] = -1                 # the sources themselves feel the usual gravity
+        js = _js_fa2() if s.n >= _JS_FA2_MIN and anchors is None else None
         if js:
             # Barnes-Hut in JS is ~20x faster than the numpy version at this size
             k = _iters(iterations, _scaled(500, s.n) * 3)
@@ -2570,7 +2602,7 @@ def install(session):
             return
         k = _iters(iterations, _scaled(500, s.n))
         lay.run(s, _fa2_gen(s, k, rng(0), scaling, float(gravity), bool(strongGravity), bool(linLog),
-                            bool(dissuadeHubs), bool(preventOverlap), float(edgeWeightInfluence)))
+                            bool(dissuadeHubs), bool(preventOverlap), float(edgeWeightInfluence), anchors=anchors))
 
     @cmd
     def noverlapLayout(margin=5, ratio=1.2):
@@ -2791,7 +2823,26 @@ def install(session):
         """rescaleLayout(percent) scales the layout by percent (0.5 = half size)
         about its top-left corner; rescaleLayout(xpercent, ypercent) scales each
         axis separately; rescaleLayout(width, height) with integers fits the
-        layout into a width x height box at the origin."""
+        layout into a width x height box at the origin. rescaleLayout(nodes,
+        percent) or rescaleLayout(nodes, xpercent, ypercent) spreads out (or
+        draws together) just those nodes about their centre, leaving the rest
+        where they are (Gephi's Scale layout)."""
+        if d and not isinstance(d[0], (int, float)) or d and isinstance(d[0], bool):
+            part = [x for x in elements_of(d[0]) if isinstance(x, Node)]
+            rest = d[1:]
+            if len(rest) not in (1, 2):
+                raise TypeError("rescaleLayout(nodes, percent) or rescaleLayout(nodes, xpercent, ypercent)")
+            fx, fy = float(rest[0]), float(rest[-1])
+            s = lay.snap()
+            sel = np.array([s.index[n._id] for n in part if n._id in s.index], np.intp)
+            if len(sel) < 2:
+                return lay.finish()
+            C = s.pos[sel] + s.size[sel] / 2
+            mid = (C.min(0) + C.max(0)) / 2
+            P = s.pos.copy()
+            P[sel] = mid + (C - mid) * (fx, fy) - s.size[sel] / 2
+            lay.apply(s, P)
+            return
         s = lay.snap()
         if s.n < 2:
             return lay.finish()

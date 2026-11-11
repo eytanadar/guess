@@ -102,7 +102,10 @@ class Session:
         epidemic.install(self)
         timeline.install(self)
         slides.install(self)
-        from . import measures, moreclusters, morelayouts, webexport
+        from . import assistant, htmlexport, measures, moreclusters, morelayouts, streaming, webexport
+        assistant.install(self)
+        htmlexport.install(self)
+        streaming.install(self)
         measures.install(self)
         moreclusters.install(self)
         morelayouts.install(self)
@@ -896,6 +899,9 @@ class Session:
         from . import styles
         if what == "suggest":
             return self.suggestions()
+        if what == "summary":
+            from . import assistant
+            return assistant.summary(self)
         if what == "workspace":
             return self.workspace()
         if what == "timeline":
@@ -1029,6 +1035,14 @@ class Session:
 
     def _pie(self, n):
         pie = self.view.pie
+        if pie["mode"] == "members":
+            # showOverlaps: one slice per community the node is in (nodes in one
+            # or none have all-zero slices and are drawn in their own colour)
+            out = [0] * len(pie["labels"])
+            for k in pie["members"].get(n._name, ()):
+                if 0 <= k < len(out):
+                    out[k] = 1
+            return out
         if pie["mode"] == "fields":
             out = []
             schema = self.graph.node_schema

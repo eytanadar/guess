@@ -611,11 +611,29 @@ export class Console {
     return run;
   }
 
+  /** Run code as a visible cell marked with a badge (e.g. "assistant") and
+   *  resolve with whether it worked and the text it showed. */
+  submitRead(code: string, badge: string): Promise<{ ok: boolean; output: string }> {
+    const run = this.queue.then(async () => {
+      const ok = await this.execute(code, false, badge);
+      return { ok, output: this.lastCellText };
+    });
+    this.queue = run.then(() => true, () => false);
+    return run;
+  }
+  private lastCellText = "";
+
   /** A hidden cell (a node drag) is a normal command — history(), undo, logs and
    * exports include it — but stays out of sight unless "Show node moves" is on,
    * or it fails. */
-  private async execute(code: string, hidden = false): Promise<boolean> {
+  private async execute(code: string, hidden = false, badge?: string): Promise<boolean> {
     const cell = this.newCell(code, hidden);
+    if (badge) {
+      const b = el("span", "cell-badge");
+      b.textContent = badge;
+      cell.root.querySelector(".cell-num")?.after(b);
+      cell.root.dataset.badge = badge;
+    }
     if (!hidden) this.remember(code);
     this.current = cell.out;
     this.currentCell = cell.root;
@@ -641,6 +659,7 @@ export class Console {
         cell.root.querySelector(".cell-actions")!.before(t);
       }
       if (!cell.out.childElementCount) cell.root.classList.add("empty");
+      this.lastCellText = cell.out.innerText;
       this.runsThisVisit++;
       if (/\bdemo\(/.test(code)) this.newcomer = false;
       this.nextHint();

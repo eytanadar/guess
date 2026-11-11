@@ -339,8 +339,7 @@ def read_csv(graph, text, directed=False, rows=None):
     of strings (a spreadsheet), instead of text."""
     if rows is not None:
         rows = [[str(c).strip() for c in r] for r in rows]
-        rows = [r for r in rows if any(c for c in r)]
-        kind = rows_kind(rows)
+        kind, rows = rows_kind([r for r in rows if any(c for c in r)])
     else:
         kind, rows = table_kind(text)
     added = []

@@ -167,7 +167,10 @@ export type FromWorker =
   | { type: "movie"; op: "stop" }
   | UiMsg
   | { type: "image"; key: string; url: string }
-  | { type: "download"; name: string; text: string }
+  /** b64: binary content (exportSHP's zip), base64; text is then empty */
+  | { type: "download"; name: string; text: string; b64?: string }
+  /** connectAssistant(): open (or close) the MCP bridge's WebSocket */
+  | { type: "assistant"; op: "connect" | "disconnect"; url?: string }
   /** optimizeLabels(): simulated annealing over label positions in the renderer */
   | { type: "labels"; op: "optimize"; ms: number }
   /** excentricLens(): the lens tool on or off, and its options */
@@ -211,7 +214,7 @@ export type ToWorker =
   | { type: "click"; x: number; y: number }
   | { type: "writeFile"; id: number; name: string; data: Uint8Array }
   /** help index, field summaries (filters/style panel) or data-table rows */
-  | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace" | "timeline" | "suggest"; kind?: string; ids?: number[] | null };
+  | { type: "query"; id: number; what: "help" | "fields" | "table" | "workspace" | "timeline" | "suggest" | "summary"; kind?: string; ids?: number[] | null };
 
 export interface DragContext {
   /** circleLayout(): nodes slide around the ring and reorder */

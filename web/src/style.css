@@ -723,3 +723,7 @@ body.app .view-col { flex: 1 1 auto; }
 .tour-buttons button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .tour-buttons button:disabled { opacity: 0.5; cursor: default; }
 .tour-count { margin-left: auto; color: var(--muted); font: 11px var(--mono); }
+
+/* a cell an AI assistant ran (connectAssistant) */
+.cell-badge { font: 600 10px var(--sans, system-ui); text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 0 4px; margin-right: 6px; align-self: center; }
+#assistant-status { color: var(--accent); font-size: 12px; margin-right: 10px; cursor: pointer; }

@@ -100,6 +100,11 @@ export async function renderVega(body: HTMLElement, m: VegaMsg, hooks: VegaHooks
   const sels = selections(spec);
   const hasTooltip = JSON.stringify(spec).includes('"tooltip"');
   spec.background ??= "transparent";
+  // a Vega (not Vega-Lite) spec with a fixed width: no wider than the panel
+  const isVega = /\/schema\/vega\/v/.test(String(spec.$schema ?? ""));
+  if (isVega && typeof spec.width === "number" && body.clientWidth > 100) {
+    spec.width = Math.max(200, Math.min(spec.width, body.clientWidth - 24));
+  }
   // a single (or layered) view with no width of its own fits the panel
   if ((spec.mark || spec.layer) && spec.width === undefined) {
     spec.width = "container";

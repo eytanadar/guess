@@ -61,7 +61,11 @@ async function init(msg: Extract<ToWorker, { type: "init" }>) {
     py.setInterruptBuffer(new Uint8Array(msg.interrupt));
     interruptible = true;
   }
-  py.globals.set("__js_emit", (s: string) => post(JSON.parse(s)));
+  py.globals.set("__js_emit", (s: string) => {
+    const m = JSON.parse(s);
+    if (m.type === "stream") streamControl(m);      // streamFrom(): read here, applied in batches
+    else post(m);
+  });
   py.runPython(`
 import sys, os, json
 sys.path.insert(0, "/guess_py")
@@ -156,13 +160,106 @@ function call(fn: string, ...args: unknown[]): unknown {
   return result;
 }
 
+// ---- streamFrom(): Gephi streaming events, applied between commands ----------
+const streams = new Map<string, { stop(): void }>();
+const pending = new Map<string, unknown[]>();
+let flushTimer = 0;
+let runningCell = false;
+
+function streamControl(m: { op: string; id?: string; url?: string }) {
+  if (m.op === "stop") {
+    for (const s of streams.values()) s.stop();
+    streams.clear();
+    pending.clear();
+    return;
+  }
+  if (m.op !== "start" || !m.id || !m.url) return;
+  const id = m.id, url = m.url;
+  const take = (line: string) => {
+    const t = line.trim();
+    if (!t) return;
+    try {
+      const ev = JSON.parse(t);
+      const q = pending.get(id) ?? [];
+      q.push(ev);
+      pending.set(id, q);
+      scheduleFlush();
+    } catch {
+      /* not JSON (a keep-alive, a partial line): skip */
+    }
+  };
+  const ended = (error?: string) => {
+    if (!streams.has(id)) return;
+    streams.delete(id);
+    flushStreams();
+    py!.globals.set("__sid", id);
+    py!.globals.set("__serr", error ?? null);
+    py!.runPython("from guess import streaming as __st\n__st.end(session, __sid, __serr)");
+  };
+  if (/^wss?:/.test(url)) {
+    const ws = new WebSocket(url);
+    ws.onmessage = (ev) => String(ev.data).split(/\r?\n/).forEach(take);
+    ws.onerror = () => ended("could not connect");
+    ws.onclose = () => ended();
+    streams.set(id, { stop: () => ws.close() });
+    return;
+  }
+  const ctl = new AbortController();
+  streams.set(id, { stop: () => ctl.abort() });
+  (async () => {
+    const res = await fetch(url, { signal: ctl.signal });
+    if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let rest = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const lines = (rest + value).split(/\r?\n/);
+      rest = lines.pop() ?? "";
+      lines.forEach(take);
+    }
+    take(rest);
+  })().then(() => ended(), (e) => ended(ctl.signal.aborted ? undefined : String(e?.message ?? e)));
+}
+
+function scheduleFlush() {
+  if (!flushTimer) flushTimer = self.setTimeout(flushStreams, 80) as unknown as number;
+}
+
+/** Apply what has arrived, unless a command is running (then try again soon). */
+function flushStreams() {
+  flushTimer = 0;
+  if (!py || !session) return;
+  if (runningCell) {
+    scheduleFlush();
+    return;
+  }
+  for (const [id, events] of pending) {
+    pending.delete(id);
+    if (!events.length) continue;
+    py.globals.set("__sid", id);
+    py.globals.set("__sev", JSON.stringify(events));
+    try {
+      py.runPython("from guess import streaming as __st\n__st.apply_batch(session, __sid, json.loads(__sev))");
+    } catch (e) {
+      post({ type: "error", text: `stream: ${String(e).split("\n").filter(Boolean).pop()}` });
+    }
+  }
+}
+
 function handle(msg: ToWorker) {
   switch (msg.type) {
     case "run": {
+      runningCell = true;
       const go = () => {
         session.current_cell = msg.cell ?? null;
         session.quiet_next = !!msg.quiet;
-        const ok = call("run", msg.code) as boolean;
+        let ok = false;
+        try {
+          ok = call("run", msg.code) as boolean;
+        } finally {
+          runningCell = false;
+        }
         post({ type: "done", id: msg.id, ok });
       };
       // packages it imports load first (a few seconds, once); then it runs

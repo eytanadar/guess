@@ -44,6 +44,12 @@
             <button role="menuitem" data-run='exportCSV("edges.csv"); exportCSV("nodes.csv", "nodes")'>CSV tables</button>
             <button role="menuitem" id="export-notebook" title="The console's cells as a Jupyter notebook, with a snapshot of the graph">Jupyter notebook (.ipynb)</button>
             <button role="menuitem" id="export-report" title="A self-contained HTML page: graph snapshot, legends and the cells you ran">Report (HTML)</button>
+            <button role="menuitem" data-run='exportHTML("graph.html")' title="One self-contained, interactive page: pan, zoom, search, hover and click nodes (exportHTML)">Interactive web page (HTML)</button>
+            <button role="menuitem" data-run='exportJSON("graph.json")' title="graphology JSON for sigma.js and other web libraries (exportJSON)">JSON for sigma.js</button>
+            <button role="menuitem" data-run='exportKML("graph.kml")' title="Placemarks and lines for Google Earth, from latitude and longitude fields (exportKML)">KML for Google Earth</button>
+            <button role="menuitem" data-run='exportSHP("graph.zip")' title="Point and line shapefiles for QGIS or ArcGIS, from latitude and longitude fields (exportSHP)">Shapefiles for GIS</button>
+            <hr />
+            <button role="menuitem" data-run="connectAssistant()" title="Let an AI assistant (Claude and other MCP clients) work here through mcp/guess-mcp.mjs; what it runs appears in the console">Connect AI assistant</button>
           </div>
         </div>
         <div class="menu-root">
@@ -157,7 +163,7 @@
           </div>
         </div>
       </nav>
-      <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.gml,.dot,.gv,.dl,.csv,.tsv,.py,image/*" multiple hidden />
+      <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.gml,.dot,.gv,.dl,.csv,.tsv,.xlsx,.xlsm,.ttl,.nt,.n3,.rdf,.owl,.py,image/*" multiple hidden />
       <span class="toolgroup" role="group" aria-label="Click tool">
         <button data-tool="select" aria-pressed="true" title="Click a node to highlight its neighbourhood (again, or Esc, to clear); shift-drag box, alt-drag lasso">Select</button>
         <button data-tool="lens" aria-pressed="false" title="Excentric lens (L switches between Select and Lens): lists the labels of the nodes under it; wheel resizes, click pins it to select or filter">◎ Lens</button>
@@ -170,6 +176,7 @@
       <button id="search" class="search-btn" title="Search commands, examples, nodes and values (Cmd/Ctrl+K)">Search<kbd>⌘K</kbd></button>
       <button id="stop" disabled title="Interrupt the running command (Esc)">Stop</button>
       <span id="status" class="status"></span>
+      <span id="assistant-status" hidden title="An AI assistant is connected (click to disconnect)"></span>
     </header>
     <main class="split">
       <div class="view-col">

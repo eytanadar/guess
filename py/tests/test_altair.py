@@ -87,3 +87,4 @@ def test_live_charts_everywhere():
     assert s.run("liveCharts()\nplotSizes(dept)")
     assert s.rec.of("chart")[-1]["live"]
     assert s.run("liveCharts(False)") and not s.live_charts
+
