@@ -226,16 +226,49 @@ history scrubber that highlights what each undo step touches.
 
 # Status
 
-Started 2026-11-10, with the four items below. Each is marked done when it
-lands, with its tests.
+Started 2026-11-10; the first four items were done 2026-11-11, with tests
+(`py/tests/test_queries_v2.py`, `py/tests/test_linked_output.py`,
+`web/e2e/linking.spec.ts`).
 
-1. **Wrong-answer bugs:** chained comparisons, `and`/`or`/`not` on sets,
-   `field in (...)`, the `&` precedence hint and `_suggest`.
-2. **Linked output:** dicts, sets and f-strings.
-3. **Two-way highlighting,** clickable chart bars, and ids on the
-   `outbreaks` histogram.
-4. **Aggregates and `top()`:** `s.degree.avg` and friends, iterable fields,
-   `top(field, k)`.
+1. ✅ **Wrong-answer bugs.**
+   - `3 < degree < 6` is the intersection of its parts.
+   - `and`, `or` and `not` combine sets when used as values. In the test of
+     an `if`, `while`, conditional expression, `assert` or comprehension
+     filter they stay plain Python.
+   - `field in (...)` / `not in` is a membership query (`Field.isin`).
+   - `dept == "x" & degree > 3` gives a "put each comparison in
+     parentheses" error.
+   - `_suggest` no longer suggests the misspelt name itself, or anything
+     when the object is missing (None).
+   - Found on the way and fixed: a number compared with an integer field
+     was rounded first (`degree < 4.75` meant `degree < 4`).
+2. ✅ **Linked output.**
+   - Dicts, sets and frozensets of elements link, entry by entry.
+   - f-strings compile to `LinkedStr`: an ordinary `str`, with the nodes,
+     edges and sets in it linked when printed.
+   - Groups longer than 500 link every member (shown or not).
+   - Objects with their own summary (e.g. `offspring()`) keep it, and link
+     every element they hold.
+3. ✅ **Two-way highlighting.**
+   - Hovering the graph, a chart mark, a table row or a legend row marks the
+     console output, table rows, legend rows and chart marks that mention
+     the same elements. This works even when graph highlighting is off.
+   - Chart bars select on click (shift adds). Right-click opens the element
+     menu, which acts on the bar's query: histogram bins and `plotSizes`
+     bars carry one.
+   - The `outbreaks()` histogram links each bar to the people its runs
+     started from.
+4. ✅ **Aggregates and `highest`/`lowest`.**
+   - Reading a field from a set gives `Values`, with `.avg`, `.mean`,
+     `.sum`, `.min`, `.max`, `.median`, `.count` and `.distinct`.
+   - Fields are iterable (`max(degree)`) and have `.median` and `.count`.
+   - `highest(field, k)` and `lowest(field, k)`; `sortBy(..., descending=true)`.
+   - Named `highest`/`lowest`, not `top`, because `top` is a common variable
+     name in the recipes.
+   - The Epidemiology book uses them.
 
 Waiting for a decision: argument renames (O), the meaning of `-` (D), and
-loosening reserved names (J).
+loosening reserved names (J). Still open from the linking list: insert as
+code (2), hover-linking inside code (6), provenance (7), previews (8),
+tagging stale output with its graph (part of 9), and live watched results
+(10).
