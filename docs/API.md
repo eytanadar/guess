@@ -39,7 +39,7 @@ Commands can be called without parentheses when they take no arguments
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
 - [Charts](#charts) (5)
-- [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (11)
+- [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (22)
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
 - [Colors](#colors) (4)
@@ -2718,6 +2718,15 @@ Pie chart of how many elements share each value of field.
 
 ## Interface building (panels, widgets, timers, events)
 
+### `Action(name, label=None)`
+
+Action(name): one of GUESS's own commands for a menu or toolbar: "open",
+"save", "png", "svg", "sample", "share-link", "share-viewer", "table",
+"style", "filter", "variables", "help", "history", "search", "stop",
+"tour", "manual", "fit", the tools "tool:select", "tool:lens",
+"tool:path", "tool:heat", "tool:paint", "tool:cluster", and "tools"
+(the whole tool strip, for a toolbar).
+
 ### `after(seconds, fn)`
 
 Call fn() once after `seconds` seconds; returns a timer with .stop().
@@ -2730,6 +2739,10 @@ Button(text, onClick=fn): calls fn() when clicked; .enabled turns it on/off.
 
 Checkbox(text, checked=False, onChange=fn): calls fn(checked) when toggled.
 
+### `Column(*a, **k)`
+
+Column(*widgets): widgets one under another.
+
 ### `Dropdown(*a, **k)`
 
 Dropdown(options, value=None, label="", onChange=fn): a choice list; calls
@@ -2739,9 +2752,31 @@ fn(value) when the selection changes.
 
 Call fn() every `seconds` seconds; returns a timer with .stop().
 
+### `Group(*a, **k)`
+
+Group(title, *widgets, collapsed=False): a titled box that can be folded.
+
 ### `Label(*a, **k)`
 
 Label(text): a line of text in a panel; set .text to change it.
+Label(lambda: f"{len(sel)} selected") is live: the function runs again
+after every command and the label follows.
+
+### `Markdown(*a, **k)`
+
+Markdown(text): a block of formatted text in a panel (headings, **bold**,
+*italics*, `code`, lists and links). Set .text to change it; a function
+makes it live, like Label.
+
+### `Menu(title, *items)`
+
+Menu(title, *items): a menu for ui.menubar; items are MenuItem, Action,
+Separator (or "-").
+
+### `MenuItem(*a, **k)`
+
+MenuItem(label, run="code" or onClick=fn, shortcut=""): an item for
+Menu(...) or a menu bar. run= runs Gython as a command (one undo step).
 
 ### `openURL(url)`
 
@@ -2749,7 +2784,17 @@ Open a web page in a new browser tab.
 
 ### `Panel(*a, **k)`
 
-Panel(title, *widgets, position="bottom", vertical=False). Show with ui.dock(p).
+Panel(title, *widgets, position="bottom", vertical=False). Show with
+ui.dock(p), or place it with ui.layout(left=p, …). position is "bottom",
+"right" or "left".
+
+### `Row(*a, **k)`
+
+Row(*widgets): widgets side by side.
+
+### `Separator()`
+
+Separator(): a line between menu or toolbar items.
 
 ### `Slider(*a, **k)`
 
@@ -2760,9 +2805,24 @@ onChange fires on release, onSlide while dragging.
 
 Stop all timers.
 
+### `Tab(*a, **k)`
+
+Tab(title, *widgets): one page of a Tabs.
+
+### `Tabs(*a, **k)`
+
+Tabs(Tab("Network", …), Tab("Style", View("style")), …): tabbed pages
+in a panel; .selected is the title of the tab showing.
+
 ### `TextField(*a, **k)`
 
 TextField(value="", placeholder="", onEnter=None): onEnter(text) on Return.
+
+### `View(*a, **k)`
+
+View(name) puts one of GUESS's own views inside a panel or tab: "table"
+(the data table), "style", "filter", "variables", "help", "timeline" or
+"console".
 
 ## Sessions and apps
 
@@ -3732,6 +3792,24 @@ graphevents.clickNode = lambda n: center([n] + n.getNeighbors())
 startMovie(30, 'run.webm')
 gemLayout()
 stopMovie()
+```
+
+**Arrange the window like an app**
+
+```python
+ui.layout(left=Tabs(Tab('About', Markdown('### My app')), Tab('Style', View('style'))), bottom=View('table'))
+```
+
+**A live label**
+
+```python
+ui.statusbar(Label(lambda: f'{len(sel)} selected'))
+```
+
+**Your own menu**
+
+```python
+ui.menubar(Menu('Tools', MenuItem('Communities', run='louvainClusters()'), Action('table')), keep=['Help'])
 ```
 
 ## Fields

@@ -1,5 +1,28 @@
 # Plan: GUESS apps
 
+## Status (November 2026)
+
+Decisions: no Cytoscape or Gephi presets or close copies; example apps for
+cookbook domains instead. Delivery starts with `?app=<manifest>` and is kept
+simple. Whether users may open the console is the author's choice. GUESS
+keeps its own look, with no property-table style editor.
+
+**Built:**
+- the manifest and `?app=` loading, with a trust prompt for other sites, and the console opening when the script fails;
+- console modes (`hidden`, `toggle` with Ctrl+`, `shown`) and the theme;
+- `ui.layout` (left, right and bottom regions, with draggable edges and sizes);
+- `Tabs`/`Tab`, `Group`, `Row`, `Column`, `Markdown`, `View`, and live `Label`/`Markdown` given a function;
+- `ui.menubar` (`Menu`, `MenuItem`, `Action`, `keep=`), `ui.toolbar`, `ui.statusbar`, `ui.title` and `ui.console`;
+- three example apps in `web/public/apps/` (Interactome Explorer, Airport Disruption, Outbreak Explorer), under *Help → Example apps*;
+- the manual's *Apps* section, plus notes in the three cookbooks' capstones.
+
+**Not built (from the plan below):**
+- presets (dropped);
+- workspaces and `ui.saveLayout()`;
+- the overview mini-map and the align/distribute tools;
+- `Table`, `List` and `Tree` widgets (a `View("table")` covers the data table);
+- folder bundles with `--app`, and an `exportApp` that writes a manifest.
+
 An app is GUESS with its own interface. It's Gython code, and optionally data,
 that runs when GUESS loads, with the console hidden and the window arranged
 for one job: a Cytoscape-style workbench, a Gephi-style studio, or a small

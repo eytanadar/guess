@@ -1921,9 +1921,87 @@ exportApp("threshold.guess", "ui.py")
 Opening `index.html?load=threshold.guess&app=1` (with the file on the same
 server) shows the graph and its panels without the console. *File → Share
 as viewer* does the same thing as a single link. This replaces the applets
-of 2006.
+of 2006. For an app with an interface of its own, see the next section.
 
-## 15.5 Code bits
+## 15.5 Apps
+
+An app is GUESS with its own interface: a script that runs when GUESS
+opens, arranging the window for one job, with the console hidden (or
+available, as the author chooses). *Help → Example apps* has three, one
+for each of the biology, infrastructure and epidemiology cookbooks; their
+source is in `web/public/apps/`.
+
+**Running an app.** An app is a small JSON file, its *manifest*, next to
+its script:
+
+```{.python .norun}
+{
+  "guess-app": 1,
+  "name": "Interactome Explorer",
+  "console": "toggle",
+  "theme": "light",
+  "data": ["brca1-intact.gdf"],
+  "script": "main.py"
+}
+```
+
+and `index.html?app=apps/interactome/manifest.json` runs it. `data` files
+(relative to the manifest) are copied into the session's folder first,
+then the script runs; its setup isn't an undo step. `console` is
+`"hidden"` (the default), `"toggle"` (hidden, but Ctrl+` shows it) or
+`"shown"`; `theme` is `"light"`, `"dark"` or `"auto"`. Instead of
+`script`, short apps can give the code itself as `code`. If the script
+stops with an error, the console opens to show it. An app from another
+web site asks before it runs.
+
+**Arranging the window.** These commands work in any script or in the
+console, so you can build an app interactively:
+
+```python
+info = Markdown("### Organisation\nClick a person to see their department.")
+ui.layout(
+    left=Tabs(Tab("About", info, Label(lambda: f"{len(sel)} selected")),
+              Tab("Style", View("style"))),
+    bottom=View("table"),
+    sizes={"left": 300, "bottom": 200})
+ui.toolbar(Action("tools"), "|", Action("fit"), Action("png"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} people"))
+ui.menubar(Menu("Analysis", MenuItem("Communities", run="louvainClusters(); colorize(louvain_class)"),
+                Action("table")), keep=["File", "Help"])
+ui.title("Organisation", "sample data")
+```
+
+- `ui.layout(left=…, right=…, bottom=…)` fills the regions around the graph,
+  each with a panel, a widget or a list of them; the edges can be dragged,
+  and `sizes=` sets them in pixels.
+- Containers: `Tabs(Tab(title, …), …)`, `Group(title, …, collapsed=false)` (a
+  box that folds), `Row(…)` and `Column(…)`, besides `Panel`.
+- `View(name)` places one of GUESS's own views: `"table"`, `"style"`,
+  `"filter"`, `"variables"`, `"help"`, `"timeline"` or `"console"`.
+- `Markdown(text)` shows formatted notes. `Label` and `Markdown` given a
+  function, as in `Label(lambda: f"{len(sel)} selected")`, are live: they
+  update after every command and every change of selection.
+- `ui.menubar(Menu(title, items…), keep=[…])` replaces the menus (keeping
+  the ones named). Items are `MenuItem(label, run="code")` or
+  `MenuItem(label, onClick=fn)`, `Action(name)` for one of GUESS's own
+  commands (`"open"`, `"save"`, `"png"`, `"table"`, `"style"`, `"tool:lens"`,
+  `"fit"`, …; `help(Action)` lists them) and `"-"` for a line.
+  `ui.menubar()` removes the menus.
+- `ui.toolbar(…)` and `ui.statusbar(…)` add a bar under the menus and along
+  the bottom: actions, widgets and `"|"`. `Action("tools")` moves the whole
+  tool strip into the toolbar.
+- `ui.title(name, subtitle)` names the window, and `ui.console("hidden" |
+  "toggle" | "shown")` hides or shows the console.
+
+```python
+ui.toolbar()
+ui.statusbar()
+ui.layout()
+ui.menubar(keep=["File", "Edit", "View", "Layout", "Analyze", "Help"])
+ui.title("GUESS")
+```
+
+## 15.6 Code bits
 
 - `execfile("file.py")` runs a script you've opened.
 - `openURL(url)` opens a web page.

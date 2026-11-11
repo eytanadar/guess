@@ -7,6 +7,7 @@ import { HistoryPanel, type HistoryStep } from "./history";
 import { ClusterTool, type ClusterInfo } from "./cluster";
 import { Tour } from "./tour";
 import { AssistantLink } from "./assistant";
+import { AppChrome, type AppManifest } from "./app";
 import { ask, choose, pickFields } from "./dialog";
 import { toGIF, toPDF, toPS } from "./rasterexport";
 import { HelpPanel, type HelpIndex } from "./help";
@@ -20,7 +21,7 @@ import sampleGdf from "../../gdfs/sample.gdf?raw";
 // the cookbooks' datasets (and the other example graphs), deployed beside the app
 // and fetched only when a recipe opens one: makeFromGDF("karate.gdf") just works
 const datasetUrls = import.meta.glob(
-  ["../../cookbooks/data/*.{gdf,csv,txt,md}", "../../gdfs/*.gdf", "!../../gdfs/sample.gdf"],
+  ["../../cookbooks/data/*.{gdf,csv,txt,md,mitab,gpml}", "../../gdfs/*.gdf", "!../../gdfs/sample.gdf"],
   { query: "?url", import: "default", eager: true },
 ) as Record<string, string>;
 
@@ -34,9 +35,12 @@ const params = new URLSearchParams(location.search);
 // a shared link carries the session in the hash: #s=<gzip+base64url>[&app=1]
 const hashParams = new URLSearchParams(location.hash.slice(1));
 const sharedSession = hashParams.get("s");
-const appMode = params.get("app") === "1" || hashParams.get("app") === "1";
+// ?app=<manifest url> runs an app (see app.ts); ?app=1 is the older viewer mode
+const appManifestUrl = params.get("app") && params.get("app") !== "1" ? params.get("app") : null;
+const appMode = params.get("app") === "1" || hashParams.get("app") === "1" || !!appManifestUrl;
 const loadUrl = params.get("load");
-if (appMode) document.body.classList.add("app");
+if (appMode && !appManifestUrl) document.body.classList.add("app");
+if (appManifestUrl) document.body.classList.add("console-hidden");    // until the manifest says otherwise
 
 // ---- worker plumbing ----------------------------------------------------------
 const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
@@ -59,6 +63,8 @@ function request<T>(build: (id: number) => ToWorker): Promise<T> {
 // ---- UI --------------------------------------------------------------------------
 const pendingMoves: number[] = [];
 let themeReady: () => void = () => {};
+/** an app's theme (not saved as the viewer's own choice) */
+let themeChoice: ((t: "auto" | "light" | "dark") => void) | null = null;
 const status = $("#status");
 const tip = $("#tip");
 const menu = $("#menu");
@@ -323,6 +329,7 @@ function scheduleAutosave() {
 
 const dock = new Dock($("#dock-bottom"), $("#dock-right"), {
   event: (target, name, value) => void uiEvent(target, name, value),
+  mountView: (name, el) => void mountView(name, el),
   hover: (items, title, lines, ev) => {
     if (!items || !ev) {
       highlightItems(null);
@@ -344,7 +351,99 @@ const dock = new Dock($("#dock-bottom"), $("#dock-right"), {
   dark: () => isDark(),
   live: (chart, on) => request<boolean>((id) => ({ type: "live", id, chart, on })),
   lineAt: (expr, title, lines, ev, click) => void lineAt(expr, title, lines, ev, click),
+}, $("#dock-left"));
+
+// ---- apps: the window as an app's script arranges it (app.ts) ------------------------
+const appChrome = new AppChrome({
+  dock,
+  event: (target, name, value) => void uiEvent(target, name, value),
+  run: (code) => void term.submit(code),
+  wireMenu: (root) => wireMenuRoot(root),
 });
+
+/** View(name): move one of the page's own views into a panel or tab. */
+async function mountView(name: string, el: HTMLElement) {
+  const sideOf: Record<string, Side> = { style: "style", filter: "filter", variables: "vars", help: "help" };
+  if (name === "table") {
+    el.append($("#table-body"));
+    $("#table-pane").hidden = true;
+    dataTable.setSelection(renderer.selection, edgesAmong(renderer.selection));
+    await dataTable.show("n", null);
+  } else if (name in sideOf) {
+    const s = sideOf[name];
+    const body = $(`#side-${s}`);
+    el.append(body);
+    body.hidden = false;
+    if (s === "help") await helpPanel.show(null);
+    else if (s === "style") await stylePanel.show();
+    else if (s === "filter") await filterPanel.show();
+    else await varsPanel.show();
+  } else if (name === "timeline") {
+    el.append($("#timeline"));
+  } else if (name === "console") {
+    el.append($("#console"));
+    $("#divider").hidden = true;
+  }
+}
+
+/** ?app=<manifest url>: fetch the manifest, its data and script, and run it. */
+async function loadApp(url: string) {
+  const base = new URL(url, location.href);
+  if (base.origin !== location.origin && !(await choose({
+    title: "Run this app?",
+    note: `It comes from ${base.origin} and runs its own code in this page (inside GUESS's sandbox, with your browser's limits).`,
+    choices: [{ label: "Run it", value: "yes" }],
+  }))) {
+    term.note("The app was not run.");
+    appChrome.console("shown");
+    return;
+  }
+  let m: AppManifest;
+  try {
+    const res = await fetch(base);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    m = await res.json();
+  } catch (e) {
+    appChrome.console("shown");
+    term.error(`Could not load the app at ${url}: ${e}`);
+    return;
+  }
+  if (m.name) {
+    appChrome.title(m.name, null);
+  }
+  if (m.theme) themeChoice?.(m.theme);
+  appChrome.console(m.console ?? "hidden");
+  for (const file of m.data ?? []) {
+    const src = new URL(file, base);
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const name = decodeURIComponent(src.pathname.split("/").pop() || "data");
+      const data = new Uint8Array(await res.arrayBuffer());
+      await request((id) => ({ type: "writeFile", id, name, data }));
+    } catch (e) {
+      term.error(`The app's data file ${file} could not be loaded: ${e}`);
+    }
+  }
+  let code = m.code ?? "";
+  if (m.script) {
+    try {
+      const res = await fetch(new URL(m.script, base));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      code = await res.text();
+    } catch (e) {
+      appChrome.console("shown");
+      term.error(`Could not load the app's script ${m.script}: ${e}`);
+      return;
+    }
+  }
+  // the script sets the app up: not an undo step, and not in the history
+  const ok = await request<boolean>((id) => ({ type: "run", id, code, quiet: true, cell: undefined }));
+  if (!ok) {
+    appChrome.console("shown");
+    term.note("The app's script stopped with an error (above).");
+  }
+}
 
 let lineToken = 0;
 let lineExpr: string | null = null;
@@ -453,6 +552,12 @@ function onUi(m: Extract<FromWorker, { type: "ui" }>) {
       break;
     case "status": status.textContent = m.text; break;
     case "open": window.open(m.url, "_blank", "noopener"); break;
+    case "regions": appChrome.regions(m.sizes); break;
+    case "menubar": appChrome.menubar(m.menus, m.keep); break;
+    case "toolbar": appChrome.toolbar(m.items); break;
+    case "statusbar": appChrome.statusbar(m.items); break;
+    case "title": appChrome.title(m.text, m.subtitle); break;
+    case "console": appChrome.console(m.mode); break;
     case "timer": {
       clearTimer(m.id);
       const fire = async () => {
@@ -1309,11 +1414,18 @@ $("#center").addEventListener("click", () => renderer.center());
   }
   system.addEventListener("change", apply);
   themeReady = apply;
+  themeChoice = (t) => {
+    theme = t;
+    apply();
+  };
 }
 
 // ---- menus ---------------------------------------------------------------------------
+/** Wire a menu (title + pop-up) so it opens, closes and moves like the others
+ *  (apps add their own with ui.menubar). */
+let wireMenuRoot: (r: HTMLElement) => void = () => {};
 {
-  const roots = [...document.querySelectorAll<HTMLElement>(".menu-root")];
+  const visibleRoots = () => [...document.querySelectorAll<HTMLElement>(".menubar .menu-root")].filter((r) => !r.hidden);
   let openRoot: HTMLElement | null = null;
   const pop = (r: HTMLElement) => r.querySelector<HTMLElement>(".menu-pop")!;
   const title = (r: HTMLElement) => r.querySelector<HTMLElement>(".menu-title")!;
@@ -1331,7 +1443,9 @@ $("#center").addEventListener("click", () => renderer.center());
     title(r).setAttribute("aria-expanded", "true");
     if (focusFirst) items(r)[0]?.focus();
   };
-  for (const r of roots) {
+  wireMenuRoot = (r: HTMLElement) => {
+    if (r.dataset.wired) return;
+    r.dataset.wired = "1";
     title(r).addEventListener("click", () => (openRoot === r ? close() : open(r)));
     title(r).addEventListener("pointerenter", () => {
       if (openRoot && openRoot !== r) open(r);
@@ -1352,6 +1466,7 @@ $("#center").addEventListener("click", () => renderer.center());
         ev.preventDefault();
         list[(k + (ev.key === "ArrowDown" ? 1 : list.length - 1)) % list.length]?.focus();
       } else if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
+        const roots = visibleRoots();
         const next = roots[(roots.indexOf(r) + (ev.key === "ArrowRight" ? 1 : roots.length - 1)) % roots.length];
         open(next, true);
       } else if (ev.key === "Escape") {
@@ -1360,10 +1475,15 @@ $("#center").addEventListener("click", () => renderer.center());
         title(r).focus();
       }
     });
-  }
+  };
+  for (const r of document.querySelectorAll<HTMLElement>(".menu-root")) wireMenuRoot(r);
   document.addEventListener("pointerdown", (ev) => {
     if (openRoot && !openRoot.contains(ev.target as Node)) close();
   });
+  // Help → Example apps: each opens in a new tab
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-app]")) {
+    b.addEventListener("click", () => window.open(`${location.pathname}?app=${encodeURIComponent(b.dataset.app!)}`, "_blank", "noopener"));
+  }
   // menu items that run a Gython command
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-run]")) {
     b.addEventListener("click", () => void term.submit(b.dataset.run!));
@@ -2068,6 +2188,8 @@ async function onReady() {
     } catch (e) {
       term.error(`Could not open the shared link: ${e}`);
     }
+  } else if (appManifestUrl) {
+    await loadApp(appManifestUrl);
   } else if (loadUrl) {
     await openUrl(loadUrl);
   } else if (await restoreAutosave()) {

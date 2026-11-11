@@ -1,0 +1,8 @@
+{
+  "guess-app": 1,
+  "name": "Interactome Explorer",
+  "description": "BRCA1's protein interactions from IntAct, drawn as stars, rings and grids; complexes, communities and a confidence filter.",
+  "console": "toggle",
+  "theme": "light",
+  "script": "main.py"
+}

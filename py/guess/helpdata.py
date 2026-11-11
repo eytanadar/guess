@@ -206,6 +206,9 @@ EXAMPLES = [
         ("A slider that filters", "s = Slider(freq.min, freq.max, label='min freq')\ndef update(v):\n    (freq < v).visible = false\n    (freq >= v).visible = true\ns.onChange = update\nui.dock(Panel('Filter', s))", "widget panel"),
         ("React to clicks", "graphevents.clickNode = lambda n: center([n] + n.getNeighbors())", "events"),
         ("Record a movie", "startMovie(30, 'run.webm')\ngemLayout()\nstopMovie()", "video"),
+        ("Arrange the window like an app", "ui.layout(left=Tabs(Tab('About', Markdown('### My app')), Tab('Style', View('style'))), bottom=View('table'))", "app layout tabs regions panel interface"),
+        ("A live label", "ui.statusbar(Label(lambda: f'{len(sel)} selected'))", "live label status bar bind"),
+        ("Your own menu", "ui.menubar(Menu('Tools', MenuItem('Communities', run='louvainClusters()'), Action('table')), keep=['Help'])", "menu menubar action app"),
     ]),
 ]
 

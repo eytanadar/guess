@@ -607,3 +607,5 @@ center()
   `plan["immune"]` before each run.
 - Add "teachers only" as a strategy (`role == "teacher"`).
 - `exportApp()` shares the control room as a page.
+
+**As an app.** A capstone like this can be packaged so it opens on its own, without the console, through `?app=` (manual, *Apps*). *Help → Example apps → Outbreak Explorer* is one for this book: click patient zero, set β and γ, and run an SIR outbreak through the simulated school. Its source is `web/public/apps/outbreak/`.

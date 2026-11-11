@@ -90,7 +90,10 @@ export interface Morph {
   edgeAppearAfter: number; edgeDisappearBy: number;
 }
 
-export interface WidgetRec { id: string; kind: string; props: Record<string, unknown> }
+/** children: containers (tabs, tab, group, row, column) */
+export interface WidgetRec { id: string; kind: string; props: Record<string, unknown>; children?: WidgetRec[] }
+/** a menu, toolbar or status bar entry: a widget, a built-in action or a separator */
+export type BarItem = WidgetRec | { kind: "action"; name: string; text?: string } | { kind: "sep" };
 export interface PanelRec extends WidgetRec { children: WidgetRec[] }
 
 export interface ChartMsg {
@@ -116,7 +119,14 @@ export type UiMsg =
   | { type: "ui"; op: "timer"; id: string; ms: number; repeat: boolean }
   | { type: "ui"; op: "cancelTimer"; id: string }
   | { type: "ui"; op: "status"; text: string }
-  | { type: "ui"; op: "open"; url: string };
+  | { type: "ui"; op: "open"; url: string }
+  /** apps: the window's regions, menu bar, toolbar, status bar, title and console */
+  | { type: "ui"; op: "regions"; sizes: Record<string, number> }
+  | { type: "ui"; op: "menubar"; menus: { title: string; items: BarItem[] }[]; keep: string[] }
+  | { type: "ui"; op: "toolbar"; items: BarItem[] }
+  | { type: "ui"; op: "statusbar"; items: BarItem[] }
+  | { type: "ui"; op: "title"; text: string; subtitle: string | null }
+  | { type: "ui"; op: "console"; mode: "hidden" | "toggle" | "shown" };
 
 /** What a hovered name or query in executed code means now. */
 export interface PeekInfo {

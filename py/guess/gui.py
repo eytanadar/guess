@@ -75,12 +75,46 @@ class Widget:
 
 
 class Label(Widget):
-    """Label(text): a line of text in a panel; set .text to change it."""
+    """Label(text): a line of text in a panel; set .text to change it.
+    Label(lambda: f"{len(sel)} selected") is live: the function runs again
+    after every command and the label follows."""
     kind = "label"
     _props = ("text",)
 
     def __init__(self, gui, text=""):
-        super().__init__(gui, text=str(text))
+        fn = text if callable(text) else None
+        super().__init__(gui, text=gui.evaluate(fn) if fn else str(text))
+        if fn:
+            gui.bound[self._id] = fn
+
+
+class Markdown(Widget):
+    """Markdown(text): a block of formatted text in a panel (headings, **bold**,
+    *italics*, `code`, lists and links). Set .text to change it; a function
+    makes it live, like Label."""
+    kind = "markdown"
+    _props = ("text",)
+
+    def __init__(self, gui, text=""):
+        fn = text if callable(text) else None
+        super().__init__(gui, text=gui.evaluate(fn) if fn else str(text))
+        if fn:
+            gui.bound[self._id] = fn
+
+
+class View(Widget):
+    """View(name) puts one of GUESS's own views inside a panel or tab: "table"
+    (the data table), "style", "filter", "variables", "help", "timeline" or
+    "console"."""
+    kind = "view"
+    _props = ("name",)
+    NAMES = ("table", "style", "filter", "variables", "help", "timeline", "console")
+
+    def __init__(self, gui, name):
+        name = {"vars": "variables", "data": "table"}.get(str(name).lower(), str(name).lower())
+        if name not in self.NAMES:
+            raise GuessError(f"View names a built-in view: {', '.join(self.NAMES)}")
+        super().__init__(gui, name=name)
 
 
 class Button(Widget):
@@ -149,24 +183,42 @@ class TextField(Widget):
         return self._handlers.get("onEnter" if name == "enter" else "onChange")
 
 
-class Panel(Widget):
-    """Panel(title, *widgets, position="bottom", vertical=False). Show with ui.dock(p)."""
-    kind = "panel"
-    _props = ("title", "position", "vertical")
+class _Container(Widget):
+    """A widget holding others (Panel, Tabs, Tab, Group, Row, Column)."""
 
-    def __init__(self, gui, title="", *children, position="bottom", vertical=False):
-        super().__init__(gui, title=str(title), position=position, vertical=bool(vertical))
+    def _init_children(self, children):
         object.__setattr__(self, "_children", [])
         self.add(*children)
 
     def add(self, *widgets):
         for w in widgets:
+            if isinstance(w, str):
+                w = Label(self._gui, w)
             if not isinstance(w, Widget) or w is self:
-                raise GuessError(f"cannot add {w!r} to a panel")
+                raise GuessError(f"cannot add {w!r} to a {self.kind}")
+            object.__setattr__(w, "_parent", self)
             self._children.append(w)
-        if self._id in self._gui.docked:
-            self._gui.emit_dock(self)
+        root = self._gui.root_of(self)
+        if root is not None:
+            self._gui.emit_dock(root)
         return self
+
+    def record(self):
+        r = super().record()
+        r["children"] = [c.record() for c in self._children]
+        return r
+
+
+class Panel(_Container):
+    """Panel(title, *widgets, position="bottom", vertical=False). Show with
+    ui.dock(p), or place it with ui.layout(left=p, …). position is "bottom",
+    "right" or "left"."""
+    kind = "panel"
+    _props = ("title", "position", "vertical", "bare")
+
+    def __init__(self, gui, title="", *children, position="bottom", vertical=False):
+        super().__init__(gui, title=str(title), position=position, vertical=bool(vertical))
+        self._init_children(children)
 
     def dock(self):
         self._gui.dock(self)
@@ -175,10 +227,135 @@ class Panel(Widget):
     def close(self):
         self._gui.close(self)
 
+
+
+class Tabs(_Container):
+    """Tabs(Tab("Network", …), Tab("Style", View("style")), …): tabbed pages
+    in a panel; .selected is the title of the tab showing."""
+    kind = "tabs"
+    _props = ("selected",)
+    _events = ("onChange",)
+
+    def __init__(self, gui, *tabs, selected=None, onChange=None):
+        for t in tabs:
+            if not isinstance(t, Tab):
+                raise GuessError("Tabs takes Tab(title, …) pages")
+        super().__init__(gui, selected=selected if selected is not None else (tabs[0].title if tabs else None),
+                         onChange=onChange)
+        self._init_children(tabs)
+
+    def _receive(self, name, value):
+        self._state["selected"] = value
+        return self._handlers.get("onChange")
+
+
+class Tab(_Container):
+    """Tab(title, *widgets): one page of a Tabs."""
+    kind = "tab"
+    _props = ("title", "vertical")
+
+    def __init__(self, gui, title, *children, vertical=True):
+        super().__init__(gui, title=str(title), vertical=bool(vertical))
+        self._init_children(children)
+
+
+class Group(_Container):
+    """Group(title, *widgets, collapsed=False): a titled box that can be folded."""
+    kind = "group"
+    _props = ("title", "collapsed", "vertical")
+
+    def __init__(self, gui, title, *children, collapsed=False, vertical=True):
+        super().__init__(gui, title=str(title), collapsed=bool(collapsed), vertical=bool(vertical))
+        self._init_children(children)
+
+
+class Row(_Container):
+    """Row(*widgets): widgets side by side."""
+    kind = "row"
+
+    def __init__(self, gui, *children):
+        super().__init__(gui)
+        self._init_children(children)
+
+
+class Column(_Container):
+    """Column(*widgets): widgets one under another."""
+    kind = "column"
+
+    def __init__(self, gui, *children):
+        super().__init__(gui)
+        self._init_children(children)
+
+
+class MenuItem(Widget):
+    """MenuItem(label, run="code" or onClick=fn, shortcut=""): an item for
+    Menu(...) or a menu bar. run= runs Gython as a command (one undo step)."""
+    kind = "menuitem"
+    _props = ("text", "run", "enabled", "shortcut")
+    _events = ("onClick",)
+
+    def __init__(self, gui, text, run=None, onClick=None, shortcut=""):
+        super().__init__(gui, text=str(text), run=None if run is None else str(run), enabled=True,
+                         shortcut=str(shortcut), onClick=onClick)
+
+
+class Action:
+    """Action(name): one of GUESS's own commands for a menu or toolbar: "open",
+    "save", "png", "svg", "sample", "share-link", "share-viewer", "table",
+    "style", "filter", "variables", "help", "history", "search", "stop",
+    "tour", "manual", "fit", the tools "tool:select", "tool:lens",
+    "tool:path", "tool:heat", "tool:paint", "tool:cluster", and "tools"
+    (the whole tool strip, for a toolbar)."""
+    NAMES = ("open", "save", "png", "svg", "sample", "share-link", "share-viewer", "table", "style", "filter",
+             "variables", "help", "history", "search", "stop", "tour", "manual", "fit", "tools",
+             "tool:select", "tool:lens", "tool:path", "tool:heat", "tool:paint", "tool:cluster")
+
+    def __init__(self, name, label=None):
+        name = str(name)
+        if name not in self.NAMES:
+            raise GuessError(f"unknown action '{name}' (actions: {', '.join(self.NAMES)})")
+        self.name, self.label = name, label
+
     def record(self):
-        r = super().record()
-        r["children"] = [c.record() for c in self._children]
-        return r
+        return {"kind": "action", "name": self.name, **({"text": str(self.label)} if self.label else {})}
+
+    def __repr__(self):
+        return f"Action({self.name!r})"
+
+
+class Separator:
+    """Separator(): a line between menu or toolbar items."""
+
+    def record(self):
+        return {"kind": "sep"}
+
+    def __repr__(self):
+        return "Separator()"
+
+
+class Menu:
+    """Menu(title, *items): a menu for ui.menubar; items are MenuItem, Action,
+    Separator (or "-")."""
+
+    def __init__(self, title, *items):
+        self.title = str(title)
+        self.items = list(items)
+
+    def record(self):
+        out = []
+        for it in self.items:
+            if it == "-" or isinstance(it, Separator):
+                out.append({"kind": "sep"})
+            elif isinstance(it, (MenuItem, Action)):
+                out.append(it.record())
+            elif isinstance(it, str):
+                out.append(Action(it).record())
+            else:
+                raise GuessError(f"a Menu holds MenuItem, Action or Separator, not {it!r}")
+        return {"title": self.title, "items": out}
+
+    def __repr__(self):
+        return f"Menu({self.title!r})"
 
 
 class Timer:
@@ -271,18 +448,99 @@ class StatusBar:
 
 
 class UI:
+    """ui.dock(panel) shows a panel; ui.layout, ui.menubar, ui.toolbar,
+    ui.statusbar, ui.title and ui.console arrange the whole window (for apps)."""
+
     def __init__(self, gui):
         self._gui = gui
 
     def dock(self, panel):
-        """Show a Panel in the dock area (bottom or right of the graph)."""
+        """Show a Panel in the dock area (bottom, right or left of the graph)."""
         self._gui.dock(panel)
 
     def undock(self, panel):
         self._gui.close(panel)
 
+    def layout(self, left=None, right=None, bottom=None, sizes=None):
+        """ui.layout(left=…, right=…, bottom=…, sizes={"left": 300}) arranges
+        the window: each region takes a Panel, any widget (Tabs, a Column, a
+        View, …) or a list of them; regions not given are emptied.
+        sizes= sets a region's width (left, right) or height (bottom) in
+        pixels; the edges can be dragged too."""
+        g = self._gui
+        for pid in list(g.docked):
+            w = g.widgets.get(pid)
+            if w is not None and w.position in ("left", "right", "bottom"):
+                g.close(w)
+        for where, content in (("left", left), ("right", right), ("bottom", bottom)):
+            if content is None:
+                continue
+            for item in (content if isinstance(content, (list, tuple)) else [content]):
+                if not isinstance(item, Panel):
+                    p = Panel(g, "", item, position=where, vertical=True)
+                    p.bare = True
+                    item = p
+                else:
+                    item.position = where
+                g.dock(item)
+        g.session.emit({"type": "ui", "op": "regions", "sizes": {k: float(v) for k, v in (sizes or {}).items()}})
+
+    def menubar(self, *menus, keep=()):
+        """ui.menubar(Menu("File", Action("open"), MenuItem("Report", run="report()")), …)
+        replaces the menu bar; keep=["Help"] keeps some of GUESS's own menus
+        (after yours). ui.menubar() with nothing removes the menus."""
+        for m in menus:
+            if not isinstance(m, Menu):
+                raise GuessError("ui.menubar takes Menu(title, …) items")
+        g = self._gui
+        g.chrome["menubar"] = [it for m in menus for it in m.items if isinstance(it, Widget)]
+        g.session.emit({"type": "ui", "op": "menubar", "menus": [m.record() for m in menus],
+                        "keep": [str(k) for k in keep]})
+
+    def toolbar(self, *items):
+        """ui.toolbar(Action("open"), "|", Button("Run", onClick=fn), Action("tools"), …)
+        shows a toolbar under the menu bar: actions, widgets, "|" (a
+        separator) and "search". ui.toolbar() removes it."""
+        g = self._gui
+        g.chrome["toolbar"] = [it for it in items if isinstance(it, Widget)]
+        g.session.emit({"type": "ui", "op": "toolbar", "items": [_item_record(it) for it in items]})
+
+    def statusbar(self, *items):
+        """ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes"), …): a bar along
+        the bottom of the window. ui.statusbar() removes it."""
+        g = self._gui
+        g.chrome["statusbar"] = [it for it in items if isinstance(it, Widget)]
+        g.session.emit({"type": "ui", "op": "statusbar", "items": [_item_record(it) for it in items]})
+
+    def title(self, text, subtitle=None):
+        """ui.title("Interactome Explorer") names the window (in place of GUESS)."""
+        self._gui.session.emit({"type": "ui", "op": "title", "text": str(text),
+                                "subtitle": None if subtitle is None else str(subtitle)})
+
+    def console(self, mode):
+        """ui.console("hidden") hides the console; "toggle" hides it but Ctrl+`
+        brings it back; "shown" shows it."""
+        mode = str(mode)
+        if mode not in ("hidden", "toggle", "shown"):
+            raise GuessError('ui.console takes "hidden", "toggle" or "shown"')
+        self._gui.session.emit({"type": "ui", "op": "console", "mode": mode})
+
     def __repr__(self):
         return "ui"
+
+
+def _item_record(it):
+    if it == "|" or isinstance(it, Separator):
+        return {"kind": "sep"}
+    if it == "search":
+        return {"kind": "action", "name": "search"}
+    if isinstance(it, str):
+        return Action(it).record()
+    if isinstance(it, Action):
+        return it.record()
+    if isinstance(it, Widget):
+        return it.record()
+    raise GuessError(f"toolbar and status bar items are actions, widgets or \"|\", not {it!r}")
 
 
 class Gui:
@@ -294,19 +552,51 @@ class Gui:
         self.defaults = {"highlight": True, "zoom": True, "edgeHighlight": True, "edgeZoom": True}
         self._next = 0
         self.events = GraphEvents(self)
+        self.bound = {}          # widget id -> function giving its text (live labels)
+        self.chrome = {}         # "menubar" / "toolbar" / "statusbar" -> their widgets
 
     def next_id(self):
         self._next += 1
         return f"w{self._next}"
 
     def emit_update(self, w, props):
-        if self._root_docked(w):
+        if self._shown(w):
             self.session.emit({"type": "ui", "op": "update", "id": w._id, "props": props})
 
-    def _root_docked(self, w):
-        if w._id in self.docked:
+    def root_of(self, w):
+        """The docked panel a widget is inside, or None."""
+        while w is not None:
+            if w._id in self.docked:
+                return w
+            w = w.__dict__.get("_parent")
+        return None
+
+    def _shown(self, w):
+        if self.root_of(w) is not None:
             return True
-        return any(w in p._children for p in (self.widgets[i] for i in self.docked))
+        top = w
+        while top.__dict__.get("_parent") is not None:
+            top = top.__dict__["_parent"]
+        return any(top in items for items in self.chrome.values())
+
+    def evaluate(self, fn):
+        try:
+            v = fn()
+        except Exception as e:  # noqa: BLE001 - a live label must never break a command
+            return f"⚠ {type(e).__name__}: {e}"
+        return "" if v is None else str(v)
+
+    def refresh_bound(self):
+        """Live labels: run their functions again and send what changed."""
+        for wid, fn in list(self.bound.items()):
+            w = self.widgets.get(wid)
+            if w is None:
+                self.bound.pop(wid, None)
+                continue
+            text = self.evaluate(fn)
+            if text != w._state.get("text"):
+                w._state["text"] = text
+                self.emit_update(w, {"text": text})
 
     def emit_dock(self, panel):
         self.session.emit({"type": "ui", "op": "dock", "panel": panel.record()})
@@ -392,7 +682,8 @@ def install(session):
         make.__doc__ = cls.__doc__
         return make
 
-    for cls in (Panel, Label, Button, Slider, Checkbox, Dropdown, TextField):
+    for cls in (Panel, Label, Button, Slider, Checkbox, Dropdown, TextField, Markdown, View, Tabs, Tab, Group,
+                Row, Column, MenuItem):
         session._bind(cls.__name__, ctor(cls), kind="command")
 
     def every(seconds, fn):
@@ -412,6 +703,8 @@ def install(session):
         """Open a web page in a new browser tab."""
         session.emit({"type": "ui", "op": "open", "url": str(url)})
 
+    for cls in (Action, Separator, Menu):
+        session._bind(cls.__name__, cls, kind="command")
     session._bind("every", every, kind="command")
     session._bind("after", after, kind="command")
     session.register_command("stopTimers", stopTimers)

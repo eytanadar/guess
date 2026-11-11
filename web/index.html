@@ -159,6 +159,11 @@
             <button role="menuitem" data-run="history()">Commands run so far</button>
             <hr />
             <button role="menuitem" id="btn-manual" title="The GUESS manual as a web page, PDF, EPUB or Word (opens in a new tab)">Manual</button>
+            <div class="menu-label">Example apps</div>
+            <button role="menuitem" data-app="apps/interactome/manifest.json" title="Biology: BRCA1's protein interactions, laid out by structure (opens in a new tab)">Interactome Explorer</button>
+            <button role="menuitem" data-app="apps/airports/manifest.json" title="Infrastructure: close an airport and see who is cut off (opens in a new tab)">Airport Disruption</button>
+            <button role="menuitem" data-app="apps/outbreak/manifest.json" title="Epidemiology: an outbreak in a simulated school (opens in a new tab)">Outbreak Explorer</button>
+            <hr />
             <button role="menuitem" id="btn-cookbooks" title="GUESS cookbooks: runnable recipes for social networks, biology, text, infrastructure, software, investigations and ecology (opens in a new tab)">Cookbooks</button>
             <button role="menuitem" id="btn-github" title="Source code, issues and releases (opens in a new tab)">GitHub</button>
           </div>
@@ -179,10 +184,12 @@
       <span id="status" class="status"></span>
       <span id="assistant-status" hidden title="An AI assistant is connected (click to disconnect)"></span>
     </header>
+    <div id="app-toolbar" class="app-toolbar" role="toolbar" hidden></div>
     <main class="split">
       <div class="view-col">
         <div id="graph-tabs" class="graph-tabs" role="tablist" aria-label="Graphs" hidden></div>
         <div class="graph-row">
+          <aside id="dock-left" class="dock dock-left" hidden></aside>
           <aside id="sidebar" class="sidebar" hidden>
             <div class="sidebar-head">
               <span class="sidebar-tabs" role="tablist">
@@ -226,6 +233,7 @@
       <div class="divider" id="divider" role="separator" aria-orientation="vertical" title="Drag to resize"></div>
       <section id="console"></section>
     </main>
+    <footer id="app-statusbar" class="app-statusbar" hidden></footer>
     <dialog id="paste-dialog" class="paste-dialog">
       <h3>Paste a table</h3>
       <p>An edge table (Source, Target, …), a node table (Id, Label, …), an adjacency matrix or an adjacency list — comma, tab or semicolon separated.</p>

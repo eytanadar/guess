@@ -24,6 +24,53 @@ export interface DockHost {
   dark?(): boolean;
   /** make a chart live or not; resolves with its state */
   live?(id: string, on: boolean): Promise<boolean>;
+  /** View(name): put one of the page's own views (table, style, …) into el */
+  mountView?(name: string, el: HTMLElement): void;
+}
+
+export type Region = "bottom" | "right" | "left";
+
+/** A little Markdown, safely: headings, **bold**, *italics*, `code`, lists,
+ *  [links](https://…) and paragraphs. Everything else is text. */
+export function markdown(text: string): DocumentFragment {
+  const f = document.createDocumentFragment();
+  const inline = (s: string, into: HTMLElement) => {
+    for (const part of s.split(/(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)\s]+\))/)) {
+      if (!part) continue;
+      let m: RegExpExecArray | null;
+      if (part.startsWith("`") && part.endsWith("`") && part.length > 1) {
+        const c = document.createElement("code"); c.textContent = part.slice(1, -1); into.append(c);
+      } else if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+        const b = document.createElement("strong"); b.textContent = part.slice(2, -2); into.append(b);
+      } else if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+        const i = document.createElement("em"); i.textContent = part.slice(1, -1); into.append(i);
+      } else if ((m = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(part)) && /^https?:\/\//.test(m[2])) {
+        const a = document.createElement("a"); a.textContent = m[1]; a.href = m[2]; a.target = "_blank"; a.rel = "noopener";
+        into.append(a);
+      } else into.append(part);
+    }
+  };
+  let list: HTMLElement | null = null;
+  for (const block of text.replace(/\r/g, "").split(/\n\s*\n/)) {
+    list = null;
+    for (const line of block.split("\n")) {
+      const h = /^(#{1,4})\s+(.*)$/.exec(line);
+      const li = /^\s*(?:[-*]|\d+\.)\s+(.*)$/.exec(line);
+      if (h) {
+        const el = document.createElement(`h${Math.min(6, h[1].length + 2)}`);
+        inline(h[2], el); f.append(el); list = null;
+      } else if (li) {
+        if (!list) { list = document.createElement(/^\s*\d/.test(line) ? "ol" : "ul"); f.append(list); }
+        const el = document.createElement("li"); inline(li[1], el); list.append(el);
+      } else if (line.trim()) {
+        const last = f.lastChild as HTMLElement | null;
+        if (last && last.nodeName === "P" && !list) { last.append(" "); inline(line, last); }
+        else { const p = document.createElement("p"); inline(line, p); f.append(p); list = null; }
+      }
+    }
+    f.append(document.createComment("block"));
+  }
+  return f;
 }
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -39,13 +86,30 @@ export class Dock {
   /** Altair charts by panel id */
   private vegas = new Map<string, VegaChart>();
 
-  constructor(private bottom: HTMLElement, private right: HTMLElement, private host: DockHost) {}
+  constructor(private bottom: HTMLElement, private right: HTMLElement, private host: DockHost,
+              private left: HTMLElement | null = null) {}
 
   // ---- panels ---------------------------------------------------------------------
   dockPanel(p: PanelRec) {
-    const body = this.frame(p.id, String(p.props.title ?? ""), p.props.position === "right" ? "right" : "bottom");
+    const where: Region = p.props.position === "right" ? "right" : p.props.position === "left" && this.left ? "left" : "bottom";
+    const body = this.frame(p.id, String(p.props.title ?? ""), where);
+    const panel = this.panels.get(p.id)!;
+    panel.classList.toggle("bare", Boolean(p.props.bare));
+    // a panel moved to another region (ui.layout again)
+    const region = this.regionEl(where);
+    if (panel.parentElement !== region) region.append(panel);
     body.classList.toggle("vertical", Boolean(p.props.vertical));
     body.replaceChildren(...p.children.map((w) => this.widget(w)));
+    this.layoutChanged();
+  }
+
+  /** A widget made outside a panel (toolbar, status bar). */
+  makeWidget(w: { id: string; kind: string; props: Record<string, unknown>; children?: unknown[] }): HTMLElement {
+    return this.widget(w as never);
+  }
+
+  private regionEl(where: Region): HTMLElement {
+    return where === "right" ? this.right : where === "left" && this.left ? this.left : this.bottom;
   }
 
   close(id: string) {
@@ -93,7 +157,7 @@ export class Dock {
   }
 
   /** A panel for the page's own use (a pinned cell, the history): its body. */
-  pane(id: string, title: string, where: "bottom" | "right" = "right", onClose?: () => void): HTMLElement {
+  pane(id: string, title: string, where: Region = "right", onClose?: () => void): HTMLElement {
     const body = this.frame(id, title, where);
     if (onClose) this.onClose.set(id, onClose);
     return body;
@@ -103,7 +167,7 @@ export class Dock {
     return this.panels.has(id);
   }
 
-  private frame(id: string, title: string, where: "bottom" | "right"): HTMLElement {
+  private frame(id: string, title: string, where: Region): HTMLElement {
     let panel = this.panels.get(id);
     if (!panel) {
       panel = document.createElement("section");
@@ -120,7 +184,7 @@ export class Dock {
       body.className = "panel-body";
       panel.append(head, body);
       this.panels.set(id, panel);
-      (where === "right" ? this.right : this.bottom).append(panel);
+      this.regionEl(where).append(panel);
     }
     panel.querySelector("header span")!.textContent = title;
     this.layoutChanged();
@@ -128,8 +192,9 @@ export class Dock {
   }
 
   private layoutChanged() {
-    this.bottom.hidden = !this.bottom.childElementCount;
-    this.right.hidden = !this.right.childElementCount;
+    for (const r of [this.bottom, this.right, this.left]) {
+      if (r) r.hidden = !r.querySelector(":scope > .panel");
+    }
   }
 
   private widget(w: WidgetRec): HTMLElement {
@@ -189,6 +254,76 @@ export class Dock {
         el = input;
         break;
       }
+      case "markdown":
+        el = document.createElement("div");
+        el.className = "w-markdown";
+        break;
+      case "view":
+        el = document.createElement("div");
+        el.className = "w-view";
+        queueMicrotask(() => this.host.mountView?.(String(p.name), el));
+        break;
+      case "row": case "column": {
+        el = document.createElement("div");
+        el.className = `w-${w.kind}`;
+        el.append(...(w.children ?? []).map((c) => this.widget(c)));
+        break;
+      }
+      case "group": {
+        const d = document.createElement("details");
+        d.className = "w-group";
+        d.open = !p.collapsed;
+        const sum = document.createElement("summary");
+        const inner = document.createElement("div");
+        inner.className = p.vertical === false ? "w-row" : "w-column";
+        inner.append(...(w.children ?? []).map((c) => this.widget(c)));
+        d.append(sum, inner);
+        el = d;
+        break;
+      }
+      case "tabs": {
+        el = document.createElement("div");
+        el.className = "w-tabs";
+        const bar = document.createElement("div");
+        bar.className = "w-tabbar";
+        bar.setAttribute("role", "tablist");
+        const pages = document.createElement("div");
+        pages.className = "w-tabpages";
+        const show = (title: string, tell: boolean) => {
+          for (const b of bar.children) b.setAttribute("aria-selected", String((b as HTMLElement).dataset.title === title));
+          for (const pg of pages.children) (pg as HTMLElement).hidden = (pg as HTMLElement).dataset.title !== title;
+          if (tell) send("change", title);
+        };
+        for (const t of w.children ?? []) {
+          const title = String(t.props.title ?? "");
+          const b = document.createElement("button");
+          b.setAttribute("role", "tab");
+          b.textContent = title;
+          b.dataset.title = title;
+          b.onclick = () => show(title, true);
+          bar.append(b);
+          const page = this.widget(t);
+          page.dataset.title = title;
+          pages.append(page);
+        }
+        el.append(bar, pages);
+        (el as any)._show = show;
+        show(String(p.selected ?? w.children?.[0]?.props.title ?? ""), false);
+        break;
+      }
+      case "tab": {
+        el = document.createElement("div");
+        el.className = p.vertical === false ? "w-tab w-row" : "w-tab w-column";
+        el.setAttribute("role", "tabpanel");
+        el.append(...(w.children ?? []).map((c) => this.widget(c)));
+        break;
+      }
+      case "menuitem": {
+        const b = document.createElement("button");
+        b.onclick = () => send("click", null);
+        el = b;
+        break;
+      }
       default:
         el = document.createElement("span");
     }
@@ -211,6 +346,14 @@ export class Dock {
       if (k === "enabled") {
         (input ?? (el as HTMLButtonElement)).toggleAttribute("disabled", !v);
       } else if (kind === "label" && k === "text") {
+        el.textContent = String(v);
+      } else if (kind === "markdown" && k === "text") {
+        el.replaceChildren(markdown(String(v)));
+      } else if (kind === "group" && k === "title") {
+        el.querySelector("summary")!.textContent = String(v);
+      } else if (kind === "tabs" && k === "selected" && v != null) {
+        (el as any)._show?.(String(v), false);
+      } else if (kind === "menuitem" && k === "text") {
         el.textContent = String(v);
       } else if (kind === "button" && k === "text") {
         el.textContent = String(v);

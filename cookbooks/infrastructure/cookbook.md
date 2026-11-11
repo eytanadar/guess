@@ -481,3 +481,5 @@ center()
   closures are enough to strand most of Alaska.
 - **The chart.** The robustness chart beside the map is the same analysis
   as the failures-versus-attacks recipe, for every *k* at once.
+
+**As an app.** A capstone like this can be packaged so it opens on its own, without the console, through `?app=` (manual, *Apps*). *Help → Example apps → Airport Disruption* is one for this book: click an airport, close it, and see which airports are cut off from the rest. Its source is `web/public/apps/airports/`.

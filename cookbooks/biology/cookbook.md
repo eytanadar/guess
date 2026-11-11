@@ -628,3 +628,5 @@ center()
 
 As before, the expression values are **simulated**: substitute your own
 table, with an `Id` column of gene names, in the second line.
+
+**As an app.** A capstone like this can be packaged so it opens on its own, without the console, through `?app=` (manual, *Apps*). *Help → Example apps → Interactome Explorer* is one for this book: BRCA1's interactions from IntAct, laid out by `motifLayout`, with tabs for exploring, colouring and filtering, the data table below and a confidence slider. Its source is `web/public/apps/interactome/`.
