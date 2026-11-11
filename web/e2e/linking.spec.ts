@@ -109,3 +109,31 @@ test("alt-clicking a node in the graph inserts its name", async ({ page }) => {
   await page.keyboard.up("Alt");
   await expect(page.locator(input)).toHaveText("v73");
 });
+
+test("pointing at a spread chart shows the step and who was reached by then", async ({ page }) => {
+  await boot(page);
+  await run(page, "spread([v73], 'SI', beta=0.5, seed=1)");
+  const hit = page.locator(".chart rect.line-hit");
+  const box = (await hit.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height / 2);
+  await expect(page.locator("#tip")).toContainText("step");
+  await expect(page.locator("#tip")).toContainText("infected:");
+  await expect.poll(() => hlCount(page)).toBeGreaterThan(0);
+  await page.mouse.click(box.x + box.width * 0.3, box.y + box.height / 2);
+  await expect.poll(() => page.evaluate(() => (window as any).__guess.renderer.selection.size)).toBeGreaterThan(0);
+});
+
+test("charts mark each other's bars", async ({ page }) => {
+  await boot(page);
+  await run(page, "plotSizes(dept)");
+  await run(page, "plotHistogram(degree, 4)");
+  await page.locator(".chart").first().locator("rect.mark").first().hover();
+  await expect(page.locator(".chart").nth(1).locator("rect.mark.linked").first()).toBeVisible();
+});
+
+test("the edge table marks edges between selected nodes", async ({ page }) => {
+  await boot(page);
+  await run(page, "table(g.edges)");
+  await run(page, "select(dept == 'dept1')");
+  await expect(page.locator(".dtable-row.selected").first()).toBeVisible();
+});

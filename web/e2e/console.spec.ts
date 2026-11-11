@@ -140,7 +140,7 @@ test("File → Start fresh forgets the autosave, history and settings", async ({
   await type(page, "addNode('only_here')");
   await page.keyboard.press("Shift+Enter");
   await expect(cells).toHaveCount(n + 1);
-  await page.evaluate(() => localStorage.setItem("guess.theme", "dark"));
+  await page.evaluate(() => localStorage.setItem("guess.theme", "light"));
   await page.waitForTimeout(2600);                            // the autosave runs 2 s after a change
   await page.reload();
   await expect(page.locator(".console-out")).toContainText("Restored your previous session", { timeout: 60000 });

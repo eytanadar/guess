@@ -201,6 +201,7 @@ try {
   {
     // warm up (Vite may reload once after pre-bundling)
     const ctx = await browser.newContext();
+    await ctx.addInitScript(() => { try { localStorage.setItem("guess.theme", "auto"); } catch {} });
     const p = await ctx.newPage();
     await p.goto(`http://localhost:${PORT}/`);
     await p.locator(".console-out").getByText(/loaded 402/).first().waitFor({ timeout: 120000 });
@@ -209,6 +210,7 @@ try {
   for (const [name, fn] of Object.entries(SHOTS)) {
     if (only.length && !only.includes(name)) continue;
     const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2, colorScheme: "light" });
+    await ctx.addInitScript(() => { try { localStorage.setItem("guess.theme", "auto"); } catch {} });
     page = await ctx.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.locator(".console-out").getByText(/loaded 402/).first().waitFor({ timeout: 120000 });

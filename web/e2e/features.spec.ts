@@ -219,13 +219,20 @@ test("undo / redo, clickable printed nodes, theme toggle", async ({ page }) => {
   await expect(page.locator(".cell").last().locator(".cell-code")).toContainText("print('node', n)");
   await run(page, "history()");
   await expect(page.locator(".cell").last()).toContainText("print('node', n)");
-  // theme: Auto -> Light -> Dark
-  await menu(page, "View", "[data-theme-choice=dark]");
+  // theme: Dark by default -> Light -> Automatic -> Dark
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(bg).toBe("rgb(24, 24, 26)");
+  await menu(page, "View", "[data-theme-choice=light]");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  expect(await page.evaluate(() => localStorage.getItem("guess.theme"))).toBe("light");
   await menu(page, "View", "[data-theme-choice=auto]");
   await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
+  await page.reload();
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
+  await menu(page, "View", "[data-theme-choice=dark]");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  expect(await page.evaluate(() => localStorage.getItem("guess.theme"))).toBeNull();
   expect(errors).toEqual([]);
 });
 
@@ -236,7 +243,7 @@ test("help, palette, data table, style and filter panels, parameter hints", asyn
   await page.keyboard.press("F1");
   await expect(page.locator("#side-help")).toBeVisible();
   await page.locator(".help-search").fill("louvain");
-  await page.locator(".help-example", { hasText: "Communities" }).getByRole("button", { name: "Insert" }).click();
+  await page.locator(".help-example", { hasText: "Communities" }).first().getByRole("button", { name: "Insert" }).click();
   await expect(page.locator(".console-in .cm-content")).toContainText("louvainClusters()");
   await run(page, "help(sizeBy)");
   await expect(page.locator(".help-doc")).toContainText("proportion");

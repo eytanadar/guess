@@ -74,6 +74,7 @@ let failed = 0;
 try {
   for (const f of todo) {
     const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2, colorScheme: "light" });
+    await ctx.addInitScript(() => { try { localStorage.setItem("guess.theme", "auto"); } catch {} });
     page = await ctx.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.locator(".console-out").getByText(/loaded 402/).first().waitFor({ timeout: 180000 });

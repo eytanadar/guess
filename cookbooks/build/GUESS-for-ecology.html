@@ -386,7 +386,7 @@ on entirely. They are not the best-connected species, which have 11 to
 <div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>makeNicheModel(<span class="dv">40</span>, <span class="fl">0.12</span>, seed<span class="op">=</span><span class="dv">1</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>trophicLevels()</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>louvainClusters()</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>colorize(modularity_class)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>colorize(louvain_class)</span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>scatterLayout(niche, trophic)</span></code></pre></div>
 <p><strong>How it works.</strong> Food webs are often
 <em>compartmentalised</em>: groups of species that interact mostly among
@@ -475,12 +475,11 @@ bottom-up? <span class="level">Intermediate</span></h2>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>makeNicheModel(<span class="dv">40</span>, <span class="fl">0.12</span>, seed<span class="op">=</span><span class="dv">1</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>trophicLevels()</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>top <span class="op">=</span> sortBy(trophic)[<span class="op">-</span><span class="dv">1</span>]</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>ss(<span class="st">&quot;web&quot;</span>)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>remove(top)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(g.nodes)</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>ls(<span class="st">&quot;web&quot;</span>)</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> extinctions([<span class="st">&quot;basal&quot;</span>], show<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="bu">next</span>(x <span class="cf">for</span> x, y <span class="kw">in</span> r[<span class="st">&quot;basal&quot;</span>] <span class="cf">if</span> y <span class="op">&lt;=</span> <span class="fl">0.5</span>)</span></code></pre></div>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> scratch():</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    remove(top)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="bu">len</span>(g.nodes))</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> extinctions([<span class="st">&quot;basal&quot;</span>], show<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="bu">next</span>(x <span class="cf">for</span> x, y <span class="kw">in</span> r[<span class="st">&quot;basal&quot;</span>] <span class="cf">if</span> y <span class="op">&lt;=</span> <span class="fl">0.5</span>)</span></code></pre></div>
 <p>Removing the top predator costs exactly one species, itself: in a
 topological model nothing depends on a predator. Removing producers
 first, the web loses half its species after a fifth of the removals.

@@ -260,6 +260,7 @@ async function record(scenes) {
   rmSync(tmp, { recursive: true, force: true });
   const browser = await chromium.launch({ channel: process.env.CI ? undefined : "chrome" });
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1, recordVideo: { dir: tmp, size: { width: W, height: H } }, colorScheme: script.theme === "dark" ? "dark" : "light" });
+  await ctx.addInitScript(() => { try { localStorage.setItem("guess.theme", "auto"); } catch {} });
   await ctx.addInitScript(OVERLAY);
   page = await ctx.newPage();
   const t0 = Date.now();

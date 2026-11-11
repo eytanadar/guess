@@ -8,7 +8,9 @@
          so Python can be interrupted (SharedArrayBuffer). No-op when already isolated. -->
     <script src="coi-serviceworker.js"></script>
     <script>
-      try { const t = localStorage.getItem("guess.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+      // dark unless "light" or "auto" (follow the system) was chosen
+      let t = null; try { t = localStorage.getItem("guess.theme"); } catch {}
+      if (t !== "auto") document.documentElement.dataset.theme = t === "light" ? "light" : "dark";
     </script>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 4L12 3L8 12Z' stroke='%23999' fill='none'/%3E%3Ccircle cx='3' cy='4' r='2' fill='%23ff1f6b'/%3E%3Ccircle cx='12' cy='3' r='2' fill='%231d4ed8'/%3E%3Ccircle cx='8' cy='12' r='2' fill='%23fcd870'/%3E%3C/svg%3E" />
   </head>
@@ -87,9 +89,9 @@
             <button role="menuitemcheckbox" id="show-moves" aria-pressed="false" title="Node drags are recorded as commands (undo, history, logs); show them in the console">Show node moves in the console</button>
             <hr />
             <div class="menu-label">Theme</div>
-            <button role="menuitemradio" data-theme-choice="auto" aria-pressed="true">Automatic</button>
+            <button role="menuitemradio" data-theme-choice="auto" aria-pressed="false">Automatic</button>
             <button role="menuitemradio" data-theme-choice="light" aria-pressed="false">Light</button>
-            <button role="menuitemradio" data-theme-choice="dark" aria-pressed="false">Dark</button>
+            <button role="menuitemradio" data-theme-choice="dark" aria-pressed="true">Dark</button>
           </div>
         </div>
         <div class="menu-root">

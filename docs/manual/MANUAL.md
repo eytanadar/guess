@@ -431,15 +431,17 @@ addNode("ann", color=red)
 addNode("bo")
 addEdge(ann, bo, weight=3)
 addDirectedEdge(bo, ann)
-addNodeField("score", DOUBLE, 0.0)
+Node.score = 0.0                 # a new node field (Edge.kind = "" for edges)
 ann.score = 4.5
 ```
 
 `addNode` makes a node and a variable with its name. `addEdge` (or
 `addUndirectedEdge`) and `addDirectedEdge` connect two nodes. Keyword
-arguments set fields. A new field must be declared with `addNodeField` or
-`addEdgeField` (giving the type and default) before you assign to it. GUESS
-won't make a new field from a typo.
+arguments set fields. A new field must be made before you assign to it:
+`Node.score = 0.0` makes a number field whose default is 0.0 (`0` an integer
+field, `""` text, `false` true/false), as does `addNodeField("score",
+DOUBLE, 0.0)`. GUESS won't make a new field from a typo: `ann.scroe = 1` is
+an error that suggests `score`.
 
 Classic networks from the literature load with `makeSample(name)`:
 `karate` (Zachary's karate club, with each member's `club`), `lesmis` (Les
@@ -528,6 +530,17 @@ meaning (`if s and t:` asks whether both are non-empty).
 
 A tuple or list of nodes also works as a set: `(v1, v2, v3).color = green`.
 
+For a test no comparison can express, `where` keeps the members for which
+a function is true, and gives a set:
+
+```python
+g.edges.where(lambda e: e.node1.dept != e.node2.dept)   # also interEdges(dept)
+```
+
+A query that can't match because of its type, such as `dept == 3` when
+`dept` holds text, prints a note saying so instead of quietly returning an
+empty set.
+
 **Broadcasting.** Setting a field on a set sets it on every member. Reading
 a field from a set gives a list of values:
 
@@ -611,7 +624,9 @@ select()                       # clear it
 *View → Data table* (or `table()`) opens a spreadsheet of the nodes or edges
 below the graph. `table(dept == 'dept3')` shows just those. You can sort by a
 column, filter, and double-click a cell to edit it. An edit is an ordinary
-command and can be undone. Selecting rows selects the nodes, and vice versa.
+command and can be undone. Selecting rows selects the nodes, and vice versa;
+in the edge table, the edges between selected nodes are marked. Hovering a
+node anywhere marks its row.
 `InfoWindow.details(v1)` (from the 2006 version) opens the table on one
 element.
 
@@ -865,7 +880,11 @@ Charts are linked to the graph. Hover over a bar or a slice and its nodes
 light up, along with the console output and table rows that mention them;
 click and they're selected (shift-click adds). Right-click for the element
 menu: on a histogram bin or a bar it acts on the bin's query, such as
-`(degree >= 0) & (degree < 4.75)`.
+`(degree >= 0) & (degree < 4.75)`. Hovering a bar also marks the bars of
+other charts that share its elements. On a line chart (`spread`,
+`robustness`, `extinctions`), pointing shows every series' value at that
+step. On the `spread` chart it also highlights who was reached by then, and
+a click selects them.
 
 ```python
 plotSizesPie(dept)           # how many in each department
@@ -1214,7 +1233,8 @@ Hulls follow their nodes when you move them or run a layout.
 
 ## 12.3 The display
 
-- **Theme**: *View → Theme* is *Automatic* (follows your system), *Light* or *Dark*.
+- **Theme**: GUESS starts in *Dark*. *View → Theme* switches to *Light* or
+  *Automatic* (follows your system), and remembers the choice.
   The graph's background follows the theme, unless you set one with
   `setDisplayBackground(black)`. `setDisplayBackground(None)` follows the
   theme again.
@@ -1418,8 +1438,13 @@ several things are selected, the function receives the selection.
 | **Run again** on a cell | run it again, as a new cell at the bottom |
 | **Watch** on a cell | re-run it whenever the graph changes |
 | `[n]` | fold or unfold a cell's output; hover it to highlight everything that cell changed |
+| `;` at the end of a line | don't print its value (`louvainClusters();`) |
 
 *View → Vim keys in the code cell* switches the editor to vim bindings.
+
+Long results print compactly: a set of many groups (`groupBy(dept)`, the
+communities from `louvainClusters()`) shows as `21 groups (402 elements):
+[dept0: 28] [dept1: 43] …`, each entry linked to its members.
 
 **Code and graph, linked.** The console and the graph point at each other:
 
@@ -1602,7 +1627,11 @@ Colours can be given by name (`red`, `cornflowerblue`), as `"r,g,b"` or
 `"r,g,b,a"` strings (0–255), or as `"#rrggbb"`. The names are variables, so
 `v1.color = wildstrawberry` needs no quotes. `averageColor(c1, c2)`,
 `generateColors(start, end, n)`, `distinctColors(count)` and `randomColor()` make
-new colours.
+new colours, and every colour has variations: `red.alpha(80)` (or
+`red.alpha(0.3)`) is partly transparent, `red.lighter(0.3)` is 30% of the way
+to white, and `red.darker(0.3)` 30% of the way to black. Colours compare by
+the colour they mean: `v1.color == red` holds whether the field says `red`,
+`"255,0,0"` or `"#ff0000"`, so `color == red` finds every red node.
 
 The named colours from 2006 are below (case doesn't matter). The standard
 web colour names work as well.

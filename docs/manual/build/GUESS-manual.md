@@ -395,7 +395,7 @@ sometimes written on one line. Both forms load.
 - **GML** (networkx, igraph, yEd, Cytoscape) and **Graphviz DOT** keep their
   attributes and any layout they carry (section 4.1). `exportGML("g.gml")`
   and `exportDOT("g.dot")` write them. `exportDOT` groups nodes into Graphviz
-  clusters by a field (`exportDOT("g.dot", clusters="modularity_class")`), and
+  clusters by a field (`exportDOT("g.dot", clusters="louvain_class")`), and
   `layout=False` leaves positions out so Graphviz lays the graph out itself.
 - **CSV** works as in Gephi. An edge table has `Source`, `Target`, and
   optionally `Type` (directed/undirected), `Weight` and `Label`; other columns
@@ -431,15 +431,17 @@ addNode("ann", color=red)
 addNode("bo")
 addEdge(ann, bo, weight=3)
 addDirectedEdge(bo, ann)
-addNodeField("score", DOUBLE, 0.0)
+Node.score = 0.0                 # a new node field (Edge.kind = "" for edges)
 ann.score = 4.5
 ```
 
 `addNode` makes a node and a variable with its name. `addEdge` (or
 `addUndirectedEdge`) and `addDirectedEdge` connect two nodes. Keyword
-arguments set fields. A new field must be declared with `addNodeField` or
-`addEdgeField` (giving the type and default) before you assign to it. GUESS
-won't make a new field from a typo.
+arguments set fields. A new field must be made before you assign to it:
+`Node.score = 0.0` makes a number field whose default is 0.0 (`0` an integer
+field, `""` text, `false` true/false), as does `addNodeField("score",
+DOUBLE, 0.0)`. GUESS won't make a new field from a typo: `ann.scroe = 1` is
+an error that suggests `score`.
 
 Classic networks from the literature load with `makeSample(name)`:
 `karate` (Zachary's karate club, with each member's `club`), `lesmis` (Les
@@ -468,7 +470,7 @@ A **field** is a property that every node (or every edge) has. Fields are
 named like variables. `dept` on its own is the department field, and `v1.dept`
 is v1's department. Fields come from the file you loaded, from the built-in
 set (section 4.2), from commands that add them (`louvainClusters()` adds
-`modularity_class`), and from `addNodeField`/`addEdgeField`. The node and
+`louvain_class`), and from `addNodeField`/`addEdgeField`. The node and
 edge fields are listed by `getNodeSchema()` and `getEdgeSchema()`. The
 *View → Data table* shows them all.
 
@@ -482,7 +484,7 @@ dept.find('eng')               # the nodes whose dept is 'eng' (same as dept == 
 highest(freq, 5)               # the five edges with the highest freq (lowest(...) too)
 sortBy(freq, descending=true)  # every edge, highest freq first
 groupBy(dept)                  # a set of sets, one per value
-groupAndSortBy(dept)           # the same, largest group first
+groupAndSortBy(dept)           # the same, ordered by value (dept0, dept1, ...)
 ```
 
 Some node fields aren't stored but computed the first time you use them:
@@ -527,6 +529,17 @@ In the test of an `if` or `while`, `and`, `or` and `not` keep their usual
 meaning (`if s and t:` asks whether both are non-empty).
 
 A tuple or list of nodes also works as a set: `(v1, v2, v3).color = green`.
+
+For a test no comparison can express, `where` keeps the members for which
+a function is true, and gives a set:
+
+```python
+g.edges.where(lambda e: e.node1.dept != e.node2.dept)   # also interEdges(dept)
+```
+
+A query that can't match because of its type, such as `dept == 3` when
+`dept` holds text, prints a note saying so instead of quietly returning an
+empty set.
 
 **Broadcasting.** Setting a field on a set sets it on every member. Reading
 a field from a set gives a list of values:
@@ -611,7 +624,9 @@ select()                       # clear it
 *View → Data table* (or `table()`) opens a spreadsheet of the nodes or edges
 below the graph. `table(dept == 'dept3')` shows just those. You can sort by a
 column, filter, and double-click a cell to edit it. An edit is an ordinary
-command and can be undone. Selecting rows selects the nodes, and vice versa.
+command and can be undone. Selecting rows selects the nodes, and vice versa;
+in the edge table, the edges between selected nodes are marked. Hovering a
+node anywhere marks its row.
 `InfoWindow.details(v1)` (from the 2006 version) opens the table on one
 element.
 
@@ -694,7 +709,7 @@ gemLayout()
 Use `centerAfterLayout(false)` if you'd rather the view didn't re-centre
 after every layout.
 
-![louvainClusters(); colorize(modularity_class); sizeBy(pagerank, 6, 40); forceAtlas2Layout(linLog=true, preventOverlap=true)](img/fa2.png){width=80%}
+![louvainClusters(); colorize(louvain_class); sizeBy(pagerank, 6, 40); forceAtlas2Layout(linLog=true, preventOverlap=true)](img/fa2.png){width=80%}
 
 **Hive plots.** A hive plot puts each group on its own axis and places nodes
 along the axis by a value. Unlike force-directed layouts, the picture
@@ -729,9 +744,9 @@ Clustering commands return a set of sets (one per cluster) and, where it
 makes sense, add a field so you can colour by it:
 
 ```python
-louvainClusters()                  # communities; adds the field modularity_class
-colorize(modularity_class)
-modularity(modularity_class)       # how good the partition is
+louvainClusters()                  # communities; adds the field louvain_class
+colorize(louvain_class)
+modularity(louvain_class)       # how good the partition is
 edgeBetweennessClusters(5)         # remove the 5 most "between" edges; the pieces
 weakComponentClusters()            # connected components
 biComponentClusters()              # biconnected components
@@ -865,7 +880,11 @@ Charts are linked to the graph. Hover over a bar or a slice and its nodes
 light up, along with the console output and table rows that mention them;
 click and they're selected (shift-click adds). Right-click for the element
 menu: on a histogram bin or a bar it acts on the bin's query, such as
-`(degree >= 0) & (degree < 4.75)`.
+`(degree >= 0) & (degree < 4.75)`. Hovering a bar also marks the bars of
+other charts that share its elements. On a line chart (`spread`,
+`robustness`, `extinctions`), pointing shows every series' value at that
+step. On the `spread` chart it also highlights who was reached by then, and
+a click selects them.
 
 ```python
 plotSizesPie(dept)           # how many in each department
@@ -900,7 +919,7 @@ sortBy(constraint)[:5]                    # brokers (structural holes)
 assortativity(dept)                       # 1: ties stay in a department; 0: random
 mixingMatrix(dept)                        # edges between each pair of departments
 louvainClusters()
-compareClusters(modularity_class, dept)   # do the communities match departments?
+compareClusters(louvain_class, dept)   # do the communities match departments?
 ```
 
 `compareClusters` gives normalized mutual information by default (0 to 1);
@@ -1110,6 +1129,18 @@ the morph. (The 2006 form `Morpher.setNodeDisappearBy(.2)` also works.)
 
 States can be saved under numbers too (`ss(1999)`, `ss(2000)`), which
 suits a series of snapshots over time.
+
+To try something and put everything back, use `with scratch():`:
+
+```python
+with scratch():
+    remove(dept == 'dept1')
+    print(len(g.nodes), graphStats())
+```
+
+When the block ends, the graph is as it was: the same nodes, edges and
+values, and fields made inside the block are gone. Print or keep in
+variables what you want to keep.
 
 ## 11.1 State-sensitive queries
 
@@ -1406,8 +1437,13 @@ several things are selected, the function receives the selection.
 | **Run again** on a cell | run it again, as a new cell at the bottom |
 | **Watch** on a cell | re-run it whenever the graph changes |
 | `[n]` | fold or unfold a cell's output; hover it to highlight everything that cell changed |
+| `;` at the end of a line | don't print its value (`louvainClusters();`) |
 
 *View → Vim keys in the code cell* switches the editor to vim bindings.
+
+Long results print compactly: a set of many groups (`groupBy(dept)`, the
+communities from `louvainClusters()`) shows as `21 groups (402 elements):
+[dept0: 28] [dept1: 43] …`, each entry linked to its members.
 
 **Code and graph, linked.** The console and the graph point at each other:
 
@@ -1590,7 +1626,11 @@ Colours can be given by name (`red`, `cornflowerblue`), as `"r,g,b"` or
 `"r,g,b,a"` strings (0–255), or as `"#rrggbb"`. The names are variables, so
 `v1.color = wildstrawberry` needs no quotes. `averageColor(c1, c2)`,
 `generateColors(start, end, n)`, `distinctColors(count)` and `randomColor()` make
-new colours.
+new colours, and every colour has variations: `red.alpha(80)` (or
+`red.alpha(0.3)`) is partly transparent, `red.lighter(0.3)` is 30% of the way
+to white, and `red.darker(0.3)` 30% of the way to black. Colours compare by
+the colour they mean: `v1.color == red` holds whether the field says `red`,
+`"255,0,0"` or `"#ff0000"`, so `color == red` finds every red node.
 
 The named colours from 2006 are below (case doesn't matter). The standard
 web colour names work as well.
@@ -1724,6 +1764,8 @@ unchanged except where Python 3 differs. The main differences:
 
   These only matter when an argument is given by name, as in
   `resizeLinear(degree, start=5, end=30)`.
+- **Louvain's field** is `louvain_class`, like `leiden_class` and the other
+  methods' (it was `modularity_class`, Gephi's name).
 - **Language.** `3 < degree < 6`, `field in (...)`, and `and`, `or` and
   `not` on sets now do what they say (Appendix B). A node or field named
   after a Python builtin (`len`, `type`) no longer hides it.
@@ -1873,7 +1915,7 @@ Label and edge fields); exportCSV("nodes.csv", "nodes") the node table.
 exportDOT("graph.dot") writes the graph for Graphviz: positions (fixed
 nodes pinned with !), sizes, shapes, colours, labels, hidden elements and
 every user field; nodes are grouped into cluster subgraphs by the field
-named by clusters= (default `cluster`, e.g. clusters="modularity_class").
+named by clusters= (default `cluster`, e.g. clusters="louvain_class").
 layout=False leaves positions out so Graphviz lays the graph out itself.
 makeFromDOT reads it back. Offered as a download.
 
@@ -2002,7 +2044,7 @@ groupBy(field) or groupBy(seq, field): groups of elements sharing a value.
 
 ### `groupStats(field, top=12, show=True)`
 
-groupStats(modularity_class) profiles each group of nodes sharing a
+groupStats(louvain_class) profiles each group of nodes sharing a
 value of a field: size, internal edges, density (internal edges /
 possible pairs), boundary edges (to the rest), conductance (boundary
 / all edges touching the group: low = well separated), and the
@@ -2284,7 +2326,7 @@ Remove (and return) all edges whose endpoints are the same node.
 report() writes a one-page summary of the graph: size, density,
 components, degree distribution, path lengths, clustering,
 assortativity, the `top` nodes by degree, betweenness and PageRank,
-and the communities if any have been found (modularity_class,
+and the communities if any have been found (louvain_class,
 leiden_class, infomap_class). report("summary.html") saves it as a web
 page (offered as a download in the browser) and report("summary.md")
 as Markdown; with no name it's printed. Returns the Markdown.
@@ -2436,7 +2478,7 @@ path length, clustering, transitivity, degree assortativity, reciprocity
 
 groupsOfSize(field, min[, max]): the nodes (or edges) whose value of
 field is shared by at least min (and at most max) elements — e.g. drop
-tiny communities with showOnly(groupsOfSize(modularity_class, 5)).
+tiny communities with showOnly(groupsOfSize(louvain_class, 5)).
 
 ### `heatMap(center, near='#d7191c', far='#2c7bb6', unreachable='#bdbdbd', middle='#8e5fbf', spread=True)`
 
@@ -2467,14 +2509,14 @@ node has at least k neighbours. E.g. showOnly(kCore(3)).
 
 louvainClusters() finds communities by Louvain modularity optimisation
 (Gephi's Modularity statistic) using edge weights, stores each node's
-community in the modularity_class field (0 = largest) and returns the
-communities. Try colorize(modularity_class). resolution > 1 gives more,
+community in the louvain_class field (0 = largest) and returns the
+communities. Try colorize(louvain_class). resolution > 1 gives more,
 smaller communities; seed=None varies the result between runs.
 
 ### `modularity(field)`
 
 modularity(field): the modularity Q of the partition given by a node
-field (e.g. modularity(dept), modularity(modularity_class)).
+field (e.g. modularity(dept), modularity(louvain_class)).
 
 ### `mutualEdges()`
 
@@ -2598,7 +2640,7 @@ a bridge). bridges().color = red shows the weak ties.
 
 ### `compareClusters(field1, field2, method='nmi')`
 
-compareClusters(modularity_class, dept) says how well two partitions of
+compareClusters(louvain_class, dept) says how well two partitions of
 the nodes agree, over the nodes that have both values: method "nmi"
 (normalized mutual information, 0..1), "ari" (adjusted Rand: 0 = chance,
 1 = identical), "rand" or "vi" (variation of information: 0 = identical).
@@ -2954,7 +2996,7 @@ dependency and citation graphs.
 ### `fdpLayout(clusters=None, overlap='prism')`
 
 fdpLayout() is a force layout that can keep clusters together:
-fdpLayout(clusters=modularity_class) gives each community its own box.
+fdpLayout(clusters=louvain_class) gives each community its own box.
 
 ### `graphvizLayout(engine='dot', **attrs)`
 
@@ -3064,7 +3106,7 @@ spread), "linear" or "log". Without `axis`: for directed graphs the
 classic source / hub / sink axes (only outgoing, both, only incoming
 edges), otherwise leaves / connectors / hubs by degree. The axes are drawn
 with their labels; any later layout removes them.
-E.g. hiveLayout(dept, pagerank) or hiveLayout(modularity_class, axes=5)
+E.g. hiveLayout(dept, pagerank) or hiveLayout(louvain_class, axes=5)
 
 ### `isomLayout(iterations=None)`
 
@@ -3458,7 +3500,7 @@ out of a hairball. Three methods:
                                 tree-like bundles; good for large graphs
   bundleEdges(method="fdeb")    force-directed edge bundling: smooth,
                                 organic curves; up to a few thousand edges
-  bundleEdges(modularity_class) through the centres of the groups of a
+  bundleEdges(louvain_class) through the centres of the groups of a
                                 node field
 strength 0..1 blends toward straight lines (0 = straight). MINGLE:
 neighbors (edges compared with each), angleStrength (higher allows
@@ -3697,6 +3739,13 @@ Load a saved state: restores which nodes/edges exist and all their values.
 ### `morph(state, duration=1000)`
 
 Animate from the current display to a saved state over `duration` ms.
+
+### `scratch()`
+
+with scratch(): runs the block, then puts the graph back as it was
+(which nodes and edges exist, and every value): for trying things out,
+such as removing nodes and measuring the result. Fields made inside the
+block are removed too; print or keep in variables what you want to keep.
 
 ### `setEdgeAppearAfter(v)`
 
@@ -4105,7 +4154,7 @@ graphStats()
 
 ```python
 louvainClusters()
-colorize(modularity_class)
+colorize(louvain_class)
 ```
 
 **Most central nodes**
@@ -4180,7 +4229,7 @@ mixingMatrix(dept)
 
 ```python
 louvainClusters()
-compareClusters(modularity_class, dept)
+compareClusters(louvain_class, dept)
 ```
 
 **Any networkx algorithm**
@@ -4341,7 +4390,7 @@ showOnly(giantComponent())
 **Edges inside communities**
 
 ```python
-showOnly(intraEdges(modularity_class))
+showOnly(intraEdges(louvain_class))
 ```
 
 **Show everything again**

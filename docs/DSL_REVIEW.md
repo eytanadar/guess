@@ -324,5 +324,32 @@ Done 2026-11-11 (linking list items 2, 6, 7 and part of 9), with tests in
   them. Right-click or alt-click acts on `dept == value` for the whole
   field.
 
-Still open: previews of a command's effect (8) and live watched results
-(10).
+Done 2026-11-11, the small and medium items (tests in
+`py/tests/test_small_batch.py` and `web/e2e/linking.spec.ts`):
+
+- **Small.**
+  - `;` at the end of a line hides the echo.
+  - A set of many groups prints compactly, still linked
+    (`21 groups: [dept0: 28] …`).
+  - `Node.score = 0` makes a field, typed by its default.
+  - `set.where(fn)` filters to a set.
+  - Colours compare by meaning (`n.color == red`) and vary
+    (`.alpha() .lighter() .darker()`); colour fields read back as colours.
+  - A note when a query can't match because of its type (once per field).
+  - Writing an unknown field suggests a close name.
+  - Tracebacks leave out the runtime helper frames.
+  - "communities", not "communitys".
+  - The `groupAndSortBy` docs are corrected.
+  - Louvain writes `louvain_class` (was `modularity_class`).
+  - `n.class_` reaches a field named after a Python keyword.
+- **Medium.**
+  - `with scratch():` (used in the Epidemiology and Ecology books).
+  - Line charts give a readout at the pointer; on the `spread` chart,
+    pointing highlights who was reached by then and a click selects them
+    (chart field `xq`).
+  - The edge table marks the edges between selected nodes.
+  - Charts mark each other's bars.
+  - `n in set` is a cached hash lookup.
+
+Still open: previews of a command's effect (8), live watched results (10),
+and a history scrubber.

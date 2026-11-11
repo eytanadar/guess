@@ -1039,15 +1039,15 @@ $("#sample").addEventListener("click", () => term.submit(`makeFromGDF("sample.gd
 $("#save").addEventListener("click", () => term.submit(`saveSession("session.guess")`));
 $("#curved").addEventListener("click", () => term.submit(`curvedEdges(${renderer.curvature > 0 ? "false" : "true"})`));
 $("#center").addEventListener("click", () => renderer.center());
-// ---- light / dark theme: Automatic follows the system (View menu) ----------------------
+// ---- light / dark theme: dark by default; Automatic follows the system (View menu) -----
 {
   type Theme = "auto" | "light" | "dark";
   const KEY = "guess.theme";
   const system = window.matchMedia("(prefers-color-scheme: dark)");
-  let theme: Theme = "auto";
+  let theme: Theme = "dark";
   try {
     const t = localStorage.getItem(KEY);
-    if (t === "light" || t === "dark") theme = t;
+    if (t === "light" || t === "auto") theme = t;
   } catch {
     /* storage unavailable */
   }
@@ -1061,7 +1061,7 @@ $("#center").addEventListener("click", () => renderer.center());
     b.addEventListener("click", () => {
       theme = b.dataset.themeChoice as Theme;
       try {
-        if (theme === "auto") localStorage.removeItem(KEY);
+        if (theme === "dark") localStorage.removeItem(KEY);
         else localStorage.setItem(KEY, theme);
       } catch {
         /* storage unavailable */
