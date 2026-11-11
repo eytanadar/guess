@@ -2138,12 +2138,41 @@ unsaved code (kept, as are edits to recalled commands)</td>
 </tr>
 <tr>
 <td><code>[n]</code></td>
-<td>fold or unfold a cell’s output</td>
+<td>fold or unfold a cell’s output; hover it to highlight everything
+that cell changed</td>
 </tr>
 </tbody>
 </table>
 <p><em>View → Vim keys in the code cell</em> switches the editor to vim
 bindings.</p>
+<p><strong>Code and graph, linked.</strong> The console and the graph
+point at each other:</p>
+<ul>
+<li><strong>Output.</strong> Nodes, edges, sets, dicts, f-strings and
+<code>dept.distinct</code> values in the output highlight what they
+stand for. Hover <code>&#39;dept1&#39;</code> in <code>dept.distinct</code> to
+see the nodes in dept1.</li>
+<li><strong>Executed code.</strong> Hover a name or a query in code
+you’ve run to see what it means <em>now</em>: a variable’s members, the
+matches of <code>degree &gt; 5</code> (or of the whole of
+<code>3 &lt; degree &lt; 6</code>), a node, or a value. Hovering a field
+shows its values and previews colouring by it; nothing is changed.
+Commands show their documentation.</li>
+<li><strong>Reverse highlighting.</strong> Hovering a node in the graph,
+a table row, a legend row or a chart bar marks the output that mentions
+it.</li>
+<li><strong>Which code changed it.</strong> A node’s tooltip lists the
+cells that last changed it (<code>color ← [12] colorize(dept)</code>).
+Its right-click menu has <em>Show the code that changed it</em>.</li>
+<li><strong>Into your code.</strong> Alt-click a node in the graph, a
+table row, a legend row, a chart bar or anything in the output to insert
+it at the cursor: its name, a query, <code>sel</code>, or a short tuple.
+A larger set is bound to a new variable, <code>picked1</code>. The
+right-click menu has <em>Insert as code</em>.</li>
+<li><strong>Earlier graphs.</strong> Output from an earlier graph
+(before a new file was opened, or another graph tab) is greyed out and
+no longer linked, since its elements are gone.</li>
+</ul>
 <p><strong>Undo.</strong> Every command is one step: a layout, a file
 load, <code>colorize</code>, a node drag, a table edit. <em>Edit →
 Undo</em>, Cmd/Ctrl+Z (when the code cell isn’t focused) or

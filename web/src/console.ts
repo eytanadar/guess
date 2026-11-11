@@ -35,6 +35,8 @@ export interface ConsoleHost {
   click(items: Item[], ev: MouseEvent, expr?: string): void;
   /** Hovering a cell's number: show what it changed (null: left it). */
   cellHover?(cell: number | null): void;
+  /** Hovering a name or a query in executed code: what it means now (null: left it). */
+  peek?(expr: string | null, ev: MouseEvent | null): void;
 }
 
 const MAX_TIP_ITEMS = 15;
@@ -122,13 +124,18 @@ export class Console {
     });
     this.out.addEventListener("mouseover", (ev) => {
       const fn = (ev.target as HTMLElement).closest<HTMLElement>(".fn");
-      this.host.doc(fn ? fn.textContent : null, fn ? ev : null);
+      const peek = fn ? null : this.peekAt(ev.target as HTMLElement);
+      if (!peek) this.host.doc(fn ? fn.textContent : null, fn ? ev : null);
+      this.setPeek(peek, ev);
       this.onOver(ev);
     });
     this.out.addEventListener("mousemove", (ev) => {
       if (this.hot) this.host.hover(collect(this.hot), this.hot, ev);
     });
-    this.out.addEventListener("mouseleave", () => this.setHot(null, null));
+    this.out.addEventListener("mouseleave", (ev) => {
+      this.setHot(null, null);
+      this.setPeek(null, ev);
+    });
     this.out.addEventListener("click", (ev) => {
       const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-k]");
       if (!t || t.closest(".stale") || window.getSelection()?.toString()) return;
@@ -550,6 +557,7 @@ export class Console {
     num.onmouseleave = () => this.host.cellHover?.(null);
     num.onclick = () => root.classList.toggle("collapsed");
     const src = el("div", "cell-code echo");
+    src.dataset.code = code;
     src.append(this.renderCode(code));
     src.title = "Double-click to edit";
     src.ondblclick = (ev) => {
@@ -587,27 +595,53 @@ export class Console {
     cell.querySelector(".cell-num")?.setAttribute("title", undone ? "Undone (redo() re-applies it)" : "Collapse/expand output");
   }
 
-  /** Syntax-highlighted source; documented command names become hoverable. */
+  /** Syntax-highlighted source; documented command names become hoverable,
+   *  and every token knows its offset (for hovering names and queries). */
   private renderCode(code: string): DocumentFragment {
     // one block per line, so an error can mark the line it happened on
     const frag = document.createDocumentFragment();
     const tree = pythonLanguage.parser.parse(code);
     let line = el("span", "code-line");
+    let pos = 0;
     highlightCode(code, tree, classHighlighter, (text, classes) => {
-      if (!classes) {
-        line.append(text);
-        return;
-      }
-      const span = el("span", classes);
-      if (text in this.docs && classes.includes("variableName")) span.classList.add("fn");
+      const span = el("span", classes || "tok");
+      if (classes && text in this.docs && classes.includes("variableName")) span.classList.add("fn");
+      span.dataset.from = String(pos);
       span.textContent = text;
       line.append(span);
+      pos += text.length;
     }, () => {
       frag.append(line);
       line = el("span", "code-line");
+      pos += 1;
     });
     frag.append(line);
     return frag;
+  }
+
+  // ---- hovering names and queries in executed code -------------------------------------
+  private peekState: { expr: string; spans: HTMLElement[] } | null = null;
+
+  /** The name or query under a token of executed code, with the tokens it spans. */
+  private peekAt(t: HTMLElement): { expr: string; spans: HTMLElement[] } | null {
+    const src = t.closest<HTMLElement>(".cell-code");
+    if (!src || t.dataset.from === undefined || !src.dataset.code) return null;
+    const code = src.dataset.code;
+    const range = peekRange(code, Number(t.dataset.from));
+    if (!range) return null;
+    const spans = [...src.querySelectorAll<HTMLElement>("[data-from]")].filter((s) => {
+      const f = Number(s.dataset.from);
+      return f >= range[0] && f < range[1];
+    });
+    return { expr: code.slice(range[0], range[1]), spans };
+  }
+
+  private setPeek(p: { expr: string; spans: HTMLElement[] } | null, ev: MouseEvent) {
+    if (p?.expr === this.peekState?.expr && p?.spans[0] === this.peekState?.spans[0]) return;
+    for (const s of this.peekState?.spans ?? []) s.classList.remove("peeking");
+    this.peekState = p;
+    for (const s of p?.spans ?? []) s.classList.add("peeking");
+    this.host.peek?.(p ? p.expr : null, p ? ev : null);
   }
 
   // ---- output ---------------------------------------------------------------------
@@ -784,6 +818,36 @@ export class Console {
 }
 
 // ---- helpers -------------------------------------------------------------------------
+
+/** The [from, to) of what hovering offset `pos` of `code` should show: a
+ *  comparison (with its whole chain, as in 3 < degree < 6) when the name is part
+ *  of one, the whole expression when on & | and or not, otherwise the name.
+ *  Calls are never included (the worker refuses them anyway). */
+export function peekRange(code: string, pos: number): [number, number] | null {
+  const tree = pythonLanguage.parser.parse(code);
+  let node = tree.resolveInner(pos, 1);
+  const isCmp = (n: typeof node | null) => !!n && n.name === "BinaryExpression" &&
+    !!(n.getChild("CompareOp") || n.getChild("in") || n.getChild("is"));
+  const chain = (n: typeof node) => {
+    while (n.parent && isCmp(n.parent)) n = n.parent;
+    return n;
+  };
+  const p = node.parent;
+  if (["CompareOp", "in", "is"].includes(node.name) && p && isCmp(p)) return [chain(p).from, chain(p).to];
+  if (["BitOp", "and", "or"].includes(node.name) && p?.name === "BinaryExpression") return [p.from, p.to];
+  if (node.name === "not" && p?.name === "UnaryExpression") return [p.from, p.to];
+  if (node.name !== "VariableName") return null;
+  // a callee (colorize in colorize(dept)) has its documentation instead
+  if (p?.name === "CallExpression" && p.firstChild?.from === node.from) return null;
+  for (let a = node.parent; a; a = a.parent) {
+    if (isCmp(a)) {
+      const c = chain(a);
+      return [c.from, c.to];
+    }
+    if (!["BinaryExpression", "ParenthesizedExpression", "UnaryExpression"].includes(a.name)) break;
+  }
+  return [node.from, node.to];
+}
 
 function el(tag: string, cls?: string) {
   const e = document.createElement(tag);

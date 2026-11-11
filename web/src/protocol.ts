@@ -107,6 +107,15 @@ export type UiMsg =
   | { type: "ui"; op: "status"; text: string }
   | { type: "ui"; op: "open"; url: string };
 
+/** What a hovered name or query in executed code means now. */
+export interface PeekInfo {
+  title: string;
+  lines: string[];
+  items: ["n" | "e", number][];
+  /** colouring by a hovered field, shown while hovering: [id, 0xRRGGBB] */
+  colors?: { n?: [number, number][]; e?: [number, number][] };
+}
+
 export interface Info {
   title: string;
   rows: [string, string][];
@@ -164,6 +173,7 @@ export type ToWorker =
   | { type: "event"; id: number; target: string; name: string; value: string }
   | { type: "describe"; id: number; kind: "n" | "e"; ident: number }
   | { type: "cellChanges"; id: number; cell: number }
+  | { type: "peek"; id: number; expr: string }
   | { type: "assign"; id: number; name: string; items: ["n" | "e", number][] }
   /** nodes dragged on the display, as [id, x, y, id, x, y, ...] (one undo step) */
   | { type: "select"; nodes: number[] }

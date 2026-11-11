@@ -293,6 +293,36 @@ Decided 2026-11-11 and done:
   - Plain assignments to commands and colours are still errors (point 5,
     not done).
 
-Still open from the linking list: insert as code (2), hover-linking inside
-code (6), provenance (7), previews (8), tagging stale output with its
-graph (part of 9), and live watched results (10).
+Done 2026-11-11 (linking list items 2, 6, 7 and part of 9), with tests in
+`py/tests/test_linked_output.py` and `web/e2e/linking.spec.ts`:
+
+- **Stale output.** Output is tagged with the graph it was made from (a
+  counter bumped on every load or switch). Output from an earlier graph is
+  greyed out and unlinked.
+- **Insert as code.** Alt-click a node in the graph, a table row, a legend
+  row, a chart bar or anything in the output, or use the menu's *Insert as
+  code*. You get a name, a query, `sel` or a short tuple; larger sets are
+  bound to `picked1`, `picked2`, ….
+- **Provenance.**
+  - Each recorded cell notes which elements and aspects (color, size,
+    position, label, …) it changed.
+  - The node and edge tooltip lists them (`color ← [12] colorize(dept)`).
+  - Hovering a cell number highlights everything that cell changed.
+  - The menu's *Show the code that changed it* scrolls to and flashes the
+    cell.
+  - Undo forgets what the undone cell did.
+- **Hovering executed code.**
+  - Names and queries in executed code are evaluated now, side-effect free
+    (no calls; the worker's `peek` checks the syntax tree).
+  - A variable or query highlights its members; a comparison chain is taken
+    whole.
+  - A field shows its values and previews colouring by it: temporary
+    renderer colours, nothing changed.
+  - A plain value shows its value.
+- **Distinct values** (suggested by the user). `dept.distinct` (and
+  `set.field.distinct`) prints values that link to the elements having
+  them. Right-click or alt-click acts on `dept == value` for the whole
+  field.
+
+Still open: previews of a command's effect (8) and live watched results
+(10).

@@ -149,6 +149,9 @@ function handle(msg: ToWorker) {
     case "describe":
       post({ type: "reply", id: msg.id, value: call("describe", msg.kind, msg.ident) });
       break;
+    case "peek":
+      post({ type: "reply", id: msg.id, value: call("peek", msg.expr) });
+      break;
     case "cellChanges":
       post({ type: "reply", id: msg.id, value: call("cell_changes", msg.cell) });
       break;

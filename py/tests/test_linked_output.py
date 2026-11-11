@@ -89,3 +89,60 @@ def test_chart_marks_carry_queries():
     s.run("outbreaks(20, beta=0.5, gamma=0.5)")
     bars = charts[-1]["items"]
     assert sum(b["value"] for b in bars) == 20 and all(b["ids"] for b in bars if b["value"])
+
+
+def test_distinct_values_link_to_their_members():
+    s = _s()
+    segs = last_out(s, "dept.distinct")
+    grp = segs[0]
+    assert grp["a"].startswith("21 values of dept")
+    first = grp["g"][1]
+    assert first["q"].startswith("dept == ") and first["x"]
+    assert s.run(f"__q = {first['q']}") and len(s.ns["__q"]) == len(first["x"])
+    sub = last_out(s, "(dept == 'dept1').jobfun.distinct")[0]["g"][1]
+    assert "q" not in sub and "(in the set)" in sub["a"]
+    assert sorted(ev_(s, "dept.distinct"))[:1] == ["dept0"]
+
+
+def ev_(s, code):
+    assert s.run(f"__r = {code}"), s.rec.of("error")
+    return s.ns["__r"]
+
+
+def test_outputs_are_tagged_with_their_graph():
+    s = _s()
+    before = s.graph_gen
+    assert s.run("v1")
+    assert s.rec.of("out")[-1]["gid"] == before
+    s.run(f"makeFromGDF({str(SAMPLE)!r})")
+    assert s.graph_gen == before + 1
+
+
+def test_provenance_records_which_cell_changed_what():
+    s = _s()
+    s.current_cell = 2
+    s.run("colorize(dept)")
+    s.current_cell = 3
+    s.run("v1.size = 30")
+    prov = {a: c for a, c, _code in s.describe("n", 0)["prov"]}
+    assert prov["color"] == 2 and prov["size"] == 3
+    assert ("n", 0) in [tuple(x) for x in s.cell_changes(2)] and len(s.cell_changes(3)) == 1
+    s.current_cell = 4
+    s.run("undo()")
+    prov = {a: c for a, c, _code in s.describe("n", 0)["prov"]}
+    assert "size" not in prov and prov["color"] == 2
+
+
+def test_peek_is_safe_and_describes_names_and_queries():
+    s = _s()
+    s.run("hubs = highest(degree, 5)")
+    assert len(s.peek("hubs")["items"]) == 5
+    assert len(s.peek("3 < degree < 6")["items"]) == 49
+    f = s.peek("dept")
+    assert "21 distinct values" in f["title"] and len(f["colors"]["n"]) == len(s.graph.nodes)
+    assert s.peek("v1.degree")["title"] == "v1.degree = 1"
+    n = len(s.graph.nodes)
+    for bad in ["remove(v1)", "__import__('os')", "g.nodes.__class__", "[x for x in g.nodes]", "v1.color = red"]:
+        assert s.peek(bad) is None
+    assert len(s.graph.nodes) == n
+    assert "__peek__" not in s.ns

@@ -1,6 +1,6 @@
 import "./style.css";
 import { Console, groupTip, type Item } from "./console";
-import type { DragContext, FromWorker, Info, LegendEntry, LegendRec, ToWorker } from "./protocol";
+import type { DragContext, FromWorker, Info, LegendEntry, LegendRec, PeekInfo, ToWorker } from "./protocol";
 import { Renderer, type DragBehaviour, type DragFrame, type Hit } from "./renderer";
 import { Dock } from "./dock";
 import { ask } from "./dialog";
@@ -368,7 +368,35 @@ const term = new Console($("#console"), {
   // clicking a node, edge or group in the output selects it (shift: adds) and shows it
   click: (items, ev, expr) => (ev.altKey ? void insertItems(items, expr ? `(${expr})` : null) : selectItems(items, ev.shiftKey)),
   cellHover: (cell) => void cellHover(cell),
+  peek: (expr, ev) => void peekCode(expr, ev),
 });
+
+// hovering a name or a query in executed code: its current members in the graph,
+// or for a field, a preview of colouring by it (nothing is changed)
+let peekToken = 0;
+async function peekCode(expr: string | null, ev: MouseEvent | null) {
+  const token = ++peekToken;
+  if (!expr || !ev) {
+    renderer.setPreviewColors(null);
+    highlightItems(null);
+    hideTip();
+    return;
+  }
+  const x = ev.clientX, y = ev.clientY;
+  const info = await request<PeekInfo | null>((id) => ({ type: "peek", id, expr }));
+  if (token !== peekToken) return;
+  if (!info) {
+    renderer.setPreviewColors(null);
+    highlightItems(null);
+    hideTip();
+    return;
+  }
+  const c = info.colors;
+  renderer.setPreviewColors(c?.n ? new Map(c.n) : null, c?.e ? new Map(c.e) : null);
+  highlightItems(info.items.length ? info.items : null);
+  tipToken++;
+  showTip(info.title, info.lines, x, y);
+}
 
 let cellHoverToken = 0;
 async function cellHover(cell: number | null) {

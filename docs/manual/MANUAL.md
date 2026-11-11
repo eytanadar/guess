@@ -1405,9 +1405,32 @@ several things are selected, the function receives the selection.
 | **Edit** on a cell (or double-click its code) | copy it into the working cell |
 | **Run again** on a cell | run it again, as a new cell at the bottom |
 | **Watch** on a cell | re-run it whenever the graph changes |
-| `[n]` | fold or unfold a cell's output |
+| `[n]` | fold or unfold a cell's output; hover it to highlight everything that cell changed |
 
 *View → Vim keys in the code cell* switches the editor to vim bindings.
+
+**Code and graph, linked.** The console and the graph point at each other:
+
+- **Output.** Nodes, edges, sets, dicts, f-strings and `dept.distinct`
+  values in the output highlight what they stand for. Hover `'dept1'` in
+  `dept.distinct` to see the nodes in dept1.
+- **Executed code.** Hover a name or a query in code you've run to see what
+  it means *now*: a variable's members, the matches of `degree > 5` (or of
+  the whole of `3 < degree < 6`), a node, or a value. Hovering a field shows
+  its values and previews colouring by it; nothing is changed. Commands show
+  their documentation.
+- **Reverse highlighting.** Hovering a node in the graph, a table row, a
+  legend row or a chart bar marks the output that mentions it.
+- **Which code changed it.** A node's tooltip lists the cells that last
+  changed it (`color ← [12] colorize(dept)`). Its right-click menu has *Show
+  the code that changed it*.
+- **Into your code.** Alt-click a node in the graph, a table row, a legend
+  row, a chart bar or anything in the output to insert it at the cursor:
+  its name, a query, `sel`, or a short tuple. A larger set is bound to a new
+  variable, `picked1`. The right-click menu has *Insert as code*.
+- **Earlier graphs.** Output from an earlier graph (before a new file was
+  opened, or another graph tab) is greyed out and no longer linked, since
+  its elements are gone.
 
 **Undo.** Every command is one step: a layout, a file load, `colorize`, a
 node drag, a table edit. *Edit → Undo*, Cmd/Ctrl+Z (when the code cell isn't
