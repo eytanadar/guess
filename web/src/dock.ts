@@ -9,7 +9,7 @@ export interface DockHost {
   /** Hovering a chart mark: highlight its elements (null = clear). */
   hover(items: Item[] | null, title: string, lines: string[], ev: MouseEvent | null): void;
   /** Clicking a mark selects its elements (shift adds). */
-  click(items: Item[], ev: MouseEvent): void;
+  click(items: Item[], ev: MouseEvent, expr?: string): void;
   /** Right-clicking a mark: the element menu (on its query, when the chart knows one). */
   context(items: Item[], ev: MouseEvent, expr: string | undefined, title: string): void;
 }
@@ -203,7 +203,7 @@ export class Dock {
         this.host.hover(null, "", [], null);
       });
       if (it.ids.length) {
-        el.addEventListener("click", (ev) => this.host.click(it.ids as Item[], ev));
+        el.addEventListener("click", (ev) => this.host.click(it.ids as Item[], ev, it.q));
         el.addEventListener("contextmenu", (ev) => {
           ev.preventDefault();
           this.host.context(it.ids as Item[], ev, it.q, it.label);

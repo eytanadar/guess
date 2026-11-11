@@ -82,7 +82,10 @@ const renderer = new Renderer($("#graph"), {
     });
     pendingMoves.push(ident, x, y);
   },
-  click: (hit, shift) => onGraphClick(hit, shift),
+  click: (hit, shift, alt) => {
+    if (alt && hit) void insertItems([[hit.kind, hit.id]]);
+    else onGraphClick(hit, shift);
+  },
   selected: (ids) => syncSelection(ids),
   clickedAt: (x, y) => send({ type: "click", x, y }),
   dragBehaviour: (id, alt) => (tool === "select" ? dragBehaviour(id, alt) : null),
@@ -248,7 +251,7 @@ const dock = new Dock($("#dock-bottom"), $("#dock-right"), {
     tipToken++;
     showTip(title, lines, ev.clientX, ev.clientY);
   },
-  click: (items, ev) => selectItems(items, ev.shiftKey),
+  click: (items, ev, expr) => (ev.altKey ? void insertItems(items, expr ? `(${expr})` : null) : selectItems(items, ev.shiftKey)),
   context: (items, ev, expr, title) => {
     highlightItems(null);
     openMenu(items, ev.clientX, ev.clientY, expr ? { expr: `(${expr})`, title } : { title });
@@ -361,10 +364,22 @@ const term = new Console($("#console"), {
     else term.note("Interrupt is unavailable (page is not cross-origin isolated).");
   },
   hover: (items, el, ev) => onConsoleHover(items, el, ev),
-  context: (items, ev) => openMenu(items, ev.clientX, ev.clientY),
+  context: (items, ev, expr) => openMenu(items, ev.clientX, ev.clientY, expr ? { expr: `(${expr})`, title: expr } : {}),
   // clicking a node, edge or group in the output selects it (shift: adds) and shows it
-  click: (items, ev) => selectItems(items, ev.shiftKey),
+  click: (items, ev, expr) => (ev.altKey ? void insertItems(items, expr ? `(${expr})` : null) : selectItems(items, ev.shiftKey)),
+  cellHover: (cell) => void cellHover(cell),
 });
+
+let cellHoverToken = 0;
+async function cellHover(cell: number | null) {
+  const token = ++cellHoverToken;
+  if (cell === null) {
+    highlightItems(null);
+    return;
+  }
+  const items = await request<Item[]>((id) => ({ type: "cellChanges", id, cell }));
+  if (token === cellHoverToken) highlightItems(items?.length ? items : null);
+}
 
 worker.onmessage = (ev: MessageEvent<FromWorker>) => {
   const m = ev.data;
@@ -378,6 +393,7 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       onReady();
       break;
     case "scene":
+      if (m.gid !== undefined) term.setGraph(m.gid, m.gname ?? "");
       if (renderer.selection.size) syncSelection([]);
       renderer.setScene(m.nodes, m.edges);
       requestAnimationFrame(() => renderer.center([], [], false));
@@ -386,7 +402,7 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       renderer.applyPatch(m.nodes, m.edges, m.removedNodes, m.removedEdges, m.morph, m.pos);
       break;
     case "out":
-      term.print(m.segs);
+      term.print(m.segs, m.gid);
       break;
     case "text":
       term.text(m.text);
@@ -510,7 +526,17 @@ async function describeTip(kind: "n" | "e", ident: number, x: number, y: number)
   const info = await request<Info | null>((id) => ({ type: "describe", id, kind, ident }));
   if (token !== tipToken || !info) return;
   const rows = info.rows.filter(([k, v]) => v !== "" && !HIDDEN_ROWS.has(k));
-  showTip(info.title, rows.map(([k, v]) => `${k}: ${v}`), x, y);
+  const lines = rows.map(([k, v]) => `${k}: ${v}`);
+  // where its look came from: the cells that last changed it (newest first)
+  const byCell = new Map<number, { aspects: string[]; code: string }>();
+  for (const [aspect, cell, code] of info.prov ?? []) {
+    const b = byCell.get(cell) ?? { aspects: [], code };
+    b.aspects.push(aspect);
+    byCell.set(cell, b);
+  }
+  if (byCell.size) lines.push("──");
+  for (const [cell, b] of [...byCell].slice(0, 6)) lines.push(`${b.aspects.join(", ")} ← [${cell}] ${b.code}`);
+  showTip(info.title, lines, x, y);
 }
 
 const HIDDEN_ROWS = new Set(["name", "image", "labelcolor", "strokecolor", "node1", "node2", "source", "destination"]);
@@ -603,6 +629,40 @@ const SWATCHES = ["red", "orange", "yellow", "green", "blue", "purple", "gray", 
 
 let menuExpr: string | null = null;   // the open menu acts on this expression (legend rows), not on ids
 
+/** Gython that names these elements, for "insert as code": a node's name, an
+ *  edge as (a - b), a short tuple of names, sel, or a fresh variable. */
+let pickedCount = 0;
+async function itemsExpr(items: Item[], expr?: string | null): Promise<string | null> {
+  if (expr) return expr;
+  if (!items.length) return null;
+  const edgeExpr = (id: number) => {
+    const e = renderer.edges.get(id);
+    return e ? `(${nodeExpr(e.s)} ${e.d ? "->" : "-"} ${nodeExpr(e.t)})` : null;
+  };
+  if (items.length === 1) return items[0][0] === "n" ? nodeExpr(items[0][1]) : edgeExpr(items[0][1]);
+  const selIds = renderer.selection;
+  if (items.length === selIds.size && items.every((i) => i[0] === "n" && selIds.has(i[1]))) return "sel";
+  if (items.length <= 12 && items.every((i) => i[0] === "n")) {
+    const names = items.map((i) => nodeExpr(i[1]));
+    if (names.every((n) => /^[A-Za-z_]\w*$/.test(n))) return `(${names.join(", ")})`;
+  }
+  // too many to spell out: bind a variable (picked1, picked2, ...) and name it
+  for (let tries = 0; tries < 50; tries++) {
+    const name = `picked${++pickedCount}`;
+    const res = await request<unknown>((id) => ({ type: "assign", id, name, items }));
+    if (typeof res === "number") {
+      term.note(`${name} = ${res === 1 ? "1 item" : `${res} items`}`);
+      return name;
+    }
+  }
+  return null;
+}
+
+async function insertItems(items: Item[], expr?: string | null) {
+  const code = await itemsExpr(items, expr);
+  if (code) term.insertAtCursor(code);
+}
+
 async function targetExpr(items: Item[]): Promise<string> {
   if (menuExpr) return menuExpr;
   const selIds = renderer.selection;
@@ -688,6 +748,16 @@ function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; ti
     sep.className = "menu-sep";
     menu.append(sep);
     for (const it of extra) act(it.label, () => uiEvent(it.id, "menuEvent", items));
+  }
+  const exprHere = menuExpr;
+  act("Insert as code", () => insertItems(items, exprHere));
+  if (items.length === 1) {
+    act("Show the code that changed it", async () => {
+      const info = await request<Info | null>((id) => ({ type: "describe", id, kind: items[0][0], ident: items[0][1] }));
+      const newest = info?.prov?.[0];
+      if (!newest) term.note("No console cell has changed it (it is as loaded).");
+      else if (!term.reveal(newest[1])) term.note(`[${newest[1]}] ${newest[2]} (no longer in the console)`);
+    });
   }
   act("Assign to variable…", async () => {
     const name = await ask({ title: "Assign to a variable", note: `${items.length === 1 ? "This item" : `These ${items.length} items`} will be available in the console under this name.`, label: "Name", value: "foo", ok: "Assign" });
@@ -870,6 +940,9 @@ function renderLegends(legends: LegendRec[]) {
         row.title = `${items.length} ${items[0][0] === "n" ? "node" : "edge"}${items.length === 1 ? "" : "s"} · right-click for actions`;
         row.addEventListener("mouseenter", () => highlightItems(legendItems(e, lg)));
         row.addEventListener("mouseleave", () => highlightItems(null));
+        row.addEventListener("click", (ev) => {
+          if (ev.altKey) void insertItems(legendItems(e, lg), e.q ? `(${e.q})` : null);
+        });
         row.addEventListener("contextmenu", (ev) => {
           ev.preventDefault();
           highlightItems(null);
@@ -1520,6 +1593,7 @@ $(".sidebar-close").addEventListener("click", () => void openSide(null));
 const edgeExpr = (id: number) => `g.edge_by_id(${id})`;
 const dataTable = new DataTable($("#table-body"), {
   load: (kind, ids) => request<TableData>((id) => ({ type: "query", id, what: "table", kind, ids })),
+  insert: (kind, id) => void insertItems([[kind, id]]),
   select: (kind, ids, add) => {
     const nodes = new Set<number>(add ? renderer.selection : []);
     for (const id of ids) {

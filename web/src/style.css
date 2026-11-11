@@ -209,6 +209,11 @@ body { display: flex; flex-direction: column; }
 .obj.edge { color: var(--link-edge); }
 .grp.hot, .obj.hot { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
 .obj.hot { background: rgba(255, 31, 107, 0.1); }
+/* output about a graph that's no longer shown: not linked */
+.result.stale .obj, .result.stale .grp { color: var(--muted, #888); text-decoration: none; cursor: default; }
+.result.stale { opacity: 0.75; }
+@keyframes cell-flash { from { background: rgba(255, 31, 107, 0.18); } to { background: transparent; } }
+.cell.flash { animation: cell-flash 1.6s ease-out; }
 /* output that mentions what's hovered elsewhere (graph, table, chart, legend) */
 .obj.linked { background: rgba(255, 31, 107, 0.14); box-shadow: 0 0 0 1px rgba(255, 31, 107, 0.45); border-radius: 2px; }
 .dtable-row.linked { box-shadow: inset 3px 0 0 var(--accent); background: rgba(255, 31, 107, 0.08); }

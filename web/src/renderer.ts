@@ -32,7 +32,7 @@ export interface RendererEvents {
   hover(hit: Hit, clientX: number, clientY: number): void;
   context(hit: Hit, clientX: number, clientY: number): void;
   moved(id: number, x: number, y: number): void;
-  click(hit: Hit, shift: boolean): void;
+  click(hit: Hit, shift: boolean, alt?: boolean): void;
   /** the selection changed by a box or lasso gesture */
   selected(ids: number[]): void;
   /** double-click; return true if handled (otherwise it zooms) */
@@ -521,6 +521,15 @@ export class Renderer {
     }
   }
 
+  /** Temporary colours (hovering a field in code shows what colouring by it
+   *  would look like); null puts the real colours back. Nothing is changed. */
+  private preview: { n: Map<number, number>; e: Map<number, number> } | null = null;
+  setPreviewColors(nodes: Map<number, number> | null, edges: Map<number, number> | null = null) {
+    this.preview = nodes || edges ? { n: nodes ?? new Map(), e: edges ?? new Map() } : null;
+    this.dirty = true;
+    this.needsRender = true;
+  }
+
   highlight(nodes: Iterable<number>, edges: Iterable<number>) {
     this.hl = { nodes: new Set(nodes), edges: new Set(edges) };
     this.drawOverlay();
@@ -764,6 +773,8 @@ export class Renderer {
   }
 
   private edgeColor(e: EdgeRec, a: NodeRec, b: NodeRec): number {
+    const pv = this.preview?.e.get(e.i);
+    if (pv !== undefined) return pv;
     switch (this.edgeColorMode) {
       case "source": return a.c;
       case "target": return b.c;
@@ -885,8 +896,9 @@ export class Renderer {
         continue;
       }
       shape(g, n);
-      g.fill({ color: n.c, alpha });
-      g.stroke({ width: border, color: n.sc >= 0 ? n.sc : darken(n.c), alpha });
+      const fill = this.preview?.n.get(id) ?? n.c;
+      g.fill({ color: fill, alpha });
+      g.stroke({ width: border, color: n.sc >= 0 && fill === n.c ? n.sc : darken(fill), alpha });
     }
   }
 
@@ -1498,7 +1510,7 @@ export class Renderer {
         this.events.dragHint?.(null);
         if (drag.moved && drag.frame) drag.beh.drop(drag.frame);
         else this.restoreDrag(drag.saved!);
-        if (!drag.moved) this.events.click(drag.hit, ev.shiftKey);
+        if (!drag.moved) this.events.click(drag.hit, ev.shiftKey, ev.altKey);
         this.drawOverlay();
         drag = null;
         el.style.cursor = "";
@@ -1524,7 +1536,7 @@ export class Renderer {
           this.events.click(null, ev.shiftKey);
         }
         this.drawOverlay();
-      } else if (drag && !drag.moved) this.events.click(drag.hit, ev.shiftKey);
+      } else if (drag && !drag.moved) this.events.click(drag.hit, ev.shiftKey, ev.altKey);
       drag = null;
       el.style.cursor = "";
       if (el.hasPointerCapture(ev.pointerId)) el.releasePointerCapture(ev.pointerId);

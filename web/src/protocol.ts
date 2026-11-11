@@ -31,7 +31,7 @@ export type Seg =
   | string
   | { n: number; t: string }
   | { e: number; t: string }
-  | { g: Seg[]; a?: string; x?: ["n" | "e", number][] };   // x: more members, linked but not shown
+  | { g: Seg[]; a?: string; x?: ["n" | "e", number][]; q?: string };   // q: a query naming the members   // x: more members, linked but not shown
 
 export interface HullRec { i: number; nodes: number[]; c: number; a: number }
 
@@ -107,14 +107,19 @@ export type UiMsg =
   | { type: "ui"; op: "status"; text: string }
   | { type: "ui"; op: "open"; url: string };
 
-export interface Info { title: string; rows: [string, string][] }
+export interface Info {
+  title: string;
+  rows: [string, string][];
+  /** which console cells last changed it: [aspect, cell, code] (newest first) */
+  prov?: [string, number, string][];
+}
 
 export type FromWorker =
   | { type: "status"; text: string }
   | { type: "ready"; interruptible: boolean }
-  | { type: "scene"; nodes: NodeRec[]; edges: EdgeRec[] }
+  | { type: "scene"; nodes: NodeRec[]; edges: EdgeRec[]; gid?: number; gname?: string }
   | { type: "patch"; nodes: NodeRec[]; edges: EdgeRec[]; removedNodes: number[]; removedEdges: number[]; morph?: Morph; pos?: number[] }
-  | { type: "out"; segs: Seg[] }
+  | { type: "out"; segs: Seg[]; gid?: number }
   | { type: "text"; text: string }
   /** summary: one line (with a "did you mean" hint); line: the cell line it happened on */
   | { type: "error"; text: string; summary?: string; line?: number }
@@ -158,6 +163,7 @@ export type ToWorker =
   | { type: "snapshot"; id: number; since: number }
   | { type: "event"; id: number; target: string; name: string; value: string }
   | { type: "describe"; id: number; kind: "n" | "e"; ident: number }
+  | { type: "cellChanges"; id: number; cell: number }
   | { type: "assign"; id: number; name: string; items: ["n" | "e", number][] }
   /** nodes dragged on the display, as [id, x, y, id, x, y, ...] (one undo step) */
   | { type: "select"; nodes: number[] }

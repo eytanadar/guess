@@ -30,9 +30,11 @@ export interface ConsoleHost {
   interrupt(): void;
   /** items === null means the pointer left all linked output. */
   hover(items: Item[] | null, el: HTMLElement | null, ev: MouseEvent | null): void;
-  context(items: Item[], ev: MouseEvent): void;
+  context(items: Item[], ev: MouseEvent, expr?: string): void;
   /** Clicking linked output (a node, an edge or a group). */
-  click(items: Item[], ev: MouseEvent): void;
+  click(items: Item[], ev: MouseEvent, expr?: string): void;
+  /** Hovering a cell's number: show what it changed (null: left it). */
+  cellHover?(cell: number | null): void;
 }
 
 const MAX_TIP_ITEMS = 15;
@@ -129,14 +131,14 @@ export class Console {
     this.out.addEventListener("mouseleave", () => this.setHot(null, null));
     this.out.addEventListener("click", (ev) => {
       const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-k]");
-      if (!t || window.getSelection()?.toString()) return;
-      this.host.click(collect(t), ev);
+      if (!t || t.closest(".stale") || window.getSelection()?.toString()) return;
+      this.host.click(collect(t), ev, t.dataset.q);
     });
     this.out.addEventListener("contextmenu", (ev) => {
       const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-k]");
-      if (!t) return;
+      if (!t || t.closest(".stale")) return;
       ev.preventDefault();
-      this.host.context(collect(t), ev);
+      this.host.context(collect(t), ev, t.dataset.q);
     });
   }
 
@@ -450,6 +452,25 @@ export class Console {
     this.view.dispatch({ changes: { from: 0, to: this.view.state.doc.length, insert: code }, selection: { anchor }, scrollIntoView: true });
   }
 
+  /** Scroll to a cell and flash it ("show the code that changed it"). */
+  reveal(n: number): boolean {
+    const cell = this.out.querySelector<HTMLElement>(`.cell[data-n="${n}"]`);
+    if (!cell) return false;
+    cell.scrollIntoView({ block: "center", behavior: "smooth" });
+    cell.classList.remove("flash");
+    void cell.offsetWidth;
+    cell.classList.add("flash");
+    return true;
+  }
+
+  /** Put text at the caret of the working cell (replacing any selection). */
+  insertAtCursor(text: string) {
+    const sel = this.view.state.selection.main;
+    this.view.dispatch({ changes: { from: sel.from, to: sel.to, insert: text },
+                         selection: { anchor: sel.from + text.length }, scrollIntoView: true });
+    this.focus();
+  }
+
   /** Pull an executed cell back into the working cell. */
   edit(code: string) {
     this.setCode(code);
@@ -524,7 +545,9 @@ export class Console {
     const head = el("div", "cell-head");
     const num = el("button", "cell-num");
     num.textContent = `[${n}]`;
-    num.title = "Collapse/expand output";
+    num.title = "Collapse/expand output · hover: what this cell changed";
+    num.onmouseenter = () => this.host.cellHover?.(n);
+    num.onmouseleave = () => this.host.cellHover?.(null);
     num.onclick = () => root.classList.toggle("collapsed");
     const src = el("div", "cell-code echo");
     src.append(this.renderCode(code));
@@ -598,10 +621,32 @@ export class Console {
     return log;
   }
 
-  print(segs: Seg[]) {
+  print(segs: Seg[], gid?: number) {
     const d = el("div", "result");
+    if (gid !== undefined) {
+      d.dataset.gid = String(gid);
+      if (this.graph && gid !== this.graph.gid) d.classList.add("stale");
+    }
     for (const s of segs) d.append(renderSeg(s));
     this.append(d);
+  }
+
+  private graph: { gid: number; name: string } | null = null;
+  private graphNames = new Map<number, string>();
+
+  /** A new graph is showing: output about earlier graphs stops linking (its
+   *  element ids now mean other elements, or nothing). */
+  setGraph(gid: number, name: string) {
+    this.graph = { gid, name };
+    this.graphNames.set(gid, name);
+    this.out.querySelectorAll<HTMLElement>(".result[data-gid]").forEach((r) => {
+      const stale = Number(r.dataset.gid) !== gid;
+      r.classList.toggle("stale", stale);
+      if (stale && !r.title) {
+        const n = this.graphNames.get(Number(r.dataset.gid));
+        r.title = `From an earlier graph${n ? ` (${n})` : ""}: not linked to this one`;
+      }
+    });
   }
 
   text(t: string) {
@@ -711,7 +756,7 @@ export class Console {
     this.linkedEls = [];
     if (!items || !items.length || items.length > 5000) return;
     const keys = new Set(items.map(([k, id]) => k + id));
-    this.out.querySelectorAll<HTMLElement>("[data-k=n],[data-k=e]").forEach((x) => {
+    this.out.querySelectorAll<HTMLElement>(".result:not(.stale) [data-k=n], .result:not(.stale) [data-k=e]").forEach((x) => {
       if (keys.has(x.dataset.k! + x.dataset.id) && x !== this.hot) {
         x.classList.add("linked");
         this.linkedEls.push(x);
@@ -722,7 +767,7 @@ export class Console {
   // ---- linked hovering ---------------------------------------------------------------
   private onOver(ev: MouseEvent) {
     const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-k]");
-    this.setHot(t && this.out.contains(t) ? t : null, ev);
+    this.setHot(t && this.out.contains(t) && !t.closest(".stale") ? t : null, ev);
   }
 
   private setHot(t: HTMLElement | null, ev: MouseEvent | null) {
@@ -778,6 +823,7 @@ export function renderSeg(s: Seg): Node {
     span.dataset.k = "g";
     if (s.a) span.dataset.a = s.a;
     if (s.x?.length) span.dataset.x = JSON.stringify(s.x);
+    if (s.q) span.dataset.q = s.q;
     for (const c of s.g) span.append(renderSeg(c));
     return span;
   }

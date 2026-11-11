@@ -14,13 +14,15 @@ Message types:
 Output segments: a str, or {"n": id, "t": text} (node), {"e": id, "t": text}
 (edge), or {"g": [segs...], "a": annotation} (a group).
 """
+import io
 import keyword
 import sys
 import time
 import traceback
 
 from . import colors, compiler, runtime
-from .model import (EDGE, NODE, Edge, Field, FieldNamespace, Graph, GSet, GuessError, Journal, Node)
+from . import colors as colors_mod
+from .model import (EDGE, NODE, DistinctValues, Edge, Field, FieldNamespace, Graph, GSet, GuessError, Journal, Node)
 
 MAX_ITEMS = 500
 _MISSING = object()
@@ -47,6 +49,10 @@ class Session:
         self.ns = {"__name__": "__console__", "__builtins__": __builtins__}
         self.system = {}          # name -> object for protected bindings
         self._shadowed = {}       # system names replaced by the user's own imports
+        self.graph_gen = 0        # counts graph loads/switches: output is tagged with it
+        self.provenance = {}      # ("n"|"e", id) -> {aspect: cell} : which cell last changed what
+        self.cell_code = {}       # cell -> its code (first line), for "color <- [12] colorize(dept)"
+        self.cell_items = {}      # cell -> [(kind, id)] it changed
         self.ns.update(runtime.HELPERS)
         self.ns["__display__"] = self.display
         self.ns["__gnot__"] = self._gnot
@@ -221,6 +227,10 @@ class Session:
             self._unbind(node._name, node)
 
     def on_graph_cleared(self):
+        # output printed before this refers to elements of a graph that's gone
+        self.graph_gen += 1
+        self.provenance.clear()
+        self.cell_items.clear()
         view = getattr(self, "view", None)
         if view is not None:
             view.reset_for_new_graph()
@@ -337,13 +347,60 @@ class Session:
             return                      # nothing changed (a query, print, help, ...)
         self.undo_stack.append(entry)
         self.redo_stack.clear()
+        if cell is not None and journal:
+            self._note_provenance(cell, label, journal)
         total = sum(e["journal"].size() for e in self.undo_stack)
         while self.undo_stack and (len(self.undo_stack) > self.UNDO_LIMIT or total > self.UNDO_BUDGET):
             total -= self.undo_stack.pop(0)["journal"].size()
 
+    # what each cell changed -------------------------------------------------------
+    _ASPECT = {"x": "position", "y": "position", "width": "size", "height": "size", "size": "size",
+               "labelvisible": "label", "labelcolor": "label", "labelsize": "label", "labelpos": "label",
+               "strokecolor": "border"}
+    PROVENANCE_CAP = 50000
+
+    def _note_provenance(self, cell, code, journal):
+        lines = [ln for ln in str(code).strip().splitlines() if ln.strip()]
+        first = lines[0] if lines else ""
+        self.cell_code[cell] = first[:70] + (" …" if len(first) > 70 or len(lines) > 1 else "")
+        touched = {}
+        for elem, name, _old in journal.values.values():
+            if not isinstance(elem, (Node, Edge)):
+                continue
+            key = ("n" if isinstance(elem, Node) else "e", elem._id)
+            aspect = self._ASPECT.get(name, name)
+            if isinstance(elem, Edge) and name == "width":
+                aspect = "width"
+            touched.setdefault(key, set()).add(aspect)
+        for op in journal.ops:
+            if op[0] == "add" and isinstance(op[1], (Node, Edge)):
+                key = ("n" if isinstance(op[1], Node) else "e", op[1]._id)
+                touched.setdefault(key, set()).add("added")
+        for key, aspects in touched.items():
+            if "added" in aspects:
+                aspects = {"added"}          # a new element: its fields came with it
+            rec = self.provenance.setdefault(key, {})
+            for a in aspects:
+                rec[a] = cell
+        self.cell_items[cell] = list(touched)[:self.PROVENANCE_CAP]
+
+    def cell_changes(self, cell):
+        """The elements a console cell changed (hover its number to see them)."""
+        return [list(k) for k in self.cell_items.get(cell, [])]
+
+    def _forget_cell(self, cell):
+        """After undo: what that cell did is gone."""
+        for key in self.cell_items.pop(cell, []):
+            rec = self.provenance.get(key)
+            if rec:
+                for a in [a for a, c in rec.items() if c == cell]:
+                    del rec[a]
+
     def _revert(self, entry):
         g = self.graph
         inv = {"label": entry["label"], "journal": g.revert(entry["journal"]), "cell": entry.get("cell")}
+        if entry.get("cell") is not None:
+            self._forget_cell(entry["cell"])
         if "view" in entry:
             inv["view"] = self.view.capture()
             self.view.restore(entry["view"])
@@ -671,13 +728,13 @@ class Session:
                 segs.extend(a.segs)            # printed text: no quotes
             else:
                 segs.append(segment(a) if _linkable(a) else str(a))
-        self.emit({"type": "out", "segs": segs})
+        self.emit({"type": "out", "segs": segs, "gid": self.graph_gen})
 
     def display(self, value):
         if value is None:
             return
         self.ns["_"] = value
-        self.emit({"type": "out", "segs": [segment(value)]})
+        self.emit({"type": "out", "segs": [segment(value)], "gid": self.graph_gen})
 
     # ---- render state ---------------------------------------------------------
     def node_record(self, n):
@@ -776,7 +833,8 @@ class Session:
                 if f is not None and g.journal is not None:
                     g.journal.ops.append(("field", schema, name, f))   # undo takes it away again
         g.reset_dirty()
-        self.emit({"type": "scene",
+        ws = getattr(self, "workspaces", None)
+        self.emit({"type": "scene", "gid": self.graph_gen, "gname": ws["current"] if ws else "",
                    "nodes": [self.node_record(n) for n in g._nodes_list()],
                    "edges": [self.edge_record(e) for e in g._edges_list()]})
         self.view.dirty = True
@@ -844,7 +902,117 @@ class Session:
                 rows.append([name, _short(f.get(elem))])
             except Exception as ex:  # noqa: BLE001
                 rows.append([name, f"<{type(ex).__name__}>"])
-        return {"title": repr(elem), "rows": rows}
+        prov = sorted(self.provenance.get((kind, ident), {}).items(), key=lambda kv: -kv[1])
+        made = [[aspect, cell, self.cell_code.get(cell, "")] for aspect, cell in prov]
+        return {"title": repr(elem), "rows": rows, "prov": made}
+
+    # ---- hovering code -------------------------------------------------------------
+    _PEEK_OK = None
+
+    def peek(self, expr):
+        """What a name or a query in executed code means now, for hovering it:
+        {title, lines, items, colors?}. Only side-effect-free expressions are
+        evaluated (names, constants, comparisons, & | and or not in, tuples;
+        no calls), and nothing is recorded."""
+        import ast
+        expr = str(expr).strip()
+        if not expr or len(expr) > 400:
+            return None
+        try:
+            tree = ast.parse(expr, mode="eval")
+        except SyntaxError:
+            return None
+        ok = (ast.Expression, ast.Name, ast.Load, ast.Constant, ast.Compare, ast.BoolOp, ast.And, ast.Or,
+              ast.BinOp, ast.BitAnd, ast.BitOr, ast.UnaryOp, ast.Not, ast.USub, ast.Tuple, ast.List,
+              ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE, ast.In, ast.NotIn, ast.Is, ast.IsNot,
+              ast.Attribute)
+        for node in ast.walk(tree):
+            if not isinstance(node, ok):
+                return None
+            if isinstance(node, ast.BinOp) and not isinstance(node.op, (ast.BitAnd, ast.BitOr)):
+                return None
+            if isinstance(node, ast.Attribute) and (node.attr.startswith("_") or not isinstance(node.value, ast.Name)):
+                return None
+        names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+        if any(n.startswith("__") for n in names):
+            return None
+        try:
+            self._prepare_fields(names)
+            code = compiler.compile_gython(f"__peek__ = ({expr})", is_protected=None, interactive=False)
+            ns = self.ns
+            old_out = sys.stdout
+            sys.stdout = io.StringIO()            # a peek prints nothing
+            try:
+                exec(code, ns)
+                value = ns.pop("__peek__", None)
+            finally:
+                sys.stdout = old_out
+        except Exception:  # noqa: BLE001 - a hover must never fail loudly
+            return None
+        return self._peek_value(expr, value)
+
+    def _peek_value(self, expr, value):
+        def item(x):
+            return ["n" if isinstance(x, Node) else "e", x._id]
+        if isinstance(value, (Node, Edge)):
+            return {"title": f"{expr}: {value!r}", "lines": [], "items": [item(value)]}
+        if isinstance(value, Field):
+            return self._peek_field(expr, value)
+        if isinstance(value, (GSet, list, tuple, set, frozenset, dict)) and _contains_elements(value):
+            els = list(_walk_elements(value))
+            nodes = sum(1 for x in els if isinstance(x, Node))
+            what = ", ".join(p for p in (f"{nodes} node{'s' * (nodes != 1)}" if nodes else "",
+                                         f"{len(els) - nodes} edge{'s' * (len(els) - nodes != 1)}"
+                                         if len(els) > nodes else "") if p) or "empty"
+            ann = getattr(value, "annotation", None) if isinstance(value, GSet) else None
+            names = [x._name if isinstance(x, Node) else repr(x) for x in els[:12]]
+            lines = [", ".join(names) + (" …" if len(els) > 12 else "")] if names else []
+            import re
+            same = ann and re.sub(r"\W", "", ann.replace('"', "'")) == re.sub(r"\W", "", expr.replace('"', "'"))
+            return {"title": f"{expr} — {what} now" + (f" ({ann})" if ann and not same else ""),
+                    "lines": lines, "items": [item(x) for x in els[:MAX_EXTRA]]}
+        if isinstance(value, GSet):
+            return {"title": f"{expr} — empty now", "lines": [], "items": []}
+        return {"title": f"{expr} = {_safe_repr(value)[:200]}", "lines": [], "items": []}
+
+    def _peek_field(self, expr, f):
+        """A field: what's in it, and the colours colouring by it would give (shown
+        while hovering, never applied)."""
+        elems = f.elements()
+        vals = [(e, f.get(e)) for e in elems]
+        nums = [v for _e, v in vals if isinstance(v, (int, float)) and not isinstance(v, bool)]
+        kind = "edge" if f.kind == EDGE else "node"
+        lines, colors = [], []
+        groups = {}
+        for e, v in vals:
+            try:
+                groups.setdefault(v, []).append(e)
+            except TypeError:
+                pass
+        if nums and len(groups) > 12:
+            lo, hi = min(nums), max(nums)
+            srt = sorted(nums)
+            lines.append(f"min {lo:.4g} · median {srt[len(srt) // 2]:.4g} · max {hi:.4g} ({len(nums)} values)")
+            yel, red = (255, 255, 0), (255, 0, 0)
+            for e, v in vals:
+                if isinstance(v, (int, float)) and not isinstance(v, bool):
+                    t = (v - lo) / (hi - lo) if hi > lo else 0.5
+                    rgb = [round(a + (b - a) * t) for a, b in zip(yel, red)]
+                    colors.append([e._id, (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]])
+            lines.append("shown: coloured by it, yellow (low) to red (high)")
+        else:
+            order = sorted(groups.items(), key=lambda kv: -len(kv[1]))
+            palette = colors_mod.distinctColors(len(order)) if order else []
+            for (v, members), c in zip(order, palette):
+                cint = colors_mod.to_rgba_int(c)[0]
+                for e in members:
+                    colors.append([e._id, cint])
+            lines += [f"{_safe_repr(v)}: {len(m)}" for v, m in order[:8]]
+            if len(order) > 8:
+                lines.append(f"… {len(order) - 8} more values")
+            lines.append("shown: a colour per value")
+        return {"title": f"{expr}: {f.type.lower()} {kind} field, {len(groups)} distinct value{'s' * (len(groups) != 1)}",
+                "lines": lines, "items": [], "colors": {kind[0]: colors}}
 
     def assign(self, varname, kind_ids):
         """Bind a user variable to the given elements (context menu "assign to")."""
@@ -912,6 +1080,28 @@ def segment(value, depth=0):
         return f"{value.name}"
     if isinstance(value, LinkedStr) and value.linked:
         return {"g": ["'", *value.segs, "'"]}
+    if isinstance(value, DistinctValues) and value.name and value.source is not None and value:
+        groups = value.groups()
+        kind = "edges" if value.source and isinstance(value.source[0], Edge) else "nodes"
+        parts = ["["]
+        for i, v in enumerate(value):
+            if i:
+                parts.append(", ")
+            if i >= MAX_ITEMS:
+                parts.append(f"... {len(value) - MAX_ITEMS} more")
+                break
+            try:
+                members = groups.get(v, [])
+            except TypeError:
+                members = []
+            q = f"{value.name} == {v!r}"
+            sub_ = {"g": [_safe_repr(v)], "a": q if value.whole else f"{q} (in the set)",
+                    "x": [["n" if isinstance(x, Node) else "e", x._id] for x in members[:MAX_EXTRA]]}
+            if value.whole:
+                sub_["q"] = q
+            parts.append(sub_)
+        parts.append("]")
+        return {"g": parts, "a": f"{len(value)} values of {value.name} ({kind})"}
     linkable = (isinstance(value, (GSet, list, tuple, dict, set, frozenset))
                 and depth < 20 and _contains_elements(value))
     if linkable and _custom_repr(value):

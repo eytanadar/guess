@@ -76,6 +76,27 @@ class GuessError(Exception):
 # Sets of graph elements
 # --------------------------------------------------------------------------
 
+class DistinctValues(list):
+    """``dept.distinct``: each value once, remembering which elements have it,
+    so the printed values link to them (hover 'dept1': the nodes in dept1)."""
+
+    def __init__(self, items=(), name=None, source=None, whole=False):
+        super().__init__(items)
+        self.name = name          # the field's name
+        self.source = source      # the elements the values came from
+        self.whole = whole        # all of the field's elements (so `name == value` is the query)
+
+    def groups(self):
+        out = {}
+        for e in self.source or ():
+            v = getattr(e, self.name, None)
+            try:
+                out.setdefault(v, []).append(e)
+            except TypeError:       # unhashable value
+                pass
+        return out
+
+
 class Values(list):
     """The values of one field over a set, e.g. ``(dept == "x").degree``: a list
     with summaries (.avg, .sum, .min, .max, .median, .distinct, .count)."""
@@ -124,7 +145,8 @@ class Values(list):
             if k not in seen:
                 seen.add(k)
                 out.append(v)
-        return out
+        src = self.__dict__.get("_src")
+        return DistinctValues(out, self.__dict__.get("_name"), src) if src is not None else out
 
 
 class GSet(list):
@@ -143,7 +165,9 @@ class GSet(list):
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
-        return Values(getattr(x, name) for x in self)
+        vals = Values(getattr(x, name) for x in self)
+        vals._src, vals._name = [x for x in self if isinstance(x, (Node, Edge))], name
+        return vals
 
     def __setattr__(self, name, value):
         if name == "annotation":
@@ -393,7 +417,7 @@ class Field:
             if v not in seen:
                 seen.add(v)
                 out.append(v)
-        return out
+        return DistinctValues(out, self.name, self.elements(), whole=True)
 
     # queries --------------------------------------------------------------
     def _query(self, sym, other):

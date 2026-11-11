@@ -149,6 +149,9 @@ function handle(msg: ToWorker) {
     case "describe":
       post({ type: "reply", id: msg.id, value: call("describe", msg.kind, msg.ident) });
       break;
+    case "cellChanges":
+      post({ type: "reply", id: msg.id, value: call("cell_changes", msg.cell) });
+      break;
     case "assign": {
       py!.globals.set("__items", JSON.stringify(msg.items));
       py!.globals.set("__name", msg.name);

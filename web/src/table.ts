@@ -17,6 +17,8 @@ export interface TableHost {
   center(kind: "n" | "e", id: number): void;
   /** commit an edit as Gython */
   edit(kind: "n" | "e", id: number, field: string, value: string, type: string): void;
+  /** alt-click a row: put the element's name into the working cell */
+  insert?(kind: "n" | "e", id: number): void;
 }
 
 const ROW_H = 22;
@@ -240,7 +242,10 @@ export class DataTable {
         }
         row.append(c);
       }
-      row.onclick = (ev) => this.host.select(this.kind, [id], ev.shiftKey || ev.metaKey || ev.ctrlKey);
+      row.onclick = (ev) => {
+        if (ev.altKey && this.host.insert) this.host.insert(this.kind, id);
+        else this.host.select(this.kind, [id], ev.shiftKey || ev.metaKey || ev.ctrlKey);
+      };
       name.ondblclick = () => this.host.center(this.kind, id);
       row.onmouseenter = () => this.host.hover(this.kind, id);
       this.rowsEl.append(row);
