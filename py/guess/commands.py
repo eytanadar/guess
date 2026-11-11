@@ -137,7 +137,7 @@ def install(session):
         """exportDOT("graph.dot") writes the graph for Graphviz: positions (fixed
         nodes pinned with !), sizes, shapes, colours, labels, hidden elements and
         every user field; nodes are grouped into cluster subgraphs by the field
-        named by clusters= (default `cluster`, e.g. clusters="modularity_class").
+        named by clusters= (default `cluster`, e.g. clusters="louvain_class").
         layout=False leaves positions out so Graphviz lays the graph out itself.
         makeFromDOT reads it back. Offered as a download."""
         from . import dot

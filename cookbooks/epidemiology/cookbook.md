@@ -277,16 +277,15 @@ lunch) would do.
 
 ```python
 makeFromGDF("school-contacts-SIMULATED.gdf")
-ss("school")
-cross = [e for e in g.edges if e.node1.room != e.node2.room]
+cross = interEdges(room)
 len(cross), len(g.edges)
-remove(cross)
-outbreaks(300, beta=0.03, gamma=0.2)
-ls("school")
+with scratch():
+    remove(cross)
+    outbreaks(300, beta=0.03, gamma=0.2)
 import random
-remove(random.Random(2).sample(list(g.edges), len(cross)))
-outbreaks(300, beta=0.03, gamma=0.2)
-ls("school")
+with scratch():
+    remove(random.Random(2).sample(list(g.edges), len(cross)))
+    outbreaks(300, beta=0.03, gamma=0.2)
 ```
 
 **How it works.** The 492 contacts between classes are 23% of all
@@ -294,8 +293,9 @@ contacts. Removing them leaves ten separate classes, and the mean outbreak
 falls from 116 to 10: an outbreak stays in the class it starts in.
 Removing the same number of contacts at random barely helps (72). What
 matters is not how many contacts are cut but *which*: the between-class
-contacts are the bridges. `ss` and `ls` save and restore the school
-between experiments.
+contacts are the bridges. `interEdges(room)` gives the edges whose ends
+differ in `room`, and each `with scratch():` block puts the school back as
+it was when it ends.
 
 **Variations.** Cut only the contacts between grades (`e.node1.grade !=
 e.node2.grade`) and see how much of the benefit remains, or keep

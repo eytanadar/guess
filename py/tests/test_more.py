@@ -68,7 +68,7 @@ def test_pie_border_bundle(big):
     assert big.run("pieChart([indegree, outdegree])") and big.node_record(ev(big, "v4"))["p"] == [12.0, 12.0]
     assert big.run("removePies()") and "p" not in big.node_record(ev(big, "v4"))
     assert big.run("borderBy(dept)") and big.view.border_width == 2.5 and ev(big, "v4.strokecolor")
-    assert big.run("louvainClusters(); bundleEdges(modularity_class)")
+    assert big.run("louvainClusters(); bundleEdges(louvain_class)")
     assert len(big.graph.bends) > 20
     assert big.run("removeBundles()") and not big.graph.bends
 

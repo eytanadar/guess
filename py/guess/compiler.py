@@ -80,6 +80,20 @@ def _starts_operand(tok):
     return getattr(tokenize, "FSTRING_START", -1) == tok.type or getattr(tokenize, "TSTRING_START", -1) == tok.type
 
 
+def quiet_rows(source):
+    """Rows that end with a semicolon: `louvainClusters();` doesn't echo its result."""
+    rows = set()
+    try:
+        toks = [t for t in tokenize.generate_tokens(io.StringIO(source).readline)
+                if t.type not in (tokenize.COMMENT, tokenize.NL)]
+    except (tokenize.TokenError, SyntaxError, IndentationError):
+        return rows
+    for t, nxt in zip(toks, toks[1:]):
+        if t.type == tokenize.OP and t.string == ";" and nxt.type in (tokenize.NEWLINE, tokenize.ENDMARKER):
+            rows.add(t.start[0])
+    return rows
+
+
 def rewrite_tokens(source):
     """Return source with Gython operators replaced by marker comparisons."""
     try:
@@ -447,9 +461,14 @@ class _Transformer(ast.NodeTransformer):
 
     def visit_Module(self, node):
         body = []
-        for stmt in node.body:
+        quiet = getattr(self, "quiet", set())
+        last_on_row = {}
+        for i, stmt in enumerate(node.body):
+            last_on_row[getattr(stmt, "end_lineno", None)] = i
+        for i, stmt in enumerate(node.body):
+            hush = stmt.end_lineno in quiet and last_on_row.get(stmt.end_lineno) == i
             new = self.visit(stmt)
-            if self.interactive and isinstance(stmt, ast.Expr) and isinstance(new, ast.Expr):
+            if self.interactive and isinstance(stmt, ast.Expr) and isinstance(new, ast.Expr) and not hush:
                 new.value = _call("__display__", new.value)
             body.extend(new if isinstance(new, list) else [new])
         node.body = body
@@ -469,7 +488,9 @@ def _flatten_stmts(stmts):
 def transform(source, *, is_protected=None, interactive=True, filename="<console>", imports=None):
     rewritten = rewrite_tokens(source)
     tree = ast.parse(rewritten, filename=filename, mode="exec")
-    tree = _Transformer(is_protected, interactive, imports).visit(tree)
+    tr = _Transformer(is_protected, interactive, imports)
+    tr.quiet = quiet_rows(source)
+    tree = tr.visit(tree)
     ast.fix_missing_locations(tree)
     return tree
 

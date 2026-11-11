@@ -221,6 +221,8 @@ body { display: flex; flex-direction: column; }
 .dtable-row.linked { box-shadow: inset 3px 0 0 var(--accent); background: rgba(255, 31, 107, 0.08); }
 .legend-row.linked { box-shadow: inset 3px 0 0 var(--accent); background: rgba(255, 31, 107, 0.08); }
 .chart .mark { cursor: pointer; }
+.chart .line-hit { fill: transparent; cursor: crosshair; }
+.chart .guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 2; pointer-events: none; }
 .console-out [data-k] { cursor: pointer; }
 
 .tip {

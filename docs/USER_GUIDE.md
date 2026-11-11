@@ -122,7 +122,7 @@ Statistics are node fields computed on first use: `pagerank`, `betweenness`,
 `clustering`, `triangles`, `coreness`, `strength`, `component`. Use them like
 any field (`(pagerank > 0.01).labelvisible = true`) and run `recompute()` after
 editing the graph. `graphStats()` prints a summary; `louvainClusters()` finds
-communities (`colorize(modularity_class)`). Filters return sets: `kCore(3)`,
+communities (`colorize(louvain_class)`). Filters return sets: `kCore(3)`,
 `egoNetwork(v1, 2)`, `giantComponent()`, `intraEdges(dept)`; `showOnly(...)`
 hides the rest and `showAll()` brings it back.
 

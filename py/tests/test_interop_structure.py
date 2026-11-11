@@ -125,8 +125,8 @@ def test_compare_clusters(s):
     assert ev(s, "compareClusters(club, club, 'ari')") == pytest.approx(1.0)
     assert ev(s, "compareClusters(club, club, 'vi')") == pytest.approx(0.0)
     run(s, "louvainClusters()")
-    nmi = ev(s, "compareClusters(modularity_class, club)")
-    ari = ev(s, "compareClusters(modularity_class, club, 'ari')")
+    nmi = ev(s, "compareClusters(louvain_class, club)")
+    ari = ev(s, "compareClusters(louvain_class, club, 'ari')")
     assert 0.3 < nmi < 1 and 0 < ari < 1
     with pytest.raises(AssertionError):
         run(s, "compareClusters(club, club, 'nope')")
@@ -136,7 +136,7 @@ def test_export_dot_round_trip(s, tmp_path):
     run(s, "makeSample('karate')\nlouvainClusters()\nn0.fixed = true\nn3.visible = false\n"
            "addNodeField('pin', DOUBLE, 0)\nn1.pin = 2.5\n(n0 - n1).weight = 1.5")
     out = tmp_path / "k.dot"
-    run(s, f"exportDOT({str(out)!r}, clusters='modularity_class')")
+    run(s, f"exportDOT({str(out)!r}, clusters='louvain_class')")
     text = out.read_text()
     assert text.startswith("graph {") and "subgraph \"cluster_0\"" in text and "guess_pin" in text
     rec = Recorder()
@@ -147,16 +147,16 @@ def test_export_dot_round_trip(s, tmp_path):
     assert ev(t, "(n0.fixed, n3.visible, n1.pin, n0.club)") == (True, False, 2.5, "Mr. Hi")
     assert ev(t, "(n0 - n1).weight") == 1.5
     assert ev(t, "(n0.x, n0.y)") == pytest.approx(ev(s, "(n0.x, n0.y)"), abs=1e-3)
-    assert ev(t, "n0.cluster") == ev(s, "n0.modularity_class")
+    assert ev(t, "n0.cluster") == ev(s, "n0.louvain_class")
 
 
 def test_loading_a_graph_drops_the_old_fields_and_undo_brings_them_back(s, tmp_path):
     run(s, "makeSample('karate')\nlouvainClusters()\nprint(pagerank.max)")
     old = list(s.graph.node_schema)
-    assert {"club", "modularity_class", "pagerank"} <= set(old)
+    assert {"club", "louvain_class", "pagerank"} <= set(old)
     run(s, "makeSample('florentine')")
     extra = [k for k, f in s.graph.node_schema.items() if not f.builtin]
-    assert extra == ["pagerank"] and "club" not in s.ns and "modularity_class" not in s.ns
+    assert extra == ["pagerank"] and "club" not in s.ns and "louvain_class" not in s.ns
     # a computed field in use is computed again for the new graph, not left stale
     assert ev(s, "sum(n.pagerank for n in g.nodes)") == pytest.approx(1.0, rel=1e-6)
     assert ev(s, "sortBy(pagerank)[-1].name") == "Medici"

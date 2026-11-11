@@ -100,6 +100,9 @@ def install(session):
         _restore(lookup(state))
 
     def _restore(snap):
+        _restore_into(g, snap)
+
+    def _restore_into(g, snap):
         g.remove([e for e in g._edges_list() if e not in snap.edges])
         g.remove([n for n in g._nodes_list() if n not in snap.nodes])
         g.add([n for n in snap.nodes if g._nodes.get(n._name) is not n])
@@ -137,7 +140,39 @@ def install(session):
         getter.__doc__ = f"The current {key} fraction (see set{cap})."
         return setter, getter
 
-    for fn in (ss, ls, morph, getStates):
+    class _Scratch:
+        """`with scratch(): ...` — try something out; the graph goes back afterwards."""
+
+        def __enter__(self):
+            gr = session.graph
+            self.graph = gr
+            self.snap = Snapshot(gr)
+            self.fields = {(f.kind, name) for sch in (gr.node_schema, gr.edge_schema) for name, f in sch.items()}
+            return self
+
+        def __exit__(self, *exc):
+            gr = self.graph
+            if gr is not session.graph:
+                return False                 # another graph is showing now: leave it be
+            _restore_into(gr, self.snap)
+            # fields made inside the block (risk, eff_distance, ...) go too: their values did
+            for sch in (gr.node_schema, gr.edge_schema):
+                for name, f in list(sch.items()):
+                    if (f.kind, name) not in self.fields and not f.builtin and (f.kind, name) not in gr.lazy_fields:
+                        del sch[name]
+                        if gr.journal is not None:
+                            gr.journal.ops.append(("unfield", sch, name, f))
+                        gr._emit("on_field_removed", f)
+            return False
+
+    def scratch():
+        """with scratch(): runs the block, then puts the graph back as it was
+        (which nodes and edges exist, and every value): for trying things out,
+        such as removing nodes and measuring the result. Fields made inside the
+        block are removed too; print or keep in variables what you want to keep."""
+        return _Scratch()
+
+    for fn in (ss, ls, morph, getStates, scratch):
         session.register_command(fn.__name__, fn)
     for key in timing:
         for fn in make_timing(key):

@@ -35,6 +35,7 @@ export class DataTable {
   private allFields = false;
   private selOnly = false;
   private selection = new Set<number>();
+  private edgeSelection = new Set<number>();
   private head = document.createElement("div");
   private scroller = document.createElement("div");
   private spacer = document.createElement("div");
@@ -124,16 +125,18 @@ export class DataTable {
     await this.reload();
   }
 
-  setSelection(ids: Iterable<number>) {
+  /** The selected nodes, and the edges among them (edge tables mark those). */
+  setSelection(ids: Iterable<number>, edgeIds?: Iterable<number>) {
     this.selection = new Set(ids);
+    this.edgeSelection = new Set(edgeIds ?? []);
     if (this.selOnly) {
       this.refilter();
       return;
     }
     // update the rows in place (repainting would swallow a double-click)
-    if (this.kind !== "n") return;
+    const sel = this.kind === "n" ? this.selection : this.edgeSelection;
     for (const row of this.rowsEl.children as HTMLCollectionOf<HTMLElement>) {
-      row.classList.toggle("selected", this.selection.has(Number(row.dataset.id)));
+      row.classList.toggle("selected", sel.has(Number(row.dataset.id)));
     }
   }
 
@@ -220,7 +223,7 @@ export class DataTable {
       const rec = this.view[r];
       const id = rec[0] as number;
       const row = document.createElement("div");
-      row.className = "dtable-row" + (this.kind === "n" && this.selection.has(id) ? " selected" : "");
+      row.className = "dtable-row" + ((this.kind === "n" ? this.selection : this.edgeSelection).has(id) ? " selected" : "");
       row.dataset.id = String(id);
       const name = document.createElement("div");
       name.className = "dtable-cell dtable-name";

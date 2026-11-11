@@ -28,6 +28,11 @@ from .model import EDGE, INT, NODE, Edge, Field, GSet, GuessError, Node, element
 # --------------------------------------------------------------------------
 
 
+
+def _plural(word):
+    """community -> communities, cluster -> clusters."""
+    return word[:-1] + "ies" if word.endswith("y") and word[-2:-1] not in "aeiou" else word + "s"
+
 def _arrays(graph, directed=None):
     """(nodes, src, dst, weight, directed?) with undirected edges doubled when
     the graph is treated as directed; self-loops dropped."""
@@ -313,7 +318,7 @@ def install(session):
     def partition(groups, label):
         groups = sorted((list(c) for c in groups), key=lambda c: (-len(c), min(n._id for n in c)))
         return GSet((GSet(sorted(c, key=lambda n: n._id), f"{label} {i}") for i, c in enumerate(groups)),
-                    f"{len(groups)} {label}s")
+                    f"{len(groups)} {_plural(label)}")
 
     @cmd
     def recompute(*fields):
@@ -351,8 +356,8 @@ def install(session):
     def louvainClusters(resolution=1.0, seed=0):
         """louvainClusters() finds communities by Louvain modularity optimisation
         (Gephi's Modularity statistic) using edge weights, stores each node's
-        community in the modularity_class field (0 = largest) and returns the
-        communities. Try colorize(modularity_class). resolution > 1 gives more,
+        community in the louvain_class field (0 = largest) and returns the
+        communities. Try colorize(louvain_class). resolution > 1 gives more,
         smaller communities; seed=None varies the result between runs."""
         nx = _nx()
         G = to_networkx(g, directed=False)
@@ -361,7 +366,7 @@ def install(session):
         _positive_weights(G)
         comms = nx.community.louvain_communities(G, weight="weight", resolution=float(resolution), seed=seed)
         out = partition(comms, "community")
-        f = g.addNodeField("modularity_class", INT, -1)
+        f = g.addNodeField("louvain_class", INT, -1)
         for i, c in enumerate(out):
             for n in c:
                 f.set(n, i)
@@ -372,7 +377,7 @@ def install(session):
     @cmd
     def modularity(field):
         """modularity(field): the modularity Q of the partition given by a node
-        field (e.g. modularity(dept), modularity(modularity_class))."""
+        field (e.g. modularity(dept), modularity(louvain_class))."""
         nx = _nx()
         if not isinstance(field, Field) or field.kind != NODE:
             raise GuessError("modularity needs a node field, e.g. modularity(dept)")
@@ -439,8 +444,8 @@ def install(session):
             f"avg path length  {(float(total.sum()) / reach.sum() if reach.sum() else 0):.3f}",
             f"avg clustering   {averageClustering():.4f}",
         ]
-        if "modularity_class" in g.node_schema:
-            lines.append(f"modularity       {modularity(g.node_schema['modularity_class']):.4f}")
+        if "louvain_class" in g.node_schema:
+            lines.append(f"modularity       {modularity(g.node_schema['louvain_class']):.4f}")
         if ne:
             ns = session.ns
             lines.append(f"transitivity     {ns['transitivity']():.4f}")
@@ -513,7 +518,7 @@ def install(session):
     def groupsOfSize(field, smallest, largest=None):
         """groupsOfSize(field, min[, max]): the nodes (or edges) whose value of
         field is shared by at least min (and at most max) elements — e.g. drop
-        tiny communities with showOnly(groupsOfSize(modularity_class, 5))."""
+        tiny communities with showOnly(groupsOfSize(louvain_class, 5))."""
         if not isinstance(field, Field):
             raise GuessError("groupsOfSize needs a field")
         groups = {}

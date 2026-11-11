@@ -395,7 +395,7 @@ sometimes written on one line. Both forms load.
 - **GML** (networkx, igraph, yEd, Cytoscape) and **Graphviz DOT** keep their
   attributes and any layout they carry (section 4.1). `exportGML("g.gml")`
   and `exportDOT("g.dot")` write them. `exportDOT` groups nodes into Graphviz
-  clusters by a field (`exportDOT("g.dot", clusters="modularity_class")`), and
+  clusters by a field (`exportDOT("g.dot", clusters="louvain_class")`), and
   `layout=False` leaves positions out so Graphviz lays the graph out itself.
 - **CSV** works as in Gephi. An edge table has `Source`, `Target`, and
   optionally `Type` (directed/undirected), `Weight` and `Label`; other columns
@@ -468,7 +468,7 @@ A **field** is a property that every node (or every edge) has. Fields are
 named like variables. `dept` on its own is the department field, and `v1.dept`
 is v1's department. Fields come from the file you loaded, from the built-in
 set (section 4.2), from commands that add them (`louvainClusters()` adds
-`modularity_class`), and from `addNodeField`/`addEdgeField`. The node and
+`louvain_class`), and from `addNodeField`/`addEdgeField`. The node and
 edge fields are listed by `getNodeSchema()` and `getEdgeSchema()`. The
 *View → Data table* shows them all.
 
@@ -482,7 +482,7 @@ dept.find('eng')               # the nodes whose dept is 'eng' (same as dept == 
 highest(freq, 5)               # the five edges with the highest freq (lowest(...) too)
 sortBy(freq, descending=true)  # every edge, highest freq first
 groupBy(dept)                  # a set of sets, one per value
-groupAndSortBy(dept)           # the same, largest group first
+groupAndSortBy(dept)           # the same, ordered by value (dept0, dept1, ...)
 ```
 
 Some node fields aren't stored but computed the first time you use them:
@@ -694,7 +694,7 @@ gemLayout()
 Use `centerAfterLayout(false)` if you'd rather the view didn't re-centre
 after every layout.
 
-![louvainClusters(); colorize(modularity_class); sizeBy(pagerank, 6, 40); forceAtlas2Layout(linLog=true, preventOverlap=true)](img/fa2.png){width=80%}
+![louvainClusters(); colorize(louvain_class); sizeBy(pagerank, 6, 40); forceAtlas2Layout(linLog=true, preventOverlap=true)](img/fa2.png){width=80%}
 
 **Hive plots.** A hive plot puts each group on its own axis and places nodes
 along the axis by a value. Unlike force-directed layouts, the picture
@@ -729,9 +729,9 @@ Clustering commands return a set of sets (one per cluster) and, where it
 makes sense, add a field so you can colour by it:
 
 ```python
-louvainClusters()                  # communities; adds the field modularity_class
-colorize(modularity_class)
-modularity(modularity_class)       # how good the partition is
+louvainClusters()                  # communities; adds the field louvain_class
+colorize(louvain_class)
+modularity(louvain_class)       # how good the partition is
 edgeBetweennessClusters(5)         # remove the 5 most "between" edges; the pieces
 weakComponentClusters()            # connected components
 biComponentClusters()              # biconnected components
@@ -900,7 +900,7 @@ sortBy(constraint)[:5]                    # brokers (structural holes)
 assortativity(dept)                       # 1: ties stay in a department; 0: random
 mixingMatrix(dept)                        # edges between each pair of departments
 louvainClusters()
-compareClusters(modularity_class, dept)   # do the communities match departments?
+compareClusters(louvain_class, dept)   # do the communities match departments?
 ```
 
 `compareClusters` gives normalized mutual information by default (0 to 1);
@@ -1110,6 +1110,18 @@ the morph. (The 2006 form `Morpher.setNodeDisappearBy(.2)` also works.)
 
 States can be saved under numbers too (`ss(1999)`, `ss(2000)`), which
 suits a series of snapshots over time.
+
+To try something and put everything back, use `with scratch():`:
+
+```python
+with scratch():
+    remove(dept == 'dept1')
+    print(len(g.nodes), graphStats())
+```
+
+When the block ends, the graph is as it was: the same nodes, edges and
+values, and fields made inside the block are gone. Print or keep in
+variables what you want to keep.
 
 ## 11.1 State-sensitive queries
 
@@ -1695,6 +1707,8 @@ unchanged except where Python 3 differs. The main differences:
 
   These only matter when an argument is given by name, as in
   `resizeLinear(degree, start=5, end=30)`.
+- **Louvain's field** is `louvain_class`, like `leiden_class` and the other
+  methods' (it was `modularity_class`, Gephi's name).
 - **Language.** `3 < degree < 6`, `field in (...)`, and `and`, `or` and
   `not` on sets now do what they say (Appendix B). A node or field named
   after a Python builtin (`len`, `type`) no longer hides it.

@@ -91,6 +91,9 @@ export interface ChartMsg {
   type: "chart"; id: string; kind: "bar" | "pie" | "distrib" | "line";
   title: string; xlabel: string; ylabel: string;
   items: { label: string; value: number; color: number; ids: ["n" | "e", number][]; q?: string }[];
+  /** line charts: a query for the elements at a point, with {x} for its x value
+   *  (spread: "(infected_at >= 0) & (infected_at <= {x})") */
+  xq?: string;
   /** line charts: one polyline per series, x and y in data units */
   series?: { name: string; color: number; points: [number, number][] }[];
 }

@@ -12,6 +12,9 @@ export interface DockHost {
   click(items: Item[], ev: MouseEvent, expr?: string): void;
   /** Right-clicking a mark: the element menu (on its query, when the chart knows one). */
   context(items: Item[], ev: MouseEvent, expr: string | undefined, title: string): void;
+  /** Pointing at a line chart: the values there, and (with a query) the elements
+   *  it stands for; ev null = left the chart. click: true when clicked. */
+  lineAt(expr: string | null, title: string, lines: string[], ev: MouseEvent | null, click?: boolean): void;
 }
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -254,6 +257,52 @@ export class Dock {
       xl.setAttribute("class", "axis-label");
       xl.textContent = c.xlabel;
       svg.append(xl);
+      // pointing: a guide at the nearest x, every series' value there, and
+      // for charts that know their elements (spread), those elements in the graph
+      const xs = [...new Set(all.map((p) => p[0]))].sort((a, b) => a - b);
+      if (xs.length) {
+        const guide = document.createElementNS(SVG, "line");
+        guide.setAttribute("class", "guide");
+        guide.setAttribute("y1", String(top));
+        guide.setAttribute("y2", String(top + ph));
+        guide.style.display = "none";
+        svg.append(guide);
+        const hit = document.createElementNS(SVG, "rect");
+        hit.setAttribute("x", String(left));
+        hit.setAttribute("y", String(top));
+        hit.setAttribute("width", String(pw));
+        hit.setAttribute("height", String(ph));
+        hit.setAttribute("class", "line-hit");
+        svg.append(hit);
+        const at = (ev: MouseEvent) => {
+          const r = svg.getBoundingClientRect();
+          const sx = ((ev.clientX - r.left) / r.width) * W;
+          const v = xmin + ((sx - left) / pw) * (xmax - xmin);
+          let best = xs[0];
+          for (const x of xs) if (Math.abs(x - v) < Math.abs(best - v)) best = x;
+          guide.setAttribute("x1", String(X(best)));
+          guide.setAttribute("x2", String(X(best)));
+          guide.style.display = "";
+          const lines = (c.series ?? []).map((s) => {
+            const p = s.points.find((q) => q[0] === best);
+            return `${s.name}: ${p ? fmt(p[1]) : "–"}`;
+          });
+          return { x: best, title: `${c.xlabel} ${fmt(best)}`, lines };
+        };
+        const expr = (x: number) => (c.xq ? c.xq.split("{x}").join(String(x)) : null);
+        hit.addEventListener("mousemove", (ev) => {
+          const a = at(ev);
+          this.host.lineAt(expr(a.x), a.title, a.lines, ev);
+        });
+        hit.addEventListener("mouseleave", () => {
+          guide.style.display = "none";
+          this.host.lineAt(null, "", [], null);
+        });
+        hit.addEventListener("click", (ev) => {
+          const a = at(ev);
+          if (c.xq) this.host.lineAt(expr(a.x), a.title, a.lines, ev, true);
+        });
+      }
     } else if (c.kind === "pie") {
       const total = items.reduce((s, it) => s + Math.max(0, it.value), 0) || 1;
       const cx = W / 2, cy = H / 2, r = H / 2 - 12;

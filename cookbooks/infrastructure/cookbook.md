@@ -315,8 +315,8 @@ real logistics problems: freight, evacuation, network bandwidth.
 makeFromGDF("us-airports.gdf")
 geoLayout(projection="albers")
 louvainClusters()
-colorize(modularity_class)
-for grp in groupBy(modularity_class)[:6]:
+colorize(louvain_class)
+for grp in groupBy(louvain_class)[:6]:
     top = sortBy(grp, degree)[-3:]
     print(len(grp), [n.iata for n in top])
 ```

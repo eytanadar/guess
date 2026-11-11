@@ -2,7 +2,7 @@
 groups, yEd folding).
 
     collapse(dept == 'dept3')            one meta-node standing for those nodes
-    collapseBy(modularity_class)         a meta-node per community
+    collapseBy(louvain_class)         a meta-node per community
     expand(group1); expandAll()          bring the members back
 
 A meta-node sits at its members' centre, is sized by how many it holds, takes

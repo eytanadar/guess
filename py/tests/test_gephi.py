@@ -98,8 +98,8 @@ def test_louvain_modularity(big):
     assert big.run("cl = louvainClusters()")
     cl = big.ns["cl"]
     assert len(cl) > 10 and len(cl[0]) >= len(cl[-1])
-    assert ev(big, "cl[0][0].modularity_class") == 0
-    q = ev(big, "modularity(modularity_class)")
+    assert ev(big, "cl[0][0].louvain_class") == 0
+    q = ev(big, "modularity(louvain_class)")
     assert 0.8 < q < 1
     assert ev(big, "len(louvainClusters(resolution=3))") > len(cl)
     assert not big.run("modularity(freq)")

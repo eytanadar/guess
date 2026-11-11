@@ -93,7 +93,8 @@ def install(session):
             if m == "sir":
                 series.append({"name": "recovered", "color": 0x1a9641, "points": [[t, r] for t, _s, _i, r in counts]})
             session.emit({"type": "chart", "id": "chart:line:spread", "kind": "line", "title": f"Spread ({model})",
-                          "xlabel": "step", "ylabel": "nodes", "items": [], "series": series})
+                          "xlabel": "step", "ylabel": "nodes", "items": [], "series": series,
+                          "xq": "(infected_at >= 0) & (infected_at <= {x})"})
         return counts
 
     # ---- motifs ----------------------------------------------------------------
@@ -176,7 +177,7 @@ def install(session):
         """report() writes a one-page summary of the graph: size, density,
         components, degree distribution, path lengths, clustering,
         assortativity, the `top` nodes by degree, betweenness and PageRank,
-        and the communities if any have been found (modularity_class,
+        and the communities if any have been found (louvain_class,
         leiden_class, infomap_class). report("summary.html") saves it as a web
         page (offered as a download in the browser) and report("summary.md")
         as Markdown; with no name it's printed. Returns the Markdown."""
@@ -210,7 +211,7 @@ def install(session):
                 best = sorted(nodes, key=lambda x: (-(f.get(x) or 0), x._id))[:int(top)]
                 lines.append(f"**{title}:** " + ", ".join(f"{x._vals.get('label') or x._name} ({f.get(x):.3g})" for x in best))
                 lines.append("")
-            for cf in ("modularity_class", "leiden_class", "infomap_class"):
+            for cf in ("louvain_class", "leiden_class", "infomap_class"):
                 if cf in gr.node_schema:
                     grps = ns["groupBy"](gr.node_schema[cf])
                     sizes = ", ".join(str(len(x)) for x in grps[:10])

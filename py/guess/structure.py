@@ -7,7 +7,7 @@ two partitions agree.
     transitiveReduction(); feedbackEdges()   implied edges of a DAG; edges that make cycles
     assortativity(dept); mixingMatrix(dept)  do similar nodes link?
     triadCensus(); reciprocity(); transitivity()
-    compareClusters(modularity_class, dept)  how well two partitions agree (NMI, ARI, ...)
+    compareClusters(louvain_class, dept)  how well two partitions agree (NMI, ARI, ...)
 
 Node fields computed on first use: constraint and effsize (Burt's structural
 holes: low constraint = a broker), generation (step in a directed hierarchy).
@@ -636,7 +636,7 @@ def install(session):
 
     @cmd
     def compareClusters(field1, field2, method="nmi"):
-        """compareClusters(modularity_class, dept) says how well two partitions of
+        """compareClusters(louvain_class, dept) says how well two partitions of
         the nodes agree, over the nodes that have both values: method "nmi"
         (normalized mutual information, 0..1), "ari" (adjusted Rand: 0 = chance,
         1 = identical), "rand" or "vi" (variation of information: 0 = identical).

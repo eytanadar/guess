@@ -2,7 +2,7 @@
 
     findDuplicates(name)              likely duplicate entities, for review
     mergeNodes(a, b, ...)             merge them into one (edges and fields)
-    groupStats(modularity_class)      size, density, boundary of each group
+    groupStats(louvain_class)      size, density, boundary of each group
     findCycles(maxLength=5)           closed loops (round-tripping)
 """
 import difflib
@@ -182,7 +182,7 @@ def install(session):
 
     @cmd
     def groupStats(field, top=12, show=True):
-        """groupStats(modularity_class) profiles each group of nodes sharing a
+        """groupStats(louvain_class) profiles each group of nodes sharing a
         value of a field: size, internal edges, density (internal edges /
         possible pairs), boundary edges (to the rest), conductance (boundary
         / all edges touching the group: low = well separated), and the

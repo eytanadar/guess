@@ -428,7 +428,7 @@ a field (0 = the largest community):
 
 | command | field | good for |
 |---|---|---|
-| `louvainClusters()` | `modularity_class` | fast, standard (Gephi's "Modularity") |
+| `louvainClusters()` | `louvain_class` | fast, standard (Gephi's "Modularity") |
 | `leidenClusters()` | `leiden_class` | like Louvain, but every community is connected |
 | `infomapClusters()` | `infomap_class` | directed flow: citations, web links |
 | `walktrapClusters()`, `fastGreedyClusters()`, `labelPropagationClusters()`, … | | alternatives to compare |
@@ -447,8 +447,8 @@ the result is stable (`seed=None`, run again, then `compareClusters`).
 ```python
 makeFromGDF("sample.gdf")
 louvainClusters()
-compareClusters(modularity_class, dept)               # 0 = unrelated, 1 = identical
-compareClusters(modularity_class, dept, method="ari")
+compareClusters(louvain_class, dept)               # 0 = unrelated, 1 = identical
+compareClusters(louvain_class, dept, method="ari")
 mixingMatrix(dept)
 ```
 
@@ -550,15 +550,15 @@ bigger.
 ```python
 makeFromGDF("lesmis.gdf")
 forceAtlas2Layout()
-louvainClusters(); colorize(modularity_class)
-for grp in groupBy(modularity_class): createConvexHull(grp)
+louvainClusters(); colorize(louvain_class)
+for grp in groupBy(louvain_class): createConvexHull(grp)
 bundleEdges()
 ```
 
 **How it works.** `createConvexHull(set)` shades the area around a set of
 nodes. `bundleEdges()` gathers edges that run in the same direction into
 bundles (MINGLE). `method="fdeb"` gives smoother curves, and passing a
-field (`bundleEdges(modularity_class)`) bundles within groups.
+field (`bundleEdges(louvain_class)`) bundles within groups.
 `removeBundles()` undoes it.
 
 ## Simplify a hairball with motifs [Intermediate]{.level}
@@ -669,7 +669,7 @@ page to share. In the browser, it's offered as a download.
 
 ```python
 makeFromGDF("karate.gdf")
-louvainClusters(); colorize(modularity_class)
+louvainClusters(); colorize(louvain_class)
 saveSession("karate-analysis.guess")
 history()
 ```
@@ -722,7 +722,7 @@ def details(n):
 
 def communities():
     louvainClusters()
-    colour_by("modularity_class")
+    colour_by("louvain_class")
 
 shown, about = Label(""), Label("click a node")
 panel = Panel("Explore",

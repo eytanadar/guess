@@ -104,7 +104,7 @@ const renderer = new Renderer($("#graph"), {
 /** Tell Python about a selection made on the display (bound to `sel`). */
 function syncSelection(ids: number[]) {
   send({ type: "select", nodes: ids });
-  dataTable.setSelection(ids);
+  dataTable.setSelection(ids, edgesAmong(ids));
   status.textContent = ids.length ? `${ids.length} selected — sel in the console` : "";
 }
 
@@ -247,7 +247,8 @@ const dock = new Dock($("#dock-bottom"), $("#dock-right"), {
       hideTip();
       return;
     }
-    highlightItems(items, false);
+    // other charts mark the bars that share these elements (the hovered one is marked already)
+    highlightItems(items);
     tipToken++;
     showTip(title, lines, ev.clientX, ev.clientY);
   },
@@ -256,7 +257,46 @@ const dock = new Dock($("#dock-bottom"), $("#dock-right"), {
     highlightItems(null);
     openMenu(items, ev.clientX, ev.clientY, expr ? { expr: `(${expr})`, title } : { title });
   },
+  lineAt: (expr, title, lines, ev, click) => void lineAt(expr, title, lines, ev, click),
 });
+
+let lineToken = 0;
+let lineExpr: string | null = null;
+async function lineAt(expr: string | null, title: string, lines: string[], ev: MouseEvent | null, click = false) {
+  const token = ++lineToken;
+  if (!ev) {
+    lineExpr = null;
+    highlightItems(null);
+    hideTip();
+    return;
+  }
+  const x = ev.clientX, y = ev.clientY;
+  if (!expr) {
+    tipToken++;
+    showTip(title, lines, x, y);
+    return;
+  }
+  if (click && ev.altKey) {
+    void insertItems([], `(${expr})`);
+    return;
+  }
+  if (!click && expr === lineExpr && !tip.hidden) {
+    showTipPosition(x, y);
+    return;
+  }
+  lineExpr = expr;
+  const info = await request<PeekInfo | null>((id) => ({ type: "peek", id, expr }));
+  if (token !== lineToken) return;
+  const items = info?.items ?? [];
+  if (click) {
+    if (items.length) selectItems(items, ev.shiftKey);
+    return;
+  }
+  highlightItems(items.length ? items : null);
+  tipToken++;
+  const n = items.filter((i) => i[0] === "n").length;
+  showTip(title, [...lines, `highlighted: ${n} node${n === 1 ? "" : "s"} · click to select`], x, y);
+}
 
 /** Highlight elements in the graph, and mark them wherever else they appear:
  *  chart marks, console output, table rows and legend rows. */
@@ -268,6 +308,15 @@ function highlightItems(items: Item[] | null, charts = true) {
   term.highlight(items);
   dataTable.highlight(items);
   highlightLegendRows(items);
+}
+
+/** The edges whose two ends are both among these nodes (selected edges, for the edge table). */
+function edgesAmong(ids: Iterable<number>): number[] {
+  const set = new Set(ids);
+  if (!set.size) return [];
+  const out: number[] = [];
+  for (const [id, e] of renderer.edges) if (set.has(e.s) && set.has(e.t)) out.push(id);
+  return out;
 }
 
 /** Select elements (edges select their endpoints; shift adds) and show them. */
@@ -510,7 +559,7 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     case "select":
       renderer.setSelection(m.nodes);
-      dataTable.setSelection(m.nodes);
+      dataTable.setSelection(m.nodes, edgesAmong(m.nodes));
       status.textContent = m.nodes.length ? `${m.nodes.length} selected` : "";
       break;
     case "done":
@@ -1654,7 +1703,7 @@ dataTable.root.hidden = false;
 async function openTable(kind: "n" | "e" = "n", ids: number[] | null = null) {
   $("#table-pane").hidden = false;
   $("#btn-table").setAttribute("aria-pressed", "true");
-  dataTable.setSelection(renderer.selection);
+  dataTable.setSelection(renderer.selection, edgesAmong(renderer.selection));
   await dataTable.show(kind, ids);
 }
 function closeTable() {

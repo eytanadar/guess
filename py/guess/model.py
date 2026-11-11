@@ -176,6 +176,19 @@ class GSet(list):
         for x in self:
             setattr(x, name, value)
 
+    def __contains__(self, x):
+        """`n in s`: a hash lookup for nodes and edges (cached while the set is
+        unchanged), so loops like [n for n in g.nodes if n in s] stay fast."""
+        if len(self) < 24 or not isinstance(x, (Node, Edge)):
+            return list.__contains__(self, x)
+        d = self.__dict__
+        key = (len(self), id(self[0]), id(self[-1]))
+        cached = d.get("_idset")
+        if cached is None or cached[0] != key:
+            cached = (key, frozenset(map(id, self)))
+            d["_idset"] = cached
+        return id(x) in cached[1]
+
     # set algebra -----------------------------------------------------
     def __and__(self, other):
         other = _as_seq(other)
@@ -225,6 +238,14 @@ class GSet(list):
     # helpers ----------------------------------------------------------
     def sortBy(self, field, descending=False):
         return sort_by(self, field, descending)
+
+    def where(self, test):
+        """g.edges.where(lambda e: e.node1.dept != e.node2.dept): the members for
+        which test(member) is true, as a set (a query you write yourself)."""
+        if not callable(test):
+            raise GuessError("where() needs a function, e.g. s.where(lambda n: n.degree > 3)")
+        ann = getattr(self, "annotation", None)
+        return GSet((x for x in self if test(x)), annotation=f"({ann}) where …" if ann else "where …")
 
     def groupBy(self, field):
         return group_by(self, field)
@@ -436,7 +457,33 @@ class Field:
             for e in self.elements():
                 if _safe(op, self.get(e), other):
                     out.append(e)
+            if not out:
+                self._note_mismatch(sym, other)
         return out
+
+    _NUMERIC = ("INTEGER", "INT", "DOUBLE", "FLOAT", "REAL", "BIGINT", "SMALLINT", "TINYINT", "DECIMAL", "NUMERIC")
+
+    def _note_mismatch(self, sym, other):
+        """`dept == 3` matches nothing because dept holds text: say so (once per field)."""
+        numeric_field = str(self.type).upper() in self._NUMERIC
+        is_num = isinstance(other, (int, float)) and not isinstance(other, bool)
+        sample = next((v for v in self.values() if v is not None), None)
+        if sample is None:
+            return
+        if numeric_field and isinstance(other, str):
+            msg = f"note: {self.name} holds numbers, but {other!r} is text, so {self.name} {sym} {other!r} matches nothing"
+        elif not numeric_field and str(self.type).upper() in ("VARCHAR", "STRING", "TEXT") and is_num is False \
+                and isinstance(other, str) and other.lstrip("-").replace(".", "", 1).isdigit() \
+                and not any(str(v) == other for v in self.values()):
+            msg = (f"note: {self.name} holds text such as {sample!r}; nothing is {other!r} "
+                   f"(compare with one of its values)")
+        else:
+            return
+        noted = self.graph.__dict__.setdefault("_noted_mismatch", set())
+        if (self.kind, self.name, type(other).__name__) in noted:
+            return
+        noted.add((self.kind, self.name, type(other).__name__))
+        print(msg)
 
     def __eq__(self, other):
         return self._query("==", other)
@@ -562,6 +609,53 @@ def _like_regex(pattern):
     return rx
 
 
+_COLOR_FIELDS = {"color", "strokecolor", "labelcolor"}
+
+
+def _field_hint(schema, name):
+    """' (did you mean 'color'?)' for a misspelt field name, or ''."""
+    import difflib
+    close = difflib.get_close_matches(name, [n for n in schema if n != name], n=1, cutoff=0.75)
+    return f" (did you mean '{close[0]}'?)" if close else ""
+
+
+def _keyword_field(schema, name):
+    """n.class_ for a field called class (a Python keyword)."""
+    import keyword
+    if name.endswith("_") and keyword.iskeyword(name[:-1]) and name[:-1] in schema:
+        return schema[name[:-1]]
+    return None
+
+
+def _read(f, elem, name):
+    v = f.get(elem)
+    if name in _COLOR_FIELDS and isinstance(v, str) and v:
+        from .colors import Color
+        return Color(v)            # so n.color == red and n.color.lighter(0.3) work
+    return v
+
+
+def _default_for(value):
+    """A sensible default to suggest for a new field holding values like this one."""
+    if isinstance(value, bool):
+        return "false"
+    if isinstance(value, int):
+        return "0"
+    if isinstance(value, float):
+        return "0.0"
+    return "''"
+
+
+def _infer_type(value):
+    if isinstance(value, bool):
+        return BOOL
+    if isinstance(value, int):
+        return INT
+    if isinstance(value, float):
+        return DOUBLE
+    return STRING
+
+
 class FieldNamespace:
     """``Node.width`` / ``Edge.width`` disambiguation objects."""
 
@@ -571,13 +665,23 @@ class FieldNamespace:
 
     def __getattr__(self, name):
         schema = self._graph.node_schema if self._kind == NODE else self._graph.edge_schema
-        f = schema.get(name) or self._graph._lazy_field(self._kind, name)
+        f = schema.get(name) or self._graph._lazy_field(self._kind, name) or _keyword_field(schema, name)
         if f is None:
-            raise AttributeError(f"no {self._kind} field '{name}'")
+            raise AttributeError(f"no {self._kind} field '{name}'{_field_hint(schema, name)}")
         return f
 
     def __setattr__(self, name, value):
-        raise GuessError(f"{'Node' if self._kind == NODE else 'Edge'} fields are read-only here")
+        """``Node.score = 0`` makes a new node field, typed by its default (0: an
+        integer field, 0.0: a number, "": text, false: true/false)."""
+        schema = self._graph.node_schema if self._kind == NODE else self._graph.edge_schema
+        which = "Node" if self._kind == NODE else "Edge"
+        if name in schema or _keyword_field(schema, name) is not None:
+            raise GuessError(f"{which}.{name} already exists; to set it everywhere: "
+                             f"g.{'nodes' if self._kind == NODE else 'edges'}.{name} = {value!r}")
+        if name.startswith("_") or not name.isidentifier():
+            raise GuessError(f"'{name}' can't be a field name")
+        add = self._graph.addNodeField if self._kind == NODE else self._graph.addEdgeField
+        add(name, _infer_type(value), value)
 
     def setRangeField(self, field):
         """Node.setRangeField(span): the text field that holds existence ranges
@@ -615,19 +719,20 @@ class Node:
         if name.startswith("_"):
             raise AttributeError(name)
         g = self._g
-        f = g.node_schema.get(name) or g._lazy_field(NODE, name)
+        f = g.node_schema.get(name) or g._lazy_field(NODE, name) or _keyword_field(g.node_schema, name)
         if f is None:
             raise AttributeError(f"node '{self._name}' has no field '{name}'")
-        return f.get(self)
+        return _read(f, self, name)
 
     def __setattr__(self, name, value):
         if name == "size":
             self.width = value
             self.height = value
             return
-        f = self._g.node_schema.get(name)
+        f = self._g.node_schema.get(name) or _keyword_field(self._g.node_schema, name)
         if f is None:
-            raise GuessError(f"no node field '{name}' (create it with addNodeField)")
+            raise GuessError(f"no node field '{name}'{_field_hint(self._g.node_schema, name)}; "
+                             f"to make one: Node.{name} = {_default_for(value)}")
         f.set(self, value)
 
     def __repr__(self):
@@ -772,15 +877,16 @@ class Edge:
         if name.startswith("_"):
             raise AttributeError(name)
         g = self._g
-        f = g.edge_schema.get(name) or g._lazy_field(EDGE, name)
+        f = g.edge_schema.get(name) or g._lazy_field(EDGE, name) or _keyword_field(g.edge_schema, name)
         if f is None:
             raise AttributeError(f"edge {self!r} has no field '{name}'")
-        return f.get(self)
+        return _read(f, self, name)
 
     def __setattr__(self, name, value):
-        f = self._g.edge_schema.get(name)
+        f = self._g.edge_schema.get(name) or _keyword_field(self._g.edge_schema, name)
         if f is None:
-            raise GuessError(f"no edge field '{name}' (create it with addEdgeField)")
+            raise GuessError(f"no edge field '{name}'{_field_hint(self._g.edge_schema, name)}; "
+                             f"to make one: Edge.{name} = {_default_for(value)}")
         f.set(self, value)
 
     def __repr__(self):

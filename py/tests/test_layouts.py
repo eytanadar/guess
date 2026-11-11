@@ -511,9 +511,9 @@ def test_legend_for_tells_categories_from_gradients():
     communities), a ramp after colorBy (any scale, with or without a middle)."""
     s = make_session()
     run(s, f"makeFromGDF({str(SAMPLE)!r})")
-    run(s, "louvainClusters()\ncolorize(modularity_class)\nlg = legendFor(modularity_class)")
+    run(s, "louvainClusters()\ncolorize(louvain_class)\nlg = legendFor(louvain_class)")
     lg = s.ns["lg"]
-    groups = len({n.modularity_class for n in s.graph.nodes})
+    groups = len({n.louvain_class for n in s.graph.nodes})
     assert groups > 16 and lg._ramp is None
     allrows = lg.record()["entries"]
     rows = [r for r in allrows if not r.get("hid")]          # what shows before expanding

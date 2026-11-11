@@ -209,9 +209,9 @@ held together by many independent paths.
 makeFromGDF("karate.gdf")
 frLayout()
 louvainClusters()
-colorize(modularity_class)
+colorize(louvain_class)
 shapeBy(club)
-compareClusters(modularity_class, club)
+compareClusters(louvain_class, club)
 ```
 
 **How it works.** Community detection finds groups denser inside than
@@ -350,7 +350,7 @@ project(kind, "woman", method="newman")
 frLayout()
 sizeBy(affiliations, 8, 30)
 sizeBy(weight, 1, 8)
-louvainClusters(); colorize(modularity_class)
+louvainClusters(); colorize(louvain_class)
 labelBy(name)
 ```
 
@@ -470,9 +470,9 @@ for n in g.nodes:
     n.side = "Mr Hi" if closer else "Officer"
 compareClusters(side, club, method="ari")
 louvainClusters(resolution=0.6)
-compareClusters(modularity_class, club, method="ari")
+compareClusters(louvain_class, club, method="ari")
 colorize(club)
-shapeBy(modularity_class)
+shapeBy(louvain_class)
 ```
 
 ![Sides joined (colour) against detected communities (shape)](img/sna-karate-split.png)
@@ -528,7 +528,7 @@ is where coordination happens, or fails.
 makeFromGDF("sample.gdf")
 colorize(dept)
 louvainClusters()
-compareClusters(modularity_class, dept)
+compareClusters(louvain_class, dept)
 mixingMatrix(dept, show=False)["dept4"]
 ```
 

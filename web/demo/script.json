@@ -50,7 +50,7 @@
         { "run": "forceAtlas2Layout()" },
         { "run": "center(giantComponent())" },
         { "run": "cl = louvainClusters()" },
-        { "run": "colorize(modularity_class)" },
+        { "run": "colorize(louvain_class)" },
         { "run": "sizeBy(pagerank, 5, 40, 'sqrt')" },
         { "wait": 600 }
       ]

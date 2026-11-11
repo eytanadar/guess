@@ -144,7 +144,7 @@ curvedEdges(); setEdgeColorMode("mixed")       # Gephi-style arcs and edge colou
 Gephi-style analysis and layout:
 
 ```python
-cl = louvainClusters(); colorize(modularity_class)   # communities, distinct colours
+cl = louvainClusters(); colorize(louvain_class)   # communities, distinct colours
 forceAtlas2Layout(linLog=true)                       # also scaling=, gravity=, preventOverlap=...
 sizeBy(pagerank, 5, 40, "sqrt"); colorBy(closeness, yellow, red)
 graphStats()                                         # diameter, path length, clustering, ...

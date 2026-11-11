@@ -366,7 +366,7 @@ export class FilterPanel {
         if (name === "kcore") this.filters.push({ type: "kcore", k: 2, on: true });
         else if (name === "giant") this.filters.push({ type: "giant", on: true });
         else if (name === "ego") this.filters.push({ type: "ego", node: this.host.selectedNode() ?? "", depth: 1, on: true });
-        else this.filters.push({ type: "groups", field: this.nf.find((f) => f.name === "modularity_class")?.name ?? this.nf.find((f) => !f.numeric && !f.builtin)?.name ?? "", min: 3, on: true });
+        else this.filters.push({ type: "groups", field: this.nf.find((f) => f.name === "louvain_class")?.name ?? this.nf.find((f) => !f.numeric && !f.builtin)?.name ?? "", min: 3, on: true });
         if (name !== "ego") void this.apply();
       } else {
         const field = (k === "n" ? this.nf : this.ef).find((f) => f.name === name)!;

@@ -2658,7 +2658,7 @@ def install(session):
         classic source / hub / sink axes (only outgoing, both, only incoming
         edges), otherwise leaves / connectors / hubs by degree. The axes are drawn
         with their labels; any later layout removes them.
-        E.g. hiveLayout(dept, pagerank) or hiveLayout(modularity_class, axes=5)"""
+        E.g. hiveLayout(dept, pagerank) or hiveLayout(louvain_class, axes=5)"""
         s = lay.snap()
         if s.n == 0:
             return lay.finish()

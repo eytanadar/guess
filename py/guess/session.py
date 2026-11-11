@@ -1104,6 +1104,8 @@ def segment(value, depth=0):
         return {"g": parts, "a": f"{len(value)} values of {value.name} ({kind})"}
     linkable = (isinstance(value, (GSet, list, tuple, dict, set, frozenset))
                 and depth < 20 and _contains_elements(value))
+    if linkable and depth == 0 and isinstance(value, (GSet, list)) and _many_groups(value):
+        return _compact_groups(value)
     if linkable and _custom_repr(value):
         # keep the object's own summary, but link every element it holds
         return {"g": [_safe_repr(value)], "x": _all_items(value)}
@@ -1141,6 +1143,35 @@ def segment(value, depth=0):
             out["a"] = value.annotation
         return out
     return _safe_repr(value)
+
+
+def _many_groups(value):
+    """A set of sets too big to print member by member (louvainClusters(), groupBy)."""
+    if not value or not all(isinstance(x, (GSet, list, tuple)) and not isinstance(x, (Node, Edge)) for x in value):
+        return False
+    return len(value) > 8 or sum(len(x) for x in value) > 150
+
+
+def _compact_groups(value):
+    """'45 groups: [32] [28] [20] …', each [n] linked to its members."""
+    sizes = [len(x) for x in value]
+    ann = getattr(value, "annotation", None) if isinstance(value, GSet) else None
+    import re
+    parts = [f"{len(value)} group{'s' * (len(value) != 1)} ({sum(sizes)} elements): "]
+    for i, grp in enumerate(value):
+        if i >= MAX_ITEMS:
+            parts.append(f" … {len(value) - MAX_ITEMS} more")
+            break
+        if i:
+            parts.append(" ")
+        sub_ann = getattr(grp, "annotation", None) if isinstance(grp, GSet) else None
+        m = re.fullmatch(r"\w+ == (.+)", sub_ann or "")
+        label = f"{m.group(1).strip(chr(39))}: {len(grp)}" if m else str(len(grp))
+        parts.append({"g": [f"[{label}]"], "a": sub_ann or f"group {i}", "x": _all_items(grp)})
+    out = {"g": parts}
+    if ann:
+        out["a"] = ann
+    return out
 
 
 def _safe_repr(value):
@@ -1252,7 +1283,12 @@ def _format_exception(e):
     # drop frames that belong to the session machinery itself
     while tb is not None and tb.tb_frame.f_code.co_filename == __file__:
         tb = tb.tb_next
-    lines = traceback.format_exception(type(e), e, tb)
+    # and the helpers compiled Gython calls (attribute broadcast, set operators,
+    # comparisons): they're how the language works, not where the problem is
+    plumbing = (runtime.__file__,)
+    frames = [f for f in traceback.extract_tb(tb) if f.filename not in plumbing]
+    lines = (["Traceback (most recent call last):\n"] + traceback.format_list(frames) if frames else []) + \
+        traceback.format_exception_only(type(e), e)
     return "".join(lines).rstrip()
 
 

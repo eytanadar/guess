@@ -13,12 +13,58 @@ for _name, _rgb in NAMED.items():
 
 
 class Color(str):
-    """A named color bound in the namespace (e.g. ``red``). Behaves as a string."""
+    """A colour (``red``, or a value read from n.color). Behaves as a string;
+    compares by the colour it means, so n.color == red holds whether the field
+    says "red", "255,0,0" or "#ff0000"; .alpha(), .lighter() and .darker() make
+    variations."""
 
     __slots__ = ()
 
     def __repr__(self):
         return str(self)
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            a, b = parse(self), parse(other)
+            if a is not None and b is not None:
+                return a == b
+        return str.__eq__(self, other)
+
+    def __ne__(self, other):
+        r = self.__eq__(other)
+        return r if r is NotImplemented else not r
+
+    __hash__ = str.__hash__
+
+    def _rgba(self):
+        c = parse(self)
+        if c is None:
+            raise ValueError(f"not a colour: {str(self)!r}")
+        return c
+
+    @staticmethod
+    def _make(r, g, b, a):
+        return Color(f"{r},{g},{b}" if a == 255 else f"{r},{g},{b},{a}")
+
+    def alpha(self, a):
+        """red.alpha(80): the same colour, partly transparent (0 clear .. 255 opaque;
+        a fraction such as 0.3 also works)."""
+        r, g, b, _a = self._rgba()
+        a = float(a)
+        a = round(a * 255) if 0 < a <= 1 and not float(a).is_integer() else int(a)
+        return Color._make(r, g, b, max(0, min(255, a)))
+
+    def lighter(self, amount=0.3):
+        """red.lighter(0.3): 30% of the way to white."""
+        r, g, b, a = self._rgba()
+        t = float(amount)
+        return Color._make(*(round(v + (255 - v) * t) for v in (r, g, b)), a)
+
+    def darker(self, amount=0.3):
+        """red.darker(0.3): 30% of the way to black."""
+        r, g, b, a = self._rgba()
+        t = float(amount)
+        return Color._make(*(round(v * (1 - t)) for v in (r, g, b)), a)
 
 
 def parse(value, default=None):

@@ -5,7 +5,7 @@ bundling (Cytoscape's enhancedGraphics, Gephi's edge bundling).
     pieNeighbors(dept)                  each node a pie of its neighbours' depts
     removePies()
     borderBy(dept)                      a border colour per value (wider borders)
-    bundleEdges(modularity_class)       route edges between groups through
+    bundleEdges(louvain_class)       route edges between groups through
                                         their centres, so parallel flows merge
     removeBundles()
 """
@@ -97,7 +97,7 @@ def install(session):
                                         tree-like bundles; good for large graphs
           bundleEdges(method="fdeb")    force-directed edge bundling: smooth,
                                         organic curves; up to a few thousand edges
-          bundleEdges(modularity_class) through the centres of the groups of a
+          bundleEdges(louvain_class) through the centres of the groups of a
                                         node field
         strength 0..1 blends toward straight lines (0 = straight). MINGLE:
         neighbors (edges compared with each), angleStrength (higher allows

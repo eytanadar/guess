@@ -278,7 +278,7 @@ def install(session):
     @cmd
     def fdpLayout(clusters=None, overlap="prism"):
         """fdpLayout() is a force layout that can keep clusters together:
-        fdpLayout(clusters=modularity_class) gives each community its own box."""
+        fdpLayout(clusters=louvain_class) gives each community its own box."""
         run_layout("fdp", {"overlap": overlap, "sep": "+4"}, clusters=cluster_arg(clusters))
 
     @cmd

@@ -28,6 +28,11 @@ from .model import DOUBLE, EDGE, INT, STRING, Field, GSet, GuessError, Node, ele
 ENABLED = [True]
 
 
+
+def _plural(word):
+    """community -> communities, cluster -> clusters."""
+    return word[:-1] + "ies" if word.endswith("y") and word[-2:-1] not in "aeiou" else word + "s"
+
 def module():
     """The igraph module if it is loaded and enabled, else None."""
     if not ENABLED[0]:
@@ -254,7 +259,7 @@ def install(session):
         if show:
             print(f"modularity {q:.4f}: {len(ordered)} communities in {fieldname}")
         return GSet((GSet(sorted(c, key=lambda n: n._id), f"{label} {i}") for i, c in enumerate(ordered)),
-                    f"{len(ordered)} {label}s")
+                    f"{len(ordered)} {_plural(label)}")
 
     def undirected():
         I = IG(g(), directed=False)

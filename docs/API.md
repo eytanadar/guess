@@ -26,7 +26,7 @@ Commands can be called without parentheses when they take no arguments
 - [Time: ranges, years and the timeline](#time-ranges-years-and-the-timeline) (1)
 - [Presentations (slides)](#presentations-slides) (6)
 - [Data from the web: URLs, SPARQL, NDEx, Neo4j, packages](#data-from-the-web-urls-sparql-ndex-neo4j-packages) (9)
-- [States and morphing](#states-and-morphing) (12)
+- [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
 - [Charts](#charts) (4)
 - [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (11)
@@ -174,7 +174,7 @@ Label and edge fields); exportCSV("nodes.csv", "nodes") the node table.
 exportDOT("graph.dot") writes the graph for Graphviz: positions (fixed
 nodes pinned with !), sizes, shapes, colours, labels, hidden elements and
 every user field; nodes are grouped into cluster subgraphs by the field
-named by clusters= (default `cluster`, e.g. clusters="modularity_class").
+named by clusters= (default `cluster`, e.g. clusters="louvain_class").
 layout=False leaves positions out so Graphviz lays the graph out itself.
 makeFromDOT reads it back. Offered as a download.
 
@@ -303,7 +303,7 @@ groupBy(field) or groupBy(seq, field): groups of elements sharing a value.
 
 ### `groupStats(field, top=12, show=True)`
 
-groupStats(modularity_class) profiles each group of nodes sharing a
+groupStats(louvain_class) profiles each group of nodes sharing a
 value of a field: size, internal edges, density (internal edges /
 possible pairs), boundary edges (to the rest), conductance (boundary
 / all edges touching the group: low = well separated), and the
@@ -585,7 +585,7 @@ Remove (and return) all edges whose endpoints are the same node.
 report() writes a one-page summary of the graph: size, density,
 components, degree distribution, path lengths, clustering,
 assortativity, the `top` nodes by degree, betweenness and PageRank,
-and the communities if any have been found (modularity_class,
+and the communities if any have been found (louvain_class,
 leiden_class, infomap_class). report("summary.html") saves it as a web
 page (offered as a download in the browser) and report("summary.md")
 as Markdown; with no name it's printed. Returns the Markdown.
@@ -737,7 +737,7 @@ path length, clustering, transitivity, degree assortativity, reciprocity
 
 groupsOfSize(field, min[, max]): the nodes (or edges) whose value of
 field is shared by at least min (and at most max) elements — e.g. drop
-tiny communities with showOnly(groupsOfSize(modularity_class, 5)).
+tiny communities with showOnly(groupsOfSize(louvain_class, 5)).
 
 ### `heatMap(center, near='#d7191c', far='#2c7bb6', unreachable='#bdbdbd', middle='#8e5fbf', spread=True)`
 
@@ -768,14 +768,14 @@ node has at least k neighbours. E.g. showOnly(kCore(3)).
 
 louvainClusters() finds communities by Louvain modularity optimisation
 (Gephi's Modularity statistic) using edge weights, stores each node's
-community in the modularity_class field (0 = largest) and returns the
-communities. Try colorize(modularity_class). resolution > 1 gives more,
+community in the louvain_class field (0 = largest) and returns the
+communities. Try colorize(louvain_class). resolution > 1 gives more,
 smaller communities; seed=None varies the result between runs.
 
 ### `modularity(field)`
 
 modularity(field): the modularity Q of the partition given by a node
-field (e.g. modularity(dept), modularity(modularity_class)).
+field (e.g. modularity(dept), modularity(louvain_class)).
 
 ### `mutualEdges()`
 
@@ -899,7 +899,7 @@ a bridge). bridges().color = red shows the weak ties.
 
 ### `compareClusters(field1, field2, method='nmi')`
 
-compareClusters(modularity_class, dept) says how well two partitions of
+compareClusters(louvain_class, dept) says how well two partitions of
 the nodes agree, over the nodes that have both values: method "nmi"
 (normalized mutual information, 0..1), "ari" (adjusted Rand: 0 = chance,
 1 = identical), "rand" or "vi" (variation of information: 0 = identical).
@@ -1255,7 +1255,7 @@ dependency and citation graphs.
 ### `fdpLayout(clusters=None, overlap='prism')`
 
 fdpLayout() is a force layout that can keep clusters together:
-fdpLayout(clusters=modularity_class) gives each community its own box.
+fdpLayout(clusters=louvain_class) gives each community its own box.
 
 ### `graphvizLayout(engine='dot', **attrs)`
 
@@ -1365,7 +1365,7 @@ spread), "linear" or "log". Without `axis`: for directed graphs the
 classic source / hub / sink axes (only outgoing, both, only incoming
 edges), otherwise leaves / connectors / hubs by degree. The axes are drawn
 with their labels; any later layout removes them.
-E.g. hiveLayout(dept, pagerank) or hiveLayout(modularity_class, axes=5)
+E.g. hiveLayout(dept, pagerank) or hiveLayout(louvain_class, axes=5)
 
 ### `isomLayout(iterations=None)`
 
@@ -1759,7 +1759,7 @@ out of a hairball. Three methods:
                                 tree-like bundles; good for large graphs
   bundleEdges(method="fdeb")    force-directed edge bundling: smooth,
                                 organic curves; up to a few thousand edges
-  bundleEdges(modularity_class) through the centres of the groups of a
+  bundleEdges(louvain_class) through the centres of the groups of a
                                 node field
 strength 0..1 blends toward straight lines (0 = straight). MINGLE:
 neighbors (edges compared with each), angleStrength (higher allows
@@ -1998,6 +1998,13 @@ Load a saved state: restores which nodes/edges exist and all their values.
 ### `morph(state, duration=1000)`
 
 Animate from the current display to a saved state over `duration` ms.
+
+### `scratch()`
+
+with scratch(): runs the block, then puts the graph back as it was
+(which nodes and edges exist, and every value): for trying things out,
+such as removing nodes and measuring the result. Fields made inside the
+block are removed too; print or keep in variables what you want to keep.
 
 ### `setEdgeAppearAfter(v)`
 
@@ -2406,7 +2413,7 @@ graphStats()
 
 ```python
 louvainClusters()
-colorize(modularity_class)
+colorize(louvain_class)
 ```
 
 **Most central nodes**
@@ -2481,7 +2488,7 @@ mixingMatrix(dept)
 
 ```python
 louvainClusters()
-compareClusters(modularity_class, dept)
+compareClusters(louvain_class, dept)
 ```
 
 **Any networkx algorithm**
@@ -2642,7 +2649,7 @@ showOnly(giantComponent())
 **Edges inside communities**
 
 ```python
-showOnly(intraEdges(modularity_class))
+showOnly(intraEdges(louvain_class))
 ```
 
 **Show everything again**

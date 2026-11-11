@@ -91,7 +91,7 @@ test("curved edges and edge colour modes", async ({ page }) => {
 
 test("gephi statistics, layouts, label options and click tools", async ({ page }) => {
   const errors = await boot(page);
-  await run(page, "cl = louvainClusters()\ncolorize(modularity_class)\nforceAtlas2Layout(iterations=80)");
+  await run(page, "cl = louvainClusters()\ncolorize(louvain_class)\nforceAtlas2Layout(iterations=80)");
   expect(await lastError(page)).toBeNull();
   await expect(page.locator(".cell").last()).toContainText(/modularity 0\.\d+: \d+ communities/);
   await run(page, "graphStats()");
@@ -516,11 +516,11 @@ test("legendFor: one live legend per field; rows highlight and have a menu", asy
   await run(page, "colorize(dept, yellow, blue)");
   await expect.poll(() => page.locator("#legends .sw").first().evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(before);
   // a long legend: 12 rows and "… N more"; Show all lists every group and scrolls
-  await run(page, "louvainClusters()\ncolorize(modularity_class)\nlegendFor(modularity_class)");
+  await run(page, "louvainClusters()\ncolorize(louvain_class)\nlegendFor(louvain_class)");
   const big = page.locator("#legends .legend").last();
   await expect(big.locator(".legend-row")).toHaveCount(13);
   await big.locator(".legend-more").click();
-  await run(page, "print(len(groupBy(modularity_class)))");
+  await run(page, "print(len(groupBy(louvain_class)))");
   const total = Number((await page.locator(".cell").last().locator(".cell-out").innerText()).trim());
   await expect(big.locator(".legend-row")).toHaveCount(total + 1);
   await expect(big.locator(".legend-row").last()).toContainText(`all ${total} shown`);
@@ -587,7 +587,7 @@ test("networkx bridge, samples and structure commands run in the browser", async
   await expect(page.locator(".cell").last()).toContainText("Graph True");
   await run(page, "print(len(bridges()), len(cutNodes()), len(spanningTree()), round(assortativity(club), 2) > 0.5)");
   await expect(page.locator(".cell").last()).toContainText("1 1 33 True");
-  await run(page, "louvainClusters()\nprint(compareClusters(modularity_class, club) > 0.3, sortBy(constraint)[0].name)");
+  await run(page, "louvainClusters()\nprint(compareClusters(louvain_class, club) > 0.3, sortBy(constraint)[0].name)");
   await expect(page.locator(".cell").last()).toContainText("True");
   await run(page, "fromNetworkX(nx.florentine_families_graph(), 'florence')\nprint(graphNames()[0], len(g.nodes))");
   await expect(page.locator(".cell").last()).toContainText("florence 15");

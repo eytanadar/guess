@@ -107,7 +107,7 @@ const SHOTS = {
     await shotWindow("table");
   },
   fa2: async () => {
-    await run("louvainClusters()\ncolorize(modularity_class)\nsizeBy(pagerank, 6, 40)\nforceAtlas2Layout(linLog=true, preventOverlap=true)\ncenter()", 1500);
+    await run("louvainClusters()\ncolorize(louvain_class)\nsizeBy(pagerank, 6, 40)\nforceAtlas2Layout(linLog=true, preventOverlap=true)\ncenter()", 1500);
     await shotGraph("fa2");
   },
   hive: async () => {

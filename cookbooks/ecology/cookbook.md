@@ -184,7 +184,7 @@ no cascade at all.
 makeNicheModel(40, 0.12, seed=1)
 trophicLevels()
 louvainClusters()
-colorize(modularity_class)
+colorize(louvain_class)
 scatterLayout(niche, trophic)
 ```
 
@@ -286,10 +286,9 @@ underlying sources (each record has one).
 makeNicheModel(40, 0.12, seed=1)
 trophicLevels()
 top = sortBy(trophic)[-1]
-ss("web")
-remove(top)
-len(g.nodes)
-ls("web")
+with scratch():
+    remove(top)
+    print(len(g.nodes))
 r = extinctions(["basal"], show=False)
 next(x for x, y in r["basal"] if y <= 0.5)
 ```
