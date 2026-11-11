@@ -331,6 +331,8 @@ def read_dot(graph, text):
                 n.fixed = True
         if a.get("shape") in _SHAPES:
             n.style = _SHAPES[a["shape"]]
+        elif a.get("shape") == "polygon" and str(a.get("sides", "")).isdigit() and 3 <= int(a["sides"]) <= 64:
+            n.style = 100 + int(a["sides"])
         _fields(graph.node_schema, n, a, _NODE_DONE, _RESERVED_N)
     count = 0
     for x, y, a in p.edges:
@@ -437,7 +439,8 @@ def write_dot(graph, clusters="cluster", layout=True):
             ("pos", f"{_num((n.x + float(n.width) / 2) * PT)},{_num(-(n.y + float(n.height) / 2) * PT)}"
                     + ("!" if n.fixed else "") if layout else None),
             ("width", _num(float(n.width) * PT / 72)), ("height", _num(float(n.height) * PT / 72)),
-            ("shape", _SHAPE_OUT.get(int(n.style or 2), "ellipse")),
+            ("shape", _SHAPE_OUT.get(int(n.style or 2), "polygon" if 103 <= int(n.style or 2) <= 164 else "ellipse")),
+            ("sides", int(n.style) - 100 if 103 <= int(n.style or 2) <= 164 else None),
             ("style", ",".join(styles)), ("fillcolor", _hex(n.color)),
             ("color", _hex(n.strokecolor) if n.strokecolor else None),
             ("fontcolor", _hex(n.labelcolor) if n.labelcolor else None),

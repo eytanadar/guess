@@ -111,6 +111,9 @@ export async function renderVega(body: HTMLElement, m: VegaMsg, hooks: VegaHooks
     if (!d || typeof d !== "object") return null;
     if (typeof d._node === "number") return { items: [["n", d._node]], expr: null, title: String(d.name ?? "") };
     if (typeof d._edge === "number") return { items: [["e", d._edge]], expr: null, title: String(d.name ?? "") };
+    // a mark for several elements listed by id (a word in wordCloud)
+    if (Array.isArray(d._nodes)) return { items: d._nodes.map((i: number) => ["n", i] as Item), expr: null, title: String(d.text ?? "") };
+    if (Array.isArray(d._edges)) return { items: d._edges.map((i: number) => ["e", i] as Item), expr: null, title: String(d.text ?? "") };
     const parts: string[] = [];
     for (const k of Object.keys(d)) {
       if (k.startsWith("_") || k.endsWith("_end")) continue;

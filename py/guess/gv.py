@@ -88,7 +88,9 @@ def build_dot(snap, edges, *, directed, graph_attrs, clusters=None, with_pos=Fal
     def line(i, n):
         w, h = float(sizes[i, 0]), float(sizes[i, 1])
         attrs = [f"width={_q(f'{max(w, 1) * PT / 72:.4f}')}", f"height={_q(f'{max(h, 1) * PT / 72:.4f}')}",
-                 f"shape={_q(_SHAPES.get(int(n.style or 2), 'ellipse'))}"]
+                 f"shape={_q(_SHAPES.get(int(n.style or 2), 'polygon' if 103 <= int(n.style or 2) <= 164 else 'ellipse'))}"]
+        if 103 <= int(n.style or 2) <= 164:
+            attrs.append(f"sides={int(n.style) - 100}")
         if with_pos or snap.fixed[i]:
             cx, cy = float(snap.pos[i, 0]) + w / 2, float(snap.pos[i, 1]) + h / 2
             attrs.append(f"pos={_q(f'{cx * PT:.3f},{-cy * PT:.3f}' + ('!' if snap.fixed[i] else ''))}")

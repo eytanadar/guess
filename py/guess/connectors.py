@@ -53,6 +53,8 @@ def http(url, method="GET", body=None, headers=None):
 _LOADERS = [(".gdf", "makeFromGDF"), (".gexf", "makeFromGEXF"), (".graphml", "makeFromGraphML"),
             (".xml", "makeFromGraphML"), (".gml", "makeFromGML"), (".dot", "makeFromDOT"), (".gv", "makeFromDOT"), (".net", "makeFromPajek"), (".paj", "makeFromPajek"),
             (".dl", "makeFromDL"), (".csv", "makeFromCSV"), (".tsv", "makeFromCSV"),
+            (".ttl", "makeFromRDF"), (".nt", "makeFromRDF"), (".n3", "makeFromRDF"), (".rdf", "makeFromRDF"),
+            (".owl", "makeFromRDF"),
             (".guess", "makeFromSession"), (".py", "execfile")]
 
 
@@ -79,6 +81,8 @@ def install(session):
         if ext not in dict(_LOADERS):
             head = text.lstrip()[:200].lower()
             ext = (".gexf" if "<gexf" in head else ".graphml" if "<graphml" in head
+                   else ".rdf" if "<rdf:rdf" in head
+                   else ".ttl" if re.match(r"(#[^\n]*\n\s*)*(@prefix|@base|prefix\s)", head)
                    else ".gdf" if head.startswith("nodedef") else ".net" if head.startswith("*vertices")
                    else ".gml" if re.match(r"(#[^\n]*\n\s*)*(creator\s|version\s|graph\s*\[)", head)
                    else ".dot" if re.match(r"(strict\s+)?(di)?graph\b[^{]*\{", head)

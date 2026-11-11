@@ -55,6 +55,43 @@ def install(session):
             grp.style = SHAPES[i % len(SHAPES)]
 
     @cmd
+    def polygon(sides):
+        """polygon(sides) is the node style for a regular polygon with that many
+        sides (3 to 64), a corner at the top: (dept == 'dept1').style = polygon(5).
+        polygonBy(field) sets one per node from a field."""
+        try:
+            k = int(sides)
+        except (TypeError, ValueError):
+            raise GuessError(f"polygon needs a number of sides, got {sides!r}") from None
+        if not 3 <= k <= 64:
+            raise GuessError("polygon sides go from 3 to 64")
+        return 100 + k
+
+    @cmd
+    def polygonBy(field, smallest=3, largest=12):
+        """polygonBy(field) draws each node as a regular polygon whose number of
+        sides comes from a node field (as Gephi's Polygon Shaped Nodes): a whole
+        number field gives the sides directly (kept within smallest..largest);
+        any other field gives each value its own polygon, 3, 4, 5, … sides, the
+        most common value first."""
+        f = field_arg(field, "polygonBy")
+        if f.kind != NODE:
+            raise GuessError("polygonBy needs a node field")
+        lo, hi = max(3, int(smallest)), min(64, int(largest))
+        if lo > hi:
+            raise GuessError("polygonBy needs smallest <= largest (3 to 64)")
+        from .model import INT
+        if f.type == INT:
+            for n in f.elements():
+                v = f.get(n)
+                if v is not None:
+                    n.style = 100 + min(hi, max(lo, int(v)))
+            return
+        groups = sorted(group_by(f.elements(), f), key=len, reverse=True)
+        for i, grp in enumerate(groups):
+            grp.style = 100 + lo + i % (hi - lo + 1)
+
+    @cmd
     def legendFor(field, title=None):
         """legendFor(field) adds a legend explaining the current colours by field:
         one entry per value (for categories, as after colorize), or a gradient

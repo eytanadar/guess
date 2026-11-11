@@ -241,6 +241,12 @@ def install(session):
             title = t if isinstance(t, str) else (t.get("text") if isinstance(t, dict) else None) or _auto_title(spec)
             if isinstance(title, list):
                 title = " ".join(map(str, title))
+        emit(spec, title)
+        return None
+
+    def emit(spec, title):
+        """Send a Vega or Vega-Lite spec to the dock (a live chart keeps its panel)."""
+        g = session.graph
         cell = session.running_cell
         count[0] += 1
         if session._refreshing is not None:
@@ -251,9 +257,65 @@ def install(session):
             session.chart_seq += 1
         session.chart_out({"type": "vega", "id": cid, "title": str(title), "spec": spec, "cell": cell,
                       "fields": {"n": list(g.node_schema), "e": list(g.edge_schema)}})
+
+    def wordCloud(field, top=80, stopwords=None, minLength=3):
+        """wordCloud(field) shows the most frequent words in a text field as a
+        word cloud in the dock (as Gephi's Word Cloud plugin), sized by how
+        many times each occurs. Hovering a word lights up the nodes (or edges)
+        whose text contains it; clicking selects them. Common English words
+        are left out; stopwords=[...] adds more, top= sets how many words,
+        minLength= the shortest word kept."""
+        import re
+        from .builders import STOPWORDS
+        from .model import as_field
+        f = as_field(session.graph, field, "wordCloud")
+        stop = STOPWORDS | {str(w).lower() for w in (stopwords or [])}
+        counts, where = {}, {}
+        for x in f.elements():
+            v = f.get(x)
+            if v is None:
+                continue
+            for w in re.findall(r"[^\W\d_][\w'-]*", str(v).lower()):
+                w = w.strip("'-")
+                if len(w) < int(minLength) or w in stop:
+                    continue
+                counts[w] = counts.get(w, 0) + 1
+                where.setdefault(w, []).append(x._id)
+        if not counts:
+            raise GuessError(f"field '{f.name}' has no words to show")
+        words = sorted(counts, key=lambda w: (-counts[w], w))[:max(1, int(top))]
+        key = "_nodes" if f.kind == NODE else "_edges"
+        rows = [{"text": w, "count": counts[w], "angle": (0, 0, -30, 0, 30)[i % 5],
+                 key: sorted(set(where[w]))[:5000]} for i, w in enumerate(words)]
+        from . import colors
+        palette = ["#" + "".join(f"{int(c):02x}" for c in str(rgb).split(",")[:3])
+                   for rgb in colors.distinctColors(min(len(words), 12))]
+        spec = {
+            "$schema": "https://vega.github.io/schema/vega/v6.json",
+            "width": 520, "height": 320, "padding": 4, "autosize": "pad",
+            "data": [{"name": "table", "values": rows}],
+            "scales": [{"name": "color", "type": "ordinal", "domain": {"data": "table", "field": "text"},
+                        "range": palette}],
+            "marks": [{
+                "type": "text", "from": {"data": "table"},
+                "encode": {
+                    "enter": {"text": {"field": "text"}, "align": {"value": "center"},
+                              "baseline": {"value": "alphabetic"}, "fill": {"scale": "color", "field": "text"},
+                              "cursor": {"value": "pointer"},
+                              "tooltip": {"signal": "datum.text + ': ' + datum.count"}},
+                    "update": {"fillOpacity": {"value": 1}},
+                    "hover": {"fillOpacity": {"value": 0.6}},
+                },
+                "transform": [{"type": "wordcloud", "size": [520, 320], "text": {"field": "text"},
+                               "rotate": {"field": "datum.angle"}, "font": "Helvetica Neue, Arial, sans-serif",
+                               "fontSize": {"field": "datum.count"}, "fontWeight": "bold",
+                               "fontSizeRange": [11, 54], "padding": 2}],
+            }],
+        }
+        emit(spec, f"words in {f.name}")
         return None
 
-    for fn in (nodeData, edgeData, showChart):
+    for fn in (nodeData, edgeData, showChart, wordCloud):
         session.register_command(fn.__name__, fn)
 
 

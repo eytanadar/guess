@@ -136,9 +136,18 @@ function edgeCandidates(p: number[], along: boolean): Candidate[] {
   return [[0.5, 0], [0.4, 0.1], [0.6, 0.1], [0.3, 0.25], [0.7, 0.25]].map(([t, pref]) => ({ ...at(t), ax: 0.5, ay: 0.5, pref }));
 }
 
-/** Polygon outline of the shapes that have one (styles 11-14), [x0, y0, ...]. */
+/** Polygon outline of the shapes that have one (styles 11-14, and 103-164: a
+ *  regular polygon with style - 100 sides, a vertex at the top), [x0, y0, ...]. */
 function polyPoints(n: { x: number; y: number; w: number; h: number; s: number }): number[] | null {
   const { x, y, w, h } = n, cx = x + w / 2, cy = y + h / 2;
+  if (n.s >= 103 && n.s <= 164) {
+    const k = n.s - 100, out: number[] = [];
+    for (let i = 0; i < k; i++) {
+      const t = -Math.PI / 2 + (i * 2 * Math.PI) / k;
+      out.push(cx + (w / 2) * Math.cos(t), cy + (h / 2) * Math.sin(t));
+    }
+    return out;
+  }
   switch (n.s) {
     case 11: return [cx, y, x + w, y + h, x, y + h];                                   // triangle
     case 12: return [cx, y, x + w, cy, cx, y + h, x, cy];                               // diamond
@@ -163,7 +172,9 @@ function insideBox(s: number): [number, number, number] {
     case 12: return [0.56, 0.56, 0.5];
     case 13: return [0.72, 0.86, 0.5];
     case 14: return [0.8, 0.8, 0.5];
-    default: return [0.9, 0.88, 0.5];
+    default:
+      if (s >= 103 && s <= 164) return s === 103 ? [0.5, 0.5, 0.64] : [0.66, 0.66, 0.52];
+      return [0.9, 0.88, 0.5];
   }
 }
 

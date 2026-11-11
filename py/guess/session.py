@@ -102,6 +102,11 @@ class Session:
         epidemic.install(self)
         timeline.install(self)
         slides.install(self)
+        from . import measures, moreclusters, morelayouts, webexport
+        measures.install(self)
+        moreclusters.install(self)
+        morelayouts.install(self)
+        webexport.install(self)
         compat.install(self)
         states.install(self)
         ranges.install(self)
@@ -221,7 +226,7 @@ class Session:
                                                f"del {name} brings it back\n"})
 
     # commands that draw a chart: they record how they were called, so the chart can be live
-    CHART_COMMANDS = {"plotHistogram", "plotSizes", "plotSizesPie", "plotDistrib", "showChart",
+    CHART_COMMANDS = {"plotHistogram", "plotSizes", "plotSizesPie", "plotDistrib", "showChart", "wordCloud",
                       "extinctions", "outbreaks", "offspring", "spread", "robustness"}
 
     def register_command(self, name, fn):

@@ -85,6 +85,9 @@ def install(session):
         table adds its columns to the current graph's nodes (matched by Id).
         Other columns become fields; directed=true makes edges without a Type
         directed."""
+        if str(filename).lower().endswith((".xlsx", ".xlsm")):
+            return session.system["makeFromExcel"][0](filename, nodes=nodes, directed=directed)
+
         def read(name):
             with open(name, encoding="utf-8", errors="replace") as fh:
                 return fh.read()

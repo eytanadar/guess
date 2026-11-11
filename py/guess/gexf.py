@@ -287,7 +287,11 @@ def _infer(values):
 
 
 def table_kind(text):
-    rows = _rows(text)
+    return rows_kind(_rows(text))
+
+
+def rows_kind(rows):
+    """The kind of a table already split into rows (see table_kind)."""
     if not rows:
         return "empty", rows
     head = [h.lower() for h in rows[0]]
@@ -329,10 +333,16 @@ def _place(graph, nodes):
         n.x, n.y = random.random() * 500, random.random() * 500
 
 
-def read_csv(graph, text, directed=False):
+def read_csv(graph, text, directed=False, rows=None):
     """Load one table into the graph (see the module docstring). Returns
-    (kind, nodes added, edges added)."""
-    kind, rows = table_kind(text)
+    (kind, nodes added, edges added). rows: the table already split into rows
+    of strings (a spreadsheet), instead of text."""
+    if rows is not None:
+        rows = [[str(c).strip() for c in r] for r in rows]
+        rows = [r for r in rows if any(c for c in r)]
+        kind = rows_kind(rows)
+    else:
+        kind, rows = table_kind(text)
     added = []
 
     def get(name):
