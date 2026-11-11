@@ -14,6 +14,7 @@ The plan, the order of volumes and the features they need are in
 | `software/` | GUESS for Software and Systems | written |
 | `investigations/` | GUESS for Investigations | written |
 | `ecology/` | GUESS for Ecology | written |
+| `epidemiology/` | GUESS for Epidemiology | written |
 
 Each book is one `cookbook.md` and ends with a capstone recipe: a small visual-analytics app (panels, sliders, drop-downs, click and right-click handlers) for a narrow problem in its field. A recipe is a `##` section. Its
 ` ```python ` blocks are run by the checker, and an image written as
