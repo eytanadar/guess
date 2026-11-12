@@ -140,6 +140,7 @@ def counts():
 
 graphevents.clickNode = pick
 repaint()
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Which network is the rail network?", "Networks, Section 2.4")
 ui.layout(
     right=Column(

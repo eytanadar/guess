@@ -38,3 +38,32 @@ test("drawings show on the display and in SVG export", async ({ page }) => {
   if (process.env.SHOT) { await page.waitForTimeout(1500); await page.screenshot({ path: process.env.SHOT + "/drawings.png" }); }
   expect(errors).toEqual([]);
 });
+
+test("menus have submenus that open by hover, click and keyboard", async ({ page }) => {
+  const errors = await boot(page);
+  await page.locator(".menu-title", { hasText: "View" }).click();
+  const sub = page.locator(".menu-sub", { has: page.locator(".menu-sub-title", { hasText: "Edges" }) });
+  await expect(sub.locator(".menu-sub-pop")).toBeHidden();
+  await sub.locator(".menu-sub-title").hover();
+  await expect(sub.locator(".menu-sub-pop")).toBeVisible();
+  await page.locator("#curved").click();
+  await expect(page.locator("#curved")).toHaveAttribute("aria-pressed", "true");
+  await expect(sub.locator(".menu-sub-pop")).toBeHidden();               // the menu closed
+  // keyboard: down to a submenu title, right opens it, left closes it
+  await page.locator(".menu-title", { hasText: "File" }).focus();
+  await page.keyboard.press("ArrowDown");
+  const exportData = page.locator(".menu-sub-title", { hasText: "Export data" });
+  await exportData.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator(".menu-sub", { has: exportData }).locator(".menu-sub-pop")).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator(".menu-sub", { has: exportData }).locator(".menu-sub-pop")).toBeHidden();
+  await expect(exportData).toBeFocused();
+  await page.keyboard.press("Escape");
+  // an insert item puts code in the cell instead of running it
+  await page.locator(".menu-title", { hasText: "File" }).click();
+  await page.locator(".menu-sub-title", { hasText: "Open from the web" }).hover();
+  await page.getByRole("menuitem", { name: "Protein structure (PDB)…" }).click();
+  await expect(page.locator(".console-in .cm-content")).toContainText('makeFromPDB("1ubq")');
+  expect(errors).toEqual([]);
+});

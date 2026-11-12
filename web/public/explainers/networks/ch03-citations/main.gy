@@ -186,6 +186,7 @@ net_note = Markdown("")
 graphevents.clickNode = choose
 base()
 hoverFields("title", "year", "cites")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Citations point back in time", "Networks, Section 3.2")
 ui.layout(
     right=Column(

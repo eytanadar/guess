@@ -185,6 +185,7 @@ test_note = Markdown("")
 graphevents.clickNode = choose
 dress()
 hoverFields("kind", "taste", "genre", "rating")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Recommendations", "Networks, Section 3.3.2")
 ui.layout(
     right=Column(

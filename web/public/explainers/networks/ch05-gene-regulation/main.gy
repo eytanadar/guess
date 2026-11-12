@@ -1,0 +1,172 @@
+# Switching genes on and off  (Newman, Networks, Section 5.1.3)
+# Genes make proteins, some of which (transcription factors) switch other genes
+# on or off. The result is a directed network with two kinds of edges:
+# promoting (arrows) and inhibiting (bars). Its loops give cells memory and
+# rhythms. Here each gene is simply ON or OFF (a Boolean network), updated one
+# gene at a time in random order:
+#   a gene with activators is ON if any activator is ON and no inhibitor is ON
+#   a gene with only inhibitors is ON if none of them is ON
+#   a gene with no inputs keeps its state
+# Clicking a gene HOLDS it on (a signal, or a gene forced on); click again to let go.
+
+import csv
+import random
+
+CIRCUITS = {
+    "Toggle switch (memory)": [("A", "B", "inhibits"), ("B", "A", "inhibits")],
+    "Repressilator (a clock)": [("lacI", "tetR", "inhibits"), ("tetR", "cI", "inhibits"), ("cI", "lacI", "inhibits")],
+    "Feed-forward loop (a delay)": [("X", "Y", "activates"), ("X", "Z", "activates"), ("Y", "Z", "activates")],
+}
+with open("pheromone-pathway.csv", encoding="utf-8") as fh:
+    CIRCUITS["Yeast pheromone response"] = [(r["Source"], r["Target"], r["effect"]) for r in csv.DictReader(fh)]
+ALL_OF = {"Feed-forward loop (a delay)": {"Z"}}            # genes that need ALL their activators
+rnd = random.Random(1)
+sim = {"circuit": None, "on": {}, "t": 0, "trace": [], "timer": None, "held": set()}
+
+
+def load(name):
+    stop()
+    sim["circuit"] = name
+    for nm in list(graphNames())[1:]:
+        closeGraph(nm)
+    remove(list(g.nodes))
+    edges = CIRCUITS[name]
+    genes = sorted({a for a, b, _ in edges} | {b for a, b, _ in edges})
+    for gname in genes:
+        addNode(gname)
+    for a, b, eff in edges:
+        e = addDirectedEdge(g.getNodeByName(a), g.getNodeByName(b))
+        e.effect = eff
+    for e in g.edges:
+        act = e.effect.startswith("activ")
+        e.arrowhead = "triangle" if act else "tee"
+        e.color = "60,160,80" if act else "220,60,50"
+        e.width = 2.5
+    if len(genes) <= 4:
+        circleLayout()
+    else:
+        kkLayout()
+    sim["on"] = {v: False for v in genes}
+    sim["held"] = set()
+    if name.startswith("Toggle"):
+        sim["on"]["A"] = True
+    if name.startswith("Repressilator"):
+        sim["on"]["lacI"] = True
+    sim["t"] = 0
+    sim["trace"] = [(0, dict(sim["on"]))]
+    repaint()
+    center()
+
+
+def rule(v):
+    if v in sim["held"]:
+        return True
+    ins = [(e.node1.name, e.effect.startswith("activ")) for e in g.edges if e.node2.name == v]
+    acts = [sim["on"][u] for u, a in ins if a]
+    inhs = [sim["on"][u] for u, a in ins if not a]
+    if not ins:
+        return sim["on"][v]
+    if any(inhs):
+        return False
+    if not acts:
+        return True
+    return all(acts) if v in ALL_OF.get(sim["circuit"], set()) else any(acts)
+
+
+def step():
+    order = sorted(sim["on"])
+    rnd.shuffle(order)
+    for v in order:
+        sim["on"][v] = rule(v)
+    sim["t"] += 1
+    sim["trace"].append((sim["t"], dict(sim["on"])))
+    del sim["trace"][:-40]
+    repaint()
+
+
+def repaint():
+    for n in g.nodes:
+        on = sim["on"].get(n.name, False)
+        n.color = "250,200,40" if on else "90,100,120"
+        n.strokecolor = "120,80,0" if on else "60,60,60"
+        n.width = n.height = 34 if on else 22
+        n.labelvisible = true
+        held = n.name in sim["held"]
+        for e in g.edges:                 # a regulator that is ON is acting now: bold, moving edge
+            if e.node1 is n:
+                act = e.effect.startswith("activ")
+                e.width = 5 if on else 2
+                e.linestyle = "flow" if on else "solid"
+                e.color = ("40,200,90" if act else "235,50,40") if on else ("60,160,80,110" if act else "220,60,50,110")
+        n.label = n.name + (" (held)" if held else "")
+        n.strokecolor = "200,30,30" if held else n.strokecolor
+
+
+def toggle(n):
+    if n.name in sim["held"]:
+        sim["held"].discard(n.name)
+        sim["on"][n.name] = rule(n.name) if any(e.node2 is n for e in g.edges) else False
+    else:
+        sim["held"].add(n.name)
+        sim["on"][n.name] = True
+    sim["trace"].append((sim["t"], dict(sim["on"])))
+    repaint()
+
+
+def play():
+    if sim["timer"] is None:
+        sim["timer"] = everyPaced(step, slow=1.0, fast=0.5, ramp=3)
+        go.text = "Pause"
+    else:
+        stop()
+
+
+def stop():
+    if sim["timer"] is not None:
+        sim["timer"].stop()
+        sim["timer"] = None
+    try:
+        go.text = "Play"
+    except NameError:
+        pass
+
+
+def activity():
+    genes = sorted(sim["on"])[:8]
+    if len(sim["trace"]) < 2 or not genes:
+        return
+    series = {v: [(t, (1 if s[v] else 0) + 1.5 * (len(genes) - 1 - i)) for t, s in sim["trace"]] for i, v in enumerate(genes)}
+    plotLine(series, title="Who is on (each gene on its own line)", xlabel="step", ylabel="on / off")
+
+
+def state_text():
+    on = sorted(v for v, s in sim["on"].items() if s)
+    tips = {
+        "Toggle switch (memory)": "Each gene shuts the other off, so one wins and **stays** on: the circuit remembers. Hold the OFF gene on for a few steps, then let go: the switch has flipped, and stays flipped.",
+        "Repressilator (a clock)": "Three genes each shut off the next, around a loop. No state is stable, so they take turns: an **oscillator** (Elowitz and Leibler built one in E. coli in 2000).",
+        "Feed-forward loop (a delay)": "Z needs both X and Y. Hold X on: Y comes on, then Z. Let go of X and Z drops at once. Brief blips of X may never reach Z: a **filter**.",
+        "Yeast pheromone response": "Hold **STE2** (the receptor) on, as if pheromone were present, and watch the signal pass down the kinase cascade to FUS3 and STE12, and the feedback (SST2, MSG5) that pushes back.",
+    }[sim["circuit"]]
+    return f"{tips}\n\nStep **{sim['t']}**. ON: {', '.join(on) if on else 'nothing'}."
+
+
+Edge.effect = ""                      # "activates" or "inhibits"
+go = Button("Play", onClick=play)
+graphevents.clickNode = toggle
+load("Toggle switch (memory)")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("Switching genes on and off", "Networks, Section 5.1.3")
+ui.layout(
+    right=Column(
+        Markdown("""### A genetic regulatory network
+**Green arrows** promote, **red bars** inhibit. Big yellow genes are ON. Each
+step, every gene in turn looks at its inputs (in random order). **Click a
+gene** to hold it ON (a red ring); click again to let go."""),
+        Dropdown(list(CIRCUITS), label="Circuit", onChange=load),
+        Row(go, Button("Step", onClick=step)),
+        Markdown(state_text),
+        Chart(activity)),
+    sizes={"right": 380},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} genes · {len(g.edges)} regulatory links"))

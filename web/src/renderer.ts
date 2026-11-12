@@ -239,6 +239,8 @@ export class Renderer {
   private leaderG = new Graphics();
   /** labels keep their size on screen; each appears from its activation scale */
   private constantSize = false;
+  /** constantLabelSize(size=): screen label size relative to the normal 10px */
+  private constantScale = 1;
   private activation = new Map<string, number>();
   private sizedFor = 0;
   private probe: BitmapText | null = null;
@@ -506,6 +508,11 @@ export class Renderer {
     const outline = !!ov.labels?.outline, cull = !!ov.labels?.cull, along = !!ov.labels?.along;
     const method = ov.labels?.placement === "particles" ? "particles" : "candidates";
     const constant = !!ov.labels?.screen;
+    const cscale = (ov.labels?.screenSize ?? 10) / 10;
+    if (cscale !== this.constantScale) {
+      this.constantScale = cscale;
+      this.labelsDirty = true;
+    }
     if (method !== this.labelMethod) this.optimized.clear();      // a new method replaces optimizeLabels()
     if (outline !== this.labelOutline || cull !== this.labelCull || along !== this.labelAlong
         || method !== this.labelMethod || constant !== this.constantSize) {
@@ -1439,7 +1446,8 @@ export class Renderer {
     if (this.constantSize) {
       const list = this.placements.filter((p) => p.halo || p.pill).map((p) => ({
         key: p.key, priority: p.priority, ax: p.x, ay: p.y,
-        box: [-p.ax * p.w, -p.ay * p.h, (1 - p.ax) * p.w, (1 - p.ay) * p.h] as Rect,
+        box: [-p.ax * p.w * this.constantScale, -p.ay * p.h * this.constantScale,
+          (1 - p.ax) * p.w * this.constantScale, (1 - p.ay) * p.h * this.constantScale] as Rect,
       }));
       this.activation = activationScales(list, Math.max(this.scale / 16, 1e-6));
     }
@@ -1455,7 +1463,7 @@ export class Renderer {
       const t = this.labelPool.get(p.key);
       if (!t) continue;
       const act = this.activation.get(p.key);
-      const k = this.constantSize && act !== undefined ? 1 / z : 1;
+      const k = this.constantSize && act !== undefined ? this.constantScale / z : 1;
       t.scale.set(p.scale * k);
       const h = this.haloPool.get(p.key);
       if (h) h.scale.set(p.scale * k);

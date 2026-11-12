@@ -39,7 +39,7 @@ Commands can be called without parentheses when they take no arguments
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
 - [Charts](#charts) (8)
-- [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (23)
+- [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (24)
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
 - [Colors](#colors) (4)
@@ -1261,7 +1261,8 @@ Bring results back with setField:
 
 bipartiteLayout(field) draws a two-mode network in two rows (by a field
 with two values, e.g. bipartite in makeSample("davis")), ordering each
-row to reduce edge crossings.
+row to reduce edge crossings. Without igraph (still loading, or
+turned off) the rows are ordered by the barycenter heuristic instead.
 
 ### `cohesiveBlocks()`
 
@@ -1851,13 +1852,14 @@ the span of the ordered axis. Nodes without a value go in the middle.
 
 Remove every drawing made with drawLine, drawText, drawRect and drawCircle.
 
-### `constantLabelSize(on=True)`
+### `constantLabelSize(on=True, size=None)`
 
 constantLabelSize() keeps labels the same size on screen as you zoom
 (they grow with the graph otherwise); each label appears once there is
 room for it and stays as you zoom further in, so zooming in reveals more
-labels. Labels inside nodes keep fitting their nodes.
-constantLabelSize(false) turns it off.
+labels. size= sets that size in pixels (default 10; a node's labelsize
+still scales its own label). Labels inside nodes keep fitting their
+nodes. constantLabelSize(false) turns it off.
 
 ### `createConvexHull(seq, color='200,200,255,90', shape='hull', rotate=False, padding=6)`
 
@@ -2883,6 +2885,15 @@ fn(value) when the selection changes.
 ### `every(seconds, fn)`
 
 Call fn() every `seconds` seconds; returns a timer with .stop().
+
+### `everyPaced(fn, steps=None, slow=0.9, fast=0.15, ramp=3)`
+
+everyPaced(step) calls step() again and again, slow-fast-slow, so a
+process can be followed on screen: `slow` seconds apart for the first
+`ramp` calls, speeding up to `fast`, and slowing down again over the
+last `ramp` calls. Give steps= when the number of calls is known, or
+let step() return how many calls are left (an int); returning False
+stops. Returns a timer with .stop().
 
 ### `Group(*a, **k)`
 

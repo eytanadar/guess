@@ -1,0 +1,150 @@
+# Who eats whom  (Newman, Networks, Section 5.3.1)
+# A food web joins each species to those that eat it: ecologists draw the
+# arrows from prey to predator, the way energy flows. Webs are nearly acyclic,
+# so species can be stacked by trophic level, with plants at the bottom.
+# The webs here come from the niche model (Williams and Martinez 2000), which
+# reproduces the structure of real food webs well.
+
+SPECIES = Slider(15, 60, 30, 1, label="species")
+CONNECT = Slider(0.05, 0.25, 0.12, 0.01, label="connectance (links / species²)")
+web = {"seed": 1, "pick": None, "mode": "source"}
+
+
+def new_web(v=None):
+    makeNicheModel(species=int(SPECIES.value), connectance=CONNECT.value, seed=web["seed"])
+    trophicLevels()
+    orderedLayout(trophic, axis="y", inverted=true, length=650)
+    xs = [n.x for n in g.nodes]
+    lo, hi = min(xs), max(xs)
+    for n in g.nodes:                     # spread sideways: the ordered layout packs them tightly
+        n.x = (n.x - lo) / ((hi - lo) or 1) * 700
+    web["pick"] = None
+    dress()
+    center()
+
+
+def another():
+    web["seed"] += 1
+    new_web()
+
+
+def dress():
+    colorBy(trophic, "110,180,80", "200,60,40")
+    for n in g.nodes:
+        n.width = n.height = 14
+        n.strokecolor = "60,60,60"
+        n.labelvisible = false
+    g.edges.color = "150,150,150,80"
+    g.edges.width = 1
+
+
+def pick(n):
+    web["pick"] = n
+    show()
+
+
+def show(v=None):
+    dress()
+    n = web["pick"]
+    if n is None:
+        return
+    group = descendants(n) if web["mode"] == "source" else ancestors(n)
+    for m in g.nodes:
+        if m not in group and m is not n:
+            m.color = "200,200,200,90"
+            m.width = m.height = 9
+        else:
+            m.width = m.height = 20
+            m.labelvisible = true
+    n.width = n.height = 28
+    n.strokecolor = "20,20,20"
+    for e in g.edges:
+        if (e.node1 in group or e.node1 is n) and (e.node2 in group or e.node2 is n):
+            e.color, e.width = "40,40,40,200", 2
+
+
+def set_mode(choice):
+    web["mode"] = "source" if choice.startswith("Source") else "sink"
+    show()
+
+
+def loops():
+    dress()
+    cyc = findCycles(6)
+    for c in cyc:
+        for x in c:
+            x.color = "220,40,40"
+            if hasattr(x, "node1"):
+                x.width = 3
+    up = sum(1 for e in g.edges if e.node2.trophic <= e.node1.trophic)
+    if not cyc:
+        loop_note.text = ("No loops at all: every link runs upward, so this web is **acyclic**. Real webs usually "
+                          "have a few (two species that eat each other, cannibals), so they are only *nearly* "
+                          "acyclic. Try a denser web. (Webs also leave out decomposers, which would close loops "
+                          "from the top back to the bottom.)")
+        return
+    many = f"{len(cyc)}+" if len(cyc) >= 1000 else str(len(cyc))
+    loop_note.text = (f"**{many}** short loops (red): **{up}** of the {len(g.edges)} links don't point up a level, "
+                      f"so **{100 * (1 - up / len(g.edges)):.0f}%** run upward. A few backward links are enough "
+                      "to make many loops. Real webs are usually close to acyclic; dense ones less so. (Webs "
+                      "also leave out decomposers, which would close loops from the top back to the bottom.)")
+
+
+def lump():
+    """Trophic species: species with exactly the same prey and the same predators."""
+    roles = {}
+    for n in g.nodes:
+        prey = frozenset(e.node1.name for e in g.edges if e.node2 is n)
+        eaters = frozenset(e.node2.name for e in g.edges if e.node1 is n)
+        roles.setdefault((prey, eaters), []).append(n)
+    groups = [grp for grp in roles.values() if len(grp) > 1]
+    before = len(g.nodes)
+    for grp in groups:
+        mergeNodes(*grp)
+    dress()
+    lump_note.text = (f"**{len(groups)}** sets of species had identical predators and prey; lumping each into one "
+                      f"**trophic species** takes the web from {before} to **{len(g.nodes)}** nodes without "
+                      "losing any information about who eats whom." if groups else
+                      "No two species here have exactly the same predators and prey. Real webs often do, "
+                      "especially among plankton and insects.")
+
+
+def info():
+    n = web["pick"]
+    base = (f"**{len(g.nodes)}** species, **{len(g.edges)}** links. Trophic level 1 = eats nothing in the web "
+            "(basal); otherwise 1 + the average level of its prey, so omnivores sit between levels.")
+    if n is None:
+        return base + "\n\n*Click a species.*"
+    group = descendants(n) if web["mode"] == "source" else ancestors(n)
+    what = ("get energy from it, directly or not: its **source web**" if web["mode"] == "source"
+            else "it gets energy from: its **sink web**")
+    return (base + f"\n\n**{n.name}**: trophic level **{n.trophic:.2f}**, {n.role}. "
+            f"**{len(group)}** species {what}.")
+
+
+loop_note = Markdown("")
+lump_note = Markdown("")
+graphevents.clickNode = pick
+SPECIES.onChange = new_web
+CONNECT.onChange = new_web
+new_web()
+hoverFields("trophic", "role")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("Who eats whom", "Networks, Section 5.3.1")
+ui.layout(
+    right=Column(
+        Markdown("""### A food web
+Arrows run from **prey to predator**, the way energy flows. Height and colour
+show the **trophic level**: green at the bottom (plants, plankton), red at the
+top (top predators)."""),
+        Group("The web", SPECIES, CONNECT, Button("Another web", onClick=another)),
+        Dropdown(["Source web: who gets energy from it", "Sink web: where its energy comes from"],
+                 label="Click shows", onChange=set_mode),
+        Markdown(info),
+        Row(Button("Find loops", onClick=loops), Button("Lump trophic species", onClick=lump)),
+        loop_note, lump_note,
+        Chart(lambda: plotHistogram(trophic, 6))),
+    sizes={"right": 370},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: "webs from the niche model (Williams and Martinez 2000)"))

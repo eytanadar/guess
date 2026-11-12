@@ -146,6 +146,7 @@ tabs = Tabs(
     onChange=switch)
 
 degree_view()
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Three things to measure", "Networks, Chapter 1")
 ui.layout(
     right=Column(

@@ -1,0 +1,140 @@
+# Protein interactions and noisy experiments  (Newman, Networks, Section 5.1.2)
+# 134 yeast proteins from seven well-known complexes and pathways, with their
+# interactions from STRING (high confidence), taken here as the truth. Then a
+# simulated experiment: two-hybrid screens miss real interactions (false
+# negatives) and report ones that don't happen (false positives), by some
+# estimates up to half of what they report. Affinity purification pulls down
+# whole complexes, which must then be turned into pairs somehow.
+
+import random
+import networkx as nx
+
+makeFromFile("yeast-modules.gdf")
+NODE = {n.name: n for n in g.nodes}
+TRUE = {frozenset((e.node1.name, e.node2.name)) for e in g.edges}
+NAMES = sorted(NODE)
+colorize(module)
+legendFor(module)
+g.nodes.labelvisible = false
+miss = Slider(0, 0.8, 0.3, 0.05, label="false negatives: share of real interactions missed")
+fake = Slider(0, 0.7, 0.5, 0.05, label="false positives: share of reported interactions that are wrong")
+measured = set()
+
+
+def screen(v=None):
+    r = random.Random(4)
+    kept = {p for p in sorted(TRUE, key=sorted) if r.random() >= miss.value}
+    n_fake = int(round(len(kept) * fake.value / (1 - fake.value))) if fake.value < 1 else 0
+    wrong = set()
+    while len(wrong) < n_fake:
+        a, b = r.sample(NAMES, 2)
+        p = frozenset((a, b))
+        if p not in TRUE:
+            wrong.add(p)
+    measured.clear()
+    measured.update(kept | wrong)
+    remove(list(g.edges))
+    for p in measured:
+        a, b = sorted(p)
+        e = addEdge(NODE[a], NODE[b])
+        e.color = "120,120,120,150" if p in TRUE else "220,60,50,170"
+        e.linestyle = "solid" if p in TRUE else "dashed"
+    louvainClusters()
+
+
+def screen_text():
+    if not measured:
+        return ""
+    true_found = len(measured & TRUE)
+    G = nx.Graph([tuple(p) for p in measured])
+    G0 = nx.Graph([tuple(p) for p in TRUE])
+    hubs0 = sorted(G0, key=lambda v: -G0.degree(v))[:10]
+    hubs = sorted(G, key=lambda v: -G.degree(v))[:10]
+    nmi = compareClusters(louvain_class, module)
+    return (f"The screen reports **{len(measured)}** interactions: **{true_found}** of the {len(TRUE)} real ones "
+            f"and **{len(measured) - true_found}** false (red, dashed).\n\n"
+            f"- communities found in the measured network match the real complexes at NMI **{nmi:.2f}**\n"
+            f"- **{len(set(hubs) & set(hubs0))}** of the 10 real hubs are still among the 10 best connected")
+
+
+# ---- pull-downs ---------------------------------------------------------------------------
+MODULES = sorted(set(n.module for n in g.nodes))
+pulled = {"module": None}
+
+
+def pulldown(mod):
+    pulled["module"] = mod
+    members = [v for v in NAMES if NODE[v].module == mod]
+    G0 = nx.Graph([tuple(p) for p in TRUE if all(NODE[v].module == mod for v in p)])
+    bait = max(members, key=lambda v: (G0.degree(v) if v in G0 else 0, v))
+    remove(list(g.edges))
+    for n in g.nodes:
+        n.visible = n.module == mod
+        n.labelvisible = n.module == mod
+    spoke = {frozenset((bait, v)) for v in members if v != bait}
+    matrix = {frozenset((a, b)) for i, a in enumerate(members) for b in members[i + 1:]}
+    real = {p for p in TRUE if all(v in members for v in p)}
+    model = spoke if model_pick.value.startswith("Spoke") else matrix
+    for p in model:
+        a, b = sorted(p)
+        e = addEdge(NODE[a], NODE[b])
+        e.color = "60,140,80" if p in real else "220,60,50,170"
+        e.linestyle = "solid" if p in real else "dashed"
+    NODE[bait].labelvisible = true
+    pulled.update(bait=bait, real=real, model=model)
+    center([NODE[v] for v in members])
+
+
+def pull_text():
+    if not pulled["module"]:
+        return "*Choose a complex.*"
+    real, model = pulled["real"], pulled["model"]
+    hit = len(real & model)
+    return (f"Bait: **{pulled['bait']}**. The pull-down finds all {len({v for p in model for v in p})} members of "
+            f"the **{pulled['module']}** group. Recorded as **{model_pick.value.split(':')[0].lower()}**: "
+            f"{len(model)} edges, of which **{hit}** are real interactions (green) and **{len(model) - hit}** "
+            f"are not (red); **{len(real) - hit}** real ones are left out.")
+
+
+def switch(title):
+    for n in g.nodes:
+        n.visible = true
+        n.labelvisible = false
+    if title == "Noisy screens":
+        screen()
+        center()
+    else:
+        pulldown(pulled["module"] or MODULES[0])
+
+
+model_pick = Dropdown(["Spoke: bait to each prey", "Matrix: every pair"], label="Record as",
+                      onChange=lambda v: pulldown(pulled["module"] or MODULES[0]))
+miss.onChange = screen
+fake.onChange = screen
+screen()
+hoverFields("module", "description")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("Protein interactions and noisy experiments", "Networks, Section 5.1.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Measuring who binds to whom
+134 yeast proteins from seven complexes and pathways (colours), with their
+interactions from STRING taken as the truth. Run a simulated experiment and
+see what survives."""),
+        Tabs(
+            Tab("Noisy screens",
+                Markdown("""A **two-hybrid screen** tests pairs of proteins. It's cheap and fast, but
+it misses some real interactions and reports some that never happen."""),
+                miss, fake, Markdown(screen_text)),
+            Tab("Pull-downs",
+                Markdown("""**Affinity purification** tags one protein (the **bait**) and pulls down
+everything bound to it: a whole complex at once. To turn that into pairs,
+either join the bait to each protein found (**spoke**) or join everyone to
+everyone (**matrix**)."""),
+                Dropdown(MODULES, label="Complex", onChange=pulldown), model_pick, Markdown(pull_text)),
+            onChange=switch)),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: "data: STRING v12 (CC BY 4.0) · experiments simulated"))
+center()

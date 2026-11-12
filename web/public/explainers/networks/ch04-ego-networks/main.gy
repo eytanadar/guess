@@ -30,10 +30,11 @@ estimates = []           # (egos interviewed, estimated mean degree, estimated c
 
 
 def plain():
-    g.nodes.color = "200,205,215"
-    g.nodes.width = g.nodes.height = 7
-    g.edges.color = "170,170,170,40"
-    g.edges.width = 0.6
+    g.nodes.strokecolor = "90,95,110"
+    g.nodes.color = "175,185,205"
+    g.nodes.width = g.nodes.height = 9
+    g.edges.color = "170,170,170,70"
+    g.edges.width = 0.8
 
 
 def interview(k=10):
@@ -43,7 +44,8 @@ def interview(k=10):
     for v in egos:
         for u in G[v]:
             NODE[u].color = "245,170,60"
-            NODE[u].width = NODE[u].height = 9
+            NODE[u].width = NODE[u].height = 14
+            NODE[u].strokecolor = "150,90,0"
     alters_of = {v: set(G[v]) for v in egos}
     for e in g.edges:
         a, b = e.node1.name, e.node2.name
@@ -54,7 +56,8 @@ def interview(k=10):
                 e.color, e.width = "40,110,210,220", 1.6
     for v in egos:
         NODE[v].color = "220,40,40"
-        NODE[v].width = NODE[v].height = 13
+        NODE[v].width = NODE[v].height = 20
+        NODE[v].strokecolor = "90,0,0"
     k_hat = sum(G.degree(v) for v in egos) / len(egos)
     c_hat = sum(nx.clustering(G, v) for v in egos) / len(egos)
     estimates.append((len(egos), k_hat, c_hat))
@@ -122,11 +125,13 @@ def choose(n):
     est, true_n, hits, names, p = scale_up(n)
     for u in acquaintances(n.name):
         NODE[u].color = "245,200,120"
+        NODE[u].width = NODE[u].height = 11
     for u in hits:
         NODE[u].color = "220,40,40"
-        NODE[u].width = NODE[u].height = 11
+        NODE[u].width = NODE[u].height = 16
+        NODE[u].strokecolor = "90,0,0"
     n.color = "30,30,30"
-    n.width = n.height = 15
+    n.width = n.height = 22
     trials.append(est)
 
 
@@ -168,6 +173,7 @@ graphevents.clickNode = click
 share.onChange = lambda v: choose(person[0]) if person[0] is not None else None
 plain()
 hoverFields("surname", "degree")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Ego-centred surveys", "Networks, Section 4.2.1")
 ui.layout(
     right=Column(

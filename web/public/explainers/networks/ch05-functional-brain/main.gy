@@ -1,0 +1,145 @@
+# Brain networks from correlations  (Newman, Networks, Section 5.2.2)
+# Functional MRI records activity in each region of a living brain over time.
+# It doesn't see the wiring: a "functional" edge is drawn between two regions
+# whose activity rises and falls together. So the network you get depends on
+# the correlation threshold you choose. The activity here is simulated: 40
+# regions in four systems, each system sharing a slow signal of its own, with
+# a weaker signal shared by the whole brain.
+
+import math
+import random
+import numpy as np
+import networkx as nx
+
+SYSTEMS = {"visual": (0, 260), "motor": (-150, -40), "auditory": (190, 40), "default mode": (20, -200)}
+rng = np.random.default_rng(3)
+T = 240
+
+
+def slow(n):
+    x = np.zeros(n)
+    for t in range(1, n):
+        x[t] = 0.9 * x[t - 1] + rng.normal()
+    return x / x.std()
+
+
+shared = {s: slow(T) for s in SYSTEMS}
+whole = slow(T)
+regions, series = [], []
+for s, (cx, cy) in SYSTEMS.items():
+    for i in range(10):
+        a = 2 * math.pi * i / 10
+        regions.append((f"{s[:3]}{i + 1}", s, cx + 70 * math.cos(a), cy + 70 * math.sin(a)))
+        mix = 0.8 * shared[s] + 0.35 * whole + (0.3 * shared["auditory"] if s == "motor" else 0)
+        series.append(mix + 0.8 * rng.normal(size=T))
+X = np.array(series)
+C = np.corrcoef(X)
+N = len(regions)
+
+H = nx.Graph()
+for name_, s, px, py in regions:
+    H.add_node(name_, system=s, pos=(px, py))
+fromNetworkX(H)
+NODE = {r[0]: g.getNodeByName(r[0]) for r in regions}
+IDX = {r[0]: i for i, r in enumerate(regions)}
+colorize(system)
+legendFor(system)
+g.nodes.width = g.nodes.height = 16
+g.nodes.labelvisible = true
+cut = Slider(0.0, 0.9, 0.5, 0.05, label="draw an edge if correlation is at least")
+picked = [regions[0][0]]
+sweep = []
+
+
+def rebuild(v=None):
+    remove(list(g.edges))
+    for i in range(N):
+        for j in range(i + 1, N):
+            if C[i, j] >= cut.value:
+                e = addEdge(NODE[regions[i][0]], NODE[regions[j][0]])
+                e.weight = round(float(C[i, j]), 3)
+                e.color = "120,120,120,110"
+    if len(g.edges):
+        louvainClusters()
+
+
+def network_text():
+    m = len(g.edges)
+    dens = 2 * m / (N * (N - 1))
+    if not m:
+        return "No correlation is that strong: no edges."
+    groups = len(set(n.louvain_class for n in g.nodes))
+    nmi = compareClusters(louvain_class, system)
+    return (f"**{m}** edges ({100 * dens:.0f}% of all pairs). Communities found: **{groups}**, matching the "
+            f"four systems at NMI **{nmi:.2f}**.")
+
+
+def pick(n):
+    picked[0] = n.name
+
+
+def series_chart():
+    i = IDX[picked[0]]
+    j = max((k for k in range(N) if k != i), key=lambda k: C[i, k])
+    far = min(range(N), key=lambda k: C[i, k])
+    t = range(0, T, 2)
+    plotLine({picked[0]: [(k, float(X[i, k])) for k in t],
+              f"{regions[j][0]} (r = {C[i, j]:.2f})": [(k, float(X[j, k]) + 5) for k in t],
+              f"{regions[far][0]} (r = {C[i, far]:.2f})": [(k, float(X[far, k]) + 10) for k in t]},
+             title=f"Activity of {picked[0]} and two others", xlabel="time", ylabel="activity (offset)")
+
+
+def run_sweep():
+    sweep[:] = []
+    for k in range(0, 19):
+        th = k * 0.05
+        G = nx.Graph()
+        G.add_nodes_from(range(N))
+        G.add_edges_from((i, j) for i in range(N) for j in range(i + 1, N) if C[i, j] >= th)
+        dens = 100 * G.number_of_edges() / (N * (N - 1) / 2)
+        comm = nx.community.louvain_communities(G, seed=1) if G.number_of_edges() else [{v} for v in G]
+        lab = {v: c for c, grp in enumerate(comm) for v in grp}
+        truth = [regions[v][1] for v in range(N)]
+        sweep.append((th, dens, 100 * nmi_score(truth, [lab[v] for v in range(N)])))
+
+
+def nmi_score(a, b):
+    from collections import Counter
+    n = len(a)
+    pa, pb, pab = Counter(a), Counter(b), Counter(zip(a, b))
+    mi = sum(c / n * math.log(c * n / (pa[x] * pb[y])) for (x, y), c in pab.items())
+    ha = -sum(c / n * math.log(c / n) for c in pa.values())
+    hb = -sum(c / n * math.log(c / n) for c in pb.values())
+    return 2 * mi / (ha + hb) if ha + hb else 1.0
+
+
+def sweep_chart():
+    if sweep:
+        plotLine({"% of pairs joined": [(t, d) for t, d, _ in sweep],
+                  "communities match systems (NMI × 100)": [(t, q) for t, _, q in sweep]},
+                 title="Effect of the threshold", xlabel="threshold", ylabel="%", dots=true)
+
+
+graphevents.clickNode = pick
+cut.onChange = rebuild
+rebuild()
+hoverFields("system")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("Brain networks from correlations", "Networks, Section 5.2.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Edges you infer, not see
+40 brain regions in four systems (simulated). Two regions get an edge when
+their activity is **correlated** above a threshold. Low thresholds join
+everything; high ones break the systems apart. Click a region to see its
+activity."""),
+        cut,
+        Markdown(network_text),
+        Tabs(Tab("Activity", Chart(series_chart)),
+             Tab("Matrix", Chart(lambda: showMatrix(order=system))),
+             Tab("Simulate", Button("Sweep the threshold", onClick=run_sweep), Chart(sweep_chart)))),
+    sizes={"right": 390},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{N} regions · {len(g.edges)} edges · activity simulated"))
+center()

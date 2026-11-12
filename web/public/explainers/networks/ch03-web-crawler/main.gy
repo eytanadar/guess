@@ -49,28 +49,38 @@ for n in g.nodes:
     n.width = n.height = 14 if n.name.endswith("_0") else 9
 g.edges.color = "150,150,150,90"
 g.edges.width = 1
+OUT = {}
+for e in g.edges:
+    OUT.setdefault(e.node1.name, []).append(e)
 
-crawl = {"seen": set(), "queue": deque(), "done": [], "start": None, "timer": None, "now": None}
+
+def plain_edges():
+    g.edges.color = "150,150,150,90"
+    g.edges.width = 1
+    g.edges.linestyle = "solid"
+
+crawl = {"trace": [], "seen": set(), "queue": deque(), "done": [], "start": None, "timer": None, "now": None}
 COL = {"unseen": "200,200,200", "queued": "245,190,40", "done": "60,120,210", "now": "220,40,40"}
 
 
+SIZE = {"now": 24, "done": 14, "queued": 14, "unseen": 9}
+
+
 def colour():
+    done = set(crawl["done"])
     for v, n in NODE.items():
-        if v == crawl["now"]:
-            n.color = COL["now"]
-        elif v in crawl["done"]:
-            n.color = COL["done"]
-        elif v in crawl["seen"]:
-            n.color = COL["queued"]
-        else:
-            n.color = COL["unseen"]
+        st = ("now" if v == crawl["now"] else "done" if v in done else "queued" if v in crawl["seen"] else "unseen")
+        n.color = COL[st]
+        n.width = n.height = SIZE[st] + (4 if v.endswith("_0") else 0)
+        n.strokecolor = "40,40,40" if st != "unseen" else "150,150,150"
 
 
 def start(n):
     stop_play()
-    crawl.update(seen={n.name}, queue=deque([n.name]), done=[], start=n.name, now=None)
+    crawl.update(seen={n.name}, queue=deque([n.name]), done=[], start=n.name, now=None, trace=[(0, 0, 1)])
     g.nodes.labelvisible = false
     n.labelvisible = true
+    plain_edges()
     colour()
 
 
@@ -85,18 +95,36 @@ def step():
         colour()
         return
     v = q.popleft()
+    for e in g.edges:                     # the previous page's links stop moving
+        if e.linestyle == "flow":
+            e.linestyle = "solid"
+            e.width = 1.6
     crawl["now"] = v
     crawl["done"].append(v)
-    for w in G.successors(v):
-        if w not in crawl["seen"]:
+    for e in OUT.get(v, []):              # this page's links: orange if they found a new page
+        w = e.node2.name
+        new = w not in crawl["seen"]
+        e.color = "240,150,30" if new else "120,140,190,160"
+        e.width = 3 if new else 1.6
+        e.linestyle = "flow"
+        if new:
             crawl["seen"].add(w)
             q.append(w)
+    crawl["trace"].append((len(crawl["done"]), len(crawl["done"]), len(q)))
     colour()
+
+
+def crawl_step():
+    if not crawl["queue"]:
+        step()
+        return False
+    step()
+    return len(crawl["queue"]) if crawl["queue"] else False
 
 
 def play():
     if crawl["timer"] is None:
-        crawl["timer"] = every(0.3, step)
+        crawl["timer"] = everyPaced(crawl_step, slow=0.9, fast=0.12)
         go.text = "Pause"
     else:
         stop_play()
@@ -126,6 +154,13 @@ def store_text():
             f"({len(q)}), oldest first:\n\n{head or '- (empty)'}{more}")
 
 
+def crawl_chart():
+    tr = crawl.get("trace") or []
+    if len(tr) > 1:
+        plotLine({"pages downloaded": [(t, d) for t, d, _ in tr], "URLs waiting in the store": [(t, q) for t, _, q in tr]},
+                 title="The crawl so far", xlabel="downloads", ylabel="pages")
+
+
 def result_text():
     if crawl["start"] is None or crawl["queue"]:
         return ""
@@ -141,6 +176,7 @@ def result_text():
 def every_start():
     stop_play()
     crawl["start"] = None
+    plain_edges()
     reach = {v: len(nx.descendants(G, v)) + 1 for v in G}
     for v, n in NODE.items():
         n.reach = reach[v]
@@ -166,6 +202,7 @@ go = Button("Play", onClick=play)
 every_note = Markdown("")
 colour()
 hoverFields("url", "site")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("How a crawler finds the Web", "Networks, Section 3.1")
 ui.layout(
     right=Column(
@@ -178,6 +215,7 @@ Red: downloading now · blue: downloaded · yellow: in the store · grey: not
 seen."""),
         Row(go, Button("Step", onClick=step), Button("Finish", onClick=finish)),
         Markdown(store_text),
+        Chart(crawl_chart),
         Markdown(result_text),
         Group("Does the start page matter?", Button("Try every start page", onClick=every_start), every_note)),
     sizes={"right": 350},

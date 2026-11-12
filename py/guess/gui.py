@@ -396,6 +396,46 @@ class Timer:
         return f"<timer {self._id}: every {self.seconds}s, {state}>" if self.repeat else f"<timer {self._id}: {state}>"
 
 
+class PacedTimer:
+    """Calls fn() repeatedly, slowly at first, faster in the middle and slowly
+    again near the end (see everyPaced)."""
+
+    def __init__(self, gui, fn, steps, slow, fast, ramp):
+        self._gui, self.fn, self.steps = gui, fn, steps
+        self.slow, self.fast, self.ramp = float(slow), float(fast), max(1, int(ramp))
+        self.count, self.running, self._timer = 0, True, None
+        self._schedule(None)
+
+    def delay(self, left):
+        """Seconds before the next call: slow for the first and last `ramp` calls."""
+        start = min(1.0, self.count / self.ramp)
+        end = 1.0 if left is None else min(1.0, max(0, left - 1) / self.ramp)
+        return self.slow + (self.fast - self.slow) * min(start, end)
+
+    def _schedule(self, left):
+        self._timer = self._gui.add_timer(self._tick, self.delay(left), False)
+
+    def _tick(self):
+        if not self.running:
+            return
+        result = self.fn()
+        self.count += 1
+        if result is False or (self.steps is not None and self.count >= self.steps):
+            self.running = False
+            return
+        left = result if isinstance(result, int) and not isinstance(result, bool) else (
+            self.steps - self.count if self.steps is not None else None)
+        self._schedule(left)
+
+    def stop(self):
+        self.running = False
+        if self._timer is not None:
+            self._timer.stop()
+
+    def __repr__(self):
+        return f"<paced timer: {self.count} calls, {'running' if self.running else 'stopped'}>"
+
+
 GRAPH_EVENTS = ("clickNode", "clickEdge", "shiftClickNode", "shiftClickEdge",
                 "mouseEnterNode", "mouseLeaveNode", "mouseEnterEdge", "mouseLeaveEdge")
 
@@ -747,6 +787,17 @@ def install(session):
         """Call fn() once after `seconds` seconds; returns a timer with .stop()."""
         return gui.add_timer(fn, seconds, False)
 
+    def everyPaced(fn, steps=None, slow=0.9, fast=0.15, ramp=3):
+        """everyPaced(step) calls step() again and again, slow-fast-slow, so a
+        process can be followed on screen: `slow` seconds apart for the first
+        `ramp` calls, speeding up to `fast`, and slowing down again over the
+        last `ramp` calls. Give steps= when the number of calls is known, or
+        let step() return how many calls are left (an int); returning False
+        stops. Returns a timer with .stop()."""
+        if not callable(fn):
+            raise GuessError("everyPaced needs a function to call")
+        return PacedTimer(gui, fn, None if steps is None else int(steps), slow, fast, ramp)
+
     def stopTimers():
         """Stop all timers."""
         for t in list(gui.timers.values()):
@@ -760,6 +811,7 @@ def install(session):
         session._bind(cls.__name__, cls, kind="command")
     session._bind("every", every, kind="command")
     session._bind("after", after, kind="command")
+    session._bind("everyPaced", everyPaced, kind="command")
     session.register_command("stopTimers", stopTimers)
     session._bind("openURL", openURL, kind="command")
     session._bind("ui", UI(gui), kind="graph")

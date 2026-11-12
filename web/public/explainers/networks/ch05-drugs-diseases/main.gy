@@ -1,0 +1,154 @@
+# Drug, target and protein networks  (Newman, Networks, Section 5.1.4)
+# Drugs act on targets in the body, usually proteins. Drugs and targets form a
+# bipartite network; projecting it onto the drugs links drugs that act on the
+# same target, a hint that they may interact. The pairs below are a small,
+# simplified, illustrative set of well-known drugs and their main targets
+# (gene symbols); real drug-target databases list many more.
+# A protein's folded chain is also a network: amino acids joined along the
+# chain and wherever the fold brings them close together. Ubiquitin's
+# structure (PDB 1UBQ) is bundled.
+
+import networkx as nx
+
+TARGETS = {
+    "aspirin": ["PTGS1", "PTGS2"], "ibuprofen": ["PTGS1", "PTGS2"], "naproxen": ["PTGS1", "PTGS2"],
+    "celecoxib": ["PTGS2"], "warfarin": ["VKORC1"], "atorvastatin": ["HMGCR"], "simvastatin": ["HMGCR"],
+    "metoprolol": ["ADRB1"], "propranolol": ["ADRB1", "ADRB2"], "salbutamol": ["ADRB2"],
+    "omeprazole": ["ATP4A"], "sertraline": ["SLC6A4"], "fluoxetine": ["SLC6A4"],
+    "imatinib": ["ABL1", "KIT", "PDGFRA"], "sunitinib": ["KIT", "PDGFRA", "FLT3", "KDR"],
+    "sorafenib": ["BRAF", "RAF1", "KDR", "KIT", "FLT3"], "vemurafenib": ["BRAF"],
+    "morphine": ["OPRM1"], "fentanyl": ["OPRM1"], "diazepam": ["GABRA1"], "zolpidem": ["GABRA1"],
+}
+CLASS = {"aspirin": "pain/inflammation", "ibuprofen": "pain/inflammation", "naproxen": "pain/inflammation",
+         "celecoxib": "pain/inflammation", "morphine": "pain/inflammation", "fentanyl": "pain/inflammation",
+         "warfarin": "heart and blood", "atorvastatin": "heart and blood", "simvastatin": "heart and blood",
+         "metoprolol": "heart and blood", "propranolol": "heart and blood", "salbutamol": "lungs",
+         "omeprazole": "stomach", "sertraline": "brain", "fluoxetine": "brain", "diazepam": "brain",
+         "zolpidem": "brain", "imatinib": "cancer", "sunitinib": "cancer", "sorafenib": "cancer",
+         "vemurafenib": "cancer"}
+
+
+def build_drugs():
+    B = nx.Graph()
+    for d, ts in TARGETS.items():
+        B.add_node(d, side="drug", treats=CLASS[d], label=d)
+        for t in ts:
+            B.add_node(t, side="target", treats="", label=t)
+            B.add_edge(d, t)
+    fromNetworkX(B)
+    renameGraph("drugs")
+    frLayout()
+    binPackLayout()                       # each cluster laid out, then the clusters packed together
+
+
+def look_drugs():
+    for n in g.nodes:
+        n.labelvisible = true
+        n.style = 2 if n.side == "drug" else 1
+        n.width = n.height = 16 if n.side == "drug" else 12
+    colorize(treats)
+    for n in g.nodes:
+        if n.side == "target":
+            n.color = "170,170,170"
+    g.edges.color = "150,150,150,160"
+
+
+VIEWS = ["Drugs and targets (bipartite)", "Drugs sharing a target", "Targets sharing a drug"]
+
+
+def drug_view(choice):
+    use("drugs")
+    for nm in graphNames()[1:]:
+        if nm != "protein":
+            closeGraph(nm)
+    if choice == VIEWS[0]:
+        look_drugs()
+        drug_note.text = ("Circles are drugs (coloured by what they treat), grey squares their targets. "
+                          "The cancer drugs share kinase targets; the painkillers share COX-1 and COX-2 (PTGS1/2).")
+    else:
+        keep = "drug" if choice == VIEWS[1] else "target"
+        project(side, keep, name="projection")
+        g.nodes.labelvisible = true
+        sizeBy(degree, 10, 26)
+        g.edges.color = "120,120,120,170"
+        louvainClusters()
+        if keep == "drug":
+            colorize(treats)
+        else:
+            colorize(louvain_class)
+        groups = len(set(n.louvain_class for n in g.nodes))
+        drug_note.text = (f"Two {keep}s are joined when they share a {'target' if keep == 'drug' else 'drug'} "
+                          f"({len(g.nodes)} nodes, {len(g.edges)} edges, {groups} groups). "
+                          + ("Drugs on the same target can add up or interfere, which is why such networks are "
+                             "used to look for interactions." if keep == "drug" else
+                             "Targets hit by the same drug are often related proteins: the kinases form one block."))
+    center()
+
+
+# ---- a protein as a network -------------------------------------------------------------
+cut = Slider(4, 12, 8, 0.5, label="contact if alpha carbons are closer than (Å)")
+
+
+def protein(v=None):
+    use("drugs")
+    if "protein" in graphNames():
+        closeGraph("protein")
+    newGraph("protein")
+    makeFromPDB("1ubq.pdb", cutoff=cut.value)
+    colorize(structure)
+    legendFor(structure)
+    hoverFields("aa", "seq", "structure")
+    for e in g.edges:
+        e.width = 3.5 if e.kind == "chain" else 0.8
+        e.color = "90,90,90" if e.kind == "chain" else "150,150,150,110"
+    g.nodes.width = g.nodes.height = 11
+    center()
+
+
+def protein_text():
+    if graphNames()[0] != "protein":
+        return ""
+    contacts = len([e for e in g.edges if e.kind == "contact"])
+    k = 2 * len(g.edges) / len(g.nodes)
+    return (f"**{len(g.nodes)}** amino acids, **{len(g.nodes) - 1}** links along the chain (thick) and "
+            f"**{contacts}** contacts from the fold (thin); mean degree **{k:.1f}**. Strands (β-sheet) lie "
+            "side by side, so they make long-range contacts between residues far apart in the sequence.")
+
+
+def switch(title):
+    if title.startswith("Drugs"):
+        drug_view(view_pick.value)
+    else:
+        if "protein" in graphNames():
+            use("protein")
+        else:
+            protein()
+        center()
+
+
+drug_note = Markdown("")
+view_pick = Dropdown(VIEWS, label="Show", onChange=drug_view)
+cut.onChange = protein
+build_drugs()
+drug_view(VIEWS[0])
+hoverFields("treats")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("Drug, target and protein networks", "Networks, Section 5.1.4")
+ui.layout(
+    right=Column(
+        Tabs(
+            Tab("Drugs and targets",
+                Markdown("""### Drugs and what they act on
+A small, simplified set of well-known drugs and their main protein targets
+(illustrative; real databases list many more targets per drug)."""),
+                view_pick, drug_note),
+            Tab("A protein as a network",
+                Markdown("""### Ubiquitin, residue by residue
+The 76 amino acids of ubiquitin (PDB entry 1UBQ), placed by the shape of the
+folded protein. Colour: helix, strand or coil."""),
+                cut, Markdown(protein_text)),
+            onChange=switch)),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))

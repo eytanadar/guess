@@ -327,6 +327,8 @@ body { display: flex; flex-direction: column; }
 .chart.matrix .matrix-group { stroke: var(--muted); stroke-width: .7; stroke-dasharray: 2 2; }
 .chart.matrix .tick, .chart.matrix .xtick { font-size: 6px; }
 .chart.matrix .matrix-col { text-anchor: start; }
+.chart.matrix .matrix-num { text-anchor: middle; dominant-baseline: central; fill: var(--muted); pointer-events: none; font-family: var(--mono); }
+.chart.matrix .matrix-num.on { fill: #fff; font-weight: 600; }
 .chart { width: 100%; height: auto; display: block; }
 .chart .mark { stroke-width: 0; transition: transform 120ms ease, opacity 120ms ease; transform-box: fill-box; }
 .chart rect.mark.hot, .chart rect.mark.linked { stroke: var(--accent); stroke-width: 1.5px; }
@@ -507,6 +509,11 @@ body.app .view-col { flex: 1 1 auto; }
 .toolbar .menu-pop button[aria-pressed=true]:hover { background: var(--selection); }
 .menu-pop kbd, .search-btn kbd { margin-left: auto; font: 11px var(--mono); color: var(--muted); }
 .menu-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 6px; }
+.menu-sub { position: relative; }
+.menu-sub-pop { top: -5px; left: calc(100% + 2px); }
+.menu-sub-pop.flip { left: auto; right: calc(100% + 2px); }
+.toolbar .menu-pop .menu-sub-title::after { content: "▸"; margin-left: auto; padding-left: 14px; color: var(--muted); }
+.toolbar .menu-pop .menu-sub-title[aria-expanded=true] { background: var(--selection); }
 .menu-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 4px 10px 2px 26px; }
 .toolbar .search-btn { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); min-width: 150px; }
 

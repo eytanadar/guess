@@ -18,42 +18,59 @@
     <header class="toolbar">
       <span class="brand">GUESS</span>
       <nav class="menubar" aria-label="Main menu">
-        <div class="menu-root">
-          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">File</button>
-          <div class="menu-pop" role="menu" hidden>
-            <button role="menuitem" id="open" title="Open a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, CSV, Excel, Cytoscape SIF, .cyjs, CX, XGMML and .cys, PSI-MI, SBML, BioPAX, KEGG, WikiPathways, RDF), a .py script, or an image — or drop files on the page">Open…<kbd>⌘O</kbd></button>
-            <button role="menuitem" id="sample">Sample graph</button>
-            <button role="menuitem" id="fresh-start" title="Forget everything GUESS saved in this browser (the autosaved session, command history, settings) and reload empty">Start fresh…</button>
-            <button role="menuitem" id="open-url">Open from URL…</button>
-            <button role="menuitem" id="paste-data" title="Paste an edge table, node table, adjacency matrix or list">Paste a table…</button>
-            <button role="menuitem" id="open-ndex">Open from NDEx…</button>
-            <button role="menuitem" data-run='makeFromSPARQL("""SELECT ?source ?sourceLabel ?target ?targetLabel WHERE {\n  ?source wdt:P737 ?target .\n  ?source wdt:P106 wd:Q4964182 .\n  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". }\n} LIMIT 400""")' title="Philosophers and who influenced them, from Wikidata">Wikidata example: philosophers' influences</button>
-            <hr />
-            <button role="menuitem" id="save" title="Download a .guess session file (graph, fields, states, hulls, legends)">Save session<kbd>⌘S</kbd></button>
-            <button role="menuitem" data-run='saveHistory("history.py")'>Save commands as script</button>
-            <button role="menuitem" id="share-link" title="A link that opens this graph and view (the data is in the link itself)">Copy share link</button>
-            <button role="menuitem" id="share-viewer" title="A link that opens this graph as a read-only viewer (no console)">Copy viewer link</button>
-            <hr />
-            <div class="menu-label">Export</div>
-            <button role="menuitem" id="png">Image (PNG)</button>
-            <button role="menuitem" id="svg">Vector image (SVG)</button>
-            <button role="menuitem" data-run='exportGEXF("graph.gexf")'>GEXF for Gephi</button>
-            <button role="menuitem" data-run='exportGraphML("graph.graphml")'>GraphML</button>
-            <button role="menuitem" data-run='exportCYJS("graph.cyjs")' title="Cytoscape.js JSON, which Cytoscape imports (exportCYJS)">Cytoscape (.cyjs)</button>
-            <button role="menuitem" data-run='exportGML("graph.gml")'>GML</button>
-            <button role="menuitem" data-run='exportDOT("graph.dot")'>Graphviz DOT</button>
-            <button role="menuitem" data-run='exportCSV("edges.csv"); exportCSV("nodes.csv", "nodes")'>CSV tables</button>
-            <button role="menuitem" id="export-notebook" title="The console's cells as a Jupyter notebook, with a snapshot of the graph">Jupyter notebook (.ipynb)</button>
-            <button role="menuitem" id="export-report" title="A self-contained HTML page: graph snapshot, legends and the cells you ran">Report (HTML)</button>
-            <button role="menuitem" data-run='exportHTML("graph.html")' title="One self-contained, interactive page: pan, zoom, search, hover and click nodes (exportHTML)">Interactive web page (HTML)</button>
-            <button role="menuitem" data-run='exportJSON("graph.json")' title="graphology JSON for sigma.js and other web libraries (exportJSON)">JSON for sigma.js</button>
-            <button role="menuitem" data-run='exportKML("graph.kml")' title="Placemarks and lines for Google Earth, from latitude and longitude fields (exportKML)">KML for Google Earth</button>
-            <button role="menuitem" data-run='exportSHP("graph.zip")' title="Point and line shapefiles for QGIS or ArcGIS, from latitude and longitude fields (exportSHP)">Shapefiles for GIS</button>
-            <hr />
-            <button role="menuitem" data-run="connectAssistant()" title="Let an AI assistant (Claude and other MCP clients) work here through mcp/guess-mcp.mjs; what it runs appears in the console">Connect AI assistant</button>
-          </div>
-        </div>
-        <div class="menu-root">
+<div class="menu-root">
+<button class="menu-title" aria-haspopup="menu" aria-expanded="false">File</button>
+<div class="menu-pop" role="menu" hidden>
+<button role="menuitem" id="open" title="Open a graph (GDF, GEXF, GraphML, GML, DOT, Pajek, CSV, Excel, Cytoscape SIF, .cyjs, CX, XGMML and .cys, PSI-MI, SBML, BioPAX, KEGG, WikiPathways, RDF), a .py script, or an image — or drop files on the page">Open…<kbd>⌘O</kbd></button>
+<button role="menuitem" id="open-url">Open from URL…</button>
+<button role="menuitem" id="paste-data" title="Paste an edge table, node table, adjacency matrix or list">Paste a table…</button>
+<button role="menuitem" id="sample">Sample graph</button>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Open from the web</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" id="open-ndex">Open from NDEx…</button>
+<button role="menuitem" data-run='makeFromSPARQL("""SELECT ?source ?sourceLabel ?target ?targetLabel WHERE {\n  ?source wdt:P737 ?target .\n  ?source wdt:P106 wd:Q4964182 .\n  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". }\n} LIMIT 400""")' title="Philosophers and who influenced them, from Wikidata">Wikidata example: philosophers' influences</button>
+<button role="menuitem" data-insert='makeFromWikipedia("Network science", limit=100)' title="Articles linked from a Wikipedia article (makeFromWikipedia): edit the title and press Shift+Enter">Wikipedia links…</button>
+<button role="menuitem" data-insert='makeFromOpenAlex("network visualization", limit=200)' title="Papers matching a search and the citations among them (makeFromOpenAlex)">OpenAlex citations…</button>
+<button role="menuitem" data-insert='makeFromSTRING(["BRCA1", "BRCA2", "TP53", "ATM"], add=20)' title="Proteins and their interactions from STRING (makeFromSTRING)">STRING protein interactions…</button>
+<button role="menuitem" data-insert='makeFromPDB("1ubq")' title="A protein as a residue contact network, from RCSB (makeFromPDB)">Protein structure (PDB)…</button>
+</div></div>
+<button role="menuitem" id="fresh-start" title="Forget everything GUESS saved in this browser (the autosaved session, command history, settings) and reload empty">Start fresh…</button>
+<hr />
+<button role="menuitem" id="save" title="Download a .guess session file (graph, fields, states, hulls, legends)">Save session<kbd>⌘S</kbd></button>
+<button role="menuitem" data-run='saveHistory("history.py")'>Save commands as script</button>
+<button role="menuitem" id="share-link" title="A link that opens this graph and view (the data is in the link itself)">Copy share link</button>
+<button role="menuitem" id="share-viewer" title="A link that opens this graph as a read-only viewer (no console)">Copy viewer link</button>
+<hr />
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Export image</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" id="png">Image (PNG)</button>
+<button role="menuitem" id="svg">Vector image (SVG)</button>
+<button role="menuitem" data-run="exportPDF(&quot;graph.pdf&quot;)">PDF</button>
+<button role="menuitem" data-run="exportJPG(&quot;graph.jpg&quot;)">JPEG</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Export data</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run='exportGEXF("graph.gexf")'>GEXF for Gephi</button>
+<button role="menuitem" data-run='exportGraphML("graph.graphml")'>GraphML</button>
+<button role="menuitem" data-run='exportCYJS("graph.cyjs")' title="Cytoscape.js JSON, which Cytoscape imports (exportCYJS)">Cytoscape (.cyjs)</button>
+<button role="menuitem" data-run='exportGML("graph.gml")'>GML</button>
+<button role="menuitem" data-run='exportDOT("graph.dot")'>Graphviz DOT</button>
+<button role="menuitem" data-run='exportCSV("edges.csv"); exportCSV("nodes.csv", "nodes")'>CSV tables</button>
+<button role="menuitem" data-run='exportJSON("graph.json")' title="graphology JSON for sigma.js and other web libraries (exportJSON)">JSON for sigma.js</button>
+<button role="menuitem" data-run='exportKML("graph.kml")' title="Placemarks and lines for Google Earth, from latitude and longitude fields (exportKML)">KML for Google Earth</button>
+<button role="menuitem" data-run='exportSHP("graph.zip")' title="Point and line shapefiles for QGIS or ArcGIS, from latitude and longitude fields (exportSHP)">Shapefiles for GIS</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Export page or notebook</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" id="export-notebook" title="The console's cells as a Jupyter notebook, with a snapshot of the graph">Jupyter notebook (.ipynb)</button>
+<button role="menuitem" id="export-report" title="A self-contained HTML page: graph snapshot, legends and the cells you ran">Report (HTML)</button>
+<button role="menuitem" data-run='exportHTML("graph.html")' title="One self-contained, interactive page: pan, zoom, search, hover and click nodes (exportHTML)">Interactive web page (HTML)</button>
+</div></div>
+<hr />
+<button role="menuitem" data-run="connectAssistant()" title="Let an AI assistant (Claude and other MCP clients) work here through mcp/guess-mcp.mjs; what it runs appears in the console">Connect AI assistant</button>
+</div>
+</div>
+<div class="menu-root">
           <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Edit</button>
           <div class="menu-pop" role="menu" hidden>
             <button role="menuitem" id="undo" title="Undo the last command">Undo<kbd>⌘Z</kbd></button>
@@ -73,102 +90,154 @@
             <button role="menuitem" data-run="showAll()">Show everything</button>
           </div>
         </div>
-        <div class="menu-root">
-          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">View</button>
-          <div class="menu-pop" role="menu" hidden>
-            <button role="menuitem" id="center" title="Fit the graph (or double-click the background)">Fit graph</button>
-            <hr />
-            <button role="menuitemcheckbox" id="btn-table" aria-pressed="false" title="Data table of nodes and edges (table())">Data table</button>
-            <button role="menuitemcheckbox" id="btn-style" aria-pressed="false" title="Map fields to colours, sizes, labels and shapes; saved styles">Style panel</button>
-            <button role="menuitemcheckbox" id="btn-filter" aria-pressed="false" title="Filter what is shown with live sliders">Filter panel</button>
-            <button role="menuitemcheckbox" id="btn-vars" aria-pressed="false" title="Your variables, saved states and styles">Variables</button>
-            <button role="menuitemcheckbox" id="btn-present" aria-pressed="false" title="Step through saved views with notes (← →)">Presentation</button>
-            <button role="menuitemcheckbox" id="btn-timeline" aria-pressed="false" title="Scrub or play through time (ranges or a field such as year)">Timeline</button>
-            <hr />
-            <button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges())">Curved edges</button>
-            <button role="menuitem" data-run="bundleEdges()" title="MINGLE: merge edges that run alike into bundles (good for large graphs)">Bundle edges (MINGLE)</button>
-            <button role="menuitem" data-run="bundleEdges(method='fdeb')" title="Force-directed edge bundling: smooth, organic bundles">Bundle edges (force-directed)</button>
-            <button role="menuitem" data-run="removeBundles()">Straighten edges</button>
-            <button role="menuitemcheckbox" id="label-outlines" aria-pressed="false">Label outlines</button>
-            <button role="menuitemcheckbox" id="label-cull" aria-pressed="false">Hide overlapping labels</button>
-            <button role="menuitem" id="hover-fields" title="Choose the fields the tooltip shows at once (hoverFields())">Hover fields…</button>
-            <button role="menuitemcheckbox" id="raise-changed" aria-pressed="true" title="Draw a node or edge on top of the others once its colour, size or label changes (raiseChanged())">Bring changed elements to the front</button>
-            <hr />
-            <button role="menuitem" id="find-output">Find in console output<kbd>⇧⌘F</kbd></button>
-            <button role="menuitemcheckbox" id="vim-keys" aria-pressed="false">Vim keys in the code cell</button>
-            <button role="menuitemcheckbox" id="show-moves" aria-pressed="false" title="Node drags are recorded as commands (undo, history, logs); show them in the console">Show node moves in the console</button>
-            <hr />
-            <div class="menu-label">Theme</div>
-            <button role="menuitemradio" data-theme-choice="auto" aria-pressed="false">Automatic</button>
-            <button role="menuitemradio" data-theme-choice="light" aria-pressed="false">Light</button>
-            <button role="menuitemradio" data-theme-choice="dark" aria-pressed="true">Dark</button>
-          </div>
-        </div>
-        <div class="menu-root">
-          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Layout</button>
-          <div class="menu-pop" role="menu" hidden>
-            <button role="menuitem" data-run="forceAtlas2Layout()">ForceAtlas2</button>
-            <button role="menuitem" data-run="forceAtlas2Layout(linLog=true)">ForceAtlas2 (LinLog clusters)</button>
-            <button role="menuitem" data-run="gemLayout()">GEM</button>
-            <button role="menuitem" data-run="kkLayout()">Kamada–Kawai</button>
-            <button role="menuitem" data-run="frLayout()">Fruchterman–Reingold</button>
-            <button role="menuitem" data-run="mdsLayout()">MDS</button>
-            <hr />
-            <button role="menuitem" data-run="circleLayout()">Circle</button>
-            <button role="menuitem" data-run="sugiyamaLayout()">Hierarchy</button>
-            <button role="menuitem" data-run="radialLayout(sel[0] if len(sel) else g.nodes[0])">Radial around selection</button>
-            <button role="menuitem" data-run="binPackLayout()">Pack components</button>
-            <button role="menuitem" data-run="hiveLayout()" title="Nodes on radial axes by role, placed by degree (hiveLayout(field, position) for your own axes)">Hive plot</button>
-            <button role="menuitem" data-run="treeLayout(sel[0] if len(sel) else None)">Tree (from selection)</button>
-            <hr />
-            <button role="menuitem" data-run="dotLayout()" title="Graphviz dot: layers, few crossings, edges routed around nodes">Layered, routed edges (dot)</button>
-            <button role="menuitem" data-run="neatoLayout()" title="Graphviz neato: distances on screen follow distances in the graph">Stress (neato)</button>
-            <button role="menuitem" data-run="sfdpLayout()" title="Graphviz sfdp: multilevel, for thousands of nodes">Large graph (sfdp)</button>
-            <button role="menuitem" data-run="drlLayout()" title="igraph DrL: tens of thousands of nodes, clusters far apart">Very large graph (DrL)</button>
-            <hr />
-            <button role="menuitem" data-run="removeOverlap()" title="Graphviz PRISM: separates nodes while keeping the layout's shape">Remove overlaps (keep shape)</button>
-            <button role="menuitem" data-run="noverlapLayout()">Remove overlaps</button>
-            <button role="menuitem" data-run="labelAdjustLayout()">Remove label overlaps</button>
-            <button role="menuitem" data-run="rotateLayout(90)">Rotate 90°</button>
-            <button role="menuitem" data-run="mirrorLayout()">Mirror</button>
-          </div>
-        </div>
-        <div class="menu-root">
-          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Analyze</button>
-          <div class="menu-pop" role="menu" hidden>
-            <button role="menuitem" data-run="graphStats()">Graph statistics</button>
-            <button role="menuitem" data-run="cl = louvainClusters()&#10;colorize(louvain_class)&#10;legendFor(louvain_class)">Find communities</button>
-            <button role="menuitem" data-run="cl = leidenClusters()&#10;colorize(leiden_class)&#10;legendFor(leiden_class)" title="igraph Leiden: every community internally connected">Find communities (Leiden)</button>
-            <hr />
-            <button role="menuitem" data-run="sizeBy(pagerank, 5, 40, 'sqrt')">Size by PageRank</button>
-            <button role="menuitem" data-run="sizeBy(betweenness, 5, 40, 'sqrt')">Size by betweenness</button>
-            <button role="menuitem" data-run="colorBy(closeness, '#fff3b0', '#d7263d')">Colour by closeness</button>
-            <hr />
-            <button role="menuitem" data-run="showOnly(giantComponent())">Largest component only</button>
-            <button role="menuitem" data-run="showOnly(kCore(2))">2-core only</button>
-            <button role="menuitem" data-run="plotHistogram(totaldegree)">Degree histogram</button>
-          </div>
-        </div>
-        <div class="menu-root">
-          <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Help</button>
-          <div class="menu-pop" role="menu" hidden>
-            <button role="menuitem" data-run="demo()" title="A guided tour, from selecting nodes to a small app (demo())">Take the tour</button>
-            <button role="menuitemcheckbox" id="btn-help" aria-pressed="false" title="Searchable commands and examples">Help and examples<kbd>F1</kbd></button>
-            <button role="menuitem" id="btn-gestures" title="Selecting, dragging with meaning, click tools and panels, with pictures">Mouse and gestures</button>
-            <button role="menuitem" id="btn-palette" title="Search commands, examples, nodes and values">Search everything…<kbd>⌘K</kbd></button>
-            <button role="menuitem" data-run="history()">Commands run so far</button>
-            <hr />
-            <button role="menuitem" id="btn-manual" title="The GUESS manual as a web page, PDF, EPUB or Word (opens in a new tab)">Manual</button>
-            <div class="menu-label">Example apps</div>
-            <button role="menuitem" data-app="apps/interactome/manifest.json" title="Biology: BRCA1's protein interactions, laid out by structure (opens in a new tab)">Interactome Explorer</button>
-            <button role="menuitem" data-app="apps/airports/manifest.json" title="Infrastructure: close an airport and see who is cut off (opens in a new tab)">Airport Disruption</button>
-            <button role="menuitem" data-app="apps/outbreak/manifest.json" title="Epidemiology: an outbreak in a simulated school (opens in a new tab)">Outbreak Explorer</button>
-            <hr />
-            <button role="menuitem" id="btn-cookbooks" title="GUESS cookbooks: runnable recipes for social networks, biology, text, infrastructure, software, investigations and ecology (opens in a new tab)">Cookbooks</button>
-            <button role="menuitem" id="btn-github" title="Source code, issues and releases (opens in a new tab)">GitHub</button>
-          </div>
-        </div>
-      </nav>
+<div class="menu-root">
+<button class="menu-title" aria-haspopup="menu" aria-expanded="false">View</button>
+<div class="menu-pop" role="menu" hidden>
+<button role="menuitem" id="center" title="Fit the graph (or double-click the background)">Fit graph</button>
+<hr />
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Panels</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitemcheckbox" id="btn-table" aria-pressed="false" title="Data table of nodes and edges (table())">Data table</button>
+<button role="menuitemcheckbox" id="btn-style" aria-pressed="false" title="Map fields to colours, sizes, labels and shapes; saved styles">Style panel</button>
+<button role="menuitemcheckbox" id="btn-filter" aria-pressed="false" title="Filter what is shown with live sliders">Filter panel</button>
+<button role="menuitemcheckbox" id="btn-vars" aria-pressed="false" title="Your variables, saved states and styles">Variables</button>
+<button role="menuitemcheckbox" id="btn-present" aria-pressed="false" title="Step through saved views with notes (← →)">Presentation</button>
+<button role="menuitemcheckbox" id="btn-timeline" aria-pressed="false" title="Scrub or play through time (ranges or a field such as year)">Timeline</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Edges</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges())">Curved edges</button>
+<button role="menuitem" data-run="bundleEdges()" title="MINGLE: merge edges that run alike into bundles (good for large graphs)">Bundle edges (MINGLE)</button>
+<button role="menuitem" data-run="bundleEdges(method='fdeb')" title="Force-directed edge bundling: smooth, organic bundles">Bundle edges (force-directed)</button>
+<button role="menuitem" data-run="removeBundles()">Straighten edges</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Labels and tooltips</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitemcheckbox" id="label-outlines" aria-pressed="false">Label outlines</button>
+<button role="menuitemcheckbox" id="label-cull" aria-pressed="false">Hide overlapping labels</button>
+<button role="menuitem" id="hover-fields" title="Choose the fields the tooltip shows at once (hoverFields())">Hover fields…</button>
+<button role="menuitem" data-run="hideOverlappingLabels(false); optimizeLabels()" title="optimizeLabels(): move labels around their nodes so fewer overlap">Place labels to avoid overlaps</button>
+</div></div>
+<button role="menuitemcheckbox" id="raise-changed" aria-pressed="true" title="Draw a node or edge on top of the others once its colour, size or label changes (raiseChanged())">Bring changed elements to the front</button>
+<hr />
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Console</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" id="find-output">Find in console output<kbd>⇧⌘F</kbd></button>
+<button role="menuitemcheckbox" id="vim-keys" aria-pressed="false">Vim keys in the code cell</button>
+<button role="menuitemcheckbox" id="show-moves" aria-pressed="false" title="Node drags are recorded as commands (undo, history, logs); show them in the console">Show node moves in the console</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Theme</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitemradio" data-theme-choice="auto" aria-pressed="false">Automatic</button>
+<button role="menuitemradio" data-theme-choice="light" aria-pressed="false">Light</button>
+<button role="menuitemradio" data-theme-choice="dark" aria-pressed="true">Dark</button>
+</div></div>
+</div>
+</div>
+<div class="menu-root">
+<button class="menu-title" aria-haspopup="menu" aria-expanded="false">Layout</button>
+<div class="menu-pop" role="menu" hidden>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Force-directed</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="forceAtlas2Layout()">ForceAtlas2</button>
+<button role="menuitem" data-run="forceAtlas2Layout(linLog=true)">ForceAtlas2 (LinLog clusters)</button>
+<button role="menuitem" data-run="gemLayout()">GEM</button>
+<button role="menuitem" data-run="kkLayout()">Kamada–Kawai</button>
+<button role="menuitem" data-run="frLayout()">Fruchterman–Reingold</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Distances</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="mdsLayout()">MDS</button>
+<button role="menuitem" data-run="neatoLayout()" title="Graphviz neato: distances on screen follow distances in the graph">Stress (neato)</button>
+<button role="menuitem" data-run="umapLayout()" title="umapLayout(): tight, well-separated islands for clusters">UMAP (clusters apart)</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Large graphs</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="sfdpLayout()" title="Graphviz sfdp: multilevel, for thousands of nodes">Large graph (sfdp)</button>
+<button role="menuitem" data-run="drlLayout()" title="igraph DrL: tens of thousands of nodes, clusters far apart">Very large graph (DrL)</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Shapes</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="circleLayout()">Circle</button>
+<button role="menuitem" data-run="sugiyamaLayout()">Hierarchy</button>
+<button role="menuitem" data-run="dotLayout()" title="Graphviz dot: layers, few crossings, edges routed around nodes">Layered, routed edges (dot)</button>
+<button role="menuitem" data-run="radialLayout(sel[0] if len(sel) else g.nodes[0])">Radial around selection</button>
+<button role="menuitem" data-run="treeLayout(sel[0] if len(sel) else None)">Tree (from selection)</button>
+<button role="menuitem" data-run="hiveLayout()" title="Nodes on radial axes by role, placed by degree (hiveLayout(field, position) for your own axes)">Hive plot</button>
+<button role="menuitem" data-run="concentricLayout(degree)" title="concentricLayout(degree): the best-connected nodes in the middle">Rings by degree</button>
+<button role="menuitem" data-run="binPackLayout()">Pack components</button>
+</div></div>
+<hr />
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Adjust</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="removeOverlap()" title="Graphviz PRISM: separates nodes while keeping the layout's shape">Remove overlaps (keep shape)</button>
+<button role="menuitem" data-run="noverlapLayout()">Remove overlaps</button>
+<button role="menuitem" data-run="labelAdjustLayout()">Remove label overlaps</button>
+<button role="menuitem" data-run="rotateLayout(90)">Rotate 90°</button>
+<button role="menuitem" data-run="mirrorLayout()">Mirror</button>
+</div></div>
+</div>
+</div>
+<div class="menu-root">
+<button class="menu-title" aria-haspopup="menu" aria-expanded="false">Analyze</button>
+<div class="menu-pop" role="menu" hidden>
+<button role="menuitem" data-run="graphStats()">Graph statistics</button>
+<button role="menuitem" data-run="report()" title="report(): sizes, components, degrees, hubs and communities in one summary">Report on the graph</button>
+<hr />
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Communities</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="cl = louvainClusters()&#10;colorize(louvain_class)&#10;legendFor(louvain_class)">Find communities</button>
+<button role="menuitem" data-run="cl = leidenClusters()&#10;colorize(leiden_class)&#10;legendFor(leiden_class)" title="igraph Leiden: every community internally connected">Find communities (Leiden)</button>
+<button role="menuitem" data-run="cl = infomapClusters()&#10;colorize(infomap_class)&#10;legendFor(infomap_class)" title="igraph Infomap: communities that trap a random walker; good for directed graphs">Find communities (Infomap)</button>
+<button role="menuitem" data-run="cl = labelPropagationClusters()&#10;colorize(lpa_class)&#10;legendFor(lpa_class)" title="Fast: each node takes the label most of its neighbours have">Find communities (label propagation)</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Centrality</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="sizeBy(degree, 5, 40, &quot;sqrt&quot;)">Size by degree</button>
+<button role="menuitem" data-run="sizeBy(pagerank, 5, 40, 'sqrt')">Size by PageRank</button>
+<button role="menuitem" data-run="sizeBy(betweenness, 5, 40, 'sqrt')">Size by betweenness</button>
+<button role="menuitem" data-run="sizeBy(eigenvector, 5, 40, &quot;sqrt&quot;)">Size by eigenvector centrality</button>
+<button role="menuitem" data-run="colorBy(closeness, '#fff3b0', '#d7263d')">Colour by closeness</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Structure</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="showOnly(giantComponent())">Largest component only</button>
+<button role="menuitem" data-run="showOnly(kCore(2))">2-core only</button>
+<button role="menuitem" data-run="select(bridges())" title="bridges(): edges whose removal splits the graph">Select bridges</button>
+<button role="menuitem" data-run="select(cutNodes())" title="cutNodes(): nodes whose removal splits the graph">Select cut nodes</button>
+<button role="menuitem" data-run="triadCensus()" title="triadCensus(): counts of the 16 kinds of three-node pattern (directed graphs)">Triad census</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Charts</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="plotHistogram(totaldegree)">Degree histogram</button>
+<button role="menuitem" data-run="plotFrequency(degree, log=true)" title="plotFrequency(degree, log=true): a power law is a straight line">Degree distribution (log–log)</button>
+<button role="menuitem" data-run="showMatrix()" title="showMatrix(order=field) sorts rows and columns by a field">Adjacency matrix</button>
+</div></div>
+</div>
+</div>
+<div class="menu-root">
+<button class="menu-title" aria-haspopup="menu" aria-expanded="false">Help</button>
+<div class="menu-pop" role="menu" hidden>
+<button role="menuitem" data-run="demo()" title="A guided tour, from selecting nodes to a small app (demo())">Take the tour</button>
+<button role="menuitemcheckbox" id="btn-help" aria-pressed="false" title="Searchable commands and examples">Help and examples<kbd>F1</kbd></button>
+<button role="menuitem" id="btn-gestures" title="Selecting, dragging with meaning, click tools and panels, with pictures">Mouse and gestures</button>
+<button role="menuitem" id="btn-palette" title="Search commands, examples, nodes and values">Search everything…<kbd>⌘K</kbd></button>
+<button role="menuitem" data-run="history()">Commands run so far</button>
+<hr />
+<button role="menuitem" id="btn-manual" title="The GUESS manual as a web page, PDF, EPUB or Word (opens in a new tab)">Manual</button>
+<button role="menuitem" id="btn-cookbooks" title="GUESS cookbooks: runnable recipes for social networks, biology, text, infrastructure, software, investigations and ecology (opens in a new tab)">Cookbooks</button>
+<button role="menuitem" id="btn-explainers" title="Interactive programs for each section of Newman's Networks (opens in a new tab)">Networks explainers</button>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Example apps</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-app="apps/interactome/manifest.json" title="Biology: BRCA1's protein interactions, laid out by structure (opens in a new tab)">Interactome Explorer</button>
+<button role="menuitem" data-app="apps/airports/manifest.json" title="Infrastructure: close an airport and see who is cut off (opens in a new tab)">Airport Disruption</button>
+<button role="menuitem" data-app="apps/outbreak/manifest.json" title="Epidemiology: an outbreak in a simulated school (opens in a new tab)">Outbreak Explorer</button>
+</div></div>
+<hr />
+<button role="menuitem" id="btn-github" title="Source code, issues and releases (opens in a new tab)">GitHub</button>
+</div>
+</div>
+</nav>
       <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.gml,.dot,.gv,.dl,.csv,.tsv,.txt,.tab,.json,.xlsx,.xlsm,.ttl,.nt,.n3,.rdf,.owl,.sif,.nnf,.cyjs,.cx,.cx2,.xgmml,.cys,.mitab,.psimitab,.mif,.psi,.sbml,.kgml,.gpml,.biopax,.py,.gy,image/*" multiple hidden />
       <span class="toolgroup" role="group" aria-label="Click tool">
         <button data-tool="select" aria-pressed="true" title="Click a node to highlight its neighbourhood (again, or Esc, to clear); shift-drag box, alt-drag lasso">Select</button>

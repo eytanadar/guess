@@ -99,7 +99,10 @@ The window has three parts:
   You can drag the divider between the graph and the console. On a narrow
   screen the console moves below the graph.
 - **The menu bar** (top): *File*, *Edit*, *View*, *Layout*, *Analyze* and
-  *Help*, then the click tools (*Select*, *Lens*, *Path*, *Heat*, *Paint*,
+  *Help*. Longer menus group their items in submenus (▸): hover over one, or
+  use the arrow keys. Some items, such as *File → Open from the web →
+  Wikipedia links…*, put a command in the code cell for you to edit and run.
+  Then come the click tools (*Select*, *Lens*, *Path*, *Heat*, *Paint*,
   *Cluster* and a paint colour), a *Search* box, *Stop*, and a status line.
 
 ![The menus collect the commands you'd otherwise type. Every menu item runs a command, and the command shows up in the console, so you can learn the language by using the menus.](img/menus.png){width=70%}
@@ -138,8 +141,10 @@ There are several ways in:
   names, the name you probably meant. Click *details* for the full Python
   traceback.
 - **Help → Manual** opens this manual in a new tab, as a web page, PDF, EPUB
-  or Word file. **Help → GitHub** opens the project's page, with the source
-  code and issue tracker.
+  or Word file. **Help → Cookbooks** has runnable recipes by field, and
+  **Help → Networks explainers** small interactive programs for each section
+  of Mark Newman's textbook *Networks*. **Help → GitHub** opens the project's
+  page, with the source code and issue tracker.
 
 ![The help panel, searching for "color". Commands come first, then examples.](img/help.png){width=85%}
 
@@ -585,7 +590,7 @@ is v1's department. Fields come from the file you loaded, from the built-in
 set (section 4.2), from commands that add them (`louvainClusters()` adds
 `louvain_class`), and from `addNodeField`/`addEdgeField`. The node and
 edge fields are listed by `getNodeSchema()` and `getEdgeSchema()`. The
-*View → Data table* shows them all.
+*View → Panels → Data table* shows them all.
 
 Fields know a little about themselves:
 
@@ -734,7 +739,7 @@ select()                       # clear it
 
 ## 5.5 The data table
 
-*View → Data table* (or `table()`) opens a spreadsheet of the nodes or edges
+*View → Panels → Data table* (or `table()`) opens a spreadsheet of the nodes or edges
 below the graph. `table(dept == 'dept3')` shows just those. You can sort by a
 column, filter, and double-click a cell to edit it. An edit is an ordinary
 command and can be undone. Selecting rows selects the nodes, and vice versa;
@@ -1000,7 +1005,7 @@ behaves like `colorBy`.
 
 ![colorBy(betweenness, yellow, red); sizeBy(betweenness, 5, 40, 'log'); GradientLegend(...)](img/color-by.png){width=75%}
 
-If you'd rather click than type, the **Style panel** (*View → Style panel*)
+If you'd rather click than type, the **Style panel** (*View → Panels → Style panel*)
 does the same mappings with menus: pick nodes or edges, a property, a field
 and a mapping. It shows the command it runs. You can save a set of mappings as
 a named style, and `defineStyle`/`applyStyle` do the same from code:
@@ -1114,7 +1119,7 @@ showAll()
 ```
 
 The filters return sets, so they combine with queries:
-`showOnly(kCore(3) & (dept == 'dept1'))`. The **Filter panel** (*View →
+`showOnly(kCore(3) & (dept == 'dept1'))`. The **Filter panel** (*View → Panels →
 Filter panel*) stacks filters with sliders and checkboxes, if you'd rather
 build them by hand.
 
@@ -1413,7 +1418,8 @@ expands it.
 | `startImages("frames.zip")` … `stopImages()` | every image exported in between, in one zip file (below) |
 
 In a browser, "saving a file" means downloading it, so these files go to your
-downloads folder. The *File* menu has the common ones, plus:
+downloads folder. *File → Export image*, *Export data* and *Export page or
+notebook* have the common ones, plus:
 
 - **Export notebook** writes the session as a Jupyter notebook (one cell per
   command).
@@ -1562,7 +1568,7 @@ showTime(1995, year, 5)         # only the last five years
 showTime(3)                     # by ranges: only what exists at time 3
 ```
 
-The **timeline** (*View → Timeline*) gives you a slider and a play button for
+The **timeline** (*View → Panels → Timeline*) gives you a slider and a play button for
 the same thing. It finds number fields that look like time and plays through
 them.
 
@@ -1654,7 +1660,7 @@ alpha for a translucent one); `anchor=` places text by its `"start"`,
   The graph's background follows the theme, unless you set one with
   `setDisplayBackground(black)`. `setDisplayBackground(None)` follows the
   theme again.
-- **Edges**: *View → Curved edges* or `curvedEdges()`.
+- **Edges**: *View → Edges → Curved edges* or `curvedEdges()`.
   `setEdgeColorMode("mixed")` draws each edge in the colours of its two ends.
   Parallel edges between the same two nodes are always drawn as separate
   curves.
@@ -1741,7 +1747,8 @@ slide along their edge), are placed to avoid other labels, nodes and edges:
   exporting a figure.
 - `constantLabelSize()` keeps labels the same size on screen as you zoom.
   Each label appears once there is room for it and stays as you zoom further
-  in, so zooming in reveals more labels.
+  in, so zooming in reveals more labels. `constantLabelSize(size=14)` sets
+  that size in pixels (10 by default), for presentations and apps.
 
 On the sample graph with every label shown, placing them `outside` cuts
 label overlaps by about two thirds and edges crossing labels by about the
@@ -1773,7 +1780,7 @@ useful.
 The tooltip comes in two stages: the label straight away, so it doesn't
 get in the way as you sweep across the graph, and every field (with the
 code that last changed the element) once you stay on it for a moment. To
-see some fields at once, pick them in *View → Hover fields…* or name them:
+see some fields at once, pick them in *View → Labels and tooltips → Hover fields…* or name them:
 
 ```python
 hoverFields(dept, degree)               # node fields; edge fields go to edges
@@ -1810,7 +1817,7 @@ selected. Each drag is recorded as an ordinary command, such as
 `v12.x = 310.5; v12.y = -42`. It is one undo step, and `history()`,
 `saveHistory()`, `log()` and notebook export include it, so a saved
 script puts the nodes back where you left them. To keep the console readable,
-these commands are hidden. *View → Show node moves in the console* shows
+these commands are hidden. *View → Console → Show node moves in the console* shows
 them.
 
 After some commands, a drag also *means* something. GUESS knows
@@ -1926,7 +1933,7 @@ several things are selected, the function receives the selection.
 | `[n]` | fold or unfold a cell's output; hover it to highlight everything that cell changed |
 | `;` at the end of a line | don't print its value (`louvainClusters();`) |
 
-*View → Vim keys in the code cell* switches the editor to vim bindings.
+*View → Console → Vim keys in the code cell* switches the editor to vim bindings.
 
 Long results print compactly: a set of many groups (`groupBy(dept)`, the
 communities from `louvainClusters()`) shows as `21 groups (402 elements):
@@ -2040,6 +2047,25 @@ after(5, gemLayout)      # once, in 5 seconds
 A timer's code runs between your commands, so it never interrupts one. A
 handler that takes longer than its interval doesn't pile up behind itself.
 
+To animate a process so it can be followed, `everyPaced(step)` calls `step()`
+again and again, **slow-fast-slow**: slowly for the first few calls, faster in
+the middle, and slowly again near the end. Give `steps=` when you know how
+many calls there will be, or let `step()` return how many are left (it slows
+down as that number gets small); returning `False` stops it.
+
+```python
+reached = [v1]
+def spread_once():
+    new = [m for n in reached for m in n.getNeighbors() if m not in reached]
+    for m in new:
+        m.color = red
+    reached.extend(new)
+    return len(g.nodes) - len(reached) or False
+
+t = everyPaced(spread_once, slow=1.0, fast=0.2)
+t.stop()
+```
+
 ## 15.4 Example 4: an app
 
 `exportApp` packages the current session with a script that builds its
@@ -2152,7 +2178,7 @@ ui.title("GUESS")
 - `installPackage("name")` installs a pure-Python package from PyPI into the
   page, so you can `import` it.
 - Presentations: `addSlide("note")` saves the current view as a slide, and
-  *View → Present* steps through them with the arrow keys.
+  *View → Panels → Presentation* steps through them with the arrow keys.
   `showSlide(2)`, `moveSlide(…)`, `noteSlide(…)` and `removeSlide(…)` edit them.
 
 \newpage
@@ -2175,8 +2201,8 @@ long. *Share as viewer* adds `&app=1`, which hides the console.
 
 ## 16.3 Notebooks and reports
 
-*File → Export notebook* writes a Jupyter notebook of your commands.
-*File → Export report* writes a self-contained HTML page with the commands,
+*File → Export page or notebook → Jupyter notebook* writes a Jupyter notebook of your commands.
+*File → Export page or notebook → Report* writes a self-contained HTML page with the commands,
 their output and a picture of the graph. Use it to send someone what you
 found.
 

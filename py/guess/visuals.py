@@ -585,13 +585,18 @@ def install(session):
         view.labels["placement"] = m
         view.changed()
 
-    def constantLabelSize(on=True):
+    def constantLabelSize(on=True, size=None):
         """constantLabelSize() keeps labels the same size on screen as you zoom
         (they grow with the graph otherwise); each label appears once there is
         room for it and stays as you zoom further in, so zooming in reveals more
-        labels. Labels inside nodes keep fitting their nodes.
-        constantLabelSize(false) turns it off."""
+        labels. size= sets that size in pixels (default 10; a node's labelsize
+        still scales its own label). Labels inside nodes keep fitting their
+        nodes. constantLabelSize(false) turns it off."""
         view.labels["screen"] = bool(on)
+        if size is not None:
+            if float(size) <= 0:
+                raise GuessError("size is a label height in pixels, e.g. 14")
+            view.labels["screenSize"] = float(size)
         view.changed()
 
     def optimizeLabels(seconds=2):

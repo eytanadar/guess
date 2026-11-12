@@ -1,0 +1,149 @@
+# Five ways to draw a metabolic network  (Newman, Networks, Section 5.1.1)
+# Glycolysis, the ten reactions that turn glucose into pyruvate, as written in
+# any biochemistry textbook. The complete picture is a directed bipartite
+# network of metabolites and reactions (tripartite if the enzymes are added);
+# most published pictures are projections onto the metabolites, which lose
+# information. "Currency" metabolites such as ATP and NAD+ take part in many
+# reactions and turn into false hubs.
+
+import networkx as nx
+
+# (enzyme, substrates, products)
+REACTIONS = [
+    ("hexokinase", ["glucose", "ATP"], ["glucose-6-P", "ADP"]),
+    ("phosphoglucose isomerase", ["glucose-6-P"], ["fructose-6-P"]),
+    ("phosphofructokinase", ["fructose-6-P", "ATP"], ["fructose-1,6-bisP", "ADP"]),
+    ("aldolase", ["fructose-1,6-bisP"], ["DHAP", "glyceraldehyde-3-P"]),
+    ("triose phosphate isomerase", ["DHAP"], ["glyceraldehyde-3-P"]),
+    ("GAPDH", ["glyceraldehyde-3-P", "NAD+", "Pi"], ["1,3-bisphosphoglycerate", "NADH"]),
+    ("phosphoglycerate kinase", ["1,3-bisphosphoglycerate", "ADP"], ["3-phosphoglycerate", "ATP"]),
+    ("phosphoglycerate mutase", ["3-phosphoglycerate"], ["2-phosphoglycerate"]),
+    ("enolase", ["2-phosphoglycerate"], ["phosphoenolpyruvate", "H2O"]),
+    ("pyruvate kinase", ["phosphoenolpyruvate", "ADP"], ["pyruvate", "ATP"]),
+]
+CURRENCY = ["ATP", "ADP", "NAD+", "NADH", "Pi", "H2O"]
+MAIN = ["glucose", "glucose-6-P", "fructose-6-P", "fructose-1,6-bisP", "DHAP", "glyceraldehyde-3-P",
+        "1,3-bisphosphoglycerate", "3-phosphoglycerate", "2-phosphoglycerate", "phosphoenolpyruvate", "pyruvate"]
+
+
+def key(s):
+    return "m_" + "".join(c if c.isalnum() else "_" for c in s)
+
+
+POS = {}
+for i, m in enumerate(MAIN):
+    POS[key(m)] = (-90 if m == "DHAP" else 0, i * 70)
+for i, m in enumerate(CURRENCY):
+    POS[key(m)] = (-330, 80 + i * 120)
+for i, (enz, subs, prods) in enumerate(REACTIONS):
+    mid = (POS[key(subs[0])][1] + POS[key([p for p in prods if p not in CURRENCY][0])][1]) / 2
+    POS[f"r{i}"] = (170, mid)
+    POS[f"e{i}"] = (330, mid)
+
+VIEWS = ["Bipartite: metabolites and reactions", "Tripartite: with the enzymes",
+         "Metabolites only (undirected projection)", "Metabolites only (substrate → product)",
+         "Reactions only (sharing a metabolite)"]
+
+
+def build(view, currency):
+    keep = lambda m: currency or m not in CURRENCY
+    if view.startswith("Metabolites only (undirected"):
+        G = nx.Graph()
+    else:
+        G = nx.DiGraph()
+    def met(m):
+        G.add_node(key(m), label=m, kind="currency" if m in CURRENCY else "metabolite", pos=POS[key(m)])
+    for i, (enz, subs, prods) in enumerate(REACTIONS):
+        S = [m for m in subs if keep(m)]
+        P = [m for m in prods if keep(m)]
+        for m in S + P:
+            met(m)
+        if view.startswith(("Bipartite", "Tripartite")):
+            G.add_node(f"r{i}", label=f"reaction {i + 1}", kind="reaction", pos=POS[f"r{i}"])
+            G.add_edges_from((key(m), f"r{i}") for m in S)
+            G.add_edges_from((f"r{i}", key(m)) for m in P)
+        elif view.startswith("Metabolites only (undirected"):
+            both = S + P
+            G.add_edges_from((key(a), key(b)) for j, a in enumerate(both) for b in both[j + 1:])
+        elif view.startswith("Metabolites only (substrate"):
+            G.add_edges_from((key(a), key(b)) for a in S for b in P)
+    if view.startswith("Reactions only"):
+        G = nx.Graph()
+        for i in range(len(REACTIONS)):
+            G.add_node(f"r{i}", label=f"{i + 1}: {REACTIONS[i][0]}", kind="reaction", pos=(170, POS[f"r{i}"][1]))
+        for i, (_, s1, p1) in enumerate(REACTIONS):
+            for j in range(i + 1, len(REACTIONS)):
+                _, s2, p2 = REACTIONS[j]
+                if any(keep(m) for m in set(s1 + p1) & set(s2 + p2)):
+                    G.add_edge(f"r{i}", f"r{j}")
+        for v, (i, r) in zip(list(G), enumerate(REACTIONS)):
+            G.nodes[v]["pos"] = (300 * (i % 2), i * 70)
+    fromNetworkX(G)
+    if view.startswith("Tripartite"):
+        for i, (enz, _, _) in enumerate(REACTIONS):
+            e = addNode(f"e{i}", label=enz, kind="enzyme", x=POS[f"e{i}"][0], y=POS[f"e{i}"][1])
+            addUndirectedEdge(e, g.getNodeByName(f"r{i}"))
+    look()
+
+
+SHAPE = {"metabolite": 2, "currency": 2, "reaction": 1, "enzyme": 11}
+COLOUR = {"metabolite": "90,150,220", "currency": "240,150,40", "reaction": "120,120,120", "enzyme": "60,170,110"}
+
+
+def look():
+    for n in g.nodes:
+        n.style = SHAPE[n.kind]
+        n.color = COLOUR[n.kind]
+        n.width = n.height = 10 if n.kind == "reaction" else 14
+        n.labelvisible = true
+    g.edges.color = "140,140,140,170"
+    g.edges.width = 1.4
+    center()
+
+
+state = {"view": VIEWS[0], "currency": True}
+
+
+def pick(v):
+    state["view"] = v
+    build(state["view"], state["currency"])
+
+
+def currency_on(on):
+    state["currency"] = bool(on)
+    build(state["view"], state["currency"])
+
+
+def counts():
+    deg = sorted(((n.degree, n.label) for n in g.nodes if n.kind != "reaction" or state["view"].startswith("Reactions")),
+                 reverse=True)[:3]
+    note = {
+        VIEWS[0]: "Arrows run from substrates into a reaction and out to its products. Nothing is lost.",
+        VIEWS[1]: "Enzymes (triangles) don't take part in reactions, they make them go: undirected edges.",
+        VIEWS[2]: "Two metabolites are joined if they take part in the same reaction. Simple, but you can no longer tell inputs from outputs.",
+        VIEWS[3]: "The usual wall chart: an arrow from each substrate to each product. A reaction with several inputs and outputs becomes several unrelated-looking edges.",
+        VIEWS[4]: "Projected the other way, reactions are joined if they share a metabolite.",
+    }[state["view"]]
+    return (f"{note}\n\n**{len(g.nodes)}** nodes, **{len(g.edges)}** edges. Best connected: "
+            + ", ".join(f"**{l}** ({d})" for d, l in deg) + ".")
+
+
+build(VIEWS[0], True)
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("Five ways to draw a metabolic network", "Networks, Section 5.1.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Glycolysis
+Ten reactions turn **glucose** into **pyruvate**. Metabolites are circles
+(blue; orange for **currency metabolites** like ATP and NAD⁺, which many
+reactions use), reactions are grey squares and enzymes green triangles."""),
+        Dropdown(VIEWS, label="Draw as", onChange=pick),
+        Checkbox("include currency metabolites", checked=true, onChange=currency_on),
+        Markdown(counts),
+        Markdown("""*Try:* the projections with and without currency metabolites. ATP and ADP
+become the best-connected "hubs", not because they matter more to the pathway
+but because they appear in so many reactions.""")),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: "glycolysis: 10 reactions, as in standard textbooks"))

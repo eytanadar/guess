@@ -1467,9 +1467,28 @@ let wireMenuRoot: (r: HTMLElement) => void = () => {};
   let openRoot: HTMLElement | null = null;
   const pop = (r: HTMLElement) => r.querySelector<HTMLElement>(".menu-pop")!;
   const title = (r: HTMLElement) => r.querySelector<HTMLElement>(".menu-title")!;
-  const items = (r: HTMLElement) => [...pop(r).querySelectorAll<HTMLButtonElement>("button:not([disabled])")];
+  // items the keyboard can reach: the menu's own, plus those of an open submenu
+  const items = (r: HTMLElement) => [...pop(r).querySelectorAll<HTMLButtonElement>("button:not([disabled])")]
+    .filter((b) => !b.closest(".menu-sub-pop[hidden]"));
+  const closeSubs = (r: HTMLElement, except?: Element | null) => {
+    for (const sp of pop(r).querySelectorAll<HTMLElement>(".menu-sub-pop")) {
+      if (sp.parentElement === except) continue;
+      sp.hidden = true;
+      sp.parentElement?.querySelector(".menu-sub-title")?.setAttribute("aria-expanded", "false");
+    }
+  };
+  const openSub = (r: HTMLElement, sub: HTMLElement, focusFirst = false) => {
+    closeSubs(r, sub);
+    const sp = sub.querySelector<HTMLElement>(".menu-sub-pop")!;
+    sp.hidden = false;
+    sub.querySelector(".menu-sub-title")!.setAttribute("aria-expanded", "true");
+    // open to the left when there's no room on the right
+    sp.classList.toggle("flip", sub.getBoundingClientRect().right + sp.offsetWidth > window.innerWidth - 8);
+    if (focusFirst) sp.querySelector<HTMLButtonElement>("button:not([disabled])")?.focus();
+  };
   const close = () => {
     if (!openRoot) return;
+    closeSubs(openRoot);
     pop(openRoot).hidden = true;
     title(openRoot).setAttribute("aria-expanded", "false");
     openRoot = null;
@@ -1495,14 +1514,46 @@ let wireMenuRoot: (r: HTMLElement) => void = () => {};
       }
     });
     pop(r).addEventListener("click", (ev) => {
-      if ((ev.target as HTMLElement).closest("button")) close();
+      const b = (ev.target as HTMLElement).closest("button");
+      if (!b) return;
+      if (b.classList.contains("menu-sub-title")) {
+        const sub = b.parentElement as HTMLElement;
+        const shown = !sub.querySelector<HTMLElement>(".menu-sub-pop")!.hidden;
+        if (shown) closeSubs(r);
+        else openSub(r, sub);
+        return;
+      }
+      close();
+    });
+    // hovering a submenu's title opens it; hovering another item of the menu closes it
+    pop(r).addEventListener("pointerover", (ev) => {
+      const b = (ev.target as HTMLElement).closest("button");
+      if (!b) return;
+      if (b.classList.contains("menu-sub-title")) openSub(r, b.parentElement as HTMLElement);
+      else if (!b.closest(".menu-sub-pop")) closeSubs(r);
     });
     pop(r).addEventListener("keydown", (ev) => {
       const list = items(r);
-      const k = list.indexOf(document.activeElement as HTMLButtonElement);
+      const active = document.activeElement as HTMLButtonElement;
+      const inSub = active?.closest(".menu-sub-pop");
+      if (ev.key === "ArrowRight" && active?.classList.contains("menu-sub-title")) {
+        ev.preventDefault();
+        openSub(r, active.parentElement as HTMLElement, true);
+        return;
+      }
+      if (ev.key === "ArrowLeft" && inSub) {
+        ev.preventDefault();
+        const t = inSub.parentElement!.querySelector<HTMLButtonElement>(".menu-sub-title")!;
+        closeSubs(r);
+        t.focus();
+        return;
+      }
       if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
         ev.preventDefault();
-        list[(k + (ev.key === "ArrowDown" ? 1 : list.length - 1)) % list.length]?.focus();
+        // move within the current level (the menu, or the open submenu)
+        const level = list.filter((b) => b.closest(".menu-sub-pop") === (inSub ?? null) || (!inSub && !b.closest(".menu-sub-pop")));
+        const j = level.indexOf(active);
+        level[(j + (ev.key === "ArrowDown" ? 1 : level.length - 1)) % level.length]?.focus();
       } else if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
         const roots = visibleRoots();
         const next = roots[(roots.indexOf(r) + (ev.key === "ArrowRight" ? 1 : roots.length - 1)) % roots.length];
@@ -1523,6 +1574,13 @@ let wireMenuRoot: (r: HTMLElement) => void = () => {};
     b.addEventListener("click", () => window.open(pageUrl(`?app=${encodeURIComponent(b.dataset.app!)}`), "_blank", "noopener"));
   }
   // menu items that run a Gython command
+  // data-insert: put code in the cell to edit before running (a title to change, a search)
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-insert]")) {
+    b.addEventListener("click", () => {
+      document.body.classList.remove("console-hidden");
+      term.insert(b.dataset.insert!);
+    });
+  }
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-run]")) {
     b.addEventListener("click", () => void term.submit(b.dataset.run!));
   }
@@ -1780,6 +1838,7 @@ function dragBehaviour(id: number, alt: boolean): DragBehaviour | null {
 $("#btn-gestures").addEventListener("click", () => void openSide("help", "gestures"));
 // the built manual is deployed next to the app (scripts/copy-manuals.mjs; the dev server serves it too)
 $("#btn-manual").addEventListener("click", () => window.open(new URL("manuals/", location.href).href, "_blank", "noopener"));
+$("#btn-explainers").addEventListener("click", () => window.open(new URL("explainers/networks/index.html", location.href).href, "_blank", "noopener"));
 $("#btn-cookbooks").addEventListener("click", () => window.open(new URL("manuals/cookbooks/", location.href).href, "_blank", "noopener"));
 $("#btn-github").addEventListener("click", () => window.open("https://github.com/eytanadar/guess", "_blank", "noopener"));
 const TIPS: Record<string, string> = {
@@ -2216,10 +2275,12 @@ const palette = new Palette(async () => {
   for (const e of idx.examples) items.push({ kind: "example", label: e.title, detail: e.code.split("\n")[0] + (e.code.includes("\n") ? " …" : "") + ` ${e.tags}`, run: () => term.insert(e.code) });
   for (const code of term.recent()) items.push({ kind: "recent", label: code.split("\n")[0], detail: code.includes("\n") ? "…" : "", run: () => term.insert(code) });
   for (const b of document.querySelectorAll<HTMLButtonElement>(".menu-pop button, [data-tool], #stop")) {
-    if (b.id === "btn-palette" || b.disabled) continue;
+    if (b.id === "btn-palette" || b.disabled || b.classList.contains("menu-sub-title")) continue;
     const label = [...b.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").trim();
     if (!label) continue;
-    const menu = b.closest(".menu-root")?.querySelector(".menu-title")?.textContent;
+    const sub = b.closest(".menu-sub")?.querySelector(".menu-sub-title")?.textContent;
+    const root = b.closest(".menu-root")?.querySelector(".menu-title")?.textContent;
+    const menu = root && sub ? `${root} › ${sub}` : root;
     items.push({ kind: "action", label: menu ? `${menu} › ${label}` : `Tool: ${label}`, detail: b.title || b.dataset.run || "", run: () => b.click() });
   }
   for (const n of renderer.nodes.values()) {

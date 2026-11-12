@@ -1,0 +1,178 @@
+# Sampling hidden populations  (Newman, Networks, Section 4.7)
+# Some groups can't be found by random phone calls. Snowball sampling asks each
+# person found to name others, wave after wave, but it finds well-connected
+# people far more often than others. A random walk (interview one named
+# contact at a time, chosen at random) finds people in proportion to their
+# degree, which can be corrected for. The population here is invented; its
+# hidden trait is more common among people with many contacts.
+
+import random
+import networkx as nx
+
+N = 400
+G = nx.powerlaw_cluster_graph(N, 2, 0.3, seed=8)
+KMAX = max(d for _, d in G.degree())
+rnd = random.Random(8)
+HAS_TRAIT = {v: rnd.random() < 0.05 + 0.6 * (G.degree(v) / KMAX) ** 0.6 for v in G}
+TRUE_K = 2 * G.number_of_edges() / N
+TRUE_P = sum(HAS_TRAIT.values()) / N
+pos = nx.spring_layout(G, seed=8, iterations=60)
+H = nx.Graph()
+for v in G:
+    H.add_node(f"p{v}", trait=HAS_TRAIT[v], pos=(pos[v][0] * 650, pos[v][1] * 650))
+H.add_edges_from((f"p{a}", f"p{b}") for a, b in G.edges())
+fromNetworkX(H)
+NODE = {v: g.getNodeByName(f"p{v}") for v in G}
+interviews = Slider(20, 200, 80, 10, label="interviews")
+curves = {}
+last = {"method": None, "sample": []}
+
+
+EDGE = {}
+
+
+def plain():
+    for v, n in NODE.items():
+        n.color = "175,185,205"
+        n.width = n.height = 8
+        n.strokecolor = "120,120,120"
+    g.edges.color = "170,170,170,40"
+    g.edges.width = 0.8
+    if not EDGE:
+        for e in g.edges:
+            EDGE[frozenset((e.node1.name, e.node2.name))] = e
+
+
+named_by = {}                 # snowball: who named each person found
+
+
+def snowball(seed, n):
+    """Waves: everyone named by the people found so far (all their contacts)."""
+    found, wave, waves = [seed], [seed], {seed: 0}
+    named_by.clear()
+    while len(found) < n and wave:
+        nxt = []
+        for v in wave:
+            for u in G[v]:
+                if u not in waves:
+                    waves[u] = waves[v] + 1
+                    named_by[u] = v
+                    nxt.append(u)
+        rnd.shuffle(nxt)
+        found += nxt[:n - len(found)]
+        wave = nxt
+    return found, waves
+
+
+def walk(seed, n, r):
+    path = [seed]
+    while len(path) < n:
+        path.append(r.choice(list(G[path[-1]])))
+    return path
+
+
+def estimates(sample, reweight):
+    if reweight:                       # each person found with probability proportional to degree
+        w = [1 / G.degree(v) for v in sample]
+        return (sum(w[i] * G.degree(v) for i, v in enumerate(sample)) / sum(w),
+                sum(w[i] * HAS_TRAIT[v] for i, v in enumerate(sample)) / sum(w))
+    return (sum(G.degree(v) for v in sample) / len(sample), sum(HAS_TRAIT[v] for v in sample) / len(sample))
+
+
+def run(method):
+    r = random.Random(len(curves.get(method, [])) * 7 + len(method))
+    seed = r.choice(sorted(G))
+    n = int(interviews.value)
+    plain()
+    if method == "snowball":
+        sample, waves = snowball(seed, n)
+        top = max(waves[v] for v in sample) or 1
+        for v in sample:                              # the referral edges, coloured by wave
+            if v in named_by:
+                e = EDGE[frozenset((f"p{v}", f"p{named_by[v]}"))]
+                t = waves[v] / top
+                e.color = f"{int(230 - 120 * t)},{int(90 + 60 * t)},{int(60 + 150 * t)}"
+                e.width = 2.5
+        for v in sample:
+            t = waves[v] / top
+            NODE[v].color = f"{int(230 - 120 * t)},{int(90 + 60 * t)},{int(60 + 150 * t)}"
+            NODE[v].width = NODE[v].height = 15
+            NODE[v].strokecolor = "40,40,40"
+    else:
+        sample = walk(seed, n, r)
+        for a, b in zip(sample, sample[1:]):          # the walk's steps
+            e = EDGE[frozenset((f"p{a}", f"p{b}"))]
+            e.color = "40,170,90"
+            e.width = min(6, e.width + 1.2)
+        for v in set(sample):
+            NODE[v].color = "60,160,90"
+            NODE[v].width = NODE[v].height = 11 + 3 * sample.count(v)
+            NODE[v].strokecolor = "20,80,40"
+    NODE[seed].color = "20,20,20"
+    last.update(method=method, sample=sample)
+    pts = []
+    for k in range(10, n + 1, 10):
+        sub = sample[:k]
+        pts.append((k, estimates(sub, False)[1], estimates(sub, True)[1]))
+    curves[method] = pts
+
+
+def verdict(k):
+    return "too high" if k > 1.1 * TRUE_K else "too low" if k < 0.9 * TRUE_K else "about right"
+
+
+def result():
+    s, m = last["sample"], last["method"]
+    if not s:
+        return "*Pick a method.* A random person is the first one found (black)."
+    k_raw, p_raw = estimates(s, False)
+    lines = [f"Truth: mean degree **{TRUE_K:.1f}**, trait in **{100 * TRUE_P:.0f}%** of people.", ""]
+    if m == "snowball":
+        lines.append(f"**Snowball** ({len(s)} people, colour = wave): mean degree **{k_raw:.1f}**, trait "
+                     f"**{100 * p_raw:.0f}%**. The mean degree is {verdict(k_raw)}: snowball sampling favours "
+                     "well-connected people (roughly by eigenvector centrality), and there's no good fix, "
+                     "since correcting for it needs the whole network.")
+    else:
+        k_w, p_w = estimates(s, True)
+        lines.append(f"**Random walk** ({len(s)} interviews, size = how often): raw mean degree "
+                     f"**{k_raw:.1f}** ({verdict(k_raw)}), trait **{100 * p_raw:.0f}%**. But a walk finds people "
+                     f"in proportion to their degree, which every interview records. Weighting each answer by "
+                     f"1/degree gives mean degree **{k_w:.1f}** and trait **{100 * p_w:.0f}%**.")
+    return "\n".join(lines)
+
+
+def chart():
+    series = {}
+    if "snowball" in curves:
+        series["snowball"] = [(k, 100 * p) for k, p, _ in curves["snowball"]]
+    if "walk" in curves:
+        series["walk, raw"] = [(k, 100 * p) for k, p, _ in curves["walk"]]
+        series["walk, reweighted"] = [(k, 100 * q) for k, _, q in curves["walk"]]
+    if series:
+        n = max(k for pts in series.values() for k, _ in pts)
+        series["truth"] = [(10, 100 * TRUE_P), (n, 100 * TRUE_P)]
+        plotLine(series, title="Estimated trait prevalence", xlabel="people interviewed", ylabel="%")
+
+
+plain()
+hoverFields("trait", "degree")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("Sampling hidden populations", "Networks, Section 4.7")
+ui.layout(
+    right=Column(
+        Markdown("""### Finding people through people
+**400** invented people. Some have a hidden **trait**, more often those with
+many contacts. Estimate how common it is by interviewing people found through
+others."""),
+        interviews,
+        Row(Button("Snowball sample", onClick=lambda: run("snowball")),
+            Button("Random-walk sample", onClick=lambda: run("walk"))),
+        Markdown(result),
+        Chart(chart),
+        Markdown("""*Respondent-driven sampling* gives each person a ticket to pass to one
+contact: roughly a random walk, so the same correction applies.""")),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{N} people · {len(g.edges)} ties (invented)"))
+center()

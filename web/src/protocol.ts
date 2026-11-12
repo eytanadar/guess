@@ -85,7 +85,7 @@ export interface Overlay {
   guidesNote?: string;
   /** context for semantic dragging (see main.ts dragBehaviour) */
   drag?: DragContext;
-  labels?: { outline: boolean; cull: boolean; along?: boolean; placement?: string; screen?: boolean };
+  labels?: { outline: boolean; cull: boolean; along?: boolean; placement?: string; screen?: boolean; screenSize?: number };
   hulls: HullRec[];
   legends: LegendRec[];
   /** drawLine/drawText/drawRect/drawCircle, in graph coordinates; c null = the theme's ink */
@@ -128,6 +128,8 @@ export interface ChartMsg {
   /** matrix (showMatrix): row/column node names and ids, cells [row, col, value, edge id],
    *  each row's group (order= field) for separators, and whether values are weights */
   labels?: string[]; ids?: number[]; cells?: [number, number, number, number][]; groups?: string[]; weighted?: boolean;
+  /** rectangular matrices (rows= and cols=): the columns' names, ids and groups; numbers: write cell values */
+  clabels?: string[]; cids?: number[]; cgroups?: string[]; numbers?: boolean;
 }
 
 export type UiMsg =

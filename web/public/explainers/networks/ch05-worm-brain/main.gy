@@ -1,0 +1,173 @@
+# The wiring of C. elegans  (Newman, Networks, Section 5.2.1)
+# The nervous system of the worm Caenorhabditis elegans, mapped synapse by
+# synapse from electron micrographs (White et al. 1986; Watts and Strogatz's
+# version: 297 neurons, 2,345 directed connections with weights). A neuron
+# fires when enough of its inputs fire. Here, as a toy model: a neuron fires
+# at the next step if the total weight of its inputs that just fired reaches a
+# threshold, and then rests for one step.
+
+import random
+import networkx as nx
+
+makeFromFile("celegans-neural.gdf")
+G = toNetworkX()
+NODE = {n.name: n for n in g.nodes}
+IN = {v: [(u, G[u][v].get("weight", 1)) for u in G.predecessors(v)] for v in G}
+theta = Slider(1, 12, 4, 1, label="threshold (input weight needed to fire)")
+sim = {"firing": set(), "resting": set(), "ever": set(), "t": 0, "trace": [], "timer": None}
+sweep = []
+
+
+def next_firing(firing, resting, th):
+    out = set()
+    for v in G:
+        if v in firing or v in resting:
+            continue
+        if sum(w for u, w in IN[v] if u in firing) >= th:
+            out.add(v)
+    return out
+
+
+def step():
+    new = next_firing(sim["firing"], sim["resting"], theta.value)
+    sim["resting"] = sim["firing"]
+    sim["firing"] = new
+    sim["ever"] |= new
+    sim["t"] += 1
+    sim["trace"].append((sim["t"], len(new)))
+    paint_brain()
+    if not new and sim["timer"] is not None:
+        stop()
+
+
+def paint_brain():
+    for v, n in NODE.items():
+        if v in sim["firing"]:
+            n.color, n.width, n.height, n.strokecolor = "255,210,40", 22, 22, "140,60,0"
+        elif v in sim["ever"]:
+            n.color, n.width, n.height, n.strokecolor = "235,120,60", 11, 11, "120,50,20"
+        else:
+            n.color, n.width, n.height, n.strokecolor = "120,135,165", 8, 8, "80,90,110"
+    g.edges.color = "140,140,160,35"
+    g.edges.width = 0.8
+    g.edges.linestyle = "solid"
+    for e in g.edges:                     # signals leaving the neurons that fire now
+        if e.node1.name in sim["firing"]:
+            e.color, e.width, e.linestyle = "250,190,40,200", 2.2, "flow"
+
+
+def stimulate(names):
+    sim["firing"] = set(names)
+    sim["resting"] = set()
+    sim["ever"] = set(names)
+    sim["t"] = 0
+    sim["trace"] = [(0, len(names))]
+    paint_brain()
+
+
+def click(n):
+    stimulate(sim["firing"] | {n.name})
+
+
+def random_five():
+    stimulate(random.Random(sim["t"] + len(sim["ever"])).sample(sorted(G), 5))
+
+
+def brain_step():
+    step()
+    return len(sim["firing"]) if sim["firing"] else False
+
+
+def play():
+    if sim["timer"] is None:
+        sim["timer"] = everyPaced(brain_step, slow=1.0, fast=0.3)
+        go.text = "Pause"
+    else:
+        stop()
+
+
+def stop():
+    if sim["timer"] is not None:
+        sim["timer"].stop()
+        sim["timer"] = None
+    go.text = "Play"
+
+
+def reach(th, seeds):
+    firing, resting, ever = set(seeds), set(), set(seeds)
+    for _ in range(60):
+        new = next_firing(firing, resting, th)
+        if not new:
+            break
+        resting, firing = firing, new
+        ever |= new
+    return len(ever) / len(G)
+
+
+sweeping = {"timer": None, "next": 1, "rnd": None}
+
+
+def run_sweep():
+    """For every threshold, 15 runs from 5 random neurons each: how much of the brain is reached?
+    One threshold per tick, so the chart fills in as it goes."""
+    if sweeping["timer"] is not None:
+        return
+    sweep[:] = []
+    sweeping.update(next=1, rnd=random.Random(1))
+    sweeping["timer"] = every(0.05, sweep_one)
+
+
+def sweep_one():
+    th, r = sweeping["next"], sweeping["rnd"]
+    runs = [reach(th, r.sample(sorted(G), 5)) for _ in range(15)]
+    sweep.append((th, 100 * sum(runs) / len(runs)))
+    sweeping["next"] += 1
+    if sweeping["next"] > 12:
+        sweeping["timer"].stop()
+        sweeping["timer"] = None
+
+
+def firing_chart():
+    if len(sim["trace"]) > 1:
+        plotLine(sim["trace"], title="Neurons firing at each step", xlabel="step", ylabel="neurons", dots=true)
+
+
+def sweep_chart():
+    if sweep:
+        plotLine(sweep, title="Share of the brain reached, by threshold", xlabel="threshold", ylabel="% reached",
+                 dots=true)
+
+
+def status():
+    if not sim["ever"]:
+        return "*Click neurons to fire them*, or stimulate five at random, then Play."
+    return (f"Step **{sim['t']}**: **{len(sim['firing'])}** firing now (yellow); **{len(sim['ever'])}** of "
+            f"{len(G)} neurons have fired so far (orange).")
+
+
+graphevents.clickNode = click
+go = Button("Play", onClick=play)
+paint_brain()
+hoverFields("label", "indegree", "outdegree")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("The wiring of C. elegans", "Networks, Section 5.2.1")
+ui.layout(
+    right=Column(
+        Markdown("""### A whole nervous system
+The worm *C. elegans* has about 300 neurons, and every individual is wired
+the same way. This is that wiring: each arrow a set of synapses from one
+neuron to another (the strength is how many). Pick some neurons to fire."""),
+        theta,
+        Row(Button("Fire 5 at random", onClick=random_five), go, Button("Step", onClick=step)),
+        Markdown(status),
+        Chart(firing_chart),
+        Group("Simulate",
+              Markdown("""Run the model 15 times for each threshold, each from 5 random neurons,
+and record how much of the brain the activity reaches."""),
+              Button("Sweep the threshold", onClick=run_sweep),
+              Chart(sweep_chart))),
+    sizes={"right": 380},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: "data: White et al. (1986), via Watts and Strogatz (1998) and M. Newman · firing model is a toy"))
+center()

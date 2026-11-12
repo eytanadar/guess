@@ -37,19 +37,29 @@ def draw():
     alive, load = state["alive"], state["load"]
     for v, n in NODE.items():
         if v in state["new"]:
-            n.color = "220,30,30"
-            n.width = n.height = 14
+            n.color = "230,30,30"
+            n.width = n.height = 22
+            n.strokecolor = "90,0,0"
         elif v not in alive:
-            n.color = "70,70,70,120"
-            n.width = n.height = 6
+            n.color = "70,70,70,140"
+            n.width = n.height = 7
+            n.strokecolor = "40,40,40"
         else:
             spare = capacity(v) - L0[v]               # how much of its spare capacity is used
-            n.color = ramp((load.get(v, 0) - L0[v]) / spare if spare > 0 else 0)
-            n.width = n.height = 9
+            t = (load.get(v, 0) - L0[v]) / spare if spare > 0 else 0
+            n.color = ramp(t)
+            n.width = n.height = 11 + 8 * max(0.0, min(1.0, t))     # stressed stations grow
+            n.strokecolor = "60,60,60"
+    new = state["new"]
     for e in EDGES:
-        up = e.node1.name in alive and e.node2.name in alive
-        e.color = "150,150,150,160" if up else "120,120,120,35"
-        e.width = 1.4 if up else 0.6
+        a, b = e.node1.name, e.node2.name
+        up = a in alive and b in alive
+        if a in new or b in new:          # lines that just went down with a failing station
+            e.color, e.width, e.linestyle = "230,40,30", 3, "dashed"
+        else:
+            e.color = "150,150,150,160" if up else "120,120,120,35"
+            e.width = 1.4 if up else 0.6
+            e.linestyle = "solid"
 
 
 def loads(alive):
@@ -71,10 +81,10 @@ def animate():
     over = next_round()
     draw()
     if over:
-        state["running"] = after(0.8, animate)
-    else:
-        state["running"] = None
-        outages.append(1 - len(state["alive"]) / N)
+        return len(over)                  # still failing: keep going (slowing down as it dies away)
+    state["running"] = None
+    outages.append(1 - len(state["alive"]) / N)
+    return False
 
 
 def fail(v):
@@ -86,7 +96,7 @@ def fail(v):
     state["new"] = {v}
     state["round"] = 0
     draw()
-    state["running"] = after(0.8, animate)
+    state["running"] = everyPaced(animate, slow=1.2, fast=0.45, ramp=2)
 
 
 def reset(keep=False):
@@ -172,6 +182,7 @@ alpha.onChange = lambda v: (reset(), draw())
 draw()
 hoverFields("label", "degree")
 
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Cascading failures", "Networks, Section 2.3")
 ui.layout(
     right=Column(

@@ -180,6 +180,7 @@ def level_text():
     return f"{notes[how]}\n\nShowing **{len(vis)}** nodes and **{len(edges)}** edges."
 
 
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("The shape of the Internet", "Networks, Section 2.1")
 ui.layout(
     right=Column(

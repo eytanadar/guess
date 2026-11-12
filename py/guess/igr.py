@@ -548,9 +548,11 @@ def install(session):
     def bipartiteLayout(field, hgap=1, vgap=1):
         """bipartiteLayout(field) draws a two-mode network in two rows (by a field
         with two values, e.g. bipartite in makeSample("davis")), ordering each
-        row to reduce edge crossings."""
-        need("bipartiteLayout")
+        row to reduce edge crossings. Without igraph (still loading, or
+        turned off) the rows are ordered by the barycenter heuristic instead."""
         f = field_arg(field, "bipartiteLayout")
+        if module() is None:
+            return _bipartite_barycenter(f)
         s, I = layout_graph()
         vals = [f.get(n) for n in I.nodes]
         kinds = sorted({v for v in vals if v is not None}, key=str)
@@ -562,6 +564,40 @@ def install(session):
         if len(P):
             P[:, 0] = (P[:, 0] - P[:, 0].min()) / (np.ptp(P[:, 0]) or 1) * (BOX - 100) + 50
             P[:, 1] = np.where(P[:, 1] > P[:, 1].min(), BOX * 0.7, BOX * 0.3)
+        lay.apply(s, P)
+
+    def _bipartite_barycenter(f):
+        """Two rows; each node placed at the mean position of its neighbours in the
+        other row, alternating rows for a few sweeps (Sugiyama's barycenter rule)."""
+        s = lay.snap()
+        nodes = list(s.nodes)
+        vals = [f.get(n) for n in nodes]
+        kinds = sorted({v for v in vals if v is not None}, key=str)
+        if len(kinds) != 2:
+            raise GuessError(f"bipartiteLayout needs a field with exactly two values; {f.name} has {len(kinds)}")
+        idx = {id(n): i for i, n in enumerate(nodes)}
+        nbrs = [[] for _ in nodes]
+        for e in g()._edges_list():
+            a, b = idx.get(id(e._n1)), idx.get(id(e._n2))
+            if a is not None and b is not None and a != b:
+                nbrs[a].append(b)
+                nbrs[b].append(a)
+        rows = [[i for i, v in enumerate(vals) if v == k] for k in kinds]
+        rows = [sorted(r, key=lambda i: (-len(nbrs[i]), str(nodes[i].name))) for r in rows]
+        pos = {}
+        for r in rows:
+            for k, i in enumerate(r):
+                pos[i] = k / max(len(r) - 1, 1)
+        for sweep in range(12):
+            r = rows[sweep % 2]
+            bary = {i: (sum(pos[j] for j in nbrs[i]) / len(nbrs[i]) if nbrs[i] else pos[i]) for i in r}
+            r.sort(key=lambda i: (bary[i], pos[i]))
+            for k, i in enumerate(r):
+                pos[i] = k / max(len(r) - 1, 1)
+        P = np.zeros((len(nodes), 2))
+        for i, v in enumerate(vals):
+            P[i, 0] = pos.get(i, 0.5) * (BOX - 100) + 50
+            P[i, 1] = BOX * (0.3 if v == kinds[0] else 0.7 if v == kinds[1] else 0.5)
         lay.apply(s, P)
 
     # ---- similarity and link prediction --------------------------------------

@@ -1,0 +1,132 @@
+# Pollinators and nestedness  (Newman, Networks, Section 5.3.2)
+# Plants and the animals that pollinate them form a bipartite network of
+# mutual benefit, with undirected edges. Many real ones are "nested": the
+# specialists visit subsets of what the generalists visit, so generalists hold
+# the network together. The networks here are generated, from perfectly nested
+# to random, with the same number of links.
+
+import random
+import networkx as nx
+
+PLANTS, ANIMALS = 18, 26
+order_ = Slider(0, 1, 0.85, 0.05, label="how nested (0 = random, 1 = perfectly nested)")
+seed = [1]
+curves = {}
+
+
+def make(v=None):
+    r = random.Random(seed[0])
+    B = nx.Graph()
+    plants = [f"plant{i + 1}" for i in range(PLANTS)]
+    animals = [f"bee{i + 1}" if i % 3 else f"fly{i + 1}" for i in range(ANIMALS)]
+    for p in plants:
+        B.add_node(p, side="plant")
+    for a in animals:
+        B.add_node(a, side="pollinator")
+    links = set()
+    for i, a in enumerate(animals):                 # animal i visits the top k plants, k falling with i
+        k = max(1, round(PLANTS * (1 - i / ANIMALS) ** 1.6))
+        for j in range(k):
+            links.add((a, plants[j]))
+    total = len(links)
+    links = sorted(links)
+    r.shuffle(links)
+    keep = links[:int(round(order_.value * total))]
+    pairs = [(a, p) for a in animals for p in plants]
+    rest = [x for x in pairs if x not in set(keep)]
+    r.shuffle(rest)
+    final = keep + rest[:total - len(keep)]
+    B.add_edges_from(final)
+    fromNetworkX(B)
+    rank_nodes()
+    bipartiteLayout(side)
+    look()
+    curves.clear()
+    center()
+
+
+def rank_nodes():
+    Node.rank = 0
+    for side_, base in (("plant", 0), ("pollinator", 100)):
+        for i, n in enumerate(sorted((n for n in g.nodes if n.side == side_), key=lambda n: (-n.degree, n.name))):
+            n.rank = base + i
+
+
+def look():
+    for n in g.nodes:
+        n.style = 1 if n.side == "plant" else 2
+        n.color = "90,170,90" if n.side == "plant" else "240,170,40"
+        n.width = n.height = 8 + n.degree
+        n.strokecolor = "60,60,60"
+    g.edges.color = "140,140,140,110"
+
+
+def nested_text():
+    import contextlib, io
+    with contextlib.redirect_stdout(io.StringIO()):     # nestedness() also prints; keep the console quiet
+        nodf = nestedness(side, rows="plant")[0]
+    return (f"**{PLANTS}** plants (squares) and **{ANIMALS}** pollinators (circles), **{len(g.edges)}** links. "
+            f"Nestedness NODF = **{nodf:.0f}** (0 = none, 100 = perfect). In the matrix, rows and columns are "
+            "sorted by number of partners: a nested network fills a triangle in one corner.")
+
+
+def surviving(order):
+    """Remove pollinators in the given order; after each, count plants still visited by someone."""
+    G = toNetworkX()
+    plants = [v for v in G if G.nodes[v]["side"] == "plant"]
+    out = [(0, 100.0)]
+    for k, a in enumerate(order, 1):
+        G.remove_node(a)
+        alive = sum(1 for p in plants if G.degree(p) > 0)
+        out.append((100 * k / len(order), 100 * alive / len(plants)))
+    return out
+
+
+def simulate():
+    animals = [n for n in g.nodes if n.side == "pollinator"]
+    gen = [n.name for n in sorted(animals, key=lambda n: (-n.degree, n.name))]
+    spec = list(reversed(gen))
+    rnd = random.Random(0)
+    runs = []
+    for _ in range(20):
+        o = [n.name for n in animals]
+        rnd.shuffle(o)
+        runs.append(surviving(o))
+    mean = [(runs[0][i][0], sum(r[i][1] for r in runs) / len(runs)) for i in range(len(runs[0]))]
+    curves.update({"generalists lost first": surviving(gen), "at random (20 runs)": mean,
+                   "specialists lost first": surviving(spec)})
+
+
+def chart():
+    if curves:
+        plotLine(curves, title="Plants still pollinated", xlabel="% of pollinators lost", ylabel="% of plants")
+
+
+def another():
+    seed[0] += 1
+    make()
+
+
+order_.onChange = make
+make()
+hoverFields("side", "degree")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("Pollinators and nestedness", "Networks, Section 5.3.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Who pollinates whom
+Plants (green squares) and pollinators (orange circles); size shows how many
+partners each has. Mutual benefit makes the edges **undirected**, and since
+plants only link to animals, the network is **bipartite**."""),
+        order_,
+        Button("Another network", onClick=another),
+        Markdown(nested_text),
+        Tabs(Tab("Matrix", Chart(lambda: showMatrix(order=rank))),
+             Tab("Losing pollinators", Button("Simulate losses", onClick=simulate), Chart(chart),
+                 Markdown("""*Nested networks are robust to losing specialists, since the generalists
+still visit everyone, but fragile when generalists go.*"""))),
+    ),
+    sizes={"right": 380},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: "generated networks · nestedness as NODF (Almeida-Neto et al. 2008)"))

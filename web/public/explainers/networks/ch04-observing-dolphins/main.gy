@@ -39,7 +39,44 @@ def watch(n):
         for k, r in RATE.items():
             if sim.random() < r:
                 seen[k] += 1
+        obs = observed()
+        progress.append((days[0], 100 * len(obs & TRUE) / len(TRUE), len(obs - TRUE)))
     redraw()
+
+
+progress = []
+
+
+def progress_chart():
+    if len(progress) > 1:
+        plotLine({"% of real ties found": [(d, f) for d, f, _ in progress],
+                  "false ties": [(d, x) for d, _, x in progress]},
+                 title="As the days add up", xlabel="days watched", ylabel="")
+
+
+SWEEP = {}
+
+
+def sweep_threshold():
+    """30 simulated days, then every threshold from 2% to 40%: what's found, what's false?"""
+    r = random.Random(77)
+    count = {k: 0 for k in RATE}
+    for _ in range(30):
+        for k, rate in RATE.items():
+            if r.random() < rate:
+                count[k] += 1
+    SWEEP.clear()
+    SWEEP["found"], SWEEP["false"] = [], []
+    for t in range(2, 41, 2):
+        obs = {k for k, c in count.items() if c / 30 >= t / 100}
+        SWEEP["found"].append((t, 100 * len(obs & TRUE) / len(TRUE)))
+        SWEEP["false"].append((t, 100 * len(obs - TRUE) / len(TRUE)))
+
+
+def sweep_chart():
+    if SWEEP:
+        plotLine({"real ties found (%)": SWEEP["found"], "false ties (% of the real number)": SWEEP["false"]},
+                 title="After 30 days, by threshold", xlabel="threshold (% of days)", ylabel="%", dots=true)
 
 
 def observed():
@@ -60,13 +97,14 @@ def redraw():
     for n in g.nodes:
         n.color = "170,190,215"
         n.labelvisible = true
-        n.width = n.height = 11
+        n.width = n.height = 14
 
 
 def reset():
     for k in seen:
         seen[k] = 0
     days[0] = 0
+    progress[:] = []
     redraw()
 
 
@@ -77,13 +115,14 @@ def result():
     found = len(obs & TRUE)
     false = len(obs - TRUE)
     return (f"After **{days[0]}** day{'s' if days[0] != 1 else ''}: **{len(obs)}** ties declared. **{found}** of the {len(TRUE)} real "
-            f"associations found ({100 * found / len(TRUE):.0f}%), and **{false}** false ties (red, dashed) "
+            f"associations found ({100 * found / len(TRUE):.0f}%), and **{false}** false tie{'s' if false != 1 else ''} (red, dashed) "
             "from chance encounters.")
 
 
 cut.onChange = lambda v: redraw()
 redraw()
 hoverFields("label")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Building a network by watching", "Networks, Section 4.3")
 ui.layout(
     right=Column(
@@ -100,6 +139,9 @@ watched. Edge thickness: how often."""),
         cut,
         Button("Start again", onClick=reset),
         Markdown(result),
+        Tabs(Tab("Over time", Chart(progress_chart)),
+             Tab("Simulate", Markdown("Watch 30 days, then try every threshold."),
+                 Button("Sweep the threshold", onClick=sweep_threshold), Chart(sweep_chart))),
         Markdown("""*Try:* after one day, any pair seen together counts. With a low threshold,
 chance encounters creep in; with a high one, weaker real ties are missed. The
 more days you watch, the more clearly the two separate.""")),

@@ -179,45 +179,76 @@ def install(session):
         return emit("distrib", f"Distribution of {f.name}", f"rank-ordered {what(f)}", f.name, items, logY=bool(log))
 
 
-    def showMatrix(order=None, weight=None, nodes=None, title=None):
+    def showMatrix(order=None, weight=None, nodes=None, title=None, numbers=False, rows=None, cols=None):
         """showMatrix() draws the adjacency matrix: a row and a column per
         node, and a dark cell where an edge joins them (darker for a bigger
         `weight` field value, when given). order=field sorts the rows and
         columns by that field (a community, a group, a degree), with lines
         between groups, so blocks and nested patterns show; nodes= limits it
         to some nodes. Rows run from the sending node to the receiving one
-        for directed edges. Hovering a cell highlights its edge and two
-        nodes; clicking selects them. Up to 600 nodes."""
+        for directed edges. Parallel edges add up; an undirected self-edge
+        counts 2 on the diagonal (1 if directed), as in the usual definition.
+        numbers=true writes each cell's value, zeros included (for small
+        matrices). rows= and cols= give two sets of nodes for a rectangular
+        matrix, e.g. the incidence matrix of a two-mode network:
+        showMatrix(rows=(kind == 'group'), cols=(kind == 'person'), numbers=true).
+        Hovering a cell highlights its edge and two nodes; clicking selects
+        them. Up to 600 rows and columns."""
         g = session.graph
-        pool = [n for n in (nodes if nodes is not None else g.nodes) if n.visible]
-        if len(pool) > 600:
-            raise GuessError(f"showMatrix draws at most 600 nodes ({len(pool)} given): pass nodes=")
         f = need_field(order) if order is not None else None
         def key(n):
             v = f.get(n) if f is not None else None
             return (v is None, v if not isinstance(v, str) else v.lower(), n.name)
-        try:
-            pool.sort(key=key)
-        except TypeError:
-            pool.sort(key=lambda n: (str(key(n)[1]), n.name))
-        at = {n._id: i for i, n in enumerate(pool)}
+
+        def ordered(seq):
+            out = [n for n in seq if isinstance(n, Node) and n.visible]
+            try:
+                out.sort(key=key)
+            except TypeError:
+                out.sort(key=lambda n: (str(key(n)[1]), n.name))
+            return out
+        rect = rows is not None or cols is not None
+        if rect:
+            if rows is None or cols is None:
+                raise GuessError("showMatrix needs both rows= and cols= for a rectangular matrix")
+            rpool, cpool = ordered(rows), ordered(cols)
+        else:
+            rpool = cpool = ordered(nodes if nodes is not None else g.nodes)
+        if max(len(rpool), len(cpool)) > 600:
+            raise GuessError(f"showMatrix draws at most 600 rows and columns ({max(len(rpool), len(cpool))} given): pass nodes=")
+        rat = {n._id: i for i, n in enumerate(rpool)}
+        cat = {n._id: i for i, n in enumerate(cpool)}
         w = need_field(weight) if weight is not None else None
-        cells = []
+        acc = {}
+
+        def put(r, c, v, eid):
+            if (r, c) in acc:
+                acc[(r, c)][0] += v
+            else:
+                acc[(r, c)] = [v, eid]
         for e in g.edges:
             if not e.visible:
                 continue
-            a, b = at.get(e._n1._id), at.get(e._n2._id)
-            if a is None or b is None:
-                continue
             v = w.get(e) if w is not None else 1
             v = float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 1.0
-            cells.append([a, b, v, e._id])
-            if not e.directed and a != b:
-                cells.append([b, a, v, e._id])
-        groups = [_label(f.get(n)) for n in pool] if f is not None else None
-        name = title or (f"Adjacency matrix by {f.name}" if f is not None else "Adjacency matrix")
-        return emit("matrix", name, "", "", [], labels=[n.name for n in pool], ids=[n._id for n in pool],
-                    cells=cells, groups=groups, weighted=w is not None)
+            a, b = e._n1._id, e._n2._id
+            if a == b:
+                if a in rat and a in cat:
+                    put(rat[a], cat[a], v if e.directed else 2 * v, e._id)
+                continue
+            if a in rat and b in cat:
+                put(rat[a], cat[b], v, e._id)
+            if not e.directed and b in rat and a in cat:
+                put(rat[b], cat[a], v, e._id)
+        cells = [[r, c, (int(v) if float(v).is_integer() else round(v, 4)), eid] for (r, c), (v, eid) in acc.items()]
+        groups = [_label(f.get(n)) for n in rpool] if f is not None else None
+        cgroups = [_label(f.get(n)) for n in cpool] if f is not None and rect else None
+        name = title or (("Incidence matrix" if rect else "Adjacency matrix") + (f" by {f.name}" if f is not None else ""))
+        extra = {}
+        if rect:
+            extra.update(clabels=[n.name for n in cpool], cids=[n._id for n in cpool], cgroups=cgroups)
+        return emit("matrix", name, "", "", [], labels=[n.name for n in rpool], ids=[n._id for n in rpool],
+                    cells=cells, groups=groups, weighted=w is not None, numbers=bool(numbers), **extra)
 
     def liveCharts(on=True):
         """liveCharts() makes every chart live, now and from now on: each is

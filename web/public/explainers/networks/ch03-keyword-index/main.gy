@@ -38,7 +38,7 @@ terms = [w for w, k in df.most_common() if 3 <= k <= 0.6 * len(pages)][:45]
 
 G = nx.Graph()
 for i, c in enumerate(words_by_page):
-    G.add_node(f"page{i + 1}", kind="page", label=f"p.{i + 1}", text=pages[i][:220].replace("\n", " ") + "…")
+    G.add_node(f"page{i + 1}", kind="page", label=f"{i + 1}", text=pages[i][:220].replace("\n", " ") + "…")
 for w in terms:
     G.add_node(f"w_{w}", kind="word", label=w)
     for i, c in enumerate(words_by_page):
@@ -164,6 +164,7 @@ def to_index():
 graphevents.clickNode = choose
 dress()
 hoverFields("label", "text")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("A book index is a network", "Networks, Section 3.3.3")
 ui.layout(
     right=Column(

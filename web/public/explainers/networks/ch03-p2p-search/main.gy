@@ -12,7 +12,7 @@ import networkx as nx
 PEERS, SUPERS, COPIES = 200, 20, 3
 ttl = Slider(1, 8, 4, 1, label="hop limit (TTL)")
 results = []
-search = {"timer": None, "front": [], "hop": 0, "reached": {}, "messages": 0, "found": None, "origin": None}
+search = {"trace": [], "timer": None, "front": [], "hop": 0, "reached": {}, "messages": 0, "found": None, "origin": None}
 
 
 def flat():
@@ -60,6 +60,7 @@ def build(kind):
     fromNetworkX(H)
     NET["G"] = H
     NET["holders"] = set(holders)
+    NET["edge"] = {frozenset((e.node1.name, e.node2.name)): e for e in g.edges}
     dress()
     center()
 
@@ -68,12 +69,13 @@ def dress():
     for n in g.nodes:
         n.color = "190,190,190"
         n.style = 1 if n.hasfile else 2
-        n.width = n.height = 18 if n.tier == "supernode" else (14 if n.hasfile else 9)
+        n.width = n.height = 20 if n.tier == "supernode" else (18 if n.hasfile else 12)
         n.strokecolor = "30,30,30" if n.hasfile else "120,120,120"
         if n.tier == "supernode":
             n.color = "120,120,160"
     g.edges.color = "160,160,160,110"
     g.edges.width = 1
+    g.edges.linestyle = "solid"
 
 
 def heat(hop):
@@ -89,13 +91,16 @@ def start(n):
     dress()
     G = NET["G"]
     if mode[0] == "flat":
-        search.update(front=[(n.name, None)], hop=0, reached={n.name: 0}, messages=0, found=None, origin=n.name)
+        search.update(front=[(n.name, None)], hop=0, reached={n.name: 0}, messages=0, found=None, origin=n.name,
+                      trace=[(0, 0, 1)])
     else:
         sup = next(iter(G[n.name]))                       # the peer asks its supernode
-        search.update(front=[(sup, None)], hop=1, reached={n.name: 0, sup: 1}, messages=1, found=None, origin=n.name)
+        search.update(front=[(sup, None)], hop=1, reached={n.name: 0, sup: 1}, messages=1, found=None, origin=n.name,
+                      trace=[(0, 0, 1), (1, 1, 2)])
         check(sup, 1)
     n.color = "20,20,20"
-    search["timer"] = every(0.6, spread_one)
+    n.width = n.height = 24
+    search["timer"] = everyPaced(spread_one, slow=1.0, fast=0.35, ramp=2)
 
 
 def holds(v):
@@ -116,14 +121,22 @@ def spread_one():
     G = NET["G"]
     if search["hop"] >= ttl.value or not search["front"]:
         finish()
-        return
+        return False
     nxt = []
+    for e in g.edges:                                      # last hop's messages: no longer moving
+        if e.linestyle == "flow":
+            e.linestyle = "solid"
     for v, came_from in search["front"]:
         for w in G[v]:
             if w == came_from:
                 continue
             if mode[0] == "two" and G.nodes[w]["tier"] != "supernode":
                 continue                                   # supernodes answer for their peers
+            e = NET["edge"].get(frozenset((v, w)))
+            if e is not None:                              # the message travels along this edge now
+                e.color = heat(search["hop"] + 1)
+                e.width = 3
+                e.linestyle = "flow"
             search["messages"] += 1
             if w not in search["reached"]:
                 search["reached"][w] = search["hop"] + 1
@@ -131,13 +144,18 @@ def spread_one():
                 check(w, search["hop"] + 1)
     search["hop"] += 1
     search["front"] = nxt
+    search["trace"].append((search["hop"], search["messages"], len(search["reached"])))
     for v, h in search["reached"].items():
         nd = g.getNodeByName(v)
         if v != search["origin"]:
             nd.color = heat(h)
+            nd.width = nd.height = max(nd.width, 16)
+            nd.strokecolor = "40,40,40"
     if search["found"]:
         nd = g.getNodeByName(search["found"][0])
         nd.color = "40,180,60"
+        nd.width = nd.height = 26
+    return max(1, int(ttl.value) - search["hop"])          # hops left: everyPaced slows down near the end
 
 
 def finish():
@@ -175,6 +193,77 @@ def results_list():
         + f", **{r['messages']}** messages, {r['reached']} reached" for r in results)
 
 
+def search_chart():
+    tr = search.get("trace") or []
+    if len(tr) > 1:
+        plotLine({"messages sent": [(h, m) for h, m, _ in tr], "computers reached": [(h, r) for h, _, r in tr]},
+                 title="This search, hop by hop", xlabel="hop", ylabel="count", dots=true)
+
+
+def flood(H, holders, origin, limit, two):
+    """The same search as the animation, without drawing: (found?, messages)."""
+    def has(v):
+        return v in holders or (two and H.nodes[v]["tier"] == "supernode" and any(u in holders for u in H[v]))
+    if two:
+        sup = next(iter(H[origin]))
+        front, reached, msgs, hop = [(sup, None)], {origin, sup}, 1, 1
+        found = has(sup)
+    else:
+        front, reached, msgs, hop, found = [(origin, None)], {origin}, 0, 0, origin in holders
+    while hop < limit and front:
+        nxt = []
+        for v, came in front:
+            for w in H[v]:
+                if w == came or (two and H.nodes[w]["tier"] != "supernode"):
+                    continue
+                msgs += 1
+                if w not in reached:
+                    reached.add(w)
+                    nxt.append((w, v))
+                    found = found or has(w)
+        front, hop = nxt, hop + 1
+    return found, msgs
+
+
+SIM = {"timer": None, "ttl": 1, "rows": {}}
+
+
+def simulate():
+    if SIM["timer"] is not None:
+        return
+    SIM["nets"] = {}
+    for kind, maker in (("flat", flat), ("supernodes", two_tier)):
+        H = maker()
+        peers = sorted(v for v in H if H.nodes[v]["tier"] == "peer")
+        SIM["nets"][kind] = (H, set(random.Random(9).sample(peers, COPIES)), peers)
+    SIM.update(ttl=1, rows={"flat": [], "supernodes": []})
+    SIM["timer"] = every(0.05, simulate_one)
+
+
+def simulate_one():
+    t = SIM["ttl"]
+    r = random.Random(t)
+    for kind, (H, holders, peers) in SIM["nets"].items():
+        runs = [flood(H, holders, r.choice(peers), t, kind == "supernodes") for _ in range(40)]
+        SIM["rows"][kind].append((t, 100 * sum(f for f, _ in runs) / len(runs), sum(m for _, m in runs) / len(runs)))
+    SIM["ttl"] += 1
+    if SIM["ttl"] > 7:
+        SIM["timer"].stop()
+        SIM["timer"] = None
+
+
+def found_chart():
+    if any(SIM["rows"].values()):
+        plotLine({k: [(t, f) for t, f, _ in v] for k, v in SIM["rows"].items()}, title="Searches that find the file",
+                 xlabel="hop limit (TTL)", ylabel="% found", dots=true)
+
+
+def cost_chart():
+    if any(SIM["rows"].values()):
+        plotLine({k: [(t, m) for t, _, m in v] for k, v in SIM["rows"].items()}, title="Messages per search",
+                 xlabel="hop limit (TTL)", ylabel="messages", dots=true)
+
+
 def pick_network(choice):
     build("flat" if choice.startswith("Flat") else "two")
 
@@ -182,6 +271,7 @@ def pick_network(choice):
 graphevents.clickNode = start
 build("flat")
 hoverFields("tier", "hasfile")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Searching a peer-to-peer network", "Networks, Section 3.3.1")
 ui.layout(
     right=Column(
@@ -193,12 +283,15 @@ question passed along is a **message**, even when it reaches someone who has
 already been asked."""),
         Dropdown(["Flat (every peer equal)", "Two tiers (supernodes)"], label="Network", onChange=pick_network),
         ttl,
-        Markdown(now_text),
-        Markdown(results_list),
+        Tabs(Tab("This search", Markdown(now_text), Chart(search_chart), Markdown(results_list)),
+             Tab("Simulate",
+                 Markdown("""40 searches from random peers for every hop limit from 1 to 7, on both
+networks."""),
+                 Button("Run the simulation", onClick=simulate), Chart(found_chart), Chart(cost_chart))),
         Markdown("""*Try:* the same search with TTL 2, 4 and 6, then with supernodes. In
 the two-tier network a peer asks its supernode, which knows every file its
 own peers hold; only the 20 supernodes pass queries on.""")),
-    sizes={"right": 340},
+    sizes={"right": 370},
 )
 ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
 ui.statusbar(Label(lambda: f"{len(g.nodes)} computers · {len(g.edges)} links · {COPIES} copies of the file"))

@@ -36,8 +36,12 @@ export async function lastError(page: Page) {
 /** Choose a menu item: menu(page, "View", "#curved") or menu(page, "Edit", "Undo"). */
 export async function menu(page: Page, title: string, item: string) {
   await page.locator(".menu-title", { hasText: title }).click();
-  const pop = page.locator(".menu-root", { has: page.locator(".menu-title", { hasText: title }) }).locator(".menu-pop");
-  await (item.startsWith("#") || item.startsWith("[") ? pop.locator(item) : pop.getByRole("menuitem", { name: item })).click();
+  const pop = page.locator(".menu-root", { has: page.locator(".menu-title", { hasText: title }) }).locator(".menu-pop").first();
+  const target = (item.startsWith("#") || item.startsWith("[") ? pop.locator(item) : pop.getByRole("menuitem", { name: item, includeHidden: true })).first();
+  // an item in a submenu: open the submenu first (hover its title)
+  const subTitle = await target.evaluate((el) => el.closest(".menu-sub")?.querySelector(".menu-sub-title")?.textContent ?? null);
+  if (subTitle) await pop.locator(".menu-sub-title", { hasText: subTitle }).first().hover();
+  await target.click();
 }
 
 /** Click a node by name: waits for the camera to settle, then clicks a point

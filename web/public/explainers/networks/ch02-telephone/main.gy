@@ -33,7 +33,7 @@ fromNetworkX(G)
 E = {frozenset((e.node1.name, e.node2.name)): e for e in g.edges}
 load = {k: 0 for k in E}
 SUBS = sorted(v for v in G if v.startswith("S"))
-SIZE = {"long-distance office": 30, "local exchange": 18, "subscriber": 8}
+SIZE = {"long-distance office": 30, "local exchange": 18, "subscriber": 12}
 SHAPE = {"long-distance office": 1, "local exchange": 3, "subscriber": 2}
 for n in g.nodes:
     n.width = n.height = SIZE[n.kind]
@@ -54,13 +54,14 @@ def in_call():
     return {c["a"] for c in calls} | {c["b"] for c in calls}
 
 
-def route(a, b):
+def route(a, b, cap=None, used=None):
     """The shortest path from a to b using only lines with a free circuit."""
-    cap = capacity.value
+    cap = capacity.value if cap is None else cap
+    used = load if used is None else used
     def free(u, v, d):
         k = frozenset((u, v))
         if d["trunk"]:
-            return 1 if load[k] < cap else None
+            return 1 if used[k] < cap else None
         return 1 if a in k or b in k else None      # only the two callers' own lines
     try:
         return nx.shortest_path(G, a, b, weight=free)
@@ -103,6 +104,10 @@ def step(new=None):
     flash[:] = []
     for _ in range(rate.value if new is None else new):
         place_call()
+    s_ = stats
+    tried = s_["connected"] + s_["blocked"]
+    timeline_.append((clock["steps"], 100 * s_["blocked"] / tried if tried else 0, len(calls)))
+    del timeline_[:-80]
     draw()
 
 
@@ -113,11 +118,11 @@ def draw():
         if n.kind != "subscriber":
             n.color = "70,90,130"
         elif n.name in flash:
-            n.color = "220,40,40"
+            n.color, n.width, n.height = "220,40,40", 20, 20
         elif n.name in talking:
-            n.color = "40,170,90"
+            n.color, n.width, n.height = "40,170,90", 16, 16
         else:
-            n.color = "180,180,180"
+            n.color, n.width, n.height = "180,180,180", 12, 12
     for k, e in E.items():
         used = load[k]
         if e.trunk:
@@ -144,6 +149,75 @@ def burst():
     step(new=20)
 
 
+timeline_ = []
+
+
+def live_chart():
+    if len(timeline_) > 1:
+        plotLine({"% of calls blocked so far": [(t, b) for t, b, _ in timeline_],
+                  "calls in progress": [(t, c) for t, _, c in timeline_]},
+                 title="As the calls come in", xlabel="step", ylabel="", dots=false)
+
+
+def run_model(cap, loc, per_step, steps, seed):
+    """The same model without drawing: the share of attempted calls blocked."""
+    r = random.Random(seed)
+    used = {k: 0 for k in E}
+    active = []
+    blocked = tried = 0
+    for _ in range(steps):
+        for c in active:
+            c[1] -= 1
+        for c in [c for c in active if c[1] <= 0]:
+            for k in c[0]:
+                used[k] -= 1
+            active.remove(c)
+        for _ in range(per_step):
+            a = r.choice(SUBS)
+            same = [x for x in SUBS if x[:3] == a[:3] and x != a]
+            b = r.choice(same) if r.random() < loc else r.choice([x for x in SUBS if x[1] != a[1]])
+            busy = {x for c in active for x in c[2]}
+            if a in busy or b in busy:
+                continue
+            tried += 1
+            path = route(a, b, cap, used)
+            if path is None:
+                blocked += 1
+                continue
+            keys = [frozenset(p) for p in zip(path, path[1:])]
+            for k in keys:
+                used[k] += 1
+            active.append([keys, r.randint(3, 8), (a, b)])
+    return 100 * blocked / tried if tried else 0
+
+
+SIM = {"timer": None, "cap": 1, "rows": {}}
+SHARES = (0.3, 0.6, 0.9)
+
+
+def simulate():
+    if SIM["timer"] is None:
+        SIM.update(cap=1, rows={f"{int(100 * l)}% local": [] for l in SHARES})
+        SIM["timer"] = every(0.05, simulate_one)
+
+
+def simulate_one():
+    c = SIM["cap"]
+    for l in SHARES:
+        runs = [run_model(c, l, 3, 50, seed) for seed in range(3)]
+        SIM["rows"][f"{int(100 * l)}% local"].append((c, sum(runs) / len(runs)))
+    SIM["cap"] += 1
+    if SIM["cap"] > 6:
+        SIM["timer"].stop()
+        SIM["timer"] = None
+
+
+def sim_chart():
+    if any(SIM["rows"].values()):
+        plotLine(SIM["rows"], title="Calls blocked, by trunk capacity", xlabel="circuits per trunk line",
+                 ylabel="% blocked", dots=true)
+
+
 def reset():
     if clock["timer"] is not None:
         play()
@@ -152,6 +226,7 @@ def reset():
         load[k] = 0
     for k in stats:
         stats[k] = 0
+    timeline_[:] = []
     draw()
 
 
@@ -173,6 +248,7 @@ def call_report():
 go = Button("Run", onClick=play)
 capacity.onChange = lambda v: draw()
 draw()
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Circuit switching", "Networks, Section 2.2")
 ui.layout(
     right=Column(
@@ -187,11 +263,16 @@ Green: lines in use (orange: half full; red: full). A red subscriber
 couldn't get through."""),
         Row(go, Button("Place 20 calls now", onClick=burst), Button("Reset", onClick=reset)),
         Group("Settings", capacity, local, rate),
-        Markdown(call_report),
+        Tabs(Tab("Now", Markdown(call_report), Chart(live_chart)),
+             Tab("Simulate",
+                 Markdown("""For each trunk capacity from 1 to 6 and three shares of local calls,
+run the network for 50 steps (3 calls a step, 3 runs each) and record how
+many calls are blocked."""),
+                 Button("Run the simulation", onClick=simulate), Chart(sim_chart))),
         Markdown("""*Try:* set 1 circuit per trunk line and few local calls, then raise
 both. Most calls being local is why the network is built in tiers: trunks are
 needed only for the rest.""")),
-    sizes={"right": 340},
+    sizes={"right": 370},
 )
 ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
 ui.statusbar(Label(lambda: f"step {clock['steps']} · {len(calls)} calls in progress"))

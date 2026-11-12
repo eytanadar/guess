@@ -1,0 +1,196 @@
+# The small-world experiment  (Newman, Networks, Section 4.6)
+# Milgram asked people in Nebraska to get a "passport" to a stockbroker in
+# Boston by passing it only to someone they knew on first-name terms. The
+# completed chains averaged about six steps. Here an invented society lives
+# on a map: people know their neighbours, some colleagues in the same
+# occupation, and a few people far away. Each holder passes the letter to the
+# acquaintance who seems closest to the target, by place or by job, and some
+# letters are simply lost along the way.
+
+import math
+import random
+from collections import Counter
+import networkx as nx
+
+rnd = random.Random(3)
+SIDE = 20
+JOBS = ["farmer", "teacher", "nurse", "stockbroker", "clerk", "builder", "driver", "cook"]
+G = nx.Graph()
+for i in range(SIDE):
+    for j in range(SIDE):
+        G.add_node((i, j), job=rnd.choice(JOBS))
+people = list(G)
+for (i, j) in people:
+    for di, dj in ((1, 0), (0, 1), (1, 1), (1, -1)):
+        if (i + di, j + dj) in G and rnd.random() < 0.8:
+            G.add_edge((i, j), (i + di, j + dj))
+    # one or two people farther away, more likely nearby (Kleinberg's r^-2 rule)
+    for _ in range(rnd.choice([1, 1, 2])):
+        far = rnd.choices(people, [0 if p == (i, j) else 1 / ((p[0] - i) ** 2 + (p[1] - j) ** 2) for p in people])[0]
+        G.add_edge((i, j), far)
+for job in JOBS:                                    # a few colleagues anywhere
+    same = [p for p in people if G.nodes[p]["job"] == job]
+    for _ in range(len(same) // 3):
+        a, b = rnd.sample(same, 2)
+        G.add_edge(a, b)
+TARGET = (SIDE - 2, SIDE - 3)
+G.nodes[TARGET]["job"] = "stockbroker"
+STARTERS = [p for p in people if p[0] < 5 and p[1] < 5]       # "Omaha": the far corner
+
+H = nx.Graph()
+key = {p: f"p{p[0]}_{p[1]}" for p in people}
+for p in people:
+    H.add_node(key[p], job=G.nodes[p]["job"], pos=(p[0] * 40 + rnd.uniform(-8, 8), p[1] * 40 + rnd.uniform(-8, 8)))
+H.add_edges_from((key[a], key[b]) for a, b in G.edges())
+fromNetworkX(H)
+NODE = {p: g.getNodeByName(key[p]) for p in people}
+EDGE = {frozenset((e.node1.name, e.node2.name)): e for e in g.edges}
+TRUE_DIST = nx.single_source_shortest_path_length(G, TARGET)
+lose = Slider(0, 0.5, 0.25, 0.05, label="chance a holder doesn't pass it on")
+runs = []
+
+
+def score(p):
+    """How promising p looks as the next holder: distance on the map, less if same job as the target."""
+    d = abs(p[0] - TARGET[0]) + abs(p[1] - TARGET[1])
+    return d - (3 if G.nodes[p]["job"] == "stockbroker" else 0)
+
+
+def send(start, r, loss):
+    path = [start]
+    while path[-1] != TARGET and len(path) < 60:
+        if r.random() < loss and len(path) > 1:
+            return path, False
+        options = [q for q in G[path[-1]] if q not in path]
+        if not options:
+            return path, False
+        path.append(min(options, key=lambda q: (q != TARGET, score(q), q)))
+    return path, path[-1] == TARGET
+
+
+def experiment():
+    r = random.Random(len(runs) + 1)
+    starts = [r.choice(STARTERS) for _ in range(96)]
+    results = [send(s, r, lose.value) for s in starts]
+    runs.append((results, starts))
+    draw(results)
+    return results
+
+
+def draw(results):
+    g.nodes.color = "175,185,205"
+    g.nodes.width = g.nodes.height = 8
+    g.edges.color = "170,170,170,30"
+    g.edges.width = 0.5
+    used = Counter()
+    for path, ok in results:
+        if ok:
+            for a, b in zip(path, path[1:]):
+                used[frozenset((key[a], key[b]))] += 1
+    for k, c in used.items():
+        EDGE[k].color = "230,110,40"
+        EDGE[k].width = 1 + c * 0.6
+    for p in STARTERS:
+        NODE[p].color = "60,120,230"
+        NODE[p].width = NODE[p].height = 12
+    for path, ok in results:
+        if ok:
+            for p in path[1:-1]:
+                NODE[p].color = "230,110,40"
+                NODE[p].width = NODE[p].height = 11
+    t = NODE[TARGET]
+    t.color, t.width, t.height, t.label, t.labelvisible = "200,30,30", 16, 16, "target (stockbroker)", true
+
+
+def stats():
+    if not runs:
+        return "*Send the letters.* Blue: the starting town. Red: the target."
+    results, starts = runs[-1]
+    done = [len(p) - 1 for p, ok in results if ok]
+    shortest = sum(TRUE_DIST[s] for s in starts) / len(starts)
+    lossless = [len(p) - 1 for p, ok in (send(s, random.Random(0), 0) for s in starts) if ok]
+    last = Counter(p[-2] for p, ok in results if ok)
+    top3 = sum(c for _, c in last.most_common(3))
+    lines = [f"**{len(done)}** of 96 letters arrived ({100 * len(done) / 96:.0f}%)."]
+    if done:
+        bias = (f" If none were lost, the same 96 letters would average **{sum(lossless) / len(lossless):.1f}**: "
+                "long chains are the likeliest to break, so the survivors look shorter." if len(done) < 96 else "")
+        lines.append(f"Completed chains took **{sum(done) / len(done):.1f}** steps on average.{bias} The shortest "
+                     f"possible routes average **{shortest:.1f}** steps; people don't always find them.")
+        lines.append(f"**Funnelling:** {100 * top3 / len(done):.0f}% arrived through just 3 of the target's "
+                     f"{G.degree(TARGET)} acquaintances.")
+    return "\n\n".join(lines)
+
+
+SWEEP = {"timer": None, "p": 0, "rows": []}
+
+
+def sweep_loss():
+    """For each chance of losing a letter, 3 rounds of 96 letters."""
+    if SWEEP["timer"] is None:
+        SWEEP.update(p=0, rows=[])
+        SWEEP["timer"] = every(0.05, sweep_one)
+
+
+def sweep_one():
+    p = SWEEP["p"] / 20
+    r = random.Random(SWEEP["p"])
+    done, lengths = 0, []
+    for _ in range(3):
+        for _ in range(96):
+            path, ok = send(r.choice(STARTERS), r, p)
+            if ok:
+                done += 1
+                lengths.append(len(path) - 1)
+    SWEEP["rows"].append((p, 100 * done / 288, sum(lengths) / len(lengths) if lengths else None))
+    SWEEP["p"] += 1
+    if SWEEP["p"] > 10:
+        SWEEP["timer"].stop()
+        SWEEP["timer"] = None
+
+
+def sweep_charts():
+    rows = SWEEP["rows"]
+    if rows:
+        plotLine({"letters arrived (%)": [(p, a) for p, a, _ in rows],
+                  "steps in completed chains × 10": [(p, 10 * m) for p, _, m in rows if m is not None]},
+                 title="Losing letters", xlabel="chance a holder drops the letter", ylabel="", dots=true)
+
+
+def length_chart():
+    if runs:
+        results, _ = runs[-1]
+        c = Counter(len(p) - 1 for p, ok in results if ok)
+        if c:
+            plotLine([(k, c[k]) for k in range(1, max(c) + 1)], title="Completed chains by length",
+                     xlabel="steps", ylabel="letters", dots=true)
+
+
+hoverFields("job")
+draw([])
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("The small-world experiment", "Networks, Section 4.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Six degrees?
+**400** invented people live on a map. Each knows a few neighbours, a few
+colleagues with the same job, and one or two people farther away. A letter
+starts in the blue corner and must reach the **stockbroker** (red), passed
+only between acquaintances. Each holder picks whoever seems closest to the
+target, by place or by job. Orange: the routes that worked."""),
+        lose,
+        Button("Send 96 letters", onClick=experiment),
+        Markdown(stats),
+        Tabs(Tab("This round", Chart(length_chart)),
+             Tab("Simulate",
+                 Markdown("""Send 288 letters for each drop-out chance from 0 to 0.5: fewer arrive, and
+those that do took shorter routes."""),
+                 Button("Sweep the drop-out chance", onClick=sweep_loss), Chart(sweep_charts))),
+        Markdown("""*Milgram's 1967 study:* 18 of 96 letters arrived, after 5.9 steps on
+average. A 2003 email version (Dodds et al.) found similar lengths, but no
+funnelling.""")),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} people · {len(g.edges)} acquaintances (invented)"))
+center()

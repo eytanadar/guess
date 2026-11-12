@@ -199,7 +199,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
 
 ### Ch. 4 Social networks (pp. 47–69)
 
-**`ch04-sociograms`: Sociograms and what an edge means (§4.1)** · planned
+**`ch04-sociograms`: Sociograms and what an edge means (§4.1)** · built
 - *Idea:* Moreno's sociograms make simple patterns obvious (friendships rarely cross the boys/girls line). What counts as a tie depends on the question.
 - *Data:* a generated class of 30 children with a `gender` field and three kinds of ties (friend, sits near, plays with).
 - *Reader:*
@@ -209,7 +209,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - "Stack the three" shows the same people as a multiplex network (`isometricLayout`).
 - *GUESS:* `shapeBy`, `mixingMatrix`, `assortativity`, edge `kind` + visibility, `isometricLayout`.
 
-**`ch04-name-generator`: Asking people who their friends are (§4.2)** · planned
+**`ch04-name-generator`: Asking people who their friends are (§4.2)** · built
 - *Idea:*
   - a name generator gives a **directed** network, and nominations aren't always returned;
   - a fixed-choice limit caps out-degree but not in-degree, so popular people still stand out, while the true hubs among the nominators are hidden.
@@ -221,7 +221,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - a toggle adds the doctors' three questions (advice / discussion / social) as layers.
 - *GUESS:* `addDirectedEdge`, `reciprocity`, `Chart`, `plotFrequency`, `isometricLayout`.
 
-**`ch04-ego-networks`: Ego-centred surveys and how many people you know (§4.2.1)** · planned
+**`ch04-ego-networks`: Ego-centred surveys and how many people you know (§4.2.1)** · built
 - *Idea:*
   - surveying random egos and their alters gives local facts (degree, clustering) without the whole network;
   - Bernard's scale-up method estimates how many people someone knows from a list of names.
@@ -231,7 +231,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - **Scale-up tab:** pick a person and a name list covering p% of the town; the count of people known on the list, divided by p, estimates the person's acquaintances, shown against the true number.
 - *GUESS:* `egoNetwork`, `averageClustering`, custom sampling, `plotLine`.
 
-**`ch04-observing-dolphins`: Building a network by watching (§4.3)** · planned
+**`ch04-observing-dolphins`: Building a network by watching (§4.3)** · built
 - *Idea:* direct observation records interactions, and a tie is declared when a pair is seen together often enough. The network you get depends on the threshold and on how long you watch.
 - *Data:* Lusseau's bottlenose dolphins of Doubtful Sound (from Newman's network data page; to be added with `make_newman.py`) as the hidden "true" associations, with generated sighting rates.
 - *Reader:*
@@ -241,7 +241,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - the observed network converges as days are added.
 - *GUESS:* edge `weight` from counts, visibility filters, `louvainClusters`, `compareClusters`.
 
-**`ch04-florentine-and-email`: Networks from records (§4.4)** · planned
+**`ch04-florentine-and-email`: Networks from records (§4.4)** · built
 - *Idea:*
   - archival records rebuild networks from the past, such as the Medici's central place in Florence's marriage network;
   - modern records (email, calls) are **time-resolved**.
@@ -251,7 +251,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - **Email tab:** a timeline slider (`showTime`) plays a month of email; who talks to whom changes by week, and the "all month" view hides that.
 - *GUESS:* `betweenness`, `remove`/`add`, `showTime`/timeline, edge `time` ranges.
 
-**`ch04-affiliation`: Affiliation networks and their projections (§4.5)** · planned
+**`ch04-affiliation`: Affiliation networks and their projections (§4.5)** · built
 - *Idea:* actors linked through groups form a bipartite network. Projecting it onto actors or groups loses information: big groups become cliques, and you can't tell one big meeting from many small ones.
 - *Data:* `southern-women.gdf` (bundled), and authors and papers from `vis-paper-authors.csv` (bundled; OpenAlex) as a coauthorship example.
 - *Reader:*
@@ -262,7 +262,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - click a pair to see what the projection hides (which events they shared).
 - *GUESS:* `bipartiteLayout`, `project`, `louvainClusters`, `use()` between tabs.
 
-**`ch04-milgram`: The small-world experiment (§4.6)** · planned
+**`ch04-milgram`: The small-world experiment (§4.6)** · built
 - *Idea:*
   - letters forwarded only to first-name acquaintances, each towards a target, arrive in about six steps;
   - chains get lost, and lost chains bias the result towards short ones;
@@ -276,7 +276,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - a drop-out slider shows the length bias.
 - *GUESS:* `makeKleinbergRandom` or custom generation, `shortestPath`, `drawLine` for chains, `Chart`.
 
-**`ch04-snowball`: Sampling hidden populations (§4.7)** · planned
+**`ch04-snowball`: Sampling hidden populations (§4.7)** · built
 - *Idea:*
   - snowball sampling over-samples well-connected people (roughly in proportion to eigenvector centrality);
   - random-walk sampling samples in proportion to degree, which can be corrected for, giving unbiased estimates;
@@ -291,7 +291,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
 
 ### Ch. 5 Biological networks (pp. 70–101)
 
-**`ch05-metabolism`: Five ways to draw a metabolic network (§5.1.1)** · planned
+**`ch05-metabolism`: Five ways to draw a metabolic network (§5.1.1)** · built
 - *Idea:*
   - the full picture is a directed bipartite network of metabolites and reactions (tripartite with enzymes);
   - the usual pictures are projections that lose information;
@@ -306,7 +306,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   A readout counts edges and the top hubs in each.
 - *GUESS:* states and `morph`, `shapeBy`, `arrowhead`, `project`-like construction in the script.
 
-**`ch05-ppi-errors`: Protein interactions and noisy experiments (§5.1.2)** · planned
+**`ch05-ppi-errors`: Protein interactions and noisy experiments (§5.1.2)** · built
 - *Idea:*
   - two-hybrid screens test pairs (bait × prey) and have high false-positive and false-negative rates;
   - affinity purification pulls down whole complexes, recorded as "spoke" or "matrix" edges.
@@ -316,7 +316,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - for one complex, spoke against matrix shows how the same pull-down gives very different networks.
 - *GUESS:* sampling in the script, `louvainClusters`, `compareClusters`, edge colours for false/true.
 
-**`ch05-gene-regulation`: Switching genes on and off (§5.1.3)** · planned
+**`ch05-gene-regulation`: Switching genes on and off (§5.1.3)** · built
 - *Idea:* transcription factors promote or inhibit other genes, giving a directed, signed network. Its loops produce memory and oscillation.
 - *Data:* `pheromone-pathway.csv` (bundled, signed), plus three textbook circuits: a toggle switch, a repressilator and a feed-forward loop.
 - *Reader:*
@@ -326,7 +326,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - the repressilator oscillates and the toggle remembers.
 - *GUESS:* `arrowheadBy`, `every`, `Chart` (on/off over time with `plotLine`).
 
-**`ch05-drugs-diseases`: Drug, target and disease networks (§5.1.4)** · planned
+**`ch05-drugs-diseases`: Drug, target and disease networks (§5.1.4)** · built
 - *Idea:*
   - drug–target and disease–gene bipartite networks;
   - projecting gives drug–drug or disease–disease networks, and related diseases cluster;
@@ -338,7 +338,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - for the protein, a contact network from 3D coordinates at a distance threshold slider.
 - *GUESS:* `project`, `bipartiteLayout`, `makeFromSimilarity`/threshold.
 
-**`ch05-worm-brain`: The wiring of *C. elegans* (§5.2.1)** · planned
+**`ch05-worm-brain`: The wiring of *C. elegans* (§5.2.1)** · built
 - *Idea:* neurons as nodes and synapses as directed edges; signals pass when enough inputs fire.
 - *Data:* the *C. elegans* neural network (White et al., via Newman's network data page; to be added with `make_newman.py`).
 - *Reader:*
@@ -347,7 +347,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - hubs and in/out-degree charts.
 - *GUESS:* `every`, `colorBy`, `Chart`.
 
-**`ch05-functional-brain`: Brain networks from correlations (§5.2.2)** · planned
+**`ch05-functional-brain`: Brain networks from correlations (§5.2.2)** · built
 - *Idea:* fMRI doesn't see wires. Edges are inferred where regions' activity correlates, so the network depends on the threshold.
 - *Data:* generated activity time series for ~40 regions in 4 systems.
 - *Reader:*
@@ -356,7 +356,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - one region's time series is shown against a neighbour's (`plotLine`).
 - *GUESS:* numpy correlation, `Chart`/`plotLine`, `louvainClusters`.
 
-**`ch05-food-webs`: Who eats whom (§5.3.1)** · planned
+**`ch05-food-webs`: Who eats whom (§5.3.1)** · built
 - *Idea:*
   - edges run from prey to predator (energy flow), nearly acyclic;
   - trophic level, with mixed levels for omnivores;
@@ -370,7 +370,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
   - "Lump trophic species" merges identical roles (`mergeNodes`).
 - *GUESS:* `trophicLevels`, `orderedLayout`, `ancestors`/`descendants`, `findCycles`, `mergeNodes`.
 
-**`ch05-mutualism`: Pollinators, parasites and nestedness (§5.3.2)** · planned
+**`ch05-mutualism`: Pollinators, parasites and nestedness (§5.3.2)** · built
 - *Idea:*
   - mutualistic networks are undirected and bipartite, and often **nested**: specialists use subsets of what generalists use;
   - parasites have parasites of their own.
@@ -391,3 +391,149 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
 | Brain connectome data | functional-brain | not bundled | generated data for now; an open connectome (e.g., a macaque or human parcellation) could be added |
 | Mutualistic network data (Interaction Web Database) | mutualism | not bundled; GloBI connector is online-only | generated, or GloBI online |
 | A matrix (adjacency heat map) view | mutualism, functional-brain, later Ch. 6 | none; charts are bar/line/pie or Altair | `showMatrix(order=field)`: an adjacency matrix in the dock, rows sorted by a field, linked to the graph like other charts (could be built on Altair `mark_rect`) |
+
+---
+
+## Batch 3: book pages 102–157 (Chapter 6, the start of Part II)
+
+This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics of networks*. From here on the explainers pair each picture with the matrix or the numbers behind it.
+
+**`ch06-adjacency-matrix`: The adjacency matrix (§§6.1–6.3)** · planned
+- *Idea:*
+  - a network and its adjacency matrix are the same thing;
+  - multiedges put 2s, 3s, … off the diagonal, and a self-edge puts a **2** on the diagonal;
+  - weighted networks hold weights in the cells.
+- *Reader:*
+  - a 6-node network beside its matrix (numbers shown);
+  - click two nodes to add or remove an edge and watch the matrix change;
+  - buttons add a double edge or a self-edge;
+  - a weight slider on the selected edge;
+  - the readout shows symmetric/not, Σ of a row = degree, and Σ of all cells = 2m.
+- *GUESS:* `showMatrix` (needs numbers in cells and self-edges counted twice; see gaps), `Chart`, `graphevents`.
+
+**`ch06-acyclic`: Directed and acyclic networks (§6.4)** · planned
+- *Idea:*
+  - directed adjacency matrices aren't symmetric;
+  - a network is acyclic exactly when you can repeatedly remove a node with no outgoing edges;
+  - numbering the nodes in that order makes the matrix strictly triangular.
+- *Reader:*
+  - step through the removal algorithm (each removed node gets its number and drops to its row in the drawing);
+  - the matrix, ordered by the numbers, fills in as an upper triangle;
+  - "Add an edge that closes a loop", then run again: the algorithm gets stuck, and the stuck nodes are a cycle (red).
+- *GUESS:* `findCycles`, `showMatrix(order=)`, positions by order, `every`.
+
+**`ch06-hypergraphs`: Hypergraphs, bipartite networks and projections (§§6.5–6.6)** · planned
+- *Idea:*
+  - groups (families, papers, films) as hyperedges, the same information as a bipartite network;
+  - the incidence matrix B;
+  - the projection P = BᵀB, whose diagonal counts each node's groups and off-diagonal shared groups;
+  - projections are unions of cliques.
+- *Reader:*
+  - morph between three views: hyperedges drawn as shaded loops (`encircle`), bipartite, and weighted projection (edge labels = shared groups);
+  - B and P shown as matrices;
+  - "Add a group of 5" shows a 5-clique appear.
+- *GUESS:* `encircle`, states and `morph`, `project`, `showMatrix` (rectangular B; see gaps).
+
+**`ch06-multilayer`: Multilayer, multiplex and temporal networks (§6.7)** · planned
+- *Idea:*
+  - layers of different node types with interlayer edges (a bus, train and air journey);
+  - **multiplex** layers on the same people (friends, work, family);
+  - **temporal** networks as ordered layers whose interlayer edges only go forward in time (infection can't go back in time).
+- *Reader:*
+  - the transport tab plans a journey that changes layers (`isometricLayout`), and the shortest trip is counted in transfers or in minutes;
+  - the multiplex tab toggles layers on and off;
+  - the temporal tab spreads an infection forward through daily contact layers; the same contacts with time ignored would infect more people.
+- *GUESS:* `isometricLayout`, `shortestPath(weighted=true)`, node copies per layer (see gaps).
+
+**`ch06-trees-planar`: Trees and planar networks (§§6.8–6.9)** · planned
+- *Idea:*
+  - a tree has n − 1 edges and exactly one path between any two nodes, and any node can be the root;
+  - a planar network can be drawn with no crossings;
+  - K₅ and K₃,₃ can't;
+  - maps make planar networks, and four colours always suffice.
+- *Reader:*
+  - **Tree tab:** click a node to re-root (`treeLayout`), add an edge to see the loop.
+  - **Planar tab:** drag nodes to remove crossings, with a live crossing counter; try K₅ and K₃,₃ (never 0).
+  - **Map tab:** regions of a generated map (or US states) and their adjacency network, coloured with four colours step by step.
+- *GUESS:* `treeLayout`, `addEdge`, crossing count and colouring (see gaps), node-drag refresh.
+
+**`ch06-degree-sparsity`: Degree, density and sparsity (§6.10)** · planned
+- *Idea:*
+  - 2m = Σ degrees;
+  - mean degree c = 2m/n;
+  - density ρ = c/(n−1);
+  - real networks are sparse;
+  - if each person keeps about the same number of friends as the population grows, density falls like 1/n;
+  - in directed networks, mean in-degree = mean out-degree.
+- *Reader:*
+  - grow a network node by node under two rules ("a fixed number of friends" against "a fixed share of everyone") and chart density against n;
+  - on any bundled dataset, read off m, c and ρ, and check 2m = Σk.
+- *GUESS:* `addNode`/`addEdge` in a timer, `density`, `Chart`, `plotLine`.
+
+**`ch06-walks-paths`: Walks, paths and powers of A (§6.11)** · planned
+- *Idea:*
+  - the number of walks of length r from j to i is [Aʳ]ᵢⱼ;
+  - loops of length r total Tr Aʳ;
+  - the shortest path is the smallest r with [Aʳ]ᵢⱼ > 0;
+  - shortest paths need not be unique;
+  - the diameter.
+- *Reader:*
+  - click two nodes and step r = 1, 2, 3 …: the count of walks, the nodes reachable in exactly r steps lit up ring by ring, and the moment the target is first reached (= distance);
+  - all shortest paths are drawn together;
+  - a table of Tr Aʳ.
+- *GUESS:* numpy matrix powers, `shortestPath`, networkx `all_shortest_paths`, `diameter`.
+
+**`ch06-components`: Components, weak and strong (§6.12)** · planned
+- *Idea:*
+  - components;
+  - block-diagonal matrices when ordered by component;
+  - in directed networks: weakly and strongly connected components, and a node's in- and out-components, whose intersection is its strongly connected component.
+- *Reader:*
+  - an undirected tab colours the components, with the matrix ordered by component (blocks);
+  - a directed tab shows weak against strong components;
+  - clicking a node shades its in-component, its out-component and their overlap.
+- *GUESS:* `component`, `strongcomponent`, `ancestors`/`descendants`, `encircle`, `showMatrix(order=component)`.
+
+**`ch06-cuts-flows`: Independent paths, cut sets and maximum flow (§6.13)** · planned
+- *Idea:*
+  - edge- and node-independent paths;
+  - Menger's theorem: their number equals the size of the minimum cut set;
+  - max-flow/min-cut on weighted networks.
+- *Reader:*
+  - click A and B;
+  - the edge-independent paths are drawn in distinct colours, the node-independent ones in another view, and the minimum cut set is crossed out, with the counts equal;
+  - the weighted tab sets edge capacities (widths) and shows the maximum flow (`flow` style) beside the minimum cut, equal.
+- *GUESS:* `maxFlow`, `minCut`, networkx `edge_disjoint_paths`/`node_disjoint_paths`, `flow` line style.
+
+**`ch06-laplacian`: The graph Laplacian (§6.14)** · planned
+- *Idea:* L = D − A, and four uses:
+  - **partitioning:** the cut size is ¼ sᵀLs, and the Fiedler vector's signs give a good split;
+  - **drawing:** the sum of squared edge lengths is xᵀLx, minimised by the Laplacian's eigenvectors;
+  - **random walks:** a walker is found at node i with probability kᵢ/2m;
+  - **resistor networks:** LV = RI.
+  - Also: eigenvalues ≥ 0, the number of zero eigenvalues = the number of components, and the algebraic connectivity.
+- *Reader:* five tabs:
+  - **Spectrum:** an eigenvalue chart; cut edges until it splits and watch a second zero appear.
+  - **Partition:** colour by the Fiedler vector, with the cut size.
+  - **Drawing:** a random layout against a spectral layout, with xᵀLx for each.
+  - **Random walk:** a walker runs, and a chart of visit share against degree is a straight line.
+  - **Resistors:** click s and t, nodes coloured by voltage, current along edges (`flow`), and the effective resistance.
+- *GUESS:* numpy `eigh`, `Chart`/`plotLine`, `every`, edge `flow` style.
+
+### Gaps found in batch 3
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| Matrix cells with their numbers; self-edges counted 2 on the diagonal (1 if directed); rectangular matrices (incidence B: groups × items) | adjacency-matrix, hypergraphs, acyclic | `showMatrix` shades cells but prints no numbers, and is always square | `showMatrix(numbers=true, rows=…, cols=…)` |
+| Copies of each node per layer (multiplex/temporal), with interlayer edges, for `isometricLayout` | multilayer | `isometricLayout` stacks by a node field, so a node can be in only one layer | `expandLayers(edgeField)`: one copy of each node per value of an edge field, interlayer edges between copies (direction optional, for time) |
+| Counting edge crossings in the current drawing | trees-planar (and layout comparisons generally) | none | `edgeCrossings()`: the number of crossings (and optionally the crossing pairs) |
+| Graph colouring (no two neighbours alike) | trees-planar | none | `colorGraph(strategy="DSATUR")`: a colour class per node in `color_class` (networkx greedy colouring) |
+| Region adjacency from a map (US states, countries) | trees-planar | the map outlines exist (geoLayout) but no adjacency network | `makeFromMap("usa")`: one node per state or country, edges for shared borders |
+| A spectrum chart (eigenvalues of A, L or the normalised Laplacian) | laplacian, later Ch. 7/14/17 | numpy can compute it in a script; no command | `plotSpectrum(matrix="laplacian")` (and `spectrum()` returning the values) |
+
+---
+
+## To do (requests not yet done)
+
+- **Lombardi-style layout and edge rounding**, as described in `lombardi.pdf` (repo root): circular-arc edges with evenly spaced angles around each node. Planned as a layout command plus an edge-drawing mode.
+- Batch 3 (Chapter 6): fill the gaps listed above, then build its 10 explainers.

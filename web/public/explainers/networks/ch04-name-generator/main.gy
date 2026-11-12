@@ -81,6 +81,7 @@ def ask(choice):
 limit.onChange = lambda v: survey()
 survey()
 hoverFields("indegree", "outdegree")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Asking people who their friends are", "Networks, Section 4.2")
 ui.layout(
     right=Column(

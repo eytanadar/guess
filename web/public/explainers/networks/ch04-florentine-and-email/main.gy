@@ -61,7 +61,7 @@ def florence_text():
 rnd = random.Random(14)
 TEAMS = {"design": 8, "build": 9, "sales": 7}
 people = [(f"{t[:1]}{i}", t) for t, k in TEAMS.items() for i in range(k)]
-team = dict(people)
+TEAM_OF = dict(people)
 # each week has its own pattern: internal work, a cross-team project, a launch, a quiet week
 WEEKS = {1: [("design", "design"), ("build", "build"), ("sales", "sales")],
          2: [("design", "build"), ("design", "design"), ("build", "build")],
@@ -98,7 +98,7 @@ def show_week(v=None):
 def email_text():
     edges = [e for e in g.edges if e.visible]
     pairs = {frozenset((e.node1.name, e.node2.name)) for e in edges}
-    cross = sum(1 for p in pairs if len({team[v] for v in p}) > 1)
+    cross = sum(1 for p in pairs if len({TEAM_OF[v] for v in p}) > 1)
     when = "the whole month" if week_pick.value == 0 else f"week {int(week_pick.value)}"
     return (f"In **{when}**: {len(edges)} emails between {len(pairs)} pairs, **{cross}** of them across "
             "teams. Each week has its own pattern; the month as a whole mixes them into one network that "
@@ -117,6 +117,7 @@ def switch(title):
 
 week_pick.onChange = show_week
 florence_look()
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Networks from records", "Networks, Section 4.4")
 ui.layout(
     right=Column(

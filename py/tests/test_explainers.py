@@ -258,3 +258,158 @@ def test_keyword_index_entries_and_similar_pages():
     assert "by **LSA**" in a.markdown()
     a.press("Place by LSA")
     a.press("Back to the index")
+
+
+# ---- batch 2: Chapters 4 and 5 -------------------------------------------------------------
+def test_sociograms_mixing_depends_on_the_tie():
+    a = App("ch04-sociograms")
+    assert "**1** boy–girl" in a.markdown()
+    a.set("dropdown", "Tie", "seat neighbours")
+    assert "Assortativity by sex: **-" in a.markdown() or "**+0.0" in a.markdown()
+    a.set("dropdown", "Place", "Seats in the classroom")
+
+
+def test_name_generator_caps_out_degree_only():
+    a = App("ch04-name-generator")
+    a.set("slider", "names allowed", 3)
+    assert a.ev("max(n.outdegree for n in g.nodes)") == 3 and a.ev("max(n.indegree for n in g.nodes)") > 3
+    a.set("slider", "names allowed", 11)
+    assert a.ev("max(n.outdegree for n in g.nodes)") > 8
+    a.set("dropdown", "Question", "Whom do you ask for advice?")
+    assert "Advice runs one way" in a.markdown()
+
+
+def test_ego_estimates_approach_the_truth():
+    a = App("ch04-ego-networks")
+    for _ in range(4):
+        a.press("Interview 10")
+    n, k, c = a.ev("estimates[-1]")
+    assert n == 40 and abs(k - a.ev("TRUE_K")) < 2.5
+    a.s.dispatch(_tabs(a)._id, "change", "How many people do you know?")
+    a.click("p5")
+    a.press("Try 30")
+    assert "different name lists" in a.markdown()
+
+
+def test_watching_dolphins_converges():
+    a = App("ch04-observing-dolphins")
+    a.press("Watch 1 day")
+    early = a.ev("len(observed() - TRUE)")
+    a.press("Watch 100")
+    assert "**159** of the 159 real" in a.markdown() and a.ev("len(observed() - TRUE)") < max(early, 3)
+
+
+def test_records_florence_and_email_weeks():
+    a = App("ch04-florentine-and-email")
+    a.press("Remove the Medici")
+    assert "**3** separate groups" in a.markdown()
+    a.press("Restore")
+    a.s.dispatch(_tabs(a)._id, "change", "An email log")
+    a.set("slider", "week", 1)
+    assert "**0** of them across teams" in a.markdown()
+
+
+def test_affiliation_projections_and_shared_groups():
+    a = App("ch04-affiliation")
+    a.set("dropdown", "Show", "People only (projection)")
+    assert a.ev("graphNames()[0]") == "projection" and len(a.s.graph.nodes) == 18
+    e = list(a.s.graph.edges)[0]
+    a.s.dispatch("graph", "clickEdge", ["e", e._id])
+    assert " share **" in a.markdown()
+    a.set("dropdown", "Data", "Coauthors of graph-drawing papers")
+    assert a.ev("graphNames()") == ["two-mode"] and len(a.s.graph.nodes) > 400
+
+
+def test_milgram_letters_and_bias():
+    a = App("ch04-milgram")
+    a.press("Send 96")
+    assert "letters arrived" in a.markdown() and "Funnelling" in a.markdown()
+
+
+def test_snowball_overestimates_and_walk_corrects():
+    a = App("ch04-snowball")
+    a.set("slider", "interviews", 200)
+    a.press("Random-walk")
+    sample = a.ev("last['sample']")
+    k_raw, _ = a.ev(f"estimates(last['sample'], False)")
+    k_w, _ = a.ev(f"estimates(last['sample'], True)")
+    assert k_raw > a.ev("TRUE_K") * 1.5 and abs(k_w - a.ev("TRUE_K")) < 1 and len(sample) == 200
+
+
+def test_metabolism_currency_hubs():
+    a = App("ch05-metabolism")
+    a.set("dropdown", "Draw as", "Metabolites only (undirected projection)")
+    assert "Best connected: **ATP**" in a.markdown()
+    a.set("checkbox", "currency", False)
+    assert "**ATP**" not in a.markdown()
+
+
+def test_ppi_noise_and_pulldowns():
+    a = App("ch05-ppi-errors")
+    a.set("slider", "false negatives", 0)
+    a.set("slider", "false positives", 0)
+    assert "NMI **1.00**" in a.markdown()
+    a.s.dispatch(_tabs(a)._id, "change", "Pull-downs")
+    a.set("dropdown", "Record as", "Matrix: every pair")
+    assert "Bait:" in a.markdown()
+
+
+def test_gene_circuits_remember_and_oscillate():
+    a = App("ch05-gene-regulation")
+    a.click("B")
+    a.press("Step")
+    a.click("B")
+    for _ in range(3):
+        a.press("Step")
+    assert a.ev("sim['on']") == {"A": False, "B": True}            # the switch remembers
+    a.set("dropdown", "Circuit", "Repressilator (a clock)")
+    seen = set()
+    for _ in range(9):
+        a.press("Step")
+        seen.add(tuple(sorted(v for v, s in a.ev("sim['on']").items() if s)))
+    assert len(seen) >= 3                                            # it keeps changing
+
+
+def test_drugs_projection_and_protein_tab():
+    a = App("ch05-drugs-diseases")
+    a.set("dropdown", "Show", "Drugs sharing a target")
+    assert len(a.s.graph.nodes) == 21
+    a.s.dispatch(_tabs(a)._id, "change", "A protein as a network")
+    assert a.ev("graphNames()[0]") == "protein" and len(a.s.graph.nodes) == 76
+
+
+def test_worm_firing_and_sweep():
+    a = App("ch05-worm-brain")
+    a.press("Fire 5")
+    a.press("Step")
+    a.press("Sweep")
+    a.tick(14)
+    sw = a.ev("sweep")
+    assert len(sw) == 12 and sw[0][1] > sw[-1][1]
+
+
+def test_functional_brain_threshold():
+    a = App("ch05-functional-brain")
+    a.set("slider", "draw an edge", 0.4)
+    assert "NMI **1.00**" in a.markdown()
+    a.press("Sweep")
+    assert len(a.ev("sweep")) == 19
+
+
+def test_food_web_source_sink_and_lumping():
+    a = App("ch05-food-webs")
+    low = min(a.s.graph.nodes, key=lambda n: n.trophic)
+    a.click(low)
+    assert "source web" in a.markdown()
+    a.press("Find loops")
+    a.press("Lump trophic species")
+
+
+def test_mutualism_nestedness_and_losses():
+    a = App("ch05-mutualism")
+    a.set("slider", "how nested", 1)
+    assert "NODF = **9" in a.markdown()
+    a.press("Simulate")
+    c = a.ev("curves")
+    mid = len(c["generalists lost first"]) // 2
+    assert c["generalists lost first"][mid][1] < c["specialists lost first"][mid][1]

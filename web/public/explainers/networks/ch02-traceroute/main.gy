@@ -185,6 +185,7 @@ graphevents.clickNode = click
 plain()
 hoverFields("asn", "degree", "fulldegree")
 
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Mapping the Internet", "Networks, Sections 2.1.1–2.1.2")
 ui.layout(
     right=Column(

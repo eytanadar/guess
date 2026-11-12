@@ -1,0 +1,159 @@
+# Affiliation networks and their projections  (Newman, Networks, Section 4.5)
+# People linked through the groups they belong to (events attended, papers
+# written, boards sat on) form a bipartite, "two-mode" network. It is often
+# "projected" onto just the people (two are linked if they share a group) or
+# just the groups, and the projection loses information.
+
+import csv
+import re
+from collections import Counter
+import networkx as nx
+
+
+def ident(s):
+    s = re.sub(r"[^0-9A-Za-z_]+", "_", s).strip("_")
+    return s if s and not s[0].isdigit() else "x" + s
+
+
+def southern():
+    makeFromFile("southern-women.gdf")
+    Node.side = ""
+    for n in g.nodes:
+        n.side = "people" if n.kind == "woman" else "groups"
+
+
+def coauthors():
+    rows = list(csv.DictReader(open("vis-paper-authors.csv", encoding="utf-8")))
+    papers = {}
+    with open("vis-papers-nodes.csv", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            papers[r["Id"]] = r
+    count = Counter(r["author"] for r in rows)
+    B = nx.Graph()
+    for r in rows:
+        if count[r["author"]] >= 3:                      # authors with 3 or more of these papers
+            B.add_edge("a_" + ident(r["author"]), "p_" + r["paper"])
+    B = B.subgraph(max(nx.connected_components(B), key=len)).copy()
+    for r in rows:
+        a = "a_" + ident(r["author"])
+        if a in B:
+            B.nodes[a].update(label=r["author"], side="people")
+    for v in B:
+        if v.startswith("p_"):
+            info = papers.get(v[2:], {})
+            t = info.get("title") or v[2:]
+            B.nodes[v].update(label=(t if len(t) < 45 else t[:44] + "…") + (f" ({info['year']})" if info.get("year") else ""),
+                              side="groups")
+    pos = nx.spring_layout(B, seed=2, iterations=60)
+    for v in B:
+        B.nodes[v]["pos"] = (pos[v][0] * 700, pos[v][1] * 700)
+    fromNetworkX(B)
+
+
+DATA = {"Southern Women (Davis et al., 1941)": (southern, "women", "events"),
+        "Coauthors of graph-drawing papers": (coauthors, "authors", "papers")}
+current = ["Southern Women (Davis et al., 1941)"]
+VIEWS = ["Two-mode (people and groups)", "People only (projection)", "Groups only (projection)"]
+method = ["count"]
+BIGGEST = {}          # side -> (label, number of members) of its largest node
+
+
+def dress():
+    for n in g.nodes:
+        n.style = 2 if n.side == "people" else 1
+        n.color = "230,120,90" if n.side == "people" else "90,130,200"
+        n.width = n.height = 12 if n.side == "people" else 9
+        n.labelvisible = false             # crowded in two rows: hover for names
+    g.edges.color = "150,150,150,120"
+
+
+def setup(choice):
+    current[0] = choice
+    if graphNames()[0] != "two-mode" and "two-mode" in graphNames():
+        use("two-mode")
+    for nm in graphNames()[1:]:
+        closeGraph(nm)
+    DATA[choice][0]()
+    renameGraph("two-mode")
+    dress()
+    bipartiteLayout(side)
+    for sd in ("people", "groups"):
+        big = max((n for n in g.nodes if n.side == sd), key=lambda n: (n.degree, n.name))
+        BIGGEST[sd] = (big.label, big.degree)
+    view_pick.value = VIEWS[0]
+    note.text = note2.text = ""
+    center()
+
+
+def pick_view(choice):
+    use("two-mode")
+    for nm in graphNames()[1:]:
+        closeGraph(nm)
+    note2.text = ""
+    if choice == VIEWS[0]:
+        note.text = ""
+        center()
+        return
+    keep = "people" if choice == VIEWS[1] else "groups"
+    other = "groups" if keep == "people" else "people"
+    project(side, keep, method=method[0], name="projection")
+    louvainClusters()
+    colorize(louvain_class)
+    sizeBy(degree, 6, 22)
+    g.edges.width = 1
+    g.nodes.labelvisible = len(g.nodes) <= 40
+    label_, k = BIGGEST[other]
+    words = DATA[current[0]]
+    note.text = (f"The projection onto the {words[1] if keep == 'people' else words[2]} has **{len(g.nodes)}** "
+                 f"nodes and **{len(g.edges)}** edges (weight: {method[0]}); colours are communities. "
+                 f"What's lost: every one of the {words[2] if keep == 'people' else words[1]} turns into a clique. "
+                 f"*{label_}*, linked to {k} {words[1] if keep == 'people' else words[2]}, alone becomes "
+                 f"{k * (k - 1) // 2} edges, which look just like many separate pairings. Click an edge to see "
+                 "what the two share.")
+    center()
+
+
+def pick_method(choice):
+    method[0] = choice
+    pick_view(view_pick.value)
+
+
+def shared(e):
+    if graphNames()[0] != "projection":
+        return
+    a, b = e.node1.name, e.node2.name
+    use("two-mode")
+    na, nb = g.getNodeByName(a), g.getNodeByName(b)
+    common = sorted(set(x.label for x in na.getNeighbors()) & set(x.label for x in nb.getNeighbors()))
+    la, lb = na.label, nb.label
+    use("projection")
+    note2.text = (f"**{la}** and **{lb}** share **{len(common)}**: " + ", ".join(common[:12])
+                  + (" …" if len(common) > 12 else ""))
+
+
+note = Markdown("")
+note2 = Markdown("")
+graphevents.clickEdge = shared
+view_pick = Dropdown(VIEWS, label="Show", onChange=pick_view)
+setup(current[0])
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
+ui.title("Affiliation networks", "Networks, Section 4.5")
+ui.layout(
+    right=Column(
+        Markdown("""### People and the groups they share
+An **affiliation network** links people (orange circles) to groups (blue
+squares): women to the social events they attended in 1930s Mississippi, or
+authors to the papers they wrote. No two people are linked directly. That
+makes it **bipartite**.
+
+Projecting onto one side links two people if they share a group."""),
+        Dropdown(list(DATA), label="Data", onChange=setup),
+        view_pick,
+        Dropdown(["count", "jaccard", "newman"], label="Edge weight", onChange=pick_method),
+        note, note2,
+        Markdown("""*In the Southern Women data the women famously form two circles of
+friends; see whether the communities in the projection find them.*""")),
+    sizes={"right": 350},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))

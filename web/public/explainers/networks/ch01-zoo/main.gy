@@ -102,6 +102,7 @@ def caption():
 picker = Dropdown(list(BUILD), label="Network", onChange=show)
 
 show("A small network")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("What is a network?", "Networks, Chapter 1")
 ui.layout(
     right=Column(

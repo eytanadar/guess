@@ -93,6 +93,7 @@ def arrange(choice):
 
 
 show("best friends")
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Sociograms and what an edge means", "Networks, Section 4.1")
 ui.layout(
     right=Column(

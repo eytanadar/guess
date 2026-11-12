@@ -213,6 +213,7 @@ def threshold_changed(v):
 graphevents.clickNode = trace
 threshold.onChange = threshold_changed
 dress()
+constantLabelSize(size=14)     # labels keep a readable size on screen at any zoom
 ui.title("Rivers are trees", "Networks, Section 2.5")
 ui.layout(
     right=Column(

@@ -106,3 +106,36 @@ def test_show_matrix_orders_and_links_cells():
     assert s.run("showMatrix(nodes=(dept == 'dept3'), weight=freq)")
     m = _charts(s)[-1]
     assert m["weighted"] and len(m["labels"]) == ev(s, "len(dept == 'dept3')")
+
+
+def test_bipartite_layout_without_igraph():
+    s = _s()
+    assert s.run("makeSample('davis')\nuseIgraph(False)\nbipartiteLayout(bipartite)"), s.rec.of("error")
+    rows = {}
+    for n in s.graph.nodes:
+        rows.setdefault(n.bipartite, set()).add(round(n.y))
+    assert len(rows) == 2 and all(len(v) == 1 for v in rows.values())
+    assert s.run("useIgraph(True)")
+
+
+def test_every_paced_goes_slow_fast_slow():
+    s = _s()
+    assert s.run("calls = []\ndef step():\n    calls.append(1)\n\nt = everyPaced(step, steps=10, slow=1, fast=0.1)"), s.rec.of("error")
+    delays = []
+    for _ in range(12):
+        timers = [m for m in s.rec.of("ui") if m.get("op") == "timer"]
+        if not timers:
+            break
+        delays.append(timers[-1]["ms"])
+        s.rec.clear()
+        s.dispatch(timers[-1]["id"], "tick")
+    assert ev(s, "len(calls)") == 10
+    assert delays[0] == 1000 and abs(min(delays) - 100) < 1e-6 and delays[-1] > delays[4]
+    assert s.run("n = [5]\ndef countdown():\n    n[0] -= 1\n    return n[0] if n[0] > 0 else False\n\nt2 = everyPaced(countdown)")
+    for _ in range(8):
+        timers = [m for m in s.rec.of("ui") if m.get("op") == "timer"]
+        if not timers:
+            break
+        s.rec.clear()
+        s.dispatch(timers[-1]["id"], "tick")
+    assert ev(s, "n[0]") == 0 and not ev(s, "t2.running")
