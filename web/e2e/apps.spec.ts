@@ -42,7 +42,7 @@ test("an app shows the code that built it", async ({ page }) => {
   await page.locator("#app-source").click();
   const dlg = page.locator(".source-dialog");
   await expect(dlg).toBeVisible();
-  await expect(dlg.locator(".w-tabbar button")).toHaveText(["main.py", "manifest.json"]);
+  await expect(dlg.locator(".w-tabbar button")).toHaveText(["main.gy", "manifest.json"]);
   await expect(dlg.locator(".source-code")).toContainText('makeFromFile("school-contacts-SIMULATED.gdf")');
   await expect(dlg.locator(".source-code .tok-keyword").first()).toBeVisible();       // highlighted
   await dlg.locator(".w-tabbar button", { hasText: "manifest.json" }).click();

@@ -204,7 +204,7 @@ export class AppChrome {
       for (const [i, b] of [...tabs.children].entries()) b.setAttribute("aria-selected", String(i === k));
       const f = this.files[k];
       pre.replaceChildren();
-      if (/\.py$/.test(f.name)) {
+      if (/\.(py|gy)$/i.test(f.name)) {
         const tree = pythonLanguage.parser.parse(f.text);
         highlightCode(f.text, tree, classHighlighter, (text, classes) => {
           const span = document.createElement("span");

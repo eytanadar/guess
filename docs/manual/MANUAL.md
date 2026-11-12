@@ -995,6 +995,9 @@ A few more ways to show values on nodes:
 
 ```python
 pieChart([indegree, outdegree])     # each node becomes a pie of several fields
+Node.shares = ''                    # or give each node its own list of values
+v1.shares = [12, 21, 12]
+pieChart(shares, labels=['A', 'B', 'C'])
 pieNeighbors(dept)                  # a pie of the neighbours' departments
 removePies()
 bundleEdges(dept)                   # bundle edges that run between the same groups
@@ -1941,7 +1944,7 @@ its script:
   "console": "toggle",
   "theme": "light",
   "data": ["brca1-intact.gdf"],
-  "script": "main.py"
+  "script": "main.gy"
 }
 ```
 
@@ -1952,7 +1955,9 @@ then the script runs; its setup isn't an undo step. `console` is
 `"shown"`; `theme` is `"light"`, `"dark"` or `"auto"`. Instead of
 `script`, short apps can give the code itself as `code`. If the script
 stops with an error, the console opens to show it. An app from another
-web site asks before it runs.
+web site asks before it runs. The script is Gython; name it `.gy`
+rather than `.py`, since some web servers try to run `.py` files as
+programs instead of sending them.
 
 Every app has a *</> Source* button beside its name that shows the script
 and the manifest it was built from, highlighted, with *Copy* and

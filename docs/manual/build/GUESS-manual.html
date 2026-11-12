@@ -2834,6 +2834,12 @@ undo step. <code>console</code> is <code>&quot;hidden&quot;</code> (the default)
 Ctrl+<code>shows it) or</code>“shown”<code>;</code>theme<code>is</code>“light”<code>,</code>“dark”<code>or</code>“auto”<code>. Instead of</code>script<code>, short apps can give the code itself as</code>code`.
 If the script stops with an error, the console opens to show it. An app
 from another web site asks before it runs.</p>
+<p>Every app has a <em>&lt;/&gt; Source</em> button beside its name that
+shows the script and the manifest it was built from, highlighted, with
+<em>Copy</em> and <em>Download</em>: a reader can see how it’s done and
+start their own from it. <code>Action(&quot;source&quot;)</code> puts the same in
+a menu or toolbar, and <code>&quot;source&quot;: false</code> in the manifest
+leaves the button out.</p>
 <p><strong>Arranging the window.</strong> These commands work in any
 script or in the console, so you can build an app interactively:</p>
 <div class="sourceCode" id="cb73"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>info <span class="op">=</span> Markdown(<span class="st">&quot;### Organisation</span><span class="ch">\n</span><span class="st">Click a person to see their department.&quot;</span>)</span>
@@ -5427,8 +5433,8 @@ building (panels, widgets, timers, events)</h2>
 “open”, “save”, “png”, “svg”, “sample”, “share-link”, “share-viewer”,
 “table”, “style”, “filter”, “variables”, “help”, “history”, “search”,
 “stop”, “tour”, “manual”, “fit”, the tools “tool:select”, “tool:lens”,
-“tool:path”, “tool:heat”, “tool:paint”, “tool:cluster”, and “tools” (the
-whole tool strip, for a toolbar).</p>
+“tool:path”, “tool:heat”, “tool:paint”, “tool:cluster”, “tools” (the
+whole tool strip, for a toolbar) and “source” (an app’s code).</p>
 <h3 id="afterseconds-fn"><code>after(seconds, fn)</code></h3>
 <p>Call fn() once after <code>seconds</code> seconds; returns a timer
 with .stop().</p>

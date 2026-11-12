@@ -3,5 +3,5 @@
   "name": "Airport Disruption",
   "description": "US airports and their routes: close an airport and see who is cut off.",
   "console": "hidden",
-  "script": "main.py"
+  "script": "main.gy"
 }

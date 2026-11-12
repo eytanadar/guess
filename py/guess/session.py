@@ -1052,6 +1052,12 @@ class Session:
                 if 0 <= k < len(out):
                     out[k] = 1
             return out
+        if pie["mode"] == "list":
+            from .glyphs import slice_values
+            f = self.graph.node_schema.get(pie["field"])
+            vals = slice_values(f.get(n)) if f is not None else []
+            k = len(pie["labels"])
+            return (vals + [0.0] * k)[:k]
         if pie["mode"] == "fields":
             out = []
             schema = self.graph.node_schema
@@ -1108,6 +1114,8 @@ class Session:
             "lc": colors.to_rgba_int(lc)[0] if lc else -1,
             "b": [c for p in self.graph.bends.get(e, ()) for c in p] or None,
             **({"ls": float(val("labelsize"))} if val("labelsize") not in (None, 1.0) else {}),
+            **({"st": val("linestyle")} if val("linestyle") not in (None, "solid") else {}),
+            **({"ah": val("arrowhead")} if val("arrowhead") not in (None, "triangle") else {}),
         }
 
     def scene(self):
@@ -1260,7 +1268,7 @@ class Session:
     # display plumbing: never suggested
     _PLUMBING = {"x", "y", "visible", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "image",
                  "labelvisible", "labelsize", "labelpos", "label", "color", "name", "node1", "node2", "source",
-                 "destination", "size"}
+                 "destination", "size", "linestyle", "arrowhead"}
 
     def suggestions(self, limit=12):
         """Short commands worth trying on the graph showing now, for the code

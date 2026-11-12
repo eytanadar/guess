@@ -2136,10 +2136,13 @@ sharper turns). FDEB: stiffness (of each edge), compatibility (0..1, how
 alike edges must be to attract), cycles. Layouts and removeBundles()
 straighten them again.
 
-### `pieChart(fields, palette=None)`
+### `pieChart(fields, palette=None, labels=None)`
 
 pieChart([f1, f2, ...]) draws each node as a pie whose slices are the
-node's values of those numeric fields; palette=[colors] sets slice colours.
+node's values of those numeric fields. pieChart(f) with one text field
+reads each node's own list of values from it: v1.f = [12, 21, 12] gives
+v1 three slices (slice k has the same colour on every node).
+palette=[colors] sets slice colours; labels=[...] names the slices in the legend.
 
 ### `pieNeighbors(field)`
 

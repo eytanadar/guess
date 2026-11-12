@@ -65,7 +65,7 @@ The app is a manifest plus a script, plus any data files:
   "icon": "logo.svg",
   "theme": {"mode": "light", "accent": "#2f6fde"},
   "console": "hidden",
-  "script": "main.py",
+  "script": "main.gy",
   "data": ["brca1-intact.gdf"],
   "open": "brca1-intact.gdf"
 }
@@ -178,7 +178,7 @@ ui.statusbar(Label(lambda: f"{len(sel)} selected"), Memory())
   - `appPreview()` turns the current session into the app view;
   - Ctrl+` brings the console back;
   - `ui.reset()` returns to the standard window.
-- **Packaging it:** `exportApp("myapp/", script="main.py", data=[...])` writes the manifest folder; `exportApp("myapp.guess")` writes the single file.
+- **Packaging it:** `exportApp("myapp/", script="main.gy", data=[...])` writes the manifest folder; `exportApp("myapp.guess")` writes the single file.
 - **Tests:** a Playwright helper loads an app by URL and checks its regions, menus and actions.
 
 ## Phases

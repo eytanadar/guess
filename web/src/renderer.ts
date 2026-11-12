@@ -2,6 +2,7 @@
 import { Application, BitmapFont, BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js";
 import { activationScales, anneal, type Candidate, type Choice, greedyRepair, type Item, Occupancy, particles, type Rect, rectOf } from "./labelplace";
 import type { EdgeRec, HullRec, Morph, NodeRec, Overlay } from "./protocol";
+import { dashes, gradientPieces, headDepth, headPrims, linePrims, type Prim, trimEnd } from "./edgestyles";
 
 interface Anim {
   t0: number;
@@ -203,6 +204,11 @@ export class Renderer {
   private guidesNote = "";
   private imageLayer = new Container();
   private edgeG = new Graphics();
+  /** edges drawn as moving dashes ("flow"), redrawn on their own layer each frame */
+  private flowG = new Graphics();
+  private flowEdges: [EdgeRec, NodeRec, NodeRec, number, number][] = [];
+  private flowAt = 0;
+  private reducedMotion = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   private nodeG = new Graphics();
   private labels = new Container();
   private labelPool = new Map<string, BitmapText>();
@@ -312,7 +318,7 @@ export class Renderer {
     }).observe(this.host);
     // draw only when something changed (idle graphs cost nothing)
     this.app.ticker.remove(this.app.render, this.app);
-    this.world.addChild(this.backdrop, this.mapG, this.guideG, this.guideLabels, this.hullG, this.edgeG, this.nodeG, this.imageLayer, this.leaderG, this.pills, this.halos, this.labels, this.overlay);
+    this.world.addChild(this.backdrop, this.mapG, this.guideG, this.guideLabels, this.hullG, this.edgeG, this.flowG, this.nodeG, this.imageLayer, this.leaderG, this.pills, this.halos, this.labels, this.overlay);
     this.app.stage.addChild(this.world);
     this.app.ticker.add(() => this.frame());
     this.bindInput();
@@ -689,6 +695,13 @@ export class Renderer {
       if (t >= 1) this.tween = null;
     }
     if (this.anim) this.stepAnim(performance.now());
+    if (this.flowEdges.length && !this.reducedMotion && !this.dirty) {
+      const now = performance.now();
+      if (now - this.flowAt > 33) {            // about 30 frames a second, only while flow edges show
+        this.drawFlow(now);
+        this.needsRender = true;
+      }
+    }
     if (this.dirty) {
       this.dirty = false;
       this.updateFocus();
@@ -809,11 +822,18 @@ export class Renderer {
     // batch edges sharing colour, width and opacity into one stroke (one draw
     // call per style instead of per edge: big graphs draw much faster)
     const batches = new Map<string, { c: number; w: number; a: number; edges: [EdgeRec, NodeRec, NodeRec][] }>();
+    const styled: [EdgeRec, NodeRec, NodeRec, number, number][] = [];
+    const flow: [EdgeRec, NodeRec, NodeRec, number, number][] = [];
     for (const e of this.edges.values()) {
       const a = this.nodes.get(e.s), b = this.nodes.get(e.t);
       if (!e.v || !a || !b || !a.v || !b.v) continue;
       const c = this.edgeColor(e, a, b);
       const alpha = this.focus && !this.focus.edges.has(e.i) ? e.a * DIM_EDGE : e.a;
+      if (e.st || e.ah) {
+        // a line style or arrowhead of its own: drawn edge by edge, after the plain ones
+        (e.st === "flow" ? flow : styled).push([e, a, b, c, alpha]);
+        continue;
+      }
       const w = Math.max(e.w, 0.1);
       const key = `${c}|${w.toFixed(2)}|${alpha.toFixed(3)}`;
       let batch = batches.get(key);
@@ -831,6 +851,72 @@ export class Renderer {
         }
       }
       if (arrows) g.fill({ color: c, alpha });
+    }
+    for (const [e, a, b, c, alpha] of styled) this.drawPrims(g, this.edgePrims(e, a, b, c, alpha));
+    this.flowEdges = flow;
+    this.drawFlow(performance.now());
+  }
+
+  /** Flow edges: dashes moving from source to target (still when the system asks for less motion). */
+  private drawFlow(now: number) {
+    this.flowAt = now;
+    const g = this.flowG;
+    g.clear();
+    for (const [e, a, b, c, alpha] of this.flowEdges) {
+      const speed = Math.max(24, e.w * 10);                 // graph units a second
+      this.drawPrims(g, this.edgePrims(e, a, b, c, alpha), this.reducedMotion ? 0 : (now / 1000) * speed);
+    }
+  }
+
+  /** An edge's line style and arrowhead as shapes (see edgestyles.ts). */
+  edgePrims(e: EdgeRec, a: NodeRec, b: NodeRec, c: number, alpha: number): Prim[] {
+    const w = Math.max(e.w, 0.1);
+    let p: number[];
+    if (a === b) {
+      const r = Math.max(a.w, a.h) * 0.6, cx = a.x + a.w / 2, cy = a.y - r * 0.6;
+      p = [];
+      for (let k = 0; k <= 40; k++) p.push(cx + r * Math.sin((k / 40) * 2 * Math.PI), cy + r * Math.cos((k / 40) * 2 * Math.PI));
+    } else p = this.edgePoints(e, a, b);
+    if (!(e.d && a !== b)) return linePrims(e.st ?? "solid", p, w, c, alpha, a.c, b.c);
+    // the line stops where the arrowhead starts, so waves, double lines and the like end cleanly
+    const kind = e.ah ?? "triangle";
+    const [px, py, ux, uy, size, half] = this.arrowFrame(e, a, b);
+    const toTip = Math.hypot(p[p.length - 2] - px, p[p.length - 1] - py);
+    const prims = linePrims(e.st ?? "solid", trimEnd(p, toTip + headDepth(kind, size, half, w)), w, c, alpha, a.c, b.c);
+    prims.push(...headPrims(kind, px, py, ux, uy, size, half, w, e.st === "gradient" ? b.c : c, alpha));
+    return prims;
+  }
+
+  private drawPrims(g: Graphics, prims: Prim[], phase = 0) {
+    const path = (p: number[]) => {
+      g.moveTo(p[0], p[1]);
+      for (let k = 2; k < p.length; k += 2) g.lineTo(p[k], p[k + 1]);
+    };
+    for (const q of prims) {
+      if (q.k === "poly") {
+        g.poly(q.p);
+        g.fill({ color: q.c, alpha: q.a });
+      } else if (q.k === "dot") {
+        g.circle(q.x, q.y, q.r);
+        g.fill({ color: q.c, alpha: q.a });
+      } else if (q.grad) {
+        for (const [piece, col] of gradientPieces(q.p, q.grad[0], q.grad[1])) {
+          path(piece);
+          g.stroke({ width: q.w, color: col, alpha: q.a, cap: "butt", join: "round" });
+        }
+      } else if (q.dash) {
+        const parts = dashes(q.p, q.dash[0], q.dash[1], phase);
+        if (q.dash[0] === 0) {
+          for (const d of parts) g.circle(d[0], d[1], Math.max(q.w * 0.6, 0.6));
+          if (parts.length) g.fill({ color: q.c, alpha: q.a });
+        } else {
+          for (const d of parts) path(d);
+          if (parts.length) g.stroke({ width: q.w, color: q.c, alpha: q.a, cap: "butt", join: "round" });
+        }
+      } else {
+        path(q.p);
+        g.stroke({ width: q.w, color: q.c, alpha: q.a, cap: "round", join: "round" });
+      }
     }
   }
 
@@ -903,6 +989,13 @@ export class Renderer {
 
   /** Arrowhead triangle [tip, left, right] at the target end of an edge. */
   arrowPoints(e: EdgeRec, a: NodeRec, b: NodeRec): number[] {
+    const [px, py, ux, uy, size, half] = this.arrowFrame(e, a, b);
+    const qx = px - ux * size, qy = py - uy * size;
+    return [px, py, qx - uy * half, qy + ux * half, qx + uy * half, qy - ux * half];
+  }
+
+  /** Where an arrowhead goes: its tip (on the target's outline), direction, length and half-width. */
+  arrowFrame(e: EdgeRec, a: NodeRec, b: NodeRec): [number, number, number, number, number, number] {
     const p = this.edgePoints(e, a, b);
     const bx = p[p.length - 2], by = p[p.length - 1];
     const fx = p[p.length - 4], fy = p[p.length - 3];
@@ -913,8 +1006,7 @@ export class Renderer {
     const px = bx - ux * tip, py = by - uy * tip;
     const size = this.arrowLen ?? Math.max(6, e.w * 3);
     const half = this.arrowWidth != null ? this.arrowWidth / 2 : size * 0.45;
-    const qx = px - ux * size, qy = py - uy * size;
-    return [px, py, qx - uy * half, qy + ux * half, qx + uy * half, qy - ux * half];
+    return [px, py, ux, uy, size, half];
   }
 
   private arrow(g: Graphics, e: EdgeRec, a: NodeRec, b: NodeRec) {
@@ -1747,6 +1839,36 @@ export class Renderer {
   }
 
   /** Vector export of the whole graph. */
+  /** SVG for edge shapes; gradients and flow use SVG's own gradient, dashes and animation. */
+  private svgPrims(prims: Prim[], col: (c: number) => string, id: string): string[] {
+    const out: string[] = [];
+    const pts = (p: number[]) => p.map((v) => +v.toFixed(2)).join(" ");
+    prims.forEach((q, k) => {
+      if (q.k === "poly") out.push(`<polygon points="${pts(q.p)}" fill="${col(q.c)}" fill-opacity="${q.a}"/>`);
+      else if (q.k === "dot") out.push(`<circle cx="${q.x.toFixed(2)}" cy="${q.y.toFixed(2)}" r="${q.r.toFixed(2)}" fill="${col(q.c)}" fill-opacity="${q.a}"/>`);
+      else {
+        let paint = col(q.c), extra = "", inner = "";
+        if (q.grad) {
+          const gid = `${id}-${k}`, n = q.p.length;
+          out.push(`<defs><linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${q.p[0]}" y1="${q.p[1]}" x2="${q.p[n - 2]}" y2="${q.p[n - 1]}">` +
+            `<stop offset="0" stop-color="${col(q.grad[0])}"/><stop offset="1" stop-color="${col(q.grad[1])}"/></linearGradient></defs>`);
+          paint = `url(#${gid})`;
+        }
+        let w = q.w, cap = "round";
+        if (q.dash) {
+          const [on, off] = q.dash;
+          if (on === 0) w = Math.max(q.w * 1.2, 1.2);        // dots: zero-length dashes with round caps
+          else cap = "butt";
+          extra = ` stroke-dasharray="${on === 0 ? 0.001 : on} ${on === 0 ? off : off}"`;
+          if (q.flow) inner = `<animate attributeName="stroke-dashoffset" from="${on + off}" to="0" dur="${((on + off) / Math.max(24, q.w * 10)).toFixed(2)}s" repeatCount="indefinite"/>`;
+        }
+        out.push(`<polyline points="${pts(q.p)}" fill="none" stroke="${paint}" stroke-opacity="${q.a}" stroke-width="${w}" ` +
+          `stroke-linecap="${cap}" stroke-linejoin="round"${extra}>${inner}</polyline>`);
+      }
+    });
+    return out;
+  }
+
   exportSVG(): string {
     const vis = [...this.nodes.values()].filter((n) => n.v);
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -1779,6 +1901,10 @@ export class Renderer {
       if (!e.v || !a || !b || !a.v || !b.v) continue;
       const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
       const ec = this.edgeColor(e, a, b);
+      if (e.st || e.ah) {
+        out.push(...this.svgPrims(this.edgePrims(e, a, b, ec, e.a), col, `eg${e.i}`));
+        continue;
+      }
       const stroke = `stroke="${col(ec)}" stroke-opacity="${e.a}" stroke-width="${e.w}" fill="none" stroke-linecap="round"`;
       if (a === b) {
         const r = Math.max(a.w, a.h) * 0.6;

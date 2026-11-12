@@ -45,6 +45,8 @@ def coerce(ftype, value):
     if value is None:
         return None
     if ftype == STRING:
+        if isinstance(value, (list, tuple)):
+            return ",".join(str(x) for x in value)     # [12, 21, 12] -> "12,21,12" (pieChart reads it)
         return value if isinstance(value, str) else str(value)
     if ftype == INT:
         if isinstance(value, bool):
@@ -359,6 +361,10 @@ class Field:
             value = str(value).lower()
             if value not in LABEL_POSITIONS:
                 raise GuessError(f"labelpos should be one of {', '.join(LABEL_POSITIONS)}, got {value!r}")
+        if self.kind == EDGE and self.builtin and self.name in _EDGE_CHOICES and value is not None:
+            value = str(value).lower()
+            if value not in _EDGE_CHOICES[self.name]:
+                raise GuessError(f"{self.name} should be one of {', '.join(_EDGE_CHOICES[self.name])}, got {value!r}")
         if self.name == "labelsize" and value is not None and float(value) <= 0:
             raise GuessError("labelsize should be a positive scale (1 = normal)")
         if self.name.endswith("color") and value is not None:
@@ -946,7 +952,14 @@ _EDGE_BUILTINS = [
     ("label", STRING, None, True),
     ("labelvisible", BOOL, False, True),
     ("labelsize", DOUBLE, 1.0, True),
+    ("linestyle", STRING, "solid", True),
+    ("arrowhead", STRING, "triangle", True),
 ]
+
+# how an edge's line is drawn, and the head on a directed edge's target end
+LINE_STYLES = ("solid", "dashed", "dotted", "taper", "wave", "double", "fuzzy", "gradient", "flow")
+ARROWHEADS = ("triangle", "swept", "open", "diamond", "circle", "tee", "none")
+_EDGE_CHOICES = {"linestyle": LINE_STYLES, "arrowhead": ARROWHEADS}
 
 
 _UNSET = object()

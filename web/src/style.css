@@ -150,7 +150,15 @@ body { display: flex; flex-direction: column; }
   border-radius: 4px; background: var(--surface); cursor: pointer; color: var(--muted);
 }
 .cell-actions button:hover { color: var(--text); border-color: var(--hover-border); }
-.cell-out { padding-left: calc(4ch + 6px); }
+.cell-out {
+  /* output, set off from the code above: a ↳ in the number column and a faint rule */
+  position: relative; margin-top: 2px; padding-left: calc(4ch + 6px);
+  background: linear-gradient(var(--border), var(--border)) no-repeat calc(4ch - 1px) 2px / 1px calc(100% - 4px);
+}
+.cell-out::before {
+  content: "↳"; position: absolute; left: 1ch; top: 0; color: var(--hint);
+  user-select: none; pointer-events: none;
+}
 .cell-out:empty { display: none; }
 .cell.collapsed .cell-out { display: none; }
 .cell.collapsed .cell-num::after { content: " …"; }

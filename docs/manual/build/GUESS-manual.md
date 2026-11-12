@@ -1954,6 +1954,12 @@ then the script runs; its setup isn't an undo step. `console` is
 stops with an error, the console opens to show it. An app from another
 web site asks before it runs.
 
+Every app has a *</> Source* button beside its name that shows the script
+and the manifest it was built from, highlighted, with *Copy* and
+*Download*: a reader can see how it's done and start their own from it.
+`Action("source")` puts the same in a menu or toolbar, and `"source": false`
+in the manifest leaves the button out.
+
 **Arranging the window.** These commands work in any script or in the
 console, so you can build an app interactively:
 
@@ -4933,8 +4939,8 @@ Action(name): one of GUESS's own commands for a menu or toolbar: "open",
 "save", "png", "svg", "sample", "share-link", "share-viewer", "table",
 "style", "filter", "variables", "help", "history", "search", "stop",
 "tour", "manual", "fit", the tools "tool:select", "tool:lens",
-"tool:path", "tool:heat", "tool:paint", "tool:cluster", and "tools"
-(the whole tool strip, for a toolbar).
+"tool:path", "tool:heat", "tool:paint", "tool:cluster", "tools"
+(the whole tool strip, for a toolbar) and "source" (an app's code).
 
 ### `after(seconds, fn)`
 

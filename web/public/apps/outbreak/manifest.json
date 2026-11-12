@@ -3,5 +3,5 @@
   "name": "Outbreak Explorer",
   "description": "A simulated school: choose patient zero and how contagious the disease is, and watch it spread.",
   "console": "toggle",
-  "script": "main.py"
+  "script": "main.gy"
 }

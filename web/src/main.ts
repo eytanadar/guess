@@ -436,11 +436,14 @@ async function loadApp(url: string) {
     } catch (e) {
       appChrome.console("shown");
       term.error(`Could not load the app's script ${m.script}: ${e}`);
+      if (/HTTP 500/.test(String(e)) && /\.py$/i.test(m.script))
+        term.note("The web server may be running .py files as programs instead of sending them. " +
+          "Rename the script to .gy (e.g. main.gy) and update \"script\" in the manifest.");
       return;
     }
   }
   // "Source": the files the app is built from
-  const scriptName = m.script ? decodeURIComponent(new URL(m.script, base).pathname.split("/").pop() || "main.py") : "code.py";
+  const scriptName = m.script ? decodeURIComponent(new URL(m.script, base).pathname.split("/").pop() || "main.gy") : "code.py";
   appChrome.setSource([{ name: scriptName, text: code }, { name: base.pathname.split("/").pop() || "manifest.json", text: manifestText }],
     m.source !== false);
   // the script sets the app up: not an undo step, and not in the history
@@ -1235,7 +1238,7 @@ $<HTMLInputElement>("#file").addEventListener("change", async (ev) => {
 });
 
 const LOADERS: [RegExp, string][] = [
-  [/\.py$/i, "execfile"],
+  [/\.(py|gy)$/i, "execfile"],
   [/\.guess$/i, "makeFromSession"],
   // every graph format: makeFromFile picks the reader by extension, or by
   // content when the extension doesn't say (.xml, .txt, .json)
@@ -1488,7 +1491,7 @@ let wireMenuRoot: (r: HTMLElement) => void = () => {};
   });
   // Help → Example apps: each opens in a new tab
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-app]")) {
-    b.addEventListener("click", () => window.open(`${location.pathname}?app=${encodeURIComponent(b.dataset.app!)}`, "_blank", "noopener"));
+    b.addEventListener("click", () => window.open(pageUrl(`?app=${encodeURIComponent(b.dataset.app!)}`), "_blank", "noopener"));
   }
   // menu items that run a Gython command
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-run]")) {
@@ -1883,11 +1886,20 @@ async function unpackSession(data: string): Promise<string> {
   const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
   return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
 }
+/** This page's full address with a new query and hash. Built from location.href,
+ *  not location.pathname: a path like "//guess/" on its own reads as a host name. */
+function pageUrl(search = "", hash = ""): string {
+  const u = new URL(location.href);
+  u.search = search;
+  u.hash = hash;
+  return u.href;
+}
+
 async function shareLink(app: boolean) {
   const snap = await request<[number, string] | null>((id) => ({ type: "snapshot", id, since: -1 }));
   if (!snap) return;
   const packed = await packSession(snap[1]);
-  const url = `${location.origin}${location.pathname}#s=${packed}${app ? "&app=1" : ""}`;
+  const url = pageUrl("", `#s=${packed}${app ? "&app=1" : ""}`);
   try {
     await navigator.clipboard.writeText(url);
     term.note(`Link copied (${Math.round(url.length / 1024)} KB)${url.length > 64000 ? " — long links may be cut off by some apps; for big graphs share a saved .guess file instead" : ""}. It opens this graph${app ? " as a read-only viewer" : ""} for anyone with the link.`);
@@ -2245,7 +2257,7 @@ async function freshStart(confirmFirst = true) {
   try {
     for (const k of Object.keys(localStorage)) if (k.startsWith("guess.")) localStorage.removeItem(k);
   } catch { /* storage unavailable */ }
-  location.replace(location.pathname);       // no ?load, #s= or ?fresh: a clean start
+  location.replace(pageUrl());               // no ?load, #s= or ?fresh: a clean start
 }
 $("#fresh-start").addEventListener("click", () => void freshStart());
 if (params.has("fresh")) void freshStart(false);

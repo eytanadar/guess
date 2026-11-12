@@ -2,6 +2,8 @@
 bundling (Cytoscape's enhancedGraphics, Gephi's edge bundling).
 
     pieChart([sales, support, rnd])     each node a pie of those numeric fields
+    pieChart(shares)                    each node a pie of its own list of values
+                                        (a text field: v1.shares = [12, 21, 12])
     pieNeighbors(dept)                  each node a pie of its neighbours' depts
     removePies()
     borderBy(dept)                      a border colour per value (wider borders)
@@ -10,12 +12,32 @@ bundling (Cytoscape's enhancedGraphics, Gephi's edge bundling).
     removeBundles()
 """
 import math
+import re
 from collections import Counter
 
 from . import colors
-from .model import Field, GuessError, NODE, group_by
+from .model import Field, GuessError, NODE, STRING, group_by
 
 MAX_SLICES = 8
+_NUMBER = re.compile(r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
+
+
+def slice_values(value):
+    """The numbers in a pie list: [12, 21, 12], "12,21,12", "12 21 12" or "[12; 21]"."""
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        items = value
+    else:
+        items = _NUMBER.findall(str(value))
+    out = []
+    for x in items:
+        try:
+            v = float(x)
+        except (TypeError, ValueError):
+            v = 0.0
+        out.append(v if v == v and v > 0 else 0.0)
+    return out
 
 
 def install(session):
@@ -48,15 +70,38 @@ def install(session):
         view.changed()
 
     @cmd
-    def pieChart(fields, palette=None):
+    def pieChart(fields, palette=None, labels=None):
         """pieChart([f1, f2, ...]) draws each node as a pie whose slices are the
-        node's values of those numeric fields; palette=[colors] sets slice colours."""
+        node's values of those numeric fields. pieChart(f) with one text field
+        reads each node's own list of values from it: v1.f = [12, 21, 12] gives
+        v1 three slices (slice k has the same colour on every node).
+        palette=[colors] sets slice colours; labels=[...] names the slices in the legend."""
         fs = [_field_arg(f, "pieChart") for f in (fields if isinstance(fields, (list, tuple)) else [fields])]
         if not fs:
             raise GuessError("pieChart needs at least one field")
+        if len(fs) == 1 and fs[0].type == STRING:
+            f = fs[0]
+            k = max((len(slice_values(f.get(n))) for n in g._nodes_list()), default=0)
+            if not k:
+                raise GuessError(f"no node has a list of numbers in '{f.name}' "
+                                 f"(set one with: v.{f.name} = [12, 21, 12])")
+            names = [str(x) for x in labels][:k] if labels else []
+            names += [f"{f.name}[{i}]" for i in range(len(names), k)]
+            cols = list(palette) if palette else colors.distinctColors(k)
+            cols = (cols * (k // max(len(cols), 1) + 1))[:k]
+            view.pie = {"mode": "list", "field": f.name, "labels": names,
+                        "colors": [colors.normalize(c) for c in cols]}
+            mark_all()
+            return
+        for f in fs:
+            if f.type == STRING:
+                raise GuessError(f"pieChart: '{f.name}' is a text field; give numeric fields, "
+                                 f"or one text field holding lists (pieChart({f.name}))")
         cols = list(palette) if palette else colors.distinctColors(len(fs))
+        names = [str(x) for x in labels][:len(fs)] if labels else []
+        names += [f.name for f in fs[len(names):]]
         view.pie = {"mode": "fields", "fields": [f.name for f in fs],
-                    "labels": [f.name for f in fs], "colors": [colors.normalize(c) for c in cols[:len(fs)]]}
+                    "labels": names, "colors": [colors.normalize(c) for c in cols[:len(fs)]]}
         mark_all()
 
     @cmd

@@ -14,6 +14,9 @@ export interface NodeRec {
   lp?: string;
   /** label size as a scale (absent: 1) */
   ls?: number;
+  /** line style (absent: solid) and arrowhead (absent: triangle); see edgestyles.ts */
+  st?: string;
+  ah?: string;
 }
 
 export interface EdgeRec {
@@ -24,6 +27,9 @@ export interface EdgeRec {
   b?: number[] | null;
   /** label size as a scale (absent: 1) */
   ls?: number;
+  /** line style (absent: solid) and arrowhead (absent: triangle); see edgestyles.ts */
+  st?: string;
+  ah?: string;
 }
 
 /** Interpreter output: text, node, edge, or a (possibly annotated) group. */

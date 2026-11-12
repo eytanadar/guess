@@ -234,3 +234,21 @@ def test_set_nodes_and_edges(s):
     s.rec.clear()
     s.run("(freq > 9).color = blue")
     assert "setEdgeColorMode" in "".join(m["text"] for m in s.rec.of("text"))
+
+
+def test_pie_from_list_field(big):
+    # one text field holding a list per node: slice k is the k-th value
+    assert big.run("Node.shares = ''\nv4.shares = [12, 21, 12]\nv5.shares = '3, 1'"), big.rec.of("error")
+    assert ev(big, "v4.shares") == "12,21,12"
+    assert big.run("pieChart(shares)"), big.rec.of("error")
+    assert big.node_record(ev(big, "v4"))["p"] == [12.0, 21.0, 12.0]
+    assert big.node_record(ev(big, "v5"))["p"] == [3.0, 1.0, 0.0]
+    assert big.node_record(ev(big, "v6"))["p"] == [0.0, 0.0, 0.0]     # no list: drawn plainly
+    assert big.view.pie["labels"] == ["shares[0]", "shares[1]", "shares[2]"]
+    assert len(big.view.record()["pie"]) == 3                          # slice colours sent to the page
+    assert big.run("pieChart(shares, labels=['a', 'b', 'c'], palette=[red, green, blue])")
+    assert big.view.pie["labels"] == ["a", "b", "c"]
+    # mistakes say what to do
+    assert not big.run("pieChart([shares, indegree])")
+    assert not big.run("Node.empty = ''\npieChart(empty)")
+    assert big.run("removePies()")

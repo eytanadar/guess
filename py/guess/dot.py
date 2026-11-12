@@ -214,7 +214,14 @@ _SHAPES = {"box": 1, "rect": 1, "rectangle": 1, "square": 1, "ellipse": 2, "oval
            "point": 2, "doublecircle": 2, "egg": 2, "triangle": 11, "diamond": 12, "hexagon": 13,
            "octagon": 14, "Mrecord": 3, "record": 1}
 _NODE_DONE = {"pos", "color", "fillcolor", "label", "width", "height", "shape", "fontcolor"}
-_EDGE_DONE = {"color", "label", "penwidth", "weight", "guess_weight", "fontcolor", "pos", "dir"}
+_EDGE_DONE = {"color", "label", "penwidth", "weight", "guess_weight", "fontcolor", "pos", "dir", "arrowhead"}
+# Graphviz arrowheads and edge styles -> GUESS's arrowhead and linestyle (and back)
+_ARROW_IN = {"normal": "triangle", "inv": "triangle", "vee": "swept", "open": "open", "onormal": "open",
+             "empty": "open", "diamond": "diamond", "odiamond": "diamond", "ediamond": "diamond",
+             "dot": "circle", "odot": "circle", "invdot": "circle", "tee": "tee", "none": "none"}
+_ARROW_OUT = {"swept": "vee", "open": "onormal", "diamond": "diamond", "circle": "dot", "tee": "tee", "none": "none"}
+_LINE_IN = {"dashed": "dashed", "dotted": "dotted", "tapered": "taper"}
+_LINE_OUT = {"dashed": "dashed", "dotted": "dotted", "taper": "tapered"}
 _RESERVED_N = {"name", "x", "y", "visible", "color", "strokecolor", "labelcolor", "fixed", "style", "width",
                "height", "label", "image", "labelvisible", "indegree", "outdegree", "totaldegree"}
 _RESERVED_E = {"node1", "node2", "directed", "source", "destination", "color", "labelcolor", "visible",
@@ -348,6 +355,17 @@ def read_dot(graph, text):
             e.label = a["label"]
         if "invis" in styles_of.get(id(a), set()):
             e.visible = False
+        ah = re.sub(r"^[lr]", "", str(a.get("arrowhead", "")).strip().lower())
+        if ah in _ARROW_IN and ah != "normal":
+            e.arrowhead = _ARROW_IN[ah]
+        st = next((_LINE_IN[w] for w in styles_of.get(id(a), set()) if w in _LINE_IN), None)
+        if st:
+            e.linestyle = st
+            rest = [x.strip() for x in a.get("style", "").split(",") if x.strip() and x.strip() not in _LINE_IN]
+            if rest:
+                a["style"] = ",".join(rest)
+            else:
+                a.pop("style", None)
         for k, attr in (("penwidth", "width"), ("weight", "weight"), ("guess_weight", "weight")):
             try:
                 setattr(e, attr, float(a[k]))
@@ -484,7 +502,9 @@ def write_dot(graph, clusters="cluster", layout=True):
                  ("color", _hex(e.color)), ("penwidth", _num(e.width)),
                  ("label", e.label or None),
                  ("fontcolor", _hex(e.labelcolor) if e.labelcolor else None),
-                 ("style", "invis" if not e.visible else None)]
+                 ("style", ",".join(x for x in ("invis" if not e.visible else None,
+                                                _LINE_OUT.get(e.linestyle)) if x) or None),
+                 ("arrowhead", _ARROW_OUT.get(e.arrowhead) if e._directed else None)]
         if w is not None:
             w = float(w)
             pairs.append(("weight", str(max(0, round(w)))))      # dot needs whole weights
