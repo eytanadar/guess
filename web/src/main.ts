@@ -10,6 +10,7 @@ import { AssistantLink } from "./assistant";
 import { AppChrome, type AppManifest } from "./app";
 import { ask, choose, pickFields } from "./dialog";
 import { toGIF, toPDF, toPS } from "./rasterexport";
+import { makeZip, uniqueName } from "./zip";
 import { HelpPanel, type HelpIndex } from "./help";
 import { Palette, type PaletteItem } from "./palette";
 import { DataTable, type QueryResult, type TableData } from "./table";
@@ -759,8 +760,29 @@ async function cellHover(cell: number | null) {
   if (token === cellHoverToken) highlightItems(items?.length ? items : null);
 }
 
+// An export from a script waits for the display to catch up before it captures,
+// and messages that arrive meanwhile (the script's next changes) wait their turn.
+const backlog: FromWorker[] = [];
+let holding = false;
+
 worker.onmessage = (ev: MessageEvent<FromWorker>) => {
-  const m = ev.data;
+  if (holding) backlog.push(ev.data);
+  else handle(ev.data);
+};
+
+async function hold(task: () => Promise<unknown>) {
+  holding = true;
+  try {
+    await task();
+  } catch (e) {
+    term.error(`Export failed: ${e}`);
+  } finally {
+    holding = false;
+    while (backlog.length && !holding) handle(backlog.shift()!);
+  }
+}
+
+function handle(m: FromWorker) {
   switch (m.type) {
     case "status":
       status.textContent = m.text;
@@ -826,7 +848,14 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       stylePanel.refreshSaved();
       break;
     case "export":
-      exportView(m.format, m.name);
+      void hold(async () => {
+        await renderer.settled();
+        await saveExport(m.name, await renderExport(m.format));
+      });
+      break;
+    case "images":
+      if (m.op === "start") startImages(m.name);
+      else void hold(stopImages);
       break;
     case "ui":
       onUi(m);
@@ -889,7 +918,7 @@ worker.onmessage = (ev: MessageEvent<FromWorker>) => {
       break;
     }
   }
-};
+}
 
 // ---- hover / tooltips -----------------------------------------------------------
 let tipToken = 0;
@@ -1590,18 +1619,47 @@ $("#stop").addEventListener("click", () => {
 $("#png").addEventListener("click", () => exportView("png", "guess.png"));
 $("#svg").addEventListener("click", () => exportView("svg", "guess.svg"));
 
-async function exportView(format: "png" | "jpg" | "svg" | "gif" | "pdf" | "ps" | "eps", name: string) {
-  if (format === "svg") {
-    download(name, new Blob([renderer.exportSVG()], { type: "image/svg+xml" }));
+type ExportFormat = "png" | "jpg" | "svg" | "gif" | "pdf" | "ps" | "eps";
+
+async function exportView(format: ExportFormat, name: string) {
+  download(name, await renderExport(format));
+}
+
+/** The display in a file format. */
+async function renderExport(format: ExportFormat): Promise<Blob> {
+  if (format === "svg") return new Blob([renderer.exportSVG()], { type: "image/svg+xml" });
+  if (format === "pdf") return toPDF(await renderer.exportImage("jpg"));
+  if (format === "ps" || format === "eps") return toPS(await renderer.exportImage("png"), format === "eps");
+  if (format === "gif") return toGIF(await renderer.exportImage("png"));
+  return (await fetch(await renderer.exportImage(format))).blob();
+}
+
+// ---- startImages()/stopImages(): a script's exports collected into one zip ----------
+let collecting: { name: string; files: [string, Blob][]; taken: Set<string> } | null = null;
+
+function startImages(name: string) {
+  collecting = { name, files: [], taken: new Set() };
+  status.textContent = `Collecting images for ${name}`;
+}
+
+async function saveExport(name: string, blob: Blob) {
+  if (!collecting) return download(name, blob);
+  const n = uniqueName(name, collecting.taken);
+  collecting.taken.add(n);
+  collecting.files.push([n, blob]);
+  status.textContent = `${collecting.files.length} image${collecting.files.length === 1 ? "" : "s"} for ${collecting.name}`;
+}
+
+async function stopImages() {
+  const c = collecting;
+  collecting = null;
+  if (!c) return;
+  if (!c.files.length) {
+    status.textContent = `No images were saved, so ${c.name} wasn't made`;
     return;
   }
-  if (format === "pdf") return download(name, await toPDF(await renderer.exportImage("jpg")));
-  if (format === "ps" || format === "eps") return download(name, await toPS(await renderer.exportImage("png"), format === "eps"));
-  if (format === "gif") return download(name, await toGIF(await renderer.exportImage("png")));
-  const a = document.createElement("a");
-  a.href = await renderer.exportImage(format);
-  a.download = name;
-  a.click();
+  download(c.name, await makeZip(c.files));
+  status.textContent = `Saved ${c.files.length} image${c.files.length === 1 ? "" : "s"} in ${c.name}`;
 }
 
 // ---- timeline ------------------------------------------------------------------------

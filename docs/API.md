@@ -22,7 +22,7 @@ Commands can be called without parentheses when they take no arguments
 - [Layouts](#layouts) (33)
 - [Structure-aware layout (motifLayout, after LUMINA)](#structure-aware-layout-motiflayout-after-lumina) (1)
 - [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
-- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (35)
+- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (37)
 - [Styles and visual mappings](#styles-and-visual-mappings) (14)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
@@ -1546,6 +1546,9 @@ centerAfterLayout(state): whether the view re-centres after each layout
 
 circleLayout() places all nodes evenly on a circle (radius 450 around 500,500).
 
+circleLayout(field) makes one circle per value of a node field (bigger
+groups get bigger circles, the biggest first), packed in rows.
+
 circleLayout(field, centerNode) puts centerNode at (500, 500) and its
 neighbours on a circle around it, ordered by `field`, at a radius
 proportional to `field` (a node field of the neighbours, or an edge
@@ -1912,7 +1915,7 @@ Save the display as GIF (downloaded by the browser): an image of the current vie
 
 ### `exportJPG(filename='guess.jpg')`
 
-Save the display as JPG (downloaded by the browser).
+Save the display as JPG (downloaded by the browser, or added to the zip after startImages()).
 
 ### `exportPDF(filename='guess.pdf')`
 
@@ -1920,7 +1923,7 @@ Save the display as PDF (downloaded by the browser): an image of the current vie
 
 ### `exportPNG(filename='guess.png')`
 
-Save the display as PNG (downloaded by the browser).
+Save the display as PNG (downloaded by the browser, or added to the zip after startImages()).
 
 ### `exportPS(filename='guess.ps')`
 
@@ -1928,7 +1931,7 @@ Save the display as PS (downloaded by the browser): an image of the current view
 
 ### `exportSVG(filename='guess.svg')`
 
-Save the display as SVG (downloaded by the browser). Vector: the whole graph, not just the visible area.
+Save the display as SVG (downloaded by the browser, or added to the zip after startImages()). Vector: the whole graph, not just the visible area.
 
 ### `getConvexHulls()`
 
@@ -2037,10 +2040,26 @@ setEdgeColorMode("mixed") draws each edge in the blend of its endpoints'
 colours; "source" / "target" use one endpoint's colour; "original" (the
 default) uses the edge's own color field. As in Gephi's preview.
 
+### `startImages(filename='images.zip')`
+
+Collect the images that exportPNG() and the other exports save into one
+zip file, downloaded by stopImages(), instead of downloading each:
+    startImages('frames.zip')
+    for t in range(1990, 2001):
+        showTime(t, 'year', 1)
+        exportPNG('year_%d.png' % t)
+    stopImages()
+Each export shows the display as it is at that point in the script.
+Repeated names get -2, -3, ... added.
+
 ### `startMovie(fps=30, filename='guess.webm')`
 
 Record the display (graph canvas) as a WebM video until stopMovie().
 Everything shown — layouts, morphs, edits, panning — is captured.
+
+### `stopImages()`
+
+Stop collecting images (see startImages) and download the zip.
 
 ### `stopMovie()`
 
@@ -3818,6 +3837,16 @@ graphevents.clickNode = lambda n: center([n] + n.getNeighbors())
 startMovie(30, 'run.webm')
 gemLayout()
 stopMovie()
+```
+
+**Save an image per step, as one zip**
+
+```python
+startImages('steps.zip')
+for k in [1, 2, 3]:
+    (degree >= k).color = red
+    exportPNG('step_%d.png' % k)
+stopImages()
 ```
 
 **Arrange the window like an app**

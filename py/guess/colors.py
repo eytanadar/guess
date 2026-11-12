@@ -1,15 +1,20 @@
 """Color handling, following com/hp/hpl/guess/ui/Colors.java.
 
 GUESS stores colors as strings: a name ("red"), or "r,g,b" / "r,g,b,a".
-Names are case-insensitive. We additionally accept "#rrggbb".
+Names are case-insensitive; the CSS colour names work too (the 2006 names win
+where both have one). We additionally accept "#rrggbb".
 """
 import random as _random
 
 from ._colortable import NAMED
+from ._webcolors import WEB
 
 COLORS = {}
 for _name, _rgb in NAMED.items():
     COLORS[_name.lower()] = _rgb + (255,)
+# the CSS colour names too; the 2006 names keep their own colours where both have one
+for _name, _hex in WEB.items():
+    COLORS.setdefault(_name, ((_hex >> 16) & 255, (_hex >> 8) & 255, _hex & 255, 255))
 
 
 class Color(str):

@@ -375,10 +375,10 @@ behave, and you can set them in the file:
 | `x`, `y` | position (if missing, GUESS lays out the graph) | |
 | `color` | fill colour (a name or `"r,g,b"` / `"r,g,b,a"`) | cornflowerblue |
 | `strokecolor` | outline colour | darker fill |
-| `style` | shape: 1 rectangle, 2 ellipse, 3 rounded rectangle, 4–6 the same with the label inside, 7 image, 11 triangle, 12 diamond, 13 hexagon, 14 octagon | 2 |
+| `style` | shape: 1 rectangle, 2 ellipse, 3 rounded rectangle, 4–6 the same with the label inside, 7 image, 11 triangle, 12 diamond, 13 hexagon, 14 octagon, `polygon(n)` (all pictured in §7.2) | 2 |
 | `width`, `height` | size | 10 |
 | `label`, `labelvisible`, `labelcolor` | the label text, whether it's shown, its colour (inside a node: black or white for contrast, unless set) | name, false |
-| `labelpos` | where the label goes: `right`, `left`, `above`, `below`, `inside`, or `outside` (GUESS picks a free side) | right |
+| `labelpos` | where the label goes: `right`, `left`, `above`, `below`, `inside`, or `outside` (GUESS picks a free side; pictured in §12.4) | right |
 | `labelsize` | label size as a scale (1 = normal) | 1 |
 | `image` | an image file or URL (with style 7) | |
 | `visible` | whether it's drawn | true |
@@ -815,6 +815,8 @@ The Graphviz and igraph layouts are loaded in the background a few seconds
 after GUESS starts (about 2 MB together). If you run one sooner, GUESS says
 so; run it again a moment later.
 
+![Nine layouts of the sample graph's largest component, coloured by department.](img/layouts.png)
+
 ```python
 makeSimpleDirectedRandom(30, 45)
 remove(feedbackEdges())                   # make it acyclic (section 7.7)
@@ -973,9 +975,13 @@ GradientLegend(yellow, red, betweenness.min, betweenness.max)
 of sides from a whole-number field, or gives each value of another field its
 own polygon.
 
+![The node shapes (the `style` field). Style 7 shows the node's `image`.](img/nodeshapes.png){width=90%}
+
 `colorize` and `colorBy` work on node fields and on edge fields (they colour
 whichever the field belongs to). `colorize(freq, blue, red)` with two colours
 behaves like `colorBy`.
+
+![The four scales of `colorBy`. The nodes are in PageRank order, lowest first. `linear` keeps most of the gradient for the few highest values, and `rank` spreads it evenly.](img/colorscales.png){width=85%}
 
 ![colorBy(betweenness, yellow, red); sizeBy(betweenness, 5, 40, 'log'); GradientLegend(...)](img/color-by.png){width=75%}
 
@@ -1018,6 +1024,8 @@ bundleEdges()                       # MINGLE
 bundleEdges(method="fdeb", strength=0.7)
 removeBundles()
 ```
+
+![The three kinds of edge bundling. Edges take their source node's colour.](img/bundling.png){width=85%}
 
 ## 7.3 Field, graph, node and edge statistics
 
@@ -1358,6 +1366,7 @@ expands it.
 | `saveSession("s.guess")` | everything: graph, fields, states, styles, legends, hulls, view, slides |
 | `saveHistory("work.py")` | every command you ran, as a script |
 | `startMovie(30, "m.webm")` … `stopMovie()` | a movie of the display |
+| `startImages("frames.zip")` … `stopImages()` | every image exported in between, in one zip file (below) |
 
 In a browser, "saving a file" means downloading it, so these files go to your
 downloads folder. The *File* menu has the common ones, plus:
@@ -1369,6 +1378,26 @@ downloads folder. The *File* menu has the common ones, plus:
 - **Share link** makes a URL that contains the whole session. Anyone who opens
   it sees your graph as you left it. **Share as viewer** does the same, but
   hides the console.
+
+**Many images from a script.** Each export shows the display at that point
+in the script: GUESS waits until the display has caught up, including any
+camera move or animation, before taking the picture. So a loop can save one
+image per step. Between `startImages` and `stopImages` the images are
+collected and download as one zip file, not one download each:
+
+```python
+addNodeField('year', INTEGER, 0)
+for n in g.nodes: n.year = 1990 + int(n.name[1:]) % 20
+startImages("years.zip")
+for yr in range(1995, 2010, 5):
+    showTime(yr, 'year', 5)
+    exportPNG("year_%d.png" % yr)
+stopImages()
+```
+
+A name used twice gets `-2`, `-3` and so on added. Every export format works,
+including `exportSVG`. For a movie of the display as it changes, use
+`startMovie(30, "m.webm")` and `stopMovie()`.
 
 **A page anyone can open.** `exportHTML("graph.html")` writes the graph as
 one web page with nothing else to install: open it from disk, email it or put
@@ -1549,6 +1578,8 @@ removeConvexHulls()
 
 ![Hulls around three departments.](img/hulls.png){width=75%}
 
+![The three shapes: `shape="hull"` (the default), `"box"` and `"ellipse"`.](img/enclosures.png){width=75%}
+
 ## 12.3 The display
 
 - **Theme**: GUESS starts in *Dark*. *View → Theme* switches to *Light* or
@@ -1599,6 +1630,8 @@ arrowheadBy(directed)
 
 ![Line styles (left) and arrowheads (right).](img/edgestyles.png)
 
+![The four edge colour modes, with grey edges between red, blue and green nodes.](img/edgecolormodes.png){width=70%}
+
 ![Dark theme, with colorize(dept), labelBy(name) and hideOverlappingLabels().](img/dark.png)
 
 ## 12.4 Labels inside nodes, positions and sizes
@@ -1624,6 +1657,8 @@ edgeLabelsAlong()
 
 The Style panel sets the same things: map *Label* with a position, or *Label
 size* to a number.
+
+![The six label positions (`labelpos`). For `outside`, GUESS picks the side.](img/labelpos.png){width=55%}
 
 **Finding room for labels.** Labels placed `outside`, and edge labels (which
 slide along their edge), are placed to avoid other labels, nodes and edges:
@@ -2139,8 +2174,10 @@ to white, and `red.darker(0.3)` 30% of the way to black. Colours compare by
 the colour they mean: `v1.color == red` holds whether the field says `red`,
 `"255,0,0"` or `"#ff0000"`, so `color == red` finds every red node.
 
-The named colours from 2006 are below (case doesn't matter). The standard
-web colour names work as well.
+The named colours are below (case doesn't matter): the ones from 2006 and
+the standard web (CSS) colour names. Where a name is in both, such as `green`
+or `orange`, the 2006 colour is used, so old sessions look the same; use
+`"r,g,b"` for the web version.
 
 <!-- COLOR-TABLE -->
 

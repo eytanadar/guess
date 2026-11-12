@@ -553,6 +553,30 @@ def _circle_positions(snap):
     return P
 
 
+def _group_circle_positions(snap, values):
+    """One circle per value: each circle's size follows its group, packed in rows."""
+    P = snap.pos.copy()
+    groups = {}
+    for i, v in enumerate(values):
+        groups.setdefault(v, []).append(i)
+    order = sorted(groups.values(), key=len, reverse=True)
+    step = 16.0                                       # space between neighbours on a ring
+    radii = [max(step, step * len(m) / (2 * math.pi)) if len(m) > 1 else 0.0 for m in order]
+    gap = 3 * step
+    width = max(max(radii) * 2, math.sqrt(sum((2 * r + gap) ** 2 for r in radii)) * 1.3)
+    x = y = row_h = 0.0
+    for members, r in zip(order, radii):
+        if x > 0 and x + 2 * r > width:
+            x, y, row_h = 0.0, y + row_h + gap, 0.0
+        cx, cy = x + r, y + r
+        a = 2 * math.pi * np.arange(len(members)) / len(members) - math.pi / 2
+        P[members, 0] = cx + np.cos(a) * r
+        P[members, 1] = cy + np.sin(a) * r
+        x += 2 * r + gap
+        row_h = max(row_h, 2 * r)
+    return P
+
+
 def _circular_constrained(snap, graph, center, field, ox, oy):
     """Port of CircularConstrained: center's neighbours on a circle, radius by field."""
     maxradius, minradius, maxangle = 500.0, 30.0, 2 * math.pi
@@ -2348,6 +2372,9 @@ def install(session):
     def circleLayout(field=None, center=None, x=None, y=None):
         """circleLayout() places all nodes evenly on a circle (radius 450 around 500,500).
 
+        circleLayout(field) makes one circle per value of a node field (bigger
+        groups get bigger circles, the biggest first), packed in rows.
+
         circleLayout(field, centerNode) puts centerNode at (500, 500) and its
         neighbours on a circle around it, ordered by `field`, at a radius
         proportional to `field` (a node field of the neighbours, or an edge
@@ -2361,9 +2388,16 @@ def install(session):
                                          "ids": [nd._id for nd in s.nodes]}
             session.view.changed()
             return
+        if field is not None and center is None and x is None and y is None:
+            f = _field_arg(g, field)
+            if f.kind != NODE:
+                raise GuessError("circleLayout(field) needs a node field, e.g. circleLayout(dept)")
+            s = lay.snap()
+            lay.apply(s, _group_circle_positions(s, [f.get(nd) for nd in s.nodes]))
+            return
         if field is None or center is None or ((x is None) != (y is None)):
-            raise TypeError("circleLayout(), circleLayout(field, centerNode) or "
-                            "circleLayout(field, centerNode, x, y)")
+            raise TypeError("circleLayout(), circleLayout(field) (a circle per value), "
+                            "circleLayout(field, centerNode) or circleLayout(field, centerNode, x, y)")
         f = _field_arg(g, field)
         c = _node_arg(g, center, "center node")
         ox, oy = (500.0, 500.0) if x is None else (float(x), float(y))

@@ -182,6 +182,9 @@ export type FromWorker =
   | ChartMsg
   | { type: "movie"; op: "start"; fps: number; name: string }
   | { type: "movie"; op: "stop" }
+  /** startImages()/stopImages(): script exports go into one zip instead of separate downloads */
+  | { type: "images"; op: "start"; name: string }
+  | { type: "images"; op: "stop" }
   | UiMsg
   | { type: "image"; key: string; url: string }
   /** b64: binary content (exportSHP's zip), base64; text is then empty */

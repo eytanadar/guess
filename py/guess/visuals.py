@@ -592,13 +592,45 @@ def install(session):
 
     session.set_selection([])
 
+    collecting = {"name": None}
+
     def _export(fmt):
         def fn(filename=f"guess.{fmt}"):
+            # the display catches up first (it waits for animations too), so an
+            # export inside a loop shows that step
+            session.flush()
             session.emit({"type": "export", "format": fmt, "name": os.path.basename(filename)})
         fn.__name__ = f"export{fmt.upper()}"
-        fn.__doc__ = (f"Save the display as {fmt.upper()} (downloaded by the browser)."
+        fn.__doc__ = (f"Save the display as {fmt.upper()} (downloaded by the browser, or added to "
+                      "the zip after startImages())."
                       + (" Vector: the whole graph, not just the visible area." if fmt == "svg" else ""))
         return fn
+
+    def startImages(filename="images.zip"):
+        """Collect the images that exportPNG() and the other exports save into one
+        zip file, downloaded by stopImages(), instead of downloading each:
+            startImages('frames.zip')
+            for t in range(1990, 2001):
+                showTime(t, 'year', 1)
+                exportPNG('year_%d.png' % t)
+            stopImages()
+        Each export shows the display as it is at that point in the script.
+        Repeated names get -2, -3, ... added."""
+        if collecting["name"]:
+            raise GuessError(f"already collecting images for {collecting['name']} (call stopImages() first)")
+        name = os.path.basename(str(filename)) or "images.zip"
+        if not name.lower().endswith(".zip"):
+            name = os.path.splitext(name)[0] + ".zip"
+        collecting["name"] = name
+        session.emit({"type": "images", "op": "start", "name": name})
+
+    def stopImages():
+        """Stop collecting images (see startImages) and download the zip."""
+        if not collecting["name"]:
+            raise GuessError("no images are being collected (use startImages)")
+        collecting["name"] = None
+        session.flush()
+        session.emit({"type": "images", "op": "stop"})
 
     recording = {"on": False}
 
@@ -620,6 +652,8 @@ def install(session):
 
     reg("startMovie", startMovie)
     reg("stopMovie", stopMovie)
+    reg("startImages", startImages)
+    reg("stopImages", stopImages)
 
     for fmt in ("png", "jpg", "svg", "gif", "pdf", "ps", "eps"):
         f = _export(fmt)

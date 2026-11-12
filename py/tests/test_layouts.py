@@ -215,6 +215,27 @@ def test_circle_layout_equidistant(sample_text):
     assert np.allclose(gaps, 2 * math.pi / len(P))
 
 
+
+def test_circle_layout_one_circle_per_group(sample_text):
+    sess = sample_session()
+    run(sess, "circleLayout(dept)")
+    by = {}
+    for n in sess.graph._nodes_list():
+        by.setdefault(n.dept, []).append((n.x, n.y))
+    centres = {}
+    for d, pts in by.items():
+        P = np.array(pts)
+        c = P.mean(0)
+        r = np.hypot(*(P - c).T)
+        if len(P) > 1:
+            assert np.allclose(r, r[0], atol=1e-6)          # all on one ring
+        centres[d] = (c, r.max())
+    ds = list(centres)
+    for i, a in enumerate(ds):                               # the rings don't overlap
+        for b in ds[i + 1:]:
+            (ca, ra), (cb, rb) = centres[a], centres[b]
+            assert np.hypot(*(ca - cb)) > ra + rb
+
 def test_circle_layout_constrained():
     sess = make_session()
     build(sess, ["c", "n1", "n2", "n3", "far"], [("c", "n1"), ("c", "n2"), ("c", "n3")])

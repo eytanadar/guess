@@ -5,7 +5,7 @@
 //   cd web && npm run manual-shots            # all
 //   npm run manual-shots -- interface hive    # just these
 import { execFileSync, spawn } from "node:child_process";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
@@ -61,6 +61,97 @@ async function shotEl(name, selector, pad = 6) {
   await page.screenshot({ path: png, clip: { x: Math.max(0, b.x - pad), y: Math.max(0, b.y - pad), width: Math.min(W, b.width + 2 * pad), height: Math.min(H, b.height + 2 * pad) } });
   save(png, name, 1200);
 }
+
+/** The graph canvas cropped to what's drawn (plus a margin), as a PNG data URL. */
+async function tight(pad = 40) {
+  await page.mouse.move(5, 5);  // no hover highlight
+  await sleep(300);
+  const png = (await page.locator("#graph canvas").first().screenshot()).toString("base64");
+  return page.evaluate(async ({ png, pad }) => {
+    const img = new Image();
+    img.src = "data:image/png;base64," + png;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext("2d");
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    const bg = [d[0], d[1], d[2]];
+    let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
+    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) {
+      const i = (y * c.width + x) * 4;
+      if (Math.abs(d[i] - bg[0]) + Math.abs(d[i + 1] - bg[1]) + Math.abs(d[i + 2] - bg[2]) > 30) {
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      }
+    }
+    x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad);
+    x1 = Math.min(c.width, x1 + pad); y1 = Math.min(c.height, y1 + pad);
+    const o = document.createElement("canvas");
+    o.width = x1 - x0; o.height = y1 - y0;
+    o.getContext("2d").drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height);
+    return o.toDataURL("image/png");
+  }, { png, pad });
+}
+
+function saveData(dataUrl, name, width) {
+  const png = join(tmp, `${name}.png`);
+  writeFileSync(png, Buffer.from(dataUrl.split(",")[1], "base64"));
+  save(png, name, width);
+}
+
+/** Several tight shots in a grid, each with a caption underneath. */
+async function grid(parts, cols) {
+  return page.evaluate(async ({ parts, cols }) => {
+    const imgs = await Promise.all(parts.map(async ([, u]) => { const i = new Image(); i.src = u; await i.decode(); return i; }));
+    const cap = 56, gap = 40;
+    const cw = Math.max(...imgs.map((i) => i.width)), ch = Math.max(...imgs.map((i) => i.height)) + cap;
+    const rows = Math.ceil(imgs.length / cols);
+    const W = cols * cw + gap * (cols - 1), H = rows * ch + gap * (rows - 1);
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    const probe = document.createElement("canvas").getContext("2d");
+    probe.drawImage(imgs[0], 0, 0);
+    const p = probe.getImageData(1, 1, 1, 1).data;
+    g.fillStyle = `rgb(${p[0]},${p[1]},${p[2]})`;
+    g.fillRect(0, 0, W, H);
+    g.font = "28px ui-monospace, Menlo, monospace";
+    g.fillStyle = getComputedStyle(document.body).color;
+    g.textAlign = "center";
+    imgs.forEach((i, k) => {
+      const x = (k % cols) * (cw + gap), y = Math.floor(k / cols) * (ch + gap);
+      g.drawImage(i, x + (cw - i.width) / 2, y);
+      g.fillText(parts[k][0], x + cw / 2, y + ch - 16);
+    });
+    return c.toDataURL("image/png");
+  }, { parts, cols });
+}
+
+/** Zoom out a step, so labels past the outermost nodes stay on the canvas. */
+async function zoomOut(dy = 40) {
+  const b = await page.locator("#graph").boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.wheel(0, dy);
+  await sleep(500);
+}
+
+const CLEAR = "remove(g.nodes)";
+const GIANT = "gc = giantComponent()\nremove([n for n in g.nodes if n not in gc])";
+
+/** Wait until the graph stops changing (layouts keep moving after their command returns). */
+async function settle(maxMs = 60000) {
+  const canvas = page.locator("#graph canvas").first();
+  await sleep(1500);                     // animated layouts start a moment after their command
+  let prev = await canvas.screenshot(), same = 0;
+  const t0 = Date.now();
+  while (Date.now() - t0 < maxMs && same < 2) {
+    await sleep(700);
+    const cur = await canvas.screenshot();
+    same = Buffer.compare(prev, cur) === 0 ? same + 1 : 0;
+    prev = cur;
+  }
+}
+
 
 const click = (sel) => page.evaluate((sel) => document.querySelector(sel).click(), sel);
 
@@ -172,6 +263,114 @@ const SHOTS = {
   timeline: async () => {
     await run("addNodeField('year', INTEGER, 0)\nfor n in g.nodes: n.year = 1990 + int(n.name[1:]) % 20\nshowTime(1995, 'year', 5)", 1000);
     await shotWindow("timeline");
+  },
+  // option figures: every value of a field, side by side
+  nodeshapes: async () => {
+    await run([CLEAR,
+      "items = [(1,'1 rectangle'),(2,'2 ellipse'),(3,'3 rounded rectangle'),(11,'11 triangle'),(12,'12 diamond'),",
+      "         (13,'13 hexagon'),(14,'14 octagon'),(polygon(5),'polygon(5)'),(polygon(7),'polygon(7)'),(polygon(9),'polygon(9)')]",
+      "for i, (st, txt) in enumerate(items):",
+      "    n = addNode('s%d' % i, x=(i % 5) * 140, y=(i // 5) * 110, width=44, height=44, style=st)",
+      "    n.label = txt; n.labelpos = 'below'; n.labelvisible = true",
+      "for i, st in enumerate([4, 5, 6]):",
+      "    n = addNode('in%d' % i, x=i * 210 + 70, y=240, width=150, height=46, style=st)",
+      "    n.label = 'style %d: label inside' % st; n.labelvisible = true",
+      "center()"].join("\n"), 1000);
+    saveData(await tight(), "nodeshapes", 1400);
+  },
+  labelpos: async () => {
+    await run([CLEAR,
+      "for i, p in enumerate(['right', 'left', 'above', 'below', 'inside', 'outside']):",
+      "    n = addNode('p' + p, x=(i % 3) * 200, y=(i // 3) * 120, width=22, height=22)",
+      "    if p == 'inside': n.width = 80; n.height = 34",
+      "    n.label = p; n.labelpos = p; n.labelvisible = true",
+      "center()"].join("\n"), 1000);
+    await zoomOut(150);
+    saveData(await tight(), "labelpos", 900);
+  },
+  edgestyles: async () => {
+    await run([CLEAR,
+      "styles = ['solid','dashed','dotted','taper','wave','double','fuzzy','gradient','flow']",
+      "heads = ['triangle','swept','open','diamond','circle','tee','none']",
+      "for i, st in enumerate(styles):",
+      "    a = addNode('L' + st, x=0, y=i * 40, color='green', label=st, labelpos='left', labelvisible=true)",
+      "    b = addNode('R' + st, x=260, y=i * 40, color='orange')",
+      "    e = addDirectedEdge(a, b, width=3, color='blue'); e.linestyle = st",
+      "for i, h in enumerate(heads):",
+      "    a = addNode('A' + h, x=420, y=i * 50)",
+      "    b = addNode('B' + h, x=640, y=i * 50, label=h, labelvisible=true)",
+      "    e = addDirectedEdge(a, b, width=2.5, color='gray'); e.arrowhead = h",
+      "center()"].join("\n"), 1000);
+    await zoomOut();
+    saveData(await tight(), "edgestyles", 1400);
+  },
+  edgecolormodes: async () => {
+    await run([CLEAR,
+      "a = addNode('a', x=0, y=0, color='red', width=18, height=18)",
+      "b = addNode('b', x=220, y=0, color='blue', width=18, height=18)",
+      "c = addNode('c', x=110, y=90, color='green', width=18, height=18)",
+      "for u, v in [(a, b), (b, c), (c, a)]:",
+      "    addDirectedEdge(u, v, width=4, color='gray')",
+      "center()"].join("\n"), 1000);
+    const parts = [];
+    for (const m of ["original", "source", "target", "mixed"]) {
+      await run(`setEdgeColorMode('${m}')`, 600);
+      parts.push([`setEdgeColorMode("${m}")`, await tight(30)]);
+    }
+    saveData(await grid(parts, 2), "edgecolormodes", 1200);
+  },
+  enclosures: async () => {
+    await run([CLEAR,
+      "import random",
+      "random.seed(4)",
+      "for k, kind in enumerate(['hull', 'box', 'ellipse']):",
+      "    ns = [addNode('%s%d' % (kind, i), x=k * 260 + random.uniform(0, 140), y=random.uniform(0, 110), width=14, height=14) for i in range(6)]",
+      "    createConvexHull(ns, shape=kind)",
+      "    ns[0].label = 'shape=\"%s\"' % kind; ns[0].labelpos = 'outside'; ns[0].labelvisible = true",
+      "center()"].join("\n"), 1000);
+    await zoomOut(150);
+    saveData(await tight(), "enclosures", 1200);
+  },
+  layouts: async () => {
+    await run(`${GIANT}\ncolorize(dept)\ng.edges.width = 0.6\ng.nodes.width = 9\ng.nodes.height = 9`, 500);
+    const parts = [];
+    for (const cmd of ["forceAtlas2Layout()", "gemLayout()", "kkLayout()",
+                       "mdsLayout()", "circleLayout(dept)", "radialLayout(v1)",
+                       "concentricLayout(totaldegree)", "multipartiteLayout(dept)", "dualCircleLayout(20)"]) {
+      await run(cmd, 500);
+      await settle();
+      await run("center()", 900);
+      await settle();
+      parts.push([cmd, await tight(20)]);
+    }
+    saveData(await grid(parts, 3), "layouts", 1400);
+  },
+  bundling: async () => {
+    await run(`${GIANT}\ncolorize(dept)\nsetEdgeColorMode('source')\ng.edges.width = 0.8`, 500);
+    await settle();
+    await run("center()", 900);
+    const parts = [["no bundling", await tight(20)]];
+    for (const cmd of ["bundleEdges()", 'bundleEdges(method="fdeb")', "bundleEdges(dept)"]) {
+      await run(`removeBundles()\n${cmd}`, 500);
+      await settle();
+      parts.push([cmd, await tight(20)]);
+    }
+    saveData(await grid(parts, 2), "bundling", 1200);
+  },
+  colorscales: async () => {
+    // nodes in a grid, ordered by pagerank: how much of the range each scale colours
+    await run([GIANT, "g.edges.visible = false",
+      "ns = sorted(g.nodes, key=lambda n: n.pagerank)",
+      "for i, n in enumerate(ns):",
+      "    n.x = (i % 23) * 20; n.y = (i // 23) * 20; n.width = 15; n.height = 15",
+      "center()"].join("\n"), 1200);
+    const parts = [];
+    for (const sc of ["linear", "log", "sqrt", "rank"]) {
+      const cmd = `colorBy(pagerank, yellow, red, '${sc}')`;
+      await run(cmd, 800);
+      parts.push([cmd, await tight(20)]);
+    }
+    saveData(await grid(parts, 2), "colorscales", 1200);
   },
   dark: async () => {
     await page.evaluate(() => document.querySelector('[data-theme-choice="dark"]').click());

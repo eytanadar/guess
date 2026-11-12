@@ -57,6 +57,14 @@ def test_colours_compare_by_meaning_and_vary():
     assert ev(s, "red == 'hello'") is False and ev(s, "red != blue") is True
 
 
+def test_web_colour_names_work_and_2006_names_win():
+    s = _s()
+    assert s.run("v1.color = steelblue\nv2.color = 'Tomato'"), s.rec.of("error")
+    assert ev(s, "v1.color == '70,130,180'") is True and ev(s, "v2.color == '255,99,71'") is True
+    assert ev(s, "green == '0,255,0'") is True          # the 2006 green, not CSS's 0,128,0
+    s.run("addNodeField('tan', INTEGER, 3)")
+    assert s.is_protected("tan") == "field"              # a field outranks a colour name
+
 def test_semicolon_hides_the_echo():
     s = _s()
     assert s.run("v1;") and not s.rec.of("out")
@@ -113,3 +121,24 @@ def test_louvain_field_and_plurals():
     s.run("__c = louvainClusters()")
     assert "louvain_class" in s.graph.node_schema
     assert s.ns["__c"].annotation.endswith("communities")
+
+
+def test_exports_in_a_loop_show_each_step_and_collect_into_a_zip():
+    s = _s()
+    s.rec.clear()
+    assert s.run("startImages('frames')\n"
+                 "for c in [red, blue]:\n"
+                 "    v1.color = c\n"
+                 "    exportPNG('step.png')\n"
+                 "stopImages()"), s.rec.of("error")
+    kinds = [m["type"] for m in s.rec.msgs if m["type"] in ("patch", "export", "images")]
+    # each export comes after the change before it, between start and stop
+    assert kinds[0] == "images" and kinds[-1] == "images"
+    exports = [i for i, k in enumerate(kinds) if k == "export"]
+    assert len(exports) == 2 and all(kinds[i - 1] == "patch" for i in exports)
+    start = next(m for m in s.rec.msgs if m["type"] == "images")
+    assert start == {"type": "images", "op": "start", "name": "frames.zip"}
+    assert not s.run("stopImages()")
+    assert "no images are being collected" in s.rec.of("error")[-1]["summary"]
+    assert s.run("startImages()") and not s.run("startImages()")
+    assert "already collecting" in s.rec.of("error")[-1]["summary"]

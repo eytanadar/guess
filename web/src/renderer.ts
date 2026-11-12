@@ -1828,6 +1828,19 @@ export class Renderer {
     return out;
   }
 
+  /**
+   * Resolves once the display has caught up: no camera move or morph running
+   * and everything changed has been redrawn (moving flow edges don't count).
+   * Gives up after maxMs, so an export never hangs.
+   */
+  async settled(maxMs = 15000): Promise<void> {
+    const t0 = performance.now();
+    const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+    await nextFrame();
+    while (performance.now() - t0 < maxMs && (this.tween || this.anim || this.dirty)) await nextFrame();
+    await nextFrame();
+  }
+
   /** Raster export of the current view (with the display background). */
   async exportImage(format: "png" | "jpg"): Promise<string> {
     return this.app.renderer.extract.base64({
