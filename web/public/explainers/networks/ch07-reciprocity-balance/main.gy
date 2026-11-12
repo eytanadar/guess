@@ -1,0 +1,425 @@
+# Reciprocity and structural balance  (Newman, Networks, Sections 7.4-7.5)
+# Reciprocity: in a directed network, the share of edges whose reverse edge is
+# there too (I name you as a friend and you name me). Structural balance: in a
+# signed network (friends +, enemies -), a triangle with an odd number of
+# negative edges is unbalanced ("the enemy of my enemy is my enemy" is
+# unstable). A network with no unbalanced cycles splits into at most two camps,
+# friendly inside and hostile between (Harary's theorem).
+
+import math
+import random
+import networkx as nx
+
+# ---- a directed friendship network: who names whom ------------------------------------------------
+r0 = random.Random(4)
+STUDENTS = [f"{c}{i}" for c in "ABC" for i in range(1, 9)]          # three classes of eight
+NOMS = set()
+order = STUDENTS[:]
+r0.shuffle(order)
+for s in order:
+    want = r0.randint(2, 5)
+    named_me = [t for (t, u) in NOMS if u == s]
+    while sum(1 for (a, _) in NOMS if a == s) < want:
+        if named_me and r0.random() < 0.6:
+            t = named_me.pop(r0.randrange(len(named_me)))
+        elif r0.random() < 0.8:
+            t = r0.choice([p for p in STUDENTS if p[0] == s[0]])
+        else:
+            t = r0.choice(STUDENTS)
+        if t != s:
+            NOMS.add((s, t))
+REAL = sorted(NOMS)
+D = nx.DiGraph(REAL)
+pos = nx.spring_layout(D.to_undirected(), seed=3, iterations=200)
+for v in D:
+    D.nodes[v]["pos"] = (pos[v][0] * 420, pos[v][1] * 420)
+    D.nodes[v]["schoolclass"] = v[0]
+fromNetworkX(D, "nominations")
+noms = {"edges": list(REAL), "rnd": random.Random(9), "sims": [], "picked": None}
+
+# ---- a signed network: eight people, everyone knows everyone ----------------------------------------------
+PEOPLE = ["Ana", "Ben", "Cai", "Dee", "Eli", "Fay", "Gus", "Hal"]
+S = nx.complete_graph(PEOPLE)
+for i, v in enumerate(PEOPLE):
+    a = 2 * math.pi * i / len(PEOPLE)
+    S.nodes[v]["pos"] = (260 * math.cos(a), 260 * math.sin(a))
+fromNetworkX(S, "signed")
+closeGraph("main") if "main" in graphNames() else None
+Edge.sign = 1
+SIGN = {}
+bal = {"rnd": random.Random(2), "timer": None, "steps": 0, "hist": [], "focus": [], "flipped": None, "sims": []}
+
+
+def key(u, v):
+    return frozenset((u, v))
+
+
+def scramble(seed=None):
+    r = random.Random(seed) if seed is not None else bal["rnd"]
+    for i, u in enumerate(PEOPLE):
+        for v in PEOPLE[i + 1:]:
+            SIGN[key(u, v)] = 1 if r.random() < 0.5 else -1
+
+
+scramble(7)
+
+
+# ---- reciprocity -----------------------------------------------------------------------------------
+def recip(edges):
+    es = set(edges)
+    return sum(1 for (u, v) in es if (v, u) in es) / len(es)
+
+
+def paint_noms():
+    es = set(noms["edges"])
+    p = noms["picked"]
+    for n in g.nodes:
+        n.width = n.height = 26
+        n.labelpos = "inside"
+        n.labelvisible = true
+        n.color = {"A": "150,190,235", "B": "235,200,140", "C": "190,225,170"}[n.name[0]]
+        n.strokecolor = "70,70,70"
+    for e in g.edges:
+        u, v = e.node1.name, e.node2.name
+        mutual = (v, u) in es
+        e.color, e.width = ("40,150,80", 3.2) if mutual else ("150,150,150", 2)
+        if p is not None:
+            if p not in (u, v):
+                e.color, e.width = "200,200,200,90", 1.2
+            elif mutual:
+                e.color, e.width = "40,150,80", 4.5
+            elif u == p:
+                e.color, e.width = "60,110,220", 4.5
+            else:
+                e.color, e.width = "230,130,30", 4.5
+    if p is not None:
+        me = g.getNodeByName(p)
+        me.width = me.height = 38
+        me.strokecolor = "20,20,20"
+
+
+def set_noms(edges):
+    noms["edges"] = list(edges)
+    remove(list(g.edges))
+    for u, v in edges:
+        addDirectedEdge(u, v)
+    paint_noms()
+
+
+def shuffle_noms():
+    """Everyone keeps how many friends they name, but names them at random."""
+    r = noms["rnd"]
+    outs = {}
+    for u, _ in REAL:
+        outs[u] = outs.get(u, 0) + 1
+    edges = []
+    for u, k in outs.items():
+        for t in r.sample([p for p in STUDENTS if p != u], k):
+            edges.append((u, t))
+    return edges
+
+
+def simulate_noms():
+    for _ in range(50):
+        noms["sims"].append(recip(shuffle_noms()))
+
+
+def noms_click(n):
+    noms["picked"] = None if noms["picked"] == n.name else n.name
+    paint_noms()
+
+
+def noms_text():
+    es = noms["edges"]
+    n = len(STUDENTS)
+    r = recip(es)
+    real = "these are the real nominations" if sorted(es) == REAL else "the nominations are shuffled"
+    out = (f"**{len(es)}** nominations among {n} students ({real}). **{sum(1 for (u, v) in set(es) if (v, u) in set(es))}** "
+           f"of them are returned (green, both ways): reciprocity r = **{r:.2f}**. If everyone named people at random, "
+           f"a nomination would be returned with probability about m / n(n−1) = **{len(es) / (n * (n - 1)):.2f}**.")
+    sims = noms["sims"]
+    if sims:
+        out += (f"\n\n{len(sims)} shuffles (each student naming as many people, at random): r from {min(sims):.2f} to "
+                f"{max(sims):.2f}, average **{sum(sims) / len(sims):.2f}**.")
+    p = noms["picked"]
+    if p is not None:
+        es = set(es)
+        named = [v for (u, v) in es if u == p]
+        by = [u for (u, v) in es if v == p]
+        both = [v for v in named if (v, p) in es]
+        out += (f"\n\n**{p}** names {len(named)} (blue, or green if returned) and is named by {len(by)} (orange); "
+                f"**{len(both)}** of these are mutual.")
+    else:
+        out += "\n\n*Click a student* for their nominations."
+    return out
+
+
+def noms_chart():
+    if not noms["sims"]:
+        return None
+    r = recip(REAL)
+    pts = [(i + 1, val) for i, val in enumerate(noms["sims"])]
+    return plotScatter({"shuffled": pts}, line=[(0, r), (len(pts) + 1, r)],
+                       title="Reciprocity of shuffled nominations (dashed: real)", xlabel="shuffle", ylabel="r")
+
+
+# ---- structural balance ------------------------------------------------------------------------------------
+def all_triangles():
+    return [(a, b, c) for i, a in enumerate(PEOPLE) for j, b in enumerate(PEOPLE[i + 1:], i + 1)
+            for c in PEOPLE[j + 1:]]
+
+
+TRIS = all_triangles()
+
+
+def unbalanced():
+    return [t for t in TRIS if SIGN[key(t[0], t[1])] * SIGN[key(t[1], t[2])] * SIGN[key(t[0], t[2])] < 0]
+
+
+def paint_signed(camps=False):
+    bad = unbalanced()
+    count = {v: 0 for v in PEOPLE}
+    for t in bad:
+        for v in t:
+            count[v] += 1
+    for e in g.edges:
+        s = SIGN[key(e.node1.name, e.node2.name)]
+        e.sign = s
+        e.color, e.linestyle, e.width = ("50,160,80", "solid", 2.6) if s > 0 else ("220,60,50", "dashed", 2.6)
+    for n in g.nodes:
+        n.labelpos = "inside"
+        n.labelvisible = true
+        n.width = n.height = 34 + 2.5 * count[n.name]          # bigger: in more unbalanced triangles
+        n.color = "200,200,210"
+        n.strokecolor = "70,70,70"
+    if camps:
+        structuralBalance("sign")
+        for n in g.nodes:
+            n.color = "240,170,60" if n.camp == 0 else "140,110,220"
+    focus = bal["focus"]
+    for i, u in enumerate(focus):
+        g.getNodeByName(u).strokecolor = "250,200,0"
+        for v in focus[i + 1:]:
+            for e in g.edges:
+                if {e.node1.name, e.node2.name} == {u, v}:
+                    e.width = 6
+    if bal["flipped"] is not None:
+        for e in g.edges:
+            if {e.node1.name, e.node2.name} == set(bal["flipped"]):
+                e.width = 9
+
+
+def flip_delta(u, v):
+    """How the number of unbalanced triangles changes if edge u-v flips sign."""
+    d = 0
+    for w in PEOPLE:
+        if w in (u, v):
+            continue
+        prod = SIGN[key(u, v)] * SIGN[key(v, w)] * SIGN[key(u, w)]
+        d += 1 if prod > 0 else -1
+    return d
+
+
+def dyn_step(show=True):
+    """Constrained triad dynamics: pick an unbalanced triangle and flip the sign of
+    the edge that leaves the fewest unbalanced triangles."""
+    bad = unbalanced()
+    if show:
+        bal["hist"].append((bal["steps"], len(bad)))
+    if not bad:
+        bal["focus"], bal["flipped"] = [], None
+        if show:
+            camp_layout()
+            paint_signed(camps=true)
+            settle_btn.text = "Settle (triad dynamics)"
+        return False
+    r = bal["rnd"]
+    t = r.choice(bad)
+    sides = [(t[0], t[1]), (t[1], t[2]), (t[0], t[2])]
+    r.shuffle(sides)
+    best = min(sides, key=lambda sd: flip_delta(*sd))
+    if flip_delta(*best) > 0 and r.random() < 0.7:
+        best = r.choice(sides)              # sometimes a worse move, so it can't get stuck
+    SIGN[key(*best)] *= -1
+    if show:
+        bal["steps"] += 1
+    bal["focus"], bal["flipped"] = list(t), best
+    if show:
+        paint_signed()
+    return len(bad) + 2
+
+
+def camp_layout():
+    structuralBalance("sign")
+    groups = [[n for n in g.nodes if n.camp == c] for c in (0, 1)]
+    for c, grp in enumerate(groups):
+        cx = -230 if c == 0 else 230
+        if not groups[1]:
+            cx = 0
+        rad = 50 + 22 * len(grp)
+        for i, n in enumerate(grp):
+            a = 2 * math.pi * i / max(1, len(grp)) + math.pi / 2 + 0.4 * c   # offset, so edges don't line up
+            n.x, n.y = cx + rad * math.cos(a), rad * math.sin(a)
+    center()
+
+
+def circle_layout():
+    for i, v in enumerate(PEOPLE):
+        a = 2 * math.pi * i / len(PEOPLE)
+        n = g.getNodeByName(v)
+        n.x, n.y = 260 * math.cos(a), 260 * math.sin(a)
+
+
+def stop_dyn():
+    if bal["timer"] is not None:
+        bal["timer"].stop()
+        bal["timer"] = None
+    settle_btn.text = "Settle (triad dynamics)"
+
+
+def play_dyn():
+    if bal["timer"] is not None and bal["timer"].running:
+        stop_dyn()
+        return
+    bal["hist"] = []
+    bal["steps"] = 0
+    bal["timer"] = everyPaced(lambda: dyn_step(true), slow=1.0, fast=0.3, ramp=3)
+    settle_btn.text = "Pause"
+
+
+def new_signs():
+    stop_dyn()
+    scramble()
+    bal.update(steps=0, hist=[], focus=[], flipped=None)
+    circle_layout()
+    paint_signed()
+
+
+def edge_click(e):
+    if mode[0] != "Structural balance":
+        return
+    k = key(e.node1.name, e.node2.name)
+    SIGN[k] *= -1
+    bal["focus"], bal["flipped"] = [], (e.node1.name, e.node2.name)
+    paint_signed(camps=not unbalanced())
+
+
+def simulate_dyn():
+    """Forty runs of the dynamics from random signs: steps taken and the bigger camp's size."""
+    saved = dict(SIGN)
+    r = random.Random(100 + len(bal["sims"]))
+    for _ in range(40):
+        scramble(r.random())
+        steps = 0
+        while unbalanced() and steps < 500:
+            dyn_step(false)
+            steps += 1
+        G = nx.Graph()
+        G.add_nodes_from(PEOPLE)
+        G.add_edges_from(tuple(k) for k, s in SIGN.items() if s > 0)
+        sizes = sorted((len(c) for c in nx.connected_components(G)), reverse=True)
+        bal["sims"].append((steps, sizes[0]))
+    SIGN.clear()
+    SIGN.update(saved)
+    bal["focus"], bal["flipped"] = [], None
+    paint_signed(camps=not unbalanced())
+
+
+def balance_text():
+    bad = unbalanced()
+    neg = sum(1 for s in SIGN.values() if s < 0)
+    out = (f"{len(SIGN)} relationships: {len(SIGN) - neg} friendly (green) and {neg} hostile (red, dashed). Of the "
+           f"{len(TRIS)} triangles, **{len(bad)}** are unbalanced (an odd number of hostile edges); a person's size "
+           "shows how many they sit in. *Click an edge* to flip its sign.")
+    if not bad:
+        G = nx.Graph()
+        G.add_nodes_from(PEOPLE)
+        G.add_edges_from(tuple(k) for k, s in SIGN.items() if s > 0)
+        camps = [sorted(c) for c in nx.connected_components(G)]
+        if len(camps) == 1:
+            out += "\n\n**Balanced**, and everyone is friends with everyone: one camp."
+        else:
+            out += (f"\n\n**Balanced**: two camps, {{{', '.join(camps[0])}}} and {{{', '.join(camps[1])}}}, friendly inside "
+                    "and hostile between, as Harary's theorem says it must.")
+    elif bal["focus"]:
+        u, v = bal["flipped"]
+        out += (f"\n\nLast step: the triangle {', '.join(bal['focus'])} (thick, yellow rings) was unbalanced, so "
+                f"{u}–{v} (thickest) changed sign.")
+    sims = bal["sims"]
+    if sims:
+        one = sum(1 for _, big in sims if big == len(PEOPLE))
+        out += (f"\n\n{len(sims)} simulated runs from random signs: on average **{sum(s for s, _ in sims) / len(sims):.1f}** "
+                f"steps to balance; {one} ended as one friendly camp, {len(sims) - one} as two.")
+    return out
+
+
+def balance_chart():
+    if len(bal["hist"]) < 2:
+        return None
+    return plotLine(bal["hist"], title="Unbalanced triangles as the dynamics run", xlabel="step",
+                    ylabel="unbalanced triangles", dots=true)
+
+
+def sim_chart():
+    if not bal["sims"]:
+        return None
+    return plotScatter({"runs": bal["sims"]}, title="Simulated runs", xlabel="steps to balance",
+                       ylabel="people in the bigger camp")
+
+
+# ---- tabs -----------------------------------------------------------------------------------------------
+mode = ["Reciprocity"]
+
+
+def click(n):
+    if mode[0] == "Reciprocity":
+        noms_click(n)
+
+
+def switch(title):
+    mode[0] = title
+    if title == "Reciprocity":
+        stop_dyn()
+        use("nominations")
+        paint_noms()
+    else:
+        use("signed")
+        paint_signed(camps=not unbalanced())
+    center()
+
+
+settle_btn = Button("Settle (triad dynamics)", onClick=play_dyn)
+graphevents.clickNode = click
+graphevents.clickEdge = edge_click
+use("signed")
+paint_signed()
+use("nominations")
+paint_noms()
+constantLabelSize(size=14)
+ui.title("Reciprocity and structural balance", "Networks, Sections 7.4–7.5")
+ui.layout(
+    right=Column(
+        Tabs(
+            Tab("Reciprocity",
+                Markdown("""### Do you name me back?
+Twenty-four students in three classes each name some friends (an edge is wide at
+the student who names, narrow at the one named)."""),
+                Row(Button("Shuffle the nominations", onClick=lambda: set_noms(shuffle_noms())),
+                    Button("Real nominations", onClick=lambda: set_noms(REAL))),
+                Markdown(noms_text),
+                Button("Simulate: 50 shuffles", onClick=simulate_noms),
+                Chart(noms_chart)),
+            Tab("Structural balance",
+                Markdown("""### The enemy of my enemy
+Eight people who all know each other; each pair are friends (+) or enemies (−)."""),
+                Row(settle_btn, Button("New random signs", onClick=new_signs)),
+                Markdown(balance_text),
+                Chart(balance_chart),
+                Button("Simulate: 40 runs", onClick=simulate_dyn),
+                Chart(sim_chart)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

@@ -97,7 +97,8 @@ export function dashes(p: number[], on: number, off: number, phase = 0): number[
  * The primitives for one edge's line. p: the polyline from source to target
  * (centre coordinates); c0/c1: the source and target node colours (gradient).
  */
-export function linePrims(style: string, p: number[], w: number, c: number, a: number, c0: number, c1: number): Prim[] {
+export function linePrims(style: string, p: number[], w: number, c: number, a: number, c0: number, c1: number,
+                          bg = 0xffffff): Prim[] {
   switch (style) {
     case "dashed": case "dotted": case "flow":
       return [{ k: "line", p, w, c, a, dash: dashFor(style, w), flow: style === "flow" }];
@@ -142,8 +143,12 @@ export function linePrims(style: string, p: number[], w: number, c: number, a: n
     case "gradient":
       return [{ k: "line", p, w, c, a, grad: [c0, c1] }];
     case "fade":
-      // dark to light: the edge's colour at the source, nearly white at the target
-      return [{ k: "line", p, w: Math.max(w, 1.5), c, a, grad: [mix(c, 0x000000, 0.25), mix(c, 0xffffff, 0.85)] }];
+    {
+      // dark to light (on a dark background, bright to dim): strong at the source, fading into the background
+      const lum = 0.2126 * ((bg >> 16) & 255) + 0.7152 * ((bg >> 8) & 255) + 0.0722 * (bg & 255);
+      const strong = mix(c, lum < 128 ? 0xffffff : 0x000000, 0.25);
+      return [{ k: "line", p, w: Math.max(w, 1.5), c, a, grad: [strong, mix(c, bg, 0.85)] }];
+    }
     default:
       return [{ k: "line", p, w, c, a }];
   }

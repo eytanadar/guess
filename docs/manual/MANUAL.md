@@ -725,6 +725,25 @@ the heavy ties and `showOnly(shortestPath(v1, v2))` only the path.
 `showOnly(set, induced=true)` keeps every edge among the shown nodes. To take nodes out of the graph rather than
 hide them, see section 8.
 
+**Playing back a growing network.** To animate a network that grows, build the
+final network first and lay it out once. Then reveal it step by step, so each
+node appears where it will stay. Give each node the step at which it arrives
+in a field such as `born`, and edges too if they arrive separately.
+`revealUpTo(step)` shows the nodes with `born <= step` and the edges between
+them, hides the rest, and returns what arrives at exactly that step, so you can
+highlight it:
+
+```python
+makeSample("karate")
+Node.born = 0
+for n in g.nodes:
+    n.born = int(n.name[1:]) if n.name[1:].isdigit() else 0
+center(g.nodes)                    # frame the final picture
+revealUpTo(5).color = orange       # the first steps; call it from a timer to animate
+showAll()
+makeFromGDF("sample.gdf")
+```
+
 ## 5.4 The selection
 
 What you select with the mouse (section 13) is the variable `sel` in the
@@ -1174,6 +1193,19 @@ plotLine({"degree": [(n.degree, n.betweenness) for n in g.nodes if n.degree]},
          title="Betweenness by degree", log=true, dots=true)
 ```
 
+**Scatter plots.** `plotScatter(degree, betweenness)` puts a dot for each
+node at (x, y), in the node's colour. Point at a dot to highlight its node,
+and click to select it. Brokers, with few links but high betweenness, stand
+out. `plotScatter(age, ends=true)` plots a node field at one end of every
+edge against the other end; for an undirected edge both ways round. That is
+the picture behind assortativity. Lists and dictionaries of points work too,
+and `line=` adds a dashed reference line:
+
+```python
+plotScatter(degree, betweenness)
+plotScatter(degree, ends=true, line=[(0, 0), (10, 10)])
+```
+
 ![plotSizesPie(dept)](img/chart.png)
 
 **Live charts.** A chart shows the graph as it was when you made it. Click
@@ -1258,6 +1290,34 @@ assortativity(dept)                       # 1: ties stay in a department; 0: ran
 mixingMatrix(dept)                        # edges between each pair of departments
 louvainClusters()
 compareClusters(louvain_class, dept)   # do the communities match departments?
+```
+
+Some measures from the textbook literature (Newman, *Networks*, ch. 7):
+
+```python
+f, limit = katzCentrality(alpha=0.05)     # x = alpha A x + beta; alpha < limit = 1/kappa1
+kComponents(2)                            # bicomponents (k = 3: tricomponents), largest first
+similarTo(v1, method="regular")           # similar neighbours, not shared ones
+```
+
+`katzCentrality` stores its result in `katz`. With a small `alpha` it ranks
+nodes almost by degree, and as `alpha` nears `limit` almost by eigenvector
+centrality. `kComponents(k)` sets the field `kcomponent`.
+
+For a signed network (an edge field of +1 and -1, or "+" and "-"),
+`structuralBalance(sign)` tests whether every cycle has an even number of
+negative edges. It returns `{"balanced": ..., "unbalanced": [triangles],
+"frustrated": edges}` and puts the two camps of Harary's theorem in the node
+field `camp`:
+
+```python
+Edge.sign = 1                             # friends within a department, rivals across
+for e in g.edges:
+    if e.node1.dept != e.node2.dept:
+        e.sign = -1
+r = structuralBalance(sign)
+colorize(camp)
+r["frustrated"].color = red               # edges that disagree with the camps
 ```
 
 `compareClusters` gives normalized mutual information by default (0 to 1);

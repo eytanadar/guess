@@ -63,6 +63,8 @@ def papers():
     colorBy(year, "255,220,150", "120,30,120")
     sizeBy(indegree, 4, 22)
     g.edges.color = "150,150,150,70"
+    binPackLayout()                       # hundreds of separate pieces: pack them, then keep nodes apart
+    noverlapLayout()
 
 
 def karate():

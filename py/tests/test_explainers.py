@@ -486,8 +486,15 @@ def test_degree_sums_and_growth():
     a = App("ch06-degree-sparsity")
     assert "add up to **156** = 2m" in a.markdown()
     a.s.dispatch(_tabs(a)._id, "change", "Grow")
+    assert a.ev("len([v for v in g.nodes if v.visible])") == 0 and a.ev("len(g.nodes)") == 120
+    before = a.ev("{v.name: (v.x, v.y) for v in g.nodes}")       # laid out once, before anything shows
+    a.tick(10)
+    shown = a.ev("len([v for v in g.nodes if v.visible])")
+    assert 1 <= shown <= 10
+    assert a.ev("all(e.node1.visible and e.node2.visible for e in g.edges if e.visible)")
     a.tick(125)
-    assert a.ev("grow['n']") == 120
+    assert a.ev("grow['n']") == 120 and a.ev("all(v.visible for v in g.nodes)")
+    assert a.ev("{v.name: (v.x, v.y) for v in g.nodes}") == before  # nobody moved
 
 
 def test_walk_counts_match_matrix_powers():

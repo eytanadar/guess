@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Cliques, cores and k-components",
+  "description": "Peel the k-cores step by step, find the cliques, see k-components nest, and why a 2-core isn't a 2-component.",
+  "console": "toggle",
+  "script": "main.gy"
+}

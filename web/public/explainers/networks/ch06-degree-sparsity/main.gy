@@ -45,40 +45,68 @@ def numbers():
 
 
 # ---- growing ------------------------------------------------------------------------------------
-grow = {"timer": None, "n": 0, "m_fixed": 0, "m_share": 0.0, "rows": [], "rnd": None}
+# The whole network is built first and laid out once; then the nodes are revealed in the order they
+# joined, so each appears where it will stay (revealUpTo shows nodes whose `born` step has come).
+GROW_N = 120
+grow = {"timer": None, "n": 0, "m_fixed": 0, "m_share": 0.0, "rows": []}
 RULES = ["each newcomer makes 3 friends", "each newcomer befriends 10% of everyone"]
 rule = [RULES[0]]
 
 
+def build_final():
+    import networkx as nx
+    r = random.Random(5)
+    G = nx.Graph()
+    for k in range(GROW_N):
+        others = list(range(k))
+        if rule[0] == RULES[0]:
+            friends = r.sample(others, min(3, k))
+        else:
+            friends = [o for o in others if r.random() < 0.10]
+        G.add_node(k)
+        for f in friends:
+            G.add_edge(k, f, born=k)
+    pos = nx.spring_layout(G, seed=3, iterations=150)
+    if "growing" not in graphNames():
+        newGraph("growing")
+    else:
+        use("growing")
+    remove(list(g.nodes))
+    Node.born = -1
+    Edge.born = -1
+    for k in G:
+        v = addNode(f"p{k}", x=pos[k][0] * 420, y=pos[k][1] * 420)
+        v.born = k
+        v.width = v.height = 12
+        v.color = "120,150,200"
+    for a, b, d in G.edges(data=True):
+        e = addEdge(g.getNodeByName(f"p{a}"), g.getNodeByName(f"p{b}"))
+        e.born = d["born"]
+        e.color, e.width = "150,150,150,90", 1
+    center(g.nodes)                                    # frame the final picture before hiding it
+    revealUpTo(-1)
+
+
 def start_growing():
     stop_growing()
-    newGraph("growing") if "growing" not in graphNames() else use("growing")
-    remove(list(g.nodes))
-    grow.update(n=0, m_fixed=0, m_share=0.0, rows=[], rnd=random.Random(5))
-    grow["timer"] = everyPaced(grow_one, steps=120, slow=0.6, fast=0.04)
+    build_final()
+    grow.update(n=0, m_fixed=0, m_share=0.0, rows=[])
+    grow["timer"] = everyPaced(grow_one, steps=GROW_N, slow=0.6, fast=0.04)
 
 
 def grow_one():
-    r = grow["rnd"]
     k = grow["n"]
-    me = addNode(f"p{k}")
-    others = [nd for nd in g.nodes if nd is not me]
-    if rule[0] == RULES[0]:
-        friends = r.sample(others, min(3, len(others)))
-    else:
-        friends = [o for o in others if r.random() < 0.10]
-    if friends:
-        me.x = sum(f.x for f in friends) / len(friends) + r.uniform(-40, 40)
-        me.y = sum(f.y for f in friends) / len(friends) + r.uniform(-40, 40)
-    else:
-        me.x, me.y = r.uniform(0, 300), r.uniform(0, 300)
-    for f in friends:
-        e = addEdge(me, f)
-        e.color, e.width, e.linestyle = "240,140,30", 2.5, "flow"
     for e in g.edges:
-        if e.linestyle == "flow" and me not in (e.node1, e.node2):
+        if e.linestyle == "flow":
             e.color, e.width, e.linestyle = "150,150,150,90", 1, "solid"
-    me.color, me.width, me.height = "240,140,30", 14, 14
+    for v in g.nodes:
+        if v.born == k - 1:
+            v.color, v.width, v.height = "120,150,200", 12, 12
+    for x in revealUpTo(k):                           # the newcomer and its friendships, highlighted
+        if not hasattr(x, "node1"):
+            x.color, x.width, x.height = "240,140,30", 18, 18
+        else:
+            x.color, x.width, x.linestyle = "240,140,30", 2.5, "flow"
     grow["n"] = k + 1
     # both rules, counted side by side (expected numbers of edges)
     n = grow["n"]
@@ -86,7 +114,7 @@ def grow_one():
     grow["m_share"] += 0.10 * (n - 1)
     if n >= 4:
         grow["rows"].append((n, 2 * grow["m_fixed"] / (n * (n - 1)), 2 * grow["m_share"] / (n * (n - 1))))
-    return 120 - n
+    return GROW_N - n
 
 
 def stop_growing():
@@ -104,7 +132,8 @@ def density_chart():
 def grow_text():
     if mode[0] != "grow" or not grow["n"]:
         return ""
-    n, m = len(g.nodes), len(g.edges)
+    n = len([v for v in g.nodes if v.visible])
+    m = len([e for e in g.edges if e.visible])
     c = 2 * m / n if n else 0
     return (f"**{n}** people, **{m}** friendships, mean degree **{c:.1f}**, density **{(c / (n - 1) if n > 1 else 0):.3f}**. "
             "With a fixed number of friends each, c stays put and density falls like 1/n (a straight line on log–log "
@@ -151,4 +180,4 @@ ui.layout(
     sizes={"right": 380},
 )
 ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
-ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+ui.statusbar(Label(lambda: f"{len([v for v in g.nodes if v.visible])} nodes · {len([e for e in g.edges if e.visible])} edges shown"))

@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Homophily and assortative mixing",
+  "description": "Mixing by category, by value and by degree, and what shuffling the edges (keeping degrees) does to it.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -564,8 +564,12 @@ export class Renderer {
     this.applyBackground();
   }
 
+  private bgColor(): number {
+    return this.userBg ?? (this.dark ? THEME_BG.dark : THEME_BG.light);
+  }
+
   private applyBackground() {
-    const bg = this.userBg ?? (this.dark ? THEME_BG.dark : THEME_BG.light);
+    const bg = this.bgColor();
     this.app.renderer.background.color = bg;
     const lum = 0.2126 * ((bg >> 16) & 255) + 0.7152 * ((bg >> 8) & 255) + 0.0722 * (bg & 255);
     this.labelColor = lum < 128 ? 0xe6e5e1 : 0x222222;
@@ -952,11 +956,11 @@ export class Renderer {
       p = [];
       for (let k = 0; k <= 40; k++) p.push(cx + r * Math.sin((k / 40) * 2 * Math.PI), cy + r * Math.cos((k / 40) * 2 * Math.PI));
     } else p = this.edgePoints(e, a, b);
-    if (!(e.d && a !== b)) return linePrims(e.st ?? "solid", p, w, c, alpha, a.c, b.c);
+    if (!(e.d && a !== b)) return linePrims(e.st ?? "solid", p, w, c, alpha, a.c, b.c, this.bgColor());
     // directed, no arrowhead of its own: by default a single cue, the taper (or fade), and no head. A line style
     // that shows direction by itself (taper, fade, gradient, flow) needs no head either; others keep one.
     if (!e.ah && this.directedStyle !== "arrow" && (!e.st || DIRECTIONAL.has(e.st)))
-      return linePrims(e.st ?? this.directedStyle, p, w, c, alpha, a.c, b.c);
+      return linePrims(e.st ?? this.directedStyle, p, w, c, alpha, a.c, b.c, this.bgColor());
     // the line stops where the arrowhead starts, so waves, double lines and the like end cleanly
     const kind = e.ah ?? "triangle";
     const [px, py, ux, uy, size, half] = this.arrowFrame(e, a, b);

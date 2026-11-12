@@ -475,7 +475,7 @@ export class Dock {
       svg.append(el);
     };
     if (c.kind === "line") {
-      const left = 40, bottom = 30, top = 8, right = 8;
+      const left = 40, bottom = 30, top = c.scatter ? 18 : 8, right = 8;   // scatter: room for the y label above
       const pw = W - left - right, ph = H - top - bottom;
       const all = (c.series ?? []).flatMap((s) => s.points)
         .filter((p) => (!c.logX || p[0] > 0) && (!c.logY || p[1] > 0));
@@ -483,6 +483,15 @@ export class Dock {
       const txs = all.map((p) => tx(p[0])), tys = all.map((p) => ty(p[1]));
       let xmin = c.logX ? Math.min(...txs) : Math.min(0, ...txs), xmax = c.logX ? Math.max(...txs) : Math.max(1e-9, ...txs);
       let ymin = c.logY ? Math.min(...tys) : Math.min(0, ...tys), ymax = c.logY ? Math.max(...tys) : Math.max(1e-9, ...tys);
+      if (c.scatter && all.length) {
+        // scatter plots fit the data (with a margin) rather than always including zero
+        const pad = (lo: number, hi: number): [number, number] => {
+          const d = (hi - lo) || Math.abs(hi) || 1;
+          return [lo - d * 0.05, hi + d * 0.05];
+        };
+        if (!c.logX) [xmin, xmax] = pad(Math.min(...txs), Math.max(...txs));
+        if (!c.logY) [ymin, ymax] = pad(Math.min(...tys), Math.max(...tys));
+      }
       if (!all.length) { xmin = 0; xmax = 1; ymin = 0; ymax = 1; }
       if (c.logX && xmax - xmin < 1) { xmin = Math.floor(xmin); xmax = Math.max(xmax, xmin + 1); }
       if (c.logY && ymax - ymin < 1) { ymin = Math.floor(ymin); ymax = Math.max(ymax, ymin + 1); }
@@ -526,6 +535,7 @@ export class Dock {
       for (const v of ticks(xmin, xmax, c.logX)) {
         const t = document.createElementNS(SVG, "text");
         t.setAttribute("x", String(XT(v)));
+        if (XT(v) > W - right - 12) t.style.textAnchor = "end";      // the last label stays inside the chart
         t.setAttribute("y", String(top + ph + 11));
         t.setAttribute("class", "xtick");
         t.textContent = label(v, c.logX);
@@ -540,7 +550,58 @@ export class Dock {
         note.textContent = c.logX && c.logY ? "log–log" : c.logX ? "log x" : "log y";
         svg.append(note);
       }
-      (c.series ?? []).forEach((s, i) => {
+      if (c.scatter) {
+        // one dot per element: pointing highlights it, clicking selects it
+        for (const s of c.series ?? []) {
+          if (s.line) {
+            const ln = document.createElementNS(SVG, "polyline");
+            ln.setAttribute("points", s.points.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" "));
+            ln.setAttribute("fill", "none");
+            ln.setAttribute("stroke", hex(s.color));
+            ln.setAttribute("stroke-dasharray", "4 3");
+            ln.setAttribute("stroke-width", "1.2");
+            svg.append(ln);
+            continue;
+          }
+          const r = s.points.length > 400 ? 1.8 : s.points.length > 100 ? 2.5 : 3.2;
+          s.points.forEach(([x, y], k) => {
+            if ((c.logX && x <= 0) || (c.logY && y <= 0)) return;
+            const dot = document.createElementNS(SVG, "circle");
+            dot.setAttribute("cx", X(x).toFixed(1));
+            dot.setAttribute("cy", Y(y).toFixed(1));
+            dot.setAttribute("r", String(r));
+            dot.setAttribute("fill", hex(s.colors?.[k] ?? s.color));
+            dot.setAttribute("fill-opacity", "0.8");
+            dot.setAttribute("stroke", "rgba(0,0,0,.35)");
+            dot.setAttribute("stroke-width", "0.5");
+            dot.classList.add("mark");
+            const ids = (s.ids?.[k] ?? []) as Item[];
+            const title = s.labels?.[k] ?? s.name;
+            const lines = [`${c.xlabel}: ${fmt(x)}`, `${c.ylabel}: ${fmt(y)}`];
+            dot.addEventListener("mouseenter", (ev) => {
+              dot.classList.add("hot");
+              dot.setAttribute("r", String(r * 1.8));
+              this.host.hover(ids, title, lines, ev);
+            });
+            dot.addEventListener("mouseleave", () => {
+              dot.classList.remove("hot");
+              dot.setAttribute("r", String(r));
+              this.host.hover(null, "", [], null);
+            });
+            if (ids.length) dot.addEventListener("click", (ev) => this.host.click(ids, ev));
+            if (ids.length) marks.push({ el: dot, keys: new Set(ids.map(([kk, id]) => kk + id)) });
+            svg.append(dot);
+          });
+        }
+        const yl = document.createElementNS(SVG, "text");
+        yl.setAttribute("x", "2");
+        yl.setAttribute("y", "11");
+        yl.setAttribute("class", "tick");
+        yl.style.textAnchor = "start";
+        yl.textContent = c.ylabel;
+        svg.append(yl);
+      }
+      (c.scatter ? [] : c.series ?? []).forEach((s, i) => {
         const pts = s.points.filter((p) => (!c.logX || p[0] > 0) && (!c.logY || p[1] > 0));
         const line = document.createElementNS(SVG, "polyline");
         line.setAttribute("points", pts.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" "));
@@ -576,7 +637,7 @@ export class Dock {
       // pointing: a guide at the nearest x, every series' value there, and
       // for charts that know their elements (spread), those elements in the graph
       const xs = [...new Set(all.map((p) => p[0]))].sort((a, b) => a - b);
-      if (xs.length) {
+      if (xs.length && !c.scatter) {
         const guide = document.createElementNS(SVG, "line");
         guide.setAttribute("class", "guide");
         guide.setAttribute("y1", String(top));

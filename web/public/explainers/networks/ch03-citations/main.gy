@@ -148,6 +148,8 @@ def build(kind):
     colorize(louvain_class)
     sizeBy(degree, 4, 20)
     g.edges.color = "150,150,150,60"
+    binPackLayout()                       # many separate pieces: pack them, then keep nodes apart
+    noverlapLayout()
     net_note.text = (f"The **{kind}** network: {len(H)} papers, joined when "
                      + ("**cited together** by at least 2 papers" if kind == "cocitation"
                         else "they **share at least 2 references**")

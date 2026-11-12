@@ -200,3 +200,61 @@ def test_directed_edges_default_to_tapered(tmp_path):
                  f"makeFromSession({str(path)!r})"), s.rec.of("error")
     assert s.view.directed == "arrow"
     assert s.run("undo()") or True
+
+
+def test_scatter_katz_balance_kcomponents_regular():
+    s = _s()
+    assert s.run("plotScatter(degree, betweenness)"), s.rec.of("error")
+    m = _charts(s)[-1]
+    se = m["series"][0]
+    assert m["scatter"] and len(se["points"]) == len(se["ids"]) == len(se["colors"]) == ev(s, "len(g.nodes)")
+    assert s.run("plotScatter(degree, ends=true, line=[(0, 0), (10, 10)])"), s.rec.of("error")
+    m = _charts(s)[-1]
+    assert len(m["series"][0]["points"]) == ev(s, "sum(1 if e.directed else 2 for e in g.edges)")
+    assert m["series"][1]["line"]
+    assert s.run("plotScatter({'a': [(1, 2), (2, 3)]}, log=true)"), s.rec.of("error")
+    # Katz: alpha -> 0 ranks by degree; too big an alpha is refused
+    assert s.run("newGraph('k')\nimport networkx as nx\nfromNetworkX(nx.karate_club_graph())"), s.rec.of("error")
+    f, lim = ev(s, "katzCentrality(alpha=0.001)")
+    top = ev(s, "max(g.nodes, key=lambda n: n.katz).name")
+    assert top == ev(s, "max(g.nodes, key=lambda n: n.degree).name")
+    assert not s.run(f"katzCentrality(alpha={lim * 1.01})")
+    # balance: a triangle with one negative edge is unbalanced; with two, balanced (two camps)
+    assert s.run("newGraph('b')\nEdge.sign = 1\naddNode('a'); addNode('b'); addNode('c'); addNode('d')\n"
+                 "for u, v, sg in [('a','b',1), ('b','c',-1), ('a','c',-1), ('c','d',1)]:\n"
+                 "    e = addEdge(u, v)\n    e.sign = sg\nr = structuralBalance()"), s.rec.of("error")
+    assert ev(s, "r['balanced']") and ev(s, "a.camp == b.camp != c.camp == d.camp")
+    assert s.run("v1 = [e for e in g.edges if {e.node1.name, e.node2.name} == {'a', 'c'}][0]\nv1.sign = 1\n"
+                 "r = structuralBalance()"), s.rec.of("error")
+    assert not ev(s, "r['balanced']") and len(ev(s, "r['unbalanced']")) == 1 and len(ev(s, "r['frustrated']")) == 1
+    # two triangles sharing a node: one 2-core-ish piece, two bicomponents
+    assert s.run("newGraph('c')\nfor u, v in [('a','b'),('b','c'),('c','a'),('c','d'),('d','e'),('e','c')]:\n"
+                 "    addNode(u) if u not in [n.name for n in g.nodes] else None\n"
+                 "    addNode(v) if v not in [n.name for n in g.nodes] else None\n    addEdge(u, v)\nbc = kComponents(2)"), s.rec.of("error")
+    assert ev(s, "len(bc)") == 2 and ev(s, "sorted(len(x) for x in bc)") == [3, 3]
+    assert ev(s, "len(kComponents(1))") == 1
+    # regular equivalence: two leaves of the same star score high, though they share... the hub
+    assert s.run("newGraph('r')\nfor u, v in [('m1','w1'),('m1','w2'),('m2','w3'),('m2','w4'),('m1','m2')]:\n"
+                 "    addNode(u) if u not in [n.name for n in g.nodes] else None\n"
+                 "    addNode(v) if v not in [n.name for n in g.nodes] else None\n    addEdge(u, v)\ntop = similarTo(m1, method='regular', top=1)"), s.rec.of("error")
+    assert ev(s, "list(top)[0].name") == "m2"
+
+
+def test_reveal_up_to_plays_back_growth():
+    s = _s()
+    assert s.run("newGraph('grow')\nNode.born = 0\nfor k in range(5):\n    v = addNode(f'p{k}')\n    v.born = k\n"
+                 "    if k:\n        addEdge(v, g.getNodeByName(f'p{k - 1}'))\nnew = revealUpTo(2)"), s.rec.of("error")
+    assert ev(s, "[n.name for n in g.nodes if n.visible]") == ["p0", "p1", "p2"]
+    assert ev(s, "len([e for e in g.edges if e.visible])") == 2
+    kinds = sorted(type(x).__name__ for x in ev(s, "new"))
+    assert kinds == ["Edge", "Node"] and ev(s, "[x.name for x in new if x in g.nodes]") == ["p2"]
+    assert s.run("revealUpTo(10)") and ev(s, "all(n.visible for n in g.nodes)")
+    assert not s.run("revealUpTo(1, field='nosuch')")
+
+
+def test_assortativity_categorical_option():
+    s = _s()
+    assert s.run("Node.code = 0\nfor n in g.nodes:\n    n.code = int(''.join(c for c in n.dept if c.isdigit()) or 0)"), s.rec.of("error")
+    as_cat = ev(s, "assortativity(code, categorical=true)")
+    assert abs(as_cat - ev(s, "assortativity(dept)")) < 1e-9          # the same split, as categories
+    assert not s.run("assortativity(dept, categorical=false)")

@@ -9,6 +9,15 @@ Page numbers are the book's (PDF page = book page + 13).
 
 Status: **planned** → **built** → **checked**.
 
+Conventions for every explainer (from review feedback):
+- Labels are readable: `constantLabelSize(size=14)`.
+- State changes are visible: bigger nodes and outlines, not just a colour change.
+- Evolving processes (transmission, flow, mutation, search) highlight the edges involved.
+- Simulations run slow-fast-slow (`everyPaced`) so they can be watched.
+- Show data as it is collected (live `Chart(fn)`), and give "Simulate" buttons that sweep parameters.
+- **Several components:** lay out, then `binPackLayout()` to pack the components side by side, then `noverlapLayout()` so no nodes overlap; use `binPackLayout(false)` when rescaling would stretch small pieces, and a bigger `margin=` when labels are shown. This doesn't apply where positions mean something (maps, anatomy, time axes).
+- **Growing networks:** build the final network first and lay it out once. Give each node and edge the step at which it arrives (`born`), fit the view to the final picture (`center(g.nodes)`), then reveal it with `revealUpTo(step)`. Nodes appear where they will stay; nothing moves as it grows.
+
 ---
 
 ## Batch 1: book pages 1–50 (Chapters 1–3)
@@ -537,7 +546,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
 
 This batch runs past 207 so that it ends at the end of the chapter.
 
-**`ch07-eigenvector-katz`: Eigenvector and Katz centrality (§§7.1.1–7.1.3)** · planned
+**`ch07-eigenvector-katz`: Eigenvector and Katz centrality (§§7.1.1–7.1.3)** · built
 - *Idea:*
   - degree counts neighbours; eigenvector centrality counts *important* neighbours, the fixed point of x ← A x;
   - in directed networks, nodes no one points to get zero, and so do the nodes they point to;
@@ -549,7 +558,7 @@ This batch runs past 207 so that it ends at the end of the chapter.
   - a rank table across the measures.
 - *GUESS:* numpy, `everyPaced`, `Chart`/`plotLine`, `sizeBy`.
 
-**`ch07-pagerank-hits`: PageRank, hubs and authorities (§§7.1.4–7.1.5)** · planned
+**`ch07-pagerank-hits`: PageRank, hubs and authorities (§§7.1.4–7.1.5)** · built
 - *Idea:*
   - PageRank divides each node's vote among its out-links, plus a random jump (damping);
   - it is where a random surfer spends its time;
@@ -563,7 +572,7 @@ This batch runs past 207 so that it ends at the end of the chapter.
   - a hubs/authorities toggle (`hub`, `authority` fields).
 - *GUESS:* `pagerank`, `hub`/`authority`, `everyPaced`, `Chart`.
 
-**`ch07-closeness-betweenness`: Closeness and betweenness (§§7.1.6–7.1.7)** · planned
+**`ch07-closeness-betweenness`: Closeness and betweenness (§§7.1.6–7.1.7)** · built
 - *Idea:*
   - closeness is the inverse mean distance, a narrow range of values; harmonic closeness handles components;
   - betweenness is the share of shortest paths through a node; brokers score high with low degree.
@@ -574,7 +583,7 @@ This batch runs past 207 so that it ends at the end of the chapter.
 - *Data:* Les Misérables (bundled) or the US airports.
 - *GUESS:* `heatMap`, `betweenness`, `closeness`, `harmonic`, scatter chart (see gaps).
 
-**`ch07-groups`: Cliques, k-cores and k-components (§7.2)** · planned
+**`ch07-groups`: Cliques, k-cores and k-components (§7.2)** · built
 - *Idea:*
   - cliques;
   - k-cores, found by peeling away nodes of degree < k;
@@ -586,7 +595,7 @@ This batch runs past 207 so that it ends at the end of the chapter.
   - a small example where the 2-core ≠ the 2-components.
 - *GUESS:* `kCore`, `coreness`, `largestCliques`, `biComponentClusters`, `encircle`.
 
-**`ch07-clustering`: Transitivity and clustering (§7.3)** · planned
+**`ch07-clustering`: Transitivity and clustering (§7.3)** · built
 - *Idea:*
   - "a friend of a friend is a friend": global clustering = 3 × triangles / connected triples;
   - local clustering, often lower for high-degree nodes;
@@ -597,7 +606,7 @@ This batch runs past 207 so that it ends at the end of the chapter.
   - "Rewire, keeping degrees" (`rewire`), paced, with C falling live.
 - *GUESS:* `clustering`, `triangles`, `transitivity`, `rewire`, scatter chart.
 
-**`ch07-reciprocity-balance`: Reciprocity and structural balance (§§7.4–7.5)** · planned
+**`ch07-reciprocity-balance`: Reciprocity and structural balance (§§7.4–7.5)** · built
 - *Idea:*
   - reciprocity is the share of directed edges returned;
   - in signed networks, triangles with an odd number of negative edges are unbalanced;
@@ -607,7 +616,7 @@ This batch runs past 207 so that it ends at the end of the chapter.
   - **Balance tab:** a signed network (green +, red −) with unbalanced triangles flashing; click an edge to flip its sign; or run the triad dynamics, which fix an unbalanced triangle at a time (paced) until it splits into two camps, coloured by Harary's division.
 - *GUESS:* `reciprocity`, `mutualEdges`, `graphevents.clickEdge`, `everyPaced`, a balance check (see gaps).
 
-**`ch07-similarity`: Structural and regular equivalence (§7.6)** · planned
+**`ch07-similarity`: Structural and regular equivalence (§7.6)** · built
 - *Idea:*
   - structural equivalence: sharing neighbours (cosine, Jaccard, Pearson);
   - regular equivalence: having *similar* neighbours (σ = αAσA + I, Leicht–Holme–Newman), which finds similar roles even far apart.
@@ -616,7 +625,7 @@ This batch runs past 207 so that it ends at the end of the chapter.
   - two roles in an invented organisation (managers in different departments share no neighbours but are regularly equivalent).
 - *GUESS:* `similarTo`, numpy for the regular-equivalence fixed point.
 
-**`ch07-assortativity`: Homophily and assortative mixing (§7.7)** · planned
+**`ch07-assortativity`: Homophily and assortative mixing (§7.7)** · built
 - *Idea:*
   - mixing by category (modularity Q, the mixing matrix);
   - by an ordered value (the correlation r across edges, e.g. age);
@@ -629,7 +638,7 @@ This batch runs past 207 so that it ends at the end of the chapter.
   - compare r for degree across the bundled networks (social vs technological).
 - *GUESS:* `modularity`, `assortativity`, `mixingMatrix`, `rewire`, scatter chart.
 
-### Gaps found in batch 4
+### Gaps found in batch 4 (all added: `plotScatter`, `katzCentrality`, `structuralBalance`, `similarTo(method="regular")`, `kComponents`; also `assortativity(categorical=)`, scatter axes fitted to the data)
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|
@@ -641,6 +650,115 @@ This batch runs past 207 so that it ends at the end of the chapter.
 
 ---
 
+Also found while building batch 4 (not changed):
+- Node names become Gython globals, so a node named `D` overwrites a variable `D`. `clash.py` checks names against commands and fields, not node names.
+- `nx.k_components` takes about 4 s in Pyodide on 62 nodes, so `ch07-groups` computes the tricomponents in the background (`after(3, ...)`).
+- `Button(onClick=f)` passes an argument to `f`, so a handler with a default parameter gets `None`. Use a lambda.
+- There is no `isNeighbor` helper for nodes.
+
+## Batch 5: book pages 218–274 (Chapter 8, *Computer algorithms*)
+
+Chapter 8 is about how network calculations are done, so these explainers
+animate algorithms step by step. Each shows the data structures (queue,
+distances, counts) beside the graph, counts the operations, and has a
+"Run at full speed" or "Simulate" button that times the algorithm on growing
+networks and charts the running time.
+
+**`ch08-complexity`: Software and running time (§§8.1–8.2)** · planned
+- *Idea:*
+  - running time is measured by how it grows with n and m (big-O), not by seconds;
+  - O(m + n) beats O(n²) beats O(n³) once networks get big, whatever the constants.
+- *Reader:*
+  - "Simulate": time three real calculations (degree count O(m), all-pairs distances by BFS O(n(m + n)), a naive O(n³) matrix product) on random networks of growing size;
+  - a log–log chart of time against n, with guide lines of slope 1, 2 and 3, so the exponent is the slope;
+  - a slider to extrapolate: "how long for a million nodes?".
+- *GUESS:* `plotLine(log=true)`, random generators, Python timing.
+
+**`ch08-storing`: Adjacency matrix, adjacency list and others (§8.3)** · planned
+- *Idea:*
+  - the matrix uses n² memory, finds an edge in O(1) but lists neighbours in O(n);
+  - the list uses O(m) memory, lists neighbours in O(k) but finds an edge in O(k);
+  - hybrids, trees and hash tables trade memory for speed (Table 8.2).
+- *Reader:*
+  - side by side: the graph, its matrix (`showMatrix`) and its adjacency list (a live Markdown table);
+  - click a node: its row lights up in the matrix and its list in the table, with the cells each structure touches counted;
+  - click two nodes: "is there an edge?", with the cost in each structure;
+  - add and remove edges by clicking, with the costs;
+  - a memory chart against n for a sparse network (matrix n², list 2m, hash table ≈ 4m).
+- *GUESS:* `showMatrix(numbers=true)`, Markdown tables, `graphevents`.
+
+**`ch08-degrees-clustering`: Degrees and clustering, computed (§8.4)** · planned
+- *Idea:*
+  - a degree is a list length (O(1));
+  - local clustering checks every pair of a node's neighbours, k(k − 1)/2 checks, so the total cost is set by Σk², large when there are hubs.
+- *Reader:*
+  - step through one node's neighbour pairs (paced): each pair's edge is checked, closed pairs turn green and open ones are dashed;
+  - the triangle count and C build up as you go;
+  - "All nodes" runs the whole network with a live operations counter;
+  - a chart comparing operations for a hub-heavy network and a uniform one with the same m.
+- *GUESS:* `everyPaced`, edge highlighting, `Chart`.
+
+**`ch08-bfs`: Breadth-first search (§§8.5.1–8.5.5)** · planned
+- *Idea:*
+  - BFS finds distances from one node by layers: everything at distance d is found before d + 1;
+  - the naive version rescans all nodes each round (O(n²) in the worst case); a first-in-first-out queue makes it O(m + n);
+  - recording predecessors gives the shortest-path tree, and recording several gives every shortest path.
+- *Reader:*
+  - choose a source and step BFS (paced slow-fast-slow): the queue is shown as a row of chips, the current node is outlined, the edges examined are highlighted, and each node gets its distance as a label and its layer colour;
+  - a naive/queue toggle with an operations counter;
+  - "Show the shortest-path tree" (predecessor edges, tapered toward the source);
+  - "all shortest paths" (multiple predecessors, path counts on the nodes).
+- *GUESS:* `everyPaced`, labels, `heatMap`-like colouring, tapered directed edges for the tree.
+
+**`ch08-betweenness-algorithm`: Computing betweenness (§8.5.6)** · planned
+- *Idea:*
+  - the fast (Brandes / Newman) algorithm: one BFS per source counts shortest paths σ (adding counts from predecessors);
+  - a backward pass sends each node's dependency to its predecessors in proportion to σ;
+  - the sum over sources is betweenness, in O(n(m + n)) rather than O(n³).
+- *Reader:*
+  - pick a source:
+    - forward pass, paced: σ appears on each node as the BFS reaches it;
+    - backward pass, paced: dependencies flow down the tree, with edge widths showing the amount;
+  - "Next source" adds to a running betweenness, shown as node size;
+  - the final sizes equal `betweenness`, and a bar chart shows the running total for every node.
+- *GUESS:* `everyPaced`, labels, edge widths, `betweenness` to check against.
+
+**`ch08-dijkstra`: Shortest paths with edge lengths (§8.6)** · planned
+- *Idea:*
+  - with lengths, layers no longer work;
+  - Dijkstra's algorithm keeps tentative distances, always settles the closest unsettled node, and relaxes its edges;
+  - a priority queue (a binary heap) makes it O((m + n) log n).
+- *Reader:*
+  - a road-like network with lengths drawn as edge labels and widths;
+  - step Dijkstra (paced): settled nodes are filled, tentative ones outlined with their distance, and a relaxation that shortens a distance flashes its edge;
+  - the priority queue is listed in order;
+  - comparing BFS hop counts with Dijkstra distances shows a path with more hops that is shorter;
+  - a path drawn on request.
+- *GUESS:* `everyPaced`, edge labels, `constantLabelSize`.
+
+**`ch08-maxflow`: Maximum flow by augmenting paths (§8.7)** · planned
+- *Idea:*
+  - repeatedly find a path from source to target in the *residual* network and push flow along it;
+  - flow pushed one way frees capacity the other way, so later paths can undo earlier choices;
+  - when no path remains, the nodes still reachable from the source give a minimum cut (max-flow/min-cut);
+  - node-independent paths come from splitting each node into an in-node and an out-node joined by a unit edge.
+- *Reader:*
+  - step the algorithm (paced): the augmenting path is found by BFS (highlighted), flow is pushed, and the residual edges (tapered, both directions where both exist) are redrawn;
+  - a "bad first path" scenario where a later path cancels flow on an edge;
+  - the final cut shown as hulls around the two sides;
+  - a "Split nodes" tab that redraws a network with each node as an in/out pair and runs the same algorithm to count node-independent paths.
+- *GUESS:* `everyPaced`, `arc` edges (to separate a→b from b→a), tapered directed edges, `encircle`.
+
+### Gaps expected in batch 5
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| Showing a data structure (a queue, a heap, a list) beside the graph, with entries linked to their nodes | bfs, dijkstra, storing | Markdown text can list it, but entries aren't linked to nodes | a small `ListView(fn)` widget (or Markdown node links) whose items highlight and select their nodes |
+| Two numbers on a node (distance and path count) that stay readable | bfs, betweenness-algorithm | one label per node | either a second label (`sublabel`) or keep using "d=2 · σ=3" labels; check how they read |
+| Timing calculations in the browser | complexity | Python `time` works in Pyodide, but slowly and noisily | none; use medians of repeats and say so |
+| Residual networks with an edge each way | maxflow | `arc` and tapered edges | probably none; check how it looks |
+
 ## To do (requests not yet done)
 
 - (done) Lombardi-style layout and edge rounding: `lombardiLayout()`, `lombardiEdges()`, `lombardiness()`, `straightenEdges()`, edge field `arc`.
+- (done) Directed edges follow Holten & van Wijk (CHI 2009): tapered by default, no arrowheads; `directedEdges("taper"|"fade"|"arrow")`, line style `fade`.

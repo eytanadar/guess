@@ -1,0 +1,362 @@
+# Homophily and assortative mixing  (Newman, Networks, Section 7.7)
+# People tend to befriend people like themselves. By a category (grade,
+# language), the mixing matrix e_ij is the fraction of edges joining a node of
+# type i to one of type j, and the modularity Q = sum_i (e_ii - a_i^2) says how
+# much more often ends match than chance would give. By an ordered value (age),
+# the assortativity coefficient r is the correlation of the values at the two
+# ends of the edges. By degree: do hubs link to hubs (r > 0) or to small nodes
+# (r < 0)? Shuffling the edges while keeping every degree destroys all of it.
+
+import random
+import networkx as nx
+
+# ---- an invented school: four grades, friendships mostly within a grade -------------------------------
+GRADES = [9, 10, 11, 12]
+GRADECOL = {9: "228,26,28", 10: "55,126,184", 11: "77,175,74", 12: "152,78,163"}
+rnd0 = random.Random(5)
+SCHOOL = nx.Graph()
+pupils = []
+for gr_ in GRADES:
+    for i in range(18):
+        v = f"p{gr_}_{i}"
+        SCHOOL.add_node(v, grade=gr_, age=round(gr_ + 5 + rnd0.random(), 2), sociable=rnd0.random())
+        pupils.append(v)
+for i, u in enumerate(pupils):
+    for v in pupils[i + 1:]:
+        d = abs(SCHOOL.nodes[u]["grade"] - SCHOOL.nodes[v]["grade"])
+        su, sv = SCHOOL.nodes[u]["sociable"], SCHOOL.nodes[v]["sociable"]
+        # same grade, and similarly sociable: the sociable befriend each other (degree assortativity)
+        p = (0.17, 0.035, 0.01, 0.005)[d] * 2.2 * max(0, 1 - 1.8 * abs(su - sv)) * (0.3 + su + sv)
+        if rnd0.random() < p:
+            SCHOOL.add_edge(u, v)
+SCHOOL.remove_nodes_from([v for v in list(SCHOOL) if SCHOOL.degree(v) == 0])
+pos = nx.spring_layout(SCHOOL, seed=3, iterations=200)
+for v in SCHOOL:
+    SCHOOL.nodes[v]["pos"] = (pos[v][0] * 500, pos[v][1] * 500)
+    SCHOOL.nodes[v]["label"] = str(SCHOOL.nodes[v]["grade"])
+ORIGINAL = [tuple(e) for e in SCHOOL.edges()]
+fromNetworkX(SCHOOL, "school")
+closeGraph("main") if "main" in graphNames() else None
+
+DATASETS = {"This school": None, "Karate club": "karate.gdf", "Dolphins": "dolphins.gdf",
+            "Les Misérables": "lesmis.gdf", "Power grid (region)": "power-grid-region.gdf",
+            "Internet (AS sample)": "internet-as-sample.gdf", "US airports": "us-airports.gdf"}
+mode = ["Category"]
+picked = ["Karate club"]
+compared = {}
+
+
+def school_style():
+    for n in g.nodes:
+        n.width = n.height = 22
+        n.labelpos = "inside"
+        n.labelvisible = true
+        n.color = GRADECOL[n.grade]
+        n.strokecolor = "60,60,60"
+    for e in g.edges:
+        edge_look(e)
+
+
+def edge_look(e):
+    """Within a grade: the grade's colour; across grades: thin grey."""
+    same = e.node1.grade == e.node2.grade
+    e.color = GRADECOL[e.node1.grade] + ",150" if same else "120,120,120,110"
+    e.width = 1.6 if same else 1.0
+
+
+def age_colour(v):
+    t = min(1, max(0, (v - 14.0) / 4.0))
+    return f"{int(250 - 190 * t)},{int(230 - 120 * t)},{int(120 + 90 * t)}"
+
+
+def age_style():
+    for n in g.nodes:
+        n.color = age_colour(n.age)
+        n.labelvisible = false
+        n.width = n.height = 22
+    for e in g.edges:                     # each edge in the colour of its ends' mean age (and its dot in the chart)
+        e.color, e.width = age_colour((e.node1.age + e.node2.age) / 2), 1.6
+
+
+# ---- by category: the mixing matrix and Q ------------------------------------------------------------
+def mixing():
+    m = len(g.edges)
+    e = {(a, b): 0.0 for a in GRADES for b in GRADES}
+    for ed in g.edges:
+        a, b = ed.node1.grade, ed.node2.grade
+        e[(a, b)] += 0.5 / m
+        e[(b, a)] += 0.5 / m
+    return e
+
+
+def grade_r():
+    """r for grade as a category: Q / (1 - sum a_i^2)."""
+    e = mixing()
+    a = {i: sum(e[(i, j)] for j in GRADES) for i in GRADES}
+    return sum(e[(i, i)] - a[i] ** 2 for i in GRADES) / (1 - sum(a[i] ** 2 for i in GRADES))
+
+
+def category_text():
+    if graphNames()[0] != "school":
+        return ""
+    e = mixing()
+    a = {i: sum(e[(i, j)] for j in GRADES) for i in GRADES}
+    Q = sum(e[(i, i)] - a[i] ** 2 for i in GRADES)
+    qmax = 1 - sum(a[i] ** 2 for i in GRADES)
+    rows = ["| grade | " + " | ".join(str(j) for j in GRADES) + " | aᵢ |", "|---" * (len(GRADES) + 2) + "|"]
+    for i in GRADES:
+        rows.append(f"| **{i}** | " + " | ".join((f"**{e[(i, j)]:.3f}**" if i == j else f"{e[(i, j)]:.3f}")
+                                                for j in GRADES) + f" | {a[i]:.2f} |")
+    return ("The **mixing matrix** eᵢⱼ: the fraction of edge ends joining grade i to grade j (the diagonal is "
+            "friendships within a grade).\n\n" + "\n".join(rows) +
+            f"\n\nQ = Σ(eᵢᵢ − aᵢ²) = **{Q:.3f}**: how much more often friends share a grade than if ends were "
+            f"matched at random. Scaled by its largest possible value, r = Q / (1 − Σaᵢ²) = **{Q / qmax:.3f}** "
+            f"(GUESS's assortativity(grade) gives {assortativity(grade):.3f}: grade is a number, so it uses the "
+            "correlation of values instead, as in the Value tab).")
+
+
+def category_chart():
+    if graphNames()[0] != "school":
+        return None
+    return showMatrix(order="grade", title="Adjacency matrix, ordered by grade")
+
+
+# ---- by value: age ----------------------------------------------------------------------------------
+def value_text():
+    if graphNames()[0] != "school":
+        return ""
+    r = assortativity(age)
+    return (f"Each dot is an edge: one end's age against the other's (both ways round). Friends of similar age fall "
+            f"near the diagonal. The correlation across edges is the **assortativity coefficient r = {r:.3f}** "
+            "(1: always the same age; 0: no relation; negative: young with old).")
+
+
+def value_chart():
+    if graphNames()[0] != "school":
+        return None
+    return plotScatter(age, ends=true, title="Age at either end of each edge", line=[(14, 14), (18, 18)])
+
+
+# ---- by degree: several networks -----------------------------------------------------------------------
+def load(which):
+    picked[0] = which
+    if which == "This school":
+        use("school")
+        school_style()
+    else:
+        if "compare" in graphNames():
+            use("compare")
+        else:
+            newGraph("compare")
+        makeFromGDF(DATASETS[which])
+        degree_style()
+    center()
+
+
+def degree_style():
+    top = max([n.degree for n in g.nodes] + [1])
+    for n in g.nodes:
+        t = n.degree / top
+        n.width = n.height = 8 + 34 * t ** 0.5
+        n.color = f"{int(250 - 200 * t)},{int(200 - 120 * t)},{int(80 + 120 * t)}"
+        n.strokecolor = "60,60,60"
+        n.labelvisible = false
+    for e in g.edges:
+        e.color, e.width = "140,140,140,110", 1.0
+
+
+def degree_text():
+    r = assortativity()
+    lean = ("**assortative**: high-degree nodes tend to link to high-degree nodes" if r > 0.05 else
+            "**disassortative**: hubs tend to link to low-degree nodes" if r < -0.05 else "close to **neutral**")
+    out = f"**{picked[0] if graphNames()[0] != 'school' else 'This school'}**: degree assortativity r = **{r:.3f}**, {lean}."
+    if compared:
+        rows = ["| network | r |", "|---|---|"] + [f"| {k} | {v:+.3f} |" for k, v in compared.items()]
+        out += ("\n\n" + "\n".join(rows) + "\n\nNewman finds big social networks usually assortative and "
+                "technological and biological ones disassortative. Small networks are noisy: the karate club's two "
+                "leaders, each with many low-degree friends, make it strongly negative.")
+    return out
+
+
+def degree_chart():
+    return plotScatter(degree, ends=true, log=true, title="Degree at either end of each edge")
+
+
+def compare_all():
+    keep = picked[0]
+    for k in DATASETS:
+        load(k)
+        compared[k] = assortativity()
+    load(keep)
+
+
+# ---- shuffling: double edge swaps that keep every degree -------------------------------------------------
+shuffle = {"timer": None, "swaps": 0, "trace": [], "rnd": random.Random(11), "null": []}
+
+
+def r_now():
+    return (grade_r(), assortativity(age), assortativity())
+
+
+def swap_once(rnd, mark=True):
+    """Take edges a-b and c-d and make them a-d and c-b: every degree stays the same."""
+    es = list(g.edges)
+    linked = {frozenset((e.node1.name, e.node2.name)) for e in es}
+    for _ in range(50):
+        e1, e2 = rnd.sample(es, 2)
+        a, b, c, d = e1.node1, e1.node2, e2.node1, e2.node2
+        if rnd.random() < 0.5:
+            c, d = d, c
+        if len({a.name, b.name, c.name, d.name}) < 4:
+            continue
+        if frozenset((a.name, d.name)) in linked or frozenset((c.name, b.name)) in linked:
+            continue
+        remove([e1, e2])
+        n1, n2 = addEdge(a, d), addEdge(c, b)
+        for ne in (n1, n2):
+            if mark:
+                ne.color, ne.width = "250,60,40", 5
+            else:
+                edge_look(ne)
+        return True
+    return False
+
+
+def shuffle_step():
+    if graphNames()[0] != "school":
+        return False
+    for e in g.edges:
+        if e.width > 3:
+            edge_look(e)
+    k = 1 if shuffle["swaps"] < 10 else 5
+    for i in range(k):
+        swap_once(shuffle["rnd"], mark=(i == k - 1) or k == 1)
+    shuffle["swaps"] += k
+    shuffle["trace"].append((shuffle["swaps"],) + r_now())
+    left = 2 * len(g.edges) - shuffle["swaps"]
+    return max(1, left // 5) if left > 0 else False
+
+
+def start_shuffle():
+    if shuffle["timer"] is None or not shuffle["timer"].running:
+        if not shuffle["trace"]:
+            shuffle["trace"].append((0,) + r_now())
+        shuffle["timer"] = everyPaced(shuffle_step, slow=0.9, fast=0.12, ramp=4)
+
+
+def stop_shuffle():
+    if shuffle["timer"] is not None:
+        shuffle["timer"].stop()
+        shuffle["timer"] = None
+
+
+def restore():
+    stop_shuffle()
+    remove(list(g.edges))
+    for u, v in ORIGINAL:
+        addEdge(u, v)
+    shuffle["swaps"], shuffle["trace"] = 0, []
+    school_style()
+
+
+def simulate():
+    """Twenty complete shuffles (off screen, in networkx): the r values chance gives."""
+    G0 = nx.Graph(ORIGINAL)
+    attrs = {n.name: (n.grade, n.age) for n in g.nodes}
+    out = []
+    for run in range(20):
+        H = G0.copy()
+        nx.double_edge_swap(H, nswap=4 * H.number_of_edges(), max_tries=10 ** 6, seed=run)
+        nx.set_node_attributes(H, {v: attrs[v][0] for v in H}, "grade")
+        nx.set_node_attributes(H, {v: attrs[v][1] for v in H}, "age")
+        out.append((nx.attribute_assortativity_coefficient(H, "grade"),
+                    nx.numeric_assortativity_coefficient(H, "age"), nx.degree_assortativity_coefficient(H)))
+    shuffle["null"] = out
+
+
+def shuffle_chart():
+    tr = shuffle["trace"]
+    if graphNames()[0] != "school" or len(tr) < 2:
+        return None
+    return plotLine({"r by grade": [(t[0], t[1]) for t in tr], "r by age": [(t[0], t[2]) for t in tr],
+                     "r by degree": [(t[0], t[3]) for t in tr]},
+                    title="Assortativity as the edges are shuffled", xlabel="swaps", ylabel="r")
+
+
+def null_chart():
+    nul = shuffle["null"]
+    if not nul:
+        return None
+    G0 = nx.Graph(ORIGINAL)
+    attrs = {n.name: (n.grade, n.age) for n in g.nodes} if graphNames()[0] == "school" else None
+    if attrs is None:
+        return None
+    nx.set_node_attributes(G0, {v: attrs[v][0] for v in G0}, "grade")
+    real = nx.attribute_assortativity_coefficient(G0, "grade")
+    return plotScatter({"shuffled (20 runs)": [(i + 1, x[0]) for i, x in enumerate(nul)],
+                        "the real school": [(i + 1, real) for i in range(len(nul))]},
+                       title="r by grade: real against shuffled", xlabel="run", ylabel="r by grade")
+
+
+def shuffle_text():
+    if graphNames()[0] != "school":
+        return ""
+    tr = shuffle["trace"]
+    now = r_now()
+    out = (f"**{shuffle['swaps']}** swaps so far (each new edge flashes red). r by grade **{now[0]:.3f}**, by age "
+           f"**{now[1]:.3f}**, by degree **{now[2]:.3f}**.")
+    if tr and len(tr) > 1:
+        out += (f" At the start: {tr[0][1]:.3f}, {tr[0][2]:.3f}, {tr[0][3]:.3f}. Every node keeps its degree, yet the "
+                "grade and age mixing drains away: it was in *who* links to whom, not in how many links they have.")
+    if shuffle["null"]:
+        nul = shuffle["null"]
+        out += (f"\n\nIn 20 full shuffles, r by grade ranged from **{min(x[0] for x in nul):.3f}** to "
+                f"**{max(x[0] for x in nul):.3f}**, by age {min(x[1] for x in nul):.3f} to "
+                f"{max(x[1] for x in nul):.3f}: chance alone gives about zero.")
+    return out
+
+
+def switch(title):
+    mode[0] = title
+    if title != "Shuffle":
+        stop_shuffle()
+    if title == "Degree":
+        load(picked[0])
+        return
+    if graphNames()[0] != "school":
+        use("school")
+    if title == "Value":
+        age_style()
+    else:
+        school_style()
+    center()
+
+
+school_style()
+constantLabelSize(size=14)
+ui.title("Homophily and assortative mixing", "Networks, Section 7.7")
+ui.layout(
+    right=Column(
+        Markdown("""### Like links to like
+An invented school of four grades (colours). Friendships are mostly within a
+grade, and between people of similar age."""),
+        Tabs(
+            Tab("Category", Markdown(category_text), Chart(category_chart)),
+            Tab("Value", Markdown(value_text), Chart(value_chart)),
+            Tab("Degree",
+                Dropdown(list(DATASETS), value="Karate club", label="Network", onChange=load),
+                Button("Compare all the networks", onClick=compare_all),
+                Markdown(degree_text), Chart(degree_chart)),
+            Tab("Shuffle",
+                Markdown("""Swap the ends of two edges (a–b and c–d become a–d and c–b)
+again and again: every node keeps its degree, but who links to whom is random."""),
+                Row(Button("Shuffle, keeping degrees", onClick=start_shuffle), Button("Stop", onClick=stop_shuffle),
+                    Button("Restore", onClick=restore)),
+                Button("Simulate 20 full shuffles", onClick=simulate),
+                Markdown(shuffle_text), Chart(shuffle_chart), Chart(null_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

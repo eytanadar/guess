@@ -38,7 +38,8 @@ def build_drugs():
     fromNetworkX(B)
     renameGraph("drugs")
     frLayout()
-    binPackLayout()                       # each cluster laid out, then the clusters packed together
+    binPackLayout(false)                  # each cluster laid out, then the clusters packed together (unscaled)
+    noverlapLayout(margin=40)             # and no node (or its label) left on top of another
 
 
 def look_drugs():
@@ -152,3 +153,4 @@ folded protein. Colour: helix, strand or coil."""),
 )
 ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
 ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

@@ -1,0 +1,238 @@
+# Structural and regular equivalence  (Newman, Networks, Section 7.6)
+# Two nodes are structurally equivalent if they share many neighbours:
+# cosine similarity (shared neighbours / sqrt(k_i k_j)), Jaccard (shared /
+# all), or the Pearson correlation of their rows of A. Two nodes are
+# regularly equivalent if their neighbours are themselves similar, even when
+# they share none: the heads of two departments, say. Newman's first
+# definition is sigma = alpha A sigma A + I (paths of even length); the
+# simpler sigma = alpha A sigma + I (similarTo(v, method="regular")) counts
+# paths of every length, so it also rewards being close.
+
+import numpy as np
+import networkx as nx
+
+# ---- an invented organisation: a director, two vice-directors, four departments ----------------
+DEPTS = [("s", "Sales", "vpA", 4), ("l", "Lab", "vpA", 3), ("h", "Shop", "vpB", 4), ("o", "Office", "vpB", 3)]
+ORG = nx.Graph()
+ORG.add_node("dir", label="Director", job="director", unit="board")
+for vp, nm in (("vpA", "Vice-director A"), ("vpB", "Vice-director B")):
+    ORG.add_node(vp, label=nm, job="vice-director", unit="board")
+    ORG.add_edge("dir", vp)
+for k, (p, title, vp, count) in enumerate(DEPTS):
+    ORG.add_node(p + "0", label=f"{title} head", job="head", unit=title)
+    ORG.add_edge(vp, p + "0")
+    for i in range(1, count + 1):
+        ORG.add_node(f"{p}{i}", label=f"{title} {i}", job="staff", unit=title)
+        ORG.add_edge(p + "0", f"{p}{i}")
+
+# a top-down drawing: one level per row, staff spread along the bottom
+staff = [v for v in ORG if ORG.nodes[v]["job"] == "staff"]
+for i, v in enumerate(staff):
+    ORG.nodes[v]["pos"] = (i * 105, 0)
+for p, title, vp, count in DEPTS:
+    xs = [ORG.nodes[f"{p}{i}"]["pos"][0] for i in range(1, count + 1)]
+    ORG.nodes[p + "0"]["pos"] = (sum(xs) / len(xs), -150)
+for vp in ("vpA", "vpB"):
+    kids = [p + "0" for p, _t, v, _s in DEPTS if v == vp]
+    ORG.nodes[vp]["pos"] = (sum(ORG.nodes[c]["pos"][0] for c in kids) / 2, -300)
+ORG.nodes["dir"]["pos"] = ((ORG.nodes["vpA"]["pos"][0] + ORG.nodes["vpB"]["pos"][0]) / 2, -450)
+fromNetworkX(ORG)
+
+NAMES = sorted(ORG)
+IDX = {v: i for i, v in enumerate(NAMES)}
+A = nx.to_numpy_array(ORG, nodelist=NAMES)
+KAPPA = float(max(abs(np.linalg.eigvals(A))))
+JOBS = ["director", "vice-director", "head", "staff"]
+JOBCOL = {"director": "90,90,90", "vice-director": "150,110,190", "head": "230,140,50", "staff": "90,150,210"}
+MEASURES = ["Cosine (shared neighbours)", "Jaccard (shared / all neighbours)", "Pearson correlation",
+            "Regular: σ = αAσA + I", "Regular: σ = αAσ + I (similarTo)"]
+state = {"node": "s0", "measure": MEASURES[0]}
+alpha = Slider(0.1, 0.99, 0.9, 0.01, label="α, as a share of its limit")
+
+
+def normalised(S):
+    d = np.sqrt(np.clip(np.diag(S), 1e-12, None))
+    return S / np.outer(d, d)
+
+
+def matrix(measure):
+    """The whole similarity matrix for a measure (rows and columns in NAMES order)."""
+    k = A.sum(axis=1)
+    if measure.startswith("Cosine"):
+        return (A @ A) / np.sqrt(np.outer(k, k))
+    if measure.startswith("Jaccard"):
+        common = A @ A
+        return common / (k[:, None] + k[None, :] - common)
+    if measure.startswith("Pearson"):
+        return np.corrcoef(A)
+    a = float(alpha.value) / KAPPA
+    if "AσA" in measure:
+        return normalised(np.linalg.inv(np.eye(len(NAMES)) - a * a * (A @ A)))    # converges for α < 1/κ²
+    return normalised(np.linalg.inv(np.eye(len(NAMES)) - a * A))
+
+
+def scores(v, measure, live=False):
+    """Similarity of every node to v. When painting, Jaccard and the αAσ + I measure come from
+    similarTo (which stores the field `similarity`); the live text uses the same formulas in numpy."""
+    if not live and (measure.startswith("Jaccard") or measure.endswith("(similarTo)")):
+        method = "jaccard" if measure.startswith("Jaccard") else "regular"
+        similarTo(g.getNodeByName(v), method=method, top=len(NAMES), alpha=float(alpha.value))
+        return {n.name: float(n.similarity) for n in g.nodes}
+    S = matrix(measure)
+    return {w: float(S[IDX[v], IDX[w]]) for w in NAMES}
+
+
+def recolour(_=None):
+    v, measure = state["node"], state["measure"]
+    sc = scores(v, measure)
+    others = [x for w, x in sc.items() if w != v]
+    top = max([abs(x) for x in others] + [1e-9])
+    best = max((w for w in NAMES if w != v), key=lambda w: sc[w])
+    for n in g.nodes:
+        n.labelvisible = true
+        n.strokecolor = JOBCOL[n.job]
+        if n.name == v:
+            n.color, n.width, n.height, n.strokecolor = "250,200,40", 44, 44, "230,40,40"
+            continue
+        t = sc[n.name] / top
+        if t >= 0:
+            n.color = f"{int(235 - 105 * t)},{int(235 - 195 * t)},{int(240 - 60 * t)}"
+        else:
+            n.color = f"{int(240 + 110 * t)},{int(240 + 60 * t)},240"
+        n.width = n.height = 18 + 26 * abs(t)
+    g.nodes.simcos = 0.0
+    g.nodes.simnow = 0.0
+    cos = matrix(MEASURES[0])
+    for n in g.nodes:
+        if n.name != v:
+            n.simcos = float(cos[IDX[v], IDX[n.name]])
+            n.simnow = sc[n.name]
+    mine = set(ORG[v])
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        e.color, e.width = "170,170,170", 1.5
+        if v in (a, b):
+            e.color, e.width = "230,60,50", 4            # the chosen node's own ties
+        elif best in (a, b):
+            e.color, e.width = "240,150,30", 4           # the best match's ties
+        if (a in mine and b == best) or (b in mine and a == best):
+            e.color, e.width = "150,60,170", 5           # a neighbour they share
+
+
+def click(n):
+    state["node"] = n.name
+    recolour()
+
+
+def pick_measure(m):
+    state["measure"] = m
+    recolour()
+
+
+def lbl(w):
+    return ORG.nodes[w]["label"]
+
+
+def text():
+    v, measure = state["node"], state["measure"]
+    sc = scores(v, measure, live=True)
+    ranked = sorted((w for w in NAMES if w != v), key=lambda w: -sc[w])[:6]
+    rows = ["| most similar | score | shared neighbours |", "|---|---|---|"]
+    for w in ranked:
+        rows.append(f"| {lbl(w)} | {sc[w]:.3f} | {len(set(ORG[v]) & set(ORG[w]))} |")
+    why = {
+        "Cosine": "counts shared neighbours, scaled by √(kᵢkⱼ): **0 for anyone who shares none**.",
+        "Jaccard": "shared neighbours over all neighbours of either: also **0 without a shared neighbour**.",
+        "Pearson": "the correlation of the two rows of A: positive with more shared neighbours than chance would give, "
+                   "negative with fewer.",
+        "Regular: σ = αAσA": "i and j are similar if their *neighbours* are similar (paths of even length). The heads "
+                             "share no neighbour, yet score high with each other, and low with their own staff.",
+        "Regular: σ = αAσ +": "i is similar to j if i's neighbours are similar to j: paths of every length count, so "
+                              "nodes close by score high too.",
+    }
+    key = next(k for k in why if measure.startswith(k))
+    return (f"Similarity to **{lbl(v)}** (yellow), by **{measure}**: more purple and bigger is more similar. Its own ties are "
+            f"red, the best match's orange, and ties to a neighbour they share purple.\n\n" + "\n".join(rows) +
+            f"\n\nThis measure {why[key]}")
+
+
+def chart():
+    if state["measure"].startswith("Cosine"):
+        return None
+    return plotScatter(simcos, simnow, title=f"Similarity to {lbl(state['node'])}",
+                       xlabel="cosine (shared neighbours)", ylabel=state["measure"].split(" (")[0])
+
+
+# ---- roles: average similarity within and between jobs and departments -------------------------------
+def roles_text():
+    measure = state["measure"]
+    S = matrix(measure)
+    job = {w: ORG.nodes[w]["job"] for w in NAMES}
+    unit = {w: ORG.nodes[w]["unit"] for w in NAMES}
+
+    def mean(pairs):
+        vals = [S[IDX[a], IDX[b]] for a, b in pairs]
+        return sum(vals) / len(vals) if vals else float("nan")
+
+    pairs = [(a, b) for a in NAMES for b in NAMES if a < b]
+    heads = mean([(a, b) for a, b in pairs if job[a] == job[b] == "head"])
+    staff_out = mean([(a, b) for a, b in pairs if job[a] == job[b] == "staff" and unit[a] != unit[b]])
+    inside = mean([(a, b) for a, b in pairs if unit[a] == unit[b] != "board"])
+    rows = ["| pairs | average similarity |", "|---|---|",
+            f"| heads of two departments | **{heads:.3f}** |",
+            f"| staff of two different departments | **{staff_out:.3f}** |",
+            f"| two people in the same department | **{inside:.3f}** |"]
+    if measure.startswith("Regular"):
+        note = ("Staff in different departments share no neighbour, yet score above zero: their neighbours (their "
+                "heads) are alike. Regular equivalence finds **roles**.")
+    else:
+        note = ("Staff in different departments share no neighbour, so they score zero (or below): structural "
+                "equivalence finds **who works together**, not who does the same job.")
+    return f"Average **{measure}**:\n\n" + "\n".join(rows) + "\n\n" + note
+
+
+def show_roles(_=None):
+    for n in g.nodes:
+        n.color = JOBCOL[n.job]
+        n.strokecolor = "60,60,60"
+        n.width = n.height = 26
+    for e in g.edges:
+        e.color, e.width = "170,170,170", 1.5
+
+
+def switch(title):
+    if title == "Roles":
+        show_roles()
+    else:
+        recolour()
+
+
+def slide(_):
+    if state["measure"].startswith("Regular"):
+        recolour()
+
+
+Node.simcos = 0.0
+Node.simnow = 0.0
+graphevents.clickNode = click
+alpha.onChange = slide
+recolour()
+constantLabelSize(size=14)
+ui.title("Structural and regular equivalence", "Networks, Section 7.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Who is like whom?
+A director, two vice-directors and four departments, each a head and staff.
+**Click** anyone and every node is coloured by its similarity to them."""),
+        Dropdown(MEASURES, label="Measure", onChange=pick_measure),
+        alpha,
+        Tabs(
+            Tab("Similar to…", Markdown(text), Chart(chart)),
+            Tab("Roles", Markdown("""Colours now show jobs: director (grey), vice-directors
+(purple), heads (orange), staff (blue). Change the measure above."""), Markdown(roles_text)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

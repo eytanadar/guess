@@ -556,6 +556,38 @@ def install(session):
         for e in g._edges_list():
             e.visible = True
 
+    @cmd
+    def revealUpTo(step, field="born"):
+        """revealUpTo(step) plays back a network's growth: nodes whose `born`
+        field (or field=) is at most step are shown and the rest hidden, and an
+        edge is shown once both its ends are (and, if edges have the field too,
+        once its own value is at most step). The way to animate a growing
+        network: build the final network first, give every node (and edge) the
+        step it arrives at, lay it out once, center(g.nodes) to fit the final
+        picture, then call revealUpTo(0), revealUpTo(1), ... from a timer, so
+        nodes appear where they will stay. Returns the nodes and edges that
+        arrive at exactly this step (to highlight them)."""
+        fname = getattr(field, "name", field)
+        has_e = fname in g.edge_schema
+        if fname not in g.node_schema:
+            raise GuessError(f"no node field {fname!r}: give each node the step it arrives at")
+        def born(x):
+            v = getattr(x, fname, None)
+            return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+        new = []
+        for n in g._nodes_list():
+            b = born(n)
+            n.visible = b is not None and b <= step
+            if b == step:
+                new.append(n)
+        for e in g._edges_list():
+            b = born(e) if has_e else None
+            ok = e._n1.visible and e._n2.visible and (not has_e or (b is not None and b <= step))
+            e.visible = ok
+            if ok and (b == step if has_e else (born(e._n1) == step or born(e._n2) == step)):
+                new.append(e)
+        return GSet(new, f"arriving at {fname} = {step}")
+
     # ---- paths -------------------------------------------------------------
     @cmd
     def shortestPath(source, target, weighted=False):

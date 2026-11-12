@@ -1,0 +1,384 @@
+# Closeness and betweenness  (Newman, Networks, Sections 7.1.6-7.1.7)
+# Closeness: how near a node is to everyone else, 1 / (its mean distance to
+# the others). Its values crowd into a narrow range, and it breaks when the
+# network has more than one component; the harmonic mean of the distances
+# (the average of 1/d) fixes that. Betweenness: how many shortest paths run
+# through a node, each pair's paths shared equally when there are several.
+# Nodes that bridge groups score high even with few links: brokers.
+# Data: the co-appearances of characters in Les Miserables (Knuth 1993).
+
+import networkx as nx
+
+makeFromFile("lesmis.gdf")
+G0 = toNetworkX(directed=False)
+N = G0.number_of_nodes()
+DIST = dict(nx.all_pairs_shortest_path_length(G0))
+CLOSE = {v: (N - 1) / sum(DIST[v].values()) for v in G0}
+HARM = {v: sum(1 / d for u, d in DIST[v].items() if d > 0) / (N - 1) for v in G0}
+BTW = nx.betweenness_centrality(G0, normalized=False)            # each unordered pair once
+Node.btw_sofar = 0.0
+mode = ["Closeness"]
+
+
+def base():
+    removeConvexHulls()
+    for n in g.nodes:
+        n.width = n.height = 16
+        n.color = "170,185,210"
+        n.strokecolor = "90,90,90"
+        n.labelvisible = false
+        n.labelpos = "right"
+        n.label = n.name
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,110", 1.2, "solid"
+
+
+def edge_of(u, v):
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {u, v}:
+            return e
+
+
+# ---- closeness --------------------------------------------------------------------------------
+centre = [None]
+
+
+def show_close(n):
+    base()
+    centre[0] = n.name
+    heatMap(n)
+    for m in g.nodes:
+        m.width = m.height = 20
+        m.labelpos = "inside"
+        m.labelvisible = true
+        m.label = str(DIST[n.name].get(m.name, "∞"))
+    n.width = n.height = 40
+    n.strokecolor = "20,20,20"
+    n.label = n.name
+    n.labelpos = "right"
+    for e in g.edges:                              # the edges one step out from the centre
+        if n in (e.node1, e.node2):
+            e.color, e.width = "215,25,28", 3
+
+
+def pick_extreme(which):
+    best = max(G0, key=lambda v: CLOSE[v]) if which == "most" else min(G0, key=lambda v: CLOSE[v])
+    show_close(g.getNodeByName(best))
+
+
+def close_text():
+    if centre[0] is None:
+        return "*Click a character* to colour everyone by their distance from them (the numbers are hops)."
+    v = centre[0]
+    ell = sum(DIST[v].values()) / (N - 1)
+    rank = sorted(G0, key=lambda u: -CLOSE[u]).index(v) + 1
+    lo, hi = min(CLOSE.values()), max(CLOSE.values())
+    return (f"**{v}**: mean distance to the other {N - 1} characters ℓ = **{ell:.2f}** hops, so closeness "
+            f"C = 1/ℓ = **{CLOSE[v]:.3f}** (rank {rank} of {N}). Harmonic closeness, the mean of 1/d, is "
+            f"**{HARM[v]:.3f}**.\n\nAcross the whole network closeness only runs from **{lo:.3f}** to **{hi:.3f}**: "
+            f"a factor of {hi / lo:.1f}, because distances in a small world are all short. Small changes in the "
+            "network can reorder it. The harmonic version adds 1/d, so a node in another component (d = ∞) just "
+            "adds 0 and it still works when the network falls apart.")
+
+
+def close_chart():
+    if centre[0] is None:
+        return None
+    best = max(G0, key=lambda u: CLOSE[u])
+    far = min(G0, key=lambda u: CLOSE[u])
+    series = {}
+    for v in dict.fromkeys([centre[0], best, far]):
+        counts = {}
+        for d in DIST[v].values():
+            if d > 0:
+                counts[d] = counts.get(d, 0) + 1
+        series[v] = sorted(counts.items())
+    return plotLine(series, title="How many characters at each distance", xlabel="hops", ylabel="characters",
+                    dots=true)
+
+
+# ---- betweenness, pair by pair ---------------------------------------------------------------
+pair = {"a": None, "b": None}
+
+
+def show_pair():
+    base()
+    a, b = pair["a"], pair["b"]
+    na = g.getNodeByName(a)
+    na.width = na.height = 34
+    na.color, na.strokecolor = "40,40,40", "0,0,0"
+    na.labelvisible = true
+    if b is None:
+        return
+    nb = g.getNodeByName(b)
+    nb.width = nb.height = 34
+    nb.color, nb.strokecolor = "40,40,40", "0,0,0"
+    nb.labelvisible = true
+    paths = list(nx.all_shortest_paths(G0, a, b))
+    share = {}
+    for p in paths:
+        for v in p[1:-1]:
+            share[v] = share.get(v, 0) + 1 / len(paths)
+        for u, v in zip(p, p[1:]):
+            e = edge_of(u, v)
+            e.color, e.width, e.linestyle = "230,120,30", 4, "flow"
+    for v, s in share.items():
+        m = g.getNodeByName(v)
+        m.width = m.height = 18 + 26 * s
+        m.color, m.strokecolor = "250,190,60", "150,80,0"
+        m.labelvisible = true
+        m.label = f"{v} · {s:.2g}"
+
+
+def pair_click(n):
+    if pair["a"] is None or pair["b"] is not None:
+        pair.update(a=n.name, b=None)
+    elif n.name != pair["a"]:
+        pair["b"] = n.name
+    show_pair()
+
+
+def pair_text():
+    a, b = pair["a"], pair["b"]
+    if a is None:
+        return "*Click two characters.* Their shortest paths light up."
+    if b is None:
+        return f"From **{a}**: now click a second character."
+    paths = list(nx.all_shortest_paths(G0, a, b))
+    return (f"**{len(paths)}** shortest path{'s' if len(paths) > 1 else ''} of length **{DIST[a][b]}** from {a} to "
+            f"{b}. Each node on them gets the share of the paths it lies on (after its name): with several "
+            "paths, they split the credit. A node's betweenness adds up these shares over every pair.")
+
+
+# ---- betweenness, every pair ----------------------------------------------------------------
+ORDER = sorted(G0, key=lambda v: (v != "Valjean", v))
+acc = {"i": 0, "total": {v: 0.0 for v in G0}, "timer": None}
+
+
+def from_source(s):
+    """Brandes: every node's share of the shortest paths from s to everyone else, and the DAG edges."""
+    sigma = {s: 1}
+    order = [s]
+    preds = {s: []}
+    d = {s: 0}
+    k = 0
+    while k < len(order):
+        u = order[k]
+        k += 1
+        for w in G0[u]:
+            if w not in d:
+                d[w] = d[u] + 1
+                sigma[w] = 0
+                preds[w] = []
+                order.append(w)
+            if d[w] == d[u] + 1:
+                sigma[w] += sigma[u]
+                preds[w].append(u)
+    delta = {v: 0.0 for v in order}
+    for w in reversed(order):
+        for u in preds[w]:
+            delta[u] += sigma[u] / sigma[w] * (1 + delta[w])
+    delta[s] = 0.0
+    dag = [(u, w) for w in order for u in preds[w]]
+    return delta, dag
+
+
+def acc_paint(s=None, dag=()):
+    base()
+    top = max(acc["total"].values()) or 1
+    for n in g.nodes:
+        t = acc["total"][n.name] / top
+        n.width = n.height = 12 + 40 * t
+        n.color = f"{int(170 + 80 * t)},{int(185 - 60 * t)},{int(210 - 170 * t)}"
+        n.btw_sofar = acc["total"][n.name] / 2
+        n.labelvisible = t > 0.35
+    for u, w in dag:
+        e = edge_of(u, w)
+        e.color, e.width = "240,150,30,200", 2.2
+    if s is not None:
+        m = g.getNodeByName(s)
+        m.color, m.strokecolor = "40,40,40", "0,0,0"
+        m.width = m.height = max(m.width, 30)
+        m.labelvisible = true
+
+
+def acc_step():
+    if acc["i"] >= N:
+        return False
+    s = ORDER[acc["i"]]
+    delta, dag = from_source(s)
+    for v, x in delta.items():
+        acc["total"][v] += x
+    acc["i"] += 1
+    acc_paint(s, dag)
+    if acc["i"] >= N:
+        acc_btn.text = "Add up over all pairs"
+        acc["timer"] = None
+        acc_paint()
+    return N - acc["i"]
+
+
+def acc_play():
+    if acc["timer"] is not None and acc["timer"].running:
+        acc["timer"].stop()
+        acc["timer"] = None
+        acc_btn.text = "Add up over all pairs"
+        return
+    if acc["i"] >= N:
+        acc_reset()
+    acc["timer"] = everyPaced(acc_step, slow=0.9, fast=0.08, ramp=3)
+    acc_btn.text = "Pause"
+
+
+def acc_all():
+    if acc["timer"] is not None:
+        acc["timer"].stop()
+        acc["timer"] = None
+        acc_btn.text = "Add up over all pairs"
+    while acc["i"] < N:
+        acc_step()
+    acc_paint()
+
+
+def acc_reset():
+    acc["i"] = 0
+    acc["total"] = {v: 0.0 for v in G0}
+    acc_paint()
+
+
+def acc_text():
+    i = acc["i"]
+    if i == 0:
+        return ("Betweenness adds up every pair. Starting from one character at a time (black), find the shortest "
+                "paths to everyone (orange) and give each node its share; sizes grow as the sums build up.")
+    top = sorted(G0, key=lambda v: -acc["total"][v])[:3]
+    done = "all" if i == N else f"{i} of {N}"
+    msg = (f"Sources done: **{done}**. Leading so far: " + ", ".join(f"**{v}** ({acc['total'][v] / 2:.0f})" for v in top) + ".")
+    if i == N:
+        ok = all(abs(acc["total"][v] / 2 - BTW[v]) < 1e-6 for v in G0)
+        msg += (" Halving (each pair was counted from both ends) gives exactly the betweenness "
+                + ("networkx computes." if ok else "(mismatch!)"))
+    return msg
+
+
+def acc_chart():
+    if acc["i"] == 0:
+        return None
+    return plotScatter(degree, btw_sofar, title="Betweenness so far against degree", xlabel="degree",
+                       ylabel="betweenness so far")
+
+
+# ---- brokers --------------------------------------------------------------------------------------
+removed = []
+
+
+def brokers():
+    rank_d = {v: r for r, v in enumerate(sorted(G0, key=lambda v: -G0.degree(v)))}
+    rank_b = {v: r for r, v in enumerate(sorted(G0, key=lambda v: -BTW[v]))}
+    return sorted((v for v in G0 if rank_b[v] < 15 and rank_d[v] - rank_b[v] >= 8), key=lambda v: rank_b[v])
+
+
+def show_brokers():
+    base()
+    top = max(BTW.values())
+    bro = set(brokers())
+    for n in g.nodes:
+        t = BTW[n.name] / top
+        n.width = n.height = 12 + 44 * t ** 0.6
+        n.color = f"{int(170 + 80 * t)},{int(185 - 60 * t)},{int(210 - 170 * t)}"
+        n.labelvisible = t > 0.12 or n.name in bro
+        if n.name in bro:
+            n.strokecolor = "200,30,30"
+            n.color = "250,120,90"
+
+
+def remove_top():
+    alive = [n for n in g.nodes]
+    if not alive:
+        return
+    big = max(alive, key=lambda n: BTW[n.name])
+    removed.append(big.name)
+    remove([big])
+
+
+def restore_all():
+    add(g.deleted)
+    removed.clear()
+    show_brokers()
+
+
+def broker_text():
+    bro = brokers()
+    H = toNetworkX(directed=False)
+    comps = nx.number_connected_components(H)
+    msg = ("Size and colour show betweenness. **Red**: brokers, whose betweenness ranks far above their "
+           "degree: " + ", ".join(f"**{v}** ({G0.degree(v)} links, betweenness {BTW[v]:.0f})" for v in bro) +
+           ". They sit between groups that would otherwise barely meet. Point at a dot in the chart to find its "
+           "character.")
+    if removed:
+        msg += (f"\n\nRemoved: {', '.join(removed)}. The network is now in **{comps}** pieces; "
+                f"the biggest has {len(max(nx.connected_components(H), key=len)) if len(H) else 0} of {N} characters.")
+    return msg
+
+
+def broker_chart():
+    return plotScatter(degree, betweenness, logY=true, title="Betweenness against degree (log scale; zeros left out)",
+                       xlabel="degree", ylabel="betweenness")
+
+
+# ---- wiring ---------------------------------------------------------------------------------------
+def click(n):
+    if mode[0] == "Closeness":
+        show_close(n)
+    elif mode[0] == "Paths through a node":
+        pair_click(n)
+
+
+def switch(title):
+    mode[0] = title
+    if acc["timer"] is not None and title != "Adding up":
+        acc_play()
+    if removed and title != "Brokers":
+        add(g.deleted)
+        removed.clear()
+    if title == "Closeness":
+        if centre[0]:
+            show_close(g.getNodeByName(centre[0]))
+        else:
+            base()
+    elif title == "Paths through a node":
+        show_pair() if pair["a"] else base()
+    elif title == "Adding up":
+        acc_paint()
+    else:
+        show_brokers()
+
+
+acc_btn = Button("Add up over all pairs", onClick=acc_play)
+graphevents.clickNode = click
+base()
+show_close(g.getNodeByName("Valjean"))
+constantLabelSize(size=14)
+ui.title("Closeness and betweenness", "Networks, Sections 7.1.6–7.1.7")
+ui.layout(
+    right=Column(
+        Markdown("""### Central by distance, central by paths
+Characters of *Les Misérables*, linked when they appear in the same chapter."""),
+        Tabs(
+            Tab("Closeness",
+                Row(Button("Most central", onClick=lambda: pick_extreme("most")),
+                    Button("Most peripheral", onClick=lambda: pick_extreme("least"))),
+                Markdown(close_text), Chart(close_chart)),
+            Tab("Paths through a node", Markdown(pair_text)),
+            Tab("Adding up",
+                Row(acc_btn, Button("All at once", onClick=acc_all), Button("Reset", onClick=acc_reset)),
+                Markdown(acc_text), Chart(acc_chart)),
+            Tab("Brokers",
+                Row(Button("Remove the top broker", onClick=remove_top), Button("Restore", onClick=restore_all)),
+                Markdown(broker_text), Chart(broker_chart)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} characters · {len(g.edges)} co-appearances · data: D. E. Knuth (1993)"))
+center()

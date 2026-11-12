@@ -1,0 +1,318 @@
+# Transitivity and clustering  (Newman, Networks, Section 7.3)
+# "The friend of my friend is also my friend." Count the connected triples
+# (paths of two edges, u-v-w) and see how many close into triangles: the
+# clustering coefficient C = 3 x triangles / connected triples. The local
+# clustering of node i is the share of pairs of its neighbours that are
+# neighbours of each other; it is often lower for nodes of high degree. Social
+# networks have far more triangles than a random network with the same degrees:
+# shuffle the edges, keeping every degree, and C falls.
+
+import random
+import networkx as nx
+
+makeFromGDF("lesmis.gdf")
+G0 = toNetworkX(directed=False)
+G0.remove_edges_from(list(nx.selfloop_edges(G0)))
+ORIGINAL = [tuple(sorted(p)) for p in G0.edges()]
+live = {"G": G0.copy()}                    # the network as it is now (the rewire tab changes it)
+Node.localc = 0.0
+for n in g.nodes:
+    n.label = n.name
+
+
+def centre(n):
+    return n.x + n.width / 2, n.y + n.height / 2
+
+
+def global_c(G):
+    return nx.transitivity(G)
+
+
+def expected_c(G):
+    """C for a random network with these degrees (configuration model): (<k^2> - <k>)^2 / (n <k>^3)."""
+    ks = [d for _, d in G.degree()]
+    n = len(ks)
+    k1 = sum(ks) / n
+    k2 = sum(k * k for k in ks) / n
+    return (k2 - k1) ** 2 / (n * k1 ** 3)
+
+
+def update_local():
+    cl = nx.clustering(live["G"])
+    for n in g.nodes:
+        n.localc = float(cl.get(n.name, 0.0))
+
+
+def base():
+    clearDrawings()
+    for n in g.nodes:
+        n.width = n.height = 16
+        n.color = "150,175,215"
+        n.strokecolor = "70,70,70"
+        n.labelvisible = false
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,150", 1.2, "solid"
+
+
+# ---- triangles around one node ----------------------------------------------------------------
+picked = [None]
+
+
+def edge_of(u, v):
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {u, v}:
+            return e
+
+
+def show_node(name):
+    picked[0] = name
+    base()
+    G = live["G"]
+    me = g.getNodeByName(name)
+    nbrs = sorted(G[name])
+    me.width = me.height = 34
+    me.color, me.strokecolor = "40,40,40", "250,200,40"
+    me.labelvisible = true
+    for v in nbrs:
+        nd = g.getNodeByName(v)
+        nd.width = nd.height = 22
+        nd.color = "240,170,80"
+        nd.labelvisible = true
+        e = edge_of(name, v)
+        if e is not None:
+            e.color, e.width = "90,90,90", 2.5
+    pairs = [(nbrs[i], nbrs[j]) for i in range(len(nbrs)) for j in range(i + 1, len(nbrs))]
+    for u, v in pairs:
+        if G.has_edge(u, v):
+            e = edge_of(u, v)
+            e.color, e.width = "40,170,80", 4.5           # closes a triangle with the picked node
+    if len(pairs) <= 150:                                    # open triples: the missing side, dashed
+        for u, v in pairs:
+            if not G.has_edge(u, v):
+                x1, y1 = centre(g.getNodeByName(u))
+                x2, y2 = centre(g.getNodeByName(v))
+                drawLine(x1, y1, x2, y2, color="220,60,50,170", width=1.2, style="dashed")
+
+
+def click(n):
+    if mode[0] == "Triangles":
+        show_node(n.name)
+
+
+def triangle_text():
+    G = live["G"]
+    tri = sum(nx.triangles(G).values()) // 3
+    triples = sum(d * (d - 1) // 2 for _, d in G.degree())
+    head = (f"The whole network: **{tri}** triangles and **{triples}** connected triples, so "
+            f"C = 3 × {tri} / {triples} = **{global_c(G):.3f}**. (The average of the local values, "
+            f"another common definition, is {nx.average_clustering(G):.3f}.)")
+    if picked[0] is None:
+        return head + "\n\n*Click a character* to see the triangles around them."
+    name = picked[0]
+    k = G.degree(name)
+    pairs = k * (k - 1) // 2
+    t = nx.triangles(G, name)
+    more = "" if pairs <= 150 else " (too many open pairs to draw)"
+    return (head + f"\n\n**{name}** has {k} neighbours (orange), so {pairs} pairs of them. **{t}** of those pairs "
+            f"know each other (green edges: each closes a triangle); the other {pairs - t} don't (red dashes{more}). "
+            f"Local clustering C = {t} / {pairs} = **{(t / pairs if pairs else 0):.3f}**.")
+
+
+# ---- clustering against degree ------------------------------------------------------------------
+def degree_chart():
+    G = live["G"]
+    by = {}
+    for v in G:
+        if G.degree(v) > 1:
+            by.setdefault(G.degree(v), []).append(nx.clustering(G, v))
+    avg = sorted((k, sum(c) / len(c)) for k, c in by.items())
+    return plotScatter(degree, localc, line=avg, title="Local clustering against degree",
+                       xlabel="degree", ylabel="local clustering C")
+
+
+def color_by_c():
+    base()
+    update_local()
+    for n in g.nodes:
+        t = n.localc
+        n.color = f"{int(240 - 190 * t)},{int(230 - 110 * t)},{int(120 + 90 * t)}"
+        n.width = n.height = 12 + 2.2 * live["G"].degree(n.name) ** 0.8
+        n.labelvisible = live["G"].degree(n.name) >= 12
+
+
+# ---- rewiring, keeping the degrees ------------------------------------------------------------------
+rw = {"timer": None, "swaps": 0, "hist": [], "rnd": random.Random(5), "sims": [], "last": []}
+
+
+def swap_once(G, rnd):
+    """One double-edge swap: a-b, c-d become a-d, c-b (no self-edges, no double edges)."""
+    edges = list(G.edges())
+    for _ in range(100):
+        (a, b), (c, d) = rnd.sample(edges, 2)
+        if rnd.random() < 0.5:
+            c, d = d, c
+        if len({a, b, c, d}) == 4 and not G.has_edge(a, d) and not G.has_edge(c, b):
+            G.remove_edges_from([(a, b), (c, d)])
+            G.add_edges_from([(a, d), (c, b)])
+            return (a, b), (c, d), (a, d), (c, b)
+    return None
+
+
+def rewire_step(show=True):
+    G = live["G"]
+    done = swap_once(G, rw["rnd"])
+    if done is None:
+        return False
+    old1, old2, new1, new2 = done
+    remove([edge_of(*old1), edge_of(*old2)])
+    e1, e2 = addEdge(*new1), addEdge(*new2)
+    rw["swaps"] += 1
+    rw["hist"].append((rw["swaps"], global_c(G)))
+    if show:
+        for e in rw["last"]:                  # the previous swap fades back to grey
+            try:
+                e.color, e.width = "200,160,110,110", 1.2
+            except Exception:
+                pass
+        for n in g.nodes:
+            if n.strokecolor != "70,70,70":
+                n.strokecolor, n.width, n.height = "70,70,70", 16, 16
+        for e in (e1, e2):
+            e.color, e.width = "255,80,20", 6
+        for v in set(old1) | set(old2):
+            nd = g.getNodeByName(v)
+            nd.strokecolor = "240,120,20"
+            nd.width = nd.height = 26
+        rw["last"] = [e1, e2]
+        update_local()
+    else:
+        e1.color = e2.color = "200,160,110,110"
+    left = 2 * G.number_of_edges() - rw["swaps"]
+    return left if left > 0 else False
+
+
+def play_rewire():
+    if rw["timer"] is not None and rw["timer"].running:
+        rw["timer"].stop()
+        rw["timer"] = None
+        rewire_btn.text = "Rewire, keeping degrees"
+        return
+    if not rw["hist"]:
+        rw["hist"].append((0, global_c(live["G"])))
+    rw["timer"] = everyPaced(lambda: rewire_step(true), slow=0.9, fast=0.08, ramp=4)
+    rewire_btn.text = "Pause"
+
+
+def fast_forward():
+    if not rw["hist"]:
+        rw["hist"].append((0, global_c(live["G"])))
+    for _ in range(200):
+        rewire_step(false)
+    update_local()
+
+
+def restore():
+    if rw["timer"] is not None:
+        rw["timer"].stop()
+        rw["timer"] = None
+        rewire_btn.text = "Rewire, keeping degrees"
+    remove(list(g.edges))
+    for u, v in ORIGINAL:
+        addEdge(u, v)
+    live["G"] = G0.copy()
+    rw.update(swaps=0, hist=[], last=[])
+    update_local()
+    base()
+
+
+def simulate():
+    """Twenty fully randomised copies (10 swaps per edge each): C for each."""
+    r = random.Random(len(rw["sims"]) + 11)
+    for _ in range(20):
+        H = G0.copy()
+        nx.double_edge_swap(H, nswap=10 * H.number_of_edges(), max_tries=10 ** 6, seed=r.randrange(10 ** 9))
+        rw["sims"].append(global_c(H))
+
+
+def rewire_chart():
+    G = live["G"]
+    if not rw["hist"]:
+        return None
+    end = max(rw["hist"][-1][0], 10)
+    exp = expected_c(G0)
+    return plotLine({"C now": rw["hist"], "random with these degrees (formula)": [(0, exp), (end, exp)]},
+                    title="Clustering as the edges are shuffled", xlabel="swaps", ylabel="C")
+
+
+def sim_chart():
+    if not rw["sims"]:
+        return None
+    c0 = global_c(G0)
+    pts = [(i + 1, c) for i, c in enumerate(rw["sims"])]
+    return plotScatter({"randomised copies": pts}, line=[(0, c0), (len(pts) + 1, c0)],
+                       title="C of randomised copies (dashed: the real network)", xlabel="copy", ylabel="C")
+
+
+def rewire_text():
+    G = live["G"]
+    c = global_c(G)
+    sims = rw["sims"]
+    line = (f"Each swap takes two edges a–b and c–d and makes them a–d and c–b: every character keeps "
+            f"their degree, but who knows whom is scrambled. Swaps so far: **{rw['swaps']}**; C now "
+            f"**{c:.3f}** (it was {global_c(G0):.3f}). For a random network with these degrees, "
+            f"C ≈ (⟨k²⟩ − ⟨k⟩)² / n⟨k⟩³ = **{expected_c(G0):.3f}**.")
+    if sims:
+        line += (f"\n\n{len(sims)} randomised copies: C from {min(sims):.3f} to {max(sims):.3f}, average "
+                 f"**{sum(sims) / len(sims):.3f}**. The real network's triangles are no accident of its degrees.")
+    return line
+
+
+mode = ["Triangles"]
+
+
+def switch(title):
+    mode[0] = title
+    if title != "Rewire" and rw["timer"] is not None and rw["timer"].running:
+        play_rewire()
+    if title == "Triangles":
+        if picked[0] is not None and picked[0] in live["G"]:
+            show_node(picked[0])
+        else:
+            base()
+    elif title == "Clustering and degree":
+        color_by_c()
+    else:
+        base()
+
+
+rewire_btn = Button("Rewire, keeping degrees", onClick=play_rewire)
+graphevents.clickNode = click
+update_local()
+base()
+constantLabelSize(size=14)
+ui.title("Transitivity and clustering", "Networks, Section 7.3")
+ui.layout(
+    right=Column(
+        Markdown("""### A friend of a friend
+The co-appearances of the characters of *Les Misérables*: an edge when two
+appear in the same chapter."""),
+        Tabs(
+            Tab("Triangles", Markdown(triangle_text)),
+            Tab("Clustering and degree",
+                Markdown("""Colour shows each character's local clustering (blue high, yellow low); size
+shows degree. In the chart each dot is a character and the dashed line is the average
+for each degree: the big characters, who meet many people from different parts of
+the story, have low clustering; minor characters in one episode have C near 1."""),
+                Chart(degree_chart)),
+            Tab("Rewire",
+                Row(rewire_btn, Button("200 swaps at once", onClick=fast_forward), Button("Restore", onClick=restore)),
+                Markdown(rewire_text),
+                Chart(rewire_chart),
+                Row(Button("Simulate: 20 randomised copies", onClick=simulate)),
+                Chart(sim_chart)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · C = {global_c(live['G']):.3f}"))
+center()

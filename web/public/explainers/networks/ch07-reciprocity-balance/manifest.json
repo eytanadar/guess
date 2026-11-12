@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Reciprocity and structural balance",
+  "description": "Returned friendship nominations against chance, and signed networks whose triad dynamics settle into two camps.",
+  "console": "toggle",
+  "script": "main.gy"
+}

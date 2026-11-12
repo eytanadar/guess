@@ -1,0 +1,346 @@
+# PageRank, hubs and authorities  (Newman, Networks, Sections 7.1.4-7.1.5)
+# PageRank: a page passes its importance on, divided equally among the pages
+# it links to, plus a small amount everyone gets: x_i = alpha sum_j A_ij x_j / k_j^out
+# + (1 - alpha) / n. It is where a random surfer spends its time, if the surfer
+# follows a random link with probability alpha (the damping factor) and jumps
+# to a random page otherwise (always, from a page with no links: a dangling node).
+# HITS (Kleinberg): a good hub points to good authorities, and a good authority
+# is pointed to by good hubs; the scores are eigenvectors of A A^T and A^T A.
+# The web here is invented: two directory pages, a news cluster, a wiki, a shop,
+# fan blogs, a link farm, and two pages with no links out.
+
+import math
+import random
+import numpy as np
+import networkx as nx
+
+LINKS = [("portal", "news"), ("portal", "sport"), ("portal", "weather"), ("portal", "wiki"), ("portal", "shop"),
+         ("directory", "wiki"), ("directory", "news"), ("directory", "shop"), ("directory", "recipes"),
+         ("directory", "sport"),
+         ("news", "sport"), ("news", "weather"), ("sport", "news"), ("weather", "news"),
+         ("wiki", "wiki_a"), ("wiki", "wiki_b"), ("wiki_a", "wiki"), ("wiki_b", "wiki"), ("wiki_b", "pdf"),
+         ("shop", "deals"), ("deals", "shop"), ("news", "portal"),
+         ("blog1", "wiki"), ("blog2", "wiki"), ("blog3", "wiki"), ("blog1", "blog2"), ("blog3", "news"),
+         ("spam1", "farm"), ("spam2", "farm"), ("spam3", "farm"), ("farm", "spam1"), ("spam2", "portal")]
+POS = {"portal": (0, 0), "directory": (40, 260), "news": (300, -120), "sport": (430, 20), "weather": (420, -230),
+       "wiki": (-300, 120), "wiki_a": (-480, 40), "wiki_b": (-460, 250), "pdf": (-600, 340),
+       "shop": (260, 330), "deals": (420, 420), "recipes": (-140, 430),
+       "blog1": (-420, -140), "blog2": (-560, -60), "blog3": (-200, -200),
+       "spam1": (150, -380), "spam2": (0, -300), "spam3": (330, -440), "farm": (260, -300)}
+WEB = nx.DiGraph(LINKS)
+for v in WEB:
+    WEB.nodes[v]["pos"] = POS[v]
+    WEB.nodes[v]["label"] = v.replace("_", " ")
+fromNetworkX(WEB)
+PAGES = sorted(WEB)
+NP = len(PAGES)
+IX = {v: i for i, v in enumerate(PAGES)}
+OUTL = {v: [w for u, w in LINKS if u == v] for v in PAGES}
+INDEG = {v: sum(1 for u, w in LINKS if w == v) for v in PAGES}
+A = np.zeros((NP, NP))                                 # A_ij = 1 for a link from j to i
+for u, w in LINKS:
+    A[IX[w], IX[u]] = 1.0
+Node.share = 0.0
+Node.prval = 0.0
+Node.hubscore = 0.0
+Node.authscore = 0.0
+damp = Slider(5, 95, 85, 5, label="α: chance of following a link (%)")
+
+
+def nd(v):
+    return g.getNodeByName(v)
+
+
+def pagerank_of(alpha):
+    x = np.full(NP, 1.0 / NP)
+    for _ in range(500):
+        new = np.full(NP, (1 - alpha) / NP)
+        for v in PAGES:
+            out = OUTL[v]
+            if out:
+                for w in out:
+                    new[IX[w]] += alpha * x[IX[v]] / len(out)
+            else:
+                new += alpha * x[IX[v]] / NP             # a dangling page: its share goes everywhere
+        if np.abs(new - x).max() < 1e-12:
+            return new
+        x = new
+    return x
+
+
+def plain():
+    for n in g.nodes:
+        n.color = "185,200,220"
+        n.strokecolor = "70,70,70"
+        n.width = n.height = 26
+        n.labelvisible = true
+        n.labelpos = "outside"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "140,140,140,170", 2.2, "solid"
+
+
+def size_by(vals, col=(240, 140, 40)):
+    top = max(vals.values()) or 1
+    for v, val in vals.items():
+        n = nd(v)
+        t = val / top
+        n.width = n.height = 18 + 44 * math.sqrt(t)
+        n.color = f"{int(235 - (235 - col[0]) * t)},{int(235 - (235 - col[1]) * t)},{int(235 - (235 - col[2]) * t)}"
+
+
+# ---- the random surfer --------------------------------------------------------------------------
+surf = {"at": "portal", "visits": {v: 0 for v in PAGES}, "steps": 0, "timer": None, "rnd": random.Random(3),
+        "jumps": 0, "last": ""}
+
+
+def surf_reset():
+    if surf["timer"] is not None:
+        surf["timer"].stop()
+        surf["timer"] = None
+    surf.update(at="portal", visits={v: 0 for v in PAGES}, steps=0, jumps=0, last="", rnd=random.Random(3))
+    surf_btn.text = "Surf"
+    clearDrawings()
+    plain()
+    surf_paint(None, None)
+
+
+def surf_move():
+    alpha = damp.value / 100.0
+    here = surf["at"]
+    out = OUTL[here]
+    r = surf["rnd"]
+    if out and r.random() < alpha:
+        nxt, how = r.choice(out), "link"
+    else:
+        nxt, how = r.choice(PAGES), ("dangling" if not out else "jump")
+        surf["jumps"] += 1
+    surf["at"] = nxt
+    surf["visits"][nxt] += 1
+    surf["steps"] += 1
+    return here, nxt, how
+
+
+def surf_paint(prev, how):
+    total = max(1, surf["steps"])
+    for v in PAGES:
+        nd(v).share = surf["visits"][v] / total
+    prv = pagerank_of(damp.value / 100.0)
+    for v in PAGES:
+        nd(v).prval = float(prv[IX[v]])
+    if surf["steps"]:
+        size_by({v: surf["visits"][v] / total for v in PAGES})
+    for n in g.nodes:
+        n.strokecolor = "70,70,70"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "140,140,140,170", 2.2, "solid"
+    here = nd(surf["at"])
+    here.color, here.strokecolor = "250,210,40", "160,40,20"
+    here.width = here.height = max(here.width, 44)
+    clearDrawings()
+    if prev is None:
+        return
+    if how == "link":
+        for e in g.edges:
+            if e.node1.name == prev and e.node2.name == surf["at"]:
+                e.color, e.width, e.linestyle = "230,110,20", 5, "flow"
+    else:
+        p = nd(prev)
+        drawLine(p.x + p.width / 2, p.y + p.height / 2, here.x + here.width / 2, here.y + here.height / 2,
+                 color="150,60,200", width=2.5, style="dashed", arrow=true)
+    surf["last"] = how
+
+
+def surf_step():
+    prev, nxt, how = surf_move()
+    surf_paint(prev, how)
+    return True
+
+
+def surf_play():
+    if surf["timer"] is not None:
+        surf["timer"].stop()
+        surf["timer"] = None
+        surf_btn.text = "Surf"
+        return
+    surf["timer"] = everyPaced(surf_step, slow=1.0, fast=0.12, ramp=4)
+    surf_btn.text = "Pause"
+
+
+def surf_many(k=2000):
+    for _ in range(k):
+        surf_move()
+    surf_paint(None, None)
+
+
+def surf_chart():
+    if surf["steps"] < 5:
+        return None
+    top = max(n.prval for n in g.nodes) * 1.1
+    return plotScatter("prval", "share", title=f"Time spent on each page ({surf['steps']} steps) against PageRank",
+                       xlabel="PageRank", ylabel="share of the surfer's time", line=[(0, 0), (top, top)])
+
+
+def surf_text():
+    how = {"link": "followed a link (orange)", "jump": "got bored and **jumped** to a random page (purple dashes)",
+           "dangling": "was on a page with **no links**, so it jumped (purple dashes)", "": "–"}[surf["last"]]
+    return (f"The surfer (yellow) is on **{surf['at'].replace('_', ' ')}**, after **{surf['steps']}** steps "
+            f"({surf['jumps']} jumps). Last step: {how}. Each page's size is the share of time spent there. As the "
+            "steps add up the dots settle on the dashed line: **the share of time is the PageRank**.")
+
+
+# ---- PageRank itself ----------------------------------------------------------------------------
+prs = {"sweep": None}
+
+
+def show_pr(v=None):
+    plain()
+    prv = pagerank_of(damp.value / 100.0)
+    vals = {p: float(prv[IX[p]]) for p in PAGES}
+    for p in PAGES:
+        nd(p).prval = vals[p]
+    size_by(vals)
+    top = max(vals, key=vals.get)
+    for e in g.edges:                                  # where the top page's rank comes from
+        if e.node2.name == top:
+            e.color, e.width, e.linestyle = "230,110,20", 4, "flow"
+    nd(top).strokecolor = "160,40,20"
+
+
+def pr_text():
+    alpha = damp.value / 100.0
+    prv = pagerank_of(alpha)
+    order = np.argsort(-prv)
+    rows = ["| page | PageRank | links in | links out |", "|---|---|---|---|"]
+    for i in order[:7]:
+        v = PAGES[i]
+        rows.append(f"| {v.replace('_', ' ')} | {prv[i]:.3f} | {INDEG[v]} | {len(OUTL[v]) or '0 (dangling)'} |")
+    farm = sum(prv[IX[v]] for v in ("farm", "spam1", "spam2", "spam3"))
+    return (f"α = **{alpha:.2f}**: x_i = α Σⱼ Aᵢⱼ xⱼ / kⱼᵒᵘᵗ + (1 − α)/n. Each page splits its rank among its out-links "
+            "(orange: the links feeding the top page), so a link from a page with few links is worth more. "
+            f"The link farm holds **{farm:.0%}** of all rank by passing it round in a loop; lower α "
+            "lets less of it build up.\n\n" + "\n".join(rows))
+
+
+def pr_sweep():
+    top = [PAGES[i] for i in np.argsort(-pagerank_of(0.85))[:5]]
+    out = {v.replace("_", " "): [] for v in top}
+    for a in range(5, 100, 5):
+        prv = pagerank_of(a / 100.0)
+        for v in top:
+            out[v.replace("_", " ")].append((a, float(prv[IX[v]])))
+    prs["sweep"] = out
+
+
+def pr_chart():
+    if prs["sweep"] is None:
+        return plotScatter("indegree", "prval", title="PageRank against links in", xlabel="links in",
+                           ylabel="PageRank")
+    return plotLine(prs["sweep"], title="PageRank of the top pages as α changes", xlabel="α (%)",
+                    ylabel="PageRank", dots=true)
+
+
+def pr_scatter():
+    prs["sweep"] = None
+
+
+# ---- hubs and authorities -----------------------------------------------------------------------
+B = A.T                                               # B_ij = 1 for a link from i to j
+hits_show = ["Authorities"]
+
+
+def hits_scores():
+    w, V = np.linalg.eigh(B.T @ B)                   # authorities: eigenvector of A^T A (links i -> j)
+    auth = np.abs(V[:, -1])
+    hub = B @ auth
+    return hub / (hub.max() or 1), auth / (auth.max() or 1)
+
+
+def show_hits(v=None):
+    if v is not None:
+        hits_show[0] = v
+    plain()
+    hub, auth = hits_scores()
+    for p in PAGES:
+        nd(p).hubscore, nd(p).authscore = float(hub[IX[p]]), float(auth[IX[p]])
+    if hits_show[0] == "Authorities":
+        size_by({p: float(auth[IX[p]]) for p in PAGES}, col=(60, 120, 220))
+        best = [PAGES[i] for i in np.argsort(-hub)[:2]]
+    else:
+        size_by({p: float(hub[IX[p]]) for p in PAGES}, col=(230, 120, 40))
+        best = [PAGES[i] for i in np.argsort(-auth)[:2]]
+    for e in g.edges:                                  # the links between the best hubs and authorities
+        if e.node1.name in [PAGES[i] for i in np.argsort(-hub)[:2]] and auth[IX[e.node2.name]] > 0.3:
+            e.color, e.width, e.linestyle = "60,120,220" if hits_show[0] == "Authorities" else "230,120,40", 4, "flow"
+
+
+def hits_text():
+    hub, auth = hits_scores()
+    th = ", ".join(PAGES[i].replace("_", " ") for i in np.argsort(-hub)[:3])
+    ta = ", ".join(PAGES[i].replace("_", " ") for i in np.argsort(-auth)[:3])
+    return (f"Top **hubs**: {th}. Top **authorities**: {ta}.\n\nA hub is worth the authorities it points to "
+            "(y = A x), an authority the hubs pointing to it (x = Aᵀ y); together x is the leading eigenvector "
+            "of AᵀA. The directory pages have few links in, so PageRank rates them low, but as hubs they "
+            "lead the field. The highlighted links run from the two best hubs to strong authorities.")
+
+
+def hits_chart():
+    return plotScatter("hubscore", "authscore", title="Hub score against authority score", xlabel="hub",
+                       ylabel="authority")
+
+
+# ---- tabs ---------------------------------------------------------------------------------------
+current = ["Random surfer"]
+
+
+def switch(title):
+    current[0] = title
+    if surf["timer"] is not None:
+        surf_play()
+    clearDrawings()
+    if title == "Random surfer":
+        plain()
+        surf_paint(None, None)
+    elif title == "PageRank":
+        show_pr()
+    else:
+        show_hits()
+
+
+def damp_changed(v=None):
+    if current[0] == "PageRank":
+        show_pr()
+    elif current[0] == "Random surfer":
+        surf_paint(None, None)
+
+
+surf_btn = Button("Surf", onClick=surf_play)
+damp.onChange = damp_changed
+plain()
+surf_paint(None, None)
+show_hits()
+switch("Random surfer")
+constantLabelSize(size=14)
+ui.title("PageRank, hubs and authorities", "Networks, Sections 7.1.4–7.1.5")
+ui.layout(
+    right=Column(
+        Markdown("""### Which pages matter?
+An invented web of 19 pages. Links are directed (wide at the page that
+links, narrowing to the page linked to)."""),
+        damp,
+        Tabs(
+            Tab("Random surfer",
+                Row(surf_btn, Button("Step", onClick=surf_step), Button("2,000 steps at once", onClick=lambda: surf_many(2000)),
+                    Button("Reset", onClick=surf_reset)),
+                Markdown(surf_text), Chart(surf_chart)),
+            Tab("PageRank",
+                Row(Button("Simulate: sweep α", onClick=pr_sweep), Button("PageRank against links in", onClick=pr_scatter)),
+                Chart(pr_chart), Markdown(pr_text)),
+            Tab("Hubs and authorities",
+                Dropdown(["Authorities", "Hubs"], label="Size by", onChange=show_hits),
+                Markdown(hits_text), Chart(hits_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} pages · {len(g.edges)} links"))
+center()

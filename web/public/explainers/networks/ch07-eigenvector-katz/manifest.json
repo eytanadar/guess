@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Eigenvector and Katz centrality",
+  "description": "Watch the power iteration settle on the eigenvector, see zeros spread in a directed network, and slide from degree to eigenvector centrality with Katz's alpha.",
+  "console": "toggle",
+  "script": "main.gy"
+}

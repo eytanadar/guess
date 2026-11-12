@@ -37,6 +37,8 @@ def undirected():
         H.nodes[v]["shuffled"] = shuffle.index(v)
     fromNetworkX(H, "undirected")
     g.nodes.width = g.nodes.height = 18
+    binPackLayout()                                    # the components packed side by side,
+    noverlapLayout()                                   # then nudged so no nodes overlap
     colorize("component")
 
 
@@ -61,6 +63,9 @@ def make_directed():
     for v in G:
         G.nodes[v]["pos"] = (pos[v][0] * 380, pos[v][1] * 380)
     fromNetworkX(G, "directed")
+    g.nodes.width = g.nodes.height = 24
+    binPackLayout()
+    noverlapLayout()
     plain_directed()
 
 

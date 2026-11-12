@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "PageRank, hubs and authorities",
+  "description": "A random surfer, the PageRank it converges to, the damping factor, and Kleinberg's hubs and authorities.",
+  "console": "toggle",
+  "script": "main.gy"
+}

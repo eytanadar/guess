@@ -345,12 +345,15 @@ def install(session):
 
     # ---- mixing --------------------------------------------------------------
     @cmd
-    def assortativity(field=None):
+    def assortativity(field=None, categorical=None):
         """assortativity() is the degree assortativity of the graph: positive when
         hubs link to hubs, negative when hubs link to small nodes.
         assortativity(dept) measures homophily by a field: near 1 = ties stay
         within the same value, 0 = random mixing, negative = ties cross values.
-        Numeric fields use the correlation of values across edges."""
+        Numeric fields use the correlation of values across edges;
+        categorical=true treats a numeric field (a grade, a class number) as
+        categories instead, and categorical=false treats a text field's values
+        as numbers."""
         nx = _nx()
         G = _undirected(g())
         if field is None:
@@ -363,7 +366,12 @@ def install(session):
         if G.number_of_edges() == 0:
             raise GuessError(f"no edges between nodes with a value of {f.name}")
         nx.set_node_attributes(G, {n: vals[n] for n in G}, "v")
-        if f.type in ("INTEGER", "DOUBLE"):
+        numeric = f.type in ("INTEGER", "DOUBLE") if categorical is None else not categorical
+        if numeric:
+            try:
+                nx.set_node_attributes(G, {n: float(vals[n]) for n in G}, "v")
+            except (TypeError, ValueError):
+                raise GuessError(f"{f.name} has values that aren't numbers; use categorical=true") from None
             return float(nx.numeric_assortativity_coefficient(G, "v"))
         return float(nx.attribute_assortativity_coefficient(G, "v"))
 

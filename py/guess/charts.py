@@ -153,6 +153,73 @@ def install(session):
         return emit("line", str(title), str(xlabel), str(ylabel), [], series=series, logX=lx, logY=ly,
                     dots=bool(dots))
 
+    def plotScatter(x, y=None, log=False, logX=None, logY=None, ends=False, title=None, xlabel=None, ylabel=None,
+                    line=None):
+        """plotScatter(degree, betweenness) plots one dot per node (or edge) at
+        (x, y), in its own colour; pointing at a dot highlights its element and
+        clicking selects it. plotScatter(age, ends=true) plots, for every edge,
+        the value of a node field at one end against the other (both ways round
+        for undirected edges), which shows assortative mixing. Data works too:
+        plotScatter([(x, y), ...]) or plotScatter({"name": points, ...}).
+        log=true uses log scales on both axes (logX=/logY= for one; values <= 0
+        are left out). line=[(x0, y0), (x1, y1), ...] adds a reference line,
+        e.g. y = x. A chart with the same title replaces the last one."""
+        palette = [0x4E79A7, 0xE15759, 0x59A14F, 0xF28E2B, 0x76B7B2, 0xB07AA1, 0xEDC948]
+        lx = bool(log) if logX is None else bool(logX)
+        ly = bool(log) if logY is None else bool(logY)
+        import numbers
+        num = lambda v: isinstance(v, numbers.Real) and not isinstance(v, bool) and v == v
+        ok = lambda a, b: num(a) and num(b) and (not lx or a > 0) and (not ly or b > 0)
+        series = []
+        if isinstance(x, (list, tuple, dict)):
+            named = list(x.items()) if isinstance(x, dict) else [("points", x)]
+            for i, (name, pts) in enumerate(named):
+                clean = [[float(p[0]), float(p[1])] for p in pts if ok(p[0], p[1])]
+                series.append({"name": str(name), "color": palette[i % len(palette)], "points": clean})
+            title = title or "Scatter plot"
+        elif ends:
+            f = need_field(x)
+            if f.kind != NODE:
+                raise GuessError("plotScatter(field, ends=true) takes a node field")
+            pts, cols, ids, labels = [], [], [], []
+            for e in session.graph._edges_list():
+                a, b = f.get(e._n1), f.get(e._n2)
+                pairs = [(a, b)] if e._directed else [(a, b), (b, a)]
+                for u, v in pairs:
+                    if ok(u, v):
+                        pts.append([float(u), float(v)])
+                        cols.append(_color([e]))
+                        ids.append([["e", e._id], ["n", e._n1._id], ["n", e._n2._id]])
+                        labels.append(f"{e._n1._name} – {e._n2._name}")
+            series.append({"name": "edges", "color": 0x4E79A7, "points": pts, "colors": cols, "ids": ids,
+                           "labels": labels})
+            title = title or f"{f.name} at either end of each edge"
+            xlabel = xlabel or f"{f.name} at one end"
+            ylabel = ylabel or f"{f.name} at the other"
+        else:
+            if y is None:
+                raise GuessError("plotScatter(x, y) takes two fields (or plotScatter(field, ends=true))")
+            fx, fy = need_field(x), need_field(y)
+            if fx.kind != fy.kind:
+                raise GuessError("plotScatter needs two node fields or two edge fields")
+            pts, cols, ids, labels = [], [], [], []
+            for e in fx.elements():
+                a, b = fx.get(e), fy.get(e)
+                if ok(a, b):
+                    pts.append([float(a), float(b)])
+                    cols.append(_color([e]))
+                    ids.append(_ids([e]))
+                    labels.append(repr(e) if not isinstance(e, Node) else e._name)
+            series.append({"name": what(fx), "color": 0x4E79A7, "points": pts, "colors": cols, "ids": ids,
+                           "labels": labels})
+            title = title or f"{fy.name} against {fx.name}"
+            xlabel, ylabel = xlabel or fx.name, ylabel or fy.name
+        if line is not None:
+            series.append({"name": "", "color": 0x888888, "points": [[float(p[0]), float(p[1])] for p in line
+                                                                     if ok(p[0], p[1])], "line": True})
+        return emit("line", str(title), str(xlabel or "x"), str(ylabel or "y"), [], series=series, logX=lx, logY=ly,
+                    scatter=True)
+
     def _sizes(f):
         groups = sorted(group_by(f.elements(), f), key=len, reverse=True)
         return [{"label": _label(getattr(grp[0], f.name)), "value": len(grp),
@@ -264,5 +331,5 @@ def install(session):
                 session.emit({"type": "liveState", "id": cid, "live": False})
             session.live_charts.clear()
 
-    for fn in (plotHistogram, plotFrequency, plotLine, showMatrix, plotSizes, plotSizesPie, plotDistrib, liveCharts):
+    for fn in (plotHistogram, plotFrequency, plotLine, plotScatter, showMatrix, plotSizes, plotSizesPie, plotDistrib, liveCharts):
         session.register_command(fn.__name__, fn)

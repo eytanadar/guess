@@ -9,9 +9,9 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (106)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (109)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
-- [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
+- [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (21)
 - [Clustering and generators](#clustering-and-generators) (11)
 - [More measures: Katz, prestige, bridging, cliques, MDS, k-brace; field tools and generators](#more-measures-katz-prestige-bridging-cliques-mds-k-brace;-field-tools-and-generators) (13)
 - [More clustering: Chinese Whispers, MCL, DBSCAN, MCODE, overlapping communities](#more-clustering-chinese-whispers-mcl-dbscan-mcode-overlapping-communities) (7)
@@ -38,7 +38,7 @@ Commands can be called without parentheses when they take no arguments
 - [Import and export: Excel, RDF, Bluesky, JSON, KML, shapefiles, standalone HTML](#import-and-export-excel-rdf-bluesky-json-kml-shapefiles-standalone-html) (7)
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
-- [Charts](#charts) (8)
+- [Charts](#charts) (9)
 - [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (24)
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
@@ -377,6 +377,29 @@ Hide nodes with no edges other than self loops.
 highest(degree) is the 10 nodes (or edges) with the largest degree,
 largest first; highest(degree, 5), or highest(degree, 5, seq) within a
 set. Elements without a value are left out.
+
+### `katzCentrality(alpha=None, beta=1.0, name='katz')`
+
+katzCentrality(alpha, beta) gives each node x = alpha A x + beta: the
+importance its in-neighbours pass on (scaled by alpha) plus a free amount
+beta, so even nodes no one points to count. alpha must be below 1/kappa1
+(the largest eigenvalue of A; returned along with the field) for the
+sum to converge; small alpha ranks nodes almost by degree, alpha near
+1/kappa1 almost like eigenvector centrality. With alpha left out it is
+0.85/kappa1. Edges follow their direction (undirected ones both ways).
+Stores the values in the field `name` (default "katz") and returns
+(field, 1/kappa1).
+
+### `kComponents(k=2, name='kcomponent')`
+
+kComponents(k) finds the k-components: the largest groups of nodes in
+which every pair is joined by at least k node-independent paths (k = 1:
+components; 2: bicomponents; 3: tricomponents). Unlike k-cores they need
+the paths, not just the degrees. Returns them as sets, largest first, and
+stores each node's (first) one in the field `name` (-1 for none); a node
+can belong to more than one, e.g. a cut node shared by two bicomponents.
+Direction is ignored. Exact for k <= 2; for k >= 3 uses networkx's
+k_components (Moody and White), which can be slow on big graphs.
 
 ### `labelCluster(nodes, value, field='cluster', relabel=True)`
 
@@ -789,6 +812,18 @@ infected_at); outbreaks() repeats it many times.
 
 straightenEdges() makes every edge straight again (arc = 0).
 
+### `structuralBalance(sign='sign', name='camp')`
+
+structuralBalance(sign) tests a signed network (an edge field of +1/-1,
+or "+"/"-") for structural balance: every cycle has an even number of
+negative edges, so no triangle has exactly one or three. Harary's
+theorem says a balanced network splits into (at most) two camps with
+positive edges inside and negative edges between; the node field `camp`
+(0 or 1) gets that split, or for an unbalanced network one that follows
+a spanning tree. Returns {"balanced": ..., "unbalanced": [(a, b, c), ...]
+(triangles with an odd number of negative edges), "frustrated": [edges
+that disagree with the camps]}. Direction is ignored.
+
 ### `travelingSalesman(stops=None, weight='weight', cycle=True)`
 
 travelingSalesman(stops) finds a short route that visits every node
@@ -941,6 +976,18 @@ themselves when read after the graph has changed, so this is rarely
 needed: recompute(pagerank, ...) forces it now (e.g. for a field you
 had overwritten, which then follows the graph again); recompute() redoes
 every computed field that has been used so far.
+
+### `revealUpTo(step, field='born')`
+
+revealUpTo(step) plays back a network's growth: nodes whose `born`
+field (or field=) is at most step are shown and the rest hidden, and an
+edge is shown once both its ends are (and, if edges have the field too,
+once its own value is at most step). The way to animate a growing
+network: build the final network first, give every node (and edge) the
+step it arrives at, lay it out once, center(g.nodes) to fit the final
+picture, then call revealUpTo(0), revealUpTo(1), ... from a timer, so
+nodes appear where they will stay. Returns the nodes and edges that
+arrive at exactly this step (to highlight them).
 
 ### `shortestPath(source, target, weighted=False)`
 
@@ -1190,13 +1237,16 @@ plain nodes.
 ancestors(node): every node with a directed path to node (upstream: what it
 depends on or cites, transitively). Undirected edges count both ways.
 
-### `assortativity(field=None)`
+### `assortativity(field=None, categorical=None)`
 
 assortativity() is the degree assortativity of the graph: positive when
 hubs link to hubs, negative when hubs link to small nodes.
 assortativity(dept) measures homophily by a field: near 1 = ties stay
 within the same value, 0 = random mixing, negative = ties cross values.
-Numeric fields use the correlation of values across edges.
+Numeric fields use the correlation of values across edges;
+categorical=true treats a numeric field (a grade, a class number) as
+categories instead, and categorical=false treats a text field's values
+as numbers.
 
 ### `blockmodel(count=4, show=True)`
 
@@ -1511,14 +1561,17 @@ that field's value, so the edges between each pair of values stay
 the same in number: rewire(keep=kind) keeps a two-mode network
 two-mode (plants still only link to pollinators).
 
-### `similarTo(node, method='jaccard', top=10)`
+### `similarTo(node, method='jaccard', top=10, alpha=0.9)`
 
 similarTo(v1) scores every node by how much its neighbourhood overlaps
 v1's, stores the score in the field `similarity` and returns the `top`
 most similar nodes. method: "jaccard" (shared neighbours / all
 neighbours of either), "dice" (2 x shared / sum of degrees), or
-"adamic_adar" (shared neighbours, rare ones counting more). Direction
-is ignored.
+"adamic_adar" (shared neighbours, rare ones counting more), or
+"regular": regular equivalence (Leicht, Holme and Newman), where nodes
+are similar if their neighbours are similar, so nodes with the same
+role score high even with no neighbours in common; alpha (below 1)
+weighs longer paths. Direction is ignored.
 
 ### `simplify(combine='sum', loops=True)`
 
@@ -2929,6 +2982,18 @@ series. log=true makes both axes logarithmic (or logX=/logY= one of
 them; points <= 0 are left out). dots=true marks each point. A chart
 with the same title replaces the last one, so calling it in a loop
 updates it.
+
+### `plotScatter(x, y=None, log=False, logX=None, logY=None, ends=False, title=None, xlabel=None, ylabel=None, line=None)`
+
+plotScatter(degree, betweenness) plots one dot per node (or edge) at
+(x, y), in its own colour; pointing at a dot highlights its element and
+clicking selects it. plotScatter(age, ends=true) plots, for every edge,
+the value of a node field at one end against the other (both ways round
+for undirected edges), which shows assortative mixing. Data works too:
+plotScatter([(x, y), ...]) or plotScatter({"name": points, ...}).
+log=true uses log scales on both axes (logX=/logY= for one; values <= 0
+are left out). line=[(x0, y0), (x1, y1), ...] adds a reference line,
+e.g. y = x. A chart with the same title replaces the last one.
 
 ### `plotSizes(field)`
 

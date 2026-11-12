@@ -602,15 +602,27 @@ def install(session):
 
     # ---- similarity and link prediction --------------------------------------
     @cmd
-    def similarTo(node, method="jaccard", top=10):
+    def similarTo(node, method="jaccard", top=10, alpha=0.9):
         """similarTo(v1) scores every node by how much its neighbourhood overlaps
         v1's, stores the score in the field `similarity` and returns the `top`
         most similar nodes. method: "jaccard" (shared neighbours / all
         neighbours of either), "dice" (2 x shared / sum of degrees), or
-        "adamic_adar" (shared neighbours, rare ones counting more). Direction
-        is ignored."""
+        "adamic_adar" (shared neighbours, rare ones counting more), or
+        "regular": regular equivalence (Leicht, Holme and Newman), where nodes
+        are similar if their neighbours are similar, so nodes with the same
+        role score high even with no neighbours in common; alpha (below 1)
+        weighs longer paths. Direction is ignored."""
         gr = g()
         me = _node_of(node)
+        if str(method).lower() == "regular":
+            from .metrics import regular_similarity
+            nodes, S = regular_similarity(gr, alpha)
+            i = nodes.index(me)
+            f = gr.addNodeField("similarity", DOUBLE, 0.0)
+            for j, x in enumerate(nodes):
+                f.set(x, 0.0 if x is me else float(S[i, j]))
+            ranked = sorted((x for x in nodes if x is not me), key=lambda x: (-float(S[i, nodes.index(x)]), x._id))
+            return GSet(ranked[:int(top)], f"most similar to {me._name}")
         nbrs = {}
         for e in gr._edges_list():
             if e._n1 is e._n2:
@@ -620,7 +632,7 @@ def install(session):
         mine = nbrs.get(me, set())
         m = str(method).lower()
         if m not in ("jaccard", "dice", "adamic_adar", "adamicadar", "aa"):
-            raise GuessError('method should be "jaccard", "dice" or "adamic_adar"')
+            raise GuessError('method should be "jaccard", "dice", "adamic_adar" or "regular"')
         scores = {}
         for z in mine:                                   # only nodes sharing a neighbour score > 0
             for other in nbrs.get(z, ()):

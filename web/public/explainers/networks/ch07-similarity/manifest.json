@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Structural and regular equivalence",
+  "description": "Similar because of shared neighbours (cosine, Jaccard, Pearson), or because of similar neighbours (regular equivalence): departments versus roles.",
+  "console": "toggle",
+  "script": "main.gy"
+}

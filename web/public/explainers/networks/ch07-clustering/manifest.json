@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Transitivity and clustering",
+  "description": "Triangles around a node, local clustering against degree, and how shuffling the edges (keeping degrees) destroys the triangles.",
+  "console": "toggle",
+  "script": "main.gy"
+}

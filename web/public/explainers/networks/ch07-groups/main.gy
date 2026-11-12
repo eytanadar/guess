@@ -1,0 +1,385 @@
+# Cliques, k-cores and k-components  (Newman, Networks, Section 7.2)
+# A clique is a group in which everyone is linked to everyone: too strict for
+# real data, where one missing link breaks it. A k-core is the largest group
+# in which each node has at least k neighbours inside the group; peel away
+# nodes with fewer than k links, again and again, and what is left is the
+# k-core. A k-component is a group in which every pair is joined by at least
+# k paths that share no nodes: harder to break than a core, and not the same
+# thing (two rings joined by one link make one 2-core but two 2-components).
+# Data: a community of bottlenose dolphins in Doubtful Sound (Lusseau et al. 2003).
+
+import networkx as nx
+
+makeFromFile("dolphins.gdf")
+G0 = toNetworkX(directed=False)
+CORE = nx.core_number(G0)
+KMAX = max(CORE.values())
+CORE_COL = ["200,200,200", "160,200,240", "110,170,230", "250,170,60", "220,60,50", "150,30,120"]
+
+# the small example: two rings joined by a single link
+S0 = nx.Graph()
+S0.add_edges_from([(f"a{i}", f"a{(i + 1) % 5}") for i in range(5)] + [(f"b{i}", f"b{(i + 1) % 5}") for i in range(5)]
+                  + [("a0", "b0")])
+import math
+for i in range(5):
+    t = 2 * math.pi * i / 5
+    S0.nodes[f"a{i}"]["pos"] = (-200 + 110 * math.cos(t), 110 * math.sin(t))     # a0 and b0 face each other
+    S0.nodes[f"b{i}"]["pos"] = (200 - 110 * math.cos(t), 110 * math.sin(t))
+fromNetworkX(S0, "rings")
+use("main")
+
+
+def base():
+    removeConvexHulls()
+    for n in g.nodes:
+        n.width = n.height = 18
+        n.color = "170,185,210"
+        n.strokecolor = "90,90,90"
+        n.labelvisible = false
+        n.labelpos = "right"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,130", 1.3, "solid"
+
+
+def edges_among(names):
+    names = set(names)
+    return [e for e in g.edges if e.node1.name in names and e.node2.name in names]
+
+
+# ---- k-cores ---------------------------------------------------------------------------------------
+kslider = Slider(1, KMAX + 1, 3, 1, label="k")
+peel = {"gone": [], "trace": [], "timer": None, "done": False}
+
+
+def left_degree(v, gone):
+    return sum(1 for u in G0[v] if u not in gone)
+
+
+def peel_reset(v=None):
+    if peel["timer"] is not None:
+        peel["timer"].stop()
+        peel["timer"] = None
+        peel_btn.text = "Peel"
+    peel.update(gone=[], trace=[(0, len(G0))], done=False)
+    base()
+
+
+def peel_step():
+    k = int(kslider.value)
+    gone = set(peel["gone"])
+    nxt = next((v for v in sorted(G0, key=lambda v: (left_degree(v, gone), v))
+                if v not in gone and left_degree(v, gone) < k), None)
+    base()
+    for v in peel["gone"]:                          # already peeled: small and faded
+        n = g.getNodeByName(v)
+        n.width = n.height = 10
+        n.color, n.strokecolor = "225,225,225", "200,200,200"
+    for e in g.edges:
+        if e.node1.name in gone or e.node2.name in gone:
+            e.color = "200,200,200,50"
+    if nxt is None:
+        peel["done"] = True
+        survivors = [v for v in G0 if v not in gone]
+        for v in survivors:
+            n = g.getNodeByName(v)
+            n.width = n.height = 24
+            n.color, n.strokecolor = "90,180,110", "20,90,40"
+        for e in edges_among(survivors):
+            e.color, e.width = "60,150,80", 2.2
+        if survivors:
+            encircle([g.getNodeByName(v) for v in survivors], shape="hull", color="90,180,110,40", padding=16)
+        peel["timer"] = None
+        peel_btn.text = "Peel"
+        return False
+    n = g.getNodeByName(nxt)                       # the node being peeled now: big, red, with its links
+    n.width = n.height = 36
+    n.color, n.strokecolor = "230,70,50", "120,0,0"
+    n.labelvisible = true
+    for e in g.edges:
+        if n in (e.node1, e.node2) and e.node1.name not in gone and e.node2.name not in gone:
+            e.color, e.width = "230,70,50", 3.5
+    peel["gone"].append(nxt)
+    peel["trace"].append((len(peel["gone"]), len(G0) - len(peel["gone"])))
+    return True
+
+
+def peel_play():
+    if peel["timer"] is not None and peel["timer"].running:
+        peel["timer"].stop()
+        peel["timer"] = None
+        peel_btn.text = "Peel"
+        return
+    if peel["done"]:
+        peel_reset()
+    peel["timer"] = everyPaced(peel_step, slow=0.9, fast=0.12, ramp=3)
+    peel_btn.text = "Pause"
+
+
+def peel_all():
+    if peel["timer"] is not None:
+        peel["timer"].stop()
+        peel["timer"] = None
+        peel_btn.text = "Peel"
+    while peel_step():
+        pass
+
+
+def show_cores():
+    peel_reset()
+    for n in g.nodes:
+        c = CORE[n.name]
+        n.color = CORE_COL[min(c, len(CORE_COL) - 1)]
+        n.width = n.height = 12 + 6 * c
+    for e in g.edges:
+        c = min(CORE[e.node1.name], CORE[e.node2.name])
+        e.color = CORE_COL[min(c, len(CORE_COL) - 1)]
+        e.width = 0.8 + 0.6 * c
+
+
+def peel_text():
+    k = int(kslider.value)
+    size = sum(1 for v in G0 if CORE[v] >= k)
+    gone = len(peel["gone"])
+    if gone == 0 and not peel["done"]:
+        counts = " · ".join(f"{c}-core: {sum(1 for v in G0 if CORE[v] >= c)}" for c in range(1, KMAX + 1))
+        return (f"**Peel** removes, one at a time, a dolphin with fewer than **k = {k}** links to those still left "
+                f"(red). Removing it lowers its neighbours' counts, so peeling cascades. Sizes: {counts}. "
+                "*Colour by core* shows every node's core number at once: 1 pale blue, 2 blue, 3 orange, 4 red.")
+    if peel["done"]:
+        return (f"Done: **{gone}** dolphins peeled and **{len(G0) - gone}** remain (green), each with at least {k} "
+                f"links inside the group. That is the **{k}-core**." if gone < len(G0) else
+                f"Everyone was peeled: there is no {k}-core. The deepest is the {KMAX}-core.")
+    return f"Peeled **{gone}** so far (grey); {len(G0) - gone} left. The k-core will have {size}."
+
+
+def peel_chart():
+    if len(peel["trace"]) < 2:
+        return None
+    return plotLine(peel["trace"], title="Dolphins left while peeling", xlabel="nodes peeled", ylabel="left",
+                    dots=true)
+
+
+# ---- cliques ---------------------------------------------------------------------------------------
+CLIQUES = sorted((sorted(c) for c in nx.find_cliques(G0) if len(c) >= 3), key=lambda c: (-len(c), c))
+clq = {"i": -1}
+
+
+def show_clique(members, hull=True, col="150,80,200"):
+    for v in members:
+        n = g.getNodeByName(v)
+        n.width = n.height = 30
+        n.color, n.strokecolor = col, "40,0,60"
+        n.labelvisible = true
+    for e in edges_among(members):
+        e.color, e.width = col, 3.5
+    if hull:
+        encircle([g.getNodeByName(v) for v in members], shape="hull", color=col + ",45", padding=16)
+
+
+def next_clique():
+    clq["i"] = (clq["i"] + 1) % len(CLIQUES)
+    base()
+    show_clique(CLIQUES[clq["i"]])
+
+
+def largest_cliques():
+    clq["i"] = -2
+    base()
+    big = len(CLIQUES[0])
+    pal = ["150,80,200", "230,120,40", "40,150,170", "200,60,110", "90,150,60"]
+    for i, c in enumerate(c for c in CLIQUES if len(c) == big):
+        show_clique(c, col=pal[i % len(pal)])
+
+
+def clique_text():
+    sizes = {}
+    for c in CLIQUES:
+        sizes[len(c)] = sizes.get(len(c), 0) + 1
+    rows = ["| clique size | " + " | ".join(str(s) for s in sorted(sizes)) + " |",
+            "|---|" + "---|" * len(sizes),
+            "| how many | " + " | ".join(str(sizes[s]) for s in sorted(sizes)) + " |"]
+    head = ("A **clique** is a set of dolphins all linked to each other. Maximal cliques (that can't be "
+            "extended) of three or more:\n\n" + "\n".join(rows) + "\n\n")
+    if clq["i"] >= 0:
+        c = CLIQUES[clq["i"]]
+        others = sum(1 for d in CLIQUES if d != c and set(d) & set(c))
+        head += (f"Clique {clq['i'] + 1} of {len(CLIQUES)}: **{', '.join(c)}**. It overlaps {others} other "
+                 "maximal cliques: cliques overlap, and one missing link splits a group into smaller ones. That "
+                 "is why looser groups like k-cores are useful.")
+    elif clq["i"] == -2:
+        head += f"The largest cliques have **{len(CLIQUES[0])}** members (one shape each)."
+    return head
+
+
+# ---- k-components ------------------------------------------------------------------------------
+kc = {"k": None}
+KSETS = {}                                          # k -> the k-components' node names (computed once)
+
+
+def ksets(k):
+    if k not in KSETS:
+        KSETS[k] = [sorted(n.name for n in comp) for comp in kComponents(k)]
+    return KSETS[k]
+
+
+KCOL = {1: "160,200,240", 2: "250,170,60", 3: "220,60,50"}
+
+
+def show_kcomp(k):
+    kc["k"] = k
+    base()
+    levels = [1, 2, 3] if k == 0 else [k]
+    for lev in levels:
+        comps = [[g.getNodeByName(v) for v in comp] for comp in ksets(lev)]
+        for comp in comps:
+            if len(comp) > 2:
+                encircle(comp, shape="hull", color=KCOL[lev] + ",55", padding=10 + 8 * (3 - lev))
+        for comp in comps:
+            for n in comp:
+                n.color = KCOL[lev]
+                n.width = n.height = 14 + 5 * lev
+    if k == 2:
+        for v in nx.articulation_points(G0):
+            n = g.getNodeByName(v)
+            n.strokecolor = "200,0,0"
+            n.width = n.height = 30
+            n.labelvisible = true
+            for e in g.edges:
+                if n in (e.node1, e.node2):
+                    e.color, e.width = "220,60,50", 2.5
+
+
+def kcomp_text():
+    k = kc["k"]
+    if k is None:
+        return ("A **k-component** is a group in which every two members are joined by at least k paths that share "
+                "no other nodes (k = 1: components; 2: bicomponents; 3: tricomponents). They nest: each "
+                "tricomponent lies inside a bicomponent, inside a component.")
+    levels = (1, 2, 3) if k in (0, 3) or 3 in KSETS else (1, 2)
+    sizes = {lev: [len(c) for c in ksets(lev)] for lev in levels}
+    names = {1: "Components", 2: "bicomponents", 3: "tricomponents"}
+    msg = " · ".join(f"{names[lev]}: " + ", ".join(map(str, sorted(sizes[lev], reverse=True))) for lev in levels) + "."
+    if k == 2:
+        cuts = sorted(nx.articulation_points(G0))
+        msg += (f"\n\n**Red rings**: the {len(cuts)} cut nodes. Removing any one of them splits the network, "
+                "so the dolphins they hang onto are left out of the bicomponent.")
+    if k == 3:
+        core3 = sum(1 for v in G0 if CORE[v] >= 3)
+        msg += (f"\n\nCompare: the 3-core has **{core3}** dolphins, the biggest tricomponent "
+                f"**{max(sizes[3]) if sizes[3] else 0}**. A k-component is always inside the k-core (k paths need k "
+                "links each), but the converse fails: having k links doesn't give k separate routes.")
+    return msg
+
+
+# ---- the small example: two rings ------------------------------------------------------------
+rings = {"show": None}
+
+
+def rings_base():
+    removeConvexHulls()
+    for n in g.nodes:
+        n.width = n.height = 34
+        n.color, n.strokecolor = "170,185,210", "70,70,70"
+        n.labelvisible = true
+        n.labelpos = "inside"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "120,120,120", 2.5, "solid"
+
+
+def rings_core():
+    rings["show"] = "core"
+    rings_base()
+    core = nx.k_core(toNetworkX(directed=False), 2)
+    for n in g.nodes:
+        if n.name in core:
+            n.color = "90,180,110"
+    encircle(list(g.nodes), shape="hull", color="90,180,110,45", padding=24)
+
+
+def rings_comps():
+    rings["show"] = "comps"
+    rings_base()
+    pal = ["250,170,60", "110,170,230"]
+    for i, comp in enumerate(kComponents(2)):
+        for n in comp:
+            n.color = pal[i]
+        encircle(comp, shape="hull", color=pal[i] + ",55", padding=20)
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {"a0", "b0"}:
+            e.color, e.width, e.linestyle = "220,40,40", 4, "dashed"
+
+
+def rings_text():
+    if rings["show"] is None:
+        return "Two rings of five, joined by one link. Every node has at least two links."
+    if rings["show"] == "core":
+        return ("**One 2-core**: every node has at least 2 neighbours in the group, so nothing is peeled; the "
+                "whole network is a single 2-core.")
+    return ("**Two 2-components**: within a ring every pair has two separate routes (both ways round), but a0 "
+            "and b0 are joined only through the single link (dashed): cut it, or remove a0, and the rings come "
+            "apart. So the two rings are separate 2-components.")
+
+
+# ---- wiring ---------------------------------------------------------------------------------------
+mode = ["k-cores"]
+
+
+def switch(title):
+    mode[0] = title
+    if peel["timer"] is not None:
+        peel_play()
+    if title == "Core ≠ component":
+        use("rings")
+        rings_base()
+        if rings["show"] == "core":
+            rings_core()
+        elif rings["show"] == "comps":
+            rings_comps()
+    else:
+        if graphNames()[0] != "main":
+            use("main")
+        if title == "k-cores":
+            peel_reset()
+        elif title == "Cliques":
+            base()
+            if clq["i"] >= 0:
+                show_clique(CLIQUES[clq["i"]])
+            elif clq["i"] == -2:
+                largest_cliques()
+        elif title == "k-components":
+            show_kcomp(kc["k"]) if kc["k"] is not None else base()
+    center()
+
+
+# tricomponents take a few seconds in the browser: work them out while the reader looks at the cores
+after(3, lambda: ksets(3))
+peel_btn = Button("Peel", onClick=peel_play)
+kslider.onChange = peel_reset
+show_cores()
+constantLabelSize(size=14)
+ui.title("Cliques, cores and k-components", "Networks, Section 7.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Finding groups
+A network of 62 dolphins, linked when often seen together."""),
+        Tabs(
+            Tab("k-cores", kslider,
+                Row(peel_btn, Button("All at once", onClick=peel_all), Button("Colour by core", onClick=show_cores)),
+                Markdown(peel_text), Chart(peel_chart)),
+            Tab("Cliques", Row(Button("Next clique", onClick=next_clique), Button("The largest", onClick=largest_cliques)),
+                Markdown(clique_text)),
+            Tab("k-components",
+                Row(Button("Components", onClick=lambda: show_kcomp(1)), Button("Bicomponents", onClick=lambda: show_kcomp(2)),
+                    Button("Tricomponents", onClick=lambda: show_kcomp(3))),
+                Button("All three, nested", onClick=lambda: show_kcomp(0)),
+                Markdown(kcomp_text)),
+            Tab("Core ≠ component",
+                Row(Button("The 2-core", onClick=rings_core), Button("The 2-components", onClick=rings_comps)),
+                Markdown(rings_text)),
+            onChange=switch)),
+    sizes={"right": 390},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · " +
+                   ("a made-up example" if graphNames()[0] == "rings" else "data: Lusseau et al. (2003)")))
+center()

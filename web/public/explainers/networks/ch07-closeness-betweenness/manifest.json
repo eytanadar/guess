@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Closeness and betweenness",
+  "description": "Distance rings and closeness, shortest paths through a node, betweenness added up pair by pair, and brokers.",
+  "console": "toggle",
+  "script": "main.gy"
+}
