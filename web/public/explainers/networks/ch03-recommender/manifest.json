@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Recommendations from a bipartite network",
+  "description": "People, films and ratings: recommend what similar people liked, and test predictions on hidden ratings.",
+  "console": "toggle",
+  "script": "main.gy"
+}

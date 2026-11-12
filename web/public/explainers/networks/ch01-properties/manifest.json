@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Three things to measure",
+  "description": "Degree and hubs, shortest paths and the small-world effect, and communities, on Zachary's karate club.",
+  "console": "toggle",
+  "script": "main.gy"
+}

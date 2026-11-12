@@ -22,7 +22,7 @@ Commands can be called without parentheses when they take no arguments
 - [Layouts](#layouts) (33)
 - [Structure-aware layout (motifLayout, after LUMINA)](#structure-aware-layout-motiflayout-after-lumina) (1)
 - [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
-- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (37)
+- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (44)
 - [Styles and visual mappings](#styles-and-visual-mappings) (14)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
@@ -38,8 +38,8 @@ Commands can be called without parentheses when they take no arguments
 - [Import and export: Excel, RDF, Bluesky, JSON, KML, shapefiles, standalone HTML](#import-and-export-excel-rdf-bluesky-json-kml-shapefiles-standalone-html) (7)
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
-- [Charts](#charts) (5)
-- [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (22)
+- [Charts](#charts) (7)
+- [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (23)
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
 - [Colors](#colors) (4)
@@ -1847,6 +1847,10 @@ the span of the ordered axis. Nodes without a value go in the middle.
 
 ## Display: hulls, legends, background, edges, labels, selection, export
 
+### `clearDrawings()`
+
+Remove every drawing made with drawLine, drawText, drawRect and drawCircle.
+
 ### `constantLabelSize(on=True)`
 
 constantLabelSize() keeps labels the same size on screen as you zoom
@@ -1871,6 +1875,33 @@ source to target, as in Gephi's preview, so a->b and b->a separate and
 direction reads without arrows. curvedEdges(false) goes back to straight
 lines; curvedEdges(k) sets the curvature: the arc radius is edge length / k
 (default 1.2, as in Gephi; 2 gives semicircles).
+
+### `drawCircle(x, y, r, color=None, fill=None, lineWidth=1.5, style='solid')`
+
+drawCircle(x, y, r) draws a circle centred at (x, y) with radius r
+(graph coordinates), under the graph. fill=, lineWidth= and style= as
+for drawRect.
+
+### `drawLine(x1, y1, x2, y2, color=None, width=1.5, style='solid', arrow=False)`
+
+drawLine(x1, y1, x2, y2) draws a line on the display, under the
+graph, in graph coordinates (the same as node x and y; a node's
+centre is n.x + n.width/2, n.y + n.height/2). color= (default: the
+theme's text colour), width=, style="dashed" or "dotted", arrow=true
+puts an arrowhead at (x2, y2). Returns the drawing (.remove()).
+
+### `drawRect(x, y, w, h, color=None, fill=None, lineWidth=1.5, style='solid')`
+
+drawRect(x, y, w, h) draws a box with its top-left corner at (x, y)
+(graph coordinates), under the graph. fill= a colour fills it
+(e.g. "255,200,0,60" for a translucent one); color= is the outline
+(default: the theme's text colour) and lineWidth=0 leaves it out.
+
+### `drawText(x, y, text, color=None, size=14, anchor='middle')`
+
+drawText(x, y, "text") writes text on the display at (x, y) in graph
+coordinates, above the graph. size= is in graph units (it zooms with
+the graph); anchor= "start", "middle" or "end" (horizontal).
 
 ### `edgeLabelsAlong(on=True)`
 
@@ -1940,6 +1971,10 @@ All hulls currently shown.
 ### `getDisplayBackground()`
 
 The display background color, or None when it follows the light/dark theme.
+
+### `getDrawings()`
+
+The drawings on the display.
 
 ### `GradientLegend(start, end, lo=0, hi=1, ticks=None)`
 
@@ -2016,6 +2051,10 @@ Remove one hull.
 ### `removeConvexHulls(seq=None)`
 
 Remove the given hulls, or all hulls.
+
+### `removeDrawing(d)`
+
+Remove one drawing (from drawLine, drawText, drawRect or drawCircle).
 
 ### `select(seq=None)`
 
@@ -2738,13 +2777,35 @@ recomputed after any command that changes the graph or the display.
 liveCharts(False) turns that off. (The Live button on a chart does it
 for one chart.)
 
-### `plotDistrib(field, sortField=None)`
+### `plotDistrib(field, sortField=None, log=False)`
 
 Each element's value of field, in rank order (or ordered by sortField).
+log=true draws the values on a log axis.
 
-### `plotHistogram(field, bins=10)`
+### `plotFrequency(field, log=False, cumulative=False)`
+
+plotFrequency(degree) plots, for each value of a numeric field, the
+fraction of nodes (or edges) with that value: the degree distribution
+p(k). log=true draws both axes on log scales (a power law is then a
+straight line; zeros are left out). cumulative=true plots the fraction
+with that value or more (the complementary cumulative distribution,
+smoother for heavy tails). Pointing at the chart highlights the
+elements with that value.
+
+### `plotHistogram(field, bins=10, log=False)`
 
 Histogram of a numeric field's values in `bins` equal-width bins.
+log=true uses bins of equal width on a log scale (for heavy-tailed
+values such as degree; values <= 0 are left out) and a log count axis.
+
+### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False)`
+
+plotLine(points) draws a line chart of [(x, y), ...] pairs;
+plotLine({"infected": pts1, "recovered": pts2}) draws one line per
+series. log=true makes both axes logarithmic (or logX=/logY= one of
+them; points <= 0 are left out). dots=true marks each point. A chart
+with the same title replaces the last one, so calling it in a loop
+updates it.
 
 ### `plotSizes(field)`
 
@@ -2772,6 +2833,13 @@ Call fn() once after `seconds` seconds; returns a timer with .stop().
 ### `Button(*a, **k)`
 
 Button(text, onClick=fn): calls fn() when clicked; .enabled turns it on/off.
+
+### `Chart(*a, **k)`
+
+Chart(lambda: plotHistogram(degree)) puts a chart inside a panel
+instead of the dock: the function makes the chart (any plot command, or
+an Altair chart) and runs again after every command, so the chart
+follows the graph. .refresh() redraws it now.
 
 ### `Checkbox(*a, **k)`
 

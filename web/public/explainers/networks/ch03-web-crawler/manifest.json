@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "How a crawler finds the Web",
+  "description": "A breadth-first web crawl, its store of URLs, and the pages it can never find.",
+  "console": "toggle",
+  "script": "main.gy"
+}

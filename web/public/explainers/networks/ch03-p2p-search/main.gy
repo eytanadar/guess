@@ -1,0 +1,204 @@
+# Searching a peer-to-peer network  (Newman, Networks, Section 3.3.1)
+# With no central index, a peer looking for a file asks its neighbours, who
+# ask theirs, and so on, up to a hop limit (TTL). It works, but the number of
+# messages grows fast. Modern networks use two tiers: ordinary peers ask a
+# supernode, and only supernodes search among themselves. Both networks here
+# are invented.
+
+import math
+import random
+import networkx as nx
+
+PEERS, SUPERS, COPIES = 200, 20, 3
+ttl = Slider(1, 8, 4, 1, label="hop limit (TTL)")
+results = []
+search = {"timer": None, "front": [], "hop": 0, "reached": {}, "messages": 0, "found": None, "origin": None}
+
+
+def flat():
+    G = nx.powerlaw_cluster_graph(PEERS, 2, 0.1, seed=4)
+    pos = nx.spring_layout(G, seed=4, iterations=80)
+    H = nx.Graph()
+    for v in G:
+        H.add_node(f"peer{v}", tier="peer", pos=(pos[v][0] * 500, pos[v][1] * 500))
+    H.add_edges_from((f"peer{a}", f"peer{b}") for a, b in G.edges())
+    return H
+
+
+def two_tier():
+    rnd = random.Random(4)
+    S = nx.gnm_random_graph(SUPERS, 2 * SUPERS, seed=4)
+    while not nx.is_connected(S):
+        a, b = rnd.sample(range(SUPERS), 2)
+        S.add_edge(a, b)
+    H = nx.Graph()
+    for s in S:
+        a = 2 * math.pi * s / SUPERS
+        H.add_node(f"super{s}", tier="supernode", pos=(170 * math.cos(a), 170 * math.sin(a)))
+    H.add_edges_from((f"super{a}", f"super{b}") for a, b in S.edges())
+    for i in range(PEERS - SUPERS):
+        s = i % SUPERS
+        a = 2 * math.pi * (s + (i // SUPERS - 4) * 0.09) / SUPERS
+        r = 400 + 30 * ((i // SUPERS) % 3)
+        H.add_node(f"peer{i}", tier="peer", pos=(r * math.cos(a), r * math.sin(a)))
+        H.add_edge(f"peer{i}", f"super{s}")
+    return H
+
+
+mode = ["flat"]
+NET = {}
+
+
+def build(kind):
+    stop()
+    mode[0] = kind
+    H = flat() if kind == "flat" else two_tier()
+    peers = sorted(v for v in H if H.nodes[v]["tier"] == "peer")
+    holders = random.Random(9).sample(peers, COPIES)
+    for v in H:
+        H.nodes[v]["hasfile"] = v in holders
+    fromNetworkX(H)
+    NET["G"] = H
+    NET["holders"] = set(holders)
+    dress()
+    center()
+
+
+def dress():
+    for n in g.nodes:
+        n.color = "190,190,190"
+        n.style = 1 if n.hasfile else 2
+        n.width = n.height = 18 if n.tier == "supernode" else (14 if n.hasfile else 9)
+        n.strokecolor = "30,30,30" if n.hasfile else "120,120,120"
+        if n.tier == "supernode":
+            n.color = "120,120,160"
+    g.edges.color = "160,160,160,110"
+    g.edges.width = 1
+
+
+def heat(hop):
+    t = min(hop / 6.0, 1.0)
+    return f"{int(230 - 170 * t)},{int(80 + 60 * t)},{int(60 + 160 * t)}"
+
+
+def start(n):
+    if n.tier != "peer":
+        StatusBar.setStatus("Click an ordinary peer (a small circle)")
+        return
+    stop()
+    dress()
+    G = NET["G"]
+    if mode[0] == "flat":
+        search.update(front=[(n.name, None)], hop=0, reached={n.name: 0}, messages=0, found=None, origin=n.name)
+    else:
+        sup = next(iter(G[n.name]))                       # the peer asks its supernode
+        search.update(front=[(sup, None)], hop=1, reached={n.name: 0, sup: 1}, messages=1, found=None, origin=n.name)
+        check(sup, 1)
+    n.color = "20,20,20"
+    search["timer"] = every(0.6, spread_one)
+
+
+def holds(v):
+    """Does v have the file, or (a supernode) index a peer that has it?"""
+    if v in NET["holders"]:
+        return true
+    if mode[0] == "two" and NET["G"].nodes[v]["tier"] == "supernode":
+        return any(u in NET["holders"] for u in NET["G"][v])
+    return false
+
+
+def check(v, hop):
+    if search["found"] is None and holds(v):
+        search["found"] = (v, hop)
+
+
+def spread_one():
+    G = NET["G"]
+    if search["hop"] >= ttl.value or not search["front"]:
+        finish()
+        return
+    nxt = []
+    for v, came_from in search["front"]:
+        for w in G[v]:
+            if w == came_from:
+                continue
+            if mode[0] == "two" and G.nodes[w]["tier"] != "supernode":
+                continue                                   # supernodes answer for their peers
+            search["messages"] += 1
+            if w not in search["reached"]:
+                search["reached"][w] = search["hop"] + 1
+                nxt.append((w, v))
+                check(w, search["hop"] + 1)
+    search["hop"] += 1
+    search["front"] = nxt
+    for v, h in search["reached"].items():
+        nd = g.getNodeByName(v)
+        if v != search["origin"]:
+            nd.color = heat(h)
+    if search["found"]:
+        nd = g.getNodeByName(search["found"][0])
+        nd.color = "40,180,60"
+
+
+def finish():
+    stop()
+    if search["origin"] is None:
+        return
+    f = search["found"]
+    results.insert(0, {"mode": "flat" if mode[0] == "flat" else "supernodes", "ttl": ttl.value,
+                       "hop": f[1] if f else None, "messages": search["messages"],
+                       "reached": len(search["reached"])})
+    del results[6:]
+    search["origin"] = None
+
+
+def stop():
+    if search["timer"] is not None:
+        search["timer"].stop()
+        search["timer"] = None
+
+
+def now_text():
+    if search["origin"] is None and not results:
+        return "*Click a peer to search for the file* (the squares have copies)."
+    f = search["found"]
+    where = (f"**found** at hop {f[1]}" if f else "not found yet")
+    return (f"Hop **{search['hop']}** of {ttl.value}: {len(search['reached'])} peers reached, "
+            f"**{search['messages']}** messages sent, file {where}.")
+
+
+def results_list():
+    if not results:
+        return ""
+    return "**Searches so far**\n\n" + "\n".join(
+        f"- {r['mode']}, TTL {r['ttl']}: " + (f"found at hop {r['hop']}" if r["hop"] is not None else "**not found**")
+        + f", **{r['messages']}** messages, {r['reached']} reached" for r in results)
+
+
+def pick_network(choice):
+    build("flat" if choice.startswith("Flat") else "two")
+
+
+graphevents.clickNode = start
+build("flat")
+hoverFields("tier", "hasfile")
+ui.title("Searching a peer-to-peer network", "Networks, Section 3.3.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Ask your neighbours
+In a peer-to-peer network every computer (dot) holds some files, but no one
+knows where everything is. To find a file, a peer asks its neighbours; any
+that don't have it pass the question on, up to a **hop limit**. Every
+question passed along is a **message**, even when it reaches someone who has
+already been asked."""),
+        Dropdown(["Flat (every peer equal)", "Two tiers (supernodes)"], label="Network", onChange=pick_network),
+        ttl,
+        Markdown(now_text),
+        Markdown(results_list),
+        Markdown("""*Try:* the same search with TTL 2, 4 and 6, then with supernodes. In
+the two-tier network a peer asks its supernode, which knows every file its
+own peers hold; only the 20 supernodes pass queries on.""")),
+    sizes={"right": 340},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} computers · {len(g.edges)} links · {COPIES} copies of the file"))

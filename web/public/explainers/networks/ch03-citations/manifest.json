@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Citations point back in time",
+  "description": "A citation network laid out by year: no loops, most papers rarely cited, cocitation and bibliographic coupling.",
+  "console": "toggle",
+  "script": "main.gy"
+}

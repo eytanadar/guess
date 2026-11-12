@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Which network is the rail network?",
+  "description": "Stops in sequence, stations sharing a train, or stations and routes: three networks from the same railway.",
+  "console": "toggle",
+  "script": "main.gy"
+}

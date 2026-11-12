@@ -1,0 +1,198 @@
+# Circuit switching  (Newman, Networks, Section 2.2)
+# A traditional telephone network has three tiers: subscribers, local
+# exchanges and long-distance offices. A call holds a circuit on every line it
+# uses for as long as it lasts, so when a trunk line is full, calls are blocked.
+
+import math
+import random
+import networkx as nx
+
+rnd = random.Random(2)
+G = nx.Graph()
+CENTRES = [(250, 220), (760, 220), (250, 660), (760, 660)]
+for r, (cx, cy) in enumerate(CENTRES):
+    G.add_node(f"LD{r}", kind="long-distance office", region=r, pos=(cx, cy))
+    for k in range(3):
+        a = 2 * math.pi * k / 3 - math.pi / 2
+        ex, ey = cx + 130 * math.cos(a), cy + 130 * math.sin(a)
+        xn = f"X{r}{k}"
+        G.add_node(xn, kind="local exchange", region=r, pos=(ex, ey))
+        G.add_edge(xn, f"LD{r}")
+        for i in range(6):
+            b = a + (i - 2.5) * 0.42
+            G.add_node(f"S{r}{k}{i}", kind="subscriber", region=r, pos=(ex + 62 * math.cos(b), ey + 62 * math.sin(b)))
+            G.add_edge(f"S{r}{k}{i}", xn)
+    G.add_edge(f"X{r}0", f"X{r}1")                 # a direct link between neighbouring exchanges
+for r in range(4):
+    for s in range(r + 1, 4):
+        G.add_edge(f"LD{r}", f"LD{s}")              # long-distance trunks
+for a, b in G.edges():
+    G.edges[a, b]["trunk"] = not (a.startswith("S") or b.startswith("S"))
+
+fromNetworkX(G)
+E = {frozenset((e.node1.name, e.node2.name)): e for e in g.edges}
+load = {k: 0 for k in E}
+SUBS = sorted(v for v in G if v.startswith("S"))
+SIZE = {"long-distance office": 30, "local exchange": 18, "subscriber": 8}
+SHAPE = {"long-distance office": 1, "local exchange": 3, "subscriber": 2}
+for n in g.nodes:
+    n.width = n.height = SIZE[n.kind]
+    n.style = SHAPE[n.kind]
+(kind != "subscriber").labelvisible = true
+
+capacity = Slider(1, 8, 3, 1, label="circuits per trunk line")
+local = Slider(0, 1, 0.6, 0.05, label="share of calls that are local")
+rate = Slider(1, 6, 2, 1, label="new calls per step")
+
+calls = []           # {"a", "b", "path", "left", "long"}
+stats = {"placed": 0, "connected": 0, "blocked": 0, "busy": 0, "long": 0, "long_blocked": 0}
+flash = []
+clock = {"timer": None, "steps": 0}
+
+
+def in_call():
+    return {c["a"] for c in calls} | {c["b"] for c in calls}
+
+
+def route(a, b):
+    """The shortest path from a to b using only lines with a free circuit."""
+    cap = capacity.value
+    def free(u, v, d):
+        k = frozenset((u, v))
+        if d["trunk"]:
+            return 1 if load[k] < cap else None
+        return 1 if a in k or b in k else None      # only the two callers' own lines
+    try:
+        return nx.shortest_path(G, a, b, weight=free)
+    except nx.NetworkXNoPath:
+        return None
+
+
+def place_call():
+    busy_now = in_call()
+    a = rnd.choice([s for s in SUBS if s not in busy_now] or SUBS)
+    same = [s for s in SUBS if s[:3] == a[:3] and s != a]
+    b = rnd.choice(same) if rnd.random() < local.value else rnd.choice([s for s in SUBS if s[1] != a[1]])
+    is_long = a[1] != b[1]
+    stats["placed"] += 1
+    stats["long"] += is_long
+    if b in busy_now or a in busy_now:
+        stats["busy"] += 1
+        return
+    path = route(a, b)
+    if path is None:
+        stats["blocked"] += 1
+        stats["long_blocked"] += is_long
+        flash.append(a)
+        return
+    stats["connected"] += 1
+    keys = [frozenset(p) for p in zip(path, path[1:])]
+    for k in keys:
+        load[k] += 1
+    calls.append({"a": a, "b": b, "keys": keys, "left": rnd.randint(3, 8), "long": is_long})
+
+
+def step(new=None):
+    clock["steps"] += 1
+    for c in calls:
+        c["left"] -= 1
+    for c in [c for c in calls if c["left"] <= 0]:
+        for k in c["keys"]:
+            load[k] -= 1
+        calls.remove(c)
+    flash[:] = []
+    for _ in range(rate.value if new is None else new):
+        place_call()
+    draw()
+
+
+def draw():
+    cap = capacity.value
+    talking = in_call()
+    for n in g.nodes:
+        if n.kind != "subscriber":
+            n.color = "70,90,130"
+        elif n.name in flash:
+            n.color = "220,40,40"
+        elif n.name in talking:
+            n.color = "40,170,90"
+        else:
+            n.color = "180,180,180"
+    for k, e in E.items():
+        used = load[k]
+        if e.trunk:
+            full = used / cap
+            e.width = 1.5 + 2.5 * used
+            e.color = "170,170,170,120" if used == 0 else ("220,50,40" if full >= 1 else "230,150,40" if full >= 0.5 else "60,160,90")
+        else:
+            e.width = 2 if used else 0.8
+            e.color = "60,160,90" if used else "190,190,190,90"
+        e.linestyle = "flow" if used and e.trunk else "solid"
+
+
+def play():
+    if clock["timer"] is None:
+        clock["timer"] = every(0.6, step)
+        go.text = "Pause"
+    else:
+        clock["timer"].stop()
+        clock["timer"] = None
+        go.text = "Run"
+
+
+def burst():
+    step(new=20)
+
+
+def reset():
+    if clock["timer"] is not None:
+        play()
+    calls[:] = []
+    for k in load:
+        load[k] = 0
+    for k in stats:
+        stats[k] = 0
+    draw()
+
+
+def call_report():
+    s = stats
+    if not s["placed"]:
+        return "*Press Run, or place a burst of calls.*"
+    trunks = [k for k in E if E[k].trunk]
+    in_use = sum(load[k] for k in trunks)
+    pct = lambda a, b: f"{100 * a / b:.0f}%" if b else "–"
+    return (f"**{len(calls)}** calls in progress, holding **{in_use}** trunk circuits.\n\n"
+            f"- placed: {s['placed']} ({pct(s['long'], s['placed'])} long-distance)\n"
+            f"- connected: **{s['connected']}**\n"
+            f"- blocked, no free circuit: **{s['blocked']}** "
+            f"({pct(s['long_blocked'], s['blocked'])} of them long-distance)\n"
+            f"- the other person was busy: {s['busy']}")
+
+
+go = Button("Run", onClick=play)
+capacity.onChange = lambda v: draw()
+draw()
+ui.title("Circuit switching", "Networks, Section 2.2")
+ui.layout(
+    right=Column(
+        Markdown("""### A three-tier telephone network
+Each **subscriber** (dot) has a line to a **local exchange** (rounded square),
+and exchanges connect through **long-distance offices** (big squares). A call
+between two subscribers on the same exchange never leaves it: a *local* call.
+Other calls hold one **circuit** on every trunk line they cross, for as long
+as they last.
+
+Green: lines in use (orange: half full; red: full). A red subscriber
+couldn't get through."""),
+        Row(go, Button("Place 20 calls now", onClick=burst), Button("Reset", onClick=reset)),
+        Group("Settings", capacity, local, rate),
+        Markdown(call_report),
+        Markdown("""*Try:* set 1 circuit per trunk line and few local calls, then raise
+both. Most calls being local is why the network is built in tiers: trunks are
+needed only for the rest.""")),
+    sizes={"right": 340},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"step {clock['steps']} · {len(calls)} calls in progress"))
+center()

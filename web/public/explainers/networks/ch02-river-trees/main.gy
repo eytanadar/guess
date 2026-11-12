@@ -1,0 +1,237 @@
+# Rivers are trees  (Newman, Networks, Section 2.5)
+# A river network collects water rather than distributing it, and (islands
+# aside) it has no loops: from any point, water reaches the outlet by exactly
+# one path. Here a river basin is grown on a grid as a random spanning tree
+# drained towards an outlet; the width of each stream shows the area it drains.
+# Then: estimate the rivers' total length by counting where they cross a set of
+# parallel lines, the trick related to Buffon's needle.
+
+import math
+import random
+import networkx as nx
+
+W, H, STEP = 26, 18, 34
+rnd = random.Random(11)
+grid = nx.grid_2d_graph(W, H)
+for a, b in grid.edges():
+    grid.edges[a, b]["w"] = rnd.random()
+tree = nx.minimum_spanning_tree(grid, weight="w")
+OUTLET = (W // 2, H - 1)
+parent = {t: s for s, t in nx.bfs_edges(tree, OUTLET)}     # each point -> the next one downstream
+area = {v: 1 for v in tree}
+for v in reversed(list(nx.bfs_tree(tree, OUTLET))):
+    if v in parent:
+        area[parent[v]] += area[v]
+
+G = nx.Graph()
+pos = {}
+for (i, j) in tree:
+    pos[(i, j)] = (i * STEP + rnd.uniform(-7, 7), j * STEP + rnd.uniform(-7, 7))
+    G.add_node(f"p{i}_{j}", pos=pos[(i, j)], drains=area[(i, j)])
+for v, p in parent.items():
+    G.add_edge(f"p{v[0]}_{v[1]}", f"p{p[0]}_{p[1]}", drains=area[v], loop=False)
+fromNetworkX(G)
+
+NODE = {n.name: n for n in g.nodes}
+def key(v):
+    return f"p{v[0]}_{v[1]}"
+OUT = NODE[key(OUTLET)]
+threshold = Slider(1, 40, 4, 1, label="show streams draining at least this many cells")
+picked = [None]
+extra = []           # the loop edge, when added
+
+
+def dress():
+    for n in g.nodes:
+        n.width = n.height = 4
+        n.color = "120,150,190,90"
+        n.labelvisible = false
+    OUT.width = OUT.height = 16
+    OUT.color = "20,60,160"
+    OUT.label = "outlet"
+    OUT.labelvisible = true
+    for e in g.edges:
+        if e.loop:
+            e.visible = true
+            e.color = "240,120,20"
+            e.width = 4
+            continue
+        e.visible = e.drains >= threshold.value
+        e.width = 0.6 + 0.9 * math.sqrt(e.drains)
+        e.color = "60,120,200"
+
+
+def current_net():
+    net = nx.Graph()
+    for e in g.edges:
+        net.add_edge(e.node1.name, e.node2.name)
+    return net
+
+
+def trace(n):
+    picked[0] = n
+    dress()
+    n.width = n.height = 12
+    n.color = "220,40,40"
+    net = current_net()
+    for path in nx.all_simple_paths(net, n.name, OUT.name):
+        for a, b in zip(path, path[1:]):
+            for e in g.edges:
+                if {e.node1.name, e.node2.name} == {a, b}:
+                    e.visible = true
+                    e.color = "220,40,40" if not e.loop else "240,120,20"
+                    e.width = max(e.width, 3)
+
+
+def add_loop():
+    if extra:
+        return
+    start = picked[0] or NODE[key((3, 4))]
+    if picked[0] is None:
+        trace(start)
+    # walk part-way down from the clicked point, then join a grid neighbour on another branch
+    v = tuple(int(t) for t in start.name[1:].split("_"))
+    path = [v]
+    while path[-1] in parent:
+        path.append(parent[path[-1]])
+    for u in path[len(path) // 3:]:
+        for w in grid[u]:
+            if not tree.has_edge(u, w) and w not in path:
+                ed = addEdge(NODE[key(u)], NODE[key(w)])
+                ed.loop = true
+                ed.drains = 0
+                extra.append(ed)
+                trace(start)
+                return
+
+
+def remove_loop():
+    for e in extra:
+        removeEdge(e)
+    extra[:] = []
+    if picked[0] is not None:
+        trace(picked[0])
+    else:
+        dress()
+
+
+def routes_text():
+    n = picked[0]
+    if n is None:
+        return "*Click any point in the basin* to follow its water to the outlet."
+    paths = list(nx.all_simple_paths(current_net(), n.name, OUT.name))
+    steps = min(len(p) for p in paths) - 1
+    if len(paths) == 1:
+        return (f"Water from here passes **{steps}** junctions to reach the outlet, by **exactly one "
+                f"route**. This point drains {n.drains} cell{'s' if n.drains > 1 else ''}. A network "
+                "with no loops is a **tree**, so there is always a single path.")
+    return (f"With the orange link, water from here has **{len(paths)} routes** to the outlet. "
+            "The network now has a loop, so it is no longer a tree, and it no longer says where "
+            "the water goes.")
+
+
+# ---- Buffon's lines -------------------------------------------------------------------
+SPACING = 60.0
+lines = {"angle": None, "results": {}}
+
+
+def segments():
+    out = []
+    for e in g.edges:
+        if e.visible and not e.loop:
+            a, b = e.node1, e.node2
+            out.append(((a.x + a.width / 2, a.y + a.height / 2), (b.x + b.width / 2, b.y + b.height / 2)))
+    return out
+
+
+def crossings(theta, draw):
+    nx_, ny_ = -math.sin(theta), math.cos(theta)
+    count = 0
+    for (x1, y1), (x2, y2) in segments():
+        s1, s2 = (nx_ * x1 + ny_ * y1) / SPACING, (nx_ * x2 + ny_ * y2) / SPACING
+        lo, hi = min(s1, s2), max(s1, s2)
+        for k in range(math.floor(lo) + 1, math.floor(hi) + 1):
+            count += 1
+            if draw:
+                t = (k - s1) / (s2 - s1)
+                drawCircle(x1 + t * (x2 - x1), y1 + t * (y2 - y1), 3.5, color="220,40,40", fill="220,40,40")
+    return count
+
+
+def draw_lines(theta):
+    clearDrawings()
+    cx, cy, r = W * STEP / 2, H * STEP / 2, math.hypot(W, H) * STEP / 2 + 20
+    dx, dy = math.cos(theta), math.sin(theta)
+    nx_, ny_ = -dy, dx
+    c0 = nx_ * cx + ny_ * cy
+    for k in range(math.floor((c0 - r) / SPACING), math.ceil((c0 + r) / SPACING) + 1):
+        off = k * SPACING - c0
+        px, py = cx + nx_ * off, cy + ny_ * off
+        half = math.sqrt(max(r * r - off * off, 0))
+        if half > 0:
+            drawLine(px - dx * half, py - dy * half, px + dx * half, py + dy * half, style="dashed", width=1)
+
+
+def measure(choice):
+    if choice == "no lines":
+        clearDrawings()
+        lines["angle"] = None
+        return
+    deg = int(choice.split("°")[0])
+    theta = math.radians(deg)
+    draw_lines(theta)
+    lines["angle"] = deg
+    lines["results"][deg] = crossings(theta, true)
+
+
+def buffon_text():
+    if not lines["results"]:
+        return ("*Pick a direction* to lay parallel lines 60 units apart over the basin and count "
+                "where the shown streams cross them (red dots).")
+    true_len = sum(math.dist(a, b) for a, b in segments())
+    rows = []
+    for deg, n in sorted(lines["results"].items()):
+        est = math.pi * SPACING * n / 2
+        rows.append(f"- {deg}°: **{n}** crossings → length ≈ π·d·n/2 = **{est:,.0f}**")
+    mean = sum(lines["results"].values()) / len(lines["results"])
+    est = math.pi * SPACING * mean / 2
+    return ("\n".join(rows) + f"\n\nAverage of the directions tried: **{est:,.0f}**. True length of the "
+            f"streams shown: **{true_len:,.0f}** ({100 * (est - true_len) / true_len:+.0f}%). One direction "
+            "can be biased, since these streams run mostly across and down the grid; averaging "
+            "over directions reduces it.")
+
+
+def threshold_changed(v):
+    lines["results"] = {}
+    clearDrawings()
+    if picked[0] is not None:
+        trace(picked[0])
+    else:
+        dress()
+
+
+graphevents.clickNode = trace
+threshold.onChange = threshold_changed
+dress()
+ui.title("Rivers are trees", "Networks, Section 2.5")
+ui.layout(
+    right=Column(
+        Markdown("""### Water drains by one path
+A river network **collects** water: streams join, and everything leaves by
+the **outlet**. Leaving islands aside, it has **no loops**. This basin was
+grown on a grid as a random tree; a stream's width shows how much land drains
+through it."""),
+        threshold,
+        Markdown(routes_text),
+        Row(Button("Add a loop", onClick=add_loop), Button("Remove it", onClick=remove_loop)),
+        Group("How long are the rivers?",
+              Markdown("""Lay parallel lines a distance *d* apart and count the crossings *n*. For
+lines in random directions the total length is about **π·d·n/2**, a cousin of
+Buffon's needle used to measure root systems."""),
+              Dropdown(["no lines", "0° (horizontal)", "45°", "90° (vertical)", "135°"], label="Lines", onChange=measure),
+              Markdown(buffon_text))),
+    sizes={"right": 340},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} points · {len(g.edges)} stream segments · a tree has one fewer edge than nodes"))
+center()

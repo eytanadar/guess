@@ -1,0 +1,160 @@
+# Which network is the rail network?  (Newman, Networks, Section 2.4)
+# The same railway as three different networks:
+#   stops     stations joined to the next stop along a line
+#   trains    stations joined when one train serves both (Sen et al.)
+#   bipartite stations joined to the lines that serve them; projecting it onto
+#             the stations gives the trains network
+# A traveller counts trains (changes), not stops, so the right network depends
+# on the question. The railway is invented.
+
+import random
+import networkx as nx
+
+NAMES = ["Ashby", "Brook", "Calder", "Dunmore", "Elton", "Fairley", "Garth", "Holm", "Ivers",
+         "Jessop", "Kelby", "Linton", "Marsh", "Norby", "Oakham", "Pelham", "Quarry", "Rendle",
+         "Selby", "Thorne", "Upton", "Vale", "Wexley", "Yarrow", "Zeal", "Alder", "Birch", "Cobb"]
+LINES = {
+    "Red": [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5)],
+    "Blue": [(0, 2), (1, 2), (2, 2), (3, 2), (4, 2)],
+    "Green": [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)],
+    "Orange": [(3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5)],
+    "Purple": [(0, 4), (1, 4), (2, 4), (3, 4), (4, 4)],
+    "Teal": [(4, 0), (4, 1), (4, 2), (4, 3), (4, 4), (4, 5)],
+}
+COLOUR = {"Red": "220,50,50", "Blue": "50,100,220", "Green": "40,160,70", "Orange": "240,140,30",
+          "Purple": "140,70,180", "Teal": "20,160,160"}
+
+rnd = random.Random(5)
+cells = sorted({c for stops in LINES.values() for c in stops})
+station = {c: NAMES[i] for i, c in enumerate(cells)}
+G = nx.MultiGraph()
+for (r, c), nm in station.items():
+    G.add_node(nm, kind="station", pos=(80 + 160 * c + rnd.uniform(-25, 25), 60 + 130 * r + rnd.uniform(-20, 20)))
+for ln, stops in LINES.items():
+    names = [station[c] for c in stops]
+    G.add_node(ln + "_line", kind="line", pos=(0, 0))
+    for a, b in zip(names, names[1:]):
+        G.add_edge(a, b, kind="stop", route=ln)
+    for i in range(len(names)):
+        G.add_edge(names[i], ln + "_line", kind="member", route=ln)
+        for j in range(i + 2, len(names)):        # next-door pairs already have a "stop" edge
+            G.add_edge(names[i], names[j], kind="train", route=ln)
+
+fromNetworkX(G)
+STOPS = nx.Graph([(e.node1.name, e.node2.name) for e in g.edges if e.kind == "stop"])
+TRAINS = nx.Graph()                    # one train between them: every stop and train edge
+for e in g.edges:
+    if e.kind in ("train", "stop"):
+        TRAINS.add_edge(e.node1.name, e.node2.name, route=e.route)
+BIP = nx.Graph([(e.node1.name, e.node2.name) for e in g.edges if e.kind == "member"])
+
+for e in g.edges:
+    e.color = COLOUR[e.route]
+for n in g.nodes:
+    n.labelvisible = true
+    if n.kind == "line":
+        n.color = COLOUR[n.name[:-5]]
+        n.style = 1
+        n.width = n.height = 26
+        n.label = n.name[:-5] + " line"
+    else:
+        n.color = "250,250,250"
+        n.strokecolor = "60,60,60"
+        n.width = n.height = 14
+ss("map")
+
+# the bipartite drawing: lines in a row above the stations, in the order of their mean position
+order = sorted((n for n in g.nodes if n.kind == "station"), key=lambda n: (n.x, n.y))
+for i, n in enumerate(order):
+    n.x, n.y = 40 + i * 900 / len(order), 520
+for k, ln in enumerate(sorted(LINES, key=lambda l: sum(160 * c for _, c in LINES[l]) / len(LINES[l]))):
+    nd = g.getNodeByName(ln + "_line")
+    nd.x, nd.y = 120 + k * 760 / (len(LINES) - 1), 120
+ss("bipartite")
+morph("map", 0)
+
+VIEWS = {"Stops in sequence": "stop", "One train between them": "train", "Stations and lines (bipartite)": "member"}
+view = ["stop"]
+ends = []
+
+
+def show(choice):
+    view[0] = VIEWS[choice]
+    morph("bipartite" if view[0] == "member" else "map", 800)
+    repaint()
+
+
+def repaint():
+    kinds = ("stop", "train") if view[0] == "train" else (view[0],)
+    for e in g.edges:
+        e.visible = e.kind in kinds
+        e.width = 3 if view[0] == "stop" else 1.6
+        e.color = COLOUR[e.route] if view[0] != "train" else COLOUR[e.route] + ",140"
+    for n in g.nodes:
+        n.visible = n.kind == "station" or view[0] == "member"
+        if n.kind == "station":
+            n.color = "30,30,30" if n in ends else "250,250,250"
+    if len(ends) == 2:
+        a, b = ends[0].name, ends[1].name
+        net = {"stop": STOPS, "train": TRAINS, "member": BIP}[view[0]]
+        path = nx.shortest_path(net, a, b)
+        for u, v in zip(path, path[1:]):
+            for e in g.edges:
+                if e.kind in kinds and {e.node1.name, e.node2.name} == {u, v}:
+                    e.width = 6
+                    e.color = "30,30,30"
+                    break
+
+
+def pick(n):
+    if n.kind != "station":
+        return
+    if len(ends) == 2:
+        ends[:] = []
+    ends.append(n)
+    repaint()
+
+
+def trip_text():
+    if len(ends) < 2:
+        return "*Click two stations* to plan a trip."
+    a, b = ends[0].name, ends[1].name
+    stops = nx.shortest_path_length(STOPS, a, b)
+    tpath = nx.shortest_path(TRAINS, a, b)
+    trains = len(tpath) - 1
+    legs = [TRAINS.edges[u, v]["route"] for u, v in zip(tpath, tpath[1:])]
+    changes = ", ".join(f"{tpath[i]} ({legs[i - 1]} → {legs[i]})" for i in range(1, len(tpath) - 1))
+    bip = nx.shortest_path_length(BIP, a, b)
+    return (f"**{a} → {b}**\n\n"
+            f"- stops network: **{stops}** edges, one per stretch between stops\n"
+            f"- trains network: **{trains}** edge{'s' if trains > 1 else ''} = {trains} train{'s' if trains > 1 else ''}"
+            + (f", changing at {changes}" if changes else ", no change") + "\n"
+            f"- bipartite network: **{bip}** edges, half of them to a line: {bip // 2} train{'s' if bip > 2 else ''}")
+
+
+def counts():
+    st = len([n for n in g.nodes if n.kind == "station"])
+    return (f"{st} stations · {len(STOPS.edges)} links between stops · {len(TRAINS.edges)} pairs "
+            f"joined by a train · {len(LINES)} lines")
+
+
+graphevents.clickNode = pick
+repaint()
+ui.title("Which network is the rail network?", "Networks, Section 2.4")
+ui.layout(
+    right=Column(
+        Markdown("""### One railway, three networks
+A map of stops and tracks is one network. But a traveller cares how many
+**trains** they need, not how many stops they pass. Sen et al. joined two
+stations when a single train runs between them; distance in that network is
+the number of trains. Better still is a **bipartite** network of stations and
+lines: projecting it onto the stations gives the trains network."""),
+        Dropdown(list(VIEWS), label="Network", onChange=show),
+        Markdown(trip_text),
+        Markdown("""*In the trains network every line becomes a clique (everyone joined to
+everyone), which is why it has so many more edges than the map.*""")),
+    sizes={"right": 340},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(counts))
+center()

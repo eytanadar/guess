@@ -1,0 +1,197 @@
+# Cascading failures  (Newman, Networks, Section 2.3)
+# 400 stations of the Western US power grid (Watts and Strogatz's data). Each
+# station carries a load, here the number of shortest paths through it (its
+# betweenness), and can take (1 + alpha) times its normal load. When a station
+# fails, paths reroute, others can overload and fail, and so on: a cascade.
+# This is the Motter-Lai model, a picture of the idea rather than of real
+# power flows (see the note in the panel).
+
+import random
+import networkx as nx
+
+makeFromFile("power-grid-region.gdf")
+G0 = toNetworkX()
+N = len(G0)
+L0 = nx.betweenness_centrality(G0, normalized=False)
+NODE = {n.name: n for n in g.nodes}
+EDGES = list(g.edges)
+alpha = Slider(0.05, 1.0, 0.25, 0.05, label="spare capacity α")
+
+state = {"alive": set(G0), "new": set(), "round": 0, "load": dict(L0), "running": None, "start": None}
+outages = []         # fraction of stations lost, one per finished cascade
+
+
+def capacity(v):
+    return (1 + alpha.value) * L0[v]
+
+
+def ramp(t):
+    """green (no load) to yellow to red (at capacity)"""
+    t = max(0.0, min(1.0, t))
+    if t < 0.5:
+        return f"{int(60 + 380 * t)},{int(170 + 40 * t)},70"
+    return f"250,{int(190 - 300 * (t - 0.5))},50"
+
+
+def draw():
+    alive, load = state["alive"], state["load"]
+    for v, n in NODE.items():
+        if v in state["new"]:
+            n.color = "220,30,30"
+            n.width = n.height = 14
+        elif v not in alive:
+            n.color = "70,70,70,120"
+            n.width = n.height = 6
+        else:
+            spare = capacity(v) - L0[v]               # how much of its spare capacity is used
+            n.color = ramp((load.get(v, 0) - L0[v]) / spare if spare > 0 else 0)
+            n.width = n.height = 9
+    for e in EDGES:
+        up = e.node1.name in alive and e.node2.name in alive
+        e.color = "150,150,150,160" if up else "120,120,120,35"
+        e.width = 1.4 if up else 0.6
+
+
+def loads(alive):
+    return nx.betweenness_centrality(G0.subgraph(alive), normalized=False)
+
+
+def next_round():
+    alive = state["alive"]
+    load = loads(alive)
+    over = {v for v in alive if load[v] > capacity(v) + 1e-9}
+    state["load"] = load
+    state["new"] = over
+    state["round"] += 1
+    state["alive"] = alive - over
+    return over
+
+
+def animate():
+    over = next_round()
+    draw()
+    if over:
+        state["running"] = after(0.8, animate)
+    else:
+        state["running"] = None
+        outages.append(1 - len(state["alive"]) / N)
+
+
+def fail(v):
+    if state["running"] is not None:
+        return
+    reset(keep=true)
+    state["start"] = v
+    state["alive"] = set(G0) - {v}
+    state["new"] = {v}
+    state["round"] = 0
+    draw()
+    state["running"] = after(0.8, animate)
+
+
+def reset(keep=False):
+    if state["running"] is not None:
+        state["running"].stop()
+        state["running"] = None
+    state.update(alive=set(G0), new=set(), round=0, load=dict(L0), start=None)
+    if not keep:
+        draw()
+
+
+def busiest():
+    fail(max(G0, key=lambda v: (L0[v], v)))
+
+
+def random_one():
+    fail(random.choice(sorted(G0)))
+
+
+def cascade_size(v):
+    alive = set(G0) - {v}
+    while true:
+        load = loads(alive)
+        over = {u for u in alive if load[u] > capacity(u) + 1e-9}
+        if not over:
+            return 1 - len(alive) / N
+        alive -= over
+
+
+batch = {"timer": None, "left": 0, "rnd": random.Random(0)}
+
+
+def run_batch():
+    if batch["timer"] is not None:
+        return
+    batch["left"] = 12
+    batch["timer"] = every(0.05, batch_step)
+
+
+def batch_step():
+    v = batch["rnd"].choice(sorted(G0))
+    outages.append(cascade_size(v))
+    batch["left"] -= 1
+    if batch["left"] <= 0:
+        batch["timer"].stop()
+        batch["timer"] = None
+
+
+def outage_chart():
+    if len(outages) >= 2:
+        xs = sorted(outages, reverse=True)
+        pts = [(100 * s, (i + 1) / len(xs)) for i, s in enumerate(xs) if s > 0]
+        plotLine(pts, title="Outage sizes", xlabel="% of stations lost", ylabel="share of outages at least this big",
+                 log=true, dots=true)
+
+
+def status():
+    if state["start"] is None:
+        return "*Click a station to fail it, or use a button.*"
+    lost = N - len(state["alive"])
+    parts = sorted((len(c) for c in nx.connected_components(G0.subgraph(state["alive"]))), reverse=True)
+    biggest = parts[0] if parts else 0
+    end = "" if state["running"] is not None else " The cascade has stopped."
+    return (f"Round **{state['round']}**: **{lost}** of {N} stations down ({100 * lost / N:.1f}%); "
+            f"the largest connected part has **{biggest}** stations.{end}")
+
+
+def batch_text():
+    if batch["timer"] is not None:
+        return f"Running random failures… {12 - batch['left']} of 12 (each takes a moment)."
+    if not outages:
+        return ""
+    big = sum(1 for s in outages if s > 0.05)
+    if len(outages) < 5:
+        return f"**{len(outages)}** cascade{'s' if len(outages) > 1 else ''} so far. Run some random failures to see how big they tend to be."
+    return (f"**{len(outages)}** cascades so far: most are small, but **{big}** took out more than 5% of "
+            "the stations. On log–log axes, a straight-ish line means outage sizes are "
+            "heavy-tailed, as real blackout records are.")
+
+
+graphevents.clickNode = lambda n: fail(n.name)
+alpha.onChange = lambda v: (reset(), draw())
+draw()
+hoverFields("label", "degree")
+
+ui.title("Cascading failures", "Networks, Section 2.3")
+ui.layout(
+    right=Column(
+        Markdown("""### When one station fails
+These are **400 stations** of the Western US power grid (Watts and Strogatz's
+data; positions are a layout, not geography). Each station's **load** is how
+many shortest paths pass through it, and it can carry **(1 + α)** times its
+normal load. Colour: green = its normal load, red = its spare capacity used
+up."""),
+        alpha,
+        Row(Button("Fail the busiest station", onClick=busiest), Button("Fail a random one", onClick=random_one)),
+        Row(Button("Repair everything", onClick=reset), Button("Run 12 random failures", onClick=run_batch)),
+        Markdown(status),
+        Chart(outage_chart),
+        Markdown(batch_text),
+        Markdown("""*A caution from the book:* real grids are controlled by operators and
+computers, and power does not follow shortest paths. Network models like this
+one show how cascades *can* happen, but they predict real blackouts poorly.""")),
+    sizes={"right": 350},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: "data: D. J. Watts and S. H. Strogatz, Nature 393, 440 (1998), via M. Newman"))
+center()

@@ -1,0 +1,159 @@
+# Three things to measure  (Newman, Networks, Chapter 1)
+# Degree and hubs, shortest paths and the small-world effect, and communities,
+# on Zachary's karate club.
+
+makeFromFile("karate.gdf")
+Node.member = ""
+for n in g.nodes:
+    n.member = n.label          # Zachary's number for each member
+BASE = "160,180,210"
+picked = []          # the nodes clicked on the "Small world" tab
+mode = ["Degree"]
+grouped = [False]    # Louvain has run
+
+
+def plain():
+    removeLegends()
+    removeConvexHulls()
+    g.nodes.color = BASE
+    g.nodes.style = 2
+    g.edges.color = "170,170,170,140"
+    g.edges.width = 1.5
+    g.nodes.width = 14
+    g.nodes.height = 14
+    labelBy(member)
+
+
+# ---- degree --------------------------------------------------------------------
+def degree_view():
+    plain()
+    labelBy(degree)
+    sizeBy(degree, 12, 40)
+    colorBy(degree, "190,210,235", "30,80,160")
+
+
+def degree_text():
+    ks = sorted((n.degree for n in g.nodes), reverse=True)
+    top = sorted(g.nodes, key=lambda n: -n.degree)[:2]
+    mid = ks[len(ks) // 2]
+    return (f"Each number is a member's **degree**: how many friends they have in the club. "
+            f"Most have only a few (the median is **{mid}**), but members {top[0].member} and {top[1].member} have **{top[0].degree}** and **{top[1].degree}**. "
+            "Nodes like these are **hubs**, and they matter more than their numbers suggest.")
+
+
+def is_edge(x):
+    return hasattr(x, "node1")
+
+
+# ---- small world -------------------------------------------------------------------
+def path_view():
+    plain()
+    picked[:] = []
+
+
+def pick(n):
+    if mode[0] != "Small world":
+        return
+    if len(picked) == 2:
+        picked[:] = []
+    picked.append(n)
+    g.nodes.color = BASE
+    g.edges.color = "170,170,170,140"
+    g.edges.width = 1.5
+    for p in picked:
+        p.color = "230,90,40"
+    if len(picked) == 2:
+        route = shortestPath(picked[0], picked[1])
+        route.color = "230,90,40"
+        for e in route:
+            if is_edge(e):
+                e.width = 5
+
+
+def farthest():
+    import networkx as nx
+    G = toNetworkX()
+    lengths = dict(nx.all_pairs_shortest_path_length(G))
+    a, b = max(((u, v) for u in lengths for v in lengths[u]), key=lambda p: (lengths[p[0]][p[1]], p))
+    picked[:] = []
+    pick(g.getNodeByName(a))
+    pick(g.getNodeByName(b))
+
+
+def path_text():
+    avg = averagePathLength()
+    if len(picked) < 2:
+        head = "*Click two members* to see the shortest chain of friends between them."
+    else:
+        hops = len([e for e in shortestPath(picked[0], picked[1]) if is_edge(e)])
+        head = (f"From member {picked[0].member} to member {picked[1].member}: **{hops}** "
+                f"step{'s' if hops != 1 else ''}.")
+    return (f"{head}\n\nOn average any two members are only **{avg:.2f}** steps apart, and the "
+            f"farthest pair is **{diameter()}** apart. Short distances like these, even in huge "
+            "networks, are the **small-world effect**: news and disease cross a network in a "
+            "few steps.")
+
+
+# ---- communities ----------------------------------------------------------------------
+def community_view():
+    plain()
+    louvainClusters()
+    grouped[0] = true
+    colorize(louvain_class)
+    encircleBy(louvain_class)
+    real.checked = false
+
+
+def show_real(on):
+    if on:
+        shapeBy(club)
+        legendFor(club, "the club after it split (shape)")
+    else:
+        g.nodes.style = 2
+        removeLegends()
+
+
+def community_text():
+    if not grouped[0]:
+        return ""
+    groups = len(set(n.louvain_class for n in g.nodes))
+    agree = compareClusters(louvain_class, club)
+    whole = sum(1 for c in set(n.louvain_class for n in g.nodes)
+                if len(set(n.club for n in g.nodes if n.louvain_class == c)) == 1)
+    return (f"Louvain modularity optimisation finds **{groups}** groups of members who are "
+            "friends mostly with one another (the colours and shaded areas). Networks often "
+            "break into **communities** like these. Some months later the club really did split "
+            f"in two. Tick the box to compare: **{whole}** of the {groups} groups went entirely "
+            f"to one side, and the groups agree with the split at NMI **{agree:.2f}** "
+            "(normalized mutual information: 1 = the same, 0 = unrelated).")
+
+
+VIEWS = {"Degree": degree_view, "Small world": path_view, "Communities": community_view}
+
+
+def switch(title):
+    mode[0] = title
+    VIEWS[title]()
+
+
+graphevents.clickNode = pick
+real = Checkbox("show the real split (shapes)", onChange=show_real)
+
+tabs = Tabs(
+    Tab("Degree", Markdown(degree_text), Chart(lambda: plotFrequency(degree))),
+    Tab("Small world", Markdown(path_text), Button("Show the farthest pair", onClick=farthest)),
+    Tab("Communities", Markdown(community_text), real),
+    onChange=switch)
+
+degree_view()
+ui.title("Three things to measure", "Networks, Chapter 1")
+ui.layout(
+    right=Column(
+        Markdown("""### Measuring a network
+A picture shows a lot, but measures say what we see, and work when a network is
+too big to draw. Here are three, on the friendships in a university karate club."""),
+        tabs),
+    sizes={"right": 340},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} members · {len(g.edges)} friendships"))

@@ -1123,6 +1123,28 @@ plotSizesPie(dept)           # how many in each department
 plotSizes(dept)              # the same, as bars
 plotHistogram(pagerank)      # distribution of a number
 plotDistrib(totaldegree)     # each value in rank order
+plotFrequency(degree)        # the fraction of nodes with each degree, p(k)
+```
+
+**Log scales.** Heavy-tailed values such as degree are easier to read on
+log axes. `plotFrequency(degree, log=true)` draws p(k) on log–log axes,
+where a power law is a straight line; `cumulative=true` plots the fraction
+with that value or more, which is smoother in the tail. Pointing at a point
+lights up the nodes with that value. `plotHistogram(degree, 10, log=true)`
+uses bins of equal width on a log scale and a log count axis, and
+`plotDistrib(degree, log=true)` a log value axis.
+
+**Your own numbers.** `plotLine(points)` draws a line through a list of
+`(x, y)` pairs; a dictionary of lists draws one line per series. `log=true`
+(or `logX=`/`logY=`) makes the axes logarithmic and `dots=true` marks each
+point. A chart with the same `title` replaces the last one, so a loop can
+update it:
+
+```python
+sizes = [(k, len(kCore(k))) for k in range(1, 6)]
+plotLine(sizes, title="k-cores", xlabel="k", ylabel="nodes", dots=true)
+plotLine({"degree": [(n.degree, n.betweenness) for n in g.nodes if n.degree]},
+         title="Betweenness by degree", log=true, dots=true)
 ```
 
 ![plotSizesPie(dept)](img/chart.png)
@@ -1579,6 +1601,29 @@ removeConvexHulls()
 ![Hulls around three departments.](img/hulls.png){width=75%}
 
 ![The three shapes: `shape="hull"` (the default), `"box"` and `"ellipse"`.](img/enclosures.png){width=75%}
+
+**Drawing on the display.** `drawLine`, `drawText`, `drawRect` and
+`drawCircle` put plain marks on the display, in graph coordinates (the same
+as node `x` and `y`; a node's centre is `n.x + n.width/2`,
+`n.y + n.height/2`). Lines and shapes go under the graph and text over it;
+all of them zoom with the graph, are saved with the session and appear in
+exports. Each returns the drawing, and `.remove()` takes it away;
+`clearDrawings()` removes them all.
+
+```python
+drawLine(0, 0, 400, 0, style="dashed")             # a guide line
+drawLine(0, 40, 400, 40, color=red, width=3, arrow=true)
+drawText(200, -30, "upstream", size=20)
+drawRect(-20, -60, 440, 120, fill="255,220,0,40", lineWidth=0)
+c = drawCircle(200, 200, 80, style="dotted")
+c.remove()
+clearDrawings()
+```
+
+`color=` defaults to the theme's text colour; `style=` is `"solid"`,
+`"dashed"` or `"dotted"`; `fill=` fills a box or circle (use a colour with
+alpha for a translucent one); `anchor=` places text by its `"start"`,
+`"middle"` or `"end"`.
 
 ## 12.3 The display
 
@@ -2053,6 +2098,11 @@ ui.title("Organisation", "sample data")
 - `Markdown(text)` shows formatted notes. `Label` and `Markdown` given a
   function, as in `Label(lambda: f"{len(sel)} selected")`, are live: they
   update after every command and every change of selection.
+- `Chart(fn)` puts a chart in a panel instead of the dock: `fn` makes it
+  with any plot command (or returns an Altair chart), and runs again after
+  every command, so `Chart(lambda: plotFrequency(degree, log=true))` follows
+  the graph as an app changes it. Its bars and points are linked to the
+  graph like any chart's.
 - `ui.menubar(Menu(title, items…), keep=[…])` replaces the menus (keeping
   the ones named). Items are `MenuItem(label, run="code")` or
   `MenuItem(label, onClick=fn)`, `Action(name)` for one of GUESS's own

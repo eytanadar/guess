@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "What is a network?",
+  "description": "Nodes and edges, and four real networks to compare: airports, citations, a karate club and a food web.",
+  "console": "toggle",
+  "script": "main.gy"
+}

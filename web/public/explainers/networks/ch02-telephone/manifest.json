@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Circuit switching",
+  "description": "Place calls on a three-tier telephone network and see trunk capacity decide which long-distance calls get through.",
+  "console": "toggle",
+  "script": "main.gy"
+}

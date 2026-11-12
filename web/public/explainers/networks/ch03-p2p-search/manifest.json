@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Searching a peer-to-peer network",
+  "description": "Flood a query with a hop limit and count the messages, then try supernodes.",
+  "console": "toggle",
+  "script": "main.gy"
+}

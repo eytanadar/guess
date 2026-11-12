@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "A book index is a network",
+  "description": "Words and pages as a bipartite network; similar pages by shared words and by latent semantic analysis.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -1,0 +1,187 @@
+# How a crawler finds the Web  (Newman, Networks, Section 3.1)
+# A crawler downloads a page, copies its links into a store, takes the next
+# URL from the store, and repeats: a breadth-first search over a directed
+# network. Pages that no reachable page links to are never found. The web here
+# is invented: seven sites, an archive nobody links to, and some orphan pages.
+
+import math
+import random
+from collections import deque
+import networkx as nx
+
+rnd = random.Random(8)
+SITES = ["news", "shop", "wiki", "blog", "uni", "games", "archive"]
+G = nx.DiGraph()
+for s, site in enumerate(SITES):
+    size = 18 if site != "archive" else 8
+    ang = 2 * math.pi * s / len(SITES)
+    cx, cy = 420 * math.cos(ang), 420 * math.sin(ang)
+    pages = [f"{site}_{i}" for i in range(size)]
+    for i, p in enumerate(pages):
+        r = 0 if i == 0 else rnd.uniform(45, 115)
+        a = rnd.uniform(0, 2 * math.pi)
+        G.add_node(p, site=site, url=f"www.{site}.example/" + ("" if i == 0 else f"page{i}.html"),
+                   pos=(cx + r * math.cos(a), cy + r * math.sin(a)))
+    for p in pages[1:]:
+        G.add_edge(p, pages[0])                               # every page links home
+        for q in rnd.sample(pages[1:], 2):
+            if q != p:
+                G.add_edge(p, q)
+    for q in rnd.sample(pages[1:], 5):
+        G.add_edge(pages[0], q)                               # home links to a few pages
+# links between sites; nobody links into the archive, but it links out
+for _ in range(26):
+    a, b = rnd.sample([s for s in SITES if s != "archive"], 2)
+    G.add_edge(f"{a}_{rnd.randrange(18)}", f"{b}_{rnd.choice([0, 0, rnd.randrange(18)])}")
+for i in range(3):
+    G.add_edge(f"archive_{i + 1}", f"{rnd.choice(SITES[:-1])}_0")
+# orphans: pages that link out but that no page links to
+for i in range(10):
+    ang = rnd.uniform(0, 2 * math.pi)
+    o = f"orphan_{i}"
+    G.add_node(o, site="(orphan)", url=f"www.orphan{i}.example/", pos=(620 * math.cos(ang), 620 * math.sin(ang)))
+    G.add_edge(o, f"{rnd.choice(SITES[:-1])}_{rnd.randrange(18)}")
+
+fromNetworkX(G)
+NODE = {n.name: n for n in g.nodes}
+for n in g.nodes:
+    n.label = n.url
+    n.width = n.height = 14 if n.name.endswith("_0") else 9
+g.edges.color = "150,150,150,90"
+g.edges.width = 1
+
+crawl = {"seen": set(), "queue": deque(), "done": [], "start": None, "timer": None, "now": None}
+COL = {"unseen": "200,200,200", "queued": "245,190,40", "done": "60,120,210", "now": "220,40,40"}
+
+
+def colour():
+    for v, n in NODE.items():
+        if v == crawl["now"]:
+            n.color = COL["now"]
+        elif v in crawl["done"]:
+            n.color = COL["done"]
+        elif v in crawl["seen"]:
+            n.color = COL["queued"]
+        else:
+            n.color = COL["unseen"]
+
+
+def start(n):
+    stop_play()
+    crawl.update(seen={n.name}, queue=deque([n.name]), done=[], start=n.name, now=None)
+    g.nodes.labelvisible = false
+    n.labelvisible = true
+    colour()
+
+
+def step():
+    if crawl["start"] is None:
+        StatusBar.setStatus("Click a page to start the crawl there")
+        return
+    q = crawl["queue"]
+    if not q:
+        stop_play()
+        crawl["now"] = None
+        colour()
+        return
+    v = q.popleft()
+    crawl["now"] = v
+    crawl["done"].append(v)
+    for w in G.successors(v):
+        if w not in crawl["seen"]:
+            crawl["seen"].add(w)
+            q.append(w)
+    colour()
+
+
+def play():
+    if crawl["timer"] is None:
+        crawl["timer"] = every(0.3, step)
+        go.text = "Pause"
+    else:
+        stop_play()
+
+
+def stop_play():
+    if crawl["timer"] is not None:
+        crawl["timer"].stop()
+        crawl["timer"] = None
+    go.text = "Play"
+
+
+def finish():
+    while crawl["queue"]:
+        step()
+    step()
+
+
+def store_text():
+    if crawl["start"] is None:
+        return "*Click any page to start a crawl from it.*"
+    q = list(crawl["queue"])
+    head = "\n".join(f"- `{NODE[v].url}`" for v in q[:7])
+    more = f"\n- … and {len(q) - 7} more" if len(q) > 7 else ""
+    now = f"Downloaded `{NODE[crawl['now']].url}`. " if crawl["now"] else ""
+    return (f"{now}**{len(crawl['done'])}** pages downloaded. The **store** of URLs waiting "
+            f"({len(q)}), oldest first:\n\n{head or '- (empty)'}{more}")
+
+
+def result_text():
+    if crawl["start"] is None or crawl["queue"]:
+        return ""
+    found = len(crawl["done"])
+    missed = [v for v in G if v not in crawl["seen"]]
+    nolinks = [v for v in missed if G.in_degree(v) == 0]
+    return (f"**Finished.** The crawl found **{found}** of {len(G)} pages "
+            f"(**{100 * found / len(G):.0f}%**). Of the {len(missed)} it never saw, "
+            f"**{len(nolinks)}** have no incoming links at all, and the rest are linked to only "
+            "from pages the crawler could not reach (the grey ones).")
+
+
+def every_start():
+    stop_play()
+    crawl["start"] = None
+    reach = {v: len(nx.descendants(G, v)) + 1 for v in G}
+    for v, n in NODE.items():
+        n.reach = reach[v]
+    colorBy(reach_field(), "235,235,235", "40,90,180")
+    best, worst = max(reach.values()), min(reach.values())
+    many = sum(1 for v in reach if reach[v] == best)
+    core = sum(1 for v in reach if reach[v] >= 0.9 * best)
+    every_note.text = (f"Colour = how many pages a crawl starting there would find: between **{worst}** "
+                       f"and **{best}**. **{core}** of the {len(G)} start pages find at least 90% of "
+                       f"the most any start finds ({many} find exactly {best}). Almost every page "
+                       "links, eventually, into the well-linked core, and a crawl finds what the core "
+                       "can reach (the **out-component**, Section 6.12). So the start matters little, "
+                       "except that a page nobody links to is found only by starting on it.")
+
+
+def reach_field():
+    return g.node_schema["reach"]
+
+
+Node.reach = 0
+graphevents.clickNode = start
+go = Button("Play", onClick=play)
+every_note = Markdown("")
+colour()
+hoverFields("url", "site")
+ui.title("How a crawler finds the Web", "Networks, Section 3.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Breadth-first crawling
+The Web is a **directed** network: a link from A to B says nothing about B to
+A. A **crawler** downloads a page, puts every new URL it finds in a **store**,
+then takes the oldest URL from the store and repeats.
+
+Red: downloading now · blue: downloaded · yellow: in the store · grey: not
+seen."""),
+        Row(go, Button("Step", onClick=step), Button("Finish", onClick=finish)),
+        Markdown(store_text),
+        Markdown(result_text),
+        Group("Does the start page matter?", Button("Try every start page", onClick=every_start), every_note)),
+    sizes={"right": 350},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} pages · {len(g.edges)} links"))
+center()

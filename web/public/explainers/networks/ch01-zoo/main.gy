@@ -1,0 +1,120 @@
+# What is a network?  (Newman, Networks, Chapter 1)
+# A network is nodes joined in pairs by edges. Start with a small one, then
+# compare four real networks, one from each of the book's four families.
+
+import networkx as nx
+
+TOY_EDGES = [("A", "B"), ("A", "C"), ("B", "C"), ("B", "D"), ("C", "D"),
+             ("C", "E"), ("D", "E"), ("D", "F"), ("E", "G"), ("F", "G")]
+TOY_POS = {"A": (40, 60), "B": (150, 20), "C": (120, 140), "D": (250, 90), "E": (230, 210),
+           "F": (370, 40), "G": (380, 190), "H": (420, 300)}
+
+INFO = {
+    "A small network": (
+        "Eight **nodes** (the dots) and ten **edges** (the lines). Node H has no "
+        "edges at all, which is allowed. Hover over a node or an edge to see what "
+        "it joins.",
+        "points", "lines"),
+    "Technological: US airports": (
+        "Airports joined by scheduled routes. Like the Internet, power grids and "
+        "roads, this network has a place on the map. A few hub airports have "
+        "hundreds of routes; most have a handful.",
+        "airports", "routes"),
+    "Information: papers citing papers": (
+        "Papers on graph drawing and network visualisation, with an edge from each "
+        "paper to every earlier paper it cites. Edges have a **direction**, shown by "
+        "arrows; colour is the year (light: older, dark: newer).",
+        "papers", "citations"),
+    "Social: a karate club": (
+        "Zachary's karate club: 34 members of a university club in the 1970s, "
+        "joined when they met outside the club. The club later split in two; the "
+        "colours show which side each member joined.",
+        "members", "friendships"),
+    "Biological: a food web": (
+        "Species in a simulated lake (the niche model), with an edge from each food "
+        "species to the species that eat it. Height is the trophic level: plants and "
+        "plankton at the bottom, top predators at the top.",
+        "species", "who eats whom"),
+}
+current = ["A small network"]
+
+
+def toy():
+    G = nx.Graph()
+    for v, p in TOY_POS.items():
+        G.add_node(v, pos=p)
+    G.add_edges_from(TOY_EDGES)
+    fromNetworkX(G)
+    g.nodes.labelvisible = true
+    g.nodes.width = 18
+    g.nodes.height = 18
+    g.edges.width = 2
+
+
+def airports():
+    makeFromFile("us-airports.gdf")
+    geoLayout()
+    sizeBy(degree, 3, 18)
+    g.edges.color = "120,140,170,60"
+
+
+def papers():
+    makeFromFile("vis-papers.gdf")
+    colorBy(year, "255,220,150", "120,30,120")
+    sizeBy(indegree, 4, 22)
+    g.edges.color = "150,150,150,70"
+
+
+def karate():
+    makeSample("karate")
+    colorize(club)
+    legendFor(club)
+    g.nodes.labelvisible = true
+
+
+def foodweb():
+    makeNicheModel(species=40, connectance=0.12, seed=3)
+    trophicLevels()
+    orderedLayout(trophic, axis="y", inverted=true, length=600)
+    colorBy(trophic, "120,190,90", "200,60,40")
+    g.edges.color = "150,150,150,90"
+
+
+BUILD = {"A small network": toy, "Technological: US airports": airports,
+         "Information: papers citing papers": papers, "Social: a karate club": karate,
+         "Biological: a food web": foodweb}
+
+
+def show(choice):
+    current[0] = choice
+    removeLegends()
+    BUILD[choice]()
+    center()
+
+
+def caption():
+    text, nodes_are, edges_are = INFO[current[0]]
+    kind = "directed" if any(e.directed for e in g.edges) else "undirected"
+    return (f"{text}\n\n**{len(g.nodes)}** nodes ({nodes_are}) · **{len(g.edges)}** edges "
+            f"({edges_are}) · {kind}")
+
+
+picker = Dropdown(list(BUILD), label="Network", onChange=show)
+
+show("A small network")
+ui.title("What is a network?", "Networks, Chapter 1")
+ui.layout(
+    right=Column(
+        Markdown("""### Nodes and edges
+A **network** is a set of points, the **nodes**, joined in pairs by lines, the
+**edges**. Almost anything made of parts that interact can be drawn this way.
+The book sorts networks into four families: technological, information,
+social and biological. Pick one."""),
+        picker,
+        Markdown(caption),
+        Markdown("""*Try:* hover over nodes and edges, scroll to zoom, and drag the
+background to pan.""")),
+    sizes={"right": 320},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))

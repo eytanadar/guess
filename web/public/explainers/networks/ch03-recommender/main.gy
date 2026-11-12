@@ -1,0 +1,204 @@
+# Recommendations from a bipartite network  (Newman, Networks, Section 3.3.2)
+# People on one side, films on the other, and an edge for each rating (green:
+# liked, red: disliked). To recommend films to someone, find the people whose
+# ratings agree with theirs and suggest what those people liked: collaborative
+# filtering. The people, films and ratings are invented.
+
+import math
+import random
+import networkx as nx
+
+rnd = random.Random(6)
+GENRES = {"action": ["Iron Tide", "Rogue Run", "Blast Radius", "Night Raid", "Steel Fang", "Overdrive"],
+          "drama": ["Quiet Harbour", "The Long Winter", "Paper Hearts", "Still Waters", "Ashes", "Homeward"],
+          "comedy": ["Duck Season", "Wrong Number", "Big Cheese", "Oops", "Mixed Nuts", "Free Lunch"],
+          "sci-fi": ["Orbit", "Second Sun", "Signal", "Event Horizon Bakery", "Cold Stars", "Relay"]}
+FILMS = [(f, gen) for gen, fs in GENRES.items() for f in fs]
+PEOPLE = ["Ana", "Ben", "Cal", "Dee", "Eli", "Fay", "Gus", "Hal", "Ivy", "Jon", "Kim", "Lou", "Mia", "Ned",
+          "Oli", "Pam", "Raj", "Sue", "Tom", "Uma", "Val", "Wes", "Xia", "Yan", "Zoe", "Abe", "Bea", "Cy"]
+TASTES = ["action", "drama", "comedy", "sci-fi"]
+
+G = nx.Graph()
+for i, p in enumerate(PEOPLE):
+    loves = [TASTES[i % 4], TASTES[(i // 4) % 4]]     # each person likes one or two genres
+    G.add_node(p, kind="person", taste=" & ".join(sorted(set(loves))))
+    for f, gen in rnd.sample(FILMS, 9):
+        base = 1.5 if gen in loves else -1.0
+        r = max(-2, min(2, round(base + rnd.gauss(0, 0.8))))
+        if r != 0:
+            G.add_edge(p, f, rating=r)
+for f, gen in FILMS:
+    G.add_node(f, kind="film", genre=gen)
+G.remove_nodes_from([v for v in list(G) if G.degree(v) == 0])
+
+# people in a column on the left, films on the right, grouped by taste and genre
+people = sorted((v for v in G if G.nodes[v]["kind"] == "person"), key=lambda v: (G.nodes[v]["taste"], v))
+films = sorted((v for v in G if G.nodes[v]["kind"] == "film"), key=lambda v: (G.nodes[v]["genre"], v))
+for i, v in enumerate(people):
+    G.nodes[v]["pos"] = (0, i * 900 / len(people))
+for i, v in enumerate(films):
+    G.nodes[v]["pos"] = (520, i * 900 / len(films))
+fromNetworkX(G)
+NODE = {n.name: n for n in g.nodes}
+for n in g.nodes:
+    n.labelvisible = true
+    n.labelpos = "left" if n.kind == "person" else "right"
+    n.style = 2 if n.kind == "person" else 1
+hidden = []          # ratings hidden for a test: (person, film, rating)
+tests = {"hit": 0, "miss": 0}
+chosen = [None]
+
+
+def ratings():
+    """{person: {film: rating}} from the visible edges"""
+    out = {}
+    for e in g.edges:
+        if e.visible:
+            p, f = (e.node1, e.node2) if e.node1.kind == "person" else (e.node2, e.node1)
+            out.setdefault(p.name, {})[f.name] = e.rating
+    return out
+
+
+def similarity(a, b):
+    """Cosine similarity of two people's ratings, over all films."""
+    shared = set(a) & set(b)
+    if not shared:
+        return 0.0
+    dot = sum(a[f] * b[f] for f in shared)
+    return dot / (math.sqrt(sum(v * v for v in a.values())) * math.sqrt(sum(v * v for v in b.values())))
+
+
+def neighbours(p, R, k=5):
+    sims = [(similarity(R.get(p, {}), R[q]), q) for q in R if q != p]
+    return [(s, q) for s, q in sorted(sims, reverse=True)[:k] if s > 0]
+
+
+def predict(p, f, R):
+    near = [(s, q) for s, q in sorted(((similarity(R.get(p, {}), R[q]), q) for q in R if q != p and f in R[q]),
+                                       reverse=True)[:5] if s > 0]
+    if not near:
+        return None, []
+    return sum(s * R[q][f] for s, q in near) / sum(s for s, _ in near), near
+
+
+def dress():
+    for n in g.nodes:
+        n.color = "250,250,250" if n.kind == "film" else "200,210,230"
+        n.strokecolor = "90,90,90"
+        n.width = n.height = 14
+    for e in g.edges:
+        e.color = "60,170,80,170" if e.rating > 0 else "220,70,60,170"
+        e.width = abs(e.rating) * 1.3
+
+
+def choose(n):
+    chosen[0] = n
+    dress()
+    R = ratings()
+    if n.kind == "film":
+        n.color = "30,30,30"
+        return
+    n.color = "30,30,30"
+    for s, q in neighbours(n.name, R):
+        NODE[q].color = "250,190,40"
+    for f, score in recommend(n.name, R)[:3]:
+        NODE[f].color = "60,170,80"
+        NODE[f].width = NODE[f].height = 20
+    for e in g.edges:
+        if n not in (e.node1, e.node2):
+            e.color = e.color + ",40" if e.color.count(",") == 2 else e.color.rsplit(",", 1)[0] + ",35"
+
+
+def recommend(p, R):
+    seen = R.get(p, {})
+    scores = []
+    for f in films:
+        if f not in seen:
+            guess_, near = predict(p, f, R)
+            if guess_ is not None and guess_ > 0:
+                scores.append((f, guess_, len(near)))
+    return [(f, s) for f, s, _ in sorted(scores, key=lambda t: (-t[1], t[0]))]
+
+
+def person_text():
+    n = chosen[0]
+    if n is None:
+        return "*Click a person* (left) to get recommendations, or a film (right)."
+    R = ratings()
+    if n.kind == "film":
+        fans = sorted(q for q in R if R[q].get(n.name, 0) > 0)
+        foes = sorted(q for q in R if R[q].get(n.name, 0) < 0)
+        return (f"**{n.name}** ({n.genre}): liked by {', '.join(fans) or 'nobody'}; disliked by "
+                f"{', '.join(foes) or 'nobody'}.")
+    near = neighbours(n.name, R)
+    recs = recommend(n.name, R)[:3]
+    lines = [f"**{n.name}** (likes {n.taste}) rated {len(R.get(n.name, {}))} films.", "",
+             "Most similar people (yellow): " + ", ".join(f"{q} ({s:.2f})" for s, q in near), ""]
+    for f, score in recs:
+        fans = [q for _, q in near if R[q].get(f, 0) > 0]
+        lines.append(f"- **{f}** ({NODE[f].genre}): predicted {score:+.1f}" +
+                     (f", liked by {', '.join(fans)}" if fans else ""))
+    return "\n".join(lines) if recs else "\n".join(lines + ["No recommendations: nobody similar has rated new films."])
+
+
+def hide_one():
+    unhide()
+    e = random.Random(tests["hit"] + tests["miss"] + 1).choice([e for e in g.edges])
+    p, f = (e.node1, e.node2) if e.node1.kind == "person" else (e.node2, e.node1)
+    e.visible = false
+    hidden.append((e, p.name, f.name, e.rating))
+    guess_, near = predict(p.name, f.name, ratings())
+    ok = guess_ is not None and (guess_ > 0) == (e.rating > 0)
+    tests["hit" if ok else "miss"] += 1
+    test_note.text = (f"Hid **{p.name}**'s rating of **{f.name}** ({e.rating:+d}). From the "
+                      + (f"{len(near)} most similar people who rated it, the prediction is **{guess_:+.1f}**: "
+                         if guess_ is not None else "ratings left there is nobody similar to ask: ")
+                      + ("**right** (same sign)." if ok else "**wrong**.") + score_text())
+    choose(p)
+
+
+def many():
+    unhide()
+    edges = list(g.edges)
+    rnd2 = random.Random(42)
+    for e in rnd2.sample(edges, 50):
+        p, f = (e.node1, e.node2) if e.node1.kind == "person" else (e.node2, e.node1)
+        e.visible = false
+        guess_, _ = predict(p.name, f.name, ratings())
+        e.visible = true
+        tests["hit" if guess_ is not None and (guess_ > 0) == (e.rating > 0) else "miss"] += 1
+    test_note.text = "Hid 50 ratings one at a time and predicted each from the rest." + score_text()
+
+
+def score_text():
+    t = tests["hit"] + tests["miss"]
+    return f"\n\nSo far: **{tests['hit']} of {t}** predictions right ({100 * tests['hit'] / t:.0f}%); guessing \"like\" every time would get {100 * sum(1 for e in g.edges if e.rating > 0) / len(g.edges):.0f}%."
+
+
+def unhide():
+    for e, *_ in hidden:
+        e.visible = true
+    hidden[:] = []
+
+
+test_note = Markdown("")
+graphevents.clickNode = choose
+dress()
+hoverFields("kind", "taste", "genre", "rating")
+ui.title("Recommendations", "Networks, Section 3.3.2")
+ui.layout(
+    right=Column(
+        Markdown("""### People, films and ratings
+A **bipartite** network: people (left) are linked only to films (right),
+never to each other. Green edges are likes, red dislikes; thicker is
+stronger. Two people are **similar** when they rate the same films the same
+way. Recommend what similar people liked."""),
+        Markdown(person_text),
+        Group("Does it work?",
+              Row(Button("Hide a rating and predict it", onClick=hide_one), Button("Test 50", onClick=many)),
+              test_note)),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len([n for n in g.nodes if n.kind == 'person'])} people · {len(films)} films · {len(g.edges)} ratings (invented)"))
+center()

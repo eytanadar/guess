@@ -51,23 +51,42 @@ export function markdown(text: string): DocumentFragment {
     }
   };
   let list: HTMLElement | null = null;
+  // a paragraph's (or list item's) lines are joined first, so **bold** and
+  // *italics* may wrap onto the next line
+  let para: string[] = [];
+  let item: { el: HTMLElement; text: string[] } | null = null;
+  const flush = () => {
+    if (para.length) {
+      const p = document.createElement("p");
+      inline(para.join(" "), p);
+      f.append(p);
+      para = [];
+    }
+    if (item) {
+      inline(item.text.join(" "), item.el);
+      item = null;
+    }
+  };
   for (const block of text.replace(/\r/g, "").split(/\n\s*\n/)) {
     list = null;
     for (const line of block.split("\n")) {
       const h = /^(#{1,4})\s+(.*)$/.exec(line);
       const li = /^\s*(?:[-*]|\d+\.)\s+(.*)$/.exec(line);
       if (h) {
+        flush();
         const el = document.createElement(`h${Math.min(6, h[1].length + 2)}`);
         inline(h[2], el); f.append(el); list = null;
       } else if (li) {
+        flush();
         if (!list) { list = document.createElement(/^\s*\d/.test(line) ? "ol" : "ul"); f.append(list); }
-        const el = document.createElement("li"); inline(li[1], el); list.append(el);
+        const el = document.createElement("li"); list.append(el);
+        item = { el, text: [li[1]] };
       } else if (line.trim()) {
-        const last = f.lastChild as HTMLElement | null;
-        if (last && last.nodeName === "P" && !list) { last.append(" "); inline(line, last); }
-        else { const p = document.createElement("p"); inline(line, p); f.append(p); list = null; }
+        if (item) item.text.push(line.trim());       // a list item continued on the next line
+        else para.push(line.trim());
       }
     }
+    flush();
     f.append(document.createComment("block"));
   }
   return f;
@@ -433,7 +452,7 @@ export class Dock {
       svg.append(el);
     };
     if (c.kind === "line") {
-      const left = 34, bottom = 30, top = 8, right = 8;
+      const left = 40, bottom = 30, top = 8, right = 8;
       const pw = W - left - right, ph = H - top - bottom;
       const all = (c.series ?? []).flatMap((s) => s.points)
         .filter((p) => (!c.logX || p[0] > 0) && (!c.logY || p[1] > 0));
@@ -455,11 +474,24 @@ export class Dock {
       /** tick values (on the axis' own scale): the ends, or the powers of ten between them */
       const ticks = (lo: number, hi: number, log: boolean | undefined) => {
         if (!log) return [lo, hi];
-        const out: number[] = [];
-        for (let k = Math.ceil(lo - 1e-9); k <= hi + 1e-9; k++) out.push(k);
-        return out.length >= 2 ? out : [lo, hi];
+        // powers of ten; with fewer than two of them, 1-2-5 steps
+        for (const ms of [[1], [1, 2, 5], [1, 2, 3, 5, 7]]) {
+          const out: number[] = [];
+          for (let k = Math.floor(lo) - 1; k <= Math.ceil(hi); k++) {
+            for (const m of ms) {
+              const v = k + Math.log10(m);
+              if (v >= lo - 1e-9 && v <= hi + 1e-9) out.push(v);
+            }
+          }
+          if (out.length >= 2) return out.length > 7 ? out.filter((_, i) => i % Math.ceil(out.length / 7) === 0) : out;
+        }
+        return [lo, hi];
       };
-      const label = (v: number, log: boolean | undefined) => (log ? fmt(+Math.pow(10, v).toPrecision(3)) : fmt(v));
+      const label = (v: number, log: boolean | undefined) => {
+        if (!log) return fmt(v);
+        const x = +Math.pow(10, v).toPrecision(2);
+        return x >= 1e4 || (x < 1e-3 && x > 0) ? x.toExponential(0) : String(x);
+      };
       for (const v of ticks(ymin, ymax, c.logY)) {
         const t = document.createElementNS(SVG, "text");
         t.setAttribute("x", String(left - 4));
@@ -478,10 +510,10 @@ export class Dock {
       }
       if (c.logX || c.logY) {
         const note = document.createElementNS(SVG, "text");
-        note.setAttribute("x", String(left + 4));
-        note.setAttribute("y", String(top + 9));
+        note.setAttribute("x", "2");
+        note.setAttribute("y", String(H - 2));
         note.setAttribute("class", "tick");
-        note.setAttribute("text-anchor", "start");
+        note.style.textAnchor = "start";
         note.textContent = c.logX && c.logY ? "log–log" : c.logX ? "log x" : "log y";
         svg.append(note);
       }
@@ -768,7 +800,7 @@ export class Dock {
     this.marks.delete(id);
     el.replaceChildren();
     if (!spec) {
-      el.textContent = "(this function made no chart)";
+      // nothing to show yet (the function made no chart): take no room
       el.classList.add("w-chart-empty");
       return;
     }

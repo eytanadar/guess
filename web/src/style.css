@@ -763,6 +763,7 @@ body.app .view-col { flex: 1 1 auto; }
 .w-chart { min-width: 220px; }
 .w-chart-title { font-size: 12px; font-weight: 600; color: var(--muted, inherit); margin: 2px 0 0; }
 .w-chart-empty { font-size: 12px; opacity: .7; }
+.w-chart-empty:empty { display: none; }
 .w-markdown { font-size: 13px; line-height: 1.45; max-width: 60ch; }
 .w-markdown h3, .w-markdown h4, .w-markdown h5 { margin: 4px 0; font-size: 13.5px; }
 .w-markdown p { margin: 0 0 6px; }

@@ -1,0 +1,198 @@
+# The shape of the Internet  (Newman, Networks, Section 2.1)
+# A made-up Internet with the real one's shape: a backbone, regional and local
+# ISPs, and end users. Then the same network at coarser levels: routers only,
+# class C subnets, domains and autonomous systems.
+
+import math
+import random
+import networkx as nx
+
+rnd = random.Random(4)
+G = nx.Graph()
+TIERS = ["backbone", "regional ISP", "local ISP", "end user"]
+RADIUS = {"backbone": 90, "regional ISP": 220, "local ISP": 350, "end user": 500}
+home = {}            # node -> the node it hangs from (for placing it)
+
+
+def router(nm, tier, asys, domain, ip, parent=None):
+    G.add_node(nm, tier=tier, asys=asys, domain=domain, subnet=ip.rsplit(".", 1)[0] + ".x", ip=ip)
+    home[nm] = parent
+
+
+# backbone: three providers with two core routers each, in a ring with chords
+for i in range(6):
+    asn = 1 + i // 2
+    router(f"core{i}", "backbone", f"AS{asn}", f"backbone{asn}.net", f"4.{asn}.0.{i + 1}")
+for i in range(6):
+    G.add_edge(f"core{i}", f"core{(i + 1) % 6}")
+G.add_edges_from([("core0", "core3"), ("core1", "core4"), ("core2", "core5")])
+
+# regional ISPs: two routers each, each router linked to one or two core routers
+regionals = []
+for r in range(6):
+    asn = 20 + r
+    for k in range(2):
+        nm = f"reg{r}{'ab'[k]}"
+        router(nm, "regional ISP", f"AS{asn}", f"region{r}.net", f"12.{asn}.0.{k + 1}", f"core{r}")
+        G.add_edge(nm, f"core{r}")
+        if rnd.random() < 0.5:
+            G.add_edge(nm, f"core{(r + 1) % 6}")
+        regionals.append(nm)
+    G.add_edge(f"reg{r}a", f"reg{r}b")
+
+# local ISPs: one router each, homed on a regional router (some on two)
+locals_ = []
+for j in range(20):
+    asn = 100 + j
+    parent = regionals[j % len(regionals)]
+    nm = f"isp{j}"
+    router(nm, "local ISP", f"AS{asn}", f"isp{j}.com", f"64.{asn}.0.1", parent)
+    G.add_edge(nm, parent)
+    if rnd.random() < 0.25:
+        G.add_edge(nm, rnd.choice(regionals))
+    locals_.append(nm)
+
+# end users: organisations on each local ISP, each with a class C subnet
+ORGS = ["acme", "bluebird", "cedar", "delta", "ember", "fjord", "granite", "harbor", "iris", "juniper"]
+u = 0
+for j, isp in enumerate(locals_):
+    asn = 100 + j
+    for o in range(rnd.randint(1, 2)):
+        org = f"{ORGS[(j + 3 * o) % len(ORGS)]}{j}.org"
+        blocks = rnd.randint(1, 2)          # a bigger organisation owns two class C blocks
+        for h in range(rnd.randint(3, 6)):
+            nm = f"pc{u}"
+            u += 1
+            router(nm, "end user", f"AS{asn}", org, f"64.{asn}.{2 * o + 1 + h % blocks}.{h + 10}", isp)
+            G.add_edge(nm, isp)
+
+# place each tier on a ring, children in their parent's direction
+users = [v for v in G if G.nodes[v]["tier"] == "end user"]
+angle = {v: 2 * math.pi * i / len(users) for i, v in enumerate(users)}
+for level_ in ("local ISP", "regional ISP", "backbone"):
+    for v in G:
+        if G.nodes[v]["tier"] == level_:
+            kids = [angle[c] for c in G if home.get(c) == v and c in angle]
+            if kids:
+                angle[v] = math.atan2(sum(math.sin(a) for a in kids), sum(math.cos(a) for a in kids))
+for i in range(6):
+    angle.setdefault(f"core{i}", 2 * math.pi * i / 6)
+for v in G:
+    r = RADIUS[G.nodes[v]["tier"]]
+    G.nodes[v]["pos"] = (r * math.cos(angle[v]), r * math.sin(angle[v]))
+
+fromNetworkX(G)
+COLOURS = {"backbone": "200,50,50", "regional ISP": "240,140,40", "local ISP": "70,140,200", "end user": "150,150,150"}
+SIZES = {"backbone": 22, "regional ISP": 16, "local ISP": 12, "end user": 7}
+
+
+def dress():
+    for n in g.nodes:
+        n.color = COLOURS.get(n.tier, "120,120,120")
+        n.width = n.height = SIZES.get(n.tier, 14)
+    g.edges.color = "160,160,160,120"
+    g.edges.width = 1.2
+    g.edges.linestyle = "solid"
+
+
+dress()
+lg = Legend()
+for t in TIERS:
+    lg.add(COLOURS[t], t)
+ss("full")
+
+LEVELS = {
+    "Everything": None,
+    "Routers only (no end users)": "routers",
+    "Class C subnets": subnet,          # the fields made from the node attributes
+    "Domains": domain,
+    "Autonomous systems": asys,
+}
+level = ["Everything"]
+route = []
+
+
+def show_level(choice):
+    level[0] = choice
+    route[:] = []
+    expandAll()
+    g.nodes.visible = true
+    dress()
+    how = LEVELS[choice]
+    if how == "routers":
+        (tier == "end user").visible = false
+    elif how is not None:
+        collapseBy(how)
+        for n in g.nodes:
+            if isGroup(n):
+                n.color = "90,110,140"
+                n.labelvisible = true
+    center()
+
+
+def pick(n):
+    if level[0] != "Everything" or n.tier != "end user":
+        StatusBar.setStatus("Click an end user (a grey dot) in the Everything view")
+        return
+    if len(route) == 2:
+        route[:] = []
+        dress()
+    route.append(n)
+    n.color = "30,30,30"
+    if len(route) == 2:
+        path = shortestPath(route[0], route[1])
+        for x in path:
+            if hasattr(x, "node1"):
+                x.color = "40,160,80"
+                x.width = 4
+                x.linestyle = "flow"
+
+
+graphevents.clickNode = pick
+
+
+def route_text():
+    if len(route) < 2:
+        return "*Click two end users (grey dots on the outside) to send data between them.*"
+    path = [x for x in shortestPath(route[0], route[1]) if not hasattr(x, "node1")]
+    hops = " → ".join(x.tier for x in path)
+    return (f"**{len(path) - 1} hops**: {hops}.\n\nData climbs towards the backbone only as far "
+            "as it must, then comes back down.")
+
+
+def level_text():
+    vis = [n for n in g.nodes if n.visible]
+    edges = [e for e in g.edges if e.visible and e.node1.visible and e.node2.visible]
+    total = len(users)
+    how = LEVELS[level[0]]
+    how = how if how is None or how == "routers" else how.name
+    notes = {
+        None: f"Every device: **{total}** of the {len(G)} nodes are end users' computers.",
+        "routers": ("Most studies leave out end users, which only start and finish journeys, and "
+                    "keep the **routers** that pass data along."),
+        "subnet": ("Addresses in the same **class C subnet** (the same first three numbers, e.g. "
+                   "64.103.1.x) usually belong to one organisation: each becomes one node."),
+        "domain": ("A **domain** (acme3.org, isp7.com) groups an organisation's computers and "
+                   "routers, found from each address by a reverse DNS lookup."),
+        "asys": ("An **autonomous system** routes its own traffic; BGP routing tables, the "
+                 "second way of mapping the Internet, are written in terms of them."),
+    }
+    return f"{notes[how]}\n\nShowing **{len(vis)}** nodes and **{len(edges)}** edges."
+
+
+ui.title("The shape of the Internet", "Networks, Section 2.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Backbone, ISPs and users
+The Internet has no central map, but it has a shape. In the middle is the
+**backbone** of long-distance, high-bandwidth links. Around it are **regional
+ISPs**, then **local ISPs**, and on the outside the **end users**. This
+network is made up, but it has that shape."""),
+        Group("Send some data", Markdown(route_text)),
+        Group("Level of detail", Dropdown(list(LEVELS), label="Show", onChange=show_level), Markdown(level_text))),
+    sizes={"right": 330},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: "Hover over a node for its IP address, domain and AS"))
+hoverFields("tier", "ip", "domain", "asys")
+center()

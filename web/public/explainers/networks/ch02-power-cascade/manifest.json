@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Cascading failures",
+  "description": "Fail a station in a real piece of the Western US power grid and watch the overload spread.",
+  "console": "toggle",
+  "script": "main.gy"
+}

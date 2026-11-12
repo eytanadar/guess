@@ -1,0 +1,211 @@
+# Citations point back in time  (Newman, Networks, Section 3.2)
+# 1,044 papers on graph drawing and network visualisation (OpenAlex), with an
+# edge from each paper to the papers it cites. A paper can only cite older
+# work, so the network is (almost) acyclic; most papers are rarely cited; and
+# two papers are related if they are cited together (cocitation) or cite the
+# same things (bibliographic coupling).
+
+import random
+from collections import Counter
+import networkx as nx
+
+makeFromFile("vis-papers.gdf")
+MAIN = graphNames()[0]
+G = toNetworkX()                       # u -> v: u cites v
+NODE = {n.name: n for n in g.nodes}
+Y0, Y1 = min(n.year for n in g.nodes), max(n.year for n in g.nodes)
+ys = [n.y for n in g.nodes]
+lo, hi = min(ys), max(ys)
+rnd = random.Random(1)
+for n in g.nodes:                      # x: the year; y: kept from the stored layout
+    n.x = (n.year - Y0) * 1600 / (Y1 - Y0) + rnd.uniform(-12, 12)
+    n.y = (n.y - lo) * 900 / (hi - lo)
+sizeBy(indegree, 4, 26)
+
+
+def base():
+    colorBy(year, "250,215,140", "110,30,120")
+    g.edges.color = "150,150,150,40"
+    g.edges.width = 0.8
+    g.nodes.labelvisible = false
+    removeLegends()
+
+
+def tidy_title(n, k=60):
+    t = n.title or n.label
+    return t if len(t) <= k else t[:k - 1] + "…"
+
+
+# ---- loops ------------------------------------------------------------------------
+loop_note = Markdown("")
+
+
+def loops():
+    base()
+    cyc = findCycles(5)
+    sizes = Counter(len([x for x in c if not hasattr(x, "node1")]) for c in cyc)
+    for c in cyc:
+        for x in c:
+            x.color = "230,40,40"
+            if hasattr(x, "node1"):
+                x.width = 3
+    back = sum(1 for e in g.edges if e.node1.year < e.node2.year)
+    loop_note.text = (f"Of {len(g.edges)} citations, **{back}** point to a paper dated *later* than the "
+                      f"citing one, and there are **{len(cyc)}** short loops "
+                      f"({', '.join(f'{v} of length {k}' for k, v in sorted(sizes.items()))}), in red. "
+                      "They come from papers that appeared close together and cite each other, or "
+                      "whose dates are recorded inconsistently. Everything else points back in time.")
+
+
+# ---- one paper: cocitation and coupling ------------------------------------------------
+pick = [None]
+
+
+def related(v):
+    cocited = Counter()
+    for c in G.predecessors(v):          # papers that cite v ...
+        for w in G.successors(c):        # ... and whatever else they cite
+            if w != v:
+                cocited[w] += 1
+    coupled = Counter()
+    for r in G.successors(v):            # v's references ...
+        for w in G.predecessors(r):      # ... and who else cites them
+            if w != v:
+                coupled[w] += 1
+    return cocited, coupled
+
+
+def choose(n):
+    use(MAIN)                            # a click in the cocitation network picks the same paper
+    n = NODE.get(n.name)
+    if n is None:
+        return
+    pick[0] = n
+    base()
+    g.nodes.color = "220,220,220,90"
+    co, cp = related(n.name)
+    for w, k in co.items():
+        NODE[w].color = "240,140,30"
+    for w, k in cp.items():
+        NODE[w].color = "130,70,200" if w not in co else "200,60,140"
+    n.color = "220,30,30"
+    n.labelvisible = true
+    for w, _ in (co.most_common(3) + cp.most_common(3)):
+        NODE[w].labelvisible = true
+
+
+def paper_text():
+    n = pick[0]
+    if n is None:
+        return "*Click a paper* to see the papers related to it."
+    co, cp = related(n.name)
+    def top(c):
+        return "\n".join(f"- {tidy_title(NODE[w], 50)} ({NODE[w].year}): **{k}**" for w, k in c.most_common(4)) or "- none"
+    return (f"**{tidy_title(n)}** ({n.year}), cited by {G.in_degree(n.name)} and citing "
+            f"{G.out_degree(n.name)} papers here.\n\n"
+            f"**Cocited** with it (orange: cited by the same papers), with how many papers cite both:\n{top(co)}\n\n"
+            f"**Coupled** to it (purple: citing the same papers), with how many references they share:\n{top(cp)}\n\n"
+            "*Pink: both.*")
+
+
+# ---- the cocitation and coupling networks ------------------------------------------------
+def build(kind):
+    H = nx.Graph()
+    for v in G:
+        refs = list(G.successors(v)) if kind == "cocitation" else []
+        if kind == "cocitation":
+            for i in range(len(refs)):
+                for j in range(i + 1, len(refs)):
+                    a, b = refs[i], refs[j]
+                    w = H[a][b]["weight"] + 1 if H.has_edge(a, b) else 1
+                    H.add_edge(a, b, weight=w)
+    if kind == "coupling":
+        for r in G:
+            citers = list(G.predecessors(r))
+            for i in range(len(citers)):
+                for j in range(i + 1, len(citers)):
+                    a, b = citers[i], citers[j]
+                    w = H[a][b]["weight"] + 1 if H.has_edge(a, b) else 1
+                    H.add_edge(a, b, weight=w)
+    H.remove_edges_from([(a, b) for a, b, d in H.edges(data=True) if d["weight"] < 2])
+    H.remove_nodes_from([v for v in list(H) if H.degree(v) == 0])
+    for v in H:
+        H.nodes[v]["title"] = NODE[v].title
+        H.nodes[v]["year"] = NODE[v].year
+        H.nodes[v]["label"] = NODE[v].label
+    use(MAIN)
+    if kind in graphNames():
+        closeGraph(kind)
+    fromNetworkX(H, kind)
+    louvainClusters()
+    colorize(louvain_class)
+    sizeBy(degree, 4, 20)
+    g.edges.color = "150,150,150,60"
+    net_note.text = (f"The **{kind}** network: {len(H)} papers, joined when "
+                     + ("**cited together** by at least 2 papers" if kind == "cocitation"
+                        else "they **share at least 2 references**")
+                     + f" ({H.number_of_edges()} pairs; edge weight = how many). Colours: Louvain "
+                     "communities, which tend to be topics. It is undirected: the relation is "
+                     "symmetric.")
+    center()
+
+
+def back():
+    use(MAIN)
+    base()
+    net_note.text = ""
+    center()
+
+
+def main_path():
+    use(MAIN)
+    base()
+    path = mainPath()
+    g.nodes.color = "220,220,220,90"
+    for x in path:
+        x.color = "30,120,60"
+        if hasattr(x, "node1"):
+            x.width = 4
+        else:
+            x.labelvisible = true
+    net_note.text = ("The **main path** follows the citations that the most chains of citations "
+                     "run through, from recent work back to the field's foundations (Hummon and "
+                     "Doreian's main path analysis).")
+
+
+def counts_text():
+    never = sum(1 for v in G if G.in_degree(v) == 0)
+    top = max(G, key=lambda v: G.in_degree(v))
+    return (f"**{100 * never / len(G):.0f}%** of these papers are never cited by another paper in "
+            f"the set, while the most cited, *{tidy_title(NODE[top], 50)}*, is cited by "
+            f"**{G.in_degree(top)}** of them. The chart counts citations in the whole literature "
+            "(OpenAlex's `cites`): a few papers have thousands, most a handful.")
+
+
+net_note = Markdown("")
+graphevents.clickNode = choose
+base()
+hoverFields("title", "year", "cites")
+ui.title("Citations point back in time", "Networks, Section 3.2")
+ui.layout(
+    right=Column(
+        Markdown("""### A network of papers
+Each paper (dot) has an arrow to every paper it cites. Left to right is
+**time** (1980 → 2024; colour too), so arrows point left: you can only cite
+what already exists. Size: citations from within this set."""),
+        Tabs(
+            Tab("Time", Button("Look for loops", onClick=loops), loop_note,
+                Markdown(counts_text), Chart(lambda: plotFrequency(cites, log=true, cumulative=true))),
+            Tab("Related papers", Markdown(paper_text)),
+            Tab("Networks from citations",
+                Markdown("""Patents and court opinions cite each other too, and make networks of
+exactly this kind."""),
+                Row(Button("Cocitation network", onClick=lambda: build("cocitation")),
+                    Button("Coupling network", onClick=lambda: build("coupling"))),
+                Row(Button("Main path", onClick=main_path), Button("Back to the citations", onClick=back)),
+                net_note))),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} papers · {len(g.edges)} edges · data: OpenAlex (CC0)"))
+center()

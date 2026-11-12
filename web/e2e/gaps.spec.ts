@@ -35,6 +35,6 @@ test("drawings show on the display and in SVG export", async ({ page }) => {
     expect(svg).toContain("a drawn title");
     expect(svg).toContain("stroke-dasharray");
   }
-  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + "/drawings.png" });
+  if (process.env.SHOT) { await page.waitForTimeout(1500); await page.screenshot({ path: process.env.SHOT + "/drawings.png" }); }
   expect(errors).toEqual([]);
 });

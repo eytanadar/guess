@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Rivers are trees",
+  "description": "A river network drains along exactly one path; add a loop to break that, and estimate the river's length from line crossings.",
+  "console": "toggle",
+  "script": "main.gy"
+}

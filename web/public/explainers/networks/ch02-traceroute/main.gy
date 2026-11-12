@@ -1,0 +1,216 @@
+# Mapping the Internet  (Newman, Networks, Sections 2.1.1 and 2.1.2)
+# Nobody holds a map of the Internet, so it is measured: traceroute finds the
+# route a packet takes, one hop at a time, and the union of many routes (or of
+# BGP routing tables) is the map. Here the "true" network is 300 autonomous
+# systems from a real 2006 snapshot, and you are the one measuring it.
+
+import random
+import networkx as nx
+
+makeFromFile("internet-as-sample.gdf")
+G0 = toNetworkX()
+ALL_EDGES = {frozenset((e.node1.name, e.node2.name)): e for e in g.edges}
+DEG = dict(G0.degree())
+HUB = sorted(DEG.values())[int(0.9 * len(DEG))]     # the top tenth by degree are "hubs"
+sizeBy(degree, 5, 24)
+
+QUIET = "170,170,170,70"
+
+
+def plain():
+    g.nodes.color = "120,150,190"
+    g.nodes.labelvisible = false
+    g.edges.color = QUIET
+    g.edges.width = 1
+    g.edges.linestyle = "solid"
+
+
+# ---- one route, hop by hop --------------------------------------------------------
+trace = {"src": None, "dst": None, "ttl": 0, "path": []}
+
+
+def trace_click(n):
+    if trace["src"] is None or trace["dst"] is not None:
+        plain()
+        trace.update(src=n, dst=None, ttl=0, path=[])
+        n.color = "30,30,30"
+        n.labelvisible = true
+    elif n is not trace["src"]:
+        trace["dst"] = n
+        n.color = "40,120,220"
+        n.labelvisible = true
+        trace["path"] = nx.shortest_path(G0, trace["src"].name, n.name)
+
+
+def ttl_up():
+    p = trace["path"]
+    if not p:
+        StatusBar.setStatus("Click a source, then a destination")
+        return
+    if trace["ttl"] >= len(p) - 1:
+        return
+    trace["ttl"] += 1
+    k = trace["ttl"]
+    hop = g.getNodeByName(p[k])
+    ALL_EDGES[frozenset((p[k - 1], p[k]))].color = "230,120,30"
+    ALL_EDGES[frozenset((p[k - 1], p[k]))].width = 4
+    if k < len(p) - 1:
+        hop.color = "230,120,30"
+    hop.labelvisible = true
+
+
+def trace_text():
+    p, k = trace["path"], trace["ttl"]
+    if trace["src"] is None:
+        return "*Click a source AS (it turns black), then a destination (blue).*"
+    if not p:
+        return f"Source **AS{trace['src'].label}**. *Now click a destination.*"
+    lines = [f"Source **AS{trace['src'].label}** → destination **AS{trace['dst'].label}**, "
+             f"{len(p) - 1} hops away.", ""]
+    for i in range(1, k + 1):
+        who = g.getNodeByName(p[i]).label
+        lines.append(f"- TTL {i}: the packet dies at **AS{who}**, which reports back"
+                     if i < len(p) - 1 else f"- TTL {i}: **AS{who}** is the destination: done")
+    if k < len(p) - 1:
+        lines.append("\n*Press TTL + 1 to send the next packet one hop further.*")
+    return "\n".join(lines)
+
+
+# ---- a map from several sources ---------------------------------------------------------
+sources = []
+found = set()
+coverage = []
+
+
+def discover(src):
+    """Every route from src to every other AS: a breadth-first tree."""
+    sources.append(src)
+    for a, b in nx.bfs_edges(G0, src):
+        found.add(frozenset((a, b)))
+    coverage.append((len(sources), 100 * len(found) / len(ALL_EDGES)))
+    draw_map()
+
+
+def draw_map():
+    plain()
+    for key in found:
+        e = ALL_EDGES[key]
+        e.color = "40,90,160,200"
+        e.width = 1.6
+    for s in sources:
+        nd = g.getNodeByName(s)
+        nd.color = "230,80,30"
+        nd.labelvisible = true
+
+
+def map_click(n):
+    if n.name not in sources:
+        discover(n.name)
+
+
+def add_random():
+    rest = [v for v in G0 if v not in sources]
+    discover(random.Random(len(sources)).choice(rest))
+
+
+def spread_out():
+    clear_map()
+    rnd = random.Random(1)
+    first = rnd.choice(sorted(G0))
+    picks = [first]
+    dist = nx.single_source_shortest_path_length(G0, first)
+    while len(picks) < 5:
+        far = max((v for v in G0 if v not in picks), key=lambda v: (dist[v], v))
+        picks.append(far)
+        d2 = nx.single_source_shortest_path_length(G0, far)
+        dist = {v: min(dist[v], d2[v]) for v in dist}
+    for v in picks:
+        discover(v)
+
+
+def clustered():
+    clear_map()
+    hub = max(G0, key=lambda v: (DEG[v], v))
+    near = sorted(G0[hub], key=lambda v: (-DEG[v], v))[:4]
+    for v in [hub] + near:
+        discover(v)
+
+
+def clear_map():
+    sources[:] = []
+    found.clear()
+    coverage[:] = []
+    plain()
+
+
+def map_text():
+    if not sources:
+        return ("*Click ASes to use them as vantage points*, or use the buttons. Each one sends "
+                "routes to every other AS; the links on those routes are all it can see.")
+    pct = 100 * len(found) / len(ALL_EDGES)
+    kinds = {"two hubs": [], "a hub and a smaller AS": [], "two smaller ASes": []}
+    for k in ALL_EDGES:
+        hubs = sum(1 for v in k if DEG[v] >= HUB)
+        kinds[["two smaller ASes", "a hub and a smaller AS", "two hubs"][hubs]].append(k in found)
+    parts = [f"**{100 * sum(v) / len(v):.0f}%** of links between {name_}" for name_, v in kinds.items() if v]
+    return (f"**{len(sources)}** source{'s' if len(sources) > 1 else ''} found **{len(found)}** of "
+            f"the {len(ALL_EDGES)} links (**{pct:.0f}%**), though every AS was reached. "
+            f"By kind: {', '.join(parts)} (hubs: the {len([v for v in DEG if DEG[v] >= HUB])} "
+            f"ASes with {HUB} or more links here). Each source sees one route to each "
+            "destination, so where there are many alternatives, most of them are never seen.")
+
+
+def coverage_chart():
+    if coverage:
+        plotLine(coverage, title="Links found", xlabel="sources", ylabel="% of links", dots=true)
+
+
+# ---- tabs ---------------------------------------------------------------------------
+mode = ["One route"]
+
+
+def click(n):
+    (trace_click if mode[0] == "One route" else map_click)(n)
+
+
+def switch(title):
+    mode[0] = title
+    plain()
+    trace.update(src=None, dst=None, ttl=0, path=[])
+    if title == "Build a map":
+        draw_map()
+
+
+graphevents.clickNode = click
+plain()
+hoverFields("asn", "degree", "fulldegree")
+
+ui.title("Mapping the Internet", "Networks, Sections 2.1.1–2.1.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Measuring a network nobody owns
+These are **300 autonomous systems** (ASes, the networks that make up the
+Internet) and the links between them, from Mark Newman's 2006 snapshot of BGP
+routing tables. Pretend you can't see it, and measure it."""),
+        Tabs(
+            Tab("One route",
+                Markdown("""Every packet carries a **time to live** (TTL), lowered by one at each
+hop. When it reaches zero the packet is dropped and the AS where that happened
+reports back. Sending TTL 1, 2, 3, … reveals the route hop by hop. That is
+**traceroute**."""),
+                Markdown(trace_text),
+                Row(Button("TTL + 1", onClick=ttl_up), Button("Start again", onClick=lambda: switch("One route")))),
+            Tab("Build a map",
+                Markdown(map_text),
+                Row(Button("Add a random source", onClick=add_random), Button("Clear", onClick=clear_map)),
+                Row(Button("5 spread-out sources", onClick=spread_out), Button("5 sources together", onClick=clustered)),
+                Chart(coverage_chart),
+                Markdown("""*The same happens with BGP routing tables (Section 2.1.2): each
+router's table lists its routes to every destination, so a map built from
+tables is a union of route trees too.*""")),
+            onChange=switch)),
+    sizes={"right": 350},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} ASes · {len(g.edges)} links · data: M. Newman, Route Views BGP tables, 22 July 2006"))
+center()

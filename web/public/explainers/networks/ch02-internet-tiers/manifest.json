@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The shape of the Internet",
+  "description": "The Internet's backbone, ISPs and end users, and the same network seen at the level of routers, subnets, domains and autonomous systems.",
+  "console": "toggle",
+  "script": "main.gy"
+}

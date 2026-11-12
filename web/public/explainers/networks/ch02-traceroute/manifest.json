@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Mapping the Internet",
+  "description": "Trace a route hop by hop, then map a real piece of the Internet from a few vantage points and see which links the map misses.",
+  "console": "toggle",
+  "script": "main.gy"
+}
