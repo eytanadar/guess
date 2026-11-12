@@ -75,6 +75,7 @@ EXAMPLES = [
         ("Legend for a mapping", "colorize(dept)\nlegendFor(dept)", "key"),
         ("Edge width by weight", "sizeBy(freq, 1, 8)", "thickness edges"),
         ("Curved, mixed-colour edges", "curvedEdges()\nsetEdgeColorMode('mixed')", "gephi arcs"),
+        ("Line styles and arrowheads", "lineStyleBy(directed)\ng.edges.arrowhead = 'swept'", "dashed dotted taper wave double fuzzy gradient flow arrow head"),
         ("Readable labels", "labelOutlines()\nhideOverlappingLabels()", "halo cull overlap"),
         ("Shade a group", "createConvexHull(dept == 'dept1', '200,200,255,90')", "hull region"),
         ("Ellipse or box around a group", "encircle(dept == 'dept1')\nencircle(dept == 'dept2', 'box')", "encircle ellipse box rotate group outline"),

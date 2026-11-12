@@ -486,7 +486,7 @@ class Session:
     # what each cell changed -------------------------------------------------------
     _ASPECT = {"x": "position", "y": "position", "width": "size", "height": "size", "size": "size",
                "labelvisible": "label", "labelcolor": "label", "labelsize": "label", "labelpos": "label",
-               "strokecolor": "border"}
+               "strokecolor": "border", "linestyle": "line style", "arrowhead": "arrowheads"}
     PROVENANCE_CAP = 50000
 
     def _note_provenance(self, cell, code, journal):

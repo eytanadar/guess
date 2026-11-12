@@ -23,7 +23,7 @@ Commands can be called without parentheses when they take no arguments
 - [Structure-aware layout (motifLayout, after LUMINA)](#structure-aware-layout-motiflayout-after-lumina) (1)
 - [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (35)
-- [Styles and visual mappings](#styles-and-visual-mappings) (12)
+- [Styles and visual mappings](#styles-and-visual-mappings) (14)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
 - [Several graphs: subgraphs and tabs](#several-graphs-subgraphs-and-tabs) (7)
@@ -2052,6 +2052,13 @@ Stop recording and download the video.
 
 applyStyle(name) runs a style's commands (one undo step).
 
+### `arrowheadBy(field)`
+
+arrowheadBy(field) gives each value of an edge field its own
+arrowhead (triangle, swept, open, diamond, circle, tee, then
+repeating), the most common value first; heads show on directed edges.
+One edge: e.arrowhead = "swept"; "none" leaves the head off.
+
 ### `defineStyle(name, commands)`
 
 defineStyle(name, [command, ...]) saves a named style: Gython lines that
@@ -2074,6 +2081,15 @@ one entry per value (for categories, as after colorize), or a gradient
 from the lowest to the highest value (for numbers, as after colorBy).
 The legend follows the colours: run colorize or colorBy again and it
 updates (until you add or remove entries yourself).
+
+### `lineStyleBy(field)`
+
+lineStyleBy(field) gives each value of an edge field its own line
+style (solid, dashed, dotted, double, wave, taper, fuzzy, then
+repeating), the most common value first. One edge: e.linestyle = "dashed";
+the styles are solid, dashed, dotted, taper (narrows towards the
+target), wave, double, fuzzy, gradient (source colour to target colour)
+and flow (dashes moving towards the target).
 
 ### `polygon(sides)`
 
@@ -3021,6 +3037,13 @@ curvedEdges()
 setEdgeColorMode('mixed')
 ```
 
+**Line styles and arrowheads**
+
+```python
+lineStyleBy(directed)
+g.edges.arrowhead = 'swept'
+```
+
 **Readable labels**
 
 ```python
@@ -3859,6 +3882,8 @@ Built-in edge fields:
 | `label` | VARCHAR | None |
 | `labelvisible` | BOOLEAN | False |
 | `labelsize` | DOUBLE | 1.0 |
+| `linestyle` | VARCHAR | 'solid' |
+| `arrowhead` | VARCHAR | 'triangle' |
 
 Computed node fields (calculated the first time they are used, by name or
 as `n.<field>`; `recompute()` after editing the graph): `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`, `harmonic`, `eccentricity`, `clustering`, `triangles`, `coreness`, `strength`, `component`, `strongcomponent`, `betweenness`, `degrank`, `hits`, `rwbetweenness`, `knn`; edge field `betweenness`.

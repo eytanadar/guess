@@ -1573,6 +1573,32 @@ removeConvexHulls()
   under the graph (a map, say), and `removeBackgroundImage()` takes it away.
 - **Arrows**: `overrideArrowLength(12)`, `overrideArrowWidth(6)`.
 
+**Line styles and arrowheads.** Each edge has a `linestyle` and, when it is
+directed, an `arrowhead`:
+
+```python
+g.edges.linestyle = 'dashed'          # every edge; e.linestyle for one
+g.edges.arrowhead = 'swept'
+lineStyleBy(directed)                 # a style per value, the most common first
+arrowheadBy(directed)
+```
+
+- `linestyle` is `solid` (the default), `dashed`, `dotted`, `taper` (wide at
+  the source, a point at the target, so direction shows without arrows),
+  `wave`, `double`, `fuzzy`, `gradient` (the source node's colour fading to
+  the target's) or `flow` (dashes moving from source to target; still, if
+  your system asks for less motion).
+- `arrowhead` is `triangle` (the default), `swept`, `open`, `diamond`,
+  `circle`, `tee` or `none`.
+- In the *Style* panel, *Line style* and *Arrowhead* give each value of an
+  edge field its own style. SVG export draws them all, and flow edges keep
+  moving in the SVG. DOT files' `arrowhead` and `style` (dashed, dotted,
+  tapered) are read and written.
+- Curved, weighted flows: `curvedEdges()`, `g.edges.arrowhead = 'swept'`,
+  `sizeBy(weight, 0.5, 7)` and `colorBy(weight, lightgray, '50,70,90')`.
+
+![Line styles (left) and arrowheads (right).](img/edgestyles.png)
+
 ![Dark theme, with colorize(dept), labelBy(name) and hideOverlappingLabels().](img/dark.png)
 
 ## 12.4 Labels inside nodes, positions and sizes

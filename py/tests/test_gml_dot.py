@@ -119,7 +119,7 @@ def test_dot_reader_maps_more_attributes(tmp_path):
     assert (a.x + a.width / 2, a.y + a.height / 2) == pytest.approx((10 / 3, -20 / 3))
     assert b.label == "Bee" and not b.visible and r.label == "left mid right"
     es = {(e._n1._name, e._n2._name): e for e in g.edges}
-    assert es[("a", "b")].labelcolor.lower() in ("green", "#008000", "0,128,0") and es[("a", "b")].style == "dashed"
+    assert es[("a", "b")].labelcolor.lower() in ("green", "#008000", "0,128,0") and es[("a", "b")].linestyle == "dashed"
     assert ("r", "b") in es and es[("r", "b")]._directed            # dir=back reverses
     assert not es[("r", "a")]._directed and not es[("r", "a")].visible
     assert g.getNodeByName("c").cluster == "x" and g.getNodeByName("c").clusterlabel == "Group X"

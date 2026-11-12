@@ -112,7 +112,7 @@ export class StylePanel {
   private async build() {
     const [nf, ef] = await Promise.all([this.host.fields("n"), this.host.fields("e")]);
     this.nodeFields = new Set(nf.map((f) => f.name));
-    const skip = new Set(["x", "y", "visible", "color", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "label", "labelvisible", "labelpos", "labelsize", "directed"]);
+    const skip = new Set(["x", "y", "visible", "color", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "label", "labelvisible", "labelpos", "labelsize", "directed", "linestyle", "arrowhead"]);
     this.form.replaceChildren();
     const target = select([["n", "Nodes"], ["e", "Edges"]]);
     const prop = select([]);
@@ -128,7 +128,8 @@ export class StylePanel {
       const p = prop.value;
       prop.replaceChildren(...(kind === "n"
         ? [["color", "Colour"], ["size", "Size"], ["label", "Label"], ["labelsize", "Label size"], ["shape", "Shape"]]
-        : [["color", "Colour"], ["size", "Width"], ["label", "Label"], ["labelsize", "Label size"]]).map(([v, t]) => {
+        : [["color", "Colour"], ["size", "Width"], ["label", "Label"], ["labelsize", "Label size"],
+           ["linestyle", "Line style"], ["arrowhead", "Arrowhead"]]).map(([v, t]) => {
         const o = el("option") as HTMLOptionElement;
         o.value = v;
         o.textContent = t;
@@ -221,8 +222,14 @@ export class StylePanel {
         range.append(lo, " to ", hi);
         opts.append(labelled("from / to (1 = normal)", range), labelled("scale", scale));
         getCode = () => `labelSizeBy(${ref}, ${Number(lo.value)}, ${Number(hi.value)}, ${JSON.stringify(scale.value)})`;
-      } else {
+      } else if (prop.value === "shape") {
         getCode = () => `shapeBy(${ref})`;
+      } else if (prop.value === "linestyle" || prop.value === "arrowhead") {
+        // a style per value, the most common value first (solid lines / triangles)
+        opts.append(el("p", "pf-note", prop.value === "linestyle"
+          ? "Each value gets a line style: solid, dashed, dotted, double, wave, taper, …"
+          : "Each value gets an arrowhead (directed edges): triangle, swept, open, diamond, circle, tee, …"));
+        getCode = () => `${prop.value === "linestyle" ? "lineStyleBy" : "arrowheadBy"}(${ref})`;
       }
     };
     target.onchange = fill;
@@ -356,7 +363,7 @@ export class FilterPanel {
     this.adder.replaceChildren();
     const opts: [string, string][] = [];
     for (const f of this.nf) if (!["x", "y", "visible", "fixed", "width", "height", "style", "labelvisible", "strokecolor", "labelcolor", "labelpos", "labelsize"].includes(f.name)) opts.push([`n:${f.name}`, `node ${f.name}`]);
-    for (const f of this.ef) if (!["visible", "labelvisible", "labelcolor", "labelsize"].includes(f.name)) opts.push([`e:${f.name}`, `edge ${f.name}`]);
+    for (const f of this.ef) if (!["visible", "labelvisible", "labelcolor", "labelsize", "linestyle", "arrowhead"].includes(f.name)) opts.push([`e:${f.name}`, `edge ${f.name}`]);
     opts.push(["s:kcore", "k-core (structure)"], ["s:giant", "largest component"], ["s:ego", "ego network of a node"], ["s:groups", "groups of at least N"]);
     const pick = select(opts);
     const add = el("button", "", "Add");

@@ -17,6 +17,9 @@ LEGEND_MAX = 300   # rows a legendFor legend lists when expanded
 
 # node shapes cycled by shapeBy: circle, square, rounded square, triangle, diamond, hexagon, octagon
 SHAPES = [2, 1, 3, 11, 12, 13, 14]
+# the order lineStyleBy / arrowheadBy hand out styles: the most distinct first
+LINE_BY = ["solid", "dashed", "dotted", "double", "wave", "taper", "fuzzy"]
+HEAD_BY = ["triangle", "swept", "open", "diamond", "circle", "tee"]
 
 
 def install(session):
@@ -53,6 +56,32 @@ def install(session):
         groups = sorted(group_by(f.elements(), f), key=len, reverse=True)
         for i, grp in enumerate(groups):
             grp.style = SHAPES[i % len(SHAPES)]
+
+    def per_value(field, what, attr, choices):
+        f = field_arg(field, what)
+        if f.kind != EDGE:
+            raise GuessError(f"{what} needs an edge field")
+        groups = sorted(group_by(f.elements(), f), key=len, reverse=True)
+        for i, grp in enumerate(groups):
+            setattr(grp, attr, choices[i % len(choices)])
+
+    @cmd
+    def lineStyleBy(field):
+        """lineStyleBy(field) gives each value of an edge field its own line
+        style (solid, dashed, dotted, double, wave, taper, fuzzy, then
+        repeating), the most common value first. One edge: e.linestyle = "dashed";
+        the styles are solid, dashed, dotted, taper (narrows towards the
+        target), wave, double, fuzzy, gradient (source colour to target colour)
+        and flow (dashes moving towards the target)."""
+        per_value(field, "lineStyleBy", "linestyle", LINE_BY)
+
+    @cmd
+    def arrowheadBy(field):
+        """arrowheadBy(field) gives each value of an edge field its own
+        arrowhead (triangle, swept, open, diamond, circle, tee, then
+        repeating), the most common value first; heads show on directed edges.
+        One edge: e.arrowhead = "swept"; "none" leaves the head off."""
+        per_value(field, "arrowheadBy", "arrowhead", HEAD_BY)
 
     @cmd
     def polygon(sides):

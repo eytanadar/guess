@@ -252,3 +252,34 @@ def test_pie_from_list_field(big):
     assert not big.run("pieChart([shares, indegree])")
     assert not big.run("Node.empty = ''\npieChart(empty)")
     assert big.run("removePies()")
+
+
+def test_edge_line_styles_and_arrowheads(big, tmp_path):
+    e = ev(big, "g.edges[0]")
+    rec = big.edge_record(e)
+    assert "st" not in rec and "ah" not in rec                  # defaults send nothing
+    assert big.run("g.edges[0].linestyle = 'Dashed'\ng.edges[0].arrowhead = 'swept'"), big.rec.of("error")
+    rec = big.edge_record(e)
+    assert rec["st"] == "dashed" and rec["ah"] == "swept"
+    assert not big.run("g.edges[0].linestyle = 'zigzag'")
+    assert "solid, dashed" in big.rec.of("error")[-1]["summary"]
+    assert not big.run("g.edges[0].arrowhead = 'arrow'")
+    # one per value, the most common value first
+    assert big.run("lineStyleBy(directed)\narrowheadBy(directed)"), big.rec.of("error")
+    styles = {x.linestyle for x in big.graph._edges_list()}
+    assert styles <= {"solid", "dashed"} and len(styles) == len({x._directed for x in big.graph._edges_list()})
+    assert not big.run("lineStyleBy(dept)")                     # a node field
+    # saved with the session
+    assert big.run("g.edges[1].linestyle = 'flow'")
+    t = roundtrip(big)
+    assert t.graph._edges_list()[1].linestyle == "flow"
+    # Graphviz arrowheads and styles map both ways
+    p = tmp_path / "d.dot"
+    p.write_text('digraph { a -> b [arrowhead=vee, style="dashed,bold"]; b -> c [arrowhead=odot]; c -> a }')
+    assert big.run(f"makeFromFile({str(p)!r})"), big.rec.of("error")
+    es = {(x._n1._name, x._n2._name): x for x in big.graph._edges_list()}
+    assert (es["a", "b"].arrowhead, es["a", "b"].linestyle) == ("swept", "dashed")
+    assert es["b", "c"].arrowhead == "circle" and es["c", "a"].arrowhead == "triangle"
+    from guess import dot
+    out = dot.write_dot(big.graph)
+    assert 'arrowhead="vee"' in out and 'style="dashed"' in out and 'arrowhead="dot"' in out
