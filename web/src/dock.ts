@@ -686,55 +686,63 @@ export class Dock {
   /** showMatrix: one cell per edge (both ways when undirected), rows and columns in the given
    *  order, lines between groups; hovering a cell highlights its edge and nodes. */
   private drawMatrix(c: ChartMsg, body: HTMLElement, key: string) {
-    const labels = c.labels ?? [], ids = c.ids ?? [], cells = c.cells ?? [];
-    const n = Math.max(labels.length, 1);
-    const named = n <= 40;
-    const pad = named ? 46 : 6, W = 300, size = W - pad - 4;
-    const step = size / n;
+    const rl = c.labels ?? [], rids = c.ids ?? [], cells = c.cells ?? [];
+    const cl = c.clabels ?? rl, cids = c.cids ?? rids;
+    const nr = Math.max(rl.length, 1), nc = Math.max(cl.length, 1);
+    const named = Math.max(nr, nc) <= 40;
+    const pad = named ? 46 : 6, W = 300;
+    const step = (W - pad - 4) / Math.max(nr, nc);
+    const wid = step * nc, hei = step * nr;
+    const H = pad + hei + 4;
     const svg = document.createElementNS(SVG, "svg");
-    svg.setAttribute("viewBox", `0 0 ${W} ${W}`);
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     svg.setAttribute("class", "chart matrix");
     const frame = document.createElementNS(SVG, "rect");
     frame.setAttribute("x", String(pad)); frame.setAttribute("y", String(pad));
-    frame.setAttribute("width", String(size)); frame.setAttribute("height", String(size));
+    frame.setAttribute("width", String(wid)); frame.setAttribute("height", String(hei));
     frame.setAttribute("class", "matrix-frame");
     svg.append(frame);
-    const g = c.groups;
-    if (g) {
-      for (let i = 1; i < n; i++) {
-        if (g[i] === g[i - 1]) continue;
-        for (const [x1, y1, x2, y2] of [[pad, pad + i * step, pad + size, pad + i * step], [pad + i * step, pad, pad + i * step, pad + size]]) {
-          const l = document.createElementNS(SVG, "line");
-          l.setAttribute("x1", String(x1)); l.setAttribute("y1", String(y1));
-          l.setAttribute("x2", String(x2)); l.setAttribute("y2", String(y2));
-          l.setAttribute("class", "matrix-group");
-          svg.append(l);
-        }
-      }
-    }
+    const line = (x1: number, y1: number, x2: number, y2: number) => {
+      const l = document.createElementNS(SVG, "line");
+      l.setAttribute("x1", String(x1)); l.setAttribute("y1", String(y1));
+      l.setAttribute("x2", String(x2)); l.setAttribute("y2", String(y2));
+      l.setAttribute("class", "matrix-group");
+      svg.append(l);
+    };
+    const rg = c.groups, cg = c.cgroups ?? (c.clabels ? undefined : c.groups);
+    if (rg) for (let i = 1; i < nr; i++) if (rg[i] !== rg[i - 1]) line(pad, pad + i * step, pad + wid, pad + i * step);
+    if (cg) for (let j = 1; j < nc; j++) if (cg[j] !== cg[j - 1]) line(pad + j * step, pad, pad + j * step, pad + hei);
+    const short = (t: string) => (t.length > 8 ? t.slice(0, 7) + "…" : t);
     if (named) {
-      labels.forEach((t, i) => {
-        const short = t.length > 8 ? t.slice(0, 7) + "…" : t;
+      rl.forEach((t, i) => {
         const row = document.createElementNS(SVG, "text");
         row.setAttribute("x", String(pad - 3)); row.setAttribute("y", String(pad + (i + 0.5) * step + 2.5));
-        row.setAttribute("class", "tick"); row.textContent = short;
+        row.setAttribute("class", "tick"); row.textContent = short(t);
+        svg.append(row);
+      });
+      cl.forEach((t, j) => {
         const col = document.createElementNS(SVG, "text");
-        col.setAttribute("transform", `translate(${pad + (i + 0.5) * step + 2.5},${pad - 3}) rotate(-90)`);
-        col.setAttribute("class", "xtick matrix-col"); col.textContent = short;
-        svg.append(row, col);
+        col.setAttribute("transform", `translate(${pad + (j + 0.5) * step + 2.5},${pad - 3}) rotate(-90)`);
+        col.setAttribute("class", "xtick matrix-col"); col.textContent = short(t);
+        svg.append(col);
       });
     }
     const max = Math.max(1e-9, ...cells.map((x) => Math.abs(x[2])));
+    const shaded = c.weighted || cells.some((x) => x[2] !== 1);
+    const numbers = !!c.numbers && Math.max(nr, nc) <= 30;
+    const fontPx = Math.max(4, Math.min(11, step * 0.5));
+
     const marks: { el: SVGElement; keys: Set<string> }[] = [];
     for (const [r, k, v, eid] of cells) {
+
       const rect = document.createElementNS(SVG, "rect");
       rect.setAttribute("x", String(pad + k * step)); rect.setAttribute("y", String(pad + r * step));
       rect.setAttribute("width", String(Math.max(step, 0.6))); rect.setAttribute("height", String(Math.max(step, 0.6)));
       rect.setAttribute("class", "mark matrix-cell");
-      rect.setAttribute("fill-opacity", String(c.weighted ? 0.2 + (0.8 * Math.abs(v)) / max : 1));
-      const items: Item[] = [["e", eid], ["n", ids[r]], ["n", ids[k]]];
-      const title = `${labels[r]} → ${labels[k]}`;
-      const lines = c.weighted ? [`weight: ${fmt(v)}`] : [];
+      rect.setAttribute("fill-opacity", String(shaded ? 0.25 + (0.75 * Math.abs(v)) / max : 1));
+      const items: Item[] = [["e", eid], ["n", rids[r]], ["n", cids[k]]];
+      const title = `${rl[r]} → ${cl[k]}`;
+      const lines = [`value: ${fmt(v)}`];
       rect.addEventListener("mouseenter", (ev) => { rect.classList.add("hot"); this.host.hover(items, title, lines, ev); });
       rect.addEventListener("mousemove", (ev) => this.host.hover(items, title, lines, ev));
       rect.addEventListener("mouseleave", () => { rect.classList.remove("hot"); this.host.hover(null, "", [], null); });
@@ -742,6 +750,21 @@ export class Dock {
       rect.addEventListener("contextmenu", (ev) => { ev.preventDefault(); this.host.context(items, ev, undefined, title); });
       marks.push({ el: rect, keys: new Set([`e${eid}`]) });
       svg.append(rect);
+    }
+    if (numbers) {
+      const valueAt = new Map(cells.map(([r, k, v]) => [`${r},${k}`, v]));
+      for (let r = 0; r < nr; r++) {
+        for (let k = 0; k < nc; k++) {
+          const v = valueAt.get(`${r},${k}`) ?? 0;
+          const t = document.createElementNS(SVG, "text");
+          t.setAttribute("x", String(pad + (k + 0.5) * step));
+          t.setAttribute("y", String(pad + (r + 0.5) * step));
+          t.setAttribute("class", v ? "matrix-num on" : "matrix-num");
+          t.setAttribute("font-size", String(fontPx));
+          t.textContent = fmt(v);
+          svg.append(t);
+        }
+      }
     }
     body.replaceChildren(svg);
     this.marks.set(key, marks);
