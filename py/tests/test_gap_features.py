@@ -139,3 +139,34 @@ def test_every_paced_goes_slow_fast_slow():
         s.rec.clear()
         s.dispatch(timers[-1]["id"], "tick")
     assert ev(s, "n[0]") == 0 and not ev(s, "t2.running")
+
+
+def test_show_matrix_numbers_self_loops_and_rectangles():
+    s = _s()
+    assert s.run("makeSample('kite')"), s.rec.of("error")
+    a = ev(s, "g.nodes[0]")
+    assert s.run(f"addEdge({a.name}, {a.name})\nshowMatrix(numbers=true)"), s.rec.of("error")
+    m = _charts(s)[-1]
+    diag = [c for c in m["cells"] if c[0] == c[1]]
+    assert m["numbers"] and diag and diag[0][2] == 2                     # an undirected self-edge counts 2
+    assert s.run("makeSample('davis')\nshowMatrix(rows=(bipartite == 1), cols=(bipartite == 0), numbers=true)"), s.rec.of("error")
+    m = _charts(s)[-1]
+    assert len(m["labels"]) == 14 and len(m["clabels"]) == 18 and m["title"].startswith("Incidence")
+    assert len(m["cells"]) == len(s.graph.edges)
+
+
+def test_map_colouring_crossings_layers_and_spectrum():
+    s = _s()
+    assert s.run("makeFromMap('usa')"), s.rec.of("error")
+    assert len(s.graph.nodes) == 48 and ev(s, "colorGraph()") <= 5
+    assert all(e.node1.color_class != e.node2.color_class for e in s.graph.edges)
+    assert s.run("makeSample('karate')\ncircleLayout()"), s.rec.of("error")
+    assert ev(s, "edgeCrossings()") == ev(s, "len(edgeCrossings(pairs=true))") > 0
+    sp = ev(s, "spectrum()")
+    assert sp[0] == 0 and sp[1] > 0 and len(sp) == 34
+    assert s.run("remove([e for e in g.edges if (e.node1.club == 'Mr Hi') != (e.node2.club == 'Mr Hi')])")
+    assert ev(s, "spectrum()")[1] == 0                                   # two components: two zeros
+    assert s.run("Edge.kind = ''\nfor i, e in enumerate(g.edges):\n    e.kind = 'a' if i % 2 else 'b'\n\n"
+                 "expandLayers(kind, directed=true)"), s.rec.of("error")
+    assert ev(s, "graphNames()[0]") == "layers" and ev(s, "len(kind == 'interlayer')") > 0
+    assert ev(s, "set(n.layer for n in g.nodes)") == {"a", "b"}
