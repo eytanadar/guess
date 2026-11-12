@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The small-world experiment",
+  "description": "Send letters through acquaintances towards a target: chain lengths, lost letters and funnelling.",
+  "console": "toggle",
+  "script": "main.gy"
+}

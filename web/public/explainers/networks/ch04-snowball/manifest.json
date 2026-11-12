@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Sampling hidden populations",
+  "description": "Snowball against random-walk sampling: who gets found, and how to correct for it.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -1,0 +1,116 @@
+# Sociograms and what an edge means  (Newman, Networks, Section 4.1)
+# Jacob Moreno drew the first social networks, "sociograms", in the 1930s: a
+# class with boys as triangles and girls as circles showed at a glance that
+# friendships rarely crossed between them. What counts as a tie, though, is a
+# choice. This invented class of 30 has three kinds: best friends, seat
+# neighbours and recess playmates.
+
+import random
+import networkx as nx
+
+rnd = random.Random(12)
+KIDS = [f"b{i}" for i in range(15)] + [f"g{i}" for i in range(15)]
+gender = {k: "boy" if k[0] == "b" else "girl" for k in KIDS}
+NAMES = ["Abe", "Bo", "Cy", "Dan", "Eli", "Fin", "Gus", "Hal", "Ike", "Jim", "Kit", "Lou", "Max", "Ned", "Oz",
+         "Amy", "Bea", "Cat", "Dot", "Eve", "Fay", "Gem", "Hope", "Ivy", "Joy", "Kay", "Liz", "May", "Nan", "Ora"]
+G = nx.MultiGraph()
+for k, nm in zip(KIDS, NAMES):
+    G.add_node(k, gender=gender[k], label=nm)
+
+# best friends: almost always the same sex (one boy-girl pair, as in Moreno's class)
+friends = set()
+for k in KIDS:
+    same = [j for j in KIDS if j != k and gender[j] == gender[k]]
+    for j in rnd.sample(same, 2):
+        friends.add(frozenset((k, j)))
+friends.add(frozenset(("b3", "g7")))
+# seat neighbours: the seating chart, five rows of six, mixed
+seats = KIDS[:]
+rnd.shuffle(seats)
+seat = {k: (i % 6, i // 6) for i, k in enumerate(seats)}
+near = {frozenset((a, b)) for a in KIDS for b in KIDS if a < b and
+        abs(seat[a][0] - seat[b][0]) + abs(seat[a][1] - seat[b][1]) == 1}
+# recess: games of four or five, mostly but not only by sex
+pool = KIDS[:]
+rnd.shuffle(pool)
+pool.sort(key=lambda k: (gender[k] if rnd.random() < 0.75 else rnd.choice(["boy", "girl"])))
+play = set()
+for i in range(0, 30, 5):
+    grp = pool[i:i + 5]
+    play |= {frozenset((a, b)) for a in grp for b in grp if a < b and rnd.random() < 0.8}
+for kind_, pairs in (("best friends", friends), ("seat neighbours", near), ("recess playmates", play)):
+    for p in pairs:
+        a, b = sorted(p)
+        G.add_edge(a, b, tie=kind_)
+
+# drawn the way a sociogram would be: friends together
+pos = nx.spring_layout(nx.Graph([tuple(p) for p in friends]), seed=3, iterations=200)
+for k in KIDS:
+    px, py = pos.get(k, (rnd.uniform(-1, 1), rnd.uniform(-1, 1)))
+    G.nodes[k]["pos"] = (px * 420, py * 420)
+fromNetworkX(G)
+NODE = {n.name: n for n in g.nodes}
+for n in g.nodes:
+    n.style = 11 if n.gender == "boy" else 2
+    n.color = "90,140,220" if n.gender == "boy" else "230,110,150"
+    n.width = n.height = 18
+    n.labelvisible = true
+ss("sociogram")
+for k, n in NODE.items():
+    n.x, n.y = seat[k][0] * 120, seat[k][1] * 110
+ss("classroom")
+morph("sociogram", 0)
+TIES = ["best friends", "seat neighbours", "recess playmates", "all three"]
+COLOUR = {"best friends": "60,60,60", "seat neighbours": "200,150,40", "recess playmates": "60,160,110"}
+showing = ["best friends"]
+
+
+def show(choice):
+    showing[0] = choice
+    for e in g.edges:
+        e.visible = choice == "all three" or e.tie == choice
+        e.color = COLOUR[e.tie]
+        e.width = 2
+
+
+def mixing():
+    seen = [e for e in g.edges if e.visible]
+    bb = sum(1 for e in seen if e.node1.gender == e.node2.gender == "boy")
+    gg = sum(1 for e in seen if e.node1.gender == e.node2.gender == "girl")
+    bg = len(seen) - bb - gg
+    m = len(seen) or 1
+    # assortativity for a two-valued attribute: (sum e_ii - sum a_i^2) / (1 - sum a_i^2)
+    e_bb, e_gg, e_bg = bb / m, gg / m, bg / (2 * m)
+    a_b, a_g = e_bb + e_bg, e_gg + e_bg
+    r = ((e_bb + e_gg) - (a_b ** 2 + a_g ** 2)) / (1 - (a_b ** 2 + a_g ** 2) or 1)
+    return (f"**{len(seen)}** ties shown: **{bb}** boy–boy, **{gg}** girl–girl and **{bg}** boy–girl.\n\n"
+            f"Assortativity by sex: **{r:+.2f}** (1: ties never cross, 0: as if at random, "
+            "negative: ties prefer to cross).")
+
+
+def arrange(choice):
+    morph("classroom" if choice.startswith("Seats") else "sociogram", 900)
+
+
+show("best friends")
+ui.title("Sociograms and what an edge means", "Networks, Section 4.1")
+ui.layout(
+    right=Column(
+        Markdown("""### A sociogram
+In 1934 Jacob Moreno drew friendships in a class with **boys as triangles**
+and **girls as circles**. One look showed that friendships almost never
+crossed between them. Pictures like this persuaded sociologists that
+networks were worth studying.
+
+But what counts as a **tie**? The same 30 (invented) children are joined
+differently by friendship, by where they sit, and by whom they play with."""),
+        Dropdown(TIES, label="Tie", onChange=show),
+        Dropdown(["Drawn as a sociogram (friends together)", "Seats in the classroom"], label="Place", onChange=arrange),
+        Markdown(mixing),
+        Markdown("""*Try:* seat neighbours mix freely, because the teacher chose the seats.
+The network you study depends on the question you ask.""")),
+    sizes={"right": 330},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: "30 children (invented) · triangles: boys · circles: girls"))
+center()

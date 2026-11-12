@@ -419,6 +419,10 @@ export class Dock {
   /** Draw a chart into body; key names its marks (the panel, or a Chart widget). */
   private drawChart(c: ChartMsg, body: HTMLElement, key: string) {
     body.classList.add("chart-body");
+    if (c.kind === "matrix") {
+      this.drawMatrix(c, body, key);
+      return;
+    }
     const W = 300, H = c.kind === "pie" ? 230 : 190;
     const svg = document.createElementNS(SVG, "svg");
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -674,6 +678,70 @@ export class Dock {
       xl.textContent = c.kind === "distrib" ? c.xlabel : "";
       svg.append(xl);
       this.brush(svg, W, left, top, pw, ph, bw, items, c);
+    }
+    body.replaceChildren(svg);
+    this.marks.set(key, marks);
+  }
+
+  /** showMatrix: one cell per edge (both ways when undirected), rows and columns in the given
+   *  order, lines between groups; hovering a cell highlights its edge and nodes. */
+  private drawMatrix(c: ChartMsg, body: HTMLElement, key: string) {
+    const labels = c.labels ?? [], ids = c.ids ?? [], cells = c.cells ?? [];
+    const n = Math.max(labels.length, 1);
+    const named = n <= 40;
+    const pad = named ? 46 : 6, W = 300, size = W - pad - 4;
+    const step = size / n;
+    const svg = document.createElementNS(SVG, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${W}`);
+    svg.setAttribute("class", "chart matrix");
+    const frame = document.createElementNS(SVG, "rect");
+    frame.setAttribute("x", String(pad)); frame.setAttribute("y", String(pad));
+    frame.setAttribute("width", String(size)); frame.setAttribute("height", String(size));
+    frame.setAttribute("class", "matrix-frame");
+    svg.append(frame);
+    const g = c.groups;
+    if (g) {
+      for (let i = 1; i < n; i++) {
+        if (g[i] === g[i - 1]) continue;
+        for (const [x1, y1, x2, y2] of [[pad, pad + i * step, pad + size, pad + i * step], [pad + i * step, pad, pad + i * step, pad + size]]) {
+          const l = document.createElementNS(SVG, "line");
+          l.setAttribute("x1", String(x1)); l.setAttribute("y1", String(y1));
+          l.setAttribute("x2", String(x2)); l.setAttribute("y2", String(y2));
+          l.setAttribute("class", "matrix-group");
+          svg.append(l);
+        }
+      }
+    }
+    if (named) {
+      labels.forEach((t, i) => {
+        const short = t.length > 8 ? t.slice(0, 7) + "…" : t;
+        const row = document.createElementNS(SVG, "text");
+        row.setAttribute("x", String(pad - 3)); row.setAttribute("y", String(pad + (i + 0.5) * step + 2.5));
+        row.setAttribute("class", "tick"); row.textContent = short;
+        const col = document.createElementNS(SVG, "text");
+        col.setAttribute("transform", `translate(${pad + (i + 0.5) * step + 2.5},${pad - 3}) rotate(-90)`);
+        col.setAttribute("class", "xtick matrix-col"); col.textContent = short;
+        svg.append(row, col);
+      });
+    }
+    const max = Math.max(1e-9, ...cells.map((x) => Math.abs(x[2])));
+    const marks: { el: SVGElement; keys: Set<string> }[] = [];
+    for (const [r, k, v, eid] of cells) {
+      const rect = document.createElementNS(SVG, "rect");
+      rect.setAttribute("x", String(pad + k * step)); rect.setAttribute("y", String(pad + r * step));
+      rect.setAttribute("width", String(Math.max(step, 0.6))); rect.setAttribute("height", String(Math.max(step, 0.6)));
+      rect.setAttribute("class", "mark matrix-cell");
+      rect.setAttribute("fill-opacity", String(c.weighted ? 0.2 + (0.8 * Math.abs(v)) / max : 1));
+      const items: Item[] = [["e", eid], ["n", ids[r]], ["n", ids[k]]];
+      const title = `${labels[r]} → ${labels[k]}`;
+      const lines = c.weighted ? [`weight: ${fmt(v)}`] : [];
+      rect.addEventListener("mouseenter", (ev) => { rect.classList.add("hot"); this.host.hover(items, title, lines, ev); });
+      rect.addEventListener("mousemove", (ev) => this.host.hover(items, title, lines, ev));
+      rect.addEventListener("mouseleave", () => { rect.classList.remove("hot"); this.host.hover(null, "", [], null); });
+      rect.addEventListener("click", (ev) => this.host.click(items, ev));
+      rect.addEventListener("contextmenu", (ev) => { ev.preventDefault(); this.host.context(items, ev, undefined, title); });
+      marks.push({ el: rect, keys: new Set([`e${eid}`]) });
+      svg.append(rect);
     }
     body.replaceChildren(svg);
     this.marks.set(key, marks);

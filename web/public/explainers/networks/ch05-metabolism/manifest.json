@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Five ways to draw a metabolic network",
+  "description": "Glycolysis as a bipartite, tripartite and projected network, with and without currency metabolites.",
+  "console": "toggle",
+  "script": "main.gy"
+}

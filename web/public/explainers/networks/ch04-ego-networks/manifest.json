@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Ego-centred surveys",
+  "description": "Estimate degree and clustering from a few interviews, and how many people someone knows from a list of names.",
+  "console": "toggle",
+  "script": "main.gy"
+}

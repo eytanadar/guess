@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Asking people who their friends are",
+  "description": "Name generators make directed networks; a limit on how many names people give caps out-degree but not in-degree.",
+  "console": "toggle",
+  "script": "main.gy"
+}

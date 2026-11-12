@@ -24,8 +24,9 @@ from guess import Session  # noqa: E402
 BASE = "https://websites.umich.edu/~mejn/netdata/"
 
 
-def fetch(name, folder):
-    """The GML inside name.zip (downloaded once into folder)."""
+def fetch(name, folder, multigraph=False):
+    """The GML inside name.zip (downloaded once into folder); multigraph=True
+    keeps repeated edges (the file lists some pairs more than once)."""
     z = Path(folder) / f"{name}.zip"
     if not z.exists():
         req = urllib.request.Request(BASE + z.name, headers={"User-Agent": "Mozilla/5.0 (dataset script)"})
@@ -33,7 +34,10 @@ def fetch(name, folder):
             z.write_bytes(r.read())
     with zipfile.ZipFile(z) as zf:
         gml = next(n for n in zf.namelist() if n.endswith(".gml"))
-        return nx.parse_gml(zf.read(gml).decode("utf-8", "replace").splitlines(), label="id")
+        text = zf.read(gml).decode("utf-8", "replace")
+        if multigraph:
+            text = text.replace("graph\n[", "graph\n[\n  multigraph 1", 1)
+        return nx.parse_gml(text.splitlines(), label="id")
 
 
 def scaled(pos, span=900.0):
@@ -86,7 +90,40 @@ def as_sample(folder, size=300, seed=7):
     return out
 
 
-DATASETS = {"power-grid-region": power_region, "internet-as-sample": as_sample}
+def dolphins(folder):
+    """Lusseau's 62 bottlenose dolphins of Doubtful Sound and their frequent associations."""
+    G = fetch("dolphins", folder)
+    out = nx.Graph()
+    name = {v: "".join(ch for ch in str(G.nodes[v].get("label", v)) if ch.isalnum()) for v in G}
+    name = {v: (nm if nm and not nm[0].isdigit() else "d" + nm) for v, nm in name.items()}
+    for v in G:
+        out.add_node(name[v], label=str(G.nodes[v].get("label", v)))
+    out.add_edges_from((name[a], name[b]) for a, b in G.edges())
+    out.graph["layout"] = "kkLayout(700, 700)"
+    return out
+
+
+def celegans(folder):
+    """The neural network of C. elegans (White et al.; Watts and Strogatz's
+    version): 297 neurons, directed synapses weighted by Watts' weights.
+    Neurons are named n<original number>."""
+    G = fetch("celegansneural", folder, multigraph=True)
+    out = nx.DiGraph()
+    for v in G:
+        out.add_node(f"n{G.nodes[v].get('label', v)}", label=str(G.nodes[v].get("label", v)))
+    for a, b, d in G.edges(data=True):      # repeated synapses add their weights
+        u, w = f"n{G.nodes[a].get('label', a)}", f"n{G.nodes[b].get('label', b)}"
+        wt = float(d.get("value", 1))
+        if out.has_edge(u, w):
+            out[u][w]["weight"] += wt
+        else:
+            out.add_edge(u, w, weight=wt)
+    out.graph["layout"] = "forceAtlas2Layout(iterations=300)"
+    return out
+
+
+DATASETS = {"power-grid-region": power_region, "internet-as-sample": as_sample,
+            "dolphins": dolphins, "celegans-neural": celegans}
 
 
 def main(folder, names):

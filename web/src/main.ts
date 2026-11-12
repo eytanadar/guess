@@ -22,7 +22,7 @@ import sampleGdf from "../../gdfs/sample.gdf?raw";
 // the cookbooks' datasets (and the other example graphs), deployed beside the app
 // and fetched only when a recipe opens one: makeFromGDF("karate.gdf") just works
 const datasetUrls = import.meta.glob(
-  ["../../cookbooks/data/*.{gdf,csv,txt,md,mitab,gpml}", "../../gdfs/*.gdf", "!../../gdfs/sample.gdf"],
+  ["../../cookbooks/data/*.{gdf,csv,txt,md,mitab,gpml,pdb}", "../../gdfs/*.gdf", "!../../gdfs/sample.gdf"],
   { query: "?url", import: "default", eager: true },
 ) as Record<string, string>;
 

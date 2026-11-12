@@ -60,7 +60,8 @@ _LOADERS = [(".gdf", "makeFromGDF"), (".gexf", "makeFromGEXF"), (".graphml", "ma
             (".guess", "makeFromSession"), (".py", "execfile"),
             (".mitab", "makeFromMITAB"), (".psimitab", "makeFromMITAB"), (".mif", "makeFromPSIMI"),
             (".psi", "makeFromPSIMI"), (".sbml", "makeFromSBML"), (".kgml", "makeFromKGML"),
-            (".gpml", "makeFromGPML"), (".biopax", "makeFromBioPAX")]
+            (".gpml", "makeFromGPML"), (".biopax", "makeFromBioPAX"),
+            (".pdb", "makeFromPDB"), (".cif", "makeFromPDB")]
 
 
 # extensions that don't say which format a file is in: look inside

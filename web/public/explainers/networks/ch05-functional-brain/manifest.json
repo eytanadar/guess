@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Brain networks from correlations",
+  "description": "Infer edges from correlated activity, and watch the threshold change the network.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -26,6 +26,10 @@ import shutil  # noqa: E402
 import tempfile  # noqa: E402
 _work = tempfile.mkdtemp(prefix="guess-manual-")
 shutil.copy(SAMPLE, os.path.join(_work, "sample.gdf"))
+# the bundled datasets open by name in the app too
+for _f in (ROOT / "cookbooks" / "data").glob("*"):
+    if _f.suffix in (".gdf", ".csv", ".txt", ".pdb", ".mitab", ".gpml"):
+        shutil.copy(_f, os.path.join(_work, _f.name))
 os.chdir(_work)
 
 # Graphviz layouts: the page's WebAssembly Graphviz, run through Node

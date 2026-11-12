@@ -34,11 +34,11 @@ Commands can be called without parentheses when they take no arguments
 - [Live graph streams (Gephi streaming protocol)](#live-graph-streams-gephi-streaming-protocol) (2)
 - [AI assistants (MCP bridge)](#ai-assistants-mcp-bridge) (2)
 - [Cytoscape formats: SIF, NNF, Cytoscape.js JSON, CX/CX2, XGMML, .cys sessions](#cytoscape-formats-sif-nnf-cytoscape.js-json-cx/cx2-xgmml-.cys-sessions) (7)
-- [Biology formats: PSI-MI (MITAB, XML), SBML, BioPAX, KEGG KGML, WikiPathways GPML](#biology-formats-psi-mi-mitab-xml-sbml-biopax-kegg-kgml-wikipathways-gpml) (6)
+- [Biology formats: PSI-MI (MITAB, XML), SBML, BioPAX, KEGG KGML, WikiPathways GPML](#biology-formats-psi-mi-mitab-xml-sbml-biopax-kegg-kgml-wikipathways-gpml) (7)
 - [Import and export: Excel, RDF, Bluesky, JSON, KML, shapefiles, standalone HTML](#import-and-export-excel-rdf-bluesky-json-kml-shapefiles-standalone-html) (7)
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
-- [Charts](#charts) (7)
+- [Charts](#charts) (8)
 - [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (23)
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
@@ -2591,6 +2591,21 @@ and IntAct's `miscore`; repeated evidence for a pair is merged into
 one edge with an `evidence` count (merge=false keeps one edge per
 line). An interactor paired with itself is a self-loop.
 
+### `makeFromPDB(source, cutoff=8.0, chain=None)`
+
+makeFromPDB("1ubq") or makeFromPDB("protein.pdb") turns a protein
+structure into a residue contact network: one node per amino acid
+(named like LYS48, with `residue`, `aa` (one letter), `seq`, `chain`,
+`structure` = helix, strand or coil from the file's HELIX/SHEET
+records, and its alpha-carbon's 3D position `x3`, `y3`, `z3`). Edges
+join residues next to each other along the chain (kind "chain") and
+residues whose alpha carbons are closer than `cutoff` angstroms
+(kind "contact", with `distance`). A four-character PDB id is
+downloaded from RCSB (files.rcsb.org); .pdb and .cif (mmCIF) files
+are read. chain="A" keeps one chain. Nodes are placed by the
+structure's two main directions, so the picture looks like the
+folded protein seen from its widest side.
+
 ### `makeFromPSIMI(filename, merge=True)`
 
 makeFromPSIMI("interactions.xml") opens molecular interactions in
@@ -2814,6 +2829,17 @@ Bar chart of how many elements share each value of field (largest first).
 ### `plotSizesPie(field)`
 
 Pie chart of how many elements share each value of field.
+
+### `showMatrix(order=None, weight=None, nodes=None, title=None)`
+
+showMatrix() draws the adjacency matrix: a row and a column per
+node, and a dark cell where an edge joins them (darker for a bigger
+`weight` field value, when given). order=field sorts the rows and
+columns by that field (a community, a group, a degree), with lines
+between groups, so blocks and nested patterns show; nodes= limits it
+to some nodes. Rows run from the sending node to the receiving one
+for directed edges. Hovering a cell highlights its edge and two
+nodes; clicking selects them. Up to 600 nodes.
 
 ## Interface building (panels, widgets, timers, events)
 

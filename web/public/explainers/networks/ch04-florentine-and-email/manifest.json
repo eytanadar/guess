@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Networks from records",
+  "description": "The Medici in Florence's marriage network, and an email network that changes week by week.",
+  "console": "toggle",
+  "script": "main.gy"
+}

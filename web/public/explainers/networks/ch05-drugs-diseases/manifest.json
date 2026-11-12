@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Drug, target and disease networks",
+  "description": "Bipartite drug-target networks and their projections, and a protein as a network of contacts.",
+  "console": "toggle",
+  "script": "main.gy"
+}

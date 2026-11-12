@@ -75,3 +75,34 @@ def test_drawings_record_undo_and_session_roundtrip(tmp_path):
     assert [d["k"] for d in s.view.drawings] == ["line", "text", "rect", "circle"]
     assert not s.run("drawLine(0, 0, 1, 1, style='wavy')")
     assert not s.run("drawText(0, 0, 'x', anchor='left')")
+
+
+def test_pdb_contact_network():
+    from pathlib import Path
+    pdb = Path(__file__).resolve().parents[2] / "cookbooks" / "data" / "1ubq.pdb"
+    s = _s()
+    assert s.run(f"makeFromPDB({str(pdb)!r})"), s.rec.of("error")
+    assert len(s.graph.nodes) == 76
+    assert ev(s, "len(kind == 'chain')") == 75 and ev(s, "len(kind == 'contact')") > 100
+    assert ev(s, "MET1.structure") == "strand" and ev(s, "MET1.aa") == "M"
+    assert ev(s, "max(e.distance for e in (kind == 'contact'))") < 8
+    assert s.run(f"makeFromPDB({str(pdb)!r}, cutoff=6)")
+    fewer = ev(s, "len(kind == 'contact')")
+    assert s.run(f"makeFromFile({str(pdb)!r})") and ev(s, "len(kind == 'contact')") > fewer
+    assert not s.run("makeFromPDB('nonsense')")
+
+
+def test_show_matrix_orders_and_links_cells():
+    s = _s()
+    assert s.run("showMatrix(order=dept)"), s.rec.of("error")
+    m = _charts(s)[-1]
+    assert m["kind"] == "matrix" and len(m["labels"]) == len(s.graph.nodes)
+    assert m["groups"] == sorted(m["groups"]) or len(set(m["groups"])) > 1
+    undirected = [e for e in s.graph.edges if not e.directed and e.node1 is not e.node2]
+    assert len(m["cells"]) >= 2 * len(undirected)
+    r, c, v, eid = m["cells"][0]
+    e = s.graph.edge_by_id(eid)
+    assert {m["labels"][r], m["labels"][c]} == {e.node1.name, e.node2.name}
+    assert s.run("showMatrix(nodes=(dept == 'dept3'), weight=freq)")
+    m = _charts(s)[-1]
+    assert m["weighted"] and len(m["labels"]) == ev(s, "len(dept == 'dept3')")

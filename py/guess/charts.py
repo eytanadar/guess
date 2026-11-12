@@ -178,6 +178,47 @@ def install(session):
                   "color": _color([e]), "ids": _ids([e])} for e in order]
         return emit("distrib", f"Distribution of {f.name}", f"rank-ordered {what(f)}", f.name, items, logY=bool(log))
 
+
+    def showMatrix(order=None, weight=None, nodes=None, title=None):
+        """showMatrix() draws the adjacency matrix: a row and a column per
+        node, and a dark cell where an edge joins them (darker for a bigger
+        `weight` field value, when given). order=field sorts the rows and
+        columns by that field (a community, a group, a degree), with lines
+        between groups, so blocks and nested patterns show; nodes= limits it
+        to some nodes. Rows run from the sending node to the receiving one
+        for directed edges. Hovering a cell highlights its edge and two
+        nodes; clicking selects them. Up to 600 nodes."""
+        g = session.graph
+        pool = [n for n in (nodes if nodes is not None else g.nodes) if n.visible]
+        if len(pool) > 600:
+            raise GuessError(f"showMatrix draws at most 600 nodes ({len(pool)} given): pass nodes=")
+        f = need_field(order) if order is not None else None
+        def key(n):
+            v = f.get(n) if f is not None else None
+            return (v is None, v if not isinstance(v, str) else v.lower(), n.name)
+        try:
+            pool.sort(key=key)
+        except TypeError:
+            pool.sort(key=lambda n: (str(key(n)[1]), n.name))
+        at = {n._id: i for i, n in enumerate(pool)}
+        w = need_field(weight) if weight is not None else None
+        cells = []
+        for e in g.edges:
+            if not e.visible:
+                continue
+            a, b = at.get(e._n1._id), at.get(e._n2._id)
+            if a is None or b is None:
+                continue
+            v = w.get(e) if w is not None else 1
+            v = float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 1.0
+            cells.append([a, b, v, e._id])
+            if not e.directed and a != b:
+                cells.append([b, a, v, e._id])
+        groups = [_label(f.get(n)) for n in pool] if f is not None else None
+        name = title or (f"Adjacency matrix by {f.name}" if f is not None else "Adjacency matrix")
+        return emit("matrix", name, "", "", [], labels=[n.name for n in pool], ids=[n._id for n in pool],
+                    cells=cells, groups=groups, weighted=w is not None)
+
     def liveCharts(on=True):
         """liveCharts() makes every chart live, now and from now on: each is
         recomputed after any command that changes the graph or the display.
@@ -192,5 +233,5 @@ def install(session):
                 session.emit({"type": "liveState", "id": cid, "live": False})
             session.live_charts.clear()
 
-    for fn in (plotHistogram, plotFrequency, plotLine, plotSizes, plotSizesPie, plotDistrib, liveCharts):
+    for fn in (plotHistogram, plotFrequency, plotLine, showMatrix, plotSizes, plotSizesPie, plotDistrib, liveCharts):
         session.register_command(fn.__name__, fn)

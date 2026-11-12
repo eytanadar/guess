@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Building a network by watching",
+  "description": "Sightings of real dolphin pairs accumulate into a network; the threshold decides which ties count.",
+  "console": "toggle",
+  "script": "main.gy"
+}

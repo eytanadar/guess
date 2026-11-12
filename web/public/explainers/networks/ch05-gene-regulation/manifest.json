@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Switching genes on and off",
+  "description": "Promoting and inhibiting edges, and a Boolean simulation of a switch, an oscillator and a pathway.",
+  "console": "toggle",
+  "script": "main.gy"
+}

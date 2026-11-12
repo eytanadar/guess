@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The wiring of C. elegans",
+  "description": "The worm's 297 neurons and their synapses, and signals spreading through them.",
+  "console": "toggle",
+  "script": "main.gy"
+}

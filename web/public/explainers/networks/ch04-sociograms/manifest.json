@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Sociograms and what an edge means",
+  "description": "A class drawn the way Moreno drew it, and how the network changes with the kind of tie.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -462,11 +462,26 @@ node's id added, and the original stays as the label.
 | SBML (systems biology models) | `makeFromSBML`: species, and reactions as small grey nodes (`reactions="edges"` for edges instead) |
 | BioPAX level 3 (Reactome, Pathway Commons) | `makeFromBioPAX`: a simple network of molecules, after Pathway Commons' rules (`mode="reactions"` keeps the reactions) |
 | KEGG KGML, WikiPathways GPML | `makeFromKGML`, `makeFromGPML`: the map as drawn |
+| Protein structures (PDB, mmCIF) | `makeFromPDB`: a residue contact network, from a file or a PDB id downloaded from RCSB |
 
 Interaction files name proteins by gene name, with `ident`, `taxid` and
 `species`; repeated evidence for a pair becomes one edge with an `evidence`
 count, the methods and publications, and IntAct's `miscore`
 (`merge=false` keeps every record).
+
+A protein's folded chain is a network too. `makeFromPDB("1ubq.pdb")` (or
+`makeFromPDB("1ubq")`, downloaded from RCSB) makes a node per amino acid
+and joins residues next to each other along the chain (`kind` "chain")
+and residues whose alpha carbons are closer than `cutoff` angstroms (8 by
+default; `kind` "contact", with `distance`). Nodes carry `aa`, `seq`,
+`chain` and `structure` (helix, strand or coil), and are placed by the
+structure's two widest directions.
+
+```python
+makeFromPDB("1ubq.pdb")
+colorize(structure)
+(kind == "chain").width = 3
+```
 
 **Any file.** `makeFromFile(name)` picks the reader by extension, or by
 content when the extension doesn't say (`.xml`, `.txt`, `.json`), which is
@@ -1133,6 +1148,13 @@ with that value or more, which is smoother in the tail. Pointing at a point
 lights up the nodes with that value. `plotHistogram(degree, 10, log=true)`
 uses bins of equal width on a log scale and a log count axis, and
 `plotDistrib(degree, log=true)` a log value axis.
+
+**Adjacency matrix.** `showMatrix()` draws the network as a matrix, a row
+and a column per node with a dark cell for each edge. `order=` a field
+sorts the rows by it with lines between the groups, so communities show as
+blocks on the diagonal: `showMatrix(order=louvain_class)`. `weight=` shades
+cells by an edge field, and `nodes=` draws part of the graph. Cells are
+linked like any chart: hover one to highlight its edge and nodes.
 
 **Your own numbers.** `plotLine(points)` draws a line through a list of
 `(x, y)` pairs; a dictionary of lists draws one line per series. `log=true`

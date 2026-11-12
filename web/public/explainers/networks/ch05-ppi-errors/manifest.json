@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Protein interactions and noisy experiments",
+  "description": "False positives and negatives in yeast protein interactions, and spoke against matrix pull-downs.",
+  "console": "toggle",
+  "script": "main.gy"
+}

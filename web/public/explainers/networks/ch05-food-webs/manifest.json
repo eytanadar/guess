@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Who eats whom",
+  "description": "Trophic levels, source and sink webs, the rare loops, and trophic species.",
+  "console": "toggle",
+  "script": "main.gy"
+}

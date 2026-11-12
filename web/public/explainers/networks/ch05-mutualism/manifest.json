@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Pollinators and nestedness",
+  "description": "Plant-pollinator networks, how nested they are, and what happens when generalists disappear.",
+  "console": "toggle",
+  "script": "main.gy"
+}

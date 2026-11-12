@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Affiliation networks and their projections",
+  "description": "Women and events, authors and papers: what projecting onto one side keeps and loses.",
+  "console": "toggle",
+  "script": "main.gy"
+}

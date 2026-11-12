@@ -111,7 +111,7 @@ export type BarItem = WidgetRec | { kind: "action"; name: string; text?: string 
 export interface PanelRec extends WidgetRec { children: WidgetRec[] }
 
 export interface ChartMsg {
-  type: "chart"; id: string; kind: "bar" | "pie" | "distrib" | "line";
+  type: "chart"; id: string; kind: "bar" | "pie" | "distrib" | "line" | "matrix";
   /** live: recomputed after every change; canLive: it knows how it was made */
   live?: boolean; canLive?: boolean;
   title: string; xlabel: string; ylabel: string;
@@ -125,6 +125,9 @@ export interface ChartMsg {
   logX?: boolean; logY?: boolean;
   /** line charts: a dot at each point */
   dots?: boolean;
+  /** matrix (showMatrix): row/column node names and ids, cells [row, col, value, edge id],
+   *  each row's group (order= field) for separators, and whether values are weights */
+  labels?: string[]; ids?: number[]; cells?: [number, number, number, number][]; groups?: string[]; weighted?: boolean;
 }
 
 export type UiMsg =

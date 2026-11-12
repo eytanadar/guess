@@ -1026,6 +1026,133 @@ def _points(it, new):
 # commands
 # --------------------------------------------------------------------------
 
+# ---- protein structures (PDB, mmCIF) -> residue contact networks ------------------------------
+AA3 = {"ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLN": "Q", "GLU": "E", "GLY": "G",
+       "HIS": "H", "ILE": "I", "LEU": "L", "LYS": "K", "MET": "M", "PHE": "F", "PRO": "P", "SER": "S",
+       "THR": "T", "TRP": "W", "TYR": "Y", "VAL": "V", "SEC": "U", "PYL": "O", "MSE": "M"}
+
+
+class _Residues:
+    def __init__(self, residues, structure, cutoff):
+        self.residues, self.structure, self.cutoff = residues, structure, cutoff
+
+    def build(self, g):
+        import math
+        res = self.residues
+        if not res:
+            raise GuessError("no amino-acid alpha carbons found in this structure")
+        chains = {r[0] for r in res}
+        names = []
+        for ch, seq, icode, rname, xyz in res:
+            nm = f"{rname}{seq}{icode or ''}" + (f"_{ch}" if len(chains) > 1 else "")
+            names.append(nm)
+        # place by the two main directions of the alpha carbons (PCA by power iteration)
+        n = len(res)
+        cx = [sum(r[4][k] for r in res) / n for k in range(3)]
+        pts = [[r[4][k] - cx[k] for k in range(3)] for r in res]
+        cov = [[sum(p[a] * p[b] for p in pts) for b in range(3)] for a in range(3)]
+
+        def top(m, avoid=None):
+            v = [1.0, 0.7, 0.3]
+            for _ in range(100):
+                w = [sum(m[a][b] * v[b] for b in range(3)) for a in range(3)]
+                if avoid is not None:
+                    d = sum(w[k] * avoid[k] for k in range(3))
+                    w = [w[k] - d * avoid[k] for k in range(3)]
+                s = math.sqrt(sum(t * t for t in w)) or 1.0
+                v = [t / s for t in w]
+            return v
+        e1 = top(cov)
+        e2 = top(cov, e1)
+        for k in ("residue", "aa", "chain", "structure"):
+            g.addNodeField(k, STRING, "")
+        g.addNodeField("seq", INT, 0)
+        for k in ("x3", "y3", "z3"):
+            g.addNodeField(k, DOUBLE, 0.0)
+        g.addEdgeField("kind", STRING, "")
+        g.addEdgeField("distance", DOUBLE, 0.0)
+        nodes = []
+        for nm, (ch, seq, icode, rname, xyz), p in zip(names, res, pts):
+            x = 20 * sum(p[k] * e1[k] for k in range(3))
+            y = 20 * sum(p[k] * e2[k] for k in range(3))
+            nodes.append(g.addNode(nm, residue=rname, aa=AA3.get(rname, "X"), chain=ch, seq=seq,
+                                   structure=self.structure.get((ch, seq), "coil"),
+                                   x3=xyz[0], y3=xyz[1], z3=xyz[2], x=x, y=y, label=nm))
+        ne = 0
+        cut2 = self.cutoff * self.cutoff
+        for i in range(n):
+            for j in range(i + 1, n):
+                a, b = res[i], res[j]
+                d2 = sum((a[4][k] - b[4][k]) ** 2 for k in range(3))
+                along = a[0] == b[0] and j == i + 1
+                if along or d2 < cut2:
+                    g.addEdge(nodes[i], nodes[j], kind="chain" if along else "contact", distance=round(math.sqrt(d2), 2))
+                    ne += 1
+        return n, ne
+
+
+def read_pdb(text, cutoff=8.0, chain=None):
+    """Alpha carbons (first model, first altloc) and HELIX/SHEET ranges from PDB or mmCIF text."""
+    residues, seen, structure = [], set(), {}
+    if text.lstrip().startswith("data_") or "_atom_site." in text[:200000]:
+        cols, rows, in_loop = [], [], False
+        for line in text.splitlines():
+            if line.startswith("_atom_site."):
+                cols.append(line.split(".", 1)[1].strip())
+                in_loop = True
+                continue
+            if in_loop and cols and (line.startswith(("ATOM", "HETATM"))):
+                rows.append(line.split())
+            elif in_loop and cols and rows and (line.startswith(("#", "loop_", "_"))):
+                break
+        ix = {c: i for i, c in enumerate(cols)}
+        for r in rows:
+            try:
+                if r[ix["label_atom_id"]].strip('"') != "CA" or r[ix.get("pdbx_PDB_model_num", 0)] not in ("1",):
+                    continue
+                rname = r[ix["label_comp_id"]]
+                ch = r[ix.get("auth_asym_id", ix["label_asym_id"])]
+                seq = int(r[ix.get("auth_seq_id", ix["label_seq_id"])])
+                xyz = (float(r[ix["Cartn_x"]]), float(r[ix["Cartn_y"]]), float(r[ix["Cartn_z"]]))
+            except (KeyError, ValueError, IndexError):
+                continue
+            if rname in AA3 and (chain is None or ch == chain) and (ch, seq) not in seen:
+                seen.add((ch, seq))
+                residues.append((ch, seq, "", rname, xyz))
+        return _Residues(residues, structure, cutoff)
+    for line in text.splitlines():
+        rec = line[:6]
+        if rec == "ENDMDL":
+            break
+        if rec == "HELIX ":
+            try:
+                ch, a, b = line[19], int(line[21:25]), int(line[33:37])
+                for k in range(a, b + 1):
+                    structure[(ch, k)] = "helix"
+            except ValueError:
+                pass
+        elif rec == "SHEET ":
+            try:
+                ch, a, b = line[21], int(line[22:26]), int(line[33:37])
+                for k in range(a, b + 1):
+                    structure[(ch, k)] = "strand"
+            except ValueError:
+                pass
+        elif rec in ("ATOM  ", "HETATM") and line[12:16].strip() == "CA":
+            rname, ch, alt = line[17:20].strip(), line[21], line[16]
+            try:
+                seq = int(line[22:26])
+                xyz = (float(line[30:38]), float(line[38:46]), float(line[46:54]))
+            except ValueError:
+                continue
+            icode = line[26].strip()
+            key = (ch, seq, icode)
+            if rname in AA3 and alt in (" ", "A") and key not in seen and (chain is None or ch == chain):
+                seen.add(key)
+                residues.append((ch, seq, icode, rname, xyz))
+    return _Residues(residues, structure, cutoff)
+
+
 def install(session):
     g = session.graph
 
@@ -1122,11 +1249,40 @@ def install(session):
         become nodes, and members have the group in `group`."""
         load(filename, read_gpml, "GPML")
 
-    for fn in (makeFromMITAB, makeFromPSIMI, makeFromSBML, makeFromBioPAX, makeFromKGML, makeFromGPML):
+    def makeFromPDB(source, cutoff=8.0, chain=None):
+        """makeFromPDB("1ubq") or makeFromPDB("protein.pdb") turns a protein
+        structure into a residue contact network: one node per amino acid
+        (named like LYS48, with `residue`, `aa` (one letter), `seq`, `chain`,
+        `structure` = helix, strand or coil from the file's HELIX/SHEET
+        records, and its alpha-carbon's 3D position `x3`, `y3`, `z3`). Edges
+        join residues next to each other along the chain (kind "chain") and
+        residues whose alpha carbons are closer than `cutoff` angstroms
+        (kind "contact", with `distance`). A four-character PDB id is
+        downloaded from RCSB (files.rcsb.org); .pdb and .cif (mmCIF) files
+        are read. chain="A" keeps one chain. Nodes are placed by the
+        structure's two main directions, so the picture looks like the
+        folded protein seen from its widest side."""
+        src = str(source)
+        if os.path.exists(src):
+            with open(src, encoding="utf-8", errors="replace") as fh:
+                text = fh.read()
+            name = os.path.basename(src)
+        elif re.fullmatch(r"[0-9][A-Za-z0-9]{3}", src):
+            from .connectors import http
+            text = http(f"https://files.rcsb.org/download/{src.upper()}.pdb")
+            name = src.upper()
+        else:
+            raise GuessError(f"no file named {src!r} (or give a four-character PDB id such as '1ubq')")
+        g.clear()
+        nn, ne = read_pdb(text, float(cutoff), chain).build(g)
+        session.scene()
+        print(f"loaded {nn} residues, {ne} edges from {name} (contacts within {float(cutoff):g} Å)")
+
+    for fn in (makeFromMITAB, makeFromPSIMI, makeFromSBML, makeFromBioPAX, makeFromKGML, makeFromGPML, makeFromPDB):
         session.register_command(fn.__name__, fn)
 
 
-__all__ = ["install", "read_mitab", "read_psimi", "read_sbml", "read_biopax", "read_kgml", "read_gpml"]
+__all__ = ["install", "read_pdb", "read_mitab", "read_psimi", "read_sbml", "read_biopax", "read_kgml", "read_gpml"]
 
 
 # --------------------------------------------------------------------------
