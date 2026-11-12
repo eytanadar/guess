@@ -102,7 +102,7 @@ class Session:
         epidemic.install(self)
         timeline.install(self)
         slides.install(self)
-        from . import assistant, bioformats, cyformats, htmlexport, measures, moreclusters, morelayouts, motiflayout, streaming, webexport
+        from . import assistant, bioformats, cyformats, htmlexport, mathtools, measures, moreclusters, morelayouts, motiflayout, streaming, webexport
         assistant.install(self)
         cyformats.install(self)
         bioformats.install(self)
@@ -113,6 +113,7 @@ class Session:
         moreclusters.install(self)
         morelayouts.install(self)
         webexport.install(self)
+        mathtools.install(self)
         compat.install(self)
         states.install(self)
         ranges.install(self)
