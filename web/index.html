@@ -109,7 +109,8 @@
 <button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges())">Curved edges</button>
 <button role="menuitem" data-run="bundleEdges()" title="MINGLE: merge edges that run alike into bundles (good for large graphs)">Bundle edges (MINGLE)</button>
 <button role="menuitem" data-run="bundleEdges(method='fdeb')" title="Force-directed edge bundling: smooth, organic bundles">Bundle edges (force-directed)</button>
-<button role="menuitem" data-run="removeBundles()">Straighten edges</button>
+<button role="menuitem" data-run="lombardiEdges()" title="lombardiEdges(): bend edges into circular arcs so each node's edges are evenly spread, without moving nodes">Round edges (Lombardi)</button>
+<button role="menuitem" data-run="removeBundles(); straightenEdges()">Straighten edges</button>
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Labels and tooltips</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
@@ -165,6 +166,7 @@
 <button role="menuitem" data-run="treeLayout(sel[0] if len(sel) else None)">Tree (from selection)</button>
 <button role="menuitem" data-run="hiveLayout()" title="Nodes on radial axes by role, placed by degree (hiveLayout(field, position) for your own axes)">Hive plot</button>
 <button role="menuitem" data-run="concentricLayout(degree)" title="concentricLayout(degree): the best-connected nodes in the middle">Rings by degree</button>
+<button role="menuitem" data-run="lombardiLayout()" title="lombardiLayout(): circular-arc edges leaving each node at nearly equal angles (after the artist Mark Lombardi)">Lombardi-style (arcs, even angles)</button>
 <button role="menuitem" data-run="binPackLayout()">Pack components</button>
 </div></div>
 <hr />

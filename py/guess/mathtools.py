@@ -196,5 +196,187 @@ def install(session):
         return session.ns["plotLine"]([(i + 1, v) for i, v in enumerate(vals)], title=f"Eigenvalues of the {name}",
                                       xlabel="rank", ylabel="eigenvalue", dots=True)
 
-    for fn in (makeFromMap, colorGraph, edgeCrossings, expandLayers, spectrum, plotSpectrum):
+
+    # ---- Lombardi-style drawings (circular-arc edges, even angles at nodes) ---------------------
+    def _arc_setup():
+        """Edges between distinct visible nodes, with each end's chord angle."""
+        edges = [e for e in g().edges if e.visible and e.node1 is not e.node2 and e.node1.visible and e.node2.visible]
+        ends = {}
+        for e in edges:
+            (x1, y1), (x2, y2) = _centre(e.node1), _centre(e.node2)
+            a1 = math.atan2(y2 - y1, x2 - x1)
+            # (edge, sign, chord angle): the tangent at this end is chord + sign * theta
+            ends.setdefault(e.node1._id, []).append((e, 1, a1))
+            ends.setdefault(e.node2._id, []).append((e, -1, a1 + math.pi))
+        return edges, ends
+
+    def _wrap(a):
+        return (a + math.pi) % (2 * math.pi) - math.pi
+
+    def _tangents(ends, theta):
+        return {v: sorted(((c + s * theta[e._id]) % (2 * math.pi), e, s) for e, s, c in lst)
+                for v, lst in ends.items()}
+
+    def lombardiness():
+        """lombardiness() scores how close the drawing is to a Lombardi drawing,
+        0-100: 100 when every node's edges leave it at equal angles (as
+        measured by their tangents, so arcs count; see lombardiEdges). Nodes
+        with one edge are always perfect (Chernobelskiy et al., GD 2011)."""
+        edges, ends = _arc_setup()
+        theta = {e._id: math.radians(e.arc or 0.0) for e in edges}
+        total, count = 0.0, 0
+        for v, tang in _tangents(ends, theta).items():
+            d = len(tang)
+            if d < 2:
+                continue
+            angles = [t for t, _, _ in tang]
+            for i in range(d):
+                gap = (angles[(i + 1) % d] - angles[i]) % (2 * math.pi)
+                total += abs(gap - 2 * math.pi / d)
+                count += 1
+        return 100.0 if not count else 100 - 100 * (total / count) / math.pi
+
+    def lombardiEdges(iterations=300, limit=70):
+        """lombardiEdges() turns the edges into circular arcs, without moving
+        any node, so that each node's edges leave it as evenly spread as
+        possible (a "near-Lombardi" drawing, after the artist Mark Lombardi;
+        Chernobelskiy et al., GD 2011). Each edge's bend is the angle, in
+        degrees, at which it leaves its ends, stored in its `arc` field (0 =
+        straight; at most `limit`). Returns lombardiness() before and after.
+        straightenEdges() undoes it."""
+        edges, ends = _arc_setup()
+        if not edges:
+            return (100.0, 100.0)
+        before = lombardiness()
+        theta = {e._id: math.radians(e.arc or 0.0) for e in edges}
+        cap = math.radians(float(limit))
+        for it in range(int(iterations)):
+            push = {e._id: 0.0 for e in edges}
+            for v, tang in _tangents(ends, theta).items():
+                d = len(tang)
+                if d < 2:
+                    continue
+                step = 2 * math.pi / d
+                # the best evenly spaced fan for this node: rotate the ideal template onto the tangents
+                offs = [tang[i][0] - i * step for i in range(d)]
+                rot = math.atan2(sum(math.sin(o) for o in offs), sum(math.cos(o) for o in offs))
+                for i, (t, e, sg) in enumerate(tang):
+                    want = rot + i * step
+                    push[e._id] += sg * _wrap(want - t) / 2
+            rate = 0.6 * (1 - it / max(1, int(iterations))) + 0.05
+            for e in edges:
+                theta[e._id] = max(-cap, min(cap, theta[e._id] + rate * push[e._id]))
+        for e in edges:
+            e.arc = round(math.degrees(theta[e._id]), 2)
+        return (round(before, 1), round(lombardiness(), 1))
+
+    def straightenEdges():
+        """straightenEdges() makes every edge straight again (arc = 0)."""
+        for e in g().edges:
+            if e.arc:
+                e.arc = 0.0
+
+    def lombardiLayout(iterations=400, seed=0):
+        """lombardiLayout() makes a Lombardi-style drawing: circular-arc edges,
+        with each node's edges leaving it at (nearly) equal angles. It is the
+        tangent-based spring embedder of Chernobelskiy et al. (GD 2011):
+        attraction (d - k)/d along edges and repulsion k^2/d^3 between all
+        pairs place the nodes, while a tangential force turns each edge's
+        chord so that the angles both ends want for it agree, and each
+        node's fan of edge tangents turns to fit; edges then get the arc
+        that matches (stored in `arc`, as by lombardiEdges). Returns
+        lombardiness() of the straight-line drawing it starts from and of
+        the result. Best for small and medium graphs (up to a few hundred
+        nodes)."""
+        import random
+        nodes = [n for n in g().nodes if n.visible]
+        if not nodes:
+            return (100.0, 100.0)
+        rnd = random.Random(seed)
+        n = len(nodes)
+        idx = {nd._id: i for i, nd in enumerate(nodes)}
+        pos = [[rnd.uniform(-1, 1), rnd.uniform(-1, 1)] for _ in nodes]
+        edges = [e for e in g().edges if e.visible and e.node1._id in idx and e.node2._id in idx and e.node1 is not e.node2]
+        pairs = [(idx[e.node1._id], idx[e.node2._id]) for e in edges]
+        inc = [[] for _ in nodes]                      # per node: (edge index, sign)
+        for k_, (i, j) in enumerate(pairs):
+            inc[i].append((k_, 1))
+            inc[j].append((k_, -1))
+        theta = [0.0] * len(pairs)
+        k = 1.0 / math.sqrt(max(n, 1))
+        steps = int(iterations)
+        t0 = 0.15
+        cap = math.radians(75)
+        for it in range(steps):
+            disp = [[0.0, 0.0] for _ in nodes]
+            for i in range(n):
+                xi, yi = pos[i]
+                for j in range(i + 1, n):
+                    dx, dy = xi - pos[j][0], yi - pos[j][1]
+                    d = math.hypot(dx, dy) or 1e-6
+                    f = k * k / (d * d * d) * 0.05
+                    disp[i][0] += dx * f
+                    disp[i][1] += dy * f
+                    disp[j][0] -= dx * f
+                    disp[j][1] -= dy * f
+            for i, j in pairs:
+                dx, dy = pos[i][0] - pos[j][0], pos[i][1] - pos[j][1]
+                d = math.hypot(dx, dy) or 1e-6
+                f = (d - k) / d * 0.5
+                disp[i][0] -= dx * f
+                disp[i][1] -= dy * f
+                disp[j][0] += dx * f
+                disp[j][1] += dy * f
+            if it > steps * 0.25:
+                # each node's ideal fan: equal angles, turned to fit its current tangents
+                chord = [math.atan2(pos[j][1] - pos[i][1], pos[j][0] - pos[i][0]) for i, j in pairs]
+                want = {}
+                for v in range(n):
+                    d = len(inc[v])
+                    if d < 2:
+                        continue
+                    tang = sorted(((chord[e] + (0 if sg > 0 else math.pi) + sg * theta[e]) % (2 * math.pi), e, sg)
+                                  for e, sg in inc[v])
+                    step = 2 * math.pi / d
+                    offs = [tang[q][0] - q * step for q in range(d)]
+                    rot = math.atan2(sum(math.sin(o) for o in offs), sum(math.cos(o) for o in offs))
+                    for q, (t, e, sg) in enumerate(tang):
+                        want[(e, sg)] = rot + q * step
+                for e, (i, j) in enumerate(pairs):
+                    cu, cv = chord[e], chord[e] + math.pi
+                    wu, wv = want.get((e, 1)), want.get((e, -1))
+                    tu = _wrap(wu - cu) if wu is not None else theta[e]          # the arc u would like
+                    tv = -_wrap(wv - cv) if wv is not None else theta[e]         # the arc v would like
+                    theta[e] = max(-cap, min(cap, theta[e] + 0.5 * ((tu + tv) / 2 - theta[e])))
+                    if wu is None or wv is None:
+                        continue
+                    # tangential force: turn the chord so both ends' wishes agree
+                    phi = max(-0.3, min(0.3, (tu - tv) / 2))
+                    dx, dy = pos[j][0] - pos[i][0], pos[j][1] - pos[i][1]
+                    c, s_ = math.cos(phi * 0.5), math.sin(phi * 0.5)
+                    rx, ry = dx * c - dy * s_ - dx, dx * s_ + dy * c - dy
+                    disp[j][0] += 0.9 * rx / 2
+                    disp[j][1] += 0.9 * ry / 2
+                    disp[i][0] -= 0.9 * rx / 2
+                    disp[i][1] -= 0.9 * ry / 2
+            temp = t0 * (steps - it) / steps
+            for i in range(n):
+                dl = math.hypot(*disp[i]) or 1e-9
+                m = min(dl, temp)
+                pos[i][0] += disp[i][0] / dl * m
+                pos[i][1] += disp[i][1] / dl * m
+        xs, ys = [p[0] for p in pos], [p[1] for p in pos]
+        span = max(max(xs) - min(xs), max(ys) - min(ys)) or 1
+        scale = 60 * math.sqrt(n) / span
+        for nd, (x, y) in zip(nodes, pos):
+            nd.x, nd.y = (x - min(xs)) * scale, (y - min(ys)) * scale
+        straightenEdges()
+        before = lombardiness()
+        for e, t in zip(edges, theta):
+            e.arc = round(math.degrees(t), 2)
+        lombardiEdges(iterations=150)                  # polish the arcs for the final positions
+        return (round(before, 1), round(lombardiness(), 1))
+
+    for fn in (makeFromMap, colorGraph, edgeCrossings, expandLayers, spectrum, plotSpectrum, lombardiness,
+               lombardiEdges, straightenEdges, lombardiLayout):
         reg(fn.__name__, fn)

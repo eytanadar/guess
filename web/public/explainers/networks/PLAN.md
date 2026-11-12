@@ -533,6 +533,114 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
 
 ---
 
+## Batch 4: book pages 158–217 (Chapter 7, *Measures and metrics*)
+
+This batch runs past 207 so that it ends at the end of the chapter.
+
+**`ch07-eigenvector-katz`: Eigenvector and Katz centrality (§§7.1.1–7.1.3)** · planned
+- *Idea:*
+  - degree counts neighbours; eigenvector centrality counts *important* neighbours, the fixed point of x ← A x;
+  - in directed networks, nodes no one points to get zero, and so do the nodes they point to;
+  - Katz centrality adds a free amount β to every node, with α trading off between degree-like and eigenvector-like.
+- *Reader:*
+  - step the power iteration (paced): sizes settle onto the eigenvector, and a chart shows the change per step;
+  - on a directed graph, watch zeros spread;
+  - an α slider (up to 1/κ₁, which is shown) morphs sizes from degree to eigenvector;
+  - a rank table across the measures.
+- *GUESS:* numpy, `everyPaced`, `Chart`/`plotLine`, `sizeBy`.
+
+**`ch07-pagerank-hits`: PageRank, hubs and authorities (§§7.1.4–7.1.5)** · planned
+- *Idea:*
+  - PageRank divides each node's vote among its out-links, plus a random jump (damping);
+  - it is where a random surfer spends its time;
+  - HITS gives hubs (point to good authorities) and authorities (pointed to by good hubs).
+- *Data:* the invented web from `ch03-web-crawler`, or `vis-papers.gdf`.
+- *Reader:*
+  - a random surfer animation (paced, edges highlighted as it moves, with jumps shown);
+  - a visit-share chart converging to the PageRank values;
+  - a damping slider;
+  - dangling nodes;
+  - a hubs/authorities toggle (`hub`, `authority` fields).
+- *GUESS:* `pagerank`, `hub`/`authority`, `everyPaced`, `Chart`.
+
+**`ch07-closeness-betweenness`: Closeness and betweenness (§§7.1.6–7.1.7)** · planned
+- *Idea:*
+  - closeness is the inverse mean distance, a narrow range of values; harmonic closeness handles components;
+  - betweenness is the share of shortest paths through a node; brokers score high with low degree.
+- *Reader:*
+  - click a node to see distance rings (`heatMap`) and its closeness and harmonic closeness;
+  - pick two nodes to see all their shortest paths, each node's share of them, and how betweenness adds them up over all pairs (paced, pair by pair);
+  - a degree-against-betweenness scatter (brokers stand out).
+- *Data:* Les Misérables (bundled) or the US airports.
+- *GUESS:* `heatMap`, `betweenness`, `closeness`, `harmonic`, scatter chart (see gaps).
+
+**`ch07-groups`: Cliques, k-cores and k-components (§7.2)** · planned
+- *Idea:*
+  - cliques;
+  - k-cores, found by peeling away nodes of degree < k;
+  - k-components need k independent paths, and are not the same as k-cores (Fig. 7.6's network has one 2-core but two 2-components).
+- *Reader:*
+  - peel the k-cores step by step (paced), each removal highlighting the node and its edges;
+  - largest cliques as hulls;
+  - bicomponents and tricomponents (`biComponentClusters`, networkx `k_components`);
+  - a small example where the 2-core ≠ the 2-components.
+- *GUESS:* `kCore`, `coreness`, `largestCliques`, `biComponentClusters`, `encircle`.
+
+**`ch07-clustering`: Transitivity and clustering (§7.3)** · planned
+- *Idea:*
+  - "a friend of a friend is a friend": global clustering = 3 × triangles / connected triples;
+  - local clustering, often lower for high-degree nodes;
+  - real networks have far more triangles than random ones with the same degrees.
+- *Reader:*
+  - click a node to see its triangles and open triples (closed in green, open dashed) and its local C;
+  - a chart of C against degree;
+  - "Rewire, keeping degrees" (`rewire`), paced, with C falling live.
+- *GUESS:* `clustering`, `triangles`, `transitivity`, `rewire`, scatter chart.
+
+**`ch07-reciprocity-balance`: Reciprocity and structural balance (§§7.4–7.5)** · planned
+- *Idea:*
+  - reciprocity is the share of directed edges returned;
+  - in signed networks, triangles with an odd number of negative edges are unbalanced;
+  - a balanced network splits into two camps (Harary).
+- *Reader:*
+  - **Reciprocity tab:** mutual edges highlighted, with the value against what chance would give.
+  - **Balance tab:** a signed network (green +, red −) with unbalanced triangles flashing; click an edge to flip its sign; or run the triad dynamics, which fix an unbalanced triangle at a time (paced) until it splits into two camps, coloured by Harary's division.
+- *GUESS:* `reciprocity`, `mutualEdges`, `graphevents.clickEdge`, `everyPaced`, a balance check (see gaps).
+
+**`ch07-similarity`: Structural and regular equivalence (§7.6)** · planned
+- *Idea:*
+  - structural equivalence: sharing neighbours (cosine, Jaccard, Pearson);
+  - regular equivalence: having *similar* neighbours (σ = αAσA + I, Leicht–Holme–Newman), which finds similar roles even far apart.
+- *Reader:*
+  - click a node and every node is coloured by similarity to it, with a drop-down of measures;
+  - two roles in an invented organisation (managers in different departments share no neighbours but are regularly equivalent).
+- *GUESS:* `similarTo`, numpy for the regular-equivalence fixed point.
+
+**`ch07-assortativity`: Homophily and assortative mixing (§7.7)** · planned
+- *Idea:*
+  - mixing by category (modularity Q, the mixing matrix);
+  - by an ordered value (the correlation r across edges, e.g. age);
+  - by degree (hubs with hubs, as in social networks, or hubs with small nodes, as in the Internet).
+- *Reader:*
+  - choose a dataset and attribute;
+  - see the mixing matrix (`mixingMatrix` / `showMatrix(order=)`), Q and r;
+  - see a scatter of the values at either end of each edge;
+  - "Shuffle the edges, keeping degrees" (`rewire`) sends r to ≈ 0 live;
+  - compare r for degree across the bundled networks (social vs technological).
+- *GUESS:* `modularity`, `assortativity`, `mixingMatrix`, `rewire`, scatter chart.
+
+### Gaps found in batch 4
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| A scatter plot of two fields (points only, linked to the graph) | closeness-betweenness, clustering, assortativity (edge-end scatter) | `plotLine(dots=true)` joins the dots; Altair can scatter but is heavy | `plotScatter(x, y, log=False)` for nodes, and for edges with `ends=true` (value at one end against the other) |
+| Signed networks: balance test, the two camps, unbalanced triangles | reciprocity-balance | none | `structuralBalance(sign)`: returns balanced?, sets `camp` on nodes, and the list of unbalanced triangles |
+| Katz centrality with a chosen α (and β) | eigenvector-katz | `katz` is computed with a fixed α | `katzCentrality(alpha, beta=1)` |
+| Regular-equivalence similarity | similarity | none (`similarTo` is structural) | `similarTo(node, method="regular", alpha=0.9)` |
+| k-components | groups | `biComponentClusters` (k = 2) and igraph's `cohesiveBlocks` | `kComponents(k)` via networkx |
+
+---
+
 ## To do (requests not yet done)
 
-- **Lombardi-style layout and edge rounding**, as described in `lombardi.pdf` (repo root): circular-arc edges with evenly spaced angles around each node. Planned as a layout command plus an edge-drawing mode.
+- (done) Lombardi-style layout and edge rounding: `lombardiLayout()`, `lombardiEdges()`, `lombardiness()`, `straightenEdges()`, edge field `arc`.

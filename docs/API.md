@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (102)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (106)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -397,6 +397,37 @@ the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank").
 lastClick() is where the display was last clicked, as (x, y) in graph
 coordinates, or None before the first click.
 
+### `lombardiEdges(iterations=300, limit=70)`
+
+lombardiEdges() turns the edges into circular arcs, without moving
+any node, so that each node's edges leave it as evenly spread as
+possible (a "near-Lombardi" drawing, after the artist Mark Lombardi;
+Chernobelskiy et al., GD 2011). Each edge's bend is the angle, in
+degrees, at which it leaves its ends, stored in its `arc` field (0 =
+straight; at most `limit`). Returns lombardiness() before and after.
+straightenEdges() undoes it.
+
+### `lombardiLayout(iterations=400, seed=0)`
+
+lombardiLayout() makes a Lombardi-style drawing: circular-arc edges,
+with each node's edges leaving it at (nearly) equal angles. It is the
+tangent-based spring embedder of Chernobelskiy et al. (GD 2011):
+attraction (d - k)/d along edges and repulsion k^2/d^3 between all
+pairs place the nodes, while a tangential force turns each edge's
+chord so that the angles both ends want for it agree, and each
+node's fan of edge tangents turns to fit; edges then get the arc
+that matches (stored in `arc`, as by lombardiEdges). Returns
+lombardiness() of the straight-line drawing it starts from and of
+the result. Best for small and medium graphs (up to a few hundred
+nodes).
+
+### `lombardiness()`
+
+lombardiness() scores how close the drawing is to a Lombardi drawing,
+0-100: 100 when every node's edges leave it at equal angles (as
+measured by their tangents, so arcs count; see lombardiEdges). Nodes
+with one edge are always perfect (Chernobelskiy et al., GD 2011).
+
 ### `lowest(field, count=10, seq=None)`
 
 lowest(degree, 5): the 5 with the smallest degree, smallest first
@@ -753,6 +784,10 @@ weight w transmits with chance 1 - (1 - beta)**w per step. Stores
 (S, I, R or V at the end), plots how many are in each state at each
 step, and returns those counts. Replay it with showTime(t,
 infected_at); outbreaks() repeats it many times.
+
+### `straightenEdges()`
+
+straightenEdges() makes every edge straight again (arc = 0).
 
 ### `travelingSalesman(stops=None, weight='weight', cycle=True)`
 

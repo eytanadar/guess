@@ -1020,6 +1020,15 @@ export class Renderer {
   edgePoints(e: EdgeRec, a: NodeRec, b: NodeRec): number[] {
     const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
     if (e.b && e.b.length >= 2) return [ax, ay, ...e.b, bx, by];
+    if (e.k) {
+      // a circular arc leaving each end at angle k from the chord (Lombardi-style edges)
+      const kk = Math.min(1.99, 2 * Math.sin(Math.min(Math.abs(e.k), 1.5)));
+      if (e.k < 0) return arcPoints(ax, ay, bx, by, kk);
+      const back = arcPoints(bx, by, ax, ay, kk);
+      const out: number[] = [];
+      for (let i = back.length - 2; i >= 0; i -= 2) out.push(back[i], back[i + 1]);
+      return out;
+    }
     const off = this.curveOffset.get(e.i);
     if (this.curvature > 0) {
       // parallel edges in the same direction get different curvatures (Gephi overlaps them)
@@ -1661,9 +1670,9 @@ export class Renderer {
       if (!e.b) {
         // quick reject: a curve bows at most half its length away from the chord
         const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
-        const reach = (this.curvature > 0 || this.curveOffset.has(e.i) ? Math.hypot(bx - ax, by - ay) * 0.55 : 0) + Math.max(e.w / 2, tolMin);
+        const reach = (this.curvature > 0 || this.curveOffset.has(e.i) || e.k ? Math.hypot(bx - ax, by - ay) * 0.55 : 0) + Math.max(e.w / 2, tolMin);
         if (x < Math.min(ax, bx) - reach || x > Math.max(ax, bx) + reach || y < Math.min(ay, by) - reach || y > Math.max(ay, by) + reach) continue;
-        if (!this.curvature && !this.curveOffset.has(e.i) && segDist(x, y, ax, ay, bx, by) > reach) continue;
+        if (!this.curvature && !this.curveOffset.has(e.i) && !e.k && segDist(x, y, ax, ay, bx, by) > reach) continue;
       }
       const p = this.edgePoints(e, a, b);
       let d = Infinity;

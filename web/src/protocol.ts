@@ -30,6 +30,8 @@ export interface EdgeRec {
   /** line style (absent: solid) and arrowhead (absent: triangle); see edgestyles.ts */
   st?: string;
   ah?: string;
+  /** arc: the angle (radians) at which a circular-arc edge leaves its ends; positive bends right of source→target */
+  k?: number;
 }
 
 /** Interpreter output: text, node, edge, or a (possibly annotated) group. */

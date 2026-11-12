@@ -170,3 +170,17 @@ def test_map_colouring_crossings_layers_and_spectrum():
                  "expandLayers(kind, directed=true)"), s.rec.of("error")
     assert ev(s, "graphNames()[0]") == "layers" and ev(s, "len(kind == 'interlayer')") > 0
     assert ev(s, "set(n.layer for n in g.nodes)") == {"a", "b"}
+
+
+def test_lombardi_edges_and_layout_raise_lombardiness():
+    s = _s()
+    assert s.run("makeSample('petersen')"), s.rec.of("error")
+    before, after = ev(s, "lombardiEdges()")
+    assert after > before + 10 and abs(ev(s, "lombardiness()") - after) < 0.1
+    assert any(e.arc for e in s.graph.edges)
+    rec = s.edge_record(next(e for e in s.graph.edges if e.arc))
+    assert "k" in rec
+    assert s.run("straightenEdges()") and not any(e.arc for e in s.graph.edges)
+    assert s.run("makeSample('karate')"), s.rec.of("error")
+    b2, a2 = ev(s, "lombardiLayout()")
+    assert a2 > 85 and a2 > b2

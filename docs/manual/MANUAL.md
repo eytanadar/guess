@@ -1630,6 +1630,24 @@ removeConvexHulls()
 
 ![The three shapes: `shape="hull"` (the default), `"box"` and `"ellipse"`.](img/enclosures.png){width=75%}
 
+**Lombardi-style edges.** The artist Mark Lombardi drew networks with
+circular-arc edges that leave each node at evenly spaced angles.
+`lombardiEdges()` bends the edges into such arcs without moving any node,
+choosing each arc so that every node's edges are spread as evenly as
+possible; `lombardiLayout()` also places the nodes (a spring embedder with an
+extra force that turns edges so both ends can agree on an arc). Both return
+`lombardiness()` before and after: 100 means every node's edges leave it at
+equal angles. Each edge's bend is its `arc` field (degrees; 0 = straight),
+which you can also set yourself; `straightenEdges()` undoes it.
+
+```python
+makeSample("petersen")
+lombardiEdges()          # e.g. (58.7, 83.2)
+lombardiLayout()
+straightenEdges()
+makeFromGDF("sample.gdf")   # back to the sample graph
+```
+
 **Drawing on the display.** `drawLine`, `drawText`, `drawRect` and
 `drawCircle` put plain marks on the display, in graph coordinates (the same
 as node `x` and `y`; a node's centre is `n.x + n.width/2`,
