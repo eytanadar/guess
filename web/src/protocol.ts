@@ -88,7 +88,15 @@ export interface Overlay {
   labels?: { outline: boolean; cull: boolean; along?: boolean; placement?: string; screen?: boolean };
   hulls: HullRec[];
   legends: LegendRec[];
+  /** drawLine/drawText/drawRect/drawCircle, in graph coordinates; c null = the theme's ink */
+  drawings?: DrawingRec[];
 }
+
+export type DrawingRec = { i: number; c: number | null; a: number } & (
+  | { k: "line"; x1: number; y1: number; x2: number; y2: number; w: number; st: "solid" | "dashed" | "dotted"; ar: boolean }
+  | { k: "text"; x: number; y: number; t: string; s: number; an: "start" | "middle" | "end" }
+  | { k: "rect"; x: number; y: number; ww: number; hh: number; w: number; st: "solid" | "dashed" | "dotted"; f: number | null; fa: number }
+  | { k: "circle"; x: number; y: number; r: number; w: number; st: "solid" | "dashed" | "dotted"; f: number | null; fa: number });
 
 export interface Morph {
   duration: number;
@@ -113,6 +121,10 @@ export interface ChartMsg {
   xq?: string;
   /** line charts: one polyline per series, x and y in data units */
   series?: { name: string; color: number; points: [number, number][] }[];
+  /** log axes (line charts: either; bar and distrib charts: logY) */
+  logX?: boolean; logY?: boolean;
+  /** line charts: a dot at each point */
+  dots?: boolean;
 }
 
 export type UiMsg =

@@ -195,6 +195,35 @@ class GradientLegend(Legend):
 
 
 
+class Drawing:
+    """A line, text, box or circle drawn on the display (drawLine, drawText,
+    drawRect, drawCircle). .remove() takes it away."""
+
+    def __init__(self, view, did):
+        self._view, self._id = view, did
+
+    def _rec(self):
+        return next((d for d in self._view.drawings if d["i"] == self._id), None)
+
+    def remove(self):
+        self._view.drawings = [d for d in self._view.drawings if d["i"] != self._id]
+        self._view.changed()
+
+    def __eq__(self, other):
+        return isinstance(other, Drawing) and other._id == self._id
+
+    def __hash__(self):
+        return hash(("drawing", self._id))
+
+    def __repr__(self):
+        d = self._rec()
+        if d is None:
+            return f"<drawing {self._id}: removed>"
+        if d["k"] == "text":
+            return f"<drawing {self._id}: text {d['t']!r}>"
+        return f"<drawing {self._id}: {d['k']}>"
+
+
 class View:
     def __init__(self, session):
         self.session = session
@@ -212,6 +241,7 @@ class View:
         self.guides = []            # labelled lines drawn under the graph (hive plot axes)
         self.map = None             # geoLayout's outlines: {"rings", "fill", "stroke"}
         self.guides_note = ""
+        self.drawings = []          # drawLine/drawText/drawRect/drawCircle records (plain dicts)
         self.border_width = 0.75
         self.raise_changed = True   # a node or edge whose appearance changes is drawn on top
         self.hover_fields = {"n": [], "e": []}   # fields the hover tooltip shows at once (hoverFields)
@@ -230,8 +260,9 @@ class View:
         Display preferences (background colour, curved edges, edge colours,
         label options, styles) stay."""
         had = bool(self.legends or self.hulls or self.guides or self.pie or self.drag or getattr(self, "slides", None)
-                   or self.map or self.image)
+                   or self.map or self.image or self.drawings)
         self.map = None
+        self.drawings = []
         self.image = None
         self.legends = {}
         self.hulls = {}
@@ -266,6 +297,7 @@ class View:
                 "slides": [dict(s) for s in getattr(self, "slides", [])],
                 "guides": [dict(x) for x in self.guides], "guides_note": self.guides_note,
                 "map": self.map, "raise_changed": self.raise_changed,
+                "drawings": [dict(d) for d in self.drawings],
                 "hover_fields": {k: list(v) for k, v in self.hover_fields.items()}}
 
     def restore(self, snap):
@@ -292,6 +324,7 @@ class View:
         self.guides = [dict(x) for x in snap.get("guides", [])]
         self.guides_note = snap.get("guides_note", "")
         self.map = snap.get("map")
+        self.drawings = [dict(d) for d in snap.get("drawings", [])]
         self.raise_changed = snap.get("raise_changed", True)
         self.hover_fields = {k: list(v) for k, v in snap.get("hover_fields", {"n": [], "e": []}).items()}
         self.session.emit({"type": "slides", "slides": [{"note": s["note"]} for s in self.slides], "index": None})
@@ -315,7 +348,7 @@ class View:
                 "pie": [colors.to_rgba_int(c)[0] for c in self.pie["colors"]] if self.pie else None,
                 "borderWidth": self.border_width, "raiseChanged": self.raise_changed,
                 "hoverFields": {k: list(v) for k, v in self.hover_fields.items()}, "drag": self._drag_record(),
-                "guides": self.guides, "guidesNote": self.guides_note, "map": self.map, "hulls": hulls, "legends": [l.record() for l in self.legends.values()]}
+                "guides": self.guides, "guidesNote": self.guides_note, "map": self.map, "drawings": self.drawings, "hulls": hulls, "legends": [l.record() for l in self.legends.values()]}
 
 
 def _data_url(path):
@@ -649,6 +682,83 @@ def install(session):
             raise GuessError("no movie is being recorded (use startMovie)")
         recording["on"] = False
         session.emit({"type": "movie", "op": "stop"})
+
+    # ---- drawings: plain lines, text and shapes in graph coordinates ----------------
+    def _ink(color):
+        if color is None:
+            return None, 1.0
+        return colors.to_rgba_int(colors.normalize(color))
+
+    def _line_style(style):
+        style = str(style)
+        if style not in ("solid", "dashed", "dotted"):
+            raise GuessError('style is "solid", "dashed" or "dotted"')
+        return style
+
+    def _add_drawing(rec):
+        rec["i"] = view.next_id()
+        view.drawings.append(rec)
+        view.changed()
+        return Drawing(view, rec["i"])
+
+    def drawLine(x1, y1, x2, y2, color=None, width=1.5, style="solid", arrow=False):
+        """drawLine(x1, y1, x2, y2) draws a line on the display, under the
+        graph, in graph coordinates (the same as node x and y; a node's
+        centre is n.x + n.width/2, n.y + n.height/2). color= (default: the
+        theme's text colour), width=, style="dashed" or "dotted", arrow=true
+        puts an arrowhead at (x2, y2). Returns the drawing (.remove())."""
+        c, a = _ink(color)
+        return _add_drawing({"k": "line", "x1": float(x1), "y1": float(y1), "x2": float(x2), "y2": float(y2),
+                             "c": c, "a": a, "w": float(width), "st": _line_style(style), "ar": bool(arrow)})
+
+    def drawText(x, y, text, color=None, size=14, anchor="middle"):
+        """drawText(x, y, "text") writes text on the display at (x, y) in graph
+        coordinates, above the graph. size= is in graph units (it zooms with
+        the graph); anchor= "start", "middle" or "end" (horizontal)."""
+        if anchor not in ("start", "middle", "end"):
+            raise GuessError('anchor is "start", "middle" or "end"')
+        c, a = _ink(color)
+        return _add_drawing({"k": "text", "x": float(x), "y": float(y), "t": str(text), "c": c, "a": a,
+                             "s": float(size), "an": anchor})
+
+    def _shape(kind, geom, color, fill, lineWidth, style):
+        c, a = _ink(color)
+        f, fa = (None, 0.0) if fill is None else colors.to_rgba_int(colors.normalize(fill))
+        return _add_drawing({"k": kind, **geom, "c": c, "a": a, "f": f, "fa": fa,
+                             "w": float(lineWidth), "st": _line_style(style)})
+
+    def drawRect(x, y, w, h, color=None, fill=None, lineWidth=1.5, style="solid"):
+        """drawRect(x, y, w, h) draws a box with its top-left corner at (x, y)
+        (graph coordinates), under the graph. fill= a colour fills it
+        (e.g. "255,200,0,60" for a translucent one); color= is the outline
+        (default: the theme's text colour) and lineWidth=0 leaves it out."""
+        return _shape("rect", {"x": float(x), "y": float(y), "ww": float(w), "hh": float(h)},
+                      color, fill, lineWidth, style)
+
+    def drawCircle(x, y, r, color=None, fill=None, lineWidth=1.5, style="solid"):
+        """drawCircle(x, y, r) draws a circle centred at (x, y) with radius r
+        (graph coordinates), under the graph. fill=, lineWidth= and style= as
+        for drawRect."""
+        return _shape("circle", {"x": float(x), "y": float(y), "r": float(r)}, color, fill, lineWidth, style)
+
+    def removeDrawing(d):
+        """Remove one drawing (from drawLine, drawText, drawRect or drawCircle)."""
+        i = d._id if isinstance(d, Drawing) else int(d)
+        view.drawings = [x for x in view.drawings if x["i"] != i]
+        view.changed()
+
+    def clearDrawings():
+        """Remove every drawing made with drawLine, drawText, drawRect and drawCircle."""
+        if view.drawings:
+            view.drawings = []
+            view.changed()
+
+    def getDrawings():
+        """The drawings on the display."""
+        return [Drawing(view, d["i"]) for d in view.drawings]
+
+    for fn in (drawLine, drawText, drawRect, drawCircle, removeDrawing, clearDrawings, getDrawings):
+        reg(fn.__name__, fn)
 
     reg("startMovie", startMovie)
     reg("stopMovie", stopMovie)

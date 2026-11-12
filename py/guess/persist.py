@@ -124,7 +124,7 @@ def _data(session, g, nodes, edges, nidx, eidx, subset=False):
                  "curvature": view.curvature, "edgeColor": view.edge_color, "labels": view.labels,
                  "styles": view.styles, "pie": view.pie, "borderWidth": view.border_width,
                  "slides": getattr(view, "slides", []), "guides": view.guides, "guidesNote": view.guides_note,
-                 "map": view.map, "raiseChanged": view.raise_changed,
+                 "map": view.map, "raiseChanged": view.raise_changed, "drawings": view.drawings,
                  "hoverFields": view.hover_fields},
     }
     if subset:
@@ -212,6 +212,7 @@ def load(session, data):
     view.border_width = float(v.get("borderWidth", 0.75))
     view.guides = [dict(x) for x in v.get("guides", [])]
     view.map = v.get("map")
+    view.drawings = [dict(x) for x in v.get("drawings", [])]
     view.guides_note = v.get("guidesNote", "")
     view.raise_changed = bool(v.get("raiseChanged", True))
     hf = v.get("hoverFields") or {}

@@ -1,7 +1,7 @@
 // Graph renderer on PixiJS. Holds only visual state; the model lives in the worker.
 import { Application, BitmapFont, BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js";
 import { activationScales, anneal, type Candidate, type Choice, greedyRepair, type Item, Occupancy, particles, type Rect, rectOf } from "./labelplace";
-import type { EdgeRec, HullRec, Morph, NodeRec, Overlay } from "./protocol";
+import type { DrawingRec, EdgeRec, HullRec, Morph, NodeRec, Overlay } from "./protocol";
 import { dashes, gradientPieces, headDepth, headPrims, linePrims, type Prim, trimEnd } from "./edgestyles";
 
 interface Anim {
@@ -200,6 +200,10 @@ export class Renderer {
   private map: Overlay["map"] = null;
   private mapKey = "";
   private guideLabels = new Container();
+  /** drawLine/drawRect/drawCircle under the graph; drawText above it */
+  private drawG = new Graphics();
+  private drawTexts = new Container();
+  private drawings: DrawingRec[] = [];
   private guides: NonNullable<Overlay["guides"]> = [];
   private guidesNote = "";
   private imageLayer = new Container();
@@ -318,7 +322,7 @@ export class Renderer {
     }).observe(this.host);
     // draw only when something changed (idle graphs cost nothing)
     this.app.ticker.remove(this.app.render, this.app);
-    this.world.addChild(this.backdrop, this.mapG, this.guideG, this.guideLabels, this.hullG, this.edgeG, this.flowG, this.nodeG, this.imageLayer, this.leaderG, this.pills, this.halos, this.labels, this.overlay);
+    this.world.addChild(this.backdrop, this.mapG, this.guideG, this.guideLabels, this.hullG, this.drawG, this.edgeG, this.flowG, this.nodeG, this.imageLayer, this.leaderG, this.pills, this.halos, this.labels, this.drawTexts, this.overlay);
     this.app.stage.addChild(this.world);
     this.app.ticker.add(() => this.frame());
     this.bindInput();
@@ -488,6 +492,7 @@ export class Renderer {
     this.userBg = ov.background;
     this.guides = ov.guides ?? [];
     this.guidesNote = ov.guidesNote ?? "";
+    this.drawings = ov.drawings ?? [];
     this.map = ov.map ?? null;
     this.pieColors = ov.pie ?? null;
     this.borderWidth = ov.borderWidth ?? 0.75;
@@ -642,6 +647,10 @@ export class Renderer {
         y0 = Math.min(y0, gd.y2 - 20); y1 = Math.max(y1, gd.y2 + 20);
       }
       if (this.guidesNote && this.guides.length) y1 += 50;
+      for (const d of this.drawings) {
+        const [a, b, c, e] = drawingBox(d);
+        x0 = Math.min(x0, a); y0 = Math.min(y0, b); x1 = Math.max(x1, c); y1 = Math.max(y1, e);
+      }
     }
     const W = this.app.screen.width, H = this.app.screen.height;
     const pad = 40;
@@ -708,6 +717,7 @@ export class Renderer {
       this.drawMap();
       this.drawGuides();
       this.drawHulls();
+      this.drawDrawings();
       this.drawEdges();
       this.drawNodes();
       if (this.labelsDirty) {
@@ -786,6 +796,55 @@ export class Renderer {
       t.anchor.set(0.5, 0);
       t.position.set((Math.min(...xs) + Math.max(...xs)) / 2, Math.max(...ys) + 40);
       this.guideLabels.addChild(t);
+    }
+  }
+
+  /** drawLine, drawRect, drawCircle (under the graph) and drawText (above it). */
+  private drawDrawings() {
+    const g = this.drawG;
+    g.clear();
+    for (const t of this.drawTexts.removeChildren()) t.destroy();
+    const ink = this.labelColor;
+    for (const d of this.drawings) {
+      const color = d.c ?? ink;
+      if (d.k === "text") {
+        const t = new BitmapText({ text: d.t, style: LABEL_STYLE });
+        t.scale.set((LABEL_SCALE * d.s) / 10);
+        t.tint = color;
+        t.alpha = d.a;
+        t.anchor.set(d.an === "start" ? 0 : d.an === "end" ? 1 : 0.5, 0.5);
+        t.position.set(d.x, d.y);
+        this.drawTexts.addChild(t);
+        continue;
+      }
+      const stroke = { width: d.w, color, alpha: d.a, cap: "round" as const, join: "round" as const };
+      const outline = (pts: number[]) => {
+        if (d.w <= 0) return;
+        if (d.st === "solid") {
+          g.poly(pts, false).stroke(stroke);
+          return;
+        }
+        const [on, off] = d.st === "dashed" ? [d.w * 4, d.w * 3] : [0.01, d.w * 2.5];
+        for (const seg of dashes(pts, on, off)) {
+          if (seg.length >= 4) g.poly(seg, false).stroke(stroke);
+          else if (seg.length === 2) g.circle(seg[0], seg[1], d.w / 2).fill({ color, alpha: d.a });
+        }
+      };
+      if (d.k === "line") {
+        let { x2, y2 } = d;
+        if (d.ar) {
+          const dx = d.x2 - d.x1, dy = d.y2 - d.y1, len = Math.hypot(dx, dy) || 1;
+          const hl = Math.max(6, d.w * 4), hw = hl * 0.45, ux = dx / len, uy = dy / len;
+          g.poly([d.x2, d.y2, d.x2 - ux * hl - uy * hw, d.y2 - uy * hl + ux * hw, d.x2 - ux * hl + uy * hw, d.y2 - uy * hl - ux * hw])
+            .fill({ color, alpha: d.a });
+          x2 = d.x2 - ux * hl * 0.8; y2 = d.y2 - uy * hl * 0.8;
+        }
+        outline([d.x1, d.y1, x2, y2]);
+      } else {
+        const pts = drawingOutline(d);
+        if (d.f != null) g.poly(pts, true).fill({ color: d.f, alpha: d.fa });
+        outline([...pts, pts[0], pts[1]]);
+      }
     }
   }
 
@@ -1889,7 +1948,11 @@ export class Renderer {
       x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y);
       x1 = Math.max(x1, n.x + n.w + (n.lv ? 8 * n.l.length : 0)); y1 = Math.max(y1, n.y + n.h);
     }
-    if (!vis.length) { x0 = y0 = 0; x1 = y1 = 100; }
+    for (const d of this.drawings) {
+      const [a, b, c, e] = drawingBox(d);
+      x0 = Math.min(x0, a); y0 = Math.min(y0, b); x1 = Math.max(x1, c); y1 = Math.max(y1, e);
+    }
+    if (!vis.length && !this.drawings.length) { x0 = y0 = 0; x1 = y1 = 100; }
     const pad = 20;
     const col = (c: number) => "#" + c.toString(16).padStart(6, "0");
     const esc = (t: string) => t.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
@@ -1908,6 +1971,25 @@ export class Renderer {
     for (const h of this.hulls) {
       const outline = this.hullOutline(h);
       if (outline.length) out.push(`<polygon points="${outline.map((p) => p.map((v) => v.toFixed(2)).join(",")).join(" ")}" fill="${col(h.c)}" fill-opacity="${h.a}" stroke="${col(darken(h.c))}"/>`);
+    }
+    const ink = this.labelColor;
+    const dash = (d: { st: string; w: number }) =>
+      d.st === "dashed" ? ` stroke-dasharray="${d.w * 4} ${d.w * 3}"` : d.st === "dotted" ? ` stroke-dasharray="0.01 ${d.w * 2.5}"` : "";
+    for (const d of this.drawings) {
+      const c = col(d.c ?? ink);
+      if (d.k === "line") {
+        out.push(`<line x1="${d.x1}" y1="${d.y1}" x2="${d.x2}" y2="${d.y2}" stroke="${c}" stroke-opacity="${d.a}" stroke-width="${d.w}" stroke-linecap="round"${dash(d)}/>`);
+        if (d.ar) {
+          const dx = d.x2 - d.x1, dy = d.y2 - d.y1, len = Math.hypot(dx, dy) || 1;
+          const hl = Math.max(6, d.w * 4), hw = hl * 0.45, ux = dx / len, uy = dy / len;
+          out.push(`<polygon points="${d.x2},${d.y2} ${d.x2 - ux * hl - uy * hw},${d.y2 - uy * hl + ux * hw} ${d.x2 - ux * hl + uy * hw},${d.y2 - uy * hl - ux * hw}" fill="${c}" fill-opacity="${d.a}"/>`);
+        }
+      } else if (d.k === "rect" || d.k === "circle") {
+        const fill = d.f != null ? `fill="${col(d.f)}" fill-opacity="${d.fa}"` : `fill="none"`;
+        const stroke = d.w > 0 ? ` stroke="${c}" stroke-opacity="${d.a}" stroke-width="${d.w}"${dash(d)}` : "";
+        out.push(d.k === "rect" ? `<rect x="${d.x}" y="${d.y}" width="${d.ww}" height="${d.hh}" ${fill}${stroke}/>`
+          : `<circle cx="${d.x}" cy="${d.y}" r="${d.r}" ${fill}${stroke}/>`);
+      }
     }
     for (const e of this.edges.values()) {
       const a = this.nodes.get(e.s), b = this.nodes.get(e.t);
@@ -1963,6 +2045,10 @@ export class Renderer {
       const top = p.y - p.ay * p.h;
       const tspans = lines.map((ln, i) => `<tspan x="${p.x}" y="${top + (i + 0.5) * lineH}">${esc(ln)}</tspan>`).join("");
       out.push(`<text font-size="${size}" font-family="Helvetica, Arial, sans-serif" text-anchor="${anchor}" dominant-baseline="central" fill="${col(p.color)}"${halo}${rot}>${tspans}</text>`);
+    }
+    for (const d of this.drawings) {
+      if (d.k !== "text") continue;
+      out.push(`<text x="${d.x}" y="${d.y}" font-family="Helvetica, Arial, sans-serif" font-size="${d.s}" fill="${col(d.c ?? this.labelColor)}" fill-opacity="${d.a}" text-anchor="${d.an}" dominant-baseline="central">${esc(d.t)}</text>`);
     }
     out.push("</svg>");
     return out.join("\n");
@@ -2191,4 +2277,30 @@ function segDist(px: number, py: number, ax: number, ay: number, bx: number, by:
 function darken(c: number) {
   const r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
   return ((r * 0.55) << 16) | ((g * 0.55) << 8) | (b * 0.55);
+}
+
+/** A drawn rectangle's or circle's outline as flat points. */
+function drawingOutline(d: DrawingRec): number[] {
+  if (d.k === "rect") return [d.x, d.y, d.x + d.ww, d.y, d.x + d.ww, d.y + d.hh, d.x, d.y + d.hh];
+  if (d.k === "circle") {
+    const n = Math.max(24, Math.min(160, Math.round(d.r)));
+    const pts: number[] = [];
+    for (let k = 0; k < n; k++) pts.push(d.x + d.r * Math.cos((2 * Math.PI * k) / n), d.y + d.r * Math.sin((2 * Math.PI * k) / n));
+    return pts;
+  }
+  return [];
+}
+
+/** A drawing's bounds [x0, y0, x1, y1] (for fitting the view). */
+function drawingBox(d: DrawingRec): [number, number, number, number] {
+  switch (d.k) {
+    case "line": return [Math.min(d.x1, d.x2), Math.min(d.y1, d.y2), Math.max(d.x1, d.x2), Math.max(d.y1, d.y2)];
+    case "rect": return [d.x, d.y, d.x + d.ww, d.y + d.hh];
+    case "circle": return [d.x - d.r, d.y - d.r, d.x + d.r, d.y + d.r];
+    case "text": {
+      const w = d.t.length * d.s * 0.55;
+      const x0 = d.an === "start" ? d.x : d.an === "end" ? d.x - w : d.x - w / 2;
+      return [x0, d.y - d.s / 2, x0 + w, d.y + d.s / 2];
+    }
+  }
 }

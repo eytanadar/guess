@@ -102,6 +102,28 @@ class Markdown(Widget):
             gui.bound[self._id] = fn
 
 
+class Chart(Widget):
+    """Chart(lambda: plotHistogram(degree)) puts a chart inside a panel
+    instead of the dock: the function makes the chart (any plot command, or
+    an Altair chart) and runs again after every command, so the chart
+    follows the graph. .refresh() redraws it now."""
+    kind = "chart"
+    _props = ("spec",)
+
+    def __init__(self, gui, fn):
+        if not callable(fn):
+            raise GuessError("Chart needs a function that makes a chart, e.g. Chart(lambda: plotHistogram(degree))")
+        super().__init__(gui)
+        object.__setattr__(self, "_fn", fn)
+        gui.bound_charts[self._id] = fn
+        self._state["spec"] = gui.capture_chart(fn)
+
+    def refresh(self):
+        spec = self._gui.capture_chart(self._fn)
+        self._state["spec"] = spec
+        self._gui.emit_update(self, {"spec": spec})
+
+
 class View(Widget):
     """View(name) puts one of GUESS's own views inside a panel or tab: "table"
     (the data table), "style", "filter", "variables", "help", "timeline" or
@@ -553,6 +575,7 @@ class Gui:
         self._next = 0
         self.events = GraphEvents(self)
         self.bound = {}          # widget id -> function giving its text (live labels)
+        self.bound_charts = {}   # Chart widget id -> function making its chart
         self.chrome = {}         # "menubar" / "toolbar" / "statusbar" -> their widgets
 
     def next_id(self):
@@ -586,8 +609,38 @@ class Gui:
             return f"⚠ {type(e).__name__}: {e}"
         return "" if v is None else str(v)
 
+    def capture_chart(self, fn):
+        """Run fn, keeping the chart it makes (for a Chart widget) instead of
+        sending it to the dock. An Altair chart returned is drawn too."""
+        s = self.session
+        prev = getattr(s, "_chart_capture", None)
+        got = []
+        s._chart_capture = got
+        try:
+            v = fn()
+            if v is not None and hasattr(v, "to_dict") and hasattr(v, "mark_point"):
+                show = s.ns.get("showChart")
+                if show is not None:
+                    show(v)
+        except Exception as e:  # noqa: BLE001 - a chart widget must never break a command
+            return {"type": "error", "text": f"{type(e).__name__}: {e}"}
+        finally:
+            s._chart_capture = prev
+        return got[-1] if got else None
+
     def refresh_bound(self):
         """Live labels: run their functions again and send what changed."""
+        for wid, fn in list(self.bound_charts.items()):
+            w = self.widgets.get(wid)
+            if w is None:
+                self.bound_charts.pop(wid, None)
+                continue
+            if not self._shown(w):
+                continue
+            spec = self.capture_chart(fn)
+            if spec != w._state.get("spec"):
+                w._state["spec"] = spec
+                self.emit_update(w, {"spec": spec})
         for wid, fn in list(self.bound.items()):
             w = self.widgets.get(wid)
             if w is None:
@@ -682,7 +735,7 @@ def install(session):
         make.__doc__ = cls.__doc__
         return make
 
-    for cls in (Panel, Label, Button, Slider, Checkbox, Dropdown, TextField, Markdown, View, Tabs, Tab, Group,
+    for cls in (Panel, Label, Button, Slider, Checkbox, Dropdown, TextField, Markdown, Chart, View, Tabs, Tab, Group,
                 Row, Column, MenuItem):
         session._bind(cls.__name__, ctor(cls), kind="command")
 

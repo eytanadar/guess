@@ -260,7 +260,12 @@ class Session:
 
     def chart_out(self, msg):
         """Send a chart (or Altair chart) message, noting how it was made so it
-        can be live."""
+        can be live. Inside a Chart(...) widget's function the message is
+        captured for the widget instead."""
+        cap = getattr(self, "_chart_capture", None)
+        if cap is not None:
+            cap.append(msg)
+            return
         cid = msg["id"]
         if self._recipe is not None and self._refreshing is None:
             self.chart_recipes.pop(cid, None)
@@ -403,7 +408,7 @@ class Session:
             if not self._history_op and not quiet:
                 self._record_undo(source, j, before, cell)
             self._edge_colour_hint(j)
-            if self.gui.bound:
+            if self.gui.bound or self.gui.bound_charts:
                 self.gui.refresh_bound()
             if self.live_charts and (j or self._history_op or self.view.version != before["view_version"]
                                      or self.graph is not g):
@@ -634,7 +639,7 @@ class Session:
         """The display's selection (box/lasso/shift-click) as the variable `sel`."""
         g = self.graph
         self.ns["sel"] = GSet((n for n in map(g.node_by_id, ids) if n is not None), "selection")
-        if self.gui.bound:
+        if self.gui.bound or self.gui.bound_charts:
             self.gui.refresh_bound()          # live labels that show the selection
         return len(self.ns["sel"])
 
@@ -955,7 +960,7 @@ class Session:
         finally:
             sys.stdout, sys.stderr = old_out, old_err
             self._restore_system()
-            if self.gui.bound:
+            if self.gui.bound or self.gui.bound_charts:
                 self.gui.refresh_bound()
             self.flush()
         return True

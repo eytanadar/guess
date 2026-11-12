@@ -258,6 +258,10 @@ export class Dock {
         el = document.createElement("div");
         el.className = "w-markdown";
         break;
+      case "chart":
+        el = document.createElement("div");
+        el.className = "w-chart";
+        break;
       case "view":
         el = document.createElement("div");
         el.className = "w-view";
@@ -349,6 +353,8 @@ export class Dock {
         el.textContent = String(v);
       } else if (kind === "markdown" && k === "text") {
         el.replaceChildren(markdown(String(v)));
+      } else if (kind === "chart" && k === "spec") {
+        this.widgetChart(id, el, v as ChartMsg | VegaMsg | { type: "error"; text: string } | null);
       } else if (kind === "group" && k === "title") {
         el.querySelector("summary")!.textContent = String(v);
       } else if (kind === "tabs" && k === "selected" && v != null) {
@@ -388,6 +394,11 @@ export class Dock {
   chart(c: ChartMsg) {
     const body = this.frame(c.id, c.title, "right");
     this.liveButton(c.id, !!c.canLive, !!c.live);
+    this.drawChart(c, body, c.id);
+  }
+
+  /** Draw a chart into body; key names its marks (the panel, or a Chart widget). */
+  private drawChart(c: ChartMsg, body: HTMLElement, key: string) {
     body.classList.add("chart-body");
     const W = 300, H = c.kind === "pie" ? 230 : 190;
     const svg = document.createElementNS(SVG, "svg");
@@ -424,30 +435,75 @@ export class Dock {
     if (c.kind === "line") {
       const left = 34, bottom = 30, top = 8, right = 8;
       const pw = W - left - right, ph = H - top - bottom;
-      const all = (c.series ?? []).flatMap((s) => s.points);
-      const xmin = Math.min(0, ...all.map((p) => p[0])), xmax = Math.max(1e-9, ...all.map((p) => p[0]));
-      const ymin = Math.min(0, ...all.map((p) => p[1])), ymax = Math.max(1e-9, ...all.map((p) => p[1]));
-      const X = (v: number) => left + (pw * (v - xmin)) / (xmax - xmin || 1);
-      const Y = (v: number) => top + ph * (1 - (v - ymin) / (ymax - ymin || 1));
+      const all = (c.series ?? []).flatMap((s) => s.points)
+        .filter((p) => (!c.logX || p[0] > 0) && (!c.logY || p[1] > 0));
+      const tx = c.logX ? Math.log10 : (v: number) => v, ty = c.logY ? Math.log10 : (v: number) => v;
+      const txs = all.map((p) => tx(p[0])), tys = all.map((p) => ty(p[1]));
+      let xmin = c.logX ? Math.min(...txs) : Math.min(0, ...txs), xmax = c.logX ? Math.max(...txs) : Math.max(1e-9, ...txs);
+      let ymin = c.logY ? Math.min(...tys) : Math.min(0, ...tys), ymax = c.logY ? Math.max(...tys) : Math.max(1e-9, ...tys);
+      if (!all.length) { xmin = 0; xmax = 1; ymin = 0; ymax = 1; }
+      if (c.logX && xmax - xmin < 1) { xmin = Math.floor(xmin); xmax = Math.max(xmax, xmin + 1); }
+      if (c.logY && ymax - ymin < 1) { ymin = Math.floor(ymin); ymax = Math.max(ymax, ymin + 1); }
+      // X, Y take data values; XT, YT values already on the axis' scale
+      const XT = (v: number) => left + (pw * (v - xmin)) / (xmax - xmin || 1);
+      const YT = (v: number) => top + ph * (1 - (v - ymin) / (ymax - ymin || 1));
+      const X = (v: number) => XT(tx(v)), Y = (v: number) => YT(ty(v));
       const axis = document.createElementNS(SVG, "path");
       axis.setAttribute("d", `M${left},${top} V${top + ph} H${W - right}`);
       axis.setAttribute("class", "axis");
       svg.append(axis);
-      for (const [v, isX] of [[ymin, false], [ymax, false], [xmin, true], [xmax, true]] as [number, boolean][]) {
+      /** tick values (on the axis' own scale): the ends, or the powers of ten between them */
+      const ticks = (lo: number, hi: number, log: boolean | undefined) => {
+        if (!log) return [lo, hi];
+        const out: number[] = [];
+        for (let k = Math.ceil(lo - 1e-9); k <= hi + 1e-9; k++) out.push(k);
+        return out.length >= 2 ? out : [lo, hi];
+      };
+      const label = (v: number, log: boolean | undefined) => (log ? fmt(+Math.pow(10, v).toPrecision(3)) : fmt(v));
+      for (const v of ticks(ymin, ymax, c.logY)) {
         const t = document.createElementNS(SVG, "text");
-        t.setAttribute("x", String(isX ? X(v) : left - 4));
-        t.setAttribute("y", String(isX ? top + ph + 11 : Y(v) + 3));
-        t.setAttribute("class", isX ? "xtick" : "tick");
-        t.textContent = fmt(v);
+        t.setAttribute("x", String(left - 4));
+        t.setAttribute("y", String(YT(v) + 3));
+        t.setAttribute("class", "tick");
+        t.textContent = label(v, c.logY);
         svg.append(t);
       }
+      for (const v of ticks(xmin, xmax, c.logX)) {
+        const t = document.createElementNS(SVG, "text");
+        t.setAttribute("x", String(XT(v)));
+        t.setAttribute("y", String(top + ph + 11));
+        t.setAttribute("class", "xtick");
+        t.textContent = label(v, c.logX);
+        svg.append(t);
+      }
+      if (c.logX || c.logY) {
+        const note = document.createElementNS(SVG, "text");
+        note.setAttribute("x", String(left + 4));
+        note.setAttribute("y", String(top + 9));
+        note.setAttribute("class", "tick");
+        note.setAttribute("text-anchor", "start");
+        note.textContent = c.logX && c.logY ? "log–log" : c.logX ? "log x" : "log y";
+        svg.append(note);
+      }
       (c.series ?? []).forEach((s, i) => {
+        const pts = s.points.filter((p) => (!c.logX || p[0] > 0) && (!c.logY || p[1] > 0));
         const line = document.createElementNS(SVG, "polyline");
-        line.setAttribute("points", s.points.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" "));
+        line.setAttribute("points", pts.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" "));
         line.setAttribute("fill", "none");
         line.setAttribute("stroke", hex(s.color));
-        line.setAttribute("stroke-width", "1.8");
+        line.setAttribute("stroke-width", c.dots ? "1" : "1.8");
+        if (c.dots) line.setAttribute("stroke-opacity", "0.5");
         svg.append(line);
+        if (c.dots) {
+          for (const [x, y] of pts) {
+            const dot = document.createElementNS(SVG, "circle");
+            dot.setAttribute("cx", X(x).toFixed(1));
+            dot.setAttribute("cy", Y(y).toFixed(1));
+            dot.setAttribute("r", "2.2");
+            dot.setAttribute("fill", hex(s.color));
+            svg.append(dot);
+          }
+        }
         const key = document.createElementNS(SVG, "text");
         key.setAttribute("x", String(W - right - 2));
         key.setAttribute("y", String(top + 10 + i * 12));
@@ -484,7 +540,7 @@ export class Dock {
           const sx = ((ev.clientX - r.left) / r.width) * W;
           const v = xmin + ((sx - left) / pw) * (xmax - xmin);
           let best = xs[0];
-          for (const x of xs) if (Math.abs(x - v) < Math.abs(best - v)) best = x;
+          for (const x of xs) if (Math.abs(tx(x) - v) < Math.abs(tx(best) - v)) best = x;
           guide.setAttribute("x1", String(X(best)));
           guide.setAttribute("x2", String(X(best)));
           guide.style.display = "";
@@ -533,16 +589,20 @@ export class Dock {
       });
     } else {
       const left = 34, bottom = c.kind === "distrib" ? 16 : 34, top = 8, right = 6;
-      const maxV = Math.max(1e-9, ...items.map((it) => it.value));
-      const minV = Math.min(0, ...items.map((it) => it.value));
+      const pos = items.map((it) => it.value).filter((v) => v > 0);
+      const maxV = c.logY ? Math.max(1, ...pos) : Math.max(1e-9, ...items.map((it) => it.value));
+      // log axis: bars start a little below the smallest value so it still shows
+      const minV = c.logY ? Math.min(...pos, maxV) / 2 : Math.min(0, ...items.map((it) => it.value));
       const pw = W - left - right, ph = H - top - bottom;
-      const y = (v: number) => top + ph * (1 - (v - minV) / (maxV - minV || 1));
+      const y = c.logY
+        ? (v: number) => top + ph * (1 - (Math.log10(Math.max(v, minV)) - Math.log10(minV)) / (Math.log10(maxV) - Math.log10(minV) || 1))
+        : (v: number) => top + ph * (1 - (v - minV) / (maxV - minV || 1));
       const bw = pw / Math.max(items.length, 1);
       const axis = document.createElementNS(SVG, "path");
       axis.setAttribute("d", `M${left},${top} V${top + ph} H${W - right}`);
       axis.setAttribute("class", "axis");
       svg.append(axis);
-      for (const v of [minV, maxV]) {
+      for (const v of c.logY ? [Math.min(...pos, maxV), maxV] : [minV, maxV]) {
         const t = document.createElementNS(SVG, "text");
         t.setAttribute("x", String(left - 4));
         t.setAttribute("y", String(y(v) + 3));
@@ -550,9 +610,17 @@ export class Dock {
         t.textContent = fmt(v);
         svg.append(t);
       }
+      if (c.logY) {
+        const note = document.createElementNS(SVG, "text");
+        note.setAttribute("x", String(W - right));
+        note.setAttribute("y", String(top + 9));
+        note.setAttribute("class", "tick");
+        note.textContent = "log scale";
+        svg.append(note);
+      }
       items.forEach((it, i) => {
         const rect = document.createElementNS(SVG, "rect");
-        const y0 = y(Math.max(0, minV)), y1 = y(it.value);
+        const y0 = c.logY ? top + ph : y(Math.max(0, minV)), y1 = c.logY && it.value <= 0 ? top + ph : y(it.value);
         rect.setAttribute("x", String(left + i * bw + (bw > 3 ? bw * 0.1 : 0)));
         rect.setAttribute("width", String(Math.max(bw > 3 ? bw * 0.8 : bw, 0.5)));
         rect.setAttribute("y", String(Math.min(y0, y1)));
@@ -576,7 +644,7 @@ export class Dock {
       this.brush(svg, W, left, top, pw, ph, bw, items, c);
     }
     body.replaceChildren(svg);
-    this.marks.set(c.id, marks);
+    this.marks.set(key, marks);
   }
 
   /** Drag across bars to pick a range of them: while dragging, the graph shows
@@ -661,9 +729,13 @@ export class Dock {
   async vega(m: VegaMsg) {
     const body = this.frame(m.id, m.title, "right");
     this.liveButton(m.id, !!m.canLive, !!m.live);
+    await this.drawVega(m, body, m.id);
+  }
+
+  private async drawVega(m: VegaMsg, body: HTMLElement, key: string) {
     body.classList.add("vega-body");
-    this.vegas.get(m.id)?.destroy();
-    this.vegas.delete(m.id);
+    this.vegas.get(key)?.destroy();
+    this.vegas.delete(key);
     const holder = document.createElement("div");
     body.replaceChildren(holder);
     const h = this.host;
@@ -679,7 +751,7 @@ export class Dock {
         brush: (expr) => h.brush?.(expr),
         resolve,
       }, h.dark?.() ?? false);
-      if (body.firstChild === holder) this.vegas.set(m.id, chart);
+      if (body.firstChild === holder) this.vegas.set(key, chart);
       else chart.destroy();
     } catch (e) {
       const err = document.createElement("div");
@@ -687,6 +759,33 @@ export class Dock {
       err.textContent = `Couldn't draw this chart: ${String(e).split("\n")[0]}`;
       body.replaceChildren(err);
     }
+  }
+
+  /** A Chart widget's chart: the title above, drawn like a dock chart. */
+  private widgetChart(id: string, el: HTMLElement, spec: ChartMsg | VegaMsg | { type: "error"; text: string } | null) {
+    this.vegas.get(id)?.destroy();
+    this.vegas.delete(id);
+    this.marks.delete(id);
+    el.replaceChildren();
+    if (!spec) {
+      el.textContent = "(this function made no chart)";
+      el.classList.add("w-chart-empty");
+      return;
+    }
+    el.classList.remove("w-chart-empty");
+    const type = (spec as { type?: string }).type;
+    if (type === "error") {
+      el.textContent = `⚠ ${(spec as { text: string }).text}`;
+      el.classList.add("w-chart-empty");
+      return;
+    }
+    const title = document.createElement("div");
+    title.className = "w-chart-title";
+    title.textContent = (spec as ChartMsg).title;
+    const body = document.createElement("div");
+    el.append(title, body);
+    if (type === "vega") void this.drawVega(spec as VegaMsg, body, id);
+    else this.drawChart(spec as ChartMsg, body, id);
   }
 
   /** Highlight marks whose elements intersect the given ones (from graph/console hover). */
