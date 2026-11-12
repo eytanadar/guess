@@ -1,0 +1,110 @@
+# Building a network by watching  (Newman, Networks, Section 4.3)
+# Animals can't fill in questionnaires, so their networks are built by
+# watching: record which pairs are seen together, and call a pair "tied" if
+# they're together often enough. The hidden truth here is the real network of
+# 62 bottlenose dolphins of Doubtful Sound (Lusseau et al. 2003); the daily
+# sightings are simulated from it.
+
+import random
+import networkx as nx
+
+makeFromFile("dolphins.gdf")
+TRUE = {frozenset((e.node1.name, e.node2.name)) for e in g.edges}
+NAMES = sorted(n.name for n in g.nodes)
+NODE = {n.name: n for n in g.nodes}
+G0 = toNetworkX()
+pod = {}
+for i, c in enumerate(nx.community.louvain_communities(G0, seed=1)):
+    for v in c:
+        pod[v] = i
+rnd = random.Random(5)
+RATE = {}                     # chance per day that a pair is seen together
+for i, a in enumerate(NAMES):
+    for b in NAMES[i + 1:]:
+        k = frozenset((a, b))
+        if k in TRUE:
+            RATE[k] = rnd.uniform(0.15, 0.6)          # real associates
+        else:
+            RATE[k] = 0.03 if pod[a] == pod[b] else 0.008   # chance encounters, more likely in the same pod
+remove(list(g.edges))
+seen = {k: 0 for k in RATE}
+days = [0]
+cut = Slider(2, 40, 10, 1, label="tie if seen together on at least this % of days")
+sim = random.Random(9)
+
+
+def watch(n):
+    for _ in range(n):
+        days[0] += 1
+        for k, r in RATE.items():
+            if sim.random() < r:
+                seen[k] += 1
+    redraw()
+
+
+def observed():
+    if not days[0]:
+        return set()
+    return {k for k, c in seen.items() if c / days[0] >= cut.value / 100}
+
+
+def redraw():
+    remove(list(g.edges))
+    for k in observed():
+        a, b = sorted(k)
+        e = addEdge(NODE[a], NODE[b])
+        real = k in TRUE
+        e.color = "50,80,140" if real else "220,60,50"
+        e.linestyle = "solid" if real else "dashed"
+        e.width = 1.2 + 3 * seen[k] / days[0]
+    for n in g.nodes:
+        n.color = "170,190,215"
+        n.labelvisible = true
+        n.width = n.height = 11
+
+
+def reset():
+    for k in seen:
+        seen[k] = 0
+    days[0] = 0
+    redraw()
+
+
+def result():
+    if not days[0]:
+        return "*Watch for some days.* Every day, each pair may be seen together."
+    obs = observed()
+    found = len(obs & TRUE)
+    false = len(obs - TRUE)
+    return (f"After **{days[0]}** day{'s' if days[0] != 1 else ''}: **{len(obs)}** ties declared. **{found}** of the {len(TRUE)} real "
+            f"associations found ({100 * found / len(TRUE):.0f}%), and **{false}** false ties (red, dashed) "
+            "from chance encounters.")
+
+
+cut.onChange = lambda v: redraw()
+redraw()
+hoverFields("label")
+ui.title("Building a network by watching", "Networks, Section 4.3")
+ui.layout(
+    right=Column(
+        Markdown("""### Who swims with whom?
+Researchers followed a community of **62 dolphins** in New Zealand and
+recorded which pairs were often seen together. Here the real network they
+found is the hidden truth. Each simulated day, real associates are seen
+together often, and other pairs now and then by chance.
+
+A pair is declared **tied** when seen together on enough of the days
+watched. Edge thickness: how often."""),
+        Row(Button("Watch 1 day", onClick=lambda: watch(1)), Button("Watch 10 days", onClick=lambda: watch(10)),
+            Button("Watch 100 days", onClick=lambda: watch(100))),
+        cut,
+        Button("Start again", onClick=reset),
+        Markdown(result),
+        Markdown("""*Try:* after one day, any pair seen together counts. With a low threshold,
+chance encounters creep in; with a high one, weaker real ties are missed. The
+more days you watch, the more clearly the two separate.""")),
+    sizes={"right": 350},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: "data: D. Lusseau et al., Behav. Ecol. Sociobiol. 54, 396 (2003), via M. Newman · sightings simulated"))
+center()

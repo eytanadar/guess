@@ -1,0 +1,193 @@
+# Ego-centred surveys  (Newman, Networks, Section 4.2.1)
+# Surveying everyone is expensive. Interview a random sample of people (egos)
+# about their contacts (alters) instead, and you can still estimate local
+# things such as the average degree and the clustering. Bernard's scale-up
+# method estimates how many people someone knows by counting how many people
+# they know with names from a list. The town here is invented.
+
+import math
+import random
+import networkx as nx
+
+rnd = random.Random(31)
+N = 480                  # (networkx lays out up to 499 nodes without scipy)
+G = nx.powerlaw_cluster_graph(N, 4, 0.55, seed=31)
+SURNAMES = [f"{a}{b}" for a in ["Ash", "Brook", "Clay", "Dale", "Fair", "Glen", "Hart", "Kemp", "Lane", "Moss",
+                                 "Nash", "Park", "Reed", "Shaw", "Vale"] for b in ["", "ley", "ton", "wood", "ford"]]
+weights = [1 / (i + 1) for i in range(len(SURNAMES))]           # a few common names, many rare ones
+pos = nx.spring_layout(G, seed=31, iterations=60)
+H = nx.Graph()
+for v in G:
+    H.add_node(f"p{v}", surname=rnd.choices(SURNAMES, weights)[0], pos=(pos[v][0] * 700, pos[v][1] * 700))
+H.add_edges_from((f"p{a}", f"p{b}") for a, b in G.edges())
+fromNetworkX(H)
+G = toNetworkX()
+NODE = {n.name: n for n in g.nodes}
+TRUE_K = 2 * G.number_of_edges() / N
+TRUE_C = nx.average_clustering(G)
+egos = []
+estimates = []           # (egos interviewed, estimated mean degree, estimated clustering)
+
+
+def plain():
+    g.nodes.color = "200,205,215"
+    g.nodes.width = g.nodes.height = 7
+    g.edges.color = "170,170,170,40"
+    g.edges.width = 0.6
+
+
+def interview(k=10):
+    plain()
+    fresh = random.Random(len(egos)).sample([v for v in G if v not in egos], k)
+    egos.extend(fresh)
+    for v in egos:
+        for u in G[v]:
+            NODE[u].color = "245,170,60"
+            NODE[u].width = NODE[u].height = 9
+    alters_of = {v: set(G[v]) for v in egos}
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        for v, al in alters_of.items():
+            if v in (a, b):
+                e.color, e.width = "60,60,60,200", 1.2
+            elif a in al and b in al:
+                e.color, e.width = "40,110,210,220", 1.6
+    for v in egos:
+        NODE[v].color = "220,40,40"
+        NODE[v].width = NODE[v].height = 13
+    k_hat = sum(G.degree(v) for v in egos) / len(egos)
+    c_hat = sum(nx.clustering(G, v) for v in egos) / len(egos)
+    estimates.append((len(egos), k_hat, c_hat))
+
+
+def restart():
+    egos[:] = []
+    estimates[:] = []
+    plain()
+
+
+def ego_text():
+    if not egos:
+        return "*Interview some people.* Each says who their contacts are and which of them know each other."
+    n, k_hat, c_hat = estimates[-1]
+    return (f"**{n}** people interviewed (red), their contacts (orange), and the ties among those "
+            f"contacts (blue).\n\n- mean degree: estimate **{k_hat:.1f}**, truth {TRUE_K:.1f}\n"
+            f"- clustering: estimate **{c_hat:.2f}**, truth {TRUE_C:.2f}\n\nThe sample says nothing about "
+            "the network's overall shape (its components, its long paths), but local averages come out right.")
+
+
+def ego_chart():
+    if len(estimates) >= 2:
+        plotLine({"estimated degree": [(n, k) for n, k, _ in estimates],
+                  "true degree": [(n, TRUE_K) for n, _, _ in estimates]},
+                 title="Estimate as interviews add up", xlabel="people interviewed", ylabel="mean degree")
+
+
+# ---- the scale-up method -------------------------------------------------------------------
+person = [None]
+share = Slider(1, 30, 10, 1, label="the name list covers this % of the town")
+trials = []
+
+
+def acquaintances(v):
+    """Everyone within two steps: friends, and friends of friends you'd know by sight."""
+    return set(nx.single_source_shortest_path_length(G, v, cutoff=2)) - {v}
+
+
+def name_list(seed):
+    r = random.Random(seed)
+    names, covered = [], 0
+    order = SURNAMES[:]
+    r.shuffle(order)
+    count = {s: sum(1 for n in g.nodes if n.surname == s) for s in SURNAMES}
+    for s in order:
+        if covered >= share.value / 100 * N:
+            break
+        names.append(s)
+        covered += count[s]
+    return set(names), covered / N
+
+
+def scale_up(n, seed=0):
+    known = acquaintances(n.name)
+    names, p = name_list(seed)
+    hits = [u for u in known if NODE[u].surname in names]
+    return len(hits) / p if p else 0, len(known), hits, names, p
+
+
+def choose(n):
+    person[0] = n
+    trials[:] = []
+    plain()
+    est, true_n, hits, names, p = scale_up(n)
+    for u in acquaintances(n.name):
+        NODE[u].color = "245,200,120"
+    for u in hits:
+        NODE[u].color = "220,40,40"
+        NODE[u].width = NODE[u].height = 11
+    n.color = "30,30,30"
+    n.width = n.height = 15
+    trials.append(est)
+
+
+def many_lists():
+    if person[0] is None:
+        return
+    trials[:] = [scale_up(person[0], seed)[0] for seed in range(30)]
+
+
+def scale_text():
+    n = person[0]
+    if n is None:
+        return "*Click someone.* They know everyone within two steps (pale)."
+    est, true_n, hits, names, p = scale_up(n)
+    line = (f"**{n.name}** knows **{true_n}** people. The list's names cover {100 * p:.0f}% of the town, and "
+            f"{n.name} knows **{len(hits)}** people with those names (red), so the estimate is "
+            f"{len(hits)} ÷ {p:.2f} = **{est:.0f}**.")
+    if len(trials) > 1:
+        mean = sum(trials) / len(trials)
+        sd = math.sqrt(sum((t - mean) ** 2 for t in trials) / (len(trials) - 1))
+        line += f"\n\nOver {len(trials)} different name lists: **{mean:.0f} ± {sd:.0f}**."
+    return line
+
+
+mode = ["Interview egos"]
+
+
+def click(n):
+    if mode[0] == "How many people do you know?":
+        choose(n)
+
+
+def switch(title):
+    mode[0] = title
+    plain()
+
+
+graphevents.clickNode = click
+share.onChange = lambda v: choose(person[0]) if person[0] is not None else None
+plain()
+hoverFields("surname", "degree")
+ui.title("Ego-centred surveys", "Networks, Section 4.2.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Interview a few, learn about many
+An **ego-centred** study asks a random sample of people (the **egos**) about
+their own contacts (**alters**). This invented town has 480 people; you
+can't see it all, only what interviews reveal."""),
+        Tabs(
+            Tab("Interview egos",
+                Row(Button("Interview 10 more", onClick=lambda: interview(10)), Button("Start again", onClick=restart)),
+                Markdown(ego_text), Chart(ego_chart)),
+            Tab("How many people do you know?",
+                Markdown("""People can't list everyone they know. Bernard and colleagues instead read
+out a list of surnames and asked how many people respondents knew with those
+names. If the names cover 1% of the population, multiply the count by 100.
+Bernard's team found that Americans know about **2000** people."""),
+                share, Markdown(scale_text), Button("Try 30 different name lists", onClick=many_lists)),
+            onChange=switch)),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{N} people · {len(g.edges)} ties (invented)"))
+center()

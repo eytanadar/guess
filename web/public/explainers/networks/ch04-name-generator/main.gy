@@ -60,11 +60,17 @@ def survey_text():
     hidden = sorted(STUDENTS, key=lambda s: -true_deg[s])[:5]
     shown = [NODE[s].outdegree for s in hidden]
     mutual = reciprocity()
-    return (f"With {cap}: the most names anyone gave is **{max(outs)}**, but the most-named "
-            f"student was named **{max(ins)}** times. Out-degree is capped; in-degree is not.\n\n"
-            f"The five most connected students really have **{', '.join(str(true_deg[s]) for s in hidden)}** "
-            f"contacts; the survey records **{', '.join(map(str, shown))}**. "
-            f"**{100 * mutual:.0f}%** of nominations are returned (reciprocity).")
+    capped = limit.value < 11
+    head = (f"With {cap}: the most names anyone gave is **{max(outs)}**, and the most-named "
+            f"student was named **{max(ins)}** times."
+            + (" Out-degree is capped; in-degree is not." if capped else ""))
+    if net.is_directed():
+        return (head + f"\n\nAdvice runs one way: only **{100 * mutual:.0f}%** of nominations are "
+                "returned, and a few students are asked by many (the biggest dots).")
+    return (head + f"\n\nThe five most connected students really have "
+            f"**{', '.join(str(true_deg[s]) for s in hidden)}** friends; the survey records "
+            f"**{', '.join(map(str, shown))}**. **{100 * mutual:.0f}%** of nominations are returned "
+            "(reciprocity).")
 
 
 def ask(choice):

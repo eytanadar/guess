@@ -1,0 +1,142 @@
+# Networks from records  (Newman, Networks, Section 4.4)
+# Archival records can rebuild networks long gone: Padgett and Ansell traced
+# marriages among the leading families of fifteenth-century Florence and found
+# the Medici in the middle. Modern records (email, phone calls) also say WHEN
+# each contact happened: the network changes over time. The email log here is
+# invented.
+
+import random
+import networkx as nx
+
+# ---- Florence ----------------------------------------------------------------------
+makeFromFile("florentine.gdf")
+FLOR = graphNames()[0]
+renameGraph("Florence")
+FLOR = "Florence"
+g.nodes.labelvisible = true
+F = toNetworkX()
+BC = nx.betweenness_centrality(F)
+gone = []
+
+
+def florence_look():
+    for n in g.nodes:
+        n.width = n.height = 12 + 60 * BC.get(n.name, 0)
+        n.color = "200,160,60" if n.name == "Medici" else "150,170,200"
+    g.edges.color = "140,140,140"
+    g.edges.width = 2
+
+
+def drop(family):
+    restore()
+    nd = g.getNodeByName(family)
+    gone.append(nd)
+    remove([nd])
+
+
+def restore():
+    if gone:
+        add(g.deleted)
+        gone[:] = []
+
+
+def florence_text():
+    if gone:
+        fam = gone[0].name
+        H = F.copy()
+        H.remove_node(fam)
+        parts = sorted((len(c) for c in nx.connected_components(H)), reverse=True)
+        if len(parts) == 1:
+            return f"Without the **{fam}**, the other {H.number_of_nodes()} families still hang together."
+        return (f"Without the **{fam}**, the {H.number_of_nodes()} other families fall into "
+                f"**{len(parts)}** separate groups (sizes {', '.join(map(str, parts))}).")
+    top = sorted(BC, key=lambda v: -BC[v])[:3]
+    return (f"Size shows **betweenness**: how often a family lies on the shortest chain of marriages "
+            f"between two others. The Medici have {F.degree('Medici')} marriage ties and the highest "
+            f"betweenness ({BC['Medici']:.2f}; next {top[1]} {BC[top[1]]:.2f}). Remove a family to see who "
+            "held the network together.")
+
+
+# ---- an email log ----------------------------------------------------------------------
+rnd = random.Random(14)
+TEAMS = {"design": 8, "build": 9, "sales": 7}
+people = [(f"{t[:1]}{i}", t) for t, k in TEAMS.items() for i in range(k)]
+team = dict(people)
+# each week has its own pattern: internal work, a cross-team project, a launch, a quiet week
+WEEKS = {1: [("design", "design"), ("build", "build"), ("sales", "sales")],
+         2: [("design", "build"), ("design", "design"), ("build", "build")],
+         3: [("build", "sales"), ("sales", "sales"), ("design", "sales")],
+         4: [("design", "design"), ("sales", "sales")]}
+E = nx.MultiDiGraph()
+for p, t in people:
+    E.add_node(p, team=t)
+for wk, pairs in WEEKS.items():
+    for ta, tb in pairs:
+        A = [p for p, t in people if t == ta]
+        B = [p for p, t in people if t == tb]
+        for _ in range(14):
+            a, b = rnd.choice(A), rnd.choice(B)
+            if a != b and not any(d["week"] == wk for d in (E.get_edge_data(a, b) or {}).values()):
+                E.add_edge(a, b, week=wk)
+pos = nx.spring_layout(nx.Graph(E), seed=4)
+for v in E:
+    E.nodes[v]["pos"] = (pos[v][0] * 450, pos[v][1] * 450)
+fromNetworkX(E, "email")
+colorize(team)
+legendFor(team)
+g.nodes.labelvisible = true
+use(FLOR)
+week_pick = Slider(0, 4, 0, 1, label="week (0 = the whole month)")
+
+
+def show_week(v=None):
+    for e in g.edges:
+        e.visible = week_pick.value == 0 or e.week == week_pick.value
+        e.color = "100,100,100,160"
+
+
+def email_text():
+    edges = [e for e in g.edges if e.visible]
+    pairs = {frozenset((e.node1.name, e.node2.name)) for e in edges}
+    cross = sum(1 for p in pairs if len({team[v] for v in p}) > 1)
+    when = "the whole month" if week_pick.value == 0 else f"week {int(week_pick.value)}"
+    return (f"In **{when}**: {len(edges)} emails between {len(pairs)} pairs, **{cross}** of them across "
+            "teams. Each week has its own pattern; the month as a whole mixes them into one network that "
+            "never existed at any single moment.")
+
+
+def switch(title):
+    if title == "Florence":
+        use(FLOR)
+        florence_look()
+    else:
+        use("email")
+        show_week()
+    center()
+
+
+week_pick.onChange = show_week
+florence_look()
+ui.title("Networks from records", "Networks, Section 4.4")
+ui.layout(
+    right=Column(
+        Tabs(
+            Tab("Florence",
+                Markdown("""### Marriages in Renaissance Florence
+Padgett and Ansell rebuilt the marriage ties among Florence's ruling families
+in the early 1400s from historical records. The Medici, who came to dominate
+the city, sit in the middle."""),
+                Row(Button("Remove the Medici", onClick=lambda: drop("Medici")),
+                    Button("Remove the Strozzi", onClick=lambda: drop("Strozzi")), Button("Restore", onClick=restore)),
+                Markdown(florence_text)),
+            Tab("An email log",
+                Markdown("""### A month of email (invented)
+An email server logs who wrote to whom, and **when**. Edges carry the week.
+Step through the weeks."""),
+                week_pick, Markdown(email_text)),
+            onChange=switch)),
+    sizes={"right": 340},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len([e for e in g.edges if e.visible])} edges shown"))
+center()
