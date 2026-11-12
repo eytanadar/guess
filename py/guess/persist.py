@@ -122,6 +122,7 @@ def _data(session, g, nodes, edges, nidx, eidx, subset=False):
                    for mid, info in groups.items() if mid in g._node_ids],
         "view": {"background": view.background, "image": view.image, "arrow": view.arrow,
                  "curvature": view.curvature, "edgeColor": view.edge_color, "labels": view.labels,
+                 "directedStyle": view.directed,
                  "styles": view.styles, "pie": view.pie, "borderWidth": view.border_width,
                  "slides": getattr(view, "slides", []), "guides": view.guides, "guidesNote": view.guides_note,
                  "map": view.map, "raiseChanged": view.raise_changed, "drawings": view.drawings,
@@ -205,6 +206,7 @@ def load(session, data):
     view.arrow = v.get("arrow", {"length": None, "width": None})
     view.curvature = float(v.get("curvature", 0.0))
     view.edge_color = v.get("edgeColor", "original")
+    view.directed = v.get("directedStyle", "taper")
     view.labels = {"outline": False, "cull": False, "along": False, "placement": "candidates", "screen": False,
                    **v.get("labels", {})}
     view.styles = {str(k): list(map(str, c)) for k, c in v.get("styles", {}).items()}

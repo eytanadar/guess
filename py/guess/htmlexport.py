@@ -66,7 +66,7 @@ def page_data(session, visible_only=True, fields=True):
         from . import colors
         bg = colors.to_rgba_int(bg, (255, 255, 255, 255))[0]
     return {"nodes": nodes, "edges": edges, "images": images, "legends": legends, "background": bg,
-            "curvature": session.view.curvature}
+            "curvature": session.view.curvature, "directed": session.view.directed}
 
 
 def render(data, title):
@@ -207,6 +207,20 @@ function draw() {
     const [ax, ay] = centre(a), [bx, by] = centre(b);
     ctx.strokeStyle = on && L ? (dark() ? "#ffd1e0" : "#c2185b") : hex(e.c, e.a * (on ? 1 : .12));
     ctx.lineWidth = Math.max(e.w, .6 * px);
+    if (e.d && a !== b && D.directed !== "arrow" && !(e.b && e.b.length) && !(D.curvature > 0)) {
+      // directed edges as in the app: tapered (wide at the source, a point at the target) or dark to light
+      const len = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / len, ny = (bx - ax) / len;
+      if (D.directed === "fade") {
+        const gr = ctx.createLinearGradient(ax, ay, bx, by);
+        gr.addColorStop(0, ctx.strokeStyle); gr.addColorStop(1, dark() ? "rgba(255,255,255,.08)" : "rgba(255,255,255,.9)");
+        ctx.strokeStyle = gr; ctx.lineWidth = Math.max(e.w, 1.5); ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+      } else {
+        const h = Math.max(e.w * 2.4, 3) / 2;
+        ctx.fillStyle = ctx.strokeStyle; ctx.beginPath();
+        ctx.moveTo(ax + nx * h, ay + ny * h); ctx.lineTo(bx, by); ctx.lineTo(ax - nx * h, ay - ny * h); ctx.fill();
+      }
+      continue;
+    }
     ctx.beginPath(); ctx.moveTo(ax, ay);
     if (e.b && e.b.length) for (let i = 0; i < e.b.length; i += 2) ctx.lineTo(e.b[i], e.b[i + 1]);
     if (a === b) { const r = Math.max(a.w, a.h) * .6; ctx.moveTo(ax + r, a.y - r * .6); ctx.arc(ax, a.y - r * .6, r, 0, Math.PI * 2); }

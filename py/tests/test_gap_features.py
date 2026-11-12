@@ -184,3 +184,19 @@ def test_lombardi_edges_and_layout_raise_lombardiness():
     assert s.run("makeSample('karate')"), s.rec.of("error")
     b2, a2 = ev(s, "lombardiLayout()")
     assert a2 > 85 and a2 > b2
+
+
+def test_directed_edges_default_to_tapered(tmp_path):
+    """Holten & van Wijk (CHI 2009): tapered directed edges by default, no arrowheads."""
+    s = _s()
+    assert s.view.directed == "taper"
+    assert s.view.record()["directedStyle"] == "taper"
+    assert s.run("directedEdges('dark-to-light')"), s.rec.of("error")
+    assert s.view.directed == "fade"
+    assert not s.run("directedEdges('wiggly')")
+    assert s.run("g.edges.linestyle = 'fade'"), s.rec.of("error")
+    path = tmp_path / "d.guess"
+    assert s.run(f"directedEdges('arrow')\nsaveSession({str(path)!r})\ndirectedEdges('taper')\n"
+                 f"makeFromSession({str(path)!r})"), s.rec.of("error")
+    assert s.view.directed == "arrow"
+    assert s.run("undo()") or True

@@ -234,6 +234,7 @@ class View:
         self.arrow = {"length": None, "width": None}
         self.curvature = 0.0        # 0 = straight edges; > 0 = Gephi-style curves
         self.edge_color = "original"  # or source / target / mixed (node colours)
+        self.directed = "taper"     # how directed edges show direction: taper / fade / arrow (directedEdges)
         self.labels = {"outline": False, "cull": False, "along": False, "placement": "candidates", "screen": False}
         self.styles = {}            # name -> [Gython lines] (defineStyle / applyStyle)
         self.pie = None             # pie-chart nodes (glyphs.py)
@@ -292,6 +293,7 @@ class View:
                 "legends": [(lg, list(lg._entries), lg._ramp, lg._auto) for lg in self.legends.values()],
                 "background": self.background, "image": self.image, "arrow": dict(self.arrow),
                 "curvature": self.curvature, "edge_color": self.edge_color, "labels": dict(self.labels),
+                "directed": self.directed,
                 "styles": {k: list(v) for k, v in self.styles.items()},
                 "pie": self.pie, "border_width": self.border_width,
                 "slides": [dict(s) for s in getattr(self, "slides", [])],
@@ -318,6 +320,7 @@ class View:
         self.background, self.image = snap["background"], snap["image"]
         self.arrow, self.curvature = dict(snap["arrow"]), snap["curvature"]
         self.edge_color, self.labels = snap["edge_color"], dict(snap["labels"])
+        self.directed = snap.get("directed", "taper")
         self.styles = {k: list(v) for k, v in snap.get("styles", {}).items()}
         self.pie, self.border_width = snap.get("pie"), snap.get("border_width", 0.75)
         self.slides = [dict(s) for s in snap.get("slides", [])]
@@ -344,7 +347,8 @@ class View:
             hulls.append(h.record())
         bg = None if self.background is None else colors.to_rgba_int(self.background, (255, 255, 255, 255))[0]
         return {"type": "overlay", "background": bg, "image": self.image, "arrow": self.arrow,
-                "curvature": self.curvature, "edgeColor": self.edge_color, "labels": dict(self.labels), "styles": list(self.styles),
+                "curvature": self.curvature, "edgeColor": self.edge_color, "directedStyle": self.directed,
+                "labels": dict(self.labels), "styles": list(self.styles),
                 "pie": [colors.to_rgba_int(c)[0] for c in self.pie["colors"]] if self.pie else None,
                 "borderWidth": self.border_width, "raiseChanged": self.raise_changed,
                 "hoverFields": {k: list(v) for k, v in self.hover_fields.items()}, "drag": self._drag_record(),
@@ -504,6 +508,24 @@ def install(session):
         if mode not in ("original", "source", "target", "mixed"):
             raise GuessError('edge colour mode is "original", "source", "target" or "mixed"')
         view.edge_color = mode
+        view.changed()
+
+    def directedEdges(style="taper"):
+        """directedEdges(style) sets how directed edges show which way they go.
+        "taper" (the default): wide at the source, narrowing to a point at the
+        target, with no arrowhead. "fade": dark at the source, light at the
+        target. "arrow": a line with an arrowhead at the target. Holten and van
+        Wijk's user study (CHI 2009) found tapered edges were read fastest and most
+        accurately, dark-to-light next, and standard arrows among the worst, and
+        that adding a second cue did not help, so the default uses the taper
+        alone. An edge's own arrowhead or linestyle still applies: dashed, dotted
+        and similar styles keep an arrowhead, since they cannot show direction."""
+        s = str(style).lower()
+        s = {"tapered": "taper", "arrows": "arrow", "arrowhead": "arrow", "arrowheads": "arrow",
+             "intensity": "fade", "dark-to-light": "fade"}.get(s, s)
+        if s not in ("taper", "fade", "arrow"):
+            raise GuessError('directedEdges takes "taper", "fade" or "arrow"')
+        view.directed = s
         view.changed()
 
     def labelOutlines(on=True):
@@ -780,7 +802,7 @@ def install(session):
     for fn in (createConvexHull, encircle, encircleBy, removeConvexHull, removeConvexHulls, getConvexHulls,
                setDisplayBackground, getDisplayBackground, setBackgroundImage,
                removeBackgroundImage, overrideArrowLength, overrideArrowWidth, curvedEdges,
-               setEdgeColorMode, labelOutlines, hideOverlappingLabels, edgeLabelsAlong, raiseChanged, hoverFields,
+               setEdgeColorMode, directedEdges, labelOutlines, hideOverlappingLabels, edgeLabelsAlong, raiseChanged, hoverFields,
                labelPlacement, constantLabelSize, optimizeLabels, excentricLens, select):
         reg(fn.__name__, fn)
     # Legend()/GradientLegend() are constructors: don't auto-call on a bare name

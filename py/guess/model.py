@@ -958,7 +958,7 @@ _EDGE_BUILTINS = [
 ]
 
 # how an edge's line is drawn, and the head on a directed edge's target end
-LINE_STYLES = ("solid", "dashed", "dotted", "taper", "wave", "double", "fuzzy", "gradient", "flow")
+LINE_STYLES = ("solid", "dashed", "dotted", "taper", "wave", "double", "fuzzy", "gradient", "flow", "fade")
 ARROWHEADS = ("triangle", "swept", "open", "diamond", "circle", "tee", "none")
 _EDGE_CHOICES = {"linestyle": LINE_STYLES, "arrowhead": ARROWHEADS}
 

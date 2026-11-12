@@ -22,7 +22,7 @@ Commands can be called without parentheses when they take no arguments
 - [Layouts](#layouts) (33)
 - [Structure-aware layout (motifLayout, after LUMINA)](#structure-aware-layout-motiflayout-after-lumina) (1)
 - [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
-- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (44)
+- [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (45)
 - [Styles and visual mappings](#styles-and-visual-mappings) (14)
 - [Pie nodes, borders and edge bundling](#pie-nodes-borders-and-edge-bundling) (6)
 - [Grouping: collapse and expand](#grouping-collapse-and-expand) (5)
@@ -1972,6 +1972,18 @@ direction reads without arrows. curvedEdges(false) goes back to straight
 lines; curvedEdges(k) sets the curvature: the arc radius is edge length / k
 (default 1.2, as in Gephi; 2 gives semicircles).
 
+### `directedEdges(style='taper')`
+
+directedEdges(style) sets how directed edges show which way they go.
+"taper" (the default): wide at the source, narrowing to a point at the
+target, with no arrowhead. "fade": dark at the source, light at the
+target. "arrow": a line with an arrowhead at the target. Holten and van
+Wijk's user study (CHI 2009) found tapered edges were read fastest and most
+accurately, dark-to-light next, and standard arrows among the worst, and
+that adding a second cue did not help, so the default uses the taper
+alone. An edge's own arrowhead or linestyle still applies: dashed, dotted
+and similar styles keep an arrowhead, since they cannot show direction.
+
 ### `drawCircle(x, y, r, color=None, fill=None, lineWidth=1.5, style='solid')`
 
 drawCircle(x, y, r) draws a circle centred at (x, y) with radius r
@@ -3266,6 +3278,13 @@ setEdgeColorMode('mixed')
 ```python
 lineStyleBy(directed)
 g.edges.arrowhead = 'swept'
+```
+
+**Tapered or arrowed directed edges**
+
+```python
+directedEdges('taper')
+directedEdges('arrow')
 ```
 
 **Readable labels**

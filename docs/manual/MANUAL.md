@@ -1695,6 +1695,28 @@ alpha for a translucent one); `anchor=` places text by its `"start"`,
   under the graph (a map, say), and `removeBackgroundImage()` takes it away.
 - **Arrows**: `overrideArrowLength(12)`, `overrideArrowWidth(6)`.
 
+**How directed edges show direction.** By default a directed edge is drawn
+*tapered*: wide where it leaves its source, narrowing to a point at its
+target, with no arrowhead. This follows Holten and van Wijk's user study of
+directed-edge drawings ("A User Study on Visualizing Directed Edges in
+Graphs", CHI 2009). Tapered edges were read fastest and most accurately. A
+dark-to-light intensity ramp came next. Standard arrowheads did worst, being
+cluttered where many edges meet a node. Adding a second cue, such as taper
+plus colour, did not help, so GUESS uses one cue at a time.
+`directedEdges(style)` switches between them:
+
+```python
+directedEdges('taper')    # the default: wide at the source, a point at the target
+directedEdges('fade')     # dark at the source, light at the target
+directedEdges('arrow')    # lines with arrowheads
+```
+
+The same choices are under *View → Edges*. The setting is saved with a
+session and applies to HTML export. An edge's own `arrowhead` still applies,
+and so does a line style that shows direction by itself (`taper`, `fade`,
+`gradient`, `flow`). Styles that can't show direction (`dashed`, `dotted`
+and the like) keep an arrowhead.
+
 **Line styles and arrowheads.** Each edge has a `linestyle` and, when it is
 directed, an `arrowhead`:
 
@@ -1708,9 +1730,10 @@ arrowheadBy(directed)
 - `linestyle` is `solid` (the default), `dashed`, `dotted`, `taper` (wide at
   the source, a point at the target, so direction shows without arrows),
   `wave`, `double`, `fuzzy`, `gradient` (the source node's colour fading to
-  the target's) or `flow` (dashes moving from source to target; still, if
-  your system asks for less motion).
-- `arrowhead` is `triangle` (the default), `swept`, `open`, `diamond`,
+  the target's), `fade` (dark to light along the edge) or `flow` (dashes
+  moving from source to target; still, if your system asks for less motion).
+- `arrowhead` is `triangle` (drawn when `directedEdges('arrow')` is set),
+  `swept`, `open`, `diamond`,
   `circle`, `tee` or `none`.
 - In the *Style* panel, *Line style* and *Arrowhead* give each value of an
   edge field its own style. SVG export draws them all, and flow edges keep

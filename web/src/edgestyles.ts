@@ -4,11 +4,14 @@
  *
  * Line styles: solid, dashed, dotted, taper (wide at the source, a point at the
  * target), wave, double, fuzzy, gradient (source colour to target colour) and
- * flow (dashes moving from source to target). Arrowheads: triangle, swept,
+ * flow (dashes moving from source to target), fade (dark at the source, light at
+ * the target: the intensity cue of Holten & van Wijk 2009). Arrowheads: triangle, swept,
  * open, diamond, circle, tee and none.
  */
 
-export const LINE_STYLES = ["solid", "dashed", "dotted", "taper", "wave", "double", "fuzzy", "gradient", "flow"] as const;
+export const LINE_STYLES = ["solid", "dashed", "dotted", "taper", "wave", "double", "fuzzy", "gradient", "flow", "fade"] as const;
+/** Line styles that show an edge's direction by themselves (no arrowhead needed). */
+export const DIRECTIONAL = new Set(["taper", "flow", "gradient", "fade"]);
 export const ARROWHEADS = ["triangle", "swept", "open", "diamond", "circle", "tee", "none"] as const;
 
 /** A stroked polyline (optionally dashed: [on, off]; on = 0 draws dots), a filled polygon, or a filled dot. */
@@ -138,6 +141,9 @@ export function linePrims(style: string, p: number[], w: number, c: number, a: n
       ];
     case "gradient":
       return [{ k: "line", p, w, c, a, grad: [c0, c1] }];
+    case "fade":
+      // dark to light: the edge's colour at the source, nearly white at the target
+      return [{ k: "line", p, w: Math.max(w, 1.5), c, a, grad: [mix(c, 0x000000, 0.25), mix(c, 0xffffff, 0.85)] }];
     default:
       return [{ k: "line", p, w, c, a }];
   }

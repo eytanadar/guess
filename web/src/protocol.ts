@@ -69,6 +69,8 @@ export interface Overlay {
   arrow: { length: number | null; width: number | null };
   /** 0 = straight edges; > 0 = every edge curves clockwise (Gephi preview style) */
   curvature: number;
+  /** how directed edges show direction: taper (default), fade (dark to light) or arrow (arrowheads) */
+  directedStyle?: "taper" | "fade" | "arrow";
   edgeColor?: "original" | "source" | "target" | "mixed";
   /** names of saved styles (defineStyle) */
   styles?: string[];

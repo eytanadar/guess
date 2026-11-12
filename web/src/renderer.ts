@@ -2,7 +2,7 @@
 import { Application, BitmapFont, BitmapText, Container, Graphics, Sprite, Texture } from "pixi.js";
 import { activationScales, anneal, type Candidate, type Choice, greedyRepair, type Item, Occupancy, particles, type Rect, rectOf } from "./labelplace";
 import type { DrawingRec, EdgeRec, HullRec, Morph, NodeRec, Overlay } from "./protocol";
-import { dashes, gradientPieces, headDepth, headPrims, linePrims, type Prim, trimEnd } from "./edgestyles";
+import { dashes, DIRECTIONAL, gradientPieces, headDepth, headPrims, linePrims, type Prim, trimEnd } from "./edgestyles";
 
 interface Anim {
   t0: number;
@@ -241,6 +241,9 @@ export class Renderer {
   private constantSize = false;
   /** constantLabelSize(size=): screen label size relative to the normal 10px */
   private constantScale = 1;
+  /** how directed edges show direction by default (directedEdges()): Holten & van Wijk (CHI 2009) found a
+   * tapered edge, wide at the source and narrow at the target, read best, and arrowheads worst */
+  private directedStyle: "taper" | "fade" | "arrow" = "taper";
   private activation = new Map<string, number>();
   private sizedFor = 0;
   private probe: BitmapText | null = null;
@@ -503,6 +506,7 @@ export class Renderer {
     this.arrowLen = ov.arrow.length;
     this.arrowWidth = ov.arrow.width;
     this.curvature = ov.curvature ?? 0;
+    this.directedStyle = ov.directedStyle ?? "taper";
     this.edgeColorMode = ov.edgeColor ?? "original";
     this.raiseChanged = ov.raiseChanged ?? true;
     const outline = !!ov.labels?.outline, cull = !!ov.labels?.cull, along = !!ov.labels?.along;
@@ -895,8 +899,8 @@ export class Renderer {
       if (!e.v || !a || !b || !a.v || !b.v) continue;
       const c = this.edgeColor(e, a, b);
       const alpha = this.focus && !this.focus.edges.has(e.i) ? e.a * DIM_EDGE : e.a;
-      if (e.st || e.ah) {
-        // a line style or arrowhead of its own: drawn edge by edge, after the plain ones
+      if (this.shaped(e, a, b)) {
+        // a line style or arrowhead of its own (or a tapered directed edge): drawn edge by edge, after the plain ones
         (e.st === "flow" ? flow : styled).push([e, a, b, c, alpha]);
         continue;
       }
@@ -934,6 +938,11 @@ export class Renderer {
     }
   }
 
+  /** Whether an edge needs edgePrims (a style, an arrowhead, or a directed edge drawn tapered or faded). */
+  private shaped(e: EdgeRec, a: NodeRec, b: NodeRec): boolean {
+    return !!(e.st || e.ah || (e.d && a !== b && this.directedStyle !== "arrow"));
+  }
+
   /** An edge's line style and arrowhead as shapes (see edgestyles.ts). */
   edgePrims(e: EdgeRec, a: NodeRec, b: NodeRec, c: number, alpha: number): Prim[] {
     const w = Math.max(e.w, 0.1);
@@ -944,6 +953,10 @@ export class Renderer {
       for (let k = 0; k <= 40; k++) p.push(cx + r * Math.sin((k / 40) * 2 * Math.PI), cy + r * Math.cos((k / 40) * 2 * Math.PI));
     } else p = this.edgePoints(e, a, b);
     if (!(e.d && a !== b)) return linePrims(e.st ?? "solid", p, w, c, alpha, a.c, b.c);
+    // directed, no arrowhead of its own: by default a single cue, the taper (or fade), and no head. A line style
+    // that shows direction by itself (taper, fade, gradient, flow) needs no head either; others keep one.
+    if (!e.ah && this.directedStyle !== "arrow" && (!e.st || DIRECTIONAL.has(e.st)))
+      return linePrims(e.st ?? this.directedStyle, p, w, c, alpha, a.c, b.c);
     // the line stops where the arrowhead starts, so waves, double lines and the like end cleanly
     const kind = e.ah ?? "triangle";
     const [px, py, ux, uy, size, half] = this.arrowFrame(e, a, b);
@@ -2013,7 +2026,7 @@ export class Renderer {
       if (!e.v || !a || !b || !a.v || !b.v) continue;
       const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
       const ec = this.edgeColor(e, a, b);
-      if (e.st || e.ah) {
+      if (this.shaped(e, a, b)) {
         out.push(...this.svgPrims(this.edgePrims(e, a, b, ec, e.a), col, `eg${e.i}`));
         continue;
       }
