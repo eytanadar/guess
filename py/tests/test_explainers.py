@@ -56,6 +56,10 @@ class App:
         assert not self.errors(), self.errors()
 
     def widget(self, kind, text):
+        for w in self.s.gui.widgets.values():         # an exact match first
+            st = w._state
+            if w.kind == kind and text in (str(st.get("text", "")), str(st.get("label", ""))):
+                return w
         for w in self.s.gui.widgets.values():
             st = w._state
             if w.kind == kind and text in str(st.get("text", "")) + str(st.get("label", "")):
@@ -413,3 +417,124 @@ def test_mutualism_nestedness_and_losses():
     c = a.ev("curves")
     mid = len(c["generalists lost first"]) // 2
     assert c["generalists lost first"][mid][1] < c["specialists lost first"][mid][1]
+
+
+# ---- batch 3: Chapter 6 ----------------------------------------------------------------------------
+def test_adjacency_matrix_counts_and_symmetry():
+    a = App("ch06-adjacency-matrix")
+    assert "gives **14** = 2m = 2 × 7" in a.markdown()
+    a.click("n1")
+    a.click("n4")
+    assert len(a.s.graph.edges) == 8
+    a.click("n2")
+    a.press("Add a self-edge")
+    chart = next(w for w in a.s.gui.widgets.values() if w.kind == "chart")
+    assert any(r == c and v == 2 for r, c, v, _ in chart.spec["cells"])
+
+
+def test_acyclic_peeling_and_getting_stuck():
+    a = App("ch06-acyclic")
+    for _ in range(13):
+        a.press("Step")
+    assert "**Done.**" in a.markdown()
+    chart = next(w for w in a.s.gui.widgets.values() if w.kind == "chart")
+    assert all(r > c for r, c, _, _ in chart.spec["cells"])         # triangular
+    a.set("checkbox", "closes a loop", True)
+    a.press("Run")
+    a.tick(14)
+    assert "**Stuck**" in a.markdown()
+
+
+def test_hypergraph_views_and_incidence_matrix():
+    a = App("ch06-hypergraphs")
+    a.set("dropdown", "Draw as", "Bipartite: people and groups")
+    chart = next(w for w in a.s.gui.widgets.values() if w.kind == "chart")
+    assert len(chart.spec["labels"]) == 4 and len(chart.spec["clabels"]) == 7
+    a.set("dropdown", "Draw as", "Projection onto the people")
+    assert "| **Cat** |" in a.markdown()
+
+
+def test_multilayer_trip_and_time():
+    a = App("ch06-multilayer")
+    a.click("Old_Town")
+    a.click("Faraway")
+    assert "**121 minutes**" in a.markdown() and "**2** changes" in a.markdown()
+    a.s.dispatch(_tabs(a)._id, "change", "Same people (multiplex)")
+    a.press("Stack the layers")
+    assert a.ev("graphNames()[0]") == "layers"
+    a.s.dispatch(_tabs(a)._id, "change", "Day by day (temporal)")
+    assert "could only be reached by going back in time" in a.markdown()
+
+
+def test_trees_planarity_and_four_colours():
+    a = App("ch06-trees-planar")
+    assert "**24** = n − 1" in a.markdown()
+    a.press("Add an edge")
+    assert "closed a **loop**" in a.markdown()
+    a.s.dispatch(_tabs(a)._id, "change", "Planar")
+    a.press("Untangle")
+    assert "**0** crossings" in a.markdown()
+    a.set("dropdown", "Network", "K5 (5 nodes, all joined)")
+    assert "**not planar**" in a.markdown()
+    a.s.dispatch(_tabs(a)._id, "change", "Four colours")
+    a.press("Colour the map")
+    a.tick(50)
+    assert "**48**, using **4** colours" in a.markdown()
+
+
+def test_degree_sums_and_growth():
+    a = App("ch06-degree-sparsity")
+    assert "add up to **156** = 2m" in a.markdown()
+    a.s.dispatch(_tabs(a)._id, "change", "Grow")
+    a.tick(125)
+    assert a.ev("grow['n']") == 120
+
+
+def test_walk_counts_match_matrix_powers():
+    a = App("ch06-walks-paths")
+    a.click("n0")
+    a.click("n9")
+    assert "that is the distance" in a.markdown()
+    import numpy as np
+    import networkx as nx
+    G = a.ev("G0")
+    A = nx.to_numpy_array(G, nodelist=a.ev("NAMES"))
+    assert int(np.trace(np.linalg.matrix_power(A, 2))) == 2 * G.number_of_edges()
+
+
+def test_components_blocks_and_directed():
+    a = App("ch06-components")
+    a.set("dropdown", "Matrix", "By component")
+    chart = next(w for w in a.s.gui.widgets.values() if w.kind == "chart")
+    gr = chart.spec["groups"]
+    assert all(gr[r] == gr[c] for r, c, _, _ in chart.spec["cells"])   # block diagonal
+    a.s.dispatch(_tabs(a)._id, "change", "Directed")
+    a.click("D")
+    assert "strongly connected component**: 3 nodes" in a.markdown()
+
+
+def test_menger_and_max_flow_min_cut():
+    a = App("ch06-cuts-flows")
+    m = a.markdown()
+    assert "**3** edge-independent" in m and "removal cuts them apart: **3**" in m
+    a.s.dispatch(_tabs(a)._id, "change", "Capacities and flow")
+    import re
+    flow, cut = re.search(r"is \*\*(\d+)\*\* \(blue", a.markdown()).group(1), re.search(r"= \*\*(\d+)\*\*\. Equal", a.markdown()).group(1)
+    assert flow == cut
+
+
+def test_laplacian_spectrum_split_walk_and_resistance():
+    a = App("ch06-laplacian")
+    a.press("Cut the links between the halves")
+    a.tick(12)
+    assert "components: **2**" in a.markdown()
+    a.press("Restore")
+    a.s.dispatch(_tabs(a)._id, "change", "Partition")
+    a.press("Spectral split")
+    assert "¼ sᵀLs" in a.markdown()
+    a.call('arrange("spectral")')
+    assert abs(float(a.ev("drawing_text()").split("**")[1]) - 1.46) < 0.05
+    a.s.dispatch(_tabs(a)._id, "change", "Resistors")
+    a.click("v0")
+    a.click("v20")
+    assert "effective resistance" in a.markdown()

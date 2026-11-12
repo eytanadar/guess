@@ -1,0 +1,296 @@
+# The graph Laplacian  (Newman, Networks, Section 6.14)
+# L = D - A: degrees on the diagonal, -1 for each edge. Its eigenvalues are
+# never negative; the number of zero eigenvalues is the number of components,
+# and the second smallest (the algebraic connectivity) is small when the
+# network nearly splits. The same matrix measures the cut size of a split
+# (R = s^T L s / 4), the total squared edge length of a drawing (x^T L x),
+# where a random walker spends its time (in proportion to degree), and how
+# current flows through a network of resistors (L V = R I).
+
+import math
+import random
+import numpy as np
+import networkx as nx
+
+G0 = nx.random_partition_graph([14, 14], 0.35, 0.04, seed=6)
+while not nx.is_connected(G0):
+    G0.add_edge(0, 20)
+G0 = nx.relabel_nodes(G0, {v: f"v{v}" for v in G0})
+for v in G0:
+    G0.nodes[v]["half"] = "left" if int(v[1:]) < 14 else "right"
+pos = nx.spring_layout(G0, seed=2, iterations=200)
+for v in G0:
+    G0.nodes[v]["pos"] = (pos[v][0] * 420, pos[v][1] * 420)
+fromNetworkX(G0)
+NAMES = sorted(G0, key=lambda v: int(v[1:]))
+IDX = {v: i for i, v in enumerate(NAMES)}
+BETWEEN = [(u, v) for u, v in G0.edges() if G0.nodes[u]["half"] != G0.nodes[v]["half"]]
+
+
+def laplacian():
+    G = toNetworkX(directed=False)
+    nodes = [v for v in NAMES if v in G]
+    A = nx.to_numpy_array(G, nodelist=nodes)
+    return np.diag(A.sum(axis=1)) - A, nodes
+
+
+def base():
+    for n in g.nodes:
+        n.width = n.height = 18
+        n.color = "160,180,210"
+        n.strokecolor = "70,70,70"
+        n.labelvisible = false
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,160", 1.4, "solid"
+
+
+# ---- spectrum ---------------------------------------------------------------------------------
+cutting = {"timer": None}
+
+
+def cut_links():
+    left = [p for p in BETWEEN if any({e.node1.name, e.node2.name} == set(p) for e in g.edges)]
+    if not left:
+        return False
+    u, v = left[0]
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {u, v}:
+            remove([e])
+            break
+    return len(left) - 1 or False
+
+
+def start_cutting():
+    if cutting["timer"] is None or not cutting["timer"].running:
+        cutting["timer"] = everyPaced(cut_links, slow=1.2, fast=0.6, ramp=1)
+
+
+def restore():
+    add(g.deleted)
+    base()
+
+
+def spectrum_text():
+    vals = spectrum()
+    zeros = sum(1 for x in vals if abs(x) < 1e-9)
+    gone = len(BETWEEN) - sum(1 for p in BETWEEN if any({e.node1.name, e.node2.name} == set(p) for e in g.edges))
+    return (f"Smallest eigenvalues: **{', '.join(f'{x:.3f}' for x in vals[:4])}** … The number of zeros is the number "
+            f"of components: **{zeros}**. The second smallest, the **algebraic connectivity**, is "
+            f"**{vals[1]:.3f}**: small, because only {len(BETWEEN) - gone} links join the two halves. Cut them one by one and "
+            "watch it fall to zero.")
+
+
+# ---- partition -------------------------------------------------------------------------------------
+split = {"s": None, "how": ""}
+
+
+def spectral_split():
+    L, nodes = laplacian()
+    w, V = np.linalg.eigh(L)
+    fiedler = V[:, 1]
+    split["s"] = {v: (1 if fiedler[i] >= 0 else -1) for i, v in enumerate(nodes)}
+    split["how"] = "the signs of the Fiedler vector (the eigenvector of the second smallest eigenvalue)"
+    paint_split()
+
+
+def random_split():
+    r = random.Random()
+    vs = NAMES[:]
+    r.shuffle(vs)
+    split["s"] = {v: (1 if i < len(vs) // 2 else -1) for i, v in enumerate(vs)}
+    split["how"] = "a random split into two halves"
+    paint_split()
+
+
+def paint_split():
+    base()
+    s = split["s"]
+    for n in g.nodes:
+        n.color = "230,110,80" if s[n.name] > 0 else "80,140,230"
+    for e in g.edges:
+        if s[e.node1.name] != s[e.node2.name]:
+            e.color, e.width, e.linestyle = "40,40,40", 3, "dashed"
+
+
+def split_text():
+    if not split["s"]:
+        return "*Split the network in two.*"
+    L, nodes = laplacian()
+    s = np.array([split["s"][v] for v in nodes], float)
+    R = s @ L @ s / 4
+    cut = sum(1 for e in g.edges if split["s"][e.node1.name] != split["s"][e.node2.name])
+    return (f"Split by {split['how']}: **{cut}** edges cross between the groups (dashed). And ¼ sᵀLs = **{R:g}**, the "
+            "same number: the cut size is a quadratic form in the Laplacian. Spectral partitioning picks s from the "
+            "eigenvectors.")
+
+
+# ---- drawing -----------------------------------------------------------------------------------
+def arrange(kind):
+    if kind == "random":
+        randomLayout(500, 500)
+    elif kind == "spectral":
+        L, nodes = laplacian()
+        w, V = np.linalg.eigh(L)
+        for i, v in enumerate(nodes):
+            nd = g.getNodeByName(v)
+            nd.x, nd.y = V[i, 1] * 1500, V[i, 2] * 1500
+    else:
+        frLayout()
+    center()
+
+
+def drawing_text():
+    L, nodes = laplacian()
+    xs = np.array([g.getNodeByName(v).x for v in nodes])
+    ys = np.array([g.getNodeByName(v).y for v in nodes])
+    score = 0
+    for c in (xs, ys):
+        c = c - c.mean()
+        score += (c @ L @ c) / (c @ c)
+    return (f"Sum of squared edge lengths, relative to the drawing's size: xᵀLx/xᵀx + yᵀLy/yᵀy = **{score:.2f}**. "
+            "Smaller means shorter edges for the space used. The spectral drawing, which places nodes by the "
+            "Laplacian's 2nd and 3rd eigenvectors, makes this as small as it can be "
+            f"(λ₂ + λ₃ = {sum(np.linalg.eigvalsh(L)[1:3]):.2f}).")
+
+
+# ---- random walk ---------------------------------------------------------------------------------
+walk = {"at": NAMES[0], "visits": {v: 0 for v in NAMES}, "steps": 0, "timer": None, "rnd": random.Random(1)}
+
+
+def walk_step(n=1):
+    G = toNetworkX(directed=False)
+    for _ in range(n):
+        nxt = walk["rnd"].choice(list(G[walk["at"]]))
+        prev, walk["at"] = walk["at"], nxt
+        walk["visits"][nxt] += 1
+        walk["steps"] += 1
+    if n == 1:
+        base()
+        for v, k in walk["visits"].items():
+            nd = g.getNodeByName(v)
+            nd.width = nd.height = 12 + 40 * k / max(1, max(walk["visits"].values()))
+        here = g.getNodeByName(walk["at"])
+        here.color, here.strokecolor = "250,200,40", "120,60,0"
+        for e in g.edges:
+            if {e.node1.name, e.node2.name} == {prev, walk["at"]}:
+                e.color, e.width, e.linestyle = "240,150,30", 4, "flow"
+
+
+def play_walk():
+    if walk["timer"] is None:
+        walk["timer"] = everyPaced(lambda: walk_step(1), slow=0.8, fast=0.15)
+        walk_btn.text = "Pause"
+    else:
+        walk["timer"].stop()
+        walk["timer"] = None
+        walk_btn.text = "Walk"
+
+
+def walk_chart():
+    if walk["steps"] < 5:
+        return None
+    G = toNetworkX(directed=False)
+    m2 = 2 * G.number_of_edges()
+    pts = sorted((G.degree(v) / m2, walk["visits"][v] / walk["steps"]) for v in G)
+    lo, hi = pts[0][0], pts[-1][0]
+    return plotLine({"nodes (degree share, time share)": pts, "k / 2m": [(lo, lo), (hi, hi)]},
+                    title=f"Where the walker spends its time ({walk['steps']} steps)", xlabel="degree / 2m",
+                    ylabel="share of steps", dots=true)
+
+
+# ---- resistors ------------------------------------------------------------------------------------
+volt = {"s": None, "t": None, "V": None}
+
+
+def solve():
+    L, nodes = laplacian()
+    I = np.zeros(len(nodes))
+    I[nodes.index(volt["s"])], I[nodes.index(volt["t"])] = 1, -1
+    V = np.linalg.pinv(L) @ I                       # L V = R I with R = 1 ohm per edge
+    V -= V[nodes.index(volt["t"])]
+    volt["V"] = {v: float(V[i]) for i, v in enumerate(nodes)}
+
+
+def paint_volts():
+    base()
+    V = volt["V"]
+    top = max(V.values()) or 1
+    for n in g.nodes:
+        t = V[n.name] / top
+        n.color = f"{int(60 + 190 * t)},{int(90 + 40 * t)},{int(220 - 180 * t)}"
+    s, t = g.getNodeByName(volt["s"]), g.getNodeByName(volt["t"])
+    s.width = s.height = t.width = t.height = 30
+    s.strokecolor = t.strokecolor = "20,20,20"
+    big = max(abs(V[e.node1.name] - V[e.node2.name]) for e in g.edges) or 1
+    for e in g.edges:
+        cur = V[e.node1.name] - V[e.node2.name]
+        e.width = 1 + 6 * abs(cur) / big
+        e.color = "250,190,60" if abs(cur) > 0.05 * big else "150,150,150,120"
+        e.linestyle = "solid"
+
+
+def resistor_click(n):
+    if volt["s"] is None or volt["t"] is not None:
+        volt.update(s=n.name, t=None, V=None)
+        base()
+        n.color = "230,60,50"
+    elif n.name != volt["s"]:
+        volt["t"] = n.name
+        solve()
+        paint_volts()
+
+
+def volt_text():
+    if volt["V"] is None:
+        return "*Click two nodes:* a current of 1 amp goes in at the first and out at the second. Each edge is a 1-ohm resistor."
+    R = volt["V"][volt["s"]] - volt["V"][volt["t"]]
+    return (f"Solving **LV = RI** gives every node's voltage (red high, blue low) and every edge's current (width). "
+            f"The voltage across them, with 1 amp, is the **effective resistance**: **{R:.3f} Ω**. More "
+            "independent paths, less resistance.")
+
+
+mode = ["Spectrum"]
+
+
+def click(n):
+    if mode[0] == "Resistors":
+        resistor_click(n)
+
+
+def switch(title):
+    mode[0] = title
+    if walk["timer"] is not None and title != "Random walk":
+        play_walk()
+    base()
+    if title == "Partition" and split["s"]:
+        paint_split()
+
+
+walk_btn = Button("Walk", onClick=play_walk)
+graphevents.clickNode = click
+base()
+constantLabelSize(size=14)
+ui.title("The graph Laplacian", "Networks, Section 6.14")
+ui.layout(
+    right=Column(
+        Markdown("""### L = D − A
+Two groups of 14 nodes, joined by a few links. One matrix, five uses."""),
+        Tabs(
+            Tab("Spectrum", Chart(lambda: plotSpectrum()), Markdown(spectrum_text),
+                Row(Button("Cut the links between the halves", onClick=start_cutting), Button("Restore", onClick=restore))),
+            Tab("Partition", Row(Button("Spectral split", onClick=spectral_split), Button("Random split", onClick=random_split)),
+                Markdown(split_text)),
+            Tab("Drawing", Row(Button("Random", onClick=lambda: arrange("random")), Button("Spectral", onClick=lambda: arrange("spectral")),
+                               Button("Force-directed", onClick=lambda: arrange("force"))),
+                Markdown(drawing_text)),
+            Tab("Random walk", Row(walk_btn, Button("10,000 steps at once", onClick=lambda: walk_step(10000))),
+                Markdown("""A walker steps to a random neighbour each time. In the long run it is found at
+node i with probability **kᵢ / 2m**: the dots end up on the line."""),
+                Chart(walk_chart)),
+            Tab("Resistors", Markdown(volt_text)),
+            onChange=switch)),
+    sizes={"right": 390},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

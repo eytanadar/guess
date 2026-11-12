@@ -1,0 +1,121 @@
+# Walks, paths and powers of A  (Newman, Networks, Section 6.11)
+# A walk of length r is any route of r steps, revisits allowed. The number of
+# walks of length r from j to i is [A^r]_ij, an entry of the r-th power of the
+# adjacency matrix. Walks that start and end at the same node are loops:
+# Tr A^r counts them. The shortest path between i and j is the smallest r with
+# [A^r]_ij > 0; there can be several, all the same length.
+
+import numpy as np
+import networkx as nx
+
+G0 = nx.connected_watts_strogatz_graph(16, 4, 0.25, seed=7)
+G0 = nx.relabel_nodes(G0, {v: f"n{v}" for v in G0})
+pos = nx.spring_layout(G0, seed=3, iterations=200)
+for v in G0:
+    G0.nodes[v]["pos"] = (pos[v][0] * 330, pos[v][1] * 330)
+fromNetworkX(G0)
+NAMES = sorted(G0, key=lambda v: int(v[1:]))
+IDX = {v: i for i, v in enumerate(NAMES)}
+A = nx.to_numpy_array(G0, nodelist=NAMES)
+pick = {"i": None, "j": None}
+power = Slider(1, 6, 1, 1, label="walk length r")
+
+
+def Ar(r):
+    return np.linalg.matrix_power(A.astype(np.int64), int(r))
+
+
+def repaint(v=None):
+    r = int(power.value)
+    for n in g.nodes:
+        n.width = n.height = 26
+        n.labelpos = "inside"
+        n.labelvisible = true
+        n.label = n.name[1:]
+        n.color = "170,185,210"
+        n.strokecolor = "60,60,60"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150", 1.5, "solid"
+    i, j = pick["i"], pick["j"]
+    if i is None:
+        return
+    W = Ar(r)
+    most = max(1, W[IDX[i]].max())
+    for n in g.nodes:                                  # walks of length r from i, by size and colour
+        w = int(W[IDX[i], IDX[n.name]])
+        if w:
+            t = w / most
+            n.color = f"{int(250 - 30 * t)},{int(220 - 150 * t)},{int(120 - 80 * t)}"
+            n.width = n.height = 26 + 22 * t
+            n.label = f"{n.name[1:]}·{w}"
+    g.getNodeByName(i).color = "40,40,40"
+    if j is not None:
+        g.getNodeByName(j).strokecolor = "230,40,40"
+        for path in nx.all_shortest_paths(G0, i, j):
+            for a, b in zip(path, path[1:]):
+                for e in g.edges:
+                    if {e.node1.name, e.node2.name} == {a, b}:
+                        e.color, e.width, e.linestyle = "230,60,50", 4, "flow"
+
+
+def click(n):
+    if pick["i"] is None or pick["j"] is not None:
+        pick.update(i=n.name, j=None)
+    elif n.name != pick["i"]:
+        pick["j"] = n.name
+    repaint()
+
+
+def step_up():
+    power.value = 1 if power.value >= 6 else power.value + 1
+    repaint()
+
+
+def text():
+    i, j = pick["i"], pick["j"]
+    r = int(power.value)
+    if i is None:
+        return "*Click a node* to start walks there, then another as the destination."
+    W = Ar(r)
+    reach = int((W[IDX[i]] > 0).sum())
+    line = (f"From node **{i[1:]}**, walks of length **{r}** reach **{reach}** nodes (the number after each label "
+            f"is how many walks; the size shows it too).")
+    if j is not None:
+        counts = [int(Ar(k)[IDX[i], IDX[j]]) for k in range(1, 7)]
+        d = nx.shortest_path_length(G0, i, j)
+        paths = list(nx.all_shortest_paths(G0, i, j))
+        line += (f"\n\nWalks from {i[1:]} to **{j[1:]}** of length 1–6: **{', '.join(map(str, counts))}**. The first "
+                 f"non-zero one is at r = **{d}**: that is the distance. There "
+                 + (f"are **{len(paths)}** shortest paths (red), all of length {d}." if len(paths) > 1 else
+                    f"is one shortest path (red)."))
+    return line
+
+
+def loops():
+    rows = ["| r | 1 | 2 | 3 | 4 | 5 | 6 |", "|---|---|---|---|---|---|---|",
+            "| Tr Aʳ | " + " | ".join(str(int(np.trace(Ar(k)))) for k in range(1, 7)) + " |"]
+    tri = int(np.trace(Ar(3))) // 6
+    return ("**Loops**: Tr Aʳ counts walks that come back to where they started (each loop counted once per "
+            f"starting point and direction).\n\n" + "\n".join(rows) +
+            f"\n\nTr A² = 2m = {2 * G0.number_of_edges()} (out and back along each edge); Tr A³ = 6 × the number "
+            f"of triangles ({tri}). Diameter (the longest distance): **{nx.diameter(G0)}**.")
+
+
+graphevents.clickNode = click
+power.onChange = repaint
+repaint()
+constantLabelSize(size=14)
+ui.title("Walks, paths and powers of A", "Networks, Section 6.11")
+ui.layout(
+    right=Column(
+        Markdown("""### Counting walks with matrix powers
+Multiply the adjacency matrix by itself r times and entry [Aʳ]ᵢⱼ counts the
+walks of exactly r steps from j to i, revisits and back-and-forth allowed."""),
+        Row(power, Button("r + 1", onClick=step_up)),
+        Markdown(text),
+        Markdown(loops)),
+    sizes={"right": 380},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

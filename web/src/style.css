@@ -325,8 +325,8 @@ body { display: flex; flex-direction: column; }
 .chart.matrix .matrix-cell { fill: var(--accent); }
 .chart.matrix .matrix-cell.hot, .chart.matrix .matrix-cell.linked { fill: #e15759; fill-opacity: 1; }
 .chart.matrix .matrix-group { stroke: var(--muted); stroke-width: .7; stroke-dasharray: 2 2; }
-.chart.matrix .tick, .chart.matrix .xtick { font-size: 6px; }
-.chart.matrix .matrix-col { text-anchor: start; }
+.chart.matrix .matrix-row { dominant-baseline: central; }
+.chart.matrix .matrix-col { text-anchor: start; dominant-baseline: central; }
 .chart.matrix .matrix-num { text-anchor: middle; dominant-baseline: central; fill: var(--muted); pointer-events: none; font-family: var(--mono); }
 .chart.matrix .matrix-num.on { fill: #fff; font-weight: 600; }
 .chart { width: 100%; height: auto; display: block; }
@@ -781,6 +781,9 @@ body.app .view-col { flex: 1 1 auto; }
 .w-markdown h3, .w-markdown h4, .w-markdown h5 { margin: 4px 0; font-size: 13.5px; }
 .w-markdown p { margin: 0 0 6px; }
 .w-markdown ul, .w-markdown ol { margin: 0 0 6px; padding-left: 20px; }
+.w-markdown .md-table { border-collapse: collapse; margin: 2px 0 8px; font-variant-numeric: tabular-nums; }
+.w-markdown .md-table th, .w-markdown .md-table td { border: 1px solid var(--border); padding: 1px 6px; text-align: center; }
+.w-markdown .md-table th { background: var(--panel); }
 .w-markdown code { font: 12px var(--mono); background: var(--panel); padding: 0 3px; border-radius: 3px; }
 .w-markdown a { color: var(--accent); }
 .w-view { min-width: 0; min-height: 0; width: 100%; display: flex; flex-direction: column; }

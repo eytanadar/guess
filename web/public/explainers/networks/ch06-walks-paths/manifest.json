@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Walks, paths and powers of A",
+  "description": "Count walks with powers of the adjacency matrix and find shortest paths as the first power that reaches.",
+  "console": "toggle",
+  "script": "main.gy"
+}

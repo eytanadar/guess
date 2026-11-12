@@ -23,6 +23,12 @@ for n in g.nodes:                      # x: the year; y: kept from the stored la
 sizeBy(indegree, 4, 26)
 
 
+def fresh_nodes():
+    """Switching graphs (use) reloads them: look the nodes up again."""
+    NODE.clear()
+    NODE.update({n.name: n for n in g.nodes})
+
+
 def base():
     colorBy(year, "250,215,140", "110,30,120")
     g.edges.color = "150,150,150,40"
@@ -77,6 +83,7 @@ def related(v):
 
 def choose(n):
     use(MAIN)                            # a click in the cocitation network picks the same paper
+    fresh_nodes()
     n = NODE.get(n.name)
     if n is None:
         return
@@ -152,6 +159,7 @@ def build(kind):
 
 def back():
     use(MAIN)
+    fresh_nodes()
     base()
     net_note.text = ""
     center()
@@ -159,6 +167,7 @@ def back():
 
 def main_path():
     use(MAIN)
+    fresh_nodes()
     base()
     path = mainPath()
     g.nodes.color = "220,220,220,90"

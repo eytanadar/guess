@@ -38,13 +38,15 @@ def adjacency(features, name_of):
     for f in features:
         for p in set(points(f["geometry"])):
             owners.setdefault(p, set()).add(name_of(f))
-    pairs = set()
+    shared = {}
     for names in owners.values():
         names = sorted(names)
         for i in range(len(names)):
             for j in range(i + 1, len(names)):
-                pairs.add((names[i], names[j]))
-    return sorted(pairs)
+                shared[(names[i], names[j])] = shared.get((names[i], names[j]), 0) + 1
+    # a border, not just a corner: at least two shared boundary points (so the
+    # Four Corners states, which meet at one point, aren't joined diagonally)
+    return sorted(p for p, k in shared.items() if k >= 2)
 
 
 def main():

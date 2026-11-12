@@ -1,0 +1,131 @@
+# The adjacency matrix  (Newman, Networks, Sections 6.1-6.3)
+# A network with n nodes is an n x n matrix A: A_ij = 1 if nodes i and j are
+# joined. Undirected networks give symmetric matrices. A double edge puts a 2
+# in the matrix, and a self-edge puts a 2 on the diagonal (both its ends are
+# at the node). In a weighted network the cells hold the weights.
+
+import math
+import random
+
+POS = {"n1": (0, 120), "n2": (150, 0), "n3": (170, 170), "n4": (330, 60), "n5": (60, 300), "n6": (330, 300)}
+START = [("n1", "n2"), ("n2", "n3"), ("n2", "n4"), ("n3", "n4"), ("n1", "n5"), ("n3", "n5"), ("n3", "n6")]
+
+state = {"first": None, "weighted": False}
+
+
+def build():
+    remove(list(g.nodes))
+    for k, (px, py) in POS.items():
+        addNode(k, x=px, y=py)
+    for a, b in START:
+        addEdge(g.getNodeByName(a), g.getNodeByName(b))
+    dress()
+
+
+def dress():
+    for n in g.nodes:
+        n.width = n.height = 30
+        n.labelvisible = true
+        n.labelpos = "inside"
+        n.color = "250,200,60" if n is state["first"] else "120,160,220"
+        n.strokecolor = "40,40,40"
+    for e in g.edges:
+        e.color = "120,120,120"
+        e.width = 1.5 + (1.5 * e.weight if state["weighted"] else 1)
+        e.label = (f"{e.weight:g}" if state["weighted"] else "")
+        e.labelvisible = state["weighted"]
+
+
+def click(n):
+    a = state["first"]
+    if a is None:
+        state["first"] = n
+    elif a is n:
+        state["first"] = None
+    else:
+        between = [e for e in g.edges if {e.node1, e.node2} == {a, n}]
+        if between:
+            remove(between)                       # all edges between them go
+        else:
+            e = addEdge(a, n)
+            e.weight = round(random.uniform(0.5, 3), 1) if state["weighted"] else 1
+        state["first"] = None
+    dress()
+
+
+def double_edge():
+    pairs = [e for e in g.edges if e.node1 is not e.node2]
+    if state["first"] is not None:
+        mine = [e for e in pairs if state["first"] in (e.node1, e.node2)]
+        pairs = mine or pairs
+    e = pairs[0]
+    addEdge(e.node1, e.node2)
+    dress()
+
+
+def self_edge():
+    n = state["first"] or g.nodes[0]
+    addEdge(n, n)
+    state["first"] = None
+    dress()
+
+
+def weights(on):
+    state["weighted"] = bool(on)
+    r = random.Random(3)
+    for e in g.edges:
+        e.weight = round(r.uniform(0.5, 3), 1) if on else 1
+    dress()
+
+
+def matrix():
+    return showMatrix(order=name, numbers=true, weight=(weight if state["weighted"] else None),
+                      title="The adjacency matrix A")
+
+
+def facts():
+    names = sorted(n.name for n in g.nodes)
+    A = {(a, b): 0.0 for a in names for b in names}
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        w = e.weight if state["weighted"] else 1
+        if a == b:
+            A[(a, a)] += 2 * w
+        else:
+            A[(a, b)] += w
+            A[(b, a)] += w
+    rows = {a: sum(A[(a, b)] for b in names) for a in names}
+    total = sum(rows.values())
+    m = len(g.edges)
+    pick = state["first"]
+    line = (f"**{len(names)}** nodes, **{m}** edges. The matrix is **symmetric** (A_ij = A_ji), since an edge "
+            f"joins i and j both ways. Adding up every cell gives **{total:g}**"
+            + (f" = 2m = 2 × {m}: each edge is counted from both ends." if not state["weighted"] else
+               ": twice the total weight."))
+    if pick is not None:
+        line += (f"\n\nRow **{pick.name}** adds up to **{rows[pick.name]:g}**: "
+                 + ("its degree (a self-edge adds 2)." if not state["weighted"] else "its strength, the total weight of its edges."))
+    return line
+
+
+graphevents.clickNode = click
+build()
+constantLabelSize(size=14)
+ui.title("The adjacency matrix", "Networks, Sections 6.1–6.3")
+ui.layout(
+    right=Column(
+        Markdown("""### A network as a matrix
+Row i, column j holds the number of edges between nodes i and j.
+**Click two nodes** to add an edge between them (or remove it). Click one node
+to pick it."""),
+        Row(Button("Double an edge", onClick=double_edge), Button("Add a self-edge", onClick=self_edge)),
+        Checkbox("weighted edges", onChange=weights),
+        Chart(matrix),
+        Markdown(facts),
+        Markdown("""*A multiedge* (two edges between the same pair) puts a 2 in its cells; a
+*self-edge* puts 2 on the diagonal, one for each of its ends.""")),
+    sizes={"right": 380},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

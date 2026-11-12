@@ -15,6 +15,7 @@ Output segments: a str, or {"n": id, "t": text} (node), {"e": id, "t": text}
 (edge), or {"g": [segs...], "a": annotation} (a group).
 """
 import io
+import math
 import keyword
 import re
 import sys
@@ -492,7 +493,7 @@ class Session:
     # what each cell changed -------------------------------------------------------
     _ASPECT = {"x": "position", "y": "position", "width": "size", "height": "size", "size": "size",
                "labelvisible": "label", "labelcolor": "label", "labelsize": "label", "labelpos": "label",
-               "strokecolor": "border", "linestyle": "line style", "arrowhead": "arrowheads"}
+               "strokecolor": "border", "linestyle": "line style", "arrowhead": "arrowheads", "arc": "edge curves"}
     PROVENANCE_CAP = 50000
 
     def _note_provenance(self, cell, code, journal):
@@ -1122,6 +1123,7 @@ class Session:
             **({"ls": float(val("labelsize"))} if val("labelsize") not in (None, 1.0) else {}),
             **({"st": val("linestyle")} if val("linestyle") not in (None, "solid") else {}),
             **({"ah": val("arrowhead")} if val("arrowhead") not in (None, "triangle") else {}),
+            **({"k": math.radians(float(val("arc")))} if val("arc") not in (None, 0, 0.0) else {}),
         }
 
     def scene(self):
@@ -1274,7 +1276,7 @@ class Session:
     # display plumbing: never suggested
     _PLUMBING = {"x", "y", "visible", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "image",
                  "labelvisible", "labelsize", "labelpos", "label", "color", "name", "node1", "node2", "source",
-                 "destination", "size", "linestyle", "arrowhead"}
+                 "destination", "size", "linestyle", "arrowhead", "arc"}
 
     def suggestions(self, limit=12):
         """Short commands worth trying on the graph showing now, for the code

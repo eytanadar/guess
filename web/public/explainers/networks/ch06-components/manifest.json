@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Components, weak and strong",
+  "description": "Block-diagonal matrices, weakly and strongly connected components, in- and out-components.",
+  "console": "toggle",
+  "script": "main.gy"
+}

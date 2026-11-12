@@ -1,0 +1,249 @@
+# Trees and planar networks  (Newman, Networks, Sections 6.8-6.9)
+# A tree is a connected network with no loops: it has exactly n - 1 edges and
+# exactly one path between any two nodes, and any node can serve as its root.
+# A planar network can be drawn with no edges crossing; K5 and K3,3 can't, and
+# every non-planar network contains one of them (Kuratowski). Maps give planar
+# networks, and four colours are always enough to colour a map.
+
+import random
+import networkx as nx
+
+# ---- a tree ------------------------------------------------------------------------------
+def tree():
+    T = nx.random_labeled_tree(25, seed=3) if hasattr(nx, "random_labeled_tree") else nx.random_tree(25, seed=3)
+    T = nx.relabel_nodes(T, {v: f"t{v}" for v in T})
+    fromNetworkX(T, "tree")
+    root[0] = "t0"
+    treeLayout(g.getNodeByName("t0"))
+    tree_look()
+
+
+root = ["t0"]
+extra_edge = []
+
+
+def tree_look():
+    for n in g.nodes:
+        n.width = n.height = 22
+        n.color = "250,190,50" if n.name == root[0] else "110,160,90"
+        n.labelvisible = false
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "120,120,120", 2, "solid"
+
+
+def reroot(n):
+    root[0] = n.name
+    if not extra_edge:
+        treeLayout(n)
+    tree_look()
+    center()
+
+
+def add_loop():
+    if extra_edge:
+        return
+    G = toNetworkX()
+    r = random.Random(len(G))
+    while true:
+        a, b = r.sample(sorted(G), 2)
+        if not G.has_edge(a, b) and nx.shortest_path_length(G, a, b) >= 3:
+            break
+    e = addEdge(g.getNodeByName(a), g.getNodeByName(b))
+    extra_edge.append(e)
+    G.add_edge(a, b)
+    cyc = nx.find_cycle(G, a)
+    tree_look()
+    on = {frozenset(p) for p in cyc}
+    for x in g.edges:
+        if frozenset((x.node1.name, x.node2.name)) in on:
+            x.color, x.width, x.linestyle = "230,60,50", 4, "flow"
+
+
+def drop_loop():
+    if extra_edge:
+        remove(extra_edge)
+        extra_edge[:] = []
+    tree_look()
+
+
+def tree_text():
+    n, m = len(g.nodes), len(g.edges)
+    if extra_edge:
+        return (f"**{n}** nodes and **{m}** edges, one more than n − 1. The new edge closed a **loop** (red): between "
+                "nodes on it there are now two paths, so this is no longer a tree.")
+    return (f"**{n}** nodes and **{m}** = n − 1 edges: a **tree**. Between any two nodes there is exactly one path. "
+            "Click any node to make it the root (yellow): it's the same tree, drawn hanging from there.")
+
+
+# ---- planarity ----------------------------------------------------------------------------
+SHAPES = ["A planar network, drawn badly", "K5 (5 nodes, all joined)", "K3,3 (three houses, three utilities)",
+          "The US states (drawn on the map)"]
+current = [SHAPES[0]]
+
+
+def planar_graph(choice):
+    current[0] = choice
+    if choice.startswith("A planar"):
+        G = nx.grid_2d_graph(3, 4)
+        G = nx.relabel_nodes(G, {v: f"p{v[0]}{v[1]}" for v in G})
+        for a, b in [("p00", "p11"), ("p11", "p22"), ("p01", "p12"), ("p12", "p23"), ("p10", "p21")]:
+            G.add_edge(a, b)
+    elif choice.startswith("K5"):
+        G = nx.relabel_nodes(nx.complete_graph(5), lambda v: f"k{v}")
+    elif choice.startswith("K3,3"):
+        G = nx.relabel_nodes(nx.complete_bipartite_graph(3, 3), lambda v: ["house1", "house2", "house3", "water", "gas", "power"][v])
+    if "planar" in graphNames():
+        if graphNames()[0] == "planar":
+            use("tree")
+        closeGraph("planar")
+    if choice.startswith("The US"):
+        newGraph("planar")
+        makeFromMap("usa")
+    else:
+        fromNetworkX(G, "planar")
+        shuffle()
+    mark_crossings()
+    g.nodes.labelvisible = len(g.nodes) < 15
+    g.nodes.width = g.nodes.height = 20
+    g.edges.width = 2
+    center()
+
+
+def shuffle():
+    r = random.Random()
+    for n in g.nodes:
+        n.x, n.y = r.uniform(0, 500), r.uniform(0, 400)
+
+
+def untangle():
+    G = toNetworkX(directed=False)
+    ok, _ = nx.check_planarity(G)
+    if not ok:
+        StatusBar.setStatus("This one can't be drawn without crossings: it isn't planar")
+        return
+    pos = nx.planar_layout(G)
+    for n in g.nodes:
+        n.x, n.y = pos[n.name][0] * 300, pos[n.name][1] * 300
+    mark_crossings()
+    center()
+
+
+def planar_text():
+    if graphNames()[0] != "planar":
+        return ""
+    k = edgeCrossings()
+    ok, _ = nx.check_planarity(toNetworkX(directed=False))
+    verdict = ("**planar**: some drawing has no crossings" if ok else
+               "**not planar**: every drawing has at least one crossing")
+    return (f"**{k}** crossing{'s' if k != 1 else ''} in this drawing. This network is {verdict}. "
+            "Drag nodes to try (the count follows; *Mark crossings* shows them in red)" + (", or press *Untangle* for a drawing with none." if ok else ".") +
+            ("\n\nK5 and K3,3 are the two smallest non-planar networks: any network that can't be drawn flat "
+             "contains one of them, stretched out (Kuratowski's theorem)." if not ok else ""))
+
+
+def mark_crossings():
+    for e in g.edges:
+        e.color, e.width = "130,130,130", 2
+    for a, b in edgeCrossings(pairs=true):
+        a.color = b.color = "230,60,50"
+        a.width = b.width = 3
+
+
+# ---- four colours -------------------------------------------------------------------------------
+PALETTE = ["230,90,80", "90,160,220", "250,200,60", "110,190,110", "170,110,200"]
+col = {"order": [], "timer": None}
+
+
+def colour_map():
+    use("map")
+    if "color_class" not in g.node_schema:
+        Node.color_class = -1
+    for n in g.nodes:
+        n.color = "200,200,200"
+        n.color_class = -1
+    # DSATUR, one state at a time: next is the state with the most differently coloured neighbours
+    G = toNetworkX()
+    col["G"], col["done"] = G, {}
+    col["timer"] = everyPaced(colour_one, steps=len(G), slow=0.7, fast=0.08)
+
+
+def colour_one():
+    G, done = col["G"], col["done"]
+    left = [v for v in G if v not in done]
+    if not left:
+        return False
+    sat = lambda v: len({done[u] for u in G[v] if u in done})
+    v = max(left, key=lambda v: (sat(v), G.degree(v), v))
+    used = {done[u] for u in G[v] if u in done}
+    c = next(i for i in range(10) if i not in used)
+    done[v] = c
+    n = g.getNodeByName(v)
+    n.color = PALETTE[c % len(PALETTE)]
+    n.color_class = c
+    n.width = n.height = 22
+    for e in g.edges:                     # the borders just checked
+        if n in (e.node1, e.node2):
+            e.color, e.width = "40,40,40", 2.5
+    return len(left) - 1 or False
+
+
+def map_text():
+    if graphNames()[0] != "map":
+        return ""
+    done = col.get("done", {})
+    used = len(set(done.values())) if done else 0
+    return (f"**48** states, joined when they share a border. Coloured so far: **{len(done)}**, using **{used}** "
+            "colour" + ("s" if used != 1 else "") + ". The four colour theorem (Appel and Haken, 1976) says four are "
+            "always enough for a map; this greedy method usually manages with four too.")
+
+
+def switch(title):
+    if title.startswith("Tree"):
+        use("tree")
+    elif title.startswith("Planar"):
+        if "planar" not in graphNames():
+            planar_graph(current[0])
+        use("planar")
+    else:
+        use("map")
+    center()
+
+
+def click(n):
+    if graphNames()[0] == "tree":
+        reroot(n)
+
+
+tree()
+newGraph("map")
+makeFromMap("usa")
+g.nodes.labelvisible = true
+for n in g.nodes:
+    n.label = n.abbrev
+use("tree")
+closeGraph("main") if "main" in graphNames() else None
+graphevents.clickNode = click
+constantLabelSize(size=14)
+ui.title("Trees and planar networks", "Networks, Sections 6.8–6.9")
+ui.layout(
+    right=Column(
+        Tabs(
+            Tab("Trees",
+                Markdown(tree_text),
+                Row(Button("Add an edge", onClick=add_loop), Button("Remove it", onClick=drop_loop))),
+            Tab("Planar",
+                Dropdown(SHAPES, label="Network", onChange=planar_graph),
+                Row(Button("Shuffle", onClick=lambda: (shuffle(), mark_crossings(), center())), Button("Untangle", onClick=untangle),
+                    Button("Mark crossings", onClick=mark_crossings)),
+                Markdown(planar_text)),
+            Tab("Four colours",
+                Markdown("""Colour each state so that no two neighbours match, using as few colours as
+possible."""),
+                Button("Colour the map", onClick=colour_map),
+                Markdown(map_text)),
+            onChange=switch)),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

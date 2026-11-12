@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Directed and acyclic networks",
+  "description": "Peel off nodes with no outgoing edges: an acyclic network's matrix becomes triangular, a cyclic one gets stuck.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -67,9 +67,28 @@ export function markdown(text: string): DocumentFragment {
       item = null;
     }
   };
+  let table: HTMLTableElement | null = null;
+  const cells = (line: string) => line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
   for (const block of text.replace(/\r/g, "").split(/\n\s*\n/)) {
     list = null;
+    table = null;
     for (const line of block.split("\n")) {
+      // a table: rows of | a | b |, the second row a separator like |---|---|
+      if (/^\s*\|.*\|\s*$/.test(line)) {
+        flush();
+        if (/^\s*\|[\s:|-]+\|\s*$/.test(line) && table) continue;
+        const head = !table;
+        if (!table) { table = document.createElement("table"); table.className = "md-table"; f.append(table); }
+        const tr = document.createElement("tr");
+        for (const c of cells(line)) {
+          const td = document.createElement(head ? "th" : "td");
+          inline(c, td);
+          tr.append(td);
+        }
+        table.append(tr);
+        continue;
+      }
+      table = null;
       const h = /^(#{1,4})\s+(.*)$/.exec(line);
       const li = /^\s*(?:[-*]|\d+\.)\s+(.*)$/.exec(line);
       if (h) {
@@ -691,7 +710,7 @@ export class Dock {
     const nr = Math.max(rl.length, 1), nc = Math.max(cl.length, 1);
     const named = Math.max(nr, nc) <= 40;
     const pad = named ? 46 : 6, W = 300;
-    const step = (W - pad - 4) / Math.max(nr, nc);
+    const step = (W - pad - 10) / Math.max(nr, nc);
     const wid = step * nc, hei = step * nr;
     const H = pad + hei + 4;
     const svg = document.createElementNS(SVG, "svg");
@@ -713,17 +732,21 @@ export class Dock {
     if (rg) for (let i = 1; i < nr; i++) if (rg[i] !== rg[i - 1]) line(pad, pad + i * step, pad + wid, pad + i * step);
     if (cg) for (let j = 1; j < nc; j++) if (cg[j] !== cg[j - 1]) line(pad + j * step, pad, pad + j * step, pad + hei);
     const short = (t: string) => (t.length > 8 ? t.slice(0, 7) + "…" : t);
+    // name labels as big as the rows allow (readable on small matrices)
+    const labelPx = Math.max(5, Math.min(11, step * 0.55));
     if (named) {
       rl.forEach((t, i) => {
         const row = document.createElementNS(SVG, "text");
-        row.setAttribute("x", String(pad - 3)); row.setAttribute("y", String(pad + (i + 0.5) * step + 2.5));
-        row.setAttribute("class", "tick"); row.textContent = short(t);
+        row.setAttribute("x", String(pad - 3)); row.setAttribute("y", String(pad + (i + 0.5) * step));
+        row.setAttribute("class", "tick matrix-row"); row.style.fontSize = `${labelPx}px`;
+        row.textContent = short(t);
         svg.append(row);
       });
       cl.forEach((t, j) => {
         const col = document.createElementNS(SVG, "text");
-        col.setAttribute("transform", `translate(${pad + (j + 0.5) * step + 2.5},${pad - 3}) rotate(-90)`);
-        col.setAttribute("class", "xtick matrix-col"); col.textContent = short(t);
+        col.setAttribute("transform", `translate(${pad + (j + 0.5) * step},${pad - 3}) rotate(-90)`);
+        col.setAttribute("class", "xtick matrix-col"); col.style.fontSize = `${labelPx}px`;
+        col.textContent = short(t);
         svg.append(col);
       });
     }
@@ -760,7 +783,7 @@ export class Dock {
           t.setAttribute("x", String(pad + (k + 0.5) * step));
           t.setAttribute("y", String(pad + (r + 0.5) * step));
           t.setAttribute("class", v ? "matrix-num on" : "matrix-num");
-          t.setAttribute("font-size", String(fontPx));
+          t.style.fontSize = `${fontPx}px`;
           t.textContent = fmt(v);
           svg.append(t);
         }

@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Multilayer and temporal networks",
+  "description": "A journey across bus, train and air layers; layers on the same people; contacts that only work forward in time.",
+  "console": "toggle",
+  "script": "main.gy"
+}

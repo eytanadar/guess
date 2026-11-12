@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The graph Laplacian",
+  "description": "Eigenvalues and components, spectral partitioning and drawing, random walks and resistor networks.",
+  "console": "toggle",
+  "script": "main.gy"
+}

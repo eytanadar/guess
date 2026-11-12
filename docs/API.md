@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (96)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (102)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (20)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -104,6 +104,16 @@ up and down look equally strong, e.g. colorBy(lfc, blue, red,
 center=0) for fold changes. Compare colorize, which spaces distinct
 values evenly.
 
+### `colorGraph(strategy='DSATUR', show=True)`
+
+colorGraph() gives every node a colour class (`color_class`, 0, 1,
+2, ...) so that no two neighbours share one, using as few as it can
+find (greedy colouring; strategy "DSATUR" (default),
+"largest_first", "smallest_last" or "random_sequential"); show=true
+also colours the nodes by class. Returns the number of colours used.
+Planar networks (maps) never need more than four, though greedy
+methods sometimes use five.
+
 ### `colorize(field, *cs)`
 
 colorize(field) gives each value its own clearly different colour (the
@@ -138,6 +148,15 @@ Edges divided by the number of possible undirected node pairs.
 ### `distance(node1, node2)`
 
 Euclidean distance between two nodes' positions.
+
+### `edgeCrossings(pairs=False)`
+
+edgeCrossings() counts the pairs of edges that cross in the current
+drawing (straight edges between node centres; edges sharing a node
+don't count). pairs=true returns the crossing pairs instead, e.g.
+for e1, e2 in edgeCrossings(pairs=true): e1.color = red. A planar
+network can be drawn with no crossings; finding such a drawing is
+another matter.
 
 ### `edgeData(*args)`
 
@@ -186,6 +205,19 @@ rows by p-value and returns all rows as dicts, best first.
 ### `execfile(filename)`
 
 Run a Gython script file in the current namespace.
+
+### `expandLayers(field, order=None, directed=False, name='layers')`
+
+expandLayers(kind) turns a multiplex network (one set of nodes,
+several kinds of edge, told apart by the edge field `kind`) into a
+multilayer one in a new graph tab: a copy of every node in each layer
+it has edges in, the layer's edges between the copies, and
+"interlayer" edges joining each node's copies in consecutive layers
+(order= a list of the layer values; default sorted). directed=true
+points the interlayer edges forward, as for time: a temporal network
+where nothing travels back in time. Copies keep the node's position
+and get `layer` and `original`; run isometricLayout(layer) to stack
+the layers. use() goes back to the original.
 
 ### `exportCSV(filename='edges.csv', table='edges')`
 
@@ -456,6 +488,17 @@ true). level=k merges modules below depth k into their parent (e.g.
 level=2 gives one node per subpackage). Test modules are skipped
 unless tests=true. The code is parsed, never run.
 
+### `makeFromMap(region='usa')`
+
+makeFromMap("usa") makes the network of the lower 48 US states, an
+edge wherever two share a border (touching at a single point, like
+the Four Corners, doesn't count); makeFromMap("world") does the same
+for countries.
+Nodes get `abbrev`, `latitude`, `longitude` (and `continent` for
+countries) and are placed on a map. Such networks are planar (when
+each region is one piece of land), which is why four colours always
+suffice to colour a map. Data: Natural Earth 1:50m, public domain.
+
 ### `makeFromPajek(filename)`
 
 Replace the current graph with a Pajek .net file (nodes are named pajek<id>).
@@ -575,6 +618,13 @@ where those outbreaks started), and returns them
 (.mean, .median, .large = share of runs reaching more than `large` of
 the nodes).
 
+### `plotSpectrum(matrix='laplacian')`
+
+plotSpectrum() charts the eigenvalues of the Laplacian (or
+"adjacency", "normalized") in order, one dot each: count the zeros
+to count components; a small second eigenvalue means the network
+nearly splits in two.
+
 ### `readSets(filename, item=None, set=None, where=None)`
 
 readSets("go.csv") reads a table with one row per (item, set) pair,
@@ -673,6 +723,15 @@ Nodes around a circle ordered by field; radius shrinks with outdegree.
 
 sortBy(field) or sortBy(seq, field), smallest first;
 descending=true for largest first.
+
+### `spectrum(matrix='laplacian')`
+
+spectrum() returns the eigenvalues of the graph Laplacian L = D - A,
+smallest first; spectrum("adjacency") those of A (largest first),
+spectrum("normalized") of the normalised Laplacian I - D^-1/2 A D^-1/2.
+Direction and weights are ignored (edges count once each way). The
+Laplacian has as many zero eigenvalues as the network has
+components; the second smallest is the algebraic connectivity.
 
 ### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None)`
 
@@ -2832,7 +2891,7 @@ Bar chart of how many elements share each value of field (largest first).
 
 Pie chart of how many elements share each value of field.
 
-### `showMatrix(order=None, weight=None, nodes=None, title=None)`
+### `showMatrix(order=None, weight=None, nodes=None, title=None, numbers=False, rows=None, cols=None)`
 
 showMatrix() draws the adjacency matrix: a row and a column per
 node, and a dark cell where an edge joins them (darker for a bigger
@@ -2840,8 +2899,14 @@ node, and a dark cell where an edge joins them (darker for a bigger
 columns by that field (a community, a group, a degree), with lines
 between groups, so blocks and nested patterns show; nodes= limits it
 to some nodes. Rows run from the sending node to the receiving one
-for directed edges. Hovering a cell highlights its edge and two
-nodes; clicking selects them. Up to 600 nodes.
+for directed edges. Parallel edges add up; an undirected self-edge
+counts 2 on the diagonal (1 if directed), as in the usual definition.
+numbers=true writes each cell's value, zeros included (for small
+matrices). rows= and cols= give two sets of nodes for a rectangular
+matrix, e.g. the incidence matrix of a two-mode network:
+showMatrix(rows=(kind == 'group'), cols=(kind == 'person'), numbers=true).
+Hovering a cell highlights its edge and two nodes; clicking selects
+them. Up to 600 rows and columns.
 
 ## Interface building (panels, widgets, timers, events)
 
@@ -4018,6 +4083,7 @@ Built-in edge fields:
 | `labelsize` | DOUBLE | 1.0 |
 | `linestyle` | VARCHAR | 'solid' |
 | `arrowhead` | VARCHAR | 'triangle' |
+| `arc` | DOUBLE | 0.0 |
 
 Computed node fields (calculated the first time they are used, by name or
 as `n.<field>`; `recompute()` after editing the graph): `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`, `harmonic`, `eccentricity`, `clustering`, `triangles`, `coreness`, `strength`, `component`, `strongcomponent`, `betweenness`, `degrank`, `hits`, `rwbetweenness`, `knn`; edge field `betweenness`.

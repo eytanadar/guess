@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Trees and planar networks",
+  "description": "One path between any two nodes; drag nodes to remove crossings; four colours for a map of the states.",
+  "console": "toggle",
+  "script": "main.gy"
+}

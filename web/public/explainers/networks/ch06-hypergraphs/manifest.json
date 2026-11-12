@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Hypergraphs and projections",
+  "description": "Groups as hyperedges, as a bipartite network and as a weighted projection, with the matrices B and B\u1d40B.",
+  "console": "toggle",
+  "script": "main.gy"
+}

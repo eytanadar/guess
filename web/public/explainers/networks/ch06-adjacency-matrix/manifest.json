@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The adjacency matrix",
+  "description": "Edit a small network and watch its adjacency matrix change: multiedges, self-edges and weights.",
+  "console": "toggle",
+  "script": "main.gy"
+}

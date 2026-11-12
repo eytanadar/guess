@@ -164,7 +164,7 @@ def test_map_colouring_crossings_layers_and_spectrum():
     assert ev(s, "edgeCrossings()") == ev(s, "len(edgeCrossings(pairs=true))") > 0
     sp = ev(s, "spectrum()")
     assert sp[0] == 0 and sp[1] > 0 and len(sp) == 34
-    assert s.run("remove([e for e in g.edges if (e.node1.club == 'Mr Hi') != (e.node2.club == 'Mr Hi')])")
+    assert s.run("remove([e for e in g.edges if e.node1.club != e.node2.club])")
     assert ev(s, "spectrum()")[1] == 0                                   # two components: two zeros
     assert s.run("Edge.kind = ''\nfor i, e in enumerate(g.edges):\n    e.kind = 'a' if i % 2 else 'b'\n\n"
                  "expandLayers(kind, directed=true)"), s.rec.of("error")

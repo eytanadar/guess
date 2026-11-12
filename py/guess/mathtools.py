@@ -14,8 +14,9 @@ def install(session):
 
     def makeFromMap(region="usa"):
         """makeFromMap("usa") makes the network of the lower 48 US states, an
-        edge wherever two share a border (touching at a point, like the Four
-        Corners, counts); makeFromMap("world") does the same for countries.
+        edge wherever two share a border (touching at a single point, like
+        the Four Corners, doesn't count); makeFromMap("world") does the same
+        for countries.
         Nodes get `abbrev`, `latitude`, `longitude` (and `continent` for
         countries) and are placed on a map. Such networks are planar (when
         each region is one piece of land), which is why four colours always

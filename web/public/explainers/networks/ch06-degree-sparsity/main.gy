@@ -1,0 +1,154 @@
+# Degree, density and sparsity  (Newman, Networks, Section 6.10)
+# A node's degree k is its number of edges. Every edge has two ends, so the
+# degrees add up to 2m; the mean degree is c = 2m/n, and the density (the
+# share of all possible edges that exist) is rho = c/(n - 1). Real networks are
+# sparse. If people keep about the same number of friends however big the
+# population, density falls like 1/n as the network grows. In a directed
+# network the mean in-degree and mean out-degree are equal (both m/n).
+
+import math
+import random
+
+DATA = {"Karate club (friendships)": "karate.gdf", "Dolphins (associations)": "dolphins.gdf",
+        "Power grid region": "power-grid-region.gdf", "Internet (300 ASes)": "internet-as-sample.gdf",
+        "US airports (routes)": "us-airports.gdf", "C. elegans neurons (directed)": "celegans-neural.gdf"}
+current = ["Karate club (friendships)"]
+
+
+def load(choice):
+    current[0] = choice
+    stop_growing()
+    makeFromFile(DATA[choice])
+    if choice.startswith("US airports"):
+        geoLayout()
+    sizeBy(degree, 5, 24)
+    g.edges.color = "150,150,150,80"
+    center()
+
+
+def numbers():
+    if mode[0] != "count":
+        return ""
+    n, m = len(g.nodes), len(g.edges)
+    directed = any(e.directed for e in g.edges)
+    if directed:
+        kin = sum(nd.indegree for nd in g.nodes)
+        kout = sum(nd.outdegree for nd in g.nodes)
+        return (f"**n = {n}** nodes, **m = {m}** directed edges. Every edge has one tail and one head, so the "
+                f"in-degrees add up to {kin} and the out-degrees to {kout}, both **m**. Mean in-degree = mean "
+                f"out-degree = m/n = **{m / n:.2f}**. Density m / (n(n−1)) = **{m / (n * (n - 1)):.4f}**.")
+    total = sum(nd.degree for nd in g.nodes)
+    c = 2 * m / n
+    return (f"**n = {n}** nodes, **m = {m}** edges. The degrees add up to **{total}** = 2m (each edge has two "
+            f"ends). Mean degree c = 2m/n = **{c:.2f}**. Density ρ = c/(n−1) = **{c / (n - 1):.4f}**: only "
+            f"{100 * c / (n - 1):.1f}% of the possible pairs are joined. **Sparse.**")
+
+
+# ---- growing ------------------------------------------------------------------------------------
+grow = {"timer": None, "n": 0, "m_fixed": 0, "m_share": 0.0, "rows": [], "rnd": None}
+RULES = ["each newcomer makes 3 friends", "each newcomer befriends 10% of everyone"]
+rule = [RULES[0]]
+
+
+def start_growing():
+    stop_growing()
+    newGraph("growing") if "growing" not in graphNames() else use("growing")
+    remove(list(g.nodes))
+    grow.update(n=0, m_fixed=0, m_share=0.0, rows=[], rnd=random.Random(5))
+    grow["timer"] = everyPaced(grow_one, steps=120, slow=0.6, fast=0.04)
+
+
+def grow_one():
+    r = grow["rnd"]
+    k = grow["n"]
+    me = addNode(f"p{k}")
+    others = [nd for nd in g.nodes if nd is not me]
+    if rule[0] == RULES[0]:
+        friends = r.sample(others, min(3, len(others)))
+    else:
+        friends = [o for o in others if r.random() < 0.10]
+    if friends:
+        me.x = sum(f.x for f in friends) / len(friends) + r.uniform(-40, 40)
+        me.y = sum(f.y for f in friends) / len(friends) + r.uniform(-40, 40)
+    else:
+        me.x, me.y = r.uniform(0, 300), r.uniform(0, 300)
+    for f in friends:
+        e = addEdge(me, f)
+        e.color, e.width, e.linestyle = "240,140,30", 2.5, "flow"
+    for e in g.edges:
+        if e.linestyle == "flow" and me not in (e.node1, e.node2):
+            e.color, e.width, e.linestyle = "150,150,150,90", 1, "solid"
+    me.color, me.width, me.height = "240,140,30", 14, 14
+    grow["n"] = k + 1
+    # both rules, counted side by side (expected numbers of edges)
+    n = grow["n"]
+    grow["m_fixed"] += min(3, n - 1)
+    grow["m_share"] += 0.10 * (n - 1)
+    if n >= 4:
+        grow["rows"].append((n, 2 * grow["m_fixed"] / (n * (n - 1)), 2 * grow["m_share"] / (n * (n - 1))))
+    return 120 - n
+
+
+def stop_growing():
+    if grow["timer"] is not None:
+        grow["timer"].stop()
+        grow["timer"] = None
+
+
+def density_chart():
+    if mode[0] == "grow" and len(grow["rows"]) > 2:
+        plotLine({RULES[0]: [(n, d) for n, d, _ in grow["rows"]], RULES[1]: [(n, s) for n, _, s in grow["rows"]]},
+                 title="Density as the network grows", xlabel="n", ylabel="density", log=true)
+
+
+def grow_text():
+    if mode[0] != "grow" or not grow["n"]:
+        return ""
+    n, m = len(g.nodes), len(g.edges)
+    c = 2 * m / n if n else 0
+    return (f"**{n}** people, **{m}** friendships, mean degree **{c:.1f}**, density **{(c / (n - 1) if n > 1 else 0):.3f}**. "
+            "With a fixed number of friends each, c stays put and density falls like 1/n (a straight line on log–log "
+            "axes): the network gets **sparser** as it grows. With a fixed *share* of everyone, c grows with n and "
+            "density stays put: **dense**. Real social networks look like the first.")
+
+
+mode = ["count"]
+
+
+def switch(title):
+    if title.startswith("Count"):
+        mode[0] = "count"
+        stop_growing()
+        if graphNames()[0] == "growing":
+            use(graphNames()[1])
+    else:
+        mode[0] = "grow"
+        start_growing()
+    center()
+
+
+def pick_rule(v):
+    rule[0] = v
+    if mode[0] == "grow":
+        start_growing()
+
+
+load(current[0])
+constantLabelSize(size=14)
+ui.title("Degree, density and sparsity", "Networks, Section 6.10")
+ui.layout(
+    right=Column(
+        Tabs(
+            Tab("Count",
+                Dropdown(list(DATA), label="Network", onChange=load),
+                Markdown(numbers),
+                Chart(lambda: plotFrequency(degree) if mode[0] == "count" else None)),
+            Tab("Grow",
+                Dropdown(RULES, label="Rule", onChange=pick_rule),
+                Button("Grow again", onClick=start_growing),
+                Markdown(grow_text), Chart(density_chart)),
+            onChange=switch)),
+    sizes={"right": 380},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))

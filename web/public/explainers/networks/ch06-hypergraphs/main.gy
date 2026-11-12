@@ -1,0 +1,114 @@
+# Hypergraphs, bipartite networks and projections  (Newman, Networks, 6.5-6.6)
+# Groups (families, papers, films) join several people at once. Drawn as
+# hyperedges (shaded loops), as a bipartite network (people and groups), or
+# projected onto the people (two are joined if they share a group). The
+# incidence matrix B has a row per group and a column per person; the
+# projection is P = B^T B: off the diagonal, the groups two people share; on
+# it, the number of groups each person is in.
+
+import math
+
+PEOPLE = ["Ann", "Ben", "Cat", "Dev", "Eve", "Fay", "Gil"]
+GROUPS = {"G1": ["Ann", "Ben", "Cat"], "G2": ["Cat", "Dev"], "G3": ["Ben", "Cat", "Dev", "Eve"], "G4": ["Eve", "Fay", "Gil"]}
+extra = {"G5": ["Ann", "Dev", "Fay", "Gil", "Eve"]}
+POS = {p: (300 + 220 * math.cos(2 * math.pi * i / len(PEOPLE) - math.pi / 2),
+           260 + 220 * math.sin(2 * math.pi * i / len(PEOPLE) - math.pi / 2)) for i, p in enumerate(PEOPLE)}
+COLOUR = {"G1": "230,90,90", "G2": "90,160,90", "G3": "80,130,220", "G4": "220,160,40", "G5": "160,90,200"}
+VIEWS = ["Hypergraph: groups as loops", "Bipartite: people and groups", "Projection onto the people"]
+view = [VIEWS[0]]
+
+
+def groups():
+    return dict(GROUPS, **extra) if big[0] else dict(GROUPS)
+
+
+big = [False]
+
+
+def draw(choice=None):
+    if choice:
+        view[0] = choice
+    removeConvexHulls()
+    remove(list(g.nodes))
+    for p in PEOPLE:
+        n = addNode(p, x=POS[p][0], y=POS[p][1])
+        n.kind = "person"
+    G = groups()
+    if view[0] == VIEWS[0]:
+        for gname, members in G.items():
+            encircle([g.getNodeByName(m) for m in members], shape="hull", color=COLOUR[gname] + ",60", padding=18)
+    elif view[0] == VIEWS[1]:
+        for i, (gname, members) in enumerate(sorted(G.items())):
+            gn = addNode(gname, x=60 + i * 130, y=-120)
+            gn.kind = "group"
+            for p in members:
+                addEdge(gn, g.getNodeByName(p))
+        for i, p in enumerate(PEOPLE):
+            g.getNodeByName(p).x, g.getNodeByName(p).y = i * 95, 250
+    else:
+        shared = {}
+        for members in G.values():
+            for i, a in enumerate(members):
+                for b in members[i + 1:]:
+                    key = tuple(sorted((a, b)))
+                    shared[key] = shared.get(key, 0) + 1
+        for (a, b), k in shared.items():
+            e = addEdge(g.getNodeByName(a), g.getNodeByName(b))
+            e.weight = k
+            e.label = str(k)
+            e.labelvisible = true
+            e.width = 1.5 + 2 * (k - 1)
+    for n in g.nodes:
+        n.width = n.height = 30 if n.kind == "person" else 22
+        n.style = 2 if n.kind == "person" else 1
+        n.color = "120,160,220" if n.kind == "person" else COLOUR.get(n.name, "150,150,150")
+        n.labelvisible = true
+        n.labelpos = "inside" if n.kind == "person" else "above"
+    g.edges.color = "120,120,120"
+    center()
+
+
+def toggle_big(on):
+    big[0] = bool(on)
+    draw()
+
+
+def matrix_view():
+    if view[0] == VIEWS[1]:
+        return showMatrix(rows=(kind == "group"), cols=(kind == "person"), numbers=true, order=name,
+                          title="Incidence matrix B (groups × people)")
+    return None
+
+
+def p_table():
+    G = groups()
+    names = PEOPLE
+    P = {(a, b): sum(1 for m in G.values() if a in m and b in m) for a in names for b in names}
+    head = "| P | " + " | ".join(n[:3] for n in names) + " |\n|---|" + "---|" * len(names)
+    rows = [f"| **{a}** | " + " | ".join(f"**{P[(a, b)]}**" if a == b else str(P[(a, b)]) for b in names) + " |"
+            for a in names]
+    k = max(len(m) for m in G.values())
+    note = {VIEWS[0]: "Each shaded loop is one **hyperedge**: a group joining any number of people.",
+            VIEWS[1]: "The same groups as a **bipartite** network: people only link to groups. B is its incidence matrix.",
+            VIEWS[2]: (f"The **projection**: two people are joined if they share a group; the label is how many. Each "
+                       f"group becomes a clique (the biggest, {k} people, alone makes {k * (k - 1) // 2} edges), and "
+                       "you can no longer tell which edges came from which group.")}[view[0]]
+    return note + "\n\n**P = BᵀB** (diagonal: how many groups each person is in):\n\n" + head + "\n" + "\n".join(rows)
+
+
+Node.kind = ""
+draw()
+constantLabelSize(size=14)
+ui.title("Hypergraphs and projections", "Networks, Sections 6.5–6.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Groups of people, three ways
+Seven people and the groups they belong to (families, say)."""),
+        Dropdown(VIEWS, label="Draw as", onChange=draw),
+        Checkbox("add a fifth group of five people", onChange=toggle_big),
+        Chart(matrix_view),
+        Markdown(p_table)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(PEOPLE)} people · {len(groups())} groups"))

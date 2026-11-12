@@ -1,0 +1,221 @@
+# Multilayer, multiplex and temporal networks  (Newman, Networks, Section 6.7)
+# Layers of networks with edges between the layers. A transport network has a
+# bus layer, a train layer and an air layer, joined where you can change. A
+# multiplex network has the same people in every layer (friends, colleagues,
+# family). A temporal network has a layer per day, and its interlayer edges
+# only point forward: what happens today can't affect yesterday. All invented.
+
+import random
+import networkx as nx
+
+# ---- transport: three layers, transfers between them ------------------------------------------
+STOPS = {  # name: (layer, x, y)
+    "Old Town": ("bus", 0, 0), "Market": ("bus", 120, 40), "Harbour": ("bus", 240, 0), "Park": ("bus", 120, 160),
+    "University": ("bus", 0, 200), "Central bus": ("bus", 240, 160),
+    "Central": ("train", 240, 160), "North": ("train", 60, -80), "Airport rail": ("train", 420, 60), "East": ("train", 380, 220),
+    "City airport": ("air", 420, 60), "Faraway": ("air", 700, 100)}
+ROUTES = [("Old Town", "Market", 9), ("Market", "Harbour", 8), ("Market", "Park", 7), ("Park", "University", 10),
+          ("Park", "Central bus", 6), ("Harbour", "Central bus", 9), ("Old Town", "University", 12),
+          ("Central", "North", 12), ("Central", "Airport rail", 15), ("Central", "East", 10), ("North", "Airport rail", 20),
+          ("City airport", "Faraway", 70)]
+TRANSFERS = [("Central bus", "Central", 5), ("Airport rail", "City airport", 25), ("Old Town", "North", 6)]
+LAYERS = {"bus": 0, "train": 1, "air": 2}
+
+
+def transport():
+    G = nx.Graph()
+    for s, (lay, px, py) in STOPS.items():
+        G.add_node(s.replace(" ", "_"), label=s, layer=lay, level=LAYERS[lay], pos=(px, py))
+    for a, b, m in ROUTES:
+        G.add_edge(a.replace(" ", "_"), b.replace(" ", "_"), minutes=m, weight=m, kind="ride")
+    for a, b, m in TRANSFERS:
+        G.add_edge(a.replace(" ", "_"), b.replace(" ", "_"), minutes=m, weight=m, kind="transfer")
+    fromNetworkX(G, "transport")
+    isometricLayout(level, layers=3)        # bus at the bottom, then train, then air
+    colorize(layer)
+    for e in g.edges:
+        e.linestyle = "dashed" if e.kind == "transfer" else "solid"
+        e.label = f"{e.minutes:g} min"
+        e.labelvisible = true
+    g.nodes.labelvisible = true
+
+
+trip = []
+
+
+def plan(n):
+    if graphNames()[0] != "transport":
+        return
+    if len(trip) == 2:
+        trip[:] = []
+    trip.append(n)
+    for e in g.edges:
+        e.width = 1.5
+        e.color = "150,150,150"
+    if len(trip) == 2:
+        path = shortestPath(trip[0], trip[1], weighted=true)
+        for x in path:
+            if hasattr(x, "node1"):
+                x.color, x.width, x.linestyle = "230,80,40", 5, "flow"
+
+
+def trip_text():
+    if len(trip) < 2:
+        return "*Click two stops* to plan the quickest trip. Dashed lines are changes between layers."
+    path = shortestPath(trip[0], trip[1], weighted=true)
+    edges = [x for x in path if hasattr(x, "node1")]
+    mins = sum(e.minutes for e in edges)
+    changes = sum(1 for e in edges if e.kind == "transfer")
+    return (f"**{trip[0].label} → {trip[1].label}**: **{mins:g} minutes**, {len(edges) - changes} rides and "
+            f"**{changes}** change{'s' if changes != 1 else ''} between layers.")
+
+
+# ---- multiplex: the same people, three kinds of tie -----------------------------------------
+PEOPLE = ["Ana", "Bo", "Cy", "Di", "Ed", "Flo", "Gus", "Hal", "Ivy", "Jo"]
+
+
+def multiplex():
+    r = random.Random(4)
+    G = nx.MultiGraph()
+    for p in PEOPLE:
+        G.add_node(p)
+    for kind_, k in (("friends", 12), ("work", 9), ("family", 6)):
+        for _ in range(k):
+            a, b = r.sample(PEOPLE, 2)
+            G.add_edge(a, b, kind=kind_)
+    fromNetworkX(G, "people")
+    circleLayout()
+    g.nodes.labelvisible = true
+    colour_kinds()
+
+
+KCOL = {"friends": "60,160,90", "work": "70,120,220", "family": "220,120,40"}
+
+
+def colour_kinds():
+    for e in g.edges:
+        if e.kind in KCOL:
+            e.color = KCOL[e.kind]
+            e.width = 2.5
+
+
+def stack():
+    use("people")
+    if "layers" in graphNames():
+        closeGraph("layers")
+    expandLayers(kind, order=["friends", "work", "family"])
+    isometricLayout(layer)
+    g.nodes.labelvisible = true
+    for e in g.edges:
+        e.color = KCOL.get(e.layer, "160,160,160,140")
+        e.width = 2.5 if e.kind == "intralayer" else 1
+    center()
+
+
+# ---- temporal: contacts day by day ------------------------------------------------------------
+DAYS = 5
+
+
+CONTACTS = []                  # (person, person, day), kept here so no graph switch is needed to read them
+
+
+def temporal():
+    r = random.Random(11)
+    G = nx.MultiGraph()
+    for p in PEOPLE:
+        G.add_node(p)
+    for d in range(1, DAYS + 1):
+        for _ in range(5):
+            a, b = r.sample(PEOPLE, 2)
+            G.add_edge(a, b, day=d)
+            CONTACTS.append((a, b, d))
+    fromNetworkX(G, "contacts")
+    circleLayout()
+    g.nodes.labelvisible = true
+
+
+def infect(start="Ana"):
+    """Who can catch it from `start` (ill from day 1), following contacts in time order?"""
+    ill = {start: 1}
+    for d in range(1, DAYS + 1):
+        changed = true
+        while changed:                                   # contacts on the same day can chain
+            changed = false
+            for a, b, day_ in CONTACTS:
+                if day_ != d:
+                    continue
+                for x, y in ((a, b), (b, a)):
+                    if x in ill and ill[x] <= d and y not in ill:
+                        ill[y] = d
+                        changed = true
+    static = nx.node_connected_component(nx.Graph([(a, b) for a, b, _ in CONTACTS]), start)
+    return ill, static
+
+
+def show_spread():
+    ill, static = infect()
+    for n in g.nodes:
+        n.color = "230,60,50" if n.name in ill else ("240,190,90" if n.name in static else "170,180,200")
+        n.width = n.height = 26 if n.name in ill else 18
+        n.label = f"{n.name} (day {ill[n.name]})" if n.name in ill else n.name
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        used = (a in ill and b in ill and ill[a] <= e.day and ill[b] <= e.day and
+                (ill[a] == e.day or ill[b] == e.day))
+        e.color = "230,60,50" if used else "150,150,150,120"
+        e.width = 3.5 if used else 1.2
+        e.linestyle = "flow" if used else "solid"
+        e.label = f"day {e.day}"
+        e.labelvisible = true
+
+
+def temporal_text():
+    ill, static = infect()
+    return (f"Ana falls ill on day 1. Passing it on only along contacts **after** someone fell ill, it reaches "
+            f"**{len(ill)}** people (red). Ignoring time, the contacts join Ana to **{len(static)}** people "
+            f"(red and orange). The extra {len(static) - len(ill)} could only be reached by going back in time.")
+
+
+def switch(title):
+    if title.startswith("Transport"):
+        use("transport")
+    elif title.startswith("Same"):
+        use("people")
+    else:
+        use("contacts")
+        show_spread()
+    center()
+
+
+transport()
+multiplex()
+temporal()
+use("transport")
+closeGraph("main")                       # the empty graph the app started with
+graphevents.clickNode = plan
+constantLabelSize(size=14)
+ui.title("Multilayer and temporal networks", "Networks, Section 6.7")
+ui.layout(
+    right=Column(
+        Tabs(
+            Tab("Transport (multilayer)",
+                Markdown("""### Bus, train and plane
+Three layers, each its own network, joined by **interlayer edges** where you
+can change (dashed)."""),
+                Markdown(trip_text)),
+            Tab("Same people (multiplex)",
+                Markdown("""### Ten people, three kinds of tie
+Friends (green), colleagues (blue) and family (orange) on the same ten
+people. A **multiplex** network: one layer per kind of tie."""),
+                Row(Button("Stack the layers", onClick=stack), Button("Back to one picture", onClick=lambda: (use("people"), center())))),
+            Tab("Day by day (temporal)",
+                Markdown("""### Contacts over five days
+Each edge is a contact on one day. An infection can only travel forward in
+time: a contact on day 2 can't pass on something caught on day 4."""),
+                Markdown(temporal_text)),
+            onChange=switch)),
+    sizes={"right": 360},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

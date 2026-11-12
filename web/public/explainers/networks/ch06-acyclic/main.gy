@@ -1,0 +1,132 @@
+# Directed and acyclic networks  (Newman, Networks, Section 6.4)
+# A directed network is acyclic if no loop of arrows leads back to where it
+# started (a citation network, roughly). To test it: find a node with no
+# outgoing edges, give it the next number and remove it; repeat. If every node
+# gets removed, the network is acyclic, and drawing the nodes in that order
+# makes every arrow point down. If at some point every remaining node still
+# has an outgoing edge, those nodes contain a cycle.
+
+import random
+
+rnd = random.Random(6)
+N = 12
+hidden = list(range(N))
+rnd.shuffle(hidden)                       # a hidden order; every edge points to an earlier node in it
+EDGES = []
+for i in range(1, N):
+    for j in rnd.sample(range(i), min(i, rnd.choice([1, 2, 2, 3]))):
+        EDGES.append((f"v{hidden[i]}", f"v{hidden[j]}"))
+BAD = (f"v{hidden[1]}", f"v{hidden[8]}")  # an edge back up the order closes a loop
+st = {"number": {}, "loop": False, "stuck": False, "timer": None}
+
+
+def build():
+    remove(list(g.nodes))
+    r = random.Random(2)
+    for k in range(N):
+        addNode(f"v{k}", x=r.uniform(0, 500), y=r.uniform(0, 400))
+    for a, b in EDGES + ([BAD] if st["loop"] else []):
+        addDirectedEdge(g.getNodeByName(a), g.getNodeByName(b))
+    for n in g.nodes:
+        n.number = 99
+    st["number"] = {}
+    st["stuck"] = False
+    look()
+
+
+def remaining():
+    return [n for n in g.nodes if n.name not in st["number"]]
+
+
+def sinks():
+    """Nodes with no outgoing edges to nodes still in the network."""
+    left = {n.name for n in remaining()}
+    return [n for n in remaining() if not any(e.node1 is n and e.node2.name in left for e in g.edges)]
+
+
+def look():
+    can = {n.name for n in sinks()} if not st["stuck"] else set()
+    for n in g.nodes:
+        n.width = n.height = 26
+        n.labelpos = "inside"
+        n.labelvisible = true
+        if n.name in st["number"]:
+            n.color, n.label = "170,170,170", str(st["number"][n.name])
+        else:
+            n.label = "?"
+            n.color = "250,200,60" if n.name in can else ("230,70,60" if st["stuck"] else "110,150,220")
+    for e in g.edges:
+        done = e.node1.name in st["number"]
+        e.color = "150,150,150,120" if done else ("230,70,60" if st["stuck"] else "80,80,80")
+        e.width = 1.2 if done else 2.2
+
+
+def step():
+    if st["stuck"] or not remaining():
+        return False
+    s = sinks()
+    if not s:
+        st["stuck"] = True
+        look()
+        for c in findCycles(N):
+            for x in c:
+                x.color = "230,40,40"
+                if hasattr(x, "node1"):
+                    x.width = 4
+                    x.linestyle = "flow"
+            break
+        return False
+    n = sorted(s, key=lambda m: m.name)[0]
+    k = len(st["number"]) + 1
+    st["number"][n.name] = k
+    n.number = k
+    n.x = 250 + 120 * ((k % 3) - 1)            # numbered nodes stack from the bottom up
+    n.y = 600 - 50 * k
+    look()
+    return len(remaining()) or False
+
+
+def run_all():
+    if st["timer"] is None or not st["timer"].running:
+        st["timer"] = everyPaced(step, slow=0.9, fast=0.3)
+
+
+def loop_on(on):
+    st["loop"] = bool(on)
+    build()
+    center()
+
+
+def status():
+    if st["stuck"]:
+        return (f"**Stuck** with {len(remaining())} nodes left: every one still has an outgoing edge. They contain "
+                "a **cycle** (red), so the network is not acyclic.")
+    if not remaining():
+        return ("**Done.** Every node was removed, so the network is **acyclic**. Drawn in removal order, every "
+                "arrow points **down**, and with rows and columns in that order the matrix is **triangular**: all its "
+                "1s on one side of the diagonal.")
+    return (f"**{len(st['number'])}** of {N} nodes numbered. Yellow nodes have no outgoing edges left: one of them is "
+            "removed next.")
+
+
+Node.number = 99                         # removal order (99 = not yet removed)
+build()
+constantLabelSize(size=14)
+ui.title("Directed and acyclic networks", "Networks, Section 6.4")
+ui.layout(
+    right=Column(
+        Markdown("""### Is there a loop?
+Arrows run one way. Repeat: find a node with **no outgoing edges** (yellow),
+give it the next number, and set it aside. Numbered nodes stack up from the
+bottom."""),
+        Row(Button("Step", onClick=step), Button("Run", onClick=run_all), Button("Start again", onClick=lambda: (build(), center()))),
+        Checkbox("add one edge that closes a loop", onChange=loop_on),
+        Markdown(status),
+        Chart(lambda: showMatrix(order=number, numbers=true, title="A, rows and columns in removal order")),
+        Markdown("""*Here a row is the node an edge comes **from**, so the 1s fall below the
+diagonal. The book writes A_ij for an edge from j to i, which puts them above.*""")),
+    sizes={"right": 380},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} directed edges"))
+center()

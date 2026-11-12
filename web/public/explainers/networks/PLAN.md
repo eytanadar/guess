@@ -398,7 +398,7 @@ This batch runs five pages past 96 so that it ends at the end of Chapter 5.
 
 This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics of networks*. From here on the explainers pair each picture with the matrix or the numbers behind it.
 
-**`ch06-adjacency-matrix`: The adjacency matrix (§§6.1–6.3)** · planned
+**`ch06-adjacency-matrix`: The adjacency matrix (§§6.1–6.3)** · built
 - *Idea:*
   - a network and its adjacency matrix are the same thing;
   - multiedges put 2s, 3s, … off the diagonal, and a self-edge puts a **2** on the diagonal;
@@ -411,7 +411,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - the readout shows symmetric/not, Σ of a row = degree, and Σ of all cells = 2m.
 - *GUESS:* `showMatrix` (needs numbers in cells and self-edges counted twice; see gaps), `Chart`, `graphevents`.
 
-**`ch06-acyclic`: Directed and acyclic networks (§6.4)** · planned
+**`ch06-acyclic`: Directed and acyclic networks (§6.4)** · built
 - *Idea:*
   - directed adjacency matrices aren't symmetric;
   - a network is acyclic exactly when you can repeatedly remove a node with no outgoing edges;
@@ -422,7 +422,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - "Add an edge that closes a loop", then run again: the algorithm gets stuck, and the stuck nodes are a cycle (red).
 - *GUESS:* `findCycles`, `showMatrix(order=)`, positions by order, `every`.
 
-**`ch06-hypergraphs`: Hypergraphs, bipartite networks and projections (§§6.5–6.6)** · planned
+**`ch06-hypergraphs`: Hypergraphs, bipartite networks and projections (§§6.5–6.6)** · built
 - *Idea:*
   - groups (families, papers, films) as hyperedges, the same information as a bipartite network;
   - the incidence matrix B;
@@ -434,7 +434,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - "Add a group of 5" shows a 5-clique appear.
 - *GUESS:* `encircle`, states and `morph`, `project`, `showMatrix` (rectangular B; see gaps).
 
-**`ch06-multilayer`: Multilayer, multiplex and temporal networks (§6.7)** · planned
+**`ch06-multilayer`: Multilayer, multiplex and temporal networks (§6.7)** · built
 - *Idea:*
   - layers of different node types with interlayer edges (a bus, train and air journey);
   - **multiplex** layers on the same people (friends, work, family);
@@ -445,7 +445,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - the temporal tab spreads an infection forward through daily contact layers; the same contacts with time ignored would infect more people.
 - *GUESS:* `isometricLayout`, `shortestPath(weighted=true)`, node copies per layer (see gaps).
 
-**`ch06-trees-planar`: Trees and planar networks (§§6.8–6.9)** · planned
+**`ch06-trees-planar`: Trees and planar networks (§§6.8–6.9)** · built
 - *Idea:*
   - a tree has n − 1 edges and exactly one path between any two nodes, and any node can be the root;
   - a planar network can be drawn with no crossings;
@@ -457,7 +457,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - **Map tab:** regions of a generated map (or US states) and their adjacency network, coloured with four colours step by step.
 - *GUESS:* `treeLayout`, `addEdge`, crossing count and colouring (see gaps), node-drag refresh.
 
-**`ch06-degree-sparsity`: Degree, density and sparsity (§6.10)** · planned
+**`ch06-degree-sparsity`: Degree, density and sparsity (§6.10)** · built
 - *Idea:*
   - 2m = Σ degrees;
   - mean degree c = 2m/n;
@@ -470,7 +470,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - on any bundled dataset, read off m, c and ρ, and check 2m = Σk.
 - *GUESS:* `addNode`/`addEdge` in a timer, `density`, `Chart`, `plotLine`.
 
-**`ch06-walks-paths`: Walks, paths and powers of A (§6.11)** · planned
+**`ch06-walks-paths`: Walks, paths and powers of A (§6.11)** · built
 - *Idea:*
   - the number of walks of length r from j to i is [Aʳ]ᵢⱼ;
   - loops of length r total Tr Aʳ;
@@ -483,7 +483,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - a table of Tr Aʳ.
 - *GUESS:* numpy matrix powers, `shortestPath`, networkx `all_shortest_paths`, `diameter`.
 
-**`ch06-components`: Components, weak and strong (§6.12)** · planned
+**`ch06-components`: Components, weak and strong (§6.12)** · built
 - *Idea:*
   - components;
   - block-diagonal matrices when ordered by component;
@@ -494,7 +494,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - clicking a node shades its in-component, its out-component and their overlap.
 - *GUESS:* `component`, `strongcomponent`, `ancestors`/`descendants`, `encircle`, `showMatrix(order=component)`.
 
-**`ch06-cuts-flows`: Independent paths, cut sets and maximum flow (§6.13)** · planned
+**`ch06-cuts-flows`: Independent paths, cut sets and maximum flow (§6.13)** · built
 - *Idea:*
   - edge- and node-independent paths;
   - Menger's theorem: their number equals the size of the minimum cut set;
@@ -505,7 +505,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - the weighted tab sets edge capacities (widths) and shows the maximum flow (`flow` style) beside the minimum cut, equal.
 - *GUESS:* `maxFlow`, `minCut`, networkx `edge_disjoint_paths`/`node_disjoint_paths`, `flow` line style.
 
-**`ch06-laplacian`: The graph Laplacian (§6.14)** · planned
+**`ch06-laplacian`: The graph Laplacian (§6.14)** · built
 - *Idea:* L = D − A, and four uses:
   - **partitioning:** the cut size is ¼ sᵀLs, and the Fiedler vector's signs give a good split;
   - **drawing:** the sum of squared edge lengths is xᵀLx, minimised by the Laplacian's eigenvectors;
@@ -520,7 +520,7 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
   - **Resistors:** click s and t, nodes coloured by voltage, current along edges (`flow`), and the effective resistance.
 - *GUESS:* numpy `eigh`, `Chart`/`plotLine`, `every`, edge `flow` style.
 
-### Gaps found in batch 3
+### Gaps found in batch 3 (all added: `showMatrix(numbers=, rows=, cols=)`, `expandLayers`, `edgeCrossings`, `colorGraph`, `makeFromMap`, `spectrum`/`plotSpectrum`; also Markdown tables in panels)
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|
@@ -536,4 +536,3 @@ This batch runs past 151 so that it ends at the end of Chapter 6, *Mathematics o
 ## To do (requests not yet done)
 
 - **Lombardi-style layout and edge rounding**, as described in `lombardi.pdf` (repo root): circular-arc edges with evenly spaced angles around each node. Planned as a layout command plus an edge-drawing mode.
-- Batch 3 (Chapter 6): fill the gaps listed above, then build its 10 explainers.

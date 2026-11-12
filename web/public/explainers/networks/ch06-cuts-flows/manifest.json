@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Independent paths, cuts and flows",
+  "description": "Menger's theorem and max-flow/min-cut, side by side.",
+  "console": "toggle",
+  "script": "main.gy"
+}

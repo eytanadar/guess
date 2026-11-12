@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Degree, density and sparsity",
+  "description": "2m = \u03a3k, mean degree and density, and why real networks are sparse.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -1,0 +1,173 @@
+# Components, weak and strong  (Newman, Networks, Section 6.12)
+# A component is a piece of the network in which every node can reach every
+# other. Number the nodes component by component and the adjacency matrix is
+# block diagonal. In a directed network: weakly connected components ignore
+# the arrows; strongly connected ones need paths both ways. A node's
+# out-component is everything it can reach, its in-component everything that
+# can reach it, and their overlap is its strongly connected component.
+
+import random
+import networkx as nx
+
+# ---- undirected ----------------------------------------------------------------------------------
+def undirected():
+    r = random.Random(3)
+    G = nx.Graph()
+    sizes = [9, 6, 4, 2, 1]
+    k = 0
+    for c, s in enumerate(sizes):
+        nodes = [f"u{k + i}" for i in range(s)]
+        k += s
+        G.add_nodes_from(nodes)
+        T = nx.random_labeled_tree(s, seed=c) if hasattr(nx, "random_labeled_tree") and s > 1 else (
+            nx.random_tree(s, seed=c) if s > 1 else nx.empty_graph(1))
+        G.add_edges_from((nodes[a], nodes[b]) for a, b in T.edges())
+        for _ in range(s // 3):
+            a, b = r.sample(nodes, 2) if s > 1 else (nodes[0], nodes[0])
+            if a != b:
+                G.add_edge(a, b)
+    shuffle = list(G)
+    r.shuffle(shuffle)
+    H = nx.Graph()
+    H.add_nodes_from(shuffle)                          # labels in a random order: the blocks are hidden
+    H.add_edges_from(G.edges())
+    pos = nx.spring_layout(H, seed=2, iterations=150)
+    for v in H:
+        H.nodes[v]["pos"] = (pos[v][0] * 400, pos[v][1] * 400)
+        H.nodes[v]["shuffled"] = shuffle.index(v)
+    fromNetworkX(H, "undirected")
+    g.nodes.width = g.nodes.height = 18
+    colorize("component")
+
+
+ordered = [False]
+
+
+def matrix():
+    if graphNames()[0] != "undirected":
+        return None
+    return showMatrix(order=("component" if ordered[0] else "shuffled"),
+                      title="A, ordered by component" if ordered[0] else "A, nodes in a random order")
+
+
+# ---- directed ------------------------------------------------------------------------------------
+DIRECTED = [("A", "B"), ("B", "C"), ("C", "A"), ("C", "D"), ("D", "E"), ("E", "F"), ("F", "D"), ("F", "G"),
+            ("H", "A"), ("I", "H"), ("G", "J"), ("K", "J"), ("L", "M"), ("M", "L"), ("N", "L")]
+
+
+def make_directed():
+    G = nx.DiGraph(DIRECTED)
+    pos = nx.spring_layout(G, seed=5, iterations=200)
+    for v in G:
+        G.nodes[v]["pos"] = (pos[v][0] * 380, pos[v][1] * 380)
+    fromNetworkX(G, "directed")
+    plain_directed()
+
+
+picked = [None]
+show = ["strong"]
+
+
+def plain_directed():
+    removeConvexHulls()
+    for n in g.nodes:
+        n.width = n.height = 24
+        n.labelpos = "inside"
+        n.labelvisible = true
+    g.edges.width = 2
+    if show[0] == "strong":
+        colorize("strongcomponent")
+        for grp in groupsOf("strongcomponent"):
+            if len(grp) > 1:
+                encircle(grp, shape="hull", color="120,120,200,50", padding=14)
+    else:
+        colorize("component")
+
+
+def groupsOf(fname):
+    out = {}
+    for n in g.nodes:
+        out.setdefault(getattr(n, fname), []).append(n)
+    return list(out.values())
+
+
+def pick(n):
+    if graphNames()[0] != "directed":
+        return
+    picked[0] = n
+    removeConvexHulls()
+    outc = descendants(n)
+    inc = ancestors(n)
+    for m in g.nodes:
+        o, i = (m in outc or m is n), (m in inc or m is n)
+        m.color = "150,80,200" if o and i else ("70,160,90" if o else ("230,140,40" if i else "200,200,200"))
+    for e in g.edges:
+        a, b = e.node1, e.node2
+        on_out = (a is n or a in outc) and (b in outc or b is n)
+        on_in = (b is n or b in inc) and (a in inc or a is n)
+        e.color = "70,160,90" if on_out else ("230,140,40" if on_in else "180,180,180,120")
+        e.width = 3 if on_out or on_in else 1.2
+        e.linestyle = "flow" if on_out or on_in else "solid"
+
+
+def dir_text():
+    if graphNames()[0] != "directed":
+        return ""
+    n = picked[0]
+    G = toNetworkX()
+    weak = nx.number_weakly_connected_components(G)
+    strong = nx.number_strongly_connected_components(G)
+    base = (f"**{weak}** weakly connected components (ignoring arrows) but **{strong}** strongly connected ones "
+            "(paths both ways; shaded when bigger than one node). A strongly connected component with more than one "
+            "node always contains a cycle.")
+    if n is None:
+        return base + "\n\n*Click a node* for its in- and out-components."
+    outc = len(descendants(n)) + 1
+    inc = len(ancestors(n)) + 1
+    both = len((set(descendants(n)) | {n}) & (set(ancestors(n)) | {n}))
+    return (base + f"\n\nNode **{n.name}**: its **out-component** (green, what it can reach) has {outc} nodes, its "
+            f"**in-component** (orange, what can reach it) {inc}, and the overlap (purple) is its **strongly "
+            f"connected component**: {both} node{'s' if both != 1 else ''}.")
+
+
+def switch(title):
+    use("undirected" if title.startswith("Undirected") else "directed")
+    center()
+
+
+def set_order(v):
+    ordered[0] = v.startswith("By")
+
+
+def set_show(v):
+    show[0] = "strong" if v.startswith("Strong") else "weak"
+    plain_directed()
+
+
+Node.shuffled = 0
+undirected()
+make_directed()
+use("undirected")
+closeGraph("main") if "main" in graphNames() else None
+graphevents.clickNode = pick
+constantLabelSize(size=14)
+ui.title("Components, weak and strong", "Networks, Section 6.12")
+ui.layout(
+    right=Column(
+        Tabs(
+            Tab("Undirected",
+                Markdown("""### Pieces of a network
+Five components (colours). In a random order the adjacency matrix looks
+scattered; ordered by component it is **block diagonal**: no edge runs
+between blocks."""),
+                Dropdown(["Nodes in a random order", "By component"], label="Matrix", onChange=set_order),
+                Chart(matrix)),
+            Tab("Directed",
+                Dropdown(["Strongly connected components", "Weakly connected components"], label="Colour", onChange=set_show),
+                Markdown(dir_text)),
+            onChange=switch)),
+    sizes={"right": 380},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

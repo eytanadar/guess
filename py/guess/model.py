@@ -954,6 +954,7 @@ _EDGE_BUILTINS = [
     ("labelsize", DOUBLE, 1.0, True),
     ("linestyle", STRING, "solid", True),
     ("arrowhead", STRING, "triangle", True),
+    ("arc", DOUBLE, 0.0, True),           # circular-arc edges: the angle (degrees) at which the edge leaves its ends
 ]
 
 # how an edge's line is drawn, and the head on a directed edge's target end

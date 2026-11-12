@@ -1,0 +1,165 @@
+# Independent paths, cut sets and maximum flow  (Newman, Networks, Section 6.13)
+# Paths from A to B are edge-independent if they share no edge, and
+# node-independent if they share no node except A and B. Menger's theorem:
+# the most independent paths equals the fewest edges (or nodes) whose removal
+# cuts A off from B. With capacities on the edges, the biggest possible flow
+# from A to B equals the smallest total capacity of edges that cut them apart
+# (max-flow / min-cut).
+
+import random
+import networkx as nx
+
+r = random.Random(8)
+G0 = nx.Graph()
+left = [f"a{i}" for i in range(8)]
+right = [f"b{i}" for i in range(8)]
+for side in (left, right):
+    for i, u in enumerate(side):
+        for v in side[i + 1:]:
+            if r.random() < 0.45:
+                G0.add_edge(u, v)
+    for u, v in zip(side, side[1:]):
+        G0.add_edge(u, v)
+for u, v in [("a2", "b5"), ("a6", "b1"), ("a4", "b3"), ("a6", "b6")]:   # the links between the halves
+    G0.add_edge(u, v)
+for u, v in G0.edges():
+    G0.edges[u, v]["cap"] = r.randint(1, 6)
+pos = nx.spring_layout(G0, seed=4, iterations=200)
+for v in G0:
+    G0.nodes[v]["pos"] = (pos[v][0] * 420, pos[v][1] * 420)
+fromNetworkX(G0)
+ends = {"A": "a0", "B": "b7"}
+PATHCOL = ["230,80,60", "60,140,230", "60,170,90", "200,120,30", "150,80,200", "40,170,170", "220,90,170"]
+mode = ["Edge-independent paths"]
+weighted = [False]
+
+
+def edge_of(u, v):
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {u, v}:
+            return e
+
+
+def base():
+    for n in g.nodes:
+        n.width = n.height = 24
+        n.labelpos = "inside"
+        n.labelvisible = true
+        n.color = "170,185,210"
+        n.strokecolor = "70,70,70"
+    for e in g.edges:
+        e.color, e.linestyle = "160,160,160,150", "solid"
+        e.width = (0.8 + 1.1 * e.cap) if weighted[0] else 1.5
+        e.label = str(e.cap) if weighted[0] else ""
+        e.labelvisible = weighted[0]
+    for v in (ends["A"], ends["B"]):
+        n = g.getNodeByName(v)
+        n.color = "40,40,40"
+        n.width = n.height = 32
+
+
+def show():
+    base()
+    s, t = ends["A"], ends["B"]
+    if weighted[0]:
+        D = nx.DiGraph()
+        for u, v, d in G0.edges(data=True):
+            D.add_edge(u, v, capacity=d["cap"])
+            D.add_edge(v, u, capacity=d["cap"])
+        value, flow = nx.maximum_flow(D, s, t)
+        cut_value, (S, T) = nx.minimum_cut(D, s, t)
+        for u, v in G0.edges():
+            f = flow[u][v] - flow[v][u]
+            e = edge_of(u, v)
+            if abs(f) > 1e-9:
+                e.color, e.linestyle = "60,140,230", "flow"
+                e.width = 1 + 1.6 * abs(f)
+            if (u in S) != (v in S):
+                e.color, e.linestyle = "230,50,40", "dashed"
+        return
+    if mode[0].startswith("Edge"):
+        paths = list(nx.edge_disjoint_paths(G0, s, t))
+        cut = nx.minimum_edge_cut(G0, s, t)
+        for e in [edge_of(u, v) for u, v in cut]:
+            e.color, e.width, e.linestyle = "230,50,40", 5, "dashed"
+    else:
+        paths = list(nx.node_disjoint_paths(G0, s, t))
+        cut = nx.minimum_node_cut(G0, s, t)
+        for v in cut:
+            n = g.getNodeByName(v)
+            n.strokecolor, n.width, n.height = "230,40,40", 34, 34
+    for k, p in enumerate(paths):
+        for u, v in zip(p, p[1:]):
+            e = edge_of(u, v)
+            if e.linestyle != "dashed":
+                e.color, e.width, e.linestyle = PATHCOL[k % len(PATHCOL)], 4, "flow"
+
+
+def click(n):
+    if ends.get("next") == "B":
+        if n.name != ends["A"]:
+            ends["B"] = n.name
+        ends["next"] = "A"
+    else:
+        ends["A"] = n.name
+        ends["next"] = "B"
+    show()
+
+
+def text():
+    s, t = ends["A"], ends["B"]
+    if weighted[0]:
+        D = nx.DiGraph()
+        for u, v, d in G0.edges(data=True):
+            D.add_edge(u, v, capacity=d["cap"])
+            D.add_edge(v, u, capacity=d["cap"])
+        value = nx.maximum_flow_value(D, s, t)
+        cut_value, (S, T) = nx.minimum_cut(D, s, t)
+        crossing = [(u, v) for u, v in G0.edges() if (u in S) != (v in S)]
+        return (f"Edge numbers are **capacities** (and widths). The biggest flow from **{s}** to **{t}** is "
+                f"**{value:g}** (blue, moving). The cheapest cut, the red dashed edges, has total capacity "
+                f"{' + '.join(str(G0.edges[u, v]['cap']) for u, v in crossing)} = **{cut_value:g}**. Equal: "
+                "max-flow/min-cut.")
+    if mode[0].startswith("Edge"):
+        k = len(list(nx.edge_disjoint_paths(G0, s, t)))
+        c = len(nx.minimum_edge_cut(G0, s, t))
+        what = ("edge-independent paths (no shared edges; colours)", "edges", "red dashed")
+    else:
+        k = len(list(nx.node_disjoint_paths(G0, s, t)))
+        c = len(nx.minimum_node_cut(G0, s, t))
+        what = ("node-independent paths (no shared nodes)", "nodes", "red rings")
+    return (f"From **{s}** to **{t}**: **{k}** {what[0]}, and the fewest {what[1]} whose removal cuts them apart: "
+            f"**{c}** ({what[2]}). Always equal: **Menger's theorem**.")
+
+
+def pick_mode(v):
+    mode[0] = v
+    show()
+
+
+def switch(title):
+    weighted[0] = title.startswith("Capacities")
+    show()
+
+
+graphevents.clickNode = click
+show()
+constantLabelSize(size=14)
+ui.title("Independent paths, cuts and flows", "Networks, Section 6.13")
+ui.layout(
+    right=Column(
+        Markdown("""### How well are two nodes connected?
+Two groups joined by a few links. **Click** to choose A, then B (black)."""),
+        Tabs(
+            Tab("Paths and cuts",
+                Dropdown(["Edge-independent paths", "Node-independent paths"], label="Count", onChange=pick_mode),
+                Markdown(text)),
+            Tab("Capacities and flow",
+                Markdown("""Think of edges as pipes: each carries at most its capacity."""),
+                Markdown(text)),
+            onChange=switch)),
+    sizes={"right": 370},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()
