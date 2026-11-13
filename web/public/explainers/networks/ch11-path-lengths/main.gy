@@ -1,0 +1,435 @@
+# Path lengths, and what random graphs get wrong  (Newman, Networks, Sections 11.7-11.8)
+# In a random graph with mean degree c, a node has about c neighbours, about
+# c^2 nodes two steps away, c^3 three steps away, and so on, until the rings
+# have used up the network: c^s ~ n when s ~ ln n / ln c. So distances grow
+# only like the logarithm of the network's size: the small-world effect.
+# But the random graph misses other features of real networks: it has almost
+# no clustering (C = c/(n - 1)), its degrees are bunched round c (no hubs), it
+# has no mixing pattern by degree, and no communities.
+
+import math
+import random
+import networkx as nx
+
+N = 400
+cnow = Slider(1.5, 8.0, 4.0, 0.5, label="mean degree c")
+rg = {"G": None, "seed": 3}
+mode = ["Rings"]
+shown = {"kind": None}           # "random" or the name of a real network
+
+
+# ---- the random graph on screen ------------------------------------------------------------------
+def lay_out(G, spread=24):
+    """Each component laid out on its own; then packed side by side and pulled apart. Returns True when a
+    component was too big for networkx's spring layout (it needs scipy past 500 nodes): use frLayout then."""
+    big = False
+    for cc in sorted(nx.connected_components(G), key=len, reverse=True):
+        H = G.subgraph(cc)
+        if len(cc) > 450:
+            rnd = random.Random(1)
+            pos = {x: (rnd.random() - 0.5, rnd.random() - 0.5) for x in cc}
+            big = True
+        elif len(cc) == 1:
+            pos = {next(iter(cc)): (0.0, 0.0)}
+        else:
+            pos = nx.spring_layout(H, seed=2, iterations=60 if len(cc) > 60 else 40)
+        scale = spread * math.sqrt(len(cc))
+        for x, (px, py) in pos.items():
+            G.nodes[x]["pos"] = (px * scale, py * scale)
+    return big
+
+
+def build_random(v=None):
+    stop_all()
+    c = float(cnow.value)
+    G = nx.fast_gnp_random_graph(N, c / (N - 1), seed=rg["seed"])
+    G = nx.relabel_nodes(G, {i: f"v{i}" for i in G})
+    lay_out(G)
+    rg["G"] = G
+    fromNetworkX(G)
+    if nx.number_connected_components(G) > 1:
+        binPackLayout(false)
+    noverlapLayout(margin=3)
+    shown["kind"] = "random"
+    ring.update(centre=None, layer=0, dist={})
+    base()
+    center()
+
+
+def base():
+    for v in g.nodes:
+        v.width = v.height = 11
+        v.color = "170,185,210"
+        v.strokecolor = "60,60,60"
+        v.strokewidth = 0
+        v.labelvisible = false
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,90", 1, "solid"
+
+
+def new_graph():
+    rg["seed"] += 1
+    build_random()
+
+
+# ---- rings: c, c^2, c^3, ... -----------------------------------------------------------------------
+ring = {"centre": None, "layer": 0, "dist": {}, "timer": None}
+RINGCOL = ["250,210,50", "250,150,50", "230,90,70", "190,70,140", "120,90,200", "70,120,210", "60,170,190",
+           "80,180,110", "150,190,80", "190,190,190"]
+
+
+def show_ring(upto):
+    base()
+    dist = ring["dist"]
+    for v in g.nodes:
+        d = dist.get(v.name)
+        if d is None or d > upto:
+            v.color = "215,215,215" if d is None else "200,205,215"
+            continue
+        v.color = RINGCOL[min(d, len(RINGCOL) - 1)]
+        v.width = v.height = 17 if d == upto else 13
+        if d == upto and upto > 0:
+            v.strokewidth = 2
+    for e in g.edges:
+        a, b = dist.get(e.node1.name), dist.get(e.node2.name)
+        if a is None or b is None or max(a, b) > upto:
+            continue
+        if abs(a - b) == 1 and max(a, b) == upto:
+            e.color, e.width, e.linestyle = "235,120,30", 2.5, "flow"
+        elif abs(a - b) == 1:
+            e.color, e.width = "120,120,120,170", 1.3
+    v = g.getNodeByName(ring["centre"])
+    v.width = v.height = 30
+    v.color = "250,230,80"
+    v.strokecolor = "20,20,20"
+    v.strokewidth = 4
+    v.label = "start"
+    v.labelvisible = true
+
+
+def set_centre(v):
+    if mode[0] != "Rings" or shown["kind"] != "random":
+        return
+    stop_all()
+    ring["centre"] = v.name
+    ring["dist"] = nx.single_source_shortest_path_length(rg["G"], v.name)
+    ring["layer"] = max(ring["dist"].values())
+    show_ring(ring["layer"])
+
+
+def random_centre():
+    G = rg["G"]
+    big = max(nx.connected_components(G), key=len)
+    set_centre(g.getNodeByName(random.choice(sorted(big))))
+
+
+def ring_step():
+    ring["layer"] += 1
+    show_ring(ring["layer"])
+    left = max(ring["dist"].values()) - ring["layer"]
+    return left if left > 0 else False
+
+
+def grow_ball():
+    if mode[0] != "Rings":
+        return
+    if ring["centre"] is None:
+        random_centre()
+    stop_all()
+    ring["layer"] = 0
+    show_ring(0)
+    ring["timer"] = everyPaced(ring_step, slow=1.1, fast=0.6, ramp=2)
+
+
+graphevents.clickNode = set_centre
+
+
+def ring_counts():
+    counts = {}
+    for d in ring["dist"].values():
+        if d <= ring["layer"]:
+            counts[d] = counts.get(d, 0) + 1
+    return counts
+
+
+def ring_text():
+    c = float(cnow.value)
+    est = math.log(N) / math.log(c)
+    out = (f"G(n, p) with **n = {N}** and c = **{c:.1f}**. Each step out multiplies the ring by about c, so the "
+           f"rings use up the network after about ln n / ln c = **{est:.1f}** steps.")
+    if ring["centre"] is None:
+        return out + "\n\n*Click a node* (or **Random start**), then **Grow the ball**."
+    counts = ring_counts()
+    rows = ["| s | nodes at distance s | cˢ |", "|---|---|---|"]
+    for s in sorted(counts):
+        rows.append(f"| {s} | {counts[s]} | {c ** s:.0f} |")
+    out += "\n\n" + "\n".join(rows)
+    reach = sum(counts.values())
+    far = max(ring["dist"].values())
+    out += (f"\n\nReached so far: **{reach}** nodes. The farthest node is **{far}** steps away. Early rings track "
+            "cˢ; the last ones fall short because the network runs out of nodes.")
+    return out
+
+
+def ring_chart():
+    if ring["centre"] is None:
+        return None
+    c = float(cnow.value)
+    counts = ring_counts()
+    if len(counts) < 2:
+        return None
+    s_max = max(ring["dist"].values())
+    return plotLine({"nodes at distance s": sorted(counts.items()),
+                     "cˢ": [(s, c ** s) for s in range(0, s_max + 1)]},
+                    title="Ring sizes", xlabel="s (steps)", ylabel="nodes", logY=true, dots=true, dashed=["cˢ"])
+
+
+# ---- grows like ln n -------------------------------------------------------------------------------
+grow = {"timer": None, "todo": [], "rows": []}
+SIZES = [50, 100, 200, 400, 800, 1600, 3200]
+CS = [3.0, 6.0]
+
+
+def mean_distance(G, sources=40, seed=0):
+    """Mean distance in the largest component: exact for small ones, else from a sample of sources."""
+    big = max(nx.connected_components(G), key=len)
+    H = G.subgraph(big)
+    nodes = sorted(H)
+    pick = nodes if len(nodes) <= sources else random.Random(seed).sample(nodes, sources)
+    tot = cnt = diam = 0
+    for v in pick:
+        d = nx.single_source_shortest_path_length(H, v)
+        tot += sum(d.values())
+        cnt += len(d) - 1
+        diam = max(diam, max(d.values()))
+    return tot / max(cnt, 1), diam, len(big)
+
+
+def grow_step():
+    if not grow["todo"]:
+        return False
+    n, c = grow["todo"].pop(0)
+    G = nx.fast_gnp_random_graph(n, c / (n - 1), seed=n + int(10 * c))
+    ell, diam, size = mean_distance(G, seed=n)
+    grow["rows"].append((n, c, ell, diam))
+    return len(grow["todo"]) or False
+
+
+def run_grow():
+    stop_all()
+    grow["rows"] = []
+    grow["todo"] = [(n, c) for n in SIZES for c in CS]
+    grow["timer"] = everyPaced(grow_step, steps=len(grow["todo"]), slow=0.6, fast=0.15, ramp=3)
+
+
+def grow_chart():
+    series = {}
+    for c in CS:
+        series[f"c = {c:g}, measured"] = [(n, ell) for n, cc, ell, _ in grow["rows"] if cc == c]
+    for c in CS:
+        series[f"ln n / ln {c:g}"] = [(n, math.log(n) / math.log(c)) for n in SIZES]
+    return plotLine(series, title="Mean distance against n", xlabel="n (log scale)", ylabel="mean distance ℓ",
+                    logX=true, dots=true, dashed=[f"ln n / ln {c:g}" for c in CS], yrange=(0, 9))
+
+
+def grow_text():
+    out = ("Random graphs of n = 50 to 3,200 nodes at two mean degrees. On a log scale for n, the mean distance is "
+           "a straight line: it grows like **ln n**, and a bigger c makes it smaller (ln n / ln c, dashed). "
+           "Doubling the network adds only a fraction of a step.")
+    if grow["rows"]:
+        rows = ["| n | c | ℓ | diameter | ln n / ln c |", "|---|---|---|---|---|"]
+        for n, c, ell, diam in grow["rows"]:
+            rows.append(f"| {n} | {c:g} | {ell:.2f} | {diam} | {math.log(n) / math.log(c):.2f} |")
+        out += "\n\n" + "\n".join(rows)
+        out += ("\n\nThe formula is the leading term: the measured ℓ runs parallel to it, offset by a constant. "
+                "The diameter (the longest shortest path, from up to 40 sources) is larger but grows the same way.")
+    return out
+
+
+# ---- what is missing -------------------------------------------------------------------------------
+REAL = {"Les Misérables": "lesmis.gdf", "Karate club": "karate.gdf", "Dolphins": "dolphins.gdf",
+        "Political blogs (600-blog sample)": "polblogs-sample.gdf", "Power grid region": "power-grid-region.gdf",
+        "Internet (300-AS sample)": "internet-as-sample.gdf", "C. elegans neurons": "celegans-neural.gdf"}
+cmp_state = {"choice": "Les Misérables", "view": "The real network", "real": None, "twin": None}
+STATS = {}
+
+
+def simple_graph():
+    G = nx.Graph(toNetworkX(directed=False))
+    G.remove_edges_from(list(nx.selfloop_edges(G)))
+    return G
+
+
+def describe(G, seed=0):
+    k = [d for _, d in G.degree()]
+    n, m = G.number_of_nodes(), G.number_of_edges()
+    k1 = sum(k) / n
+    k2 = sum(x * x for x in k) / n
+    try:
+        r = nx.degree_assortativity_coefficient(G)
+    except Exception:
+        r = float("nan")
+    ell, _, size = mean_distance(G, sources=40, seed=seed)
+    return {"n": n, "m": m, "C": nx.transitivity(G), "kmax": max(k), "spread": k2 / (k1 * k1), "r": r, "ell": ell,
+            "giant": size / n}
+
+
+def stats_for(choice):
+    if choice not in STATS:
+        G = cmp_state["real"]
+        real = describe(G)
+        twins = [describe(nx.gnm_random_graph(real["n"], real["m"], seed=s), seed=s) for s in range(3)]
+        twin = {key: sum(t[key] for t in twins) / len(twins) for key in real}
+        STATS[choice] = (real, twin)
+    return STATS[choice]
+
+
+def load_real(choice=None):
+    stop_all()
+    if choice is not None:
+        cmp_state["choice"] = choice
+    makeFromFile(REAL[cmp_state["choice"]])
+    G = simple_graph()
+    cmp_state["real"] = G
+    cmp_state["twin"] = None
+    shown["kind"] = cmp_state["choice"]
+    if cmp_state["view"] != "The real network":
+        show_twin()
+    else:
+        if nx.number_connected_components(G) > 1:
+            binPackLayout(false)
+            noverlapLayout(margin=3)
+        look_by_degree()
+        center()
+
+
+def show_twin():
+    G = cmp_state["real"]
+    if cmp_state["twin"] is None:
+        T = nx.gnm_random_graph(G.number_of_nodes(), G.number_of_edges(), seed=0)
+        T = nx.relabel_nodes(T, {i: f"r{i}" for i in T})
+        cmp_state["twin_big"] = lay_out(T, spread=22)
+        cmp_state["twin"] = T
+    fromNetworkX(cmp_state["twin"])
+    if cmp_state.get("twin_big"):
+        frLayout()
+    if nx.number_connected_components(cmp_state["twin"]) > 1:
+        binPackLayout(false)
+    noverlapLayout(margin=3)
+    look_by_degree()
+    center()
+
+
+def pick_view(v):
+    cmp_state["view"] = v
+    if mode[0] == "What's missing":
+        load_real()
+
+
+def look_by_degree():
+    """Size and colour by degree, on the real network's scale, so a twin without hubs looks it."""
+    top = sorted(g.nodes, key=lambda v: -v.degree)[:5]
+    kmax = max(1, max(d for _, d in cmp_state["real"].degree()))
+    for v in g.nodes:
+        t = math.sqrt(min(1.0, v.degree / kmax))
+        v.width = v.height = 6 + 26 * t
+        v.color = f"{int(120 + 130 * t)},{int(160 - 70 * t)},{int(215 - 150 * t)}"
+        v.strokecolor = "60,60,60"
+        v.strokewidth = 0
+        v.labelvisible = false
+    for v in top:
+        v.strokecolor = "20,20,20"
+        v.strokewidth = 3
+        v.label = f"k = {v.degree}"
+        v.labelvisible = true
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,90", 1, "solid"
+
+
+def missing_text():
+    if mode[0] != "What's missing" or cmp_state["real"] is None:
+        return ""
+    real, twin = stats_for(cmp_state["choice"])
+    rows = ["| | real | random, same n and m |", "|---|---|---|",
+            f"| nodes, edges | {real['n']}, {real['m']} | same |",
+            f"| clustering C | **{real['C']:.3f}** | {twin['C']:.3f} |",
+            f"| largest degree | **{real['kmax']}** | {twin['kmax']:.1f} |",
+            f"| ⟨k²⟩ / ⟨k⟩² (spread of degrees) | **{real['spread']:.2f}** | {twin['spread']:.2f} |",
+            f"| degree assortativity r | **{real['r']:+.2f}** | {twin['r']:+.2f} |",
+            f"| mean distance ℓ | **{real['ell']:.2f}** | {twin['ell']:.2f} |"]
+    ratio = real["C"] / twin["C"] if twin["C"] > 0 else float("inf")
+    out = (f"**{cmp_state['choice']}** against random graphs with the same numbers of nodes and edges (the "
+           "average of 3).\n\n" + "\n".join(rows))
+    out += (f"\n\nThe random graph gets the **distances** about right: both are small. It misses the rest. "
+            f"Real clustering is **{ratio:.0f}×** the random value; the real degrees are far more spread out, with "
+            "hubs the random graph never makes (the five biggest are outlined); and " +
+            (f"this network mixes by degree (r = {real['r']:+.2f}) while random graphs sit near 0. " if abs(real["r"]) > 0.1
+             else f"here even the real r ({real['r']:+.2f}) is near the random graph's 0, but many real networks "
+                  "mix by degree. ") +
+            "Real networks also have communities, which random graphs lack. "
+            "Chapter 12's configuration model fixes the degrees; the clustering and communities need other models.")
+    return out
+
+
+def missing_chart():
+    if mode[0] != "What's missing" or cmp_state["real"] is None:
+        return None
+    G = cmp_state["real"]
+    T = cmp_state["twin"] if cmp_state["twin"] is not None else nx.gnm_random_graph(G.number_of_nodes(),
+                                                                                       G.number_of_edges(), seed=0)
+
+    def ccdf(H):
+        ks = sorted((d for _, d in H.degree() if d > 0), reverse=True)
+        n = len(ks)
+        pts, seen = [], set()
+        for i, k in enumerate(ks):
+            if k not in seen:
+                seen.add(k)
+                pts.append((k, (i + 1) / n))
+        return sorted(pts)
+    return plotLine({"real": ccdf(G), "random twin": ccdf(T)}, title="Degree distributions (cumulative)",
+                    xlabel="degree k", ylabel="share with degree ≥ k", log=true, dots=true)
+
+
+# ---- tabs ----------------------------------------------------------------------------------------
+def stop_all():
+    for st in (ring, grow):
+        if st["timer"] is not None:
+            st["timer"].stop()
+            st["timer"] = None
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    if title == "What's missing":
+        load_real()
+    elif shown["kind"] != "random":
+        build_random()
+
+
+cnow.onChange = build_random
+build_random()
+constantLabelSize(size=14)
+ui.title("Path lengths, and what random graphs miss", "Networks, Sections 11.7–11.8")
+ui.layout(
+    right=Column(
+        Tabs(
+            Tab("Rings",
+                Row(cnow, Button("New random graph", onClick=lambda: new_graph())),
+                Row(Button("Random start", onClick=lambda: random_centre()),
+                    Button("Grow the ball", onClick=lambda: grow_ball())),
+                Markdown(ring_text), Chart(ring_chart)),
+            Tab("Grows like ln n",
+                Button("Simulate: n from 50 to 3,200", onClick=lambda: run_grow()),
+                Markdown(grow_text), Chart(grow_chart)),
+            Tab("What's missing",
+                Dropdown(list(REAL), label="Network", onChange=load_real),
+                Dropdown(["The real network", "Its random twin"], label="Show", onChange=pick_view),
+                Markdown(missing_text), Chart(missing_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

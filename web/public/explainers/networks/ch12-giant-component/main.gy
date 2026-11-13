@@ -1,0 +1,492 @@
+# The giant component in the configuration model  (Newman, Networks, Sections 12.6–12.9)
+# A random network with a given degree distribution p_k has a giant component
+# when <k^2> - 2<k> > 0 (Molloy and Reed). Its size follows from generating
+# functions: u, the chance that following an edge does not lead to the giant
+# component, solves u = g1(u), and the giant component holds S = 1 - g0(u) of the
+# nodes, where g0(z) = sum p_k z^k and g1(z) = g0'(z)/g0'(1). For nodes of degree
+# 1 and 3 only (shares p1, p3) this gives u = p1/(3 p3) and a giant component as
+# soon as p3 > 1/4. With power-law degrees and alpha < 3, <k^2> diverges and there
+# is always a giant component (with k >= 1 it vanishes only above alpha = 3.48).
+# Distances grow like ln n, and for power laws even more slowly.
+
+import math
+import random
+import numpy as np
+import networkx as nx
+
+N13 = 300
+NPL = 500
+mode = ["Degrees 1 and 3"]
+shown = {"kind": None, "giant": set(), "n": 0, "S": 0.0, "second": 0, "k": {}}
+
+
+def stop_all():
+    for st in (cob, sweep13, sweeppl, dist):
+        if st.get("timer") is not None:
+            st["timer"].stop()
+            st["timer"] = None
+
+
+# ---- degrees 1 and 3: theory -------------------------------------------------------------------------
+def theory13(p3):
+    p1 = 1 - p3
+    if p3 <= 0.25:
+        return 1.0, 0.0
+    u = p1 / (3 * p3)
+    return u, 1 - p1 * u - p3 * u ** 3
+
+
+def g1_13(p3, z):
+    p1 = 1 - p3
+    return (p1 + 3 * p3 * z * z) / (p1 + 3 * p3)
+
+
+def degrees13(n, p3, rnd):
+    n3 = int(round(p3 * n))
+    n1 = n - n3
+    if (n1 + 3 * n3) % 2:                    # every edge has two ends: the total must be even
+        if n1:
+            n1 -= 1
+        else:
+            n3 -= 1
+    k = [3] * n3 + [1] * n1
+    rnd.shuffle(k)
+    return k
+
+
+# ---- power laws: theory ---------------------------------------------------------------------------------
+KS = np.arange(1, 4001, dtype=float)
+
+
+def zeta(s, K=4000):
+    """Riemann zeta by a sum plus the Euler-Maclaurin tail (s > 1)."""
+    return float((KS[:K] ** -s).sum() + K ** (1 - s) / (s - 1) - 0.5 * K ** -s)
+
+
+def theory_pl(alpha):
+    """u and S for p_k proportional to k^-alpha, k >= 1 (alpha > 2)."""
+    pk = KS ** -alpha / zeta(alpha)
+    mean = zeta(alpha - 1) / zeta(alpha)
+
+    def g1(u):
+        return float((KS * pk * u ** (KS - 1)).sum() / mean)
+
+    lo, hi = 0.0, 1 - 1e-7
+    if g1(hi) - hi >= 0:                     # no root below 1: no giant component
+        return 1.0, 0.0
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if g1(mid) - mid > 0:
+            lo = mid
+        else:
+            hi = mid
+    u = (lo + hi) / 2
+    return u, 1 - float((pk * u ** KS).sum())
+
+
+def degrees_pl(n, alpha, rnd):
+    w = [k ** -alpha for k in range(1, n)]
+    tot = sum(w)
+    cum, acc = [], 0.0
+    for x in w:
+        acc += x / tot
+        cum.append(acc)
+    k = []
+    for _ in range(n):
+        r = rnd.random()
+        lo, hi = 0, len(cum) - 1
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if cum[mid] < r:
+                lo = mid + 1
+            else:
+                hi = mid
+        k.append(lo + 1)
+    if sum(k) % 2:
+        k[0] += 1
+    return k
+
+
+def giant_share(k, seed):
+    G = nx.Graph(nx.configuration_model(k, seed=seed))
+    return len(max(nx.connected_components(G), key=len)) / len(k)
+
+
+# ---- drawing a network --------------------------------------------------------------------------------
+def build(kind):
+    stop_all()
+    rnd = random.Random(7)
+    if kind == "13":
+        degs = degrees13(N13, p3s.value / 100, rnd)
+    else:
+        degs = degrees_pl(NPL, alpha_s.value / 100, rnd)
+    makeConfigurationModel(degs, seed=7)
+    binPackLayout(false)                     # the giant component and the small ones packed side by side
+    noverlapLayout()
+    shown["kind"] = kind
+    G = toNetworkX(directed=False)
+    comps = sorted(nx.connected_components(G), key=len, reverse=True)
+    shown.update(giant=set(comps[0]) if comps else set(), n=len(G), second=len(comps[1]) if len(comps) > 1 else 0,
+                 k={v.name: v.stubs for v in g.nodes})
+    shown["S"] = len(shown["giant"]) / max(1, shown["n"])
+    look()
+    center()
+
+
+def look():
+    big = shown["S"] >= 0.05
+    for v in g.nodes:
+        k = v.stubs
+        v.width = v.height = 7 + 4 * math.sqrt(k)
+        v.labelvisible = false
+        v.strokecolor = "40,40,40"
+        if big and v.name in shown["giant"]:
+            v.color, v.strokewidth = "250,165,50", 1.2
+        else:
+            v.color, v.strokewidth = "150,175,215", 0.5
+    for e in g.edges:
+        inside = big and e.node1.name in shown["giant"]
+        e.color = "230,140,40,200" if inside else "150,150,150,120"
+        e.width, e.linestyle = (1.6 if inside else 1.0), "solid"
+
+
+# ---- tab 1: degrees 1 and 3 ----------------------------------------------------------------------------
+sweep13 = {"timer": None, "rows": {}, "todo": []}
+
+
+def text13():
+    p3 = p3s.value / 100
+    p1 = 1 - p3
+    mean, k2 = p1 + 3 * p3, p1 + 9 * p3
+    mr = k2 - 2 * mean
+    u, S = theory13(p3)
+    out = (f"**{100 * p1:.0f}%** of the nodes have degree 1 and **{100 * p3:.0f}%** degree 3, wired at random "
+           f"({N13} nodes). Molloy–Reed: ⟨k²⟩ − 2⟨k⟩ = 3p₃ − p₁ = **{mr:+.2f}**, ")
+    if mr > 0:
+        out += (f"positive, so there is a **giant component**. Theory: u = p₁/3p₃ = **{u:.3f}**, "
+                f"S = 1 − p₁u − p₃u³ = **{S:.3f}**.")
+    else:
+        out += "not positive, so **no giant component**: only small pieces (theory S = 0)."
+    out += (f" This network: the largest component has **{100 * shown['S']:.0f}%** of the nodes"
+            f"{' (orange)' if shown['S'] >= 0.05 else ''}, the next largest **{shown['second']}** nodes.")
+    out += ("\n\nWhy p₃ = 1/4? Follow an edge: you reach a degree-3 node with probability 3p₃/⟨k⟩ (edges lead to "
+            "high degree), and it sends you on along **2** new edges; a degree-1 node ends the path. So each edge "
+            f"leads on to 6p₃/⟨k⟩ = **{6 * p3 / mean:.2f}** new edges on average. Above 1 the branching never dies "
+            "out, and that happens exactly when p₃ > 1/4.")
+    return out
+
+
+def chart13():
+    if mode[0] != "Degrees 1 and 3":
+        return None
+    curve = [(p / 100, theory13(p / 100)[1]) for p in range(0, 101)]
+    data = {"theory S": curve}
+    for n in (300, 3000):
+        pts = sorted((p, s) for (nn, p), s in sweep13["rows"].items() if nn == n)
+        if pts:
+            data[f"simulated, n = {n}"] = pts
+    data["this network"] = [(p3s.value / 100, shown["S"])]
+    return plotLine(data, title="Size of the giant component", xlabel="share of degree-3 nodes p₃",
+                    ylabel="S", dots=true, dashed=["theory S"], yrange=(0, 1), xrange=(0, 1))
+
+
+def sweep13_step():
+    if not sweep13["todo"]:
+        return False
+    n, p = sweep13["todo"].pop(0)
+    k = degrees13(n, p, random.Random(int(p * 1000) + n))
+    sweep13["rows"][(n, p)] = giant_share(k, seed=n)
+    return len(sweep13["todo"]) or False
+
+
+def run_sweep13():
+    if sweep13["timer"] is not None:
+        sweep13["timer"].stop()
+    sweep13["todo"] = [(n, p / 20) for n in (300, 3000) for p in range(1, 21) if (n, p / 20) not in sweep13["rows"]]
+    if sweep13["todo"]:
+        sweep13["timer"] = everyPaced(sweep13_step, slow=0.5, fast=0.12, ramp=3)
+
+
+# ---- tab 2: solving u = g1(u) ------------------------------------------------------------------------
+cob = {"timer": None, "u": [0.0]}
+
+
+def cob_paint():
+    """Colour each node by its chance of being in the giant component, 1 - u^k, for the current u."""
+    u = cob["u"][-1]
+    for v in g.nodes:
+        t = 1 - u ** v.stubs
+        v.color = f"{int(150 + 100 * t)},{int(175 - 10 * t)},{int(215 - 165 * t)}"
+        v.strokewidth = 2.5 if t > 0.5 else 0.5
+        v.strokecolor = "40,40,40"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,110", 1.0, "solid"
+
+
+def cob_step():
+    p3 = p3s.value / 100
+    u = cob["u"][-1]
+    nxt = g1_13(p3, u)
+    cob["u"].append(nxt)
+    cob_paint()
+    return len(cob["u"]) < 25 and abs(nxt - u) > 1e-6
+
+
+def run_cob():
+    if cob["timer"] is not None:
+        cob["timer"].stop()
+    if len(cob["u"]) >= 25 or (len(cob["u"]) > 1 and abs(cob["u"][-1] - cob["u"][-2]) <= 1e-6):
+        cob["u"] = [0.0]
+    cob["timer"] = everyPaced(cob_step, slow=1.0, fast=0.35, ramp=3)
+
+
+def cob_reset():
+    if cob["timer"] is not None:
+        cob["timer"].stop()
+        cob["timer"] = None
+    cob["u"] = [0.0]
+    look()
+
+
+def cob_text():
+    p3 = p3s.value / 100
+    p1 = 1 - p3
+    u = cob["u"][-1]
+    S = 1 - p1 * u - p3 * u ** 3
+    ut, St = theory13(p3)
+    out = ("**u** is the chance that following an edge does *not* lead into the giant component. An edge leads out "
+           "of the giant component only if every other edge at its far end does too, so u = g₁(u) = "
+           "(p₁ + 3p₃u²)/(p₁ + 3p₃). Start from u = 0 and apply g₁ again and again: the steps (the staircase in "
+           "the chart) climb to the smallest solution.")
+    if len(cob["u"]) > 1:
+        out += (f"\n\nAfter **{len(cob['u']) - 1}** steps: u = **{u:.4f}**, so S = 1 − g₀(u) = **{S:.3f}** "
+                f"(the answer: u = {ut:.4f}, S = {St:.3f}). Colour shows each node's chance of being in the giant "
+                "component, 1 − u^k: degree-3 nodes fill in faster than degree-1 nodes.")
+    return out
+
+
+def cob_chart():
+    if mode[0] != "Solve u = g₁(u)":
+        return None
+    p3 = p3s.value / 100
+    curve = [(z / 50, g1_13(p3, z / 50)) for z in range(51)]
+    path = [(0.0, 0.0)]
+    for a, b in zip(cob["u"], cob["u"][1:]):
+        path += [(a, b), (b, b)]
+    data = {"g₁(u)": curve, "u (the diagonal)": [(0, 0), (1, 1)]}
+    if len(path) > 1:
+        data["iterations"] = path
+    return plotLine(data, title="Solving u = g₁(u) by iteration", xlabel="u", ylabel="g₁(u)",
+                    dashed=["u (the diagonal)"], xrange=(0, 1), yrange=(0, 1))
+
+
+# ---- tab 3: power laws ----------------------------------------------------------------------------------
+sweeppl = {"timer": None, "rows": {}, "todo": []}
+PL_CURVE = {}
+
+
+def pl_text():
+    a = alpha_s.value / 100
+    u, S = theory_pl(a)
+    k = list(shown["k"].values()) or [1]
+    n = len(k)
+    m1, m2 = sum(k) / n, sum(x * x for x in k) / n
+    out = (f"Degrees drawn from p_k ∝ k^−α with α = **{a:.2f}**, k ≥ 1 ({NPL} nodes). Here ⟨k⟩ = {m1:.2f} and "
+           f"⟨k²⟩ = {m2:.1f}, so ⟨k²⟩ − 2⟨k⟩ = **{m2 - 2 * m1:+.1f}**. ")
+    if a < 3:
+        out += ("For α < 3, ⟨k²⟩ grows without limit as the network grows (the hubs dominate it), so the "
+                "condition holds in any large network: **there is always a giant component**. ")
+    else:
+        out += ("For α > 3, ⟨k²⟩ is finite and the condition can fail: with k ≥ 1 the giant component "
+                "vanishes above α ≈ 3.48. ")
+    out += (f"Theory for an infinite network: S = **{S:.3f}**. This network: the largest component holds "
+            f"**{100 * shown['S']:.0f}%** of the nodes.")
+    return out
+
+
+def pl_chart():
+    if mode[0] != "Power laws":
+        return None
+    if not PL_CURVE:
+        for i in range(0, 41):
+            a = 2.05 + 0.05 * i
+            PL_CURVE[a] = theory_pl(a)[1]
+    data = {"theory S": sorted(PL_CURVE.items())}
+    for n in (500, 5000):
+        pts = sorted((a, s) for (nn, a), s in sweeppl["rows"].items() if nn == n)
+        if pts:
+            data[f"simulated, n = {n}"] = pts
+    data["this network"] = [(alpha_s.value / 100, shown["S"])]
+    return plotLine(data, title="Giant component with power-law degrees", xlabel="exponent α", ylabel="S",
+                    dots=true, dashed=["theory S"], yrange=(0, 1), xrange=(2, 4.1))
+
+
+def sweeppl_step():
+    if not sweeppl["todo"]:
+        return False
+    n, a = sweeppl["todo"].pop(0)
+    k = degrees_pl(n, a, random.Random(int(a * 100) + n))
+    sweeppl["rows"][(n, a)] = giant_share(k, seed=n)
+    return len(sweeppl["todo"]) or False
+
+
+def run_sweeppl():
+    if sweeppl["timer"] is not None:
+        sweeppl["timer"].stop()
+    sweeppl["todo"] = [(n, round(2.1 + 0.2 * i, 2)) for n in (500, 5000) for i in range(10)
+                       if (n, round(2.1 + 0.2 * i, 2)) not in sweeppl["rows"]]
+    if sweeppl["todo"]:
+        sweeppl["timer"] = everyPaced(sweeppl_step, slow=0.5, fast=0.15, ramp=3)
+
+
+# ---- tab 4: diameter -----------------------------------------------------------------------------------
+dist = {"timer": None, "rows": [], "todo": [], "from": None}
+SIZES = [100, 200, 400, 800, 1600, 3200, 6400]
+
+
+def mean_distance(G, seed):
+    giant = G.subgraph(max(nx.connected_components(G), key=len))
+    nodes = sorted(giant)
+    pick = random.Random(seed).sample(nodes, min(15, len(nodes)))
+    tot, cnt = 0, 0
+    for s in pick:
+        d = nx.single_source_shortest_path_length(giant, s)
+        tot += sum(d.values())
+        cnt += len(d) - 1
+    return tot / max(cnt, 1)
+
+
+def dist_step():
+    if not dist["todo"]:
+        return False
+    kind, n = dist["todo"].pop(0)
+    rnd = random.Random(n)
+    k = degrees13(n, 0.6, rnd) if kind == "13" else degrees_pl(n, 2.5, rnd)
+    G = nx.Graph(nx.configuration_model(k, seed=n))
+    G.remove_edges_from(list(nx.selfloop_edges(G)))
+    dist["rows"].append((kind, n, mean_distance(G, n)))
+    return len(dist["todo"]) or False
+
+
+def run_dist():
+    if dist["timer"] is not None:
+        dist["timer"].stop()
+    dist["rows"] = []
+    dist["todo"] = [(kind, n) for n in SIZES for kind in ("13", "pl")]
+    dist["timer"] = everyPaced(dist_step, slow=0.6, fast=0.3, ramp=2)
+
+
+def rings_from_hub():
+    """Distances from a best-connected node of the giant component, by colour."""
+    if not shown["giant"]:
+        return
+    hub = max(shown["giant"], key=lambda v: shown["k"].get(v, 0))
+    heatMap(g.getNodeByName(hub))
+    h = g.getNodeByName(hub)
+    h.color, h.strokecolor, h.strokewidth = "255,230,60", "30,30,30", 3
+    h.width = h.height = h.width + 10
+    h.label, h.labelvisible = f"start, k = {h.stubs}", true
+    dist["from"] = hub
+
+
+def dist_text():
+    p3 = 0.6
+    c1 = (1 - p3) + 3 * p3
+    c2 = (1 - p3) + 9 * p3 - c1
+    out = ("Each step out from a node multiplies the number of nodes reached by about c₂/c₁ = (⟨k²⟩ − ⟨k⟩)/⟨k⟩, "
+           f"so the mean distance grows like **ln n / ln(c₂/c₁)**: a straight line against log n. For nodes of degree 1 "
+           f"and 3 (p₃ = 0.6) c₂/c₁ = {c2 / c1:.2f}. With power-law degrees (α = 2.5) c₂/c₁ itself grows with n, "
+           "and distances grow even more slowly. *Simulate* builds both at n = 100 to 6,400 and measures the mean "
+           "distance in the giant component (from 15 sources). The drawing is coloured by distance from a "
+           "best-connected node (yellow): red near, blue far.")
+    if dist["rows"]:
+        rows = ["| n | degrees 1 and 3 | power law α = 2.5 |", "|---|---|---|"]
+        for n in SIZES:
+            a = next((d for kd, nn, d in dist["rows"] if kd == "13" and nn == n), None)
+            b = next((d for kd, nn, d in dist["rows"] if kd == "pl" and nn == n), None)
+            if a is not None or b is not None:
+                rows.append(f"| {n} | {'' if a is None else f'{a:.2f}'} | {'' if b is None else f'{b:.2f}'} |")
+        out += "\n\n" + "\n".join(rows)
+    return out
+
+
+def dist_chart():
+    if mode[0] != "Diameter" or not dist["rows"]:
+        return None
+    c1 = 0.4 + 1.8
+    c2 = 0.4 + 5.4 - c1
+    first = [d for kd, nn, d in dist["rows"] if kd == "13" and nn == 100]
+    shift = (first[0] - math.log(100) / math.log(c2 / c1)) if first else 0.0
+    return plotLine({"degrees 1 and 3": [(n, d) for kd, n, d in dist["rows"] if kd == "13"],
+                     "power law α = 2.5": [(n, d) for kd, n, d in dist["rows"] if kd == "pl"],
+                     "ln n / ln(c₂/c₁) (1 and 3)": [(n, shift + math.log(n) / math.log(c2 / c1)) for n in SIZES]},
+                    title="Mean distance in the giant component", xlabel="n", ylabel="mean distance",
+                    logX=true, dots=true, dashed=["ln n / ln(c₂/c₁) (1 and 3)"])
+
+
+# ---- wiring ------------------------------------------------------------------------------------------
+def p3_changed(v=None):
+    if mode[0] in ("Degrees 1 and 3", "Solve u = g₁(u)", "Diameter"):
+        cob["u"] = [0.0]
+        build("13")
+        if mode[0] == "Diameter":
+            rings_from_hub()
+
+
+def alpha_changed(v=None):
+    if mode[0] == "Power laws":
+        build("pl")
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    if title == "Power laws":
+        if shown["kind"] != "pl":
+            build("pl")
+        else:
+            look()
+    else:
+        if shown["kind"] != "13":
+            build("13")
+        else:
+            look()
+        if title == "Solve u = g₁(u)":
+            cob["u"] = [0.0]
+        if title == "Diameter":
+            rings_from_hub()
+
+
+p3s = Slider(0, 100, 50, 1, label="share of degree-3 nodes p₃ (%)")
+p3s.onChange = p3_changed
+alpha_s = Slider(205, 400, 250, 5, label="exponent α (× 100)")
+alpha_s.onChange = alpha_changed
+build("13")
+constantLabelSize(size=14)
+ui.title("The giant component with any degrees", "Networks, Sections 12.6–12.9")
+ui.layout(
+    right=Column(
+        Markdown("""### When does a random network hold together?
+Random wiring with a chosen degree distribution (the configuration model).
+Orange: the largest component, when it is a giant one."""),
+        Tabs(
+            Tab("Degrees 1 and 3", p3s,
+                Button("Simulate: sweep p₃", onClick=lambda: run_sweep13()),
+                Markdown(text13), Chart(chart13)),
+            Tab("Solve u = g₁(u)",
+                Row(Button("Iterate u ← g₁(u)", onClick=lambda: run_cob()),
+                    Button("Start from u = 0", onClick=lambda: cob_reset())),
+                Markdown(cob_text), Chart(cob_chart)),
+            Tab("Power laws", alpha_s,
+                Button("Simulate: sweep α", onClick=lambda: run_sweeppl()),
+                Markdown(pl_text), Chart(pl_chart)),
+            Tab("Diameter",
+                Button("Simulate: growing networks", onClick=lambda: run_dist()),
+                Markdown(dist_text), Chart(dist_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · largest component "
+                           f"{100 * shown['S']:.0f}%"))
+center()

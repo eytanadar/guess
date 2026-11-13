@@ -1,0 +1,335 @@
+# The giant component  (Newman, Networks, Section 11.5)
+# In a random graph with mean degree c, all components are small while c < 1.
+# Past c = 1 one component takes a fixed share S of all nodes, however big the
+# network: the giant component. A node is outside it only if none of its
+# neighbours is in it, which gives S = 1 - e^(-cS); for c > 1 this has a
+# solution S > 0, found by iterating the equation or graphically where the
+# curve meets the line y = S. Two giant components can't coexist: some pair
+# between them would almost surely be joined, merging them.
+#
+# One random number u per pair of nodes decides at which c that pair is
+# joined (when u < c/(n - 1)), so raising c only ever adds edges. The network
+# for the largest c is laid out once and its edges revealed as c grows
+# (revealUpTo(c) shows edges whose `born` c has been reached), so nodes never
+# move and you watch the giant component form in place.
+
+import math
+import random
+import networkx as nx
+
+N = 200
+CMAX = 4.0
+mode = ["Phase transition"]
+Node.born = 0.0
+Edge.born = 0.0
+st = {"c": 0.5, "pairs": [], "seen": {}, "timer": None, "prev": 0.0, "sim": [], "simtimer": None,
+      "cob": [], "cobtimer": None}
+ORANGE, ORANGE_EDGE, BLUE = "250,160,50", "120,60,0", "90,200,250"
+
+
+def theory_S(c):
+    """The giant component's share: the root of S = 1 - e^(-cS) above 0 (0 when c <= 1)."""
+    if c <= 1:
+        return 0.0
+    lo, hi = 1e-12, 1.0
+    for _ in range(80):
+        mid = (lo + hi) / 2
+        if mid - 1 + math.exp(-c * mid) < 0:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
+def build():
+    rnd = random.Random(4)
+    pairs = []
+    for i in range(N):
+        for j in range(i + 1, N):
+            when = rnd.random() * (N - 1)          # joined once c reaches u (n - 1)
+            if when <= CMAX:
+                pairs.append((i, j, when))
+    st["pairs"] = pairs
+    remove(list(g.nodes))
+    nodes = [addNode(f"p{i}", label=str(i)) for i in range(N)]
+    for v in nodes:
+        v.born = 0.0
+        v.labelvisible = false
+    for i, j, when in pairs:
+        e = addEdge(nodes[i], nodes[j])
+        e.born = when
+    frLayout()                                     # laid out for the largest c ...
+    binPackLayout(false)
+    noverlapLayout(margin=4)
+    center(g.nodes)                                # ... and framed before anything is hidden
+
+
+def components(c):
+    """Union-find over the pairs joined by mean degree c: the components, largest first."""
+    parent = list(range(N))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    for i, j, when in st["pairs"]:
+        if when <= c:
+            ri, rj = find(i), find(j)
+            if ri != rj:
+                parent[ri] = rj
+    groups = {}
+    for i in range(N):
+        groups.setdefault(find(i), []).append(i)
+    return sorted(groups.values(), key=len, reverse=True)
+
+
+def show(c=None):
+    c = st["c"] if c is None else c
+    prev = st["prev"]
+    st["c"] = c
+    revealUpTo(c)
+    comps = components(c)
+    big = set(comps[0]) if comps else set()
+    second = set(comps[1]) if len(comps) > 1 and len(comps[1]) > 1 else set()
+    for v in g.nodes:
+        i = int(v.name[1:])
+        if i in big and len(big) > 1:
+            v.color, v.strokecolor, v.strokewidth = ORANGE, ORANGE_EDGE, 1.5
+            v.width = v.height = 14
+        elif i in second:
+            v.color, v.strokecolor, v.strokewidth = BLUE, "20,70,110", 1.5
+            v.width = v.height = 11
+        else:
+            v.color, v.strokecolor, v.strokewidth = "175,185,205", "70,70,80", 0
+            v.width = v.height = 8
+    for e in g.edges:
+        if not e.visible:
+            continue
+        a = int(e.node1.name[1:])
+        if prev < e.born <= c and c - prev < 0.3:   # just joined: highlighted while you watch
+            e.color, e.width, e.linestyle = "255,90,60", 3.2, "flow"
+        elif a in big:
+            e.color, e.width, e.linestyle = "240,170,90,210", 1.6, "solid"
+        else:
+            e.color, e.width, e.linestyle = "150,150,160,170", 1.2, "solid"
+    st["prev"] = c
+    st["seen"][round(c, 3)] = (len(comps[0]) / N, (len(comps[1]) / N) if len(comps) > 1 else 0.0)
+
+
+def set_c(v):
+    if st["timer"] is not None and st["timer"].running:
+        return
+    show(float(v))
+
+
+def stop_all():
+    for key in ("timer", "simtimer", "cobtimer"):
+        if st[key] is not None:
+            st[key].stop()
+            st[key] = None
+    sweep_btn.text = "Sweep c from 0 to 4"
+
+
+# ---- the phase transition ------------------------------------------------------------------------
+def sweep():
+    if st["timer"] is not None and st["timer"].running:
+        stop_all()
+        return
+    stop_all()
+    st["prev"] = 0.0
+    st["seen"] = {}
+    sweep_state["c"] = 0.0
+    show(0.0)
+    st["timer"] = everyPaced(sweep_step, steps=81, slow=0.8, fast=0.12, ramp=6)
+    sweep_btn.text = "Pause"
+
+
+sweep_state = {"c": 0.0}
+
+
+def sweep_step():
+    sweep_state["c"] = round(sweep_state["c"] + 0.05, 2)
+    if sweep_state["c"] > CMAX:
+        sweep_btn.text = "Sweep c from 0 to 4"
+        show(st["c"])                      # the sweep is over: clear the last flash
+        return False
+    cslider.value = sweep_state["c"]
+    show(sweep_state["c"])
+    return int(round((CMAX - sweep_state["c"]) / 0.05))
+
+
+def transition_text():
+    c = st["c"]
+    comps = components(c)
+    S, S2 = len(comps[0]) / N, (len(comps[1]) / N if len(comps) > 1 else 0)
+    th = theory_S(c)
+    edges = sum(1 for i, j, w in st["pairs"] if w <= c)
+    phase = ("**below the transition**: every component is small, and stays small however big the network gets"
+             if c < 0.9 else
+             "**near c = 1**: components merge fast; the largest and second-largest are both growing"
+             if c < 1.3 else
+             "**above the transition**: one giant component holds a fixed share, and every other piece is small")
+    return (f"Mean degree **c = {c:.2f}** ({edges} edges on {N} nodes): {phase}.\n\n"
+            f"Largest component (orange): **{len(comps[0])}** nodes, S = **{S:.3f}**; theory for n → ∞: "
+            f"**{th:.3f}**. Second largest (blue): {len(comps[1]) if len(comps) > 1 else 0} nodes; "
+            f"{len(comps)} components in all.\n\n"
+            "Drag c, or sweep it: new edges flash red as they appear.")
+
+
+def transition_chart():
+    if mode[0] != "Phase transition":
+        return None
+    seen = sorted(st["seen"].items())
+    curve = [(k / 20, theory_S(k / 20)) for k in range(0, 81)]
+    data = {"S, theory (n → ∞)": curve}
+    if seen:
+        data["largest / n, this network"] = [(c, s1) for c, (s1, s2) in seen]
+        data["second largest / n"] = [(c, s2) for c, (s1, s2) in seen]
+    return plotLine(data, title="Size of the largest component", xlabel="mean degree c", ylabel="share of nodes",
+                    dots=true, dashed=["S, theory (n → ∞)"], yrange=(0, 1), xrange=(0, 4))
+
+
+# ---- simulate: bigger networks sharpen the transition ------------------------------------------
+SIZES = [100, 3000]
+
+
+def run_sim():
+    stop_all()
+    st["sim"] = []
+    st["simtimer"] = everyPaced(sim_step, steps=32, slow=0.6, fast=0.1, ramp=4)
+
+
+def sim_step():
+    k = len(st["sim"])
+    if k > 30:
+        return False
+    c = k * 0.1
+    row = [c]
+    for n in SIZES:
+        reps = 6 if n < 1000 else 1
+        tot = 0.0
+        for r in range(reps):
+            G = nx.fast_gnp_random_graph(n, c / (n - 1), seed=1000 * k + r + n)
+            tot += len(max(nx.connected_components(G), key=len)) / n
+        row.append(tot / reps)
+    st["sim"].append(tuple(row))
+    return 31 - len(st["sim"])
+
+
+def sim_chart():
+    if mode[0] != "Simulate" or not st["sim"]:
+        return None
+    data = {"theory": [(k / 20, theory_S(k / 20)) for k in range(0, 61)]}
+    for i, n in enumerate(SIZES):
+        data[f"n = {n}"] = [(row[0], row[i + 1]) for row in st["sim"]]
+    return plotLine(data, title="Largest component, simulated", xlabel="mean degree c", ylabel="largest / n",
+                    dots=true, dashed=["theory"], yrange=(0, 1), xrange=(0, 3))
+
+
+def sim_text():
+    if not st["sim"]:
+        return ("**Simulate** builds random graphs of 100 nodes (6 at each c) and 3,000 nodes (one each) for c = 0, "
+                "0.1, … 3, and plots the largest component's share against the theory.")
+    last = st["sim"][-1]
+    out = (f"At c = {last[0]:.1f}: n = 100 gives **{last[1]:.3f}**, n = 3000 gives **{last[2]:.3f}**, theory "
+           f"**{theory_S(last[0]):.3f}**.")
+    near = [r for r in st["sim"] if abs(r[0] - 0.8) < 1e-9]
+    if near:
+        out += (f"\n\nJust below the transition (c = 0.8) the largest component is still {near[0][1]:.3f} of "
+                f"100 nodes but only {near[0][2]:.3f} of 3000: in a bigger network the small components are a "
+                "smaller share, so the jump at c = 1 gets sharper as n grows. That is a phase transition.")
+    return out
+
+
+# ---- solving S = 1 - e^(-cS) -----------------------------------------------------------------------
+def run_cobweb():
+    stop_all()
+    st["cob"] = [0.02]                     # start near 0: the staircase climbs to the giant's share, or slides to 0
+    st["cobtimer"] = everyPaced(cob_step, steps=30, slow=0.9, fast=0.25, ramp=3)
+
+
+def cob_step():
+    c = st["c"]
+    s_ = st["cob"][-1]
+    st["cob"].append(1 - math.exp(-c * s_))
+    return 30 - len(st["cob"])
+
+
+def cob_chart():
+    if mode[0] != "Solving for S":
+        return None
+    c = st["c"]
+    data = {"y = 1 − e^(−cS)": [(k / 50, 1 - math.exp(-c * k / 50)) for k in range(51)],
+            "y = S": [(0, 0), (1, 1)]}
+    if len(st["cob"]) > 1:
+        path = [(st["cob"][0], 0.0)]
+        for a, b in zip(st["cob"], st["cob"][1:]):
+            path += [(a, b), (b, b)]
+        data["iterating"] = path
+    return plotLine(data, title="Where the curve meets the line", xlabel="S", ylabel="y", dashed=["y = S"],
+                    yrange=(0, 1), xrange=(0, 1))
+
+
+def cob_text():
+    c = st["c"]
+    th = theory_S(c)
+    out = (f"With **c = {c:.2f}**: start from a tiny S = 0.02 and apply S ← 1 − e^(−cS) again and again (the "
+           "staircase). Each step goes up to the curve, then across to the line. Try c = 1.5, then c = 0.8.")
+    if len(st["cob"]) > 1:
+        vals = ", ".join(f"{v:.3f}" for v in st["cob"][:8])
+        out += f"\n\nS = {vals}{' …' if len(st['cob']) > 8 else ''} → **{st['cob'][-1]:.4f}**"
+    out += ("\n\nThe curve's slope at S = 0 is c. If c ≤ 1 the curve lies under the line everywhere except at 0, so "
+            "the only solution is S = 0: no giant component. If c > 1 it starts steeper than the line and must "
+            f"cross it again: here at **S = {th:.4f}**." if c > 1 else
+            "\n\nThe curve's slope at S = 0 is c. With c ≤ 1 the curve stays under the line, so the staircase slides "
+            "down to S = 0: no giant component. Set c above 1 and run it again.")
+    return out
+
+
+# ---- only one giant ------------------------------------------------------------------------------------
+def one_text():
+    c = max(st["c"], 1.5)
+    rows = ["| n | expected edges between two pieces of 0.4 n | chance of none |", "|---|---|---|"]
+    for n in (200, 10000, 1000000):
+        mean = c * 0.16 * n                  # p (0.4 n)^2 = c 0.16 n^2 / (n - 1)
+        rows.append(f"| {n:,} | {mean:,.0f} | e^−{mean:,.0f} ≈ {math.exp(-mean):.1e} |")
+    return ("Could there be **two** giant components, each a fixed share of the network? Take two pieces of "
+            f"0.4 n nodes each. There are 0.16 n² pairs between them, each joined with probability c/(n−1), so "
+            f"(here with c = {c:.1f}) the expected number of edges between them grows like n, and the chance "
+            "that none is there falls exponentially:\n\n" + "\n".join(rows) +
+            "\n\nSo two giants would merge almost surely: there is only one. In the picture, at large c, the "
+            "second-largest component (blue) is always small.")
+
+
+# ---- wiring ------------------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    stop_all()
+    show()
+
+
+sweep_btn = Button("Sweep c from 0 to 4", onClick=lambda: sweep())
+cslider = Slider(0, 4, 0.5, 0.05, label="mean degree c")
+cslider.onChange = set_c
+build()
+show(0.5)
+constantLabelSize(size=14)
+ui.title("The giant component", "Networks, Section 11.5")
+ui.layout(
+    right=Column(
+        Markdown(f"""### A phase transition at c = 1
+{N} nodes; each pair joins when c passes its own random threshold, so raising c only adds edges."""),
+        cslider,
+        Tabs(
+            Tab("Phase transition", sweep_btn, Markdown(transition_text), Chart(transition_chart)),
+            Tab("Simulate", Button("Simulate: 100 and 3,000 nodes", onClick=lambda: run_sim()),
+                Markdown(sim_text), Chart(sim_chart)),
+            Tab("Solving for S", Button("Iterate S ← 1 − e^(−cS)", onClick=lambda: run_cobweb()),
+                Markdown(cob_text), Chart(cob_chart)),
+            Tab("Only one giant", Markdown(one_text)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{N} nodes · c = {st['c']:.2f} · largest component {len(components(st['c'])[0])}"))

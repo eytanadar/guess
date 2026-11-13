@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The configuration model",
+  "description": "Give every node its stubs and pair them at random: any degree sequence, a few self-loops and repeats, and edges with probability k_i k_j / 2m.",
+  "console": "toggle",
+  "script": "main.gy"
+}

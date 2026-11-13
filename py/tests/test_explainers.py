@@ -84,7 +84,16 @@ class App:
         assert not self.errors(), self.errors()
 
     def markdown(self):
-        return "\n".join(str(w._state.get("text", "")) for w in self.s.gui.widgets.values() if w.kind == "markdown")
+        """Every Markdown widget's text, live ones evaluated now (the app only
+        refreshes the tab that is showing; tests read them all)."""
+        gui = self.s.gui
+        out = []
+        for wid, w in gui.widgets.items():
+            if w.kind != "markdown":
+                continue
+            fn = gui.bound.get(wid)
+            out.append(gui.evaluate(fn) if fn is not None else str(w._state.get("text", "")))
+        return "\n".join(out)
 
 
 ALL = sorted(p.name for p in EXPL.iterdir() if (p / "main.gy").exists()) if EXPL.exists() else []

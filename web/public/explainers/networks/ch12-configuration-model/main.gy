@@ -1,0 +1,733 @@
+# The configuration model  (Newman, Networks, Section 12.1)
+# Fix every node's degree k_i, give node i k_i "stubs" (half-edges), and pair
+# all the stubs up uniformly at random. Every way of pairing is equally
+# likely. The result has exactly the degrees asked for, but can contain
+# self-loops and repeated edges, fewer and fewer of them (per edge) as the
+# network grows. Nodes i and j end up joined by k_i k_j / (2m - 1) edges on
+# average. The "expected degree" (Chung-Lu) variant joins each pair
+# independently with probability k_i k_j / 2m instead.
+#
+# Here the final network is built and laid out first (makeConfigurationModel),
+# then its edges are revealed in the order the stubs were paired, so nothing
+# moves while the stubs (drawn as spokes) are used up.
+
+import math
+import random
+import numpy as np
+import networkx as nx
+
+
+def hub_sequence():
+    ks = [max(1, int(round(13 * (i + 1) ** -0.75))) for i in range(30)]
+    if sum(ks) % 2:
+        ks[-1] += 1
+    return ks
+
+
+KARATE = [d for _, d in sorted(nx.karate_club_graph().degree())]
+SEQS = {"A dozen nodes": [5, 4, 4, 3, 2, 2, 2, 2, 1, 1, 1, 1],
+        "A few hubs (30 nodes)": hub_sequence(),
+        "The karate club's degrees": KARATE}
+SIMPLE_EDGE = "130,140,155"
+NEW_EDGE = "245,150,30"
+BAD = "230,45,45"
+
+st = {"name": "A few hubs (30 nodes)", "seed": 1, "pairs": [], "step": 0, "timer": None, "spoke": 12.0,
+      "bad": {}, "hist": [], "sim": None, "simple": None, "chart": "progress", "nodes": [], "edge_at": {}}
+mode = ["Pair the stubs"]
+
+
+def ks_now():
+    return SEQS[st["name"]]
+
+
+def two_m():
+    return sum(ks_now())
+
+
+def expected_loops(ks):
+    m2 = sum(ks)
+    return sum(k * (k - 1) for k in ks) / (2 * (m2 - 1))
+
+
+def expected_repeats(ks):
+    """Expected pairs of parallel edges, exactly: sum over i < j of k_i(k_i-1)k_j(k_j-1) / 2(2m-1)(2m-3).
+    For large networks about (1/4)[(<k^2> - <k>)/<k>]^2; Newman's Eq. (12.3) has 1/2, because it counts
+    the two edges of a pair in both orders."""
+    m2 = sum(ks)
+    a = [k * (k - 1) for k in ks]
+    tot = sum(a)
+    pairsum = (tot * tot - sum(x * x for x in a)) / 2
+    return pairsum / (2 * (m2 - 1) * (m2 - 3)) if m2 > 3 else 0.0
+
+
+def large_n_repeats(ks):
+    return 0.25 * (sum(k * (k - 1) for k in ks) / sum(ks)) ** 2
+
+
+def parallel_pairs(pairs):
+    """Pairs of edges that join the same two nodes: a pair joined N times gives N(N-1)/2."""
+    count = {}
+    for (a, _), (b, _) in pairs:
+        if a != b:
+            key = (min(a, b), max(a, b))
+            count[key] = count.get(key, 0) + 1
+    return sum(c * (c - 1) // 2 for c in count.values())
+
+
+def stop_all():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+    go.text = "Pair them up"
+    for t in (prob, cl, grow):
+        if t.get("timer") is not None:
+            t["timer"].stop()
+            t["timer"] = None
+
+
+# ---- building ------------------------------------------------------------------------------------
+def build(choice=None, seed=None):
+    """The final network first (makeConfigurationModel lays it out), then hide its edges."""
+    stop_all()
+    if choice is not None:
+        st["name"] = choice
+    if seed is not None:
+        st["seed"] = seed
+    ks = ks_now()
+    makeConfigurationModel(ks, seed=st["seed"])
+    ids = [(i, j) for i, k in enumerate(ks) for j in range(k)]       # stub j of node i, in the command's order
+    random.Random(st["seed"]).shuffle(ids)                            # the same shuffle the command made
+    st["pairs"] = [(ids[t], ids[t + 1]) for t in range(0, len(ids), 2)]
+    st["nodes"] = [g.getNodeByName(f"nd{i}") for i in range(len(ks))]
+    Node.born = 0
+    Edge.born = 0
+    for t, e in enumerate(list(g.edges)):
+        e.born = t + 1
+    binPackLayout(false)                                              # several pieces: pack them,
+    noverlapLayout(margin=34)                                         # and leave room for the spokes
+    lengths = sorted(math.hypot(cx(e.node1) - cx(e.node2), cy(e.node1) - cy(e.node2))
+                     for e in g.edges if e.node1 != e.node2)
+    st["spoke"] = min(30.0, max(10.0, 0.25 * lengths[len(lengths) // 2])) if lengths else 14.0
+    center(g.nodes)
+    start_over()
+
+
+def cx(n):
+    return n.x + n.width / 2
+
+
+def cy(n):
+    return n.y + n.height / 2
+
+
+def restore_edges():
+    """Put the matching's edges back on the same nodes (after the expected-degree tab), positions unchanged."""
+    remove(list(g.edges))
+    for t, ((a, _), (b, _)) in enumerate(st["pairs"]):
+        e = addEdge(st["nodes"][a], st["nodes"][b])
+        e.born = t + 1
+    start_over()
+
+
+def start_over():
+    stop_all()
+    st.update(step=0, bad={}, hist=[(0, 0, 0)], simple=None, chart="progress")
+    st["edge_at"] = {e.born: e for e in g.edges}
+    look_nodes()
+    for e in g.edges:
+        plain(e)
+    revealUpTo(0)
+    draw_spokes()
+
+
+def look_nodes():
+    for i, n in enumerate(st["nodes"]):
+        k = ks_now()[i]
+        n.width = n.height = 14 + 1.6 * k
+        n.color = "120,175,245"
+        n.strokecolor = "35,45,60"
+        n.strokewidth = 1
+        n.label = str(k)
+        n.labelvisible = true
+
+
+def plain(e):
+    if e.born in st["bad"]:
+        e.color, e.width, e.linestyle = BAD, 3, "solid"
+    else:
+        e.color, e.width, e.linestyle = SIMPLE_EDGE, 1.6, "solid"
+
+
+# ---- stubs as spokes ---------------------------------------------------------------------------
+def used_stubs():
+    out = set()
+    for (a, b) in st["pairs"][:st["step"]]:
+        out.add(a)
+        out.add(b)
+    return out
+
+
+def draw_spokes():
+    clearDrawings()
+    if mode[0] != "Pair the stubs":
+        return
+    used = used_stubs()
+    L = st["spoke"]
+    for i, k in enumerate(ks_now()):
+        n = st["nodes"][i]
+        r = n.width / 2
+        for j in range(k):
+            if (i, j) in used:
+                continue
+            a = 2 * math.pi * j / k - math.pi / 2
+            drawLine(cx(n) + r * math.cos(a), cy(n) + r * math.sin(a),
+                     cx(n) + (r + L) * math.cos(a), cy(n) + (r + L) * math.sin(a), color="250,175,60", width=2.4)
+
+
+# ---- pairing ---------------------------------------------------------------------------------------
+def pair_one():
+    M = len(st["pairs"])
+    if st["step"] >= M:
+        return False
+    prev = st["edge_at"].get(st["step"])
+    if prev is not None:
+        plain(prev)
+    for n in st["nodes"]:
+        n.strokecolor, n.strokewidth = "35,45,60", 1
+    st["step"] += 1
+    t = st["step"]
+    (a, _), (b, _) = st["pairs"][t - 1]
+    kind = None
+    if a == b:
+        kind = "self-loop"
+    else:
+        for s, ((c, _), (d, _)) in enumerate(st["pairs"][:t - 1]):
+            if {c, d} == {a, b}:
+                kind = "parallel edge"
+                st["bad"].setdefault(s + 1, "parallel edge")
+                plain(st["edge_at"][s + 1])
+                break
+    if kind:
+        st["bad"][t] = kind
+    for x in revealUpTo(t):
+        if hasattr(x, "node1"):
+            x.color, x.width, x.linestyle = (BAD if kind else NEW_EDGE), 4.5, "flow"
+    for v in {a, b}:
+        nd = st["nodes"][v]
+        nd.strokecolor, nd.strokewidth = (BAD if kind else "20,20,20"), 3.5
+    loops = sum(1 for k in st["bad"].values() if k == "self-loop")
+    st["hist"].append((t, loops, parallel_pairs(st["pairs"][:t])))
+    draw_spokes()
+    return M - t
+
+
+def play():
+    if st["timer"] is not None:
+        stop_all()
+        return
+    if st["step"] >= len(st["pairs"]):
+        start_over()
+    st["chart"] = "progress"
+    st["timer"] = everyPaced(pair_one, slow=0.9, fast=0.12, ramp=3)
+    go.text = "Pause"
+
+
+def one_pair():
+    stop_all()
+    st["chart"] = "progress"
+    pair_one()
+
+
+def all_pairs():
+    stop_all()
+    while pair_one():
+        pass
+
+
+def new_shuffle():
+    build(seed=st["seed"] + 1)
+
+
+def make_simple():
+    """Delete self-loops and repeats, as simple=true would: some degrees fall below what was asked for."""
+    all_pairs()
+    gone = [st["edge_at"][t] for t in sorted(st["bad"])
+            if st["bad"][t] == "self-loop" or is_extra(t)]
+    for e in gone:
+        e.visible = false
+    for e in g.edges:                     # what is left is an ordinary edge now
+        if e.visible:
+            e.color, e.width, e.linestyle = SIMPLE_EDGE, 1.6, "solid"
+    short = []
+    for i, n in enumerate(st["nodes"]):
+        k_now = sum(1 for e in g.edges if e.visible and e.node1 != e.node2 and n in (e.node1, e.node2))
+        if k_now < ks_now()[i]:
+            n.label = f"{ks_now()[i]}→{k_now}"
+            n.strokecolor, n.strokewidth = BAD, 3.5
+            short.append(n)
+    st["simple"] = {"removed": len(gone), "short": short}
+    draw_spokes()
+
+
+def is_extra(t):
+    (a, _), (b, _) = st["pairs"][t - 1]
+    for s in range(1, t):
+        (c, _), (d, _) = st["pairs"][s - 1]
+        if {c, d} == {a, b}:
+            return True
+    return False
+
+
+def pairing_text():
+    ks = ks_now()
+    M = len(st["pairs"])
+    t = st["step"]
+    loops = sum(1 for k in st["bad"].values() if k == "self-loop")
+    par = parallel_pairs(st["pairs"][:t])
+    out = (f"**{len(ks)}** nodes, degrees adding up to **2m = {sum(ks)}** stubs (orange spokes), so **m = {M}** "
+           f"edges. Paired so far: **{t}** of {M}; **{sum(ks) - 2 * t}** stubs left.\n\n")
+    if t:
+        (a, _), (b, _) = st["pairs"][t - 1]
+        e = st["edge_at"][t]
+        what = st["bad"].get(t)
+        out += (f"Last pair: a stub of {linkTo(st['nodes'][a])} with a stub of {linkTo(st['nodes'][b])}"
+                + (f", a **{what}** (red)." if what else ".") + "\n\n")
+    out += (f"Self-loops so far: **{loops}**; pairs of parallel edges (two edges joining the same two nodes): "
+            f"**{par}**. Over a whole pairing expect **{expected_loops(ks):.2f}** self-loops (Σ k(k−1) / 2(2m−1)) "
+            f"and **{expected_repeats(ks):.2f}** parallel pairs (Σ over i < j of k_i(k_i−1)k_j(k_j−1) / "
+            "2(2m−1)(2m−3)). Hubs make both: they have many stubs to pair with each other.")
+    bad = [st["edge_at"][s] for s in sorted(st["bad"])][:8]
+    if bad:
+        out += "\n\nProblem edges: " + " ".join(linkTo(e, text=f"{e.node1.name}–{e.node2.name} ({st['bad'][e.born]})")
+                                               for e in bad)
+    if st["simple"]:
+        sm = st["simple"]
+        out += (f"\n\n**Made simple:** {sm['removed']} edges deleted, so **{len(sm['short'])}** nodes now have fewer "
+                "edges than asked for (red, *asked→got*). That is why the model keeps them: deleting them, or "
+                "re-drawing until there are none, no longer gives every pairing the same chance.")
+    if st["sim"]:
+        s = st["sim"]
+        out += (f"\n\n**{s['runs']:,} pairings** of this sequence: on average **{s['loops']:.2f}** self-loops "
+                f"(expected {expected_loops(ks):.2f}) and **{s['repeats']:.2f}** parallel pairs (expected "
+                f"{expected_repeats(ks):.2f}). For big networks this is about ¼[(⟨k²⟩−⟨k⟩)/⟨k⟩]² = "
+                f"{large_n_repeats(ks):.2f} here. Newman's Eq. (12.3) gives twice that, ½[(⟨k²⟩−⟨k⟩)/⟨k⟩]²: its "
+                "derivation counts the two edges of a parallel pair in both orders.")
+    return out
+
+
+def pairing_chart():
+    if mode[0] != "Pair the stubs":
+        return None
+    ks = ks_now()
+    if st["chart"] == "sim" and st["sim"]:
+        s = st["sim"]
+        series = {"self-loops": s["dl"], "parallel pairs": s["dr"]}
+        top = max(p[1] for p in s["dl"] + s["dr"])
+        series[f"expected loops {expected_loops(ks):.1f}"] = [(expected_loops(ks), 0), (expected_loops(ks), top)]
+        series[f"expected parallel pairs {expected_repeats(ks):.1f}"] = [(expected_repeats(ks), 0),
+                                                                  (expected_repeats(ks), top)]
+        return plotLine(series, title="Self-loops and parallel pairs in many pairings", xlabel="how many in one pairing",
+                        ylabel="share of pairings", dots=true,
+                        dashed=[f"expected loops {expected_loops(ks):.1f}", f"expected parallel pairs {expected_repeats(ks):.1f}"])
+    if len(st["hist"]) < 2:
+        return None
+    M = len(st["pairs"])
+    return plotLine({"self-loops": [(t, l) for t, l, _ in st["hist"]],
+                     "parallel pairs": [(t, r) for t, _, r in st["hist"]],
+                     "expected loops (whole)": [(0, expected_loops(ks)), (M, expected_loops(ks))],
+                     "expected parallel pairs (whole)": [(0, expected_repeats(ks)), (M, expected_repeats(ks))]},
+                    title="As the stubs are paired", xlabel="pairs made", ylabel="count",
+                    dashed=["expected loops (whole)", "expected parallel pairs (whole)"])
+
+
+def simulate_pairings():
+    """Many pairings of the same sequence, in numpy: how many self-loops and repeats each one has."""
+    stop_all()
+    ks = np.array(ks_now())
+    n = len(ks)
+    stub = np.repeat(np.arange(n), np.asarray(ks, dtype=np.intp))
+    rng = np.random.default_rng(st["seed"])
+    L, R = [], []
+    for _ in range(1000):
+        p = rng.permutation(stub)
+        a, b = p[0::2], p[1::2]
+        L.append(int((a == b).sum()))
+        keep = a != b
+        code = np.minimum(a, b)[keep] * n + np.maximum(a, b)[keep]
+        _, c = np.unique(code, return_counts=True)
+        R.append(int((c * (c - 1) // 2).sum()))
+
+    def dist(xs):
+        top = max(xs)
+        return [(v, xs.count(v) / len(xs)) for v in range(top + 1)]
+    st["sim"] = {"runs": 1000, "loops": float(np.mean(L)), "repeats": float(np.mean(R)), "dl": dist(L), "dr": dist(R)}
+    st["chart"] = "sim"
+
+
+# ---- edge probability ---------------------------------------------------------------------------
+prob = {"timer": None, "runs": 0, "count": None, "loops": None, "pick": None}
+
+
+def prob_reset():
+    n = len(ks_now())
+    prob.update(runs=0, count=np.zeros((n, n)), loops=np.zeros(n), pick=prob["pick"])
+
+
+def prob_batch(k=100):
+    ks = np.array(ks_now())
+    n = len(ks)
+    stub = np.repeat(np.arange(n), np.asarray(ks, dtype=np.intp))
+    rng = np.random.default_rng(1000 + prob["runs"])
+    C = prob["count"]
+    for _ in range(k):
+        p = rng.permutation(stub)
+        a, b = p[0::2], p[1::2]
+        loop = a == b
+        np.add.at(prob["loops"], a[loop], 1)
+        np.add.at(C, (a[~loop], b[~loop]), 1)
+        np.add.at(C, (b[~loop], a[~loop]), 1)
+    prob["runs"] += k
+    show_pick()
+    return 20 - prob["runs"] // 100
+
+
+def run_prob():
+    stop_all()
+    prob_reset()
+    prob["timer"] = everyPaced(lambda: prob_batch(100), steps=20, slow=0.7, fast=0.2, ramp=2)
+
+
+def predicted(i, j):
+    ks = ks_now()
+    if i == j:
+        return ks[i] * (ks[i] - 1) / (2 * (two_m() - 1))
+    return ks[i] * ks[j] / (two_m() - 1)
+
+
+def measured(i, j):
+    if not prob["runs"]:
+        return None
+    if i == j:
+        return prob["loops"][i] / prob["runs"]
+    return prob["count"][i, j] / prob["runs"]
+
+
+def prob_click(n):
+    prob["pick"] = st["nodes"].index(n)
+    show_pick()
+
+
+def show_pick():
+    if mode[0] != "Edge probability":
+        return
+    i = prob["pick"]
+    look_nodes()
+    if i is None:
+        return
+    vals = {j: (measured(i, j) if prob["runs"] else predicted(i, j)) for j in range(len(ks_now())) if j != i}
+    top = max(vals.values()) or 1
+    best = sorted(vals, key=lambda j: -vals[j])[:5]
+    for j, v in vals.items():
+        t = v / top
+        nd = st["nodes"][j]
+        nd.color = f"{int(225 + 20 * t)},{int(225 - 90 * t)},{int(230 - 200 * t)}"
+        nd.label = f"{v:.2f}" if j in best else str(ks_now()[j])
+    me = st["nodes"][i]
+    me.color, me.strokecolor, me.strokewidth = "250,215,70", "20,20,20", 4
+
+
+def prob_text():
+    ks = ks_now()
+    out = ("Each of node i's k_i stubs has 2m − 1 others to pair with, k_j of them at node j, so i and j end up joined "
+           f"by **k_i k_j / (2m − 1)** edges on average (here 2m = {two_m()}); roughly k_i k_j / 2m, a probability "
+           "when it is small. A node with itself: k_i(k_i − 1) / 2(2m − 1).\n\n")
+    if prob["runs"]:
+        n = len(ks)
+        worst = max(abs(measured(i, j) - predicted(i, j)) for i in range(n) for j in range(i + 1, n))
+        out += (f"**{prob['runs']:,}** random pairings so far. The dots are pairs of nodes grouped by k_i k_j; they "
+                f"sit on the line. Largest gap for any one pair: **{worst:.3f}** edges.\n\n")
+    i = prob["pick"]
+    if i is None:
+        out += "*Click a node* to colour the others by how many edges join them to it."
+    else:
+        me = st["nodes"][i]
+        js = sorted((j for j in range(len(ks)) if j != i), key=lambda j: -predicted(i, j))[:5]
+        rows = ["| with | k_j | predicted | measured |", "|---|---|---|---|"]
+        for j in js:
+            m_ = measured(i, j)
+            rows.append(f"| {linkTo(st['nodes'][j])} | {ks[j]} | {predicted(i, j):.3f} | "
+                        + ("–" if m_ is None else f"{m_:.3f}") + " |")
+        m_ = measured(i, i)
+        out += (f"Node {linkTo(me)} (k = {ks[i]}): its likeliest partners (labels: edges on average).\n\n"
+                + "\n".join(rows) + f"\n\nSelf-loops at it: predicted **{predicted(i, i):.3f}**"
+                + ("" if m_ is None else f", measured **{m_:.3f}**") + ".")
+    return out
+
+
+def prob_chart():
+    if mode[0] != "Edge probability" or not prob["runs"]:
+        return None
+    ks = ks_now()
+    n = len(ks)
+    groups = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            groups.setdefault(ks[i] * ks[j], []).append(measured(i, j))
+    pts = [(kk / (two_m() - 1), sum(v) / len(v)) for kk, v in sorted(groups.items())]
+    top = max(max(p[0] for p in pts), max(p[1] for p in pts))
+    return plotScatter({"pairs, grouped by k_i k_j": pts}, title="Edges between i and j: measured against k_i k_j / (2m − 1)",
+                       xlabel="k_i k_j / (2m − 1)", ylabel="measured, on average", line=[(0, 0), (top, top)])
+
+
+# ---- expected degree (Chung-Lu) ------------------------------------------------------------------
+cl = {"timer": None, "draw": 0, "sim": None, "batches": 12}
+
+
+def chung_lu_edges(seed):
+    w = np.array(ks_now(), float)
+    n = len(w)
+    P = np.minimum(1.0, np.outer(w, w) / w.sum())
+    R = np.random.default_rng(seed).random((n, n))
+    iu = np.triu_indices(n, 1)
+    hit = R[iu] < P[iu]
+    return list(zip(iu[0][hit].tolist(), iu[1][hit].tolist()))
+
+
+def draw_chung_lu():
+    """One expected-degree network on the same nodes: edges appear in batches, nodes stay put."""
+    stop_all()
+    clearDrawings()
+    cl["draw"] += 1
+    edges = chung_lu_edges(cl["draw"])
+    remove(list(g.edges))
+    r = random.Random(cl["draw"])
+    for a, b in edges:
+        e = addEdge(st["nodes"][a], st["nodes"][b])
+        e.born = r.randint(1, cl["batches"])
+        e.color, e.width, e.linestyle = SIMPLE_EDGE, 1.6, "solid"
+    look_nodes()
+    revealUpTo(0)
+    cl["step"] = 0
+    cl["timer"] = everyPaced(cl_step, steps=cl["batches"] + 1, slow=0.6, fast=0.25, ramp=2)
+
+
+def cl_step():
+    for e in g.edges:
+        if e.linestyle == "flow":
+            e.color, e.width, e.linestyle = SIMPLE_EDGE, 1.6, "solid"
+    if cl["step"] >= cl["batches"]:
+        cl_marks()
+        return False
+    cl["step"] += 1
+    for x in revealUpTo(cl["step"]):
+        if hasattr(x, "node1"):
+            x.color, x.width, x.linestyle = NEW_EDGE, 3.5, "flow"
+    cl_marks()
+    return cl["batches"] + 1 - cl["step"]
+
+
+def cl_marks():
+    ks = ks_now()
+    for i, n in enumerate(st["nodes"]):
+        k = sum(1 for e in g.edges if e.visible and n in (e.node1, e.node2))
+        d = k - ks[i]
+        n.label = f"{ks[i]}→{k}"
+        n.color = "245,165,60" if d > 0 else ("110,160,245" if d < 0 else "200,205,215")
+        n.strokecolor, n.strokewidth = "35,45,60", (1 + min(3, abs(d)))
+
+
+def cl_text():
+    ks = ks_now()
+    out = ("Instead of pairing stubs, join every pair i, j **independently** with probability w_i w_j / Σw "
+           "(at most 1), using the degrees as weights w. Labels read *asked→got*: orange got more, blue fewer, "
+           "thicker outlines miss by more. In the configuration model every node gets **exactly** its degree; here "
+           "degrees only come out right **on average**, with a spread of about √w, like a Poisson count.\n\n")
+    if cl["draw"]:
+        exact = sum(1 for i, n in enumerate(st["nodes"]) if n.label == f"{ks[i]}→{ks[i]}")
+        out += f"In this draw **{exact}** of {len(ks)} nodes got exactly their degree.\n\n"
+    if cl["sim"]:
+        s = cl["sim"]
+        out += (f"**{s['runs']}** draws: the biggest node (w = {max(ks)}) averaged **{s['top']:.2f}** edges, a "
+                "little below w, because no probability can exceed 1 and there are no self-loops here.")
+    return out
+
+
+def simulate_cl():
+    stop_all()
+    ks = ks_now()
+    n = len(ks)
+    deg = np.zeros((200, n))
+    for r in range(200):
+        for a, b in chung_lu_edges(5000 + r):
+            deg[r, a] += 1
+            deg[r, b] += 1
+    mean, sd = deg.mean(0), deg.std(0)
+    by = {}
+    for i, w in enumerate(ks):
+        by.setdefault(w, []).append(i)
+    rows = [(w, float(np.mean(mean[ix])), float(np.mean(sd[ix]))) for w, ix in sorted(by.items())]
+    cl["sim"] = {"runs": 200, "rows": rows, "top": float(mean[int(np.argmax(ks))])}
+
+
+def cl_chart():
+    if mode[0] != "Expected degree" or not cl["sim"]:
+        return None
+    rows = cl["sim"]["rows"]
+    top = rows[-1][0]
+    return plotLine({"mean degree": [(w, m) for w, m, _ in rows],
+                     "+1 s.d.": [(w, m + s) for w, m, s in rows],
+                     "−1 s.d.": [(w, max(0, m - s)) for w, m, s in rows],
+                     "got = asked": [(0, 0), (top, top)]},
+                    title="200 expected-degree networks", xlabel="asked for (w)", ylabel="degree got", dots=true,
+                    dashed=["+1 s.d.", "−1 s.d.", "got = asked"])
+
+
+# ---- bigger networks ------------------------------------------------------------------------------
+grow = {"timer": None, "rows": [], "i": 0}
+SIZES = [50, 100, 200, 400, 800, 1600, 3200]
+
+
+def seq_for(kind, n, rng):
+    if kind == "poisson":
+        ks = rng.poisson(4, n)
+    else:
+        ks = np.minimum(n - 1, np.floor((1 - rng.random(n)) ** (-1 / 1.5))).astype(np.intp)   # p(k) ~ k^-2.5, k >= 1
+    if ks.sum() % 2:
+        ks[0] += 1
+    return ks
+
+
+def grow_step():
+    if grow["i"] >= len(SIZES):
+        return False
+    n = SIZES[grow["i"]]
+    rng = np.random.default_rng(n)
+    row = {"n": n}
+    for kind in ("poisson", "hubs"):
+        L = R = E = M = 0
+        for _ in range(20):
+            ks = seq_for(kind, n, rng)
+            stub = np.repeat(np.arange(n), np.asarray(ks, dtype=np.intp))
+            p = rng.permutation(stub)
+            a, b = p[0::2], p[1::2]
+            L += int((a == b).sum())
+            keep = a != b
+            _, c = np.unique(np.minimum(a, b)[keep] * n + np.maximum(a, b)[keep], return_counts=True)
+            R += int((c - 1).sum())                    # extra edges: a pair joined c times has c - 1 too many
+            M += len(a)
+            E += expected_loops(ks.tolist()) + expected_repeats(ks.tolist())   # when rare, parallel pairs = extras
+        row[kind] = ((L + R) / M, E / M, L / 20, R / 20)
+    grow["rows"].append(row)
+    grow["i"] += 1
+    return len(SIZES) - grow["i"]
+
+
+def run_grow():
+    stop_all()
+    grow.update(rows=[], i=0)
+    grow["timer"] = everyPaced(grow_step, slow=0.8, fast=0.3, ramp=2)
+
+
+def grow_chart():
+    if mode[0] != "Bigger networks" or len(grow["rows"]) < 2:
+        return None
+    rs = grow["rows"]
+    return plotLine({"Poisson degrees": [(r["n"], r["poisson"][0]) for r in rs],
+                     "Poisson, expected": [(r["n"], r["poisson"][1]) for r in rs],
+                     "power law (hubs)": [(r["n"], r["hubs"][0]) for r in rs]},
+                    title="Share of edges that are self-loops or extra parallel edges", xlabel="n",
+                    ylabel="share of edges", log=true, dots=true, dashed=["Poisson, expected"])
+
+
+def grow_text():
+    out = ("Self-loops and parallel edges don't grow in **number** as the network grows (as long as ⟨k²⟩ stays put), "
+           "so as a **share** of the edges they fall like 1/n: in big networks they can be ignored. With a power-law "
+           "degree distribution ⟨k²⟩ keeps growing (bigger networks have bigger hubs), so the share falls much more "
+           "slowly, and jumps about with the size of the biggest hub.\n\n"
+           "*Simulate* builds 20 networks at each size, n = 50 to 3,200, with mean degree 4 (Poisson) or "
+           "p(k) ∝ k^−2.5 from k = 1 (no degree above n − 1). Extra parallel edges: a pair joined c times counts c − 1.")
+    if grow["rows"]:
+        rows = ["| n | Poisson: loops, extras | power law: loops, extras |", "|---|---|---|"]
+        for r in grow["rows"]:
+            rows.append(f"| {r['n']:,} | {r['poisson'][2]:.1f}, {r['poisson'][3]:.1f} | "
+                        f"{r['hubs'][2]:.1f}, {r['hubs'][3]:.1f} |")
+        out += "\n\nAverage counts per network:\n\n" + "\n".join(rows)
+    return out
+
+
+# ---- tabs ---------------------------------------------------------------------------------------------
+def click(n):
+    if mode[0] == "Edge probability":
+        prob_click(n)
+
+
+def switch(title):
+    left = mode[0]
+    mode[0] = title
+    stop_all()
+    if left == "Expected degree" and title != "Expected degree":
+        restore_edges()
+    if title == "Pair the stubs":
+        if left != "Pair the stubs":
+            start_over()                  # back from another tab: the stubs again, ready to pair
+        draw_spokes()
+    elif title == "Edge probability":
+        clearDrawings()
+        all_pairs()
+        if prob["count"] is None or len(prob["count"]) != len(ks_now()):
+            prob_reset()
+        show_pick()
+    elif title == "Expected degree":
+        clearDrawings()
+        draw_chung_lu()
+    else:
+        clearDrawings()
+        all_pairs()                       # the finished network, while the simulation runs
+
+
+def choose(v):
+    prob["pick"] = None
+    build(v)
+    prob_reset()
+    cl["sim"] = None
+    st["sim"] = None
+    switch(mode[0])
+
+
+go = Button("Pair them up", onClick=lambda: play())
+picker = Dropdown(list(SEQS), label="Degrees", onChange=choose)
+picker.value = st["name"]
+graphevents.clickNode = click
+constantLabelSize(size=14)
+build()
+prob_reset()
+ui.title("The configuration model", "Networks, Section 12.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Random networks with any degrees
+Give each node one stub per edge it should have, then pair the stubs at random."""),
+        picker,
+        Tabs(
+            Tab("Pair the stubs",
+                Row(go, Button("One pair", onClick=lambda: one_pair()), Button("All at once", onClick=lambda: all_pairs())),
+                Row(Button("New shuffle", onClick=lambda: new_shuffle()),
+                    Button("Make it simple", onClick=lambda: make_simple()),
+                    Button("Simulate: 1,000 pairings", onClick=lambda: simulate_pairings())),
+                Markdown(pairing_text), Chart(pairing_chart)),
+            Tab("Edge probability",
+                Button("Simulate: 2,000 pairings", onClick=lambda: run_prob()),
+                Markdown(prob_text), Chart(prob_chart)),
+            Tab("Expected degree",
+                Row(Button("Draw another", onClick=lambda: draw_chung_lu()),
+                    Button("Simulate: 200 draws", onClick=lambda: simulate_cl())),
+                Markdown(cl_text), Chart(cl_chart)),
+            Tab("Bigger networks",
+                Button("Simulate: n = 50 to 3,200", onClick=lambda: run_grow()),
+                Markdown(grow_text), Chart(grow_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len([e for e in g.edges if e.visible])} of {len(g.edges)} edges shown"))
+center(g.nodes)

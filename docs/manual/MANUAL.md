@@ -1278,6 +1278,21 @@ makeErdosRenyiRandom(400, 0.009)
 averageClustering()
 ```
 
+To compare with a random network that has *the same degrees*, use the
+configuration model: each node gets as many stubs (half-edges) as its
+degree, and the stubs are paired at random. It keeps self-loops and repeated
+edges unless `simple=true`. `makeExpectedDegree` joins each pair
+independently with probability w_i w_j / Σw (the Chung–Lu model):
+
+```python
+makeSample("karate")
+makeConfigurationModel(degree)            # the karate club's degrees, wired at random
+averageClustering()                       # far below the real club's
+makeConfigurationModel([3, 3, 2, 2, 1, 1], seed=2)
+makeExpectedDegree([5, 4, 3, 2, 2, 1, 1, 1, 1])
+makeFromGDF("sample.gdf")
+```
+
 ## 7.7 Structure, mixing and comparing partitions
 
 These commands return sets you can colour, hide or show, or a single number:

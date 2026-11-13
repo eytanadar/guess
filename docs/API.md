@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (111)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (113)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (21)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -478,6 +478,31 @@ with one edge are always perfect (Chernobelskiy et al., GD 2011).
 
 lowest(degree, 5): the 5 with the smallest degree, smallest first
 (see highest).
+
+### `makeConfigurationModel(degrees, simple=False, seed=0)`
+
+makeConfigurationModel([3, 2, 2, 1, ...]) replaces the graph with a
+random network with exactly those degrees: each node gets that many
+"stubs" (half-edges) and the stubs are paired up uniformly at random
+(Newman, Networks, section 12.1). Some pairs make self-loops or join
+nodes already joined; simple=true deletes those afterwards (so some
+degrees come out lower). degrees can be a node field of the current
+graph, e.g. makeConfigurationModel(degree), which randomises a network
+keeping its degrees. The node field `stubs` keeps each node's intended
+degree. The degrees must add up to an even number. Returns the counts of
+self-loops and repeated edges. (GUESS's degree field counts a self-loop
+once; in the book's convention it adds 2 to the degree, which is what
+`stubs` holds.)
+
+### `makeExpectedDegree(weights, seed=0)`
+
+makeExpectedDegree([5.5, 3, 1.2, ...]) replaces the graph with a random
+network in which each pair i, j is joined independently with
+probability w_i w_j / sum(w) (at most 1), so node i's expected degree is
+about w_i: the Chung-Lu model, the configuration model's cousin with
+independent edges (Newman, Networks, section 12.1.2). weights can be a
+node field of the current graph. No self-loops or repeated edges. The
+node field `expected` keeps w.
 
 ### `makeFromCalls(target)`
 

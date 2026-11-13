@@ -268,7 +268,8 @@ class Tabs(_Container):
 
     def _receive(self, name, value):
         self._state["selected"] = value
-        return self._handlers.get("onChange")
+        # even without onChange, switching tabs runs the newly shown tab's live widgets
+        return self._handlers.get("onChange") or (lambda *a: None)
 
 
 class Tab(_Container):
@@ -635,11 +636,16 @@ class Gui:
         return None
 
     def _shown(self, w):
-        if self.root_of(w) is not None:
-            return True
+        """Whether a widget is on screen: attached to the layout or a bar, and not
+        on a tab page that isn't selected."""
         top = w
         while top.__dict__.get("_parent") is not None:
-            top = top.__dict__["_parent"]
+            parent = top.__dict__["_parent"]
+            if isinstance(top, Tab) and isinstance(parent, Tabs) and parent._state.get("selected") != top._state.get("title"):
+                return False
+            top = parent
+        if self.root_of(w) is not None:
+            return True
         return any(top in items for items in self.chrome.values())
 
     def evaluate(self, fn):
@@ -685,6 +691,8 @@ class Gui:
             w = self.widgets.get(wid)
             if w is None:
                 self.bound.pop(wid, None)
+                continue
+            if not self._shown(w):          # as for charts: a hidden tab's text waits until it is shown
                 continue
             text = self.evaluate(fn)
             if text != w._state.get("text"):

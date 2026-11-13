@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Small components",
+  "description": "In a random graph the small components are trees; their sizes follow a known law, and their mean size spikes at c = 1.",
+  "console": "toggle",
+  "script": "main.gy"
+}

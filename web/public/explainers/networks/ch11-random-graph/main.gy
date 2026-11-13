@@ -1,0 +1,375 @@
+# The random graph  (Newman, Networks, Sections 11.1-11.4)
+# G(n, p): every pair of n nodes is joined, independently, with probability p.
+# G(n, m): exactly m edges, placed on m pairs chosen uniformly at random. For
+# large n they behave alike. The mean degree is c = (n - 1)p; a node's degree
+# follows a binomial distribution, which becomes Poisson, p_k = e^-c c^k / k!,
+# when n is large. The chance that two neighbours of a node are themselves
+# joined is just p, so the clustering coefficient is C = c / (n - 1): it
+# vanishes as networks grow, unlike real networks, where C stays large.
+#
+# The network is built once, laid out once (components packed, nodes kept
+# apart), and then its edges are revealed in random order on nodes that never
+# move: revealUpTo(k) shows the edges whose `born` step is at most k.
+
+import math
+import random
+import networkx as nx
+
+st = {"n": 50, "c": 3.0, "model": "G(n, p)", "seed": 1, "edges": [], "k": 0, "timer": None,
+      "sim": None, "simtimer": None, "csim": [], "ctimer": None}
+REAL = {"Les Misérables (77 characters)": "lesmis.gdf", "Karate club (34 people)": "karate.gdf",
+        "Dolphins (62 dolphins)": "dolphins.gdf", "Florentine families (15 families)": "florentine.gdf"}
+mode = ["Build it"]
+play_btn = None                            # the play button, made with the panel below
+Node.born = 0                              # the step at which each node and edge appears (revealUpTo)
+Edge.born = 0
+
+
+def read_gdf(fname):
+    """The nodes and edges of a bundled GDF file, as a networkx graph (nothing is drawn)."""
+    G = nx.Graph()
+    part = None
+    with open(fname, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line.startswith("nodedef>"):
+                part = "n"
+                continue
+            if line.startswith("edgedef>"):
+                part = "e"
+                continue
+            if not line:
+                continue
+            cols = line.split(",")
+            if part == "n":
+                G.add_node(cols[0])
+            elif part == "e" and cols[0] != cols[1]:
+                G.add_edge(cols[0], cols[1])
+    return G
+
+
+def draw_edges(n, c, model, seed):
+    """The pairs of a G(n, p) or G(n, m) graph, in the random order they will appear."""
+    rnd = random.Random(seed)
+    p = c / (n - 1)
+    pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
+    if model == "G(n, p)":
+        chosen = [q for q in pairs if rnd.random() < p]
+    else:
+        chosen = rnd.sample(pairs, min(len(pairs), int(round(c * n / 2))))
+    rnd.shuffle(chosen)
+    return chosen
+
+
+def build(v=None):
+    stop_timers()
+    n, c = int(nslider.value), float(cslider.value)
+    st.update(n=n, c=c, k=0)
+    st["edges"] = draw_edges(n, c, st["model"], st["seed"])
+    remove(list(g.nodes))
+    nodes = [addNode(f"r{i}", label=str(i)) for i in range(n)]
+    for k, (i, j) in enumerate(st["edges"]):
+        e = addEdge(nodes[i], nodes[j])
+        e.born = k + 1
+    for v_ in nodes:
+        v_.born = 0
+    frLayout()
+    binPackLayout(false)                   # the pieces packed side by side,
+    noverlapLayout(margin=6)               # then no node on top of another
+    look()
+    center(g.nodes)                        # frame the finished network before hiding its edges
+    st["k"] = 0
+    revealUpTo(0)
+    look()
+
+
+def look():
+    deg = shown_degrees()
+    top = max(deg) if deg else 1
+    for v_ in g.nodes:
+        k = deg[int(v_.name[1:])]
+        v_.width = v_.height = 10 + 14 * math.sqrt(k / max(1, top))
+        v_.color = "150,190,240"
+        v_.strokecolor = "50,60,80"
+        v_.strokewidth = 0
+        v_.labelvisible = false
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,150", 1.3, "solid"
+    if mode[0] == "Clustering":
+        mark_triangles()
+
+
+def shown_degrees():
+    deg = [0] * st["n"]
+    for i, j in st["edges"][:st["k"]]:
+        deg[i] += 1
+        deg[j] += 1
+    return deg
+
+
+# ---- build it, edge by edge ------------------------------------------------------------------------
+def add_one():
+    if st["k"] >= len(st["edges"]):
+        return False
+    st["k"] += 1
+    look()
+    for x in revealUpTo(st["k"]):          # the new edge and its two ends, highlighted
+        if hasattr(x, "node1"):
+            x.color, x.width, x.linestyle = "245,150,40", 3.5, "flow"
+            for end in (x.node1, x.node2):
+                end.color, end.strokecolor, end.strokewidth = "255,205,90", "120,60,0", 2.5
+    return len(st["edges"]) - st["k"]
+
+
+def play():
+    if st["timer"] is not None and st["timer"].running:
+        st["timer"].stop()
+        st["timer"] = None
+        play_btn.text = "Add edges one at a time"
+        return
+    if st["k"] >= len(st["edges"]):
+        st["k"] = 0
+        revealUpTo(0)
+    st["timer"] = everyPaced(add_one, steps=len(st["edges"]) - st["k"] + 1, slow=0.7, fast=0.05, ramp=4)
+    play_btn.text = "Pause"
+
+
+def all_edges():
+    stop_timers()
+    st["k"] = len(st["edges"])
+    revealUpTo(st["k"])
+    look()
+
+
+def new_graph():
+    st["seed"] += 1
+    build()
+
+
+def pick_model(v):
+    st["model"] = v
+    build()
+
+
+def stop_timers():
+    for key in ("timer", "simtimer", "ctimer"):
+        if st[key] is not None:
+            st[key].stop()
+            st[key] = None
+    if play_btn is not None:
+        play_btn.text = "Add edges one at a time"
+
+
+def build_text():
+    n, c, k = st["n"], st["c"], st["k"]
+    total = n * (n - 1) // 2
+    p = c / (n - 1)
+    shown = 2 * k / n
+    m_all = len(st["edges"])
+    if st["model"] == "G(n, p)":
+        how = (f"Each of the **{total}** pairs got its own coin toss with p = c/(n−1) = **{p:.4f}**, so the number "
+               f"of edges is itself random: expected {p * total:.1f}, this time **{m_all}**.")
+    else:
+        how = f"Exactly **{m_all}** of the {total} pairs were chosen, all equally likely."
+    return (f"{how}\n\nShown: **{k}** of {m_all} edges; mean degree so far 2m/n = **{shown:.2f}** "
+            f"(target c = {c:g}). Node size is degree. The nodes were placed for the finished network, so they "
+            "stay put while the edges arrive.")
+
+
+# ---- degrees ---------------------------------------------------------------------------------------
+def poisson(c, k):
+    return math.exp(-c + k * math.log(c) - math.lgamma(k + 1)) if c > 0 else (1.0 if k == 0 else 0.0)
+
+
+def binomial(n, p, k):
+    if k > n:
+        return 0.0
+    return math.exp(math.lgamma(n + 1) - math.lgamma(k + 1) - math.lgamma(n - k + 1)
+                    + k * math.log(max(p, 1e-300)) + (n - k) * math.log(max(1 - p, 1e-300)))
+
+
+def degree_chart():
+    if mode[0] != "Degrees":
+        return None
+    n, c = st["n"], st["c"]
+    deg = shown_degrees() if st["k"] else [0] * n
+    kmax = max(max(deg), int(c + 4 * math.sqrt(c) + 3))
+    counts = [0] * (kmax + 1)
+    for d in deg:
+        counts[d] += 1
+    data = {"this network": [(k, counts[k] / n) for k in range(kmax + 1)],
+            "Poisson e^−c c^k / k!": [(k, poisson(c, k)) for k in range(kmax + 1)],
+            "binomial(n−1, p)": [(k, binomial(n - 1, c / (n - 1), k)) for k in range(kmax + 1)]}
+    sim = st["sim"]
+    if sim and sim["graphs"]:
+        tot = sum(sim["hist"].values())
+        data[f"{sim['graphs']} graphs, n = {sim['n']}"] = [(k, sim["hist"].get(k, 0) / tot) for k in range(kmax + 1)]
+    return plotLine(data, title="Degree distribution", xlabel="degree k", ylabel="fraction of nodes p_k", dots=true,
+                    dashed=["Poisson e^−c c^k / k!", "binomial(n−1, p)"])
+
+
+def run_degree_sim():
+    stop_timers()
+    st["sim"] = {"n": 1000, "graphs": 0, "hist": {}, "rnd": random.Random(7)}
+    st["simtimer"] = everyPaced(degree_sim_step, steps=20, slow=0.6, fast=0.15, ramp=3)
+
+
+def degree_sim_step():
+    sim = st["sim"]
+    for _ in range(5):                         # five graphs of 1000 nodes a step
+        G = nx.fast_gnp_random_graph(sim["n"], st["c"] / (sim["n"] - 1), seed=sim["rnd"].randrange(10**9))
+        for _v, d in G.degree():
+            sim["hist"][d] = sim["hist"].get(d, 0) + 1
+        sim["graphs"] += 1
+    return 100 - sim["graphs"]
+
+
+def degree_text():
+    n, c = st["n"], st["c"]
+    deg = shown_degrees()
+    mean = sum(deg) / n
+    var = sum((d - mean) ** 2 for d in deg) / n
+    out = (f"Mean degree **{mean:.2f}**, variance **{var:.2f}**. For a Poisson distribution the two are equal "
+           f"(both c = {c:g}). With n = {n} the exact distribution is binomial; already it is hard to tell from the "
+           "Poisson curve, and it gets closer as n grows. Few nodes are far from c: no hubs.")
+    sim = st["sim"]
+    if sim and sim["graphs"]:
+        tot = sum(sim["hist"].values())
+        m1 = sum(k * v for k, v in sim["hist"].items()) / tot
+        m2 = sum(k * k * v for k, v in sim["hist"].items()) / tot
+        out += (f"\n\n**Simulated:** {sim['graphs']} graphs of {sim['n']} nodes: mean **{m1:.3f}**, variance "
+                f"**{m2 - m1 * m1:.3f}**.")
+    if not st["k"]:
+        out = "*Add some edges first (the first tab), or press **Show all edges** there.*\n\n" + out
+    return out
+
+
+# ---- clustering ------------------------------------------------------------------------------------
+real_choice = [list(REAL)[0]]
+REAL_CACHE = {}
+
+
+def real_stats(name):
+    if name not in REAL_CACHE:
+        G = read_gdf(REAL[name])
+        n, m = G.number_of_nodes(), G.number_of_edges()
+        rnd = random.Random(3)
+        cs = [nx.transitivity(nx.gnm_random_graph(n, m, seed=rnd.randrange(10**9))) for _ in range(20)]
+        degs = [d for _v, d in G.degree()]
+        REAL_CACHE[name] = {"n": n, "m": m, "C": nx.transitivity(G), "Crand": sum(cs) / len(cs),
+                            "kmax": max(degs), "c": 2 * m / n}
+    return REAL_CACHE[name]
+
+
+def pick_real(v):
+    real_choice[0] = v
+
+
+def current_graph():
+    G = nx.Graph()
+    G.add_nodes_from(range(st["n"]))
+    G.add_edges_from(st["edges"][:st["k"]])
+    return G
+
+
+def mark_triangles():
+    G = current_graph()
+    tri = set()
+    for i, j in G.edges():
+        if set(G[i]) & set(G[j]):
+            tri.add((min(i, j), max(i, j)))
+    local = nx.clustering(G)
+    for v_ in g.nodes:
+        t = local[int(v_.name[1:])]
+        v_.color = f"{int(150 - 90 * t)},{int(190 + 10 * t)},{int(240 - 130 * t)}"     # light blue to green
+    for e in g.edges:
+        a, b = int(e.node1.name[1:]), int(e.node2.name[1:])
+        if (min(a, b), max(a, b)) in tri:
+            e.color, e.width = "60,200,110", 3
+
+
+def clustering_text():
+    G = current_graph()
+    n, c = st["n"], st["c"]
+    C = nx.transitivity(G) if G.number_of_edges() else 0.0
+    tris = sum(nx.triangles(G).values()) // 3
+    r = real_stats(real_choice[0])
+    rows = ["| | n | m | max degree | C | C for random edges |", "|---|---|---|---|---|---|",
+            f"| {real_choice[0].split(' (')[0]} | {r['n']} | {r['m']} | {r['kmax']} | **{r['C']:.3f}** | "
+            f"{r['Crand']:.3f} |",
+            f"| this random graph | {n} | {G.number_of_edges()} | {max(dict(G.degree()).values()) if n else 0} | "
+            f"**{C:.3f}** | {c / (n - 1):.3f} (= c/(n−1)) |"]
+    return (f"Green edges are in triangles (**{tris}** of them here); colour shows each node's local clustering. "
+            "In a random graph a node's two neighbours are joined with the same probability p as any pair, so "
+            f"C = p = c/(n−1).\n\n" + "\n".join(rows) +
+            f"\n\nThe real network has **{r['C'] / max(r['Crand'], 1e-9):.0f}×** the clustering of random graphs "
+            "with the same n and m (averaged over 20). And since c stays put while n grows, the random graph's C "
+            "falls like 1/n: see *Simulate*.")
+
+
+def run_c_sim():
+    stop_timers()
+    st["csim"] = []
+    st["ctimer"] = everyPaced(c_sim_step, steps=7, slow=0.8, fast=0.3, ramp=2)
+
+
+def c_sim_step():
+    sizes = [50, 100, 200, 400, 800, 1600, 3200]
+    i = len(st["csim"])
+    if i >= len(sizes):
+        return False
+    n = sizes[i]
+    rnd = random.Random(n)
+    vals = [nx.transitivity(nx.fast_gnp_random_graph(n, 4 / (n - 1), seed=rnd.randrange(10**9))) for _ in range(3)]
+    st["csim"].append((n, sum(vals) / len(vals)))
+    return len(sizes) - len(st["csim"])
+
+
+def c_chart():
+    if mode[0] != "Clustering":
+        return None
+    if not st["csim"]:
+        return None
+    pts = [(n, max(Cv, 1e-4)) for n, Cv in st["csim"]]
+    theory = [(n, 4 / (n - 1)) for n, _ in st["csim"]]
+    return plotLine({"measured, c = 4": pts, "c/(n−1)": theory}, title="Clustering against network size",
+                    xlabel="n", ylabel="C", log=true, dots=true, dashed=["c/(n−1)"])
+
+
+# ---- wiring ------------------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    stop_timers()
+    look()
+
+
+nslider = Slider(20, 120, 50, 5, label="nodes n")
+cslider = Slider(0.5, 8, 3, 0.5, label="mean degree c")
+nslider.onChange = build
+cslider.onChange = build
+play_btn = Button("Add edges one at a time", onClick=lambda: play())
+build()
+constantLabelSize(size=14)
+ui.title("The random graph", "Networks, Sections 11.1–11.4")
+ui.layout(
+    right=Column(
+        Markdown("""### Edges at random
+Every pair of nodes is joined by chance, independently of the rest."""),
+        Row(Dropdown(["G(n, p)", "G(n, m)"], label="Model", onChange=pick_model), nslider),
+        Row(cslider, Button("New random graph", onClick=lambda: new_graph())),
+        Tabs(
+            Tab("Build it",
+                Row(play_btn, Button("Show all edges", onClick=lambda: all_edges())),
+                Markdown(build_text)),
+            Tab("Degrees",
+                Button("Simulate: 100 graphs of 1000 nodes", onClick=lambda: run_degree_sim()),
+                Markdown(degree_text), Chart(degree_chart)),
+            Tab("Clustering",
+                Row(Dropdown(list(REAL), label="Real network", onChange=pick_real),
+                    Button("Simulate: C as n grows", onClick=lambda: run_c_sim())),
+                Markdown(clustering_text), Chart(c_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{st['n']} nodes · {st['k']} of {len(st['edges'])} edges shown · {st['model']}"))

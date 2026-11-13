@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Excess degree and the friendship paradox",
+  "description": "Follow random edges and land on hubs; your friends have more friends than you; second neighbours and clustering in the configuration model.",
+  "console": "toggle",
+  "script": "main.gy"
+}

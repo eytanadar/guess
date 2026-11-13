@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The giant component",
+  "description": "Raise the mean degree past 1 and watch a giant component form in place; S = 1 − e^(−cS), simulated and solved.",
+  "console": "toggle",
+  "script": "main.gy"
+}

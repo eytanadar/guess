@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The random graph",
+  "description": "G(n, p) and G(n, m): edges appear at random on nodes that stay put; Poisson degrees, and clustering that vanishes as n grows.",
+  "console": "toggle",
+  "script": "main.gy"
+}

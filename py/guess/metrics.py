@@ -276,5 +276,111 @@ def install(session):
         k = int(k) if float(k).is_integer() else k
         return {"alpha": round(alpha, 4), "sigma": round(sigma, 4), "kmin": k, "n": n, "ks": round(d, 4)}
 
-    for fn in (katzCentrality, structuralBalance, kComponents, bowTie, fitPowerLaw):
+    def _degrees_arg(degrees, what):
+        """A list of numbers, or a node field of the current graph (copied before it is replaced)."""
+        if isinstance(degrees, (list, tuple)):
+            vals = list(degrees)
+        else:
+            from .model import as_field
+            f = as_field(session.graph, degrees)
+            vals = [f.get(n) for n in session.graph._nodes_list()]
+        out = []
+        for v in vals:
+            if not isinstance(v, (int, float)) or isinstance(v, bool) or v < 0:
+                raise GuessError(f"{what}: values must be numbers of at least 0, got {v!r}")
+            out.append(v)
+        if not out:
+            raise GuessError(f"{what}: no values")
+        return out
+
+    def _replace_graph(n, edges, field, values, label):
+        import random as _r
+        gr = session.graph
+        gr.clear()
+        nodes = []
+        for i in range(n):
+            v = gr.addNode(f"nd{i}")
+            v.label = f"nd{i}"
+            v.x, v.y = _r.random() * 500, _r.random() * 500
+            nodes.append(v)
+        for a, b in edges:
+            gr.addEdge(nodes[a], nodes[b], False)
+        floats = any(not float(x).is_integer() for x in values)
+        f = gr.addNodeField(field, "DOUBLE" if floats else INTEGER, 0.0 if floats else 0)
+        for v, x in zip(nodes, values):
+            f.set(v, float(x) if floats else int(x))
+        session.scene()
+        if 0 < n <= 3000:
+            session.ns["frLayout"]()
+        loops = sum(1 for a, b in edges if a == b)
+        pairs = {}
+        for a, b in edges:
+            if a != b:
+                key = (min(a, b), max(a, b))
+                pairs[key] = pairs.get(key, 0) + 1
+        multi = sum(c - 1 for c in pairs.values())
+        print(f"generated {label}: {n} nodes, {len(edges)} edges ({loops} self-loops, {multi} repeated edges)")
+        return {"selfloops": loops, "multiedges": multi}
+
+    def makeConfigurationModel(degrees, simple=False, seed=0):
+        """makeConfigurationModel([3, 2, 2, 1, ...]) replaces the graph with a
+        random network with exactly those degrees: each node gets that many
+        "stubs" (half-edges) and the stubs are paired up uniformly at random
+        (Newman, Networks, section 12.1). Some pairs make self-loops or join
+        nodes already joined; simple=true deletes those afterwards (so some
+        degrees come out lower). degrees can be a node field of the current
+        graph, e.g. makeConfigurationModel(degree), which randomises a network
+        keeping its degrees. The node field `stubs` keeps each node's intended
+        degree. The degrees must add up to an even number. Returns the counts of
+        self-loops and repeated edges. (GUESS's degree field counts a self-loop
+        once; in the book's convention it adds 2 to the degree, which is what
+        `stubs` holds.)"""
+        import random as _r
+        ks = [int(round(k)) for k in _degrees_arg(degrees, "makeConfigurationModel")]
+        if sum(ks) % 2:
+            raise GuessError(f"makeConfigurationModel: the degrees add up to {sum(ks)}, an odd number; "
+                             "every edge has two ends, so the total must be even")
+        stubs = [i for i, k in enumerate(ks) for _ in range(k)]
+        _r.Random(seed).shuffle(stubs)
+        edges = [(stubs[i], stubs[i + 1]) for i in range(0, len(stubs), 2)]
+        counts = None
+        if simple:
+            seen, kept = set(), []
+            for a, b in edges:
+                key = (min(a, b), max(a, b))
+                if a != b and key not in seen:
+                    seen.add(key)
+                    kept.append((a, b))
+            counts = {"selfloops": sum(1 for a, b in edges if a == b),
+                      "multiedges": len(edges) - len(kept) - sum(1 for a, b in edges if a == b)}
+            edges = kept
+        made = _replace_graph(len(ks), edges, "stubs", ks, "makeConfigurationModel")
+        if counts is not None:
+            print(f"  simple=true removed {counts['selfloops']} self-loops and {counts['multiedges']} repeated edges")
+            return {**counts, "removed": True}
+        return made
+
+    def makeExpectedDegree(weights, seed=0):
+        """makeExpectedDegree([5.5, 3, 1.2, ...]) replaces the graph with a random
+        network in which each pair i, j is joined independently with
+        probability w_i w_j / sum(w) (at most 1), so node i's expected degree is
+        about w_i: the Chung-Lu model, the configuration model's cousin with
+        independent edges (Newman, Networks, section 12.1.2). weights can be a
+        node field of the current graph. No self-loops or repeated edges. The
+        node field `expected` keeps w."""
+        import random as _r
+        w = [float(x) for x in _degrees_arg(weights, "makeExpectedDegree")]
+        total = sum(w)
+        if total <= 0:
+            raise GuessError("makeExpectedDegree: the weights add up to 0")
+        rnd = _r.Random(seed)
+        edges = []
+        for i in range(len(w)):
+            for j in range(i + 1, len(w)):
+                if rnd.random() < min(1.0, w[i] * w[j] / total):
+                    edges.append((i, j))
+        return _replace_graph(len(w), edges, "expected", w, "makeExpectedDegree")
+
+    for fn in (katzCentrality, structuralBalance, kComponents, bowTie, fitPowerLaw, makeConfigurationModel,
+               makeExpectedDegree):
         reg(fn.__name__, fn)

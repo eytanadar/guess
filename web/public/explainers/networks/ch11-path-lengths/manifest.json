@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Path lengths, and what random graphs miss",
+  "description": "Rings around a node grow like c^s, so distances grow like ln n / ln c; but random graphs lack the clustering and hubs of real networks.",
+  "console": "toggle",
+  "script": "main.gy"
+}

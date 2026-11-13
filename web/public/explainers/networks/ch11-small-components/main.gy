@@ -1,0 +1,327 @@
+# Small components  (Newman, Networks, Section 11.6)
+# In the random graph G(n, p) with mean degree c, everything outside the giant
+# component sits in small components, and those are trees: a small component
+# of s nodes almost surely has exactly s - 1 edges, because a cycle would need
+# an extra edge among a handful of nodes, which is very unlikely when p is
+# small. The chance that a node belongs to a small component of size s is
+#     pi_s = e^(-cs) (cs)^(s-1) / s!
+# and the mean size of the small component a node belongs to is
+#     <s> = 1 / (1 - c + cS),
+# where S solves S = 1 - e^(-cS). Below c = 1 this is 1 / (1 - c), which blows
+# up as c approaches 1: the small components grow and merge into the giant one.
+
+import math
+import random
+import networkx as nx
+
+N = 250
+cnow = Slider(0.2, 3.0, 1.5, 0.1, label="mean degree c")
+world = {"G": None, "seed": 1, "comp": {}, "giant": set(), "cycles": set(), "picked": None}
+SMALLCOL = {1: "200,200,200", 2: "250,205,70", 3: "250,160,60", 4: "235,110,70"}
+
+
+# ---- theory --------------------------------------------------------------------------------------
+S_CACHE = {}
+
+
+def giant_S(c):
+    """The solution S of S = 1 - e^(-cS) (0 for c <= 1); cached, since live charts ask often."""
+    c = round(float(c), 6)
+    if c <= 1:
+        return 0.0
+    if c not in S_CACHE:
+        S = 0.8
+        for _ in range(100000):
+            new = 1 - math.exp(-c * S)
+            if abs(new - S) < 1e-12:
+                break
+            S = new
+        S_CACHE[c] = new
+    return S_CACHE[c]
+
+
+def pi_s(c, s):
+    return math.exp(-c * s + (s - 1) * math.log(c * s) - math.lgamma(s + 1))
+
+
+def mean_small(c):
+    return 1 / (1 - c + c * giant_S(c))
+
+
+def split(G, c):
+    """(giant set, list of small components). The largest component counts as giant only above c = 1."""
+    comps = sorted(nx.connected_components(G), key=len, reverse=True)
+    if c > 1 and comps:
+        return set(comps[0]), comps[1:]
+    return set(), comps
+
+
+# ---- the graph on screen -----------------------------------------------------------------------------
+def build(v=None):
+    stop_all()
+    c = float(cnow.value)
+    G = nx.fast_gnp_random_graph(N, c / (N - 1), seed=world["seed"])
+    G = nx.relabel_nodes(G, {i: f"v{i}" for i in G})
+    big, small = split(G, c)
+    comp = {}
+    for k, cc in enumerate([big] + small if big else small):
+        for x in cc:
+            comp[x] = k
+    world.update(G=G, giant=big, comp=comp, picked=None)
+    # cycles in small components (there should hardly be any)
+    world["cycles"] = set()
+    for cc in small:
+        if G.subgraph(cc).number_of_edges() >= len(cc):
+            world["cycles"] |= set(cc)
+    # each component laid out on its own, then packed side by side and pulled apart
+    for cc in ([big] if big else []) + small:
+        H = G.subgraph(cc)
+        if len(cc) == 1:
+            pos = {next(iter(cc)): (0.0, 0.0)}
+        else:
+            pos = nx.spring_layout(H, seed=2, iterations=80 if len(cc) > 30 else 50)
+        scale = 26 * math.sqrt(len(cc))
+        for x, (px, py) in pos.items():
+            G.nodes[x]["pos"] = (px * scale, py * scale)
+    fromNetworkX(G)
+    binPackLayout(false)
+    noverlapLayout(margin=4)
+    look()
+    center()
+
+
+def size_of(name):
+    G = world["G"]
+    return len(nx.node_connected_component(G, name))
+
+
+def look():
+    G = world["G"]
+    sizes = {}
+    for cc in nx.connected_components(G):
+        for x in cc:
+            sizes[x] = len(cc)
+    for v in g.nodes:
+        s = sizes[v.name]
+        v.width = v.height = 12
+        v.strokecolor = "60,60,60"
+        v.strokewidth = 0
+        v.labelvisible = false
+        if v.name in world["giant"]:
+            v.color = "110,150,215"
+        else:
+            v.color = SMALLCOL.get(s, "220,80,90")
+    for e in g.edges:
+        a = e.node1.name
+        if a in world["cycles"]:
+            e.color, e.width, e.linestyle = "230,40,40", 3, "dashed"
+        elif a in world["giant"]:
+            e.color, e.width, e.linestyle = "150,150,150,110", 1, "solid"
+        else:
+            e.color, e.width, e.linestyle = "120,120,120", 2, "solid"
+
+
+def pick(v):
+    look()
+    G = world["G"]
+    cc = nx.node_connected_component(G, v.name)
+    world["picked"] = v.name
+    for x in cc:
+        m = g.getNodeByName(x)
+        m.width = m.height = 20 if len(cc) < 40 else 14
+        m.strokecolor = "20,20,20"
+        m.strokewidth = 3
+    for e in g.edges:
+        if e.node1.name in cc:
+            e.color, e.width, e.linestyle = "235,120,30", 3, "solid"
+    v.color = "250,220,60"
+
+
+graphevents.clickNode = pick
+
+
+def screen_text():
+    G = world["G"]
+    c = float(cnow.value)
+    big, small = split(G, c)
+    S = giant_S(c)
+    ntree = sum(1 for cc in small if G.subgraph(cc).number_of_edges() == len(cc) - 1)
+    out = (f"**n = {N}**, mean degree c = **{c:.1f}**. ")
+    if big:
+        out += (f"The giant component (blue) holds **{len(big)}** nodes, {len(big) / N:.0%} of them; theory says "
+                f"S = {S:.0%}. ")
+    else:
+        out += "Below c = 1 there is no giant component, only small ones. "
+    out += (f"The other **{len(small)}** components are small (orange and red by size, grey for single nodes), and "
+            f"**{ntree}** of them are trees: s nodes, s − 1 edges.")
+    if world["cycles"]:
+        out += " The red dashed edges close a cycle, which is rare."
+    if world["picked"] is not None:
+        cc = nx.node_connected_component(G, world["picked"])
+        m = G.subgraph(cc).number_of_edges()
+        where = "the giant component" if world["picked"] in world["giant"] else "a small component"
+        kind = "a tree" if m == len(cc) - 1 else f"not a tree ({m - len(cc) + 1} cycle{'s' if m - len(cc) + 1 != 1 else ''})"
+        out += (f"\n\nClicked: {linkTo(g.getNodeByName(world['picked']))} is in {where} of **{len(cc)}** nodes and "
+                f"**{m}** edges: {kind}.")
+    else:
+        out += "\n\n*Click a node* to outline its component and count its edges."
+    return out
+
+
+def screen_chart():
+    G = world["G"]
+    c = float(cnow.value)
+    big, small = split(G, c)
+    count = {}
+    for cc in small:
+        count[len(cc)] = count.get(len(cc), 0) + len(cc)
+    top = 10
+    meas = [(s, count.get(s, 0) / N) for s in range(1, top + 1) if count.get(s, 0)]
+    theory = [(s, pi_s(c, s)) for s in range(1, top + 1)]
+    return plotLine({"this graph": meas, "formula πₛ": theory}, title="Share of nodes in small components of size s",
+                    xlabel="s", ylabel="πₛ", logY=true, dots=true, dashed=["formula πₛ"])
+
+
+def new_graph():
+    world["seed"] += 1
+    build()
+
+
+# ---- size distribution, many graphs ----------------------------------------------------------------
+BIG_N = 2000
+dist = {"timer": None, "runs": 0, "count": {}, "c": None}
+
+
+def dist_step():
+    c = float(cnow.value)
+    if dist["c"] != c:
+        dist.update(runs=0, count={}, c=c)
+    G = nx.fast_gnp_random_graph(BIG_N, c / (BIG_N - 1), seed=1000 + dist["runs"])
+    big, small = split(G, c)
+    for cc in small:
+        dist["count"][len(cc)] = dist["count"].get(len(cc), 0) + len(cc)
+    dist["runs"] += 1
+    return 40 - dist["runs"] if dist["runs"] < 40 else False
+
+
+def run_dist():
+    stop_all()
+    dist.update(runs=0, count={}, c=float(cnow.value))
+    dist["timer"] = everyPaced(dist_step, steps=40, slow=0.5, fast=0.08, ramp=3)
+
+
+def dist_chart():
+    if not dist["runs"]:
+        return None
+    c = dist["c"]
+    tot = BIG_N * dist["runs"]
+    meas = [(s, k / tot) for s, k in sorted(dist["count"].items()) if s <= 25]
+    theory = [(s, pi_s(c, s)) for s in range(1, 26)]
+    return plotLine({f"{dist['runs']} graphs of {BIG_N}": meas, "formula πₛ": theory},
+                    title=f"Small-component sizes at c = {c:.1f}", xlabel="s", ylabel="πₛ", logY=true, dots=true,
+                    dashed=["formula πₛ"])
+
+
+def dist_text():
+    c = float(cnow.value)
+    S = giant_S(c)
+    out = (f"Each run makes a random graph of **{BIG_N}** nodes with c = {c:.1f} and counts the nodes in small "
+           f"components of each size. The formula's πₛ add up to 1 − S = **{1 - S:.3f}**, the share of nodes outside "
+           "the giant component.")
+    if dist["runs"]:
+        tot = BIG_N * dist["runs"]
+        outside = sum(dist["count"].values()) / tot
+        out += f" Measured so far ({dist['runs']} graphs): **{outside:.3f}**."
+    out += ("\n\nThe tail falls off fast away from c = 1; at c = 1 it becomes a power law, s^(−3/2), and very "
+            "big \"small\" components appear.")
+    return out
+
+
+# ---- mean size, sweeping c --------------------------------------------------------------------------
+sweep = {"timer": None, "rows": [], "cs": []}
+
+
+def sweep_step():
+    if not sweep["cs"]:
+        return False
+    c = sweep["cs"].pop(0)
+    vals, Ss = [], []
+    for rep in range(3):
+        G = nx.fast_gnp_random_graph(BIG_N, c / (BIG_N - 1), seed=50 * rep + int(c * 100))
+        big, small = split(G, c)
+        num = sum(len(cc) ** 2 for cc in small)
+        den = sum(len(cc) for cc in small)
+        vals.append(num / den if den else 0)
+        Ss.append(len(big) / BIG_N)
+    sweep["rows"].append((c, sum(vals) / len(vals), sum(Ss) / len(Ss)))
+    return len(sweep["cs"]) or False
+
+
+def run_sweep():
+    stop_all()
+    sweep["rows"] = []
+    sweep["cs"] = [round(0.2 + 0.1 * i, 1) for i in range(29)]
+    sweep["timer"] = everyPaced(sweep_step, steps=29, slow=0.6, fast=0.1, ramp=3)
+
+
+def theory_cs():
+    return [0.05 * i for i in range(2, 61) if abs(0.05 * i - 1) > 0.01]
+
+
+def mean_chart():
+    pts = [(c, mean_small(c)) for c in theory_cs()]
+    series = {"<s> = 1/(1 − c + cS)": [(c, v) for c, v in pts if v < 40]}
+    if sweep["rows"]:
+        series[f"measured, n = {BIG_N}"] = [(c, m) for c, m, _ in sweep["rows"]]
+    return plotLine(series, title="Mean size of a node's small component", xlabel="c", ylabel="<s>", dots=true,
+                    dashed=["<s> = 1/(1 − c + cS)"], yrange=(0, 30))
+
+
+def S_chart():
+    series = {"S = 1 − e^(−cS)": [(c, giant_S(c)) for c in theory_cs()]}
+    if sweep["rows"]:
+        series["measured"] = [(c, S) for c, _, S in sweep["rows"]]
+    return plotLine(series, title="Giant component", xlabel="c", ylabel="S", dots=true, dashed=["S = 1 − e^(−cS)"])
+
+
+def mean_text():
+    c = float(cnow.value)
+    out = (f"At c = {c:.1f} the formula gives ⟨s⟩ = **{mean_small(c):.2f}**. Below c = 1 it is 1/(1 − c), which "
+           "goes to infinity as c → 1: the small components get bigger and bigger until they join up into the "
+           "giant component. Above 1 the giant component swallows the big ones, and the small ones left over "
+           "shrink again.")
+    if sweep["rows"]:
+        peak = max(sweep["rows"], key=lambda r: r[1])
+        out += (f"\n\nMeasured peak so far: ⟨s⟩ = **{peak[1]:.1f}** at c = {peak[0]:.1f}. In a finite network the "
+                "spike is rounded off: no component can be bigger than the network.")
+    return out
+
+
+def stop_all():
+    for st in (dist, sweep):
+        if st["timer"] is not None:
+            st["timer"].stop()
+            st["timer"] = None
+
+
+cnow.onChange = build
+build()
+constantLabelSize(size=14)
+ui.title("Small components", "Networks, Section 11.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Outside the giant component
+A random graph G(n, p). Each small component sits apart; the giant one, if
+there is one, is blue."""),
+        Row(cnow, Button("New random graph", onClick=lambda: new_graph())),
+        Tabs(
+            Tab("Trees", Markdown(screen_text), Chart(screen_chart)),
+            Tab("Size distribution", Button("Simulate: 40 graphs", onClick=lambda: run_dist()),
+                Markdown(dist_text), Chart(dist_chart)),
+            Tab("Mean size", Button("Simulate: sweep c", onClick=lambda: run_sweep()),
+                Markdown(mean_text), Chart(mean_chart), Chart(S_chart)))),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · c = {float(cnow.value):.1f}"))
+center()

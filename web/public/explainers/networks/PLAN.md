@@ -988,7 +988,7 @@ side: the formula's curve with a "Simulate" button that adds measured points.
   - a diameter chart against n.
 - *GUESS:* the configuration-model generator, `plotLine`, `encircle`.
 
-### Gaps expected in batch 7
+### Gaps in batch 7 (added before building: `makeConfigurationModel(degrees or field, simple=, seed=)` with its own stub matching, a `stubs` field and self-loop and repeated-edge counts; `makeExpectedDegree(weights)`; GUESS `degree` counts a self-loop once, while the book counts it twice)
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|
@@ -996,6 +996,108 @@ side: the formula's curve with a "Simulate" button that adds measured points.
 | Expected-degree (Chung–Lu) random graphs | ch12-configuration-model | none | `makeExpectedDegree(weights, seed=0)` |
 | Self-loops and multi-edges drawn visibly | ch12-configuration-model | self-loops are drawn; multi-edges curve apart | check how it looks with many |
 | Edge-by-edge growth on fixed nodes | ch11-random-graph | `revealUpTo` reveals nodes; edges with a `born` field are revealed too | none |
+
+## Batch 8: book pages 401–458 (Chapter 12.10–12.11 and Chapter 13.1–13.3)
+
+The mathematics behind the configuration model (generating functions),
+other random-graph models, and the first models of how networks grow:
+Price's model of citations and the Barabási–Albert model. The growth models
+follow the "growing networks" convention: build the final network, lay it out
+once, then reveal it in arrival order.
+
+**`ch12-generating-functions`: Generating functions (§§12.10.1–12.10.7)** · planned
+- *Idea:*
+  - a degree distribution can be packed into a function g₀(z) = Σ p_k z^k;
+  - moments come from its derivatives at z = 1;
+  - adding independent quantities multiplies their generating functions;
+  - g₁(z) = g₀′(z)/g₀′(1) is the excess-degree distribution;
+  - second neighbours come from g₀(g₁(z)).
+- *Reader:*
+  - choose a distribution (Poisson, exponential, power law, or a real network's);
+  - see p_k as bars and g₀(z) and g₁(z) as curves on [0, 1], with the slope at 1 marked as ⟨k⟩;
+  - "Add two" convolves p_k with itself, shown against the product g₀(z)²;
+  - a sampling check: draw a node's neighbours' excess degrees in a real network and compare with g₁.
+- *GUESS:* numpy, `plotLine(dashed=)`, `Chart`.
+
+**`ch12-small-component-sizes`: Small components from generating functions (§§12.10.8–12.10.9)** · planned
+- *Idea:*
+  - the size of the small component reached along an edge satisfies h₁(z) = z g₁(h₁(z)), and h₀(z) = z g₀(h₁(z));
+  - iterating gives the whole size distribution π_s;
+  - the mean size is 1 + g₀′(1)/(1 − g₁′(1)), which diverges at the transition.
+- *Reader:*
+  - the iteration h₁ ← z g₁(h₁) stepped (paced), with the curve converging;
+  - the predicted π_s as a dashed line against simulated small components (packed beside the giant one);
+  - a slider for the mean degree, showing the divergence near the transition.
+- *GUESS:* numpy, `makeConfigurationModel`, `binPackLayout` + `noverlapLayout`, `plotLine`.
+
+**`ch12-other-models`: Directed, bipartite and community random graphs (§§12.11.1–12.11.6)** · planned
+- *Idea:*
+  - the configuration model generalises:
+    - directed: in- and out-stubs paired;
+    - bipartite: stubs of two kinds;
+    - acyclic: edges point down a fixed order;
+    - degree-correlated;
+    - clustered: triangle "stubs";
+    - with communities: the stochastic block model.
+- *Reader:* one tab per variant, each with its generator, a picture and the property it adds.
+  - **Directed:** the bow tie appears.
+  - **Bipartite:** its projection is full of cliques.
+  - **Clustered:** C stays high as n grows.
+  - **Communities:** sliders for p_in and p_out, with the block structure visible in `showMatrix(order=block)` and found again by `louvainClusters`.
+- *GUESS:* networkx generators, `showMatrix`, `bowTie`, a stochastic block model generator (see gaps).
+
+**`ch12-small-world-model`: The small-world model (§§12.11.7–12.11.8)** · planned
+- *Idea:*
+  - a ring lattice has high clustering and long paths;
+  - rewiring a small fraction p of edges as random shortcuts collapses the path lengths while the clustering stays high;
+  - so real networks can have both.
+- *Reader:*
+  - a p slider (on a log scale) redraws the ring with shortcuts highlighted;
+  - "Rewire one by one" (paced): each shortcut flashes and the mean distance drops live;
+  - "Simulate": the classic C(p)/C(0) and L(p)/L(0) curves on a log p axis;
+  - a note on dynamic networks (§12.11.7).
+- *GUESS:* `makeWattsStrogatz`, `everyPaced`, `plotLine(logX=)`.
+
+**`ch13-price-model`: Price's model of citations (§13.1)** · planned
+- *Idea:*
+  - new papers cite c earlier papers, chosen in proportion to (in-degree + a);
+  - the in-degree distribution becomes a power law with α = 2 + a/c;
+  - the simulation trick: with probability c/(c + a) copy a citation from a random paper, otherwise pick uniformly.
+- *Reader:*
+  - the network is built first and revealed paper by paper (paced), each new paper's citations highlighted;
+  - nodes are sized by in-degree and coloured by arrival time;
+  - sliders for c and a with a live cumulative in-degree chart and its fitted α against 2 + a/c (`fitPowerLaw`);
+  - "Simulate" sweeps a.
+- *GUESS:* `revealUpTo`, `fitPowerLaw`, `plotFrequency(fit=true)`, a Price-model generator that records the step each node arrives (see gaps).
+
+**`ch13-barabasi-albert`: The Barabási–Albert model (§13.2)** · planned
+- *Idea:*
+  - undirected growth with each new node attaching to m existing nodes in proportion to degree: α = 3;
+  - without the preference (uniform attachment) the distribution is exponential.
+- *Reader:*
+  - growth revealed node by node, with the new node's links flowing;
+  - side by side: preferential against uniform attachment, with their degree distributions charted live (log–log and log-linear);
+  - the fitted α.
+- *GUESS:* `makeBarabasiAlbertRandom` (with a `born` field), `revealUpTo`, `fitPowerLaw`.
+
+**`ch13-first-mover`: Time evolution and the first-mover advantage (§13.3)** · planned
+- *Idea:*
+  - in these models the oldest nodes end up with the highest degrees: the expected degree falls with arrival time, and a node's degree grows like a power of time;
+  - early arrival matters more than anything else.
+- *Reader:*
+  - colour by arrival time and size by degree;
+  - a scatter of degree against arrival time with the theoretical curve;
+  - pick any node to follow its degree over time (paced re-growth, with the node highlighted);
+  - real data: citations by year in `vis-papers.gdf` against the model.
+- *GUESS:* `plotScatter(line=)`, `revealUpTo`.
+
+### Gaps expected in batch 8
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| Growth generators that record when each node arrived | ch13-price-model, ch13-barabasi-albert, ch13-first-mover | `makeBarabasiAlbertRandom` doesn't record arrival order; there is no Price model | `makePriceModel(n, c, a=1, seed=0)` (directed) and a `born` field from `makeBarabasiAlbertRandom` (and the aging variant) |
+| Stochastic block model | ch12-other-models | none (networkx `stochastic_block_model` works from code) | `makeBlockModel(sizes, p_in, p_out, seed=0)` with a node field `block` |
+| Clustered random graphs (triangle stubs) | ch12-other-models | none | build it in the explainer (or `makeClusteredRandom`) |
 
 ## To do (requests not yet done)
 

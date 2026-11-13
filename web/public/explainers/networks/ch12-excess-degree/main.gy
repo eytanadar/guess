@@ -1,0 +1,530 @@
+# Excess degree and the friendship paradox  (Newman, Networks, Sections 12.2–12.5)
+# Pick a node at random and its degree follows p_k. Pick an edge at random and
+# follow it: you arrive at a node with probability proportional to its degree,
+# k p_k / <k>, so the node you reach has more edges than a typical node (on
+# average <k^2>/<k> rather than <k>). Your friends have more friends than you.
+# The number of edges a node has other than the one you came along, its excess
+# degree, has distribution q_k = (k+1) p_{k+1} / <k>. In the configuration model
+# (random wiring with these degrees) this gives the number of second neighbours,
+# <k^2> - <k>, and the clustering, (<k^2> - <k>)^2 / (n <k>^3), which vanishes as
+# n grows: such networks are locally tree-like.
+
+import math
+import random
+import networkx as nx
+
+DATA = {"Les Misérables (characters)": "lesmis.gdf", "Karate club (friendships)": "karate.gdf",
+        "Dolphins (associations)": "dolphins.gdf", "Power grid region (400 stations)": "power-grid-region.gdf",
+        "Internet (300 ASes)": "internet-as-sample.gdf", "Political blogs (600-blog sample)": "polblogs-sample.gdf",
+        "US airports (routes)": "us-airports.gdf"}
+net = {"choice": None, "G": None, "k": {}, "n": 0, "m": 0, "mean": 0.0, "k2": 0.0, "random": False,
+       "names": {}, "edges": [], "byname": {}, "edge_of": {}}
+mode = ["Follow an edge"]
+
+
+def stop_all():
+    for st in (walk, compare, sim):
+        if st.get("timer") is not None:
+            st["timer"].stop()
+            st["timer"] = None
+
+
+def measure():
+    """Degrees and edges of the network on screen (direction ignored, self-loops left out)."""
+    G = toNetworkX(directed=False)
+    G.remove_edges_from(list(nx.selfloop_edges(G)))
+    k = dict(G.degree())
+    n = max(1, len(G))
+    net.update(G=G, k=k, n=len(G), m=G.number_of_edges(), mean=sum(k.values()) / n,
+               k2=sum(v * v for v in k.values()) / n, edges=list(G.edges()))
+    net["byname"] = {v.name: v for v in g.nodes}
+    net["edge_of"] = {}
+    for e in g.edges:
+        net["edge_of"].setdefault(frozenset((e.node1.name, e.node2.name)), e)
+    Node.nbrk = 0.0
+    for v in g.nodes:
+        nb = list(G[v.name]) if v.name in G else []
+        v.nbrk = sum(k[u] for u in nb) / len(nb) if nb else 0.0
+    walk.update(counts={}, total=0, last=None)
+    picked[0] = None
+
+
+def load(choice):
+    stop_all()
+    net["choice"] = choice
+    net["random"] = False
+    makeFromFile(DATA[choice])
+    if choice.startswith("US airports"):
+        geoLayout()
+    net["names"] = {v.name: (str(v.label) if v.label else v.name) for v in g.nodes}
+    measure()
+    base()
+    center()
+
+
+def short(name):
+    lab = net["names"].get(name, name)
+    return lab if len(lab) < 22 else lab[:20] + "…"
+
+
+def base():
+    kmax = max(1, max(net["k"].values() or [1]))
+    for v in g.nodes:
+        t = math.sqrt(net["k"].get(v.name, 0) / kmax)
+        v.width = v.height = 7 + 24 * t
+        v.color = "150,175,215"
+        v.strokecolor = "60,60,60"
+        v.strokewidth = 0
+        v.labelvisible = false
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,90", 1.0, "solid"
+
+
+# ---- following edges ---------------------------------------------------------------------------------
+walk = {"timer": None, "counts": {}, "total": 0, "last": None, "rnd": random.Random(4)}
+
+
+def pick_end():
+    """One random edge, one of its two ends at random: the node reached by following an edge."""
+    if not net["edges"]:
+        return None
+    rnd = walk["rnd"]
+    u, v = rnd.choice(net["edges"])
+    came, end = (u, v) if rnd.random() < 0.5 else (v, u)
+    walk["counts"][end] = walk["counts"].get(end, 0) + 1
+    walk["total"] += 1
+    return came, end
+
+
+def reached_colour(name):
+    c = walk["counts"].get(name, 0)
+    if not c:
+        return "150,175,215"
+    t = min(1.0, math.sqrt(c / max(walk["counts"].values())))
+    return f"{int(150 + 100 * t)},{int(175 - 40 * t)},{int(215 - 175 * t)}"
+
+
+def show_step(came, end):
+    """The edge just followed flows orange; the node reached is bright with a dark ring and its degree."""
+    last = walk["last"]
+    if last is not None:
+        e = net["edge_of"].get(frozenset(last))
+        if e is not None:
+            e.color, e.width, e.linestyle = "160,160,160,90", 1.0, "solid"
+        old = net["byname"].get(last[1])
+        if old is not None:
+            old.strokewidth = 0
+            old.labelvisible = false
+            old.color = reached_colour(old.name)
+    e = net["edge_of"].get(frozenset((came, end)))
+    if e is not None:
+        e.color, e.width, e.linestyle = "240,140,30", 3.5, "flow"
+    src, dst = net["byname"].get(came), net["byname"].get(end)
+    if src is not None:
+        src.color = reached_colour(came)
+    if dst is not None:
+        dst.color = "255,215,40"
+        dst.strokecolor = "30,30,30"
+        dst.strokewidth = 3
+        dst.label = f"{short(end)}  k={net['k'][end]}"
+        dst.labelvisible = true
+    walk["last"] = (came, end)
+
+
+def walk_step():
+    r = pick_end()
+    if r is None:
+        return False
+    show_step(*r)
+    return True
+
+
+def play_walk():
+    if walk["timer"] is not None and walk["timer"].running:
+        walk["timer"].stop()
+        walk["timer"] = None
+        walk_btn.text = "Follow random edges"
+        return
+    walk["timer"] = everyPaced(walk_step, steps=400, slow=0.9, fast=0.08, ramp=4)
+    walk_btn.text = "Pause"
+
+
+def walk_many():
+    if walk["timer"] is not None:
+        walk["timer"].stop()
+        walk["timer"] = None
+        walk_btn.text = "Follow random edges"
+    r = None
+    for _ in range(2000):
+        r = pick_end()
+    for v in g.nodes:
+        v.color = reached_colour(v.name)
+    if r is not None:
+        show_step(*r)
+
+
+def walk_reset():
+    if walk["timer"] is not None:
+        walk["timer"].stop()
+        walk["timer"] = None
+    walk_btn.text = "Follow random edges"
+    walk.update(counts={}, total=0, last=None)
+    base()
+
+
+def walk_text():
+    mean, k2 = net["mean"], net["k2"]
+    out = (f"A random node has on average **⟨k⟩ = {mean:.2f}** edges. Follow a random edge instead and you arrive at "
+           f"a node with probability proportional to its degree, **k p_k / ⟨k⟩**, so on average it has "
+           f"**⟨k²⟩/⟨k⟩ = {k2 / mean if mean else 0:.2f}** edges.")
+    if walk["total"]:
+        got = sum(net["k"][v] * c for v, c in walk["counts"].items()) / walk["total"]
+        out += (f"\n\nAfter **{walk['total']}** edges followed, the nodes reached have **{got:.2f}** edges on "
+                "average. Colour shows how often each node has been reached: hubs fill in first.")
+    out += (f"\n\nNot counting the edge you arrived along, the node's other edges are its **excess degree**, "
+            f"with distribution q_k = (k+1) p_(k+1) / ⟨k⟩ and mean (⟨k²⟩ − ⟨k⟩)/⟨k⟩ = "
+            f"**{(k2 - mean) / mean if mean else 0:.2f}**.")
+    return out
+
+
+def walk_chart():
+    if mode[0] != "Follow an edge" or net["n"] == 0:
+        return None
+    n, mean = net["n"], net["mean"]
+    pk = {}
+    for kk in net["k"].values():
+        pk[kk] = pk.get(kk, 0) + 1 / n
+    data = {"p_k: a random node": sorted(pk.items()),
+            "k p_k / ⟨k⟩: formula": sorted((kk, kk * p / mean) for kk, p in pk.items() if mean)}
+    if walk["total"]:
+        got = {}
+        for v, c in walk["counts"].items():
+            got[net["k"][v]] = got.get(net["k"][v], 0) + c / walk["total"]
+        data["reached along an edge"] = sorted(got.items())
+    wide = max(pk) > 40
+    return plotLine(data, title="Degree of a random node, and of a node reached along an edge",
+                    xlabel="degree k", ylabel="probability", dots=true, dashed=["k p_k / ⟨k⟩: formula"],
+                    log=wide)
+
+
+# ---- the friendship paradox -------------------------------------------------------------------------
+picked = [None]
+compare = {"timer": None, "todo": [], "rows": {}}
+
+
+def paradox_share(G):
+    k = dict(G.degree())
+    more = sum(1 for v in G if k[v] and sum(k[u] for u in G[v]) / k[v] > k[v])
+    return more / max(1, sum(1 for v in G if k[v]))
+
+
+def paint_paradox():
+    for v in g.nodes:
+        kk = net["k"].get(v.name, 0)
+        if kk == 0:
+            v.color = "200,200,200"
+        elif v.nbrk > kk:
+            v.color = "235,110,80"           # its friends have more friends than it does
+        elif v.nbrk < kk:
+            v.color = "90,150,230"
+        else:
+            v.color = "190,190,190"
+        v.strokewidth = 0
+        v.labelvisible = false
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,90", 1.0, "solid"
+
+
+def show_friends(v):
+    paint_paradox()
+    picked[0] = v.name
+    v.strokecolor, v.strokewidth = "20,20,20", 4
+    v.label = f"{short(v.name)}  k={net['k'].get(v.name, 0)}"
+    v.labelvisible = true
+    for u in net["G"][v.name] if v.name in net["G"] else []:
+        w = net["byname"][u]
+        w.strokecolor, w.strokewidth = "30,30,30", 2
+        e = net["edge_of"].get(frozenset((v.name, u)))
+        if e is not None:
+            e.color, e.width = "250,190,60", 3
+
+
+def paradox_text():
+    G = net["G"]
+    share = paradox_share(G)
+    mean = net["mean"]
+    out = (f"Red: nodes whose friends have **more** friends, on average, than they do (**{100 * share:.0f}%** of "
+           f"them); blue: fewer. A node has **{mean:.2f}** friends on average; a friend, reached along an edge, has "
+           f"**{net['k2'] / mean if mean else 0:.2f}**. Popular people are on many friend lists, so they are "
+           "over-counted.")
+    v = picked[0]
+    if v is not None and v in G:
+        nb = sorted(G[v], key=lambda u: -net["k"][u])
+        avg = sum(net["k"][u] for u in nb) / len(nb) if nb else 0
+        chips = " ".join(linkTo(net["byname"][u], f"{short(u)} {net['k'][u]}") for u in nb[:12])
+        out += (f"\n\n**{short(v)}** has **{net['k'][v]}** friends; they have **{avg:.1f}** on average: "
+                f"{chips}{' …' if len(nb) > 12 else ''}")
+    else:
+        out += "\n\n*Click a node* to see its friends and how many friends they have."
+    if compare["rows"]:
+        rows = ["| network | linked nodes | ⟨k⟩ | ⟨k²⟩/⟨k⟩ | friends more popular |", "|---|---|---|---|---|"]
+        for ch in DATA:
+            if ch in compare["rows"]:
+                n, m1, m2, sh = compare["rows"][ch]
+                rows.append(f"| {ch.split(' (')[0]} | {n} | {m1:.1f} | {m2:.1f} | {100 * sh:.0f}% |")
+        out += "\n\n" + "\n".join(rows)
+    return out
+
+
+def read_edges(fname):
+    """The edges of a bundled GDF file, read straight from the file (nothing is drawn)."""
+    G = nx.Graph()
+    inside = False
+    for line in open(fname, encoding="utf-8"):
+        if line.startswith("edgedef>"):
+            inside = True
+            continue
+        if line.startswith("nodedef>"):
+            inside = False
+            continue
+        if inside and line.strip():
+            parts = line.split(",")
+            if parts[0] != parts[1]:
+                G.add_edge(parts[0], parts[1])
+    return G
+
+
+def compare_step():
+    if not compare["todo"]:
+        return False
+    ch = compare["todo"].pop(0)
+    G = read_edges(DATA[ch])
+    k = dict(G.degree())
+    n = len(G)
+    m1 = sum(k.values()) / n
+    m2 = sum(x * x for x in k.values()) / n / m1
+    compare["rows"][ch] = (n, m1, m2, paradox_share(G))
+    return len(compare["todo"]) or False
+
+
+def run_compare():
+    if compare["timer"] is not None:
+        compare["timer"].stop()
+    compare["todo"] = [c for c in DATA if c not in compare["rows"]]
+    if compare["todo"]:
+        compare["timer"] = everyPaced(compare_step, slow=0.6, fast=0.3, ramp=1)
+
+
+def paradox_chart():
+    if mode[0] != "Friendship paradox":
+        return None
+    kmax = max(net["k"].values() or [1])
+    wide = kmax > 40
+    return plotScatter("degree", "nbrk", log=wide, line=[(1, 1), (kmax, kmax)],
+                       title="A node's degree, and its friends' average degree",
+                       xlabel="degree k", ylabel="friends' mean degree")
+
+
+# ---- second neighbours and clustering ---------------------------------------------------------------
+sim = {"timer": None, "rows": [], "sizes": [100, 200, 400, 800, 1600, 3200], "i": 0, "rnd": random.Random(9)}
+
+
+def second_neighbours(G, v):
+    first = set(G[v])
+    two = set()
+    for u in first:
+        two.update(G[u])
+    return two - first - {v}
+
+
+def clustering_numbers(G):
+    """Measured C (simple graph), the configuration-model formula, and C in random rewirings of these degrees."""
+    k = [d for _, d in G.degree()]
+    n = len(k)
+    m1 = sum(k) / n
+    m2 = sum(x * x for x in k) / n
+    formula = (m2 - m1) ** 2 / (n * m1 ** 3) if m1 else 0.0
+    real = nx.transitivity(nx.Graph(G))
+    rand = []
+    for s in range(3):
+        R = nx.Graph(nx.configuration_model(k, seed=s))
+        R.remove_edges_from(list(nx.selfloop_edges(R)))
+        rand.append(nx.transitivity(R))
+    return real, formula, sum(rand) / len(rand)
+
+
+def show_second(v):
+    base()
+    picked[0] = v.name
+    G = net["G"]
+    if v.name not in G:
+        return
+    first = set(G[v.name])
+    two = second_neighbours(G, v.name)
+    v.color, v.strokecolor, v.strokewidth = "255,215,40", "20,20,20", 4
+    v.label, v.labelvisible = f"{short(v.name)}  k={len(first)}", true
+    for u in first:
+        w = net["byname"][u]
+        w.color, w.strokecolor, w.strokewidth = "245,150,60", "60,30,0", 2
+    for u in two:
+        w = net["byname"][u]
+        w.color, w.strokecolor, w.strokewidth = "110,200,110", "20,70,20", 1.5
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        if v.name in (a, b):
+            e.color, e.width, e.linestyle = "245,150,60", 3, "flow"
+        elif (a in first and b in two) or (b in first and a in two):
+            e.color, e.width, e.linestyle = "110,200,110", 2, "flow"
+        elif a in first and b in first:
+            e.color, e.width, e.linestyle = "230,60,60", 3, "solid"     # a triangle: not tree-like
+
+
+stats_cache = {}
+
+
+def second_text():
+    if mode[0] != "Second neighbours":
+        return ""
+    G = net["G"]
+    n, mean, k2 = net["n"], net["mean"], net["k2"]
+    key = id(G)
+    if key not in stats_cache:              # three rewirings: compute once per network shown
+        stats_cache.clear()
+        stats_cache[key] = (sum(len(second_neighbours(G, v)) for v in G) / max(1, n), clustering_numbers(G))
+    c2, (real, formula, rand) = stats_cache[key]
+    what = "a random rewiring of the" if net["random"] else "the real"
+    pred = k2 - mean
+    close = c2 >= 0.85 * pred
+    out = (f"This is {what} network. Second neighbours: **{c2:.1f}** on average; the configuration model predicts "
+           f"⟨k²⟩ − ⟨k⟩ = **{pred:.1f}** (each first neighbour leads on to its excess degree). ")
+    if close:
+        out += "Close: a sparse network without big hubs behaves like the model.\n\n"
+    else:
+        out += ("That counts *paths* of two steps, which are all distinct only in a large sparse network. With "
+                f"{n} nodes and big hubs many paths end on the same nodes"
+                + (" (and friends share friends)" if not net["random"] else "")
+                + ", so there are fewer. The sparse power grid comes close.\n\n")
+    out += (f"| clustering C | value |\n|---|---|\n| this network | {real:.3f} |\n"
+           f"| configuration model, formula (⟨k²⟩−⟨k⟩)² / n⟨k⟩³ | {formula:.3f} |\n"
+           f"| configuration model, measured (3 rewirings) | {rand:.3f} |")
+    v = picked[0]
+    if v is not None and v in G:
+        first = set(G[v])
+        tri = sum(1 for a in first for b in first if a < b and G.has_edge(a, b))
+        out += (f"\n\n**{short(v)}**: {len(first)} first neighbours (orange), {len(second_neighbours(G, v))} second "
+                f"(green); **{tri}** links among its neighbours (red), each one a triangle. A locally tree-like "
+                "network has almost none.")
+    else:
+        out += "\n\n*Click a node* to see its first and second neighbours."
+    if sim["rows"]:
+        out += (f"\n\n**Simulate**: random networks with these degrees, bigger and bigger. C falls like 1/n, as the "
+                f"formula says: at n = {sim['rows'][-1][0]}, C = {sim['rows'][-1][1]:.4f} "
+                f"(formula {sim['rows'][-1][2]:.4f}).")
+    return out
+
+
+def wire_random():
+    stop_all()
+    degs = [net["k"].get(v.name, 0) for v in g.nodes]
+    if sum(degs) % 2:
+        degs[degs.index(max(degs))] += 1
+    makeConfigurationModel(degs, seed=1)
+    binPackLayout(false)
+    noverlapLayout()
+    net["names"] = {v.name: v.name for v in g.nodes}
+    measure()
+    net["random"] = True
+    base()
+    center()
+
+
+def back_real():
+    load(net["choice"])
+
+
+def sim_step():
+    i = sim["i"]
+    if i >= len(sim["sizes"]):
+        return False
+    n = sim["sizes"][i]
+    pool = [x for x in net["k"].values() if x > 0]
+    rnd = sim["rnd"]
+    k = [rnd.choice(pool) for _ in range(n)]
+    if sum(k) % 2:
+        k[0] += 1
+    R = nx.Graph(nx.configuration_model(k, seed=i))
+    R.remove_edges_from(list(nx.selfloop_edges(R)))
+    m1 = sum(k) / n
+    m2 = sum(x * x for x in k) / n
+    sim["rows"].append((n, nx.transitivity(R), (m2 - m1) ** 2 / (n * m1 ** 3)))
+    sim["i"] = i + 1
+    return len(sim["sizes"]) - sim["i"] or False
+
+
+def run_sim():
+    if sim["timer"] is not None:
+        sim["timer"].stop()
+    sim.update(rows=[], i=0, rnd=random.Random(9))
+    sim["timer"] = everyPaced(sim_step, slow=0.8, fast=0.4, ramp=2)
+
+
+def sim_chart():
+    if mode[0] != "Second neighbours" or not sim["rows"]:
+        return None
+    return plotLine({"measured C": [(n, c) for n, c, _ in sim["rows"] if c > 0],
+                     "formula (⟨k²⟩−⟨k⟩)² / n⟨k⟩³": [(n, f) for n, _, f in sim["rows"]]},
+                    title="Clustering in random networks with these degrees", xlabel="n", ylabel="C",
+                    log=true, dots=true, dashed=["formula (⟨k²⟩−⟨k⟩)² / n⟨k⟩³"])
+
+
+# ---- wiring ------------------------------------------------------------------------------------------
+def click(v):
+    if mode[0] == "Friendship paradox":
+        show_friends(v)
+    elif mode[0] == "Second neighbours":
+        show_second(v)
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    walk_btn.text = "Follow random edges"
+    if net["random"] and title != "Second neighbours":
+        load(net["choice"])
+    picked[0] = None
+    if title == "Friendship paradox":
+        paint_paradox()
+    else:
+        base()
+
+
+walk_btn = Button("Follow random edges", onClick=lambda: play_walk())
+dropdown = Dropdown(list(DATA), label="Network", onChange=load)
+graphevents.clickNode = click
+load(list(DATA)[0])
+constantLabelSize(size=14)
+ui.title("Excess degree and the friendship paradox", "Networks, Sections 12.2–12.5")
+ui.layout(
+    right=Column(
+        Markdown("""### Your friends have more friends than you
+Choosing a node and choosing an edge's end are different: edges lead to hubs."""),
+        dropdown,
+        Tabs(
+            Tab("Follow an edge",
+                Row(walk_btn, Button("2,000 at once", onClick=lambda: walk_many()),
+                    Button("Start over", onClick=lambda: walk_reset())),
+                Markdown(walk_text), Chart(walk_chart)),
+            Tab("Friendship paradox",
+                Button("Compare the networks", onClick=lambda: run_compare()),
+                Markdown(paradox_text), Chart(paradox_chart)),
+            Tab("Second neighbours",
+                Row(Button("Wire at random", onClick=lambda: wire_random()),
+                    Button("Real network", onClick=lambda: back_real()),
+                    Button("Simulate: bigger networks", onClick=lambda: run_sim())),
+                Markdown(second_text), Chart(sim_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{net['n']} nodes · {net['m']} edges · ⟨k⟩ = {net['mean']:.2f}"))
+center()

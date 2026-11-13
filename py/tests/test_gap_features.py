@@ -321,3 +321,21 @@ def test_plot_line_dashed_series():
     assert s.run("plotLine({'data': [(1, 1), (2, 3)], 'theory': [(1, 1), (2, 2)]}, title='t', dashed=['theory'])"), s.rec.of("error")
     se = _charts(s)[-1]["series"]
     assert "dash" not in se[0] and se[1]["dash"]
+
+
+def test_configuration_model_and_expected_degree():
+    s = _s()
+    ks = [3, 3, 2, 2, 2, 1, 1, 4, 2]
+    assert s.run(f"r = makeConfigurationModel({ks}, seed=3)"), s.rec.of("error")
+    # every stub is used: degrees match exactly (a self-loop counts 2)
+    assert ev(s, "sorted(n.stubs for n in g.nodes)") == sorted(ks)
+    # GUESS's degree counts a self-loop once; the book's k counts it twice
+    assert ev(s, "sum(n.degree for n in g.nodes)") + ev(s, "r")["selfloops"] == sum(ks)
+    assert ev(s, "len(g.edges)") == sum(ks) // 2
+    assert set(ev(s, "r")) == {"selfloops", "multiedges"}
+    assert s.run("makeSample('karate')\nk0 = sorted(n.degree for n in g.nodes)\nmakeConfigurationModel(degree, simple=true)")
+    assert ev(s, "len(g.nodes)") == 34 and ev(s, "all(e.node1 != e.node2 for e in g.edges)")
+    assert not s.run("makeConfigurationModel([1, 2])")              # odd total
+    assert s.run("makeExpectedDegree([4.0] * 200, seed=1)"), s.rec.of("error")
+    mean = ev(s, "sum(n.degree for n in g.nodes) / len(g.nodes)")
+    assert 3.3 < mean < 4.7 and ev(s, "g.nodes[0].expected") == 4.0

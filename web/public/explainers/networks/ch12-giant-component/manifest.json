@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The giant component with any degrees",
+  "description": "Nodes of degree 1 and 3, the Molloy–Reed condition, solving u = g₁(u), power-law networks that always percolate, and how distances grow.",
+  "console": "toggle",
+  "script": "main.gy"
+}
