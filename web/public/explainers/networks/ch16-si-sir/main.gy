@@ -1,0 +1,326 @@
+# The SI and SIR models  (Newman, Networks, Sections 16.1.1-16.1.4)
+# A fully mixed population: anyone can meet anyone. Each step every infected
+# person meets one other person picked at random, and passes the infection on
+# with probability beta if that person is susceptible. In the SIR model each
+# infected person also recovers (for good) with probability gamma per step.
+# The equations for the shares s, x, r of susceptible, infected and recovered
+# people, written step by step,
+#     s' = s - beta s x,    x' = x + beta s x - gamma x,    r' = r + gamma x,
+# give the logistic curve for SI (gamma = 0), the epidemic threshold
+# R0 = beta / gamma = 1, and the final size r = 1 - exp(-R0 r).
+
+import math
+import random
+import numpy as np
+
+SIDE = 12                      # a 12 x 12 grid of people
+N = SIDE * SIDE
+GAP = 50
+COL = {"S": "70,130,220", "I": "225,45,45", "R": "120,175,110"}
+OUTLINE = {"S": "30,60,120", "I": "90,10,10", "R": "50,90,45"}
+
+for k in range(N):
+    addNode(f"p{k}", x=(k % SIDE) * GAP, y=(k // SIDE) * GAP)
+PEOPLE = [g.getNodeByName(f"p{k}") for k in range(N)]
+
+beta_sl = Slider(0.05, 1.0, 0.5, 0.05, label="β: chance a contact infects")
+gamma_sl = Slider(0.02, 0.5, 0.15, 0.01, label="γ: chance of recovering per step")
+model_dd = Dropdown(["SIR", "SI"], label="Model")
+
+ep = {"model": "SIR", "who": [], "t": 0, "rows": [], "timer": None, "rnd": random.Random(7), "seeds": 2,
+      "new": [], "made": 0, "passed": 0, "done": False}
+
+
+def beta():
+    return float(beta_sl.value)
+
+
+def gamma():
+    return 0.0 if ep["model"] == "SI" else float(gamma_sl.value)
+
+
+def tally():
+    w = ep["who"]
+    return w.count("S"), w.count("I"), w.count("R")
+
+
+def restart():
+    stop_run()
+    r = ep["rnd"] = random.Random(7)
+    ep["who"] = ["S"] * N
+    for k in r.sample(range(N), ep["seeds"]):
+        ep["who"][k] = "I"
+    ep.update(t=0, new=[], made=0, passed=0, done=False)
+    s, i, rr = tally()
+    ep["rows"] = [(0, s / N, i / N, rr / N)]
+    clearDrawings()
+    show_people()
+
+
+def show_people(new=()):
+    for k, nd in enumerate(PEOPLE):
+        st = ep["who"][k]
+        nd.color, nd.strokecolor = COL[st], OUTLINE[st]
+        nd.width = nd.height = 30 if st == "I" else (18 if st == "R" else 22)
+        nd.strokewidth = 3 if st == "I" else 1
+        nd.labelvisible = false
+    for k in new:                                   # just infected: biggest, with a thick dark ring
+        nd = PEOPLE[k]
+        nd.width = nd.height = 38
+        nd.strokewidth = 5
+        nd.strokecolor = "40,0,0"
+
+
+def centre(nd):
+    return nd.x + nd.width / 2, nd.y + nd.height / 2
+
+
+def one_step():
+    """Every infected person meets one random other person; susceptible ones are infected with
+    probability beta; then infected people recover with probability gamma (SIR). Returns the contacts."""
+    r, who = ep["rnd"], ep["who"]
+    infected = [k for k in range(N) if who[k] == "I"]
+    contacts, new = [], []
+    for k in infected:
+        other = r.randrange(N - 1)
+        other = other + 1 if other >= k else other
+        hit = who[other] == "S" and other not in new and r.random() < beta()
+        contacts.append((k, other, hit))
+        if hit:
+            new.append(other)
+    recovered = [k for k in infected if r.random() < gamma()]
+    for k in new:
+        who[k] = "I"
+    for k in recovered:
+        who[k] = "R"
+    ep["t"] += 1
+    ep["made"] += len(contacts)
+    ep["passed"] += len(new)
+    ep["new"] = new
+    s, i, rr = tally()
+    ep["rows"].append((ep["t"], s / N, i / N, rr / N))
+    return contacts, new
+
+
+def draw_contacts(contacts):
+    clearDrawings()
+    for a, b, hit in contacts:
+        (x1, y1), (x2, y2) = centre(PEOPLE[a]), centre(PEOPLE[b])
+        if hit:
+            drawLine(x1, y1, x2, y2, color="225,45,45", width=4, arrow=true)
+        else:
+            drawLine(x1, y1, x2, y2, color="150,150,150,120", width=1.2, style="dashed")
+
+
+def step_once():
+    if ep["done"]:
+        return False
+    contacts, new = one_step()
+    show_people(new)
+    draw_contacts(contacts)
+    s, i, _r = tally()
+    if i == 0 or (ep["model"] == "SI" and s == 0) or ep["t"] >= 400:
+        ep["done"] = True
+        return False
+    return True
+
+
+def stop_run():
+    if ep["timer"] is not None:
+        ep["timer"].stop()
+        ep["timer"] = None
+    run_btn.text = "Run"
+
+
+def play():
+    if ep["timer"] is not None:
+        stop_run()
+        return
+    if ep["done"]:
+        restart()
+    ep["timer"] = everyPaced(step_once, slow=0.9, fast=0.12, ramp=4)
+    run_btn.text = "Pause"
+
+
+def finish():
+    stop_run()
+    while not ep["done"]:
+        step_once()
+
+
+def pick_model(v):
+    ep["model"] = v
+    restart()
+
+
+# ---- the equations ---------------------------------------------------------------------------
+def theory(b, gm, x0, steps):
+    s, x, r = 1.0 - x0, x0, 0.0
+    out = [(0, s, x, r)]
+    for t in range(1, steps + 1):
+        inf, rec = b * s * x, gm * x
+        s, x, r = s - inf, x + inf - rec, r + rec
+        out.append((t, s, x, r))
+    return out
+
+
+def horizon():
+    """How far to draw the equations: until the epidemic is over (or everyone is infected)."""
+    x0 = ep["seeds"] / N
+    rows = theory(beta(), gamma(), x0, 600)
+    for t, s, x, r in rows:
+        if t > 5 and (x < 0.3 / N or (ep["model"] == "SI" and s < 0.003)):
+            return max(t, ep["t"])
+    return max(600, ep["t"])
+
+
+def final_size(r0):
+    """r = 1 - exp(-R0 r): 0 below the threshold R0 = 1."""
+    if r0 <= 1:
+        return 0.0
+    r = 0.9
+    for _ in range(500):
+        r = 1 - math.exp(-r0 * r)
+    return r
+
+
+def outbreak_chart():
+    rows = ep["rows"]
+    h = horizon()
+    th = theory(beta(), gamma(), ep["seeds"] / N, h)
+    data = {"S": [(t, s) for t, s, _x, _r in rows], "I": [(t, x) for t, _s, x, _r in rows]}
+    if ep["model"] == "SIR":
+        data["R"] = [(t, r) for t, _s, _x, r in rows]
+    data["S (equations)"] = [(t, s) for t, s, _x, _r in th]
+    data["I (equations)"] = [(t, x) for t, _s, x, _r in th]
+    if ep["model"] == "SIR":
+        data["R (equations)"] = [(t, r) for t, _s, _x, r in th]
+    return plotLine(data, title=f"{ep['model']}: shares over time", xlabel="step", ylabel="share of people",
+                    yrange=(0, 1), xrange=(0, h), dashed=["S (equations)", "I (equations)", "R (equations)"])
+
+
+def outbreak_text():
+    s, i, r = tally()
+    b, gm = beta(), gamma()
+    head = (f"Step **{ep['t']}**: **{s}** susceptible, **{i}** infected" +
+            (f", **{r}** recovered" if ep["model"] == "SIR" else "") +
+            f" (of {N}). Contacts so far: {ep['made']}, of which {ep['passed']} passed it on.")
+    if ep["new"]:
+        head += " Newly infected: " + " ".join(linkTo(PEOPLE[k]) for k in ep["new"][:8]) + (
+            " …" if len(ep["new"]) > 8 else "")
+    if ep["model"] == "SI":
+        dbl = math.log(2) / math.log(1 + b) if b > 0 else float("inf")
+        return (head + f"\n\nWith no recovery everyone is infected in the end. Early on, each infected person "
+                f"infects about β = {b:.2f} others a step, so the number doubles every **{dbl:.1f}** steps; "
+                "it slows as the susceptible run out. That S-shaped curve is the **logistic** curve.")
+    r0 = b / gm
+    fs = final_size(r0)
+    verdict = ("**above the threshold**: an outbreak can take off" if r0 > 1 else
+               "**below the threshold** R₀ = 1: each case is replaced by fewer than one, so it dies out")
+    return (head + f"\n\n**R₀ = β/γ = {b:.2f}/{gm:.2f} = {r0:.2f}**: the number of people one case infects "
+            f"in a population where everyone else is susceptible. That is {verdict}. The equations predict "
+            f"that **{fs:.0%}** are infected by the end (r = 1 − e^(−R₀ r)); "
+            + (f"this run reached **{(r + i) / N:.0%}** so far." if ep["t"] else "press Run.")
+            + ("\n\nThe run usually starts later than the equations (dashed): with only two first cases, "
+               "chance decides how soon it gets going (they may recover before passing it on). Compare the "
+               "shapes and the final size, not the timing." if ep["t"] else ""))
+
+
+# ---- R0 and the final size -------------------------------------------------------------------
+sweep = {"pts": {}, "timer": None, "todo": [], "rnd": None}
+SWEEP_N = 1000
+R0S = [0.5, 0.8, 1.0, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0]
+
+
+def sim_final(r0, rng, n=SWEEP_N, gm=0.2, seeds=5):
+    """One stochastic SIR outbreak in a fully mixed population of n (the same rules, counted, not drawn)."""
+    b = min(1.0, r0 * gm)
+    S, I, R = n - seeds, seeds, 0
+    while I > 0:
+        p = 1.0 - (1.0 - b / (n - 1)) ** I         # chance a given susceptible is infected this step
+        new = rng.binomial(S, p)
+        rec = rng.binomial(I, gm)
+        S, I, R = S - new, I + new - rec, R + rec
+    return R / n
+
+
+def sweep_step():
+    if not sweep["todo"]:
+        sweep["timer"] = None
+        return False
+    r0 = sweep["todo"].pop(0)
+    sweep["pts"][r0] = [sim_final(r0, sweep["rnd"]) for _ in range(4)]
+    return bool(sweep["todo"])
+
+
+def run_sweep():
+    if sweep["timer"] is not None:
+        sweep["timer"].stop()
+    sweep.update(pts={}, todo=list(R0S), rnd=np.random.default_rng(3))
+    sweep["timer"] = everyPaced(sweep_step, steps=len(R0S), slow=0.6, fast=0.2, ramp=2)
+
+
+def sweep_chart():
+    grid = [i / 20 for i in range(0, 101)]
+    data = {"outbreaks (1,000 people)": sorted((r0, f) for r0, fs in sweep["pts"].items() for f in fs),
+            "r = 1 − e^(−R₀ r)": [(r0, final_size(r0)) for r0 in grid]}
+    if ep["model"] == "SIR" and ep["done"]:
+        s, i, r = tally()
+        data["this run"] = [(beta() / gamma(), (r + i) / N)]
+    return plotLine(data, title="Final size against R₀", xlabel="R₀ = β/γ", ylabel="share ever infected",
+                    yrange=(0, 1), xrange=(0, 5), dashed=["r = 1 − e^(−R₀ r)"], highlight=["this run"], dots=true)
+
+
+def sweep_text():
+    if not sweep["pts"]:
+        return ("Each run starts with 5 cases among 1,000 people, γ = 0.2 and β = R₀ γ. *Simulate* runs 4 "
+                "outbreaks at each R₀ and plots how many were ever infected.")
+    done = sorted(sweep["pts"])
+    low = [f for r0 in done if r0 < 1 for f in sweep["pts"][r0]]
+    high = [f for r0 in done if r0 >= 2 for f in sweep["pts"][r0]]
+    out = (f"{len(done)} of {len(R0S)} values of R₀ done. Below R₀ = 1 the outbreaks stay small "
+           f"(largest: {max(low) if low else 0:.1%}): each case infects fewer than one other on average. ")
+    if high:
+        out += (f"Above it most outbreaks reach a sizeable share, close to the curve: at R₀ ≥ 2 the runs reach "
+                f"{min(high):.0%}–{max(high):.0%}. ")
+    out += ("Near R₀ = 1 the runs scatter most: some die out early by chance even when R₀ is a little above 1. "
+            "The curve rises from 0 at the threshold: the epidemic transition is a phase transition, "
+            "like the giant component's.")
+    return out
+
+
+def sliders_changed(v=None):
+    if ep["t"] == 0:
+        show_people()
+
+
+beta_sl.onChange = sliders_changed
+gamma_sl.onChange = sliders_changed
+model_dd.onChange = pick_model
+run_btn = Button("Run", onClick=lambda: play())
+restart()
+center(g.nodes)
+constantLabelSize(size=14)
+ui.title("The SI and SIR models", "Networks, Sections 16.1.1–16.1.4")
+ui.layout(
+    right=Column(
+        Markdown("""### A fully mixed population
+144 people (dots). Each step every **infected** person (red) meets one
+person at random: a **red arrow** passes the infection on, a grey dashed
+line is a contact that didn't (the other was immune or already ill, or
+chance said no). **Blue**: susceptible; **green**: recovered."""),
+        model_dd, beta_sl, gamma_sl,
+        Tabs(
+            Tab("Outbreak",
+                Row(run_btn, Button("One step", onClick=lambda: step_once()),
+                    Button("To the end", onClick=lambda: finish()), Button("Start again", onClick=lambda: restart())),
+                Markdown(outbreak_text), Chart(outbreak_chart)),
+            Tab("R₀ and final size",
+                Button("Simulate: final size against R₀", onClick=lambda: run_sweep()),
+                Chart(sweep_chart), Markdown(sweep_text))),
+    ),
+    sizes={"right": 430},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{N} people · step {ep['t']} · {ep['model']}"))
+center(g.nodes)

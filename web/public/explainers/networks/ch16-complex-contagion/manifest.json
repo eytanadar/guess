@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Two diseases, and complex contagion",
+  "description": "Diseases that help each other spread explosively; ideas that need two contacts spread on clustered networks and stall on random ones.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Epidemics on networks",
+  "description": "SIR on contact networks: infection travels only along edges, hubs catch it first, and the network's shape sets the outbreak's size.",
+  "console": "toggle",
+  "script": "main.gy"
+}

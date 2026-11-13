@@ -39,7 +39,7 @@ def dendro_colours(merges, n, k):
         alive.add(n + i)
         size[n + i] = size[a_] + size[b_]
         members[n + i] = members[a_] + members[b_]
-    ranked = sorted(alive, key=lambda c: -size[c])
+    ranked = sorted(alive, key=lambda c: (-size[c], min(members[c])))   # as showDendrogram: ties by smallest index
     out = {}
     for j, c in enumerate(ranked):
         for x in members[c]:

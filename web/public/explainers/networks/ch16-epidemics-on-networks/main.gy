@@ -1,0 +1,548 @@
+# Epidemic models on networks  (Newman, Networks, Section 16.2)
+# In a fully mixed population anyone can infect anyone. On a network,
+# infection travels only along edges: an infected node passes the disease to
+# each susceptible neighbour with probability beta per step, and recovers
+# (for good) with probability gamma per step. Who you are connected to then
+# matters: a node with k contacts is reached about k times as often, so hubs
+# are infected early and spread widely, and the same beta and gamma give
+# different outbreaks on networks with the same number of edges.
+#
+# Three contact networks are built once, each in its own graph, and kept in
+# place; an outbreak only changes colours. The step function below follows
+# the same rules as GUESS's spread(model="SIR"): this step's infectious nodes
+# try each susceptible neighbour, then each of them recovers with
+# probability gamma, then the newly infected become infectious.
+
+import math
+import random
+
+NETS = {"Random contacts (Poisson degrees)": "random",
+        "A few hubs (power-law degrees)": "hubs",
+        "School contacts (simulated)": "school"}
+S_COL, S_LINE = "90,150,235", "30,60,120"
+I_COL, I_LINE = "235,60,50", "90,0,0"
+R_COL = "175,178,185"
+NEW_EDGE, OLD_EDGE, BASE_EDGE = "255,90,40", "235,110,80,150", "150,150,165,90"
+
+adj = {}            # graph name -> {node name: [neighbour names]}
+deg = {}            # graph name -> {node name: degree}
+sim = {"net": "random", "state": {}, "when": {}, "t": 0, "fresh": set(), "tree": set(), "curve": [],
+       "newdeg": [], "timer": None, "seed": None, "rnd": random.Random(1), "chosen": None,
+       "sweep": [], "sweeptimer": None, "cmp": {}, "cmptimer": None}
+mode = ["Outbreak"]
+
+
+# ---- the three networks, built once ---------------------------------------------------------------
+def collect(name):
+    a = {v.name: [] for v in g.nodes}
+    for e in g.edges:
+        u, w = e.node1.name, e.node2.name
+        if u != w:
+            a[u].append(w)
+            a[w].append(u)
+    adj[name] = a
+    deg[name] = {v: len(ns) for v, ns in a.items()}
+
+
+def lay_out():
+    frLayout()
+    binPackLayout(false)
+    noverlapLayout(margin=3)
+    center(g.nodes)
+
+
+def build_all():
+    r = random.Random(7)
+    # random: Poisson degrees with mean 5 (a configuration model, so it's reproducible everywhere)
+    ks = []
+    for _ in range(200):
+        L, k, p = math.exp(-5.0), 0, 1.0
+        while True:
+            p *= r.random()
+            if p <= L:
+                break
+            k += 1
+        ks.append(k)
+    if sum(ks) % 2:
+        ks[0] += 1
+    makeConfigurationModel(ks, simple=true, seed=3, layout=false)
+    lay_out()
+    renameGraph("random")
+    collect("random")
+    # hubs: power-law degrees (exponent 2.3, at least 2), also mean about 5
+    ks = []
+    while len(ks) < 200:
+        k = int(2 * (1 - r.random()) ** (-1 / 1.3))
+        if k <= 60:
+            ks.append(k)
+    if sum(ks) % 2:
+        ks[0] += 1
+    newGraph("hubs")
+    makeConfigurationModel(ks, simple=true, seed=5, layout=false)
+    lay_out()
+    collect("hubs")
+    newGraph("school")
+    makeFromFile("school-contacts-SIMULATED.gdf")
+    center(g.nodes)
+    collect("school")
+    use("random")
+
+
+def mean_degree(net):
+    ks = list(deg[net].values())
+    return sum(ks) / len(ks)
+
+
+def excess(net):
+    """<k^2>/<k>: the mean degree of a node reached by following an edge."""
+    ks = list(deg[net].values())
+    return sum(k * k for k in ks) / max(1, sum(ks))
+
+
+# ---- one outbreak, step by step -------------------------------------------------------------------
+def T_of(b, c):
+    """Transmissibility: the chance an infected node infects a given neighbour before recovering
+    (it tries once a step, then recovers with probability c)."""
+    return b / (1 - (1 - c) * (1 - b)) if b > 0 else 0.0
+
+
+def reset_outbreak():
+    stop_all()
+    net = sim["net"]
+    sim.update(state={v: "S" for v in adj[net]}, when={v: -1 for v in adj[net]}, t=0, fresh=set(), tree=set(),
+               curve=[], newdeg=[])
+    paint_net()
+
+
+def seed_outbreak(name=None):
+    net = sim["net"]
+    reset_outbreak()
+    if name is None:
+        name = sim["chosen"] or sim["rnd"].choice(sorted(adj[net]))
+    sim["seed"] = name
+    sim["state"][name] = "I"
+    sim["when"][name] = 0
+    n = len(adj[net])
+    sim["curve"].append((0, (n - 1) / n, 1 / n, 0.0))
+    sim["newdeg"].append((0, deg[net][name]))
+    paint_net()
+
+
+def step_sir():
+    net = sim["net"]
+    b, c = beta_sl.value, gamma_sl.value
+    st = sim["state"]
+    infected = [v for v, s in st.items() if s == "I"]
+    if not infected:
+        sim["fresh"] = set()
+        paint_net()
+        go_btn.text = "Start an outbreak"
+        return False
+    new, fresh = [], set()
+    taken = set()
+    for v in infected:
+        for u in adj[net][v]:
+            if st[u] == "S" and u not in taken and sim["rnd"].random() < b:
+                taken.add(u)
+                new.append(u)
+                fresh.add(frozenset((u, v)))
+    for v in infected:
+        if sim["rnd"].random() < c:
+            st[v] = "R"
+    sim["t"] += 1
+    for u in new:
+        st[u] = "I"
+        sim["when"][u] = sim["t"]
+    sim["fresh"] = fresh
+    sim["tree"] |= fresh
+    n = len(st)
+    i_ = sum(1 for s in st.values() if s == "I")
+    r_ = sum(1 for s in st.values() if s == "R")
+    sim["curve"].append((sim["t"], (n - i_ - r_) / n, i_ / n, r_ / n))
+    if new:
+        sim["newdeg"].append((sim["t"], sum(deg[net][u] for u in new) / len(new)))
+    paint_net()
+    if i_ == 0:
+        go_btn.text = "Start an outbreak"
+        return False
+    past_peak = len(sim["curve"]) > 3 and i_ < max(p[2] for p in sim["curve"]) * n
+    return max(1, i_) if past_peak and i_ < 4 else True
+
+
+def paint_net():
+    net = sim["net"]
+    st = sim["state"]
+    for v in g.nodes:
+        s = st.get(v.name, "S")
+        k = deg[net].get(v.name, 0)
+        size = 6 + 2.0 * math.sqrt(k)
+        v.labelvisible = false
+        if s == "I":
+            v.color, v.strokecolor, v.strokewidth = I_COL, I_LINE, 2.5
+            v.width = v.height = size + 7
+        elif s == "R":
+            v.color, v.strokecolor, v.strokewidth = R_COL, "120,120,125", 0.5
+            v.width = v.height = size
+        else:
+            v.color, v.strokecolor, v.strokewidth = S_COL, S_LINE, 0.8
+            v.width = v.height = size
+        if v.name == sim["seed"] or (sim["seed"] is None and v.name == sim["chosen"]):
+            v.strokecolor, v.strokewidth = "255,220,60", 4
+    for e in g.edges:
+        key = frozenset((e.node1.name, e.node2.name))
+        if key in sim["fresh"]:
+            e.color, e.width, e.linestyle = NEW_EDGE, 3.2, "flow"
+        elif key in sim["tree"]:
+            e.color, e.width, e.linestyle = OLD_EDGE, 1.6, "solid"
+        else:
+            e.color, e.width, e.linestyle = BASE_EDGE, 0.7, "solid"
+
+
+def go():
+    if sim["timer"] is not None and sim["timer"].running:
+        sim["timer"].stop()
+        sim["timer"] = None
+        go_btn.text = "Continue"
+        return
+    if go_btn.text != "Continue" or not any(s == "I" for s in sim["state"].values()):
+        seed_outbreak()
+    sim["timer"] = everyPaced(step_sir, slow=0.9, fast=0.25, ramp=4)
+    go_btn.text = "Pause"
+
+
+def one_step():
+    if not any(s == "I" for s in sim["state"].values()):
+        seed_outbreak()
+        return
+    step_sir()
+
+
+def finish_now():
+    stop_all()
+    if not any(s == "I" for s in sim["state"].values()):
+        seed_outbreak()
+    for _ in range(2000):
+        if step_sir() is False:
+            break
+    sim["fresh"] = set()
+    paint_net()
+
+
+def click_node(v):
+    sim["chosen"] = v.name
+    seed_outbreak(v.name)
+
+
+# ---- theory -----------------------------------------------------------------------------------------
+def mixed_curve(net, steps):
+    """The same rules in a fully mixed population with the same mean degree: each susceptible
+    person meets <k> others at random each step."""
+    n = len(adj[net])
+    kbar = mean_degree(net)
+    b, c = beta_sl.value, gamma_sl.value
+    s, i, r = (n - 1) / n, 1 / n, 0.0
+    out = [(0, s, i, r)]
+    for t in range(1, steps + 1):
+        new = s * (1 - (1 - b) ** (kbar * i * n / max(1, n - 1)))
+        s, i, r = s - new, i * (1 - c) + new, r + c * i
+        out.append((t, s, i, r))
+    return out
+
+
+_fs_cache = {}
+
+
+def final_size_cm(net, T):
+    """Configuration-model prediction for the share reached by a large outbreak:
+    u = 1 - T + T g1(u), S = 1 - g0(u), from the network's own degrees (cached)."""
+    key = (net, round(T, 4))
+    if key in _fs_cache:
+        return _fs_cache[key]
+    import numpy as np
+    counts = {}
+    for k in deg[net].values():
+        counts[k] = counts.get(k, 0) + 1
+    ks = np.array(sorted(counts), float)
+    pk = np.array([counts[k] for k in sorted(counts)], float)
+    pk /= pk.sum()
+    kbar = float((ks * pk).sum())
+    u = 0.0
+    for _ in range(500):
+        x = 1 - T + T * u
+        new = float((ks * pk * x ** np.maximum(ks - 1, 0)).sum() / kbar)
+        if abs(new - u) < 1e-10:
+            u = new
+            break
+        u = new
+    out = float(1 - (pk * (1 - T + T * u) ** ks).sum())
+    _fs_cache[key] = out
+    return out
+
+
+def final_size_mixed(R0):
+    if R0 <= 1:
+        return 0.0
+    s_ = 0.5
+    for _ in range(300):
+        s_ = 1 - math.exp(-R0 * s_)
+    return s_
+
+
+# ---- text and charts ----------------------------------------------------------------------------------
+def outbreak_text():
+    net = sim["net"]
+    n = len(adj[net])
+    b, c = beta_sl.value, gamma_sl.value
+    T = T_of(b, c)
+    head = (f"**{n}** people, mean degree **{mean_degree(net):.1f}**. Each step an infected person (red) "
+            f"infects each susceptible contact (blue) with probability β = {b:.2f}, then recovers (grey) with "
+            f"probability γ = {c:.2f}. So each contact is infected with chance **T = {T:.2f}** in all. "
+            "The edges each new infection travelled along flash orange, and the trail stays. Bigger nodes have "
+            "more contacts. *Click a person* to start there.")
+    if not sim["curve"]:
+        return head
+    t, s_, i_, r_ = sim["curve"][-1]
+    seed = g.getNodeByName(sim["seed"]) if sim["seed"] else None
+    line = f"\n\nStep **{t}**: {round(i_ * n)} infected, {round(r_ * n)} recovered, {round(s_ * n)} never caught it."
+    if seed is not None:
+        line += f" Started from " + linkTo(seed) + f" ({deg[net][sim['seed']]} contacts)."
+    new = [u for u in sim["when"] if sim["when"][u] == t and t > 0]
+    if new and sim["fresh"]:
+        line += " New this step: " + " ".join(linkTo(g.getNodeByName(u)) for u in new[:8]) + (" …" if len(new) > 8 else "")
+    if i_ == 0 and t > 0:
+        reached = 1 - s_
+        line += (f"\n\n**Over.** It reached **{reached:.0%}** of the network." +
+                 (" A small outbreak: it died out before taking off, which happens by chance even above the "
+                  "threshold." if reached < 0.1 else ""))
+    return head + line
+
+
+def outbreak_chart():
+    if mode[0] != "Outbreak" or not sim["curve"]:
+        return None
+    net = sim["net"]
+    steps = max(30, sim["curve"][-1][0] + 5)
+    mix = mixed_curve(net, steps)
+    return plotLine({"infected": [(t, i) for t, s_, i, r in sim["curve"]],
+                     "recovered": [(t, r) for t, s_, i, r in sim["curve"]],
+                     "infected, fully mixed": [(t, i) for t, s_, i, r in mix],
+                     "recovered, fully mixed": [(t, r) for t, s_, i, r in mix]},
+                    title="Share of people, step by step", xlabel="step", ylabel="share",
+                    dashed=["infected, fully mixed", "recovered, fully mixed"], yrange=(0, 1))
+
+
+def hubs_text():
+    net = sim["net"]
+    kb, ex = mean_degree(net), excess(net)
+    txt = (f"Following a contact leads to someone with **{ex:.1f}** contacts on average, against **{kb:.1f}** "
+           "for a person picked at random, because well-connected people turn up on more people's lists. "
+           "Infection travels along contacts, so the first people infected after the start are typically the "
+           "well connected ones, and the late ones have few contacts. The chart shows the mean number of "
+           "contacts of the people newly infected at each step of the last outbreak.")
+    if len(sim["newdeg"]) > 2:
+        early = [d for t, d in sim["newdeg"][1:4]]
+        late = [d for t, d in sim["newdeg"][-3:]]
+        txt += (f"\n\nIn the last outbreak: steps 1–3 infected people with **{sum(early) / len(early):.1f}** "
+                f"contacts on average; the last three steps, **{sum(late) / len(late):.1f}**.")
+    else:
+        txt += "\n\n*Run an outbreak (Outbreak tab, or here) to fill the chart.*"
+    return txt
+
+
+def hubs_chart():
+    if mode[0] != "Who catches it first" or len(sim["newdeg"]) < 2:
+        return None
+    net = sim["net"]
+    last = sim["newdeg"][-1][0]
+    return plotLine({"newly infected": sim["newdeg"],
+                     "everyone: <k>": [(0, mean_degree(net)), (last, mean_degree(net))],
+                     "reached along an edge: <k²>/<k>": [(0, excess(net)), (last, excess(net))]},
+                    title="Contacts of the newly infected", xlabel="step", ylabel="mean degree",
+                    dashed=["everyone: <k>", "reached along an edge: <k²>/<k>"], dots=true)
+
+
+# ---- simulate: sweep beta --------------------------------------------------------------------------
+def run_sir(net, b, c, rnd, start=None):
+    """One outbreak off screen (the same rules); returns the share reached."""
+    a = adj[net]
+    st = {v: "S" for v in a}
+    start = start or rnd.choice(sorted(a))
+    st[start] = "I"
+    infected = [start]
+    reached = 1
+    while infected:
+        new = []
+        for v in infected:
+            for u in a[v]:
+                if st[u] == "S" and rnd.random() < b:
+                    st[u] = "N"
+                    new.append(u)
+        still = []
+        for v in infected:
+            if rnd.random() < c:
+                st[v] = "R"
+            else:
+                still.append(v)
+        for u in new:
+            st[u] = "I"
+        reached += len(new)
+        infected = still + new
+    return reached / len(a)
+
+
+BETAS = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.1, 0.13, 0.16, 0.2, 0.3]
+
+
+def sweep_start():
+    stop_all()
+    sim["sweep"] = []
+    sim["sweeptimer"] = everyPaced(sweep_step, steps=len(BETAS), slow=0.5, fast=0.15, ramp=2)
+
+
+def sweep_step():
+    net = sim["net"]
+    b = BETAS[len(sim["sweep"])]
+    rnd = random.Random(100 + len(sim["sweep"]))
+    sizes = [run_sir(net, b, gamma_sl.value, rnd) for _ in range(40)]
+    big = [x for x in sizes if x > 0.15]
+    sim["sweep"].append((b, sum(big) / len(big) if big else 0.0, len(big) / len(sizes)))
+    return len(BETAS) - len(sim["sweep"])
+
+
+def sweep_text():
+    net = sim["net"]
+    c = gamma_sl.value
+    kb, ex = mean_degree(net), excess(net)
+    Tc = 1 / (ex - 1) if ex > 1 else 1
+    bc = Tc * c / (1 - Tc * (1 - c)) if Tc < 1 else 1.0
+    txt = (f"How big does an outbreak get as β rises (γ = {c:.2f})? A large outbreak needs each case to infect "
+           f"more than one other on average. On a network the threshold is set by the people reached along "
+           f"contacts: **T > ⟨k⟩/(⟨k²⟩ − ⟨k⟩) = {Tc:.3f}**, here β > **{bc:.3f}**. Fully mixed, with the same "
+           f"mean degree, it would be T⟨k⟩ > 1, β > **{(1 / kb) * c / (1 - (1 / kb) * (1 - c)):.3f}**. Hubs lower "
+           "the threshold. The dashed lines are the predictions; points are the mean size of the large outbreaks "
+           "(over 15% of people) in 40 runs at each β.")
+    if net == "school":
+        txt += (" The school network is clustered (classmates know each other), which the configuration-model "
+                "prediction ignores, so it overestimates a little: contacts' contacts are often already infected.")
+    if sim["sweep"]:
+        rows = ["| β | T | large outbreaks | mean size | predicted |", "|---|---|---|---|---|"]
+        for b, size, share in sim["sweep"]:
+            T = T_of(b, c)
+            rows.append(f"| {b:.2f} | {T:.2f} | {share:.0%} | {size:.0%} | {final_size_cm(net, T):.0%} |")
+        txt += "\n\n" + "\n".join(rows)
+    return txt
+
+
+def sweep_chart():
+    if mode[0] != "Simulate":
+        return None
+    net = sim["net"]
+    c = gamma_sl.value
+    bs = [i / 100 for i in range(1, 31)]
+    series = {"network prediction": [(b, final_size_cm(net, T_of(b, c))) for b in bs],
+              "fully mixed": [(b, final_size_mixed(T_of(b, c) * mean_degree(net))) for b in bs]}
+    if sim["sweep"]:
+        series["simulated"] = [(b, size) for b, size, share in sim["sweep"]]
+    return plotLine(series, title="Size of a large outbreak against β", xlabel="β", ylabel="share reached",
+                    dashed=["network prediction", "fully mixed"], highlight=["simulated"], yrange=(0, 1))
+
+
+# ---- compare the networks ----------------------------------------------------------------------------
+def compare_start():
+    stop_all()
+    sim["cmp"] = {}
+    sim["cmptimer"] = everyPaced(compare_step, steps=len(NETS), slow=0.4, fast=0.2, ramp=1)
+
+
+def compare_step():
+    todo = [net for net in NETS.values() if net not in sim["cmp"]]
+    net = todo[0]
+    rnd = random.Random(9)
+    sizes = [run_sir(net, beta_sl.value, gamma_sl.value, rnd) for _ in range(60)]
+    big = [x for x in sizes if x > 0.15]
+    sim["cmp"][net] = (sum(sizes) / len(sizes), len(big) / len(sizes), sum(big) / len(big) if big else 0.0)
+    return len(todo) - 1
+
+
+def compare_text():
+    b, c = beta_sl.value, gamma_sl.value
+    T = T_of(b, c)
+    rows = ["| network | n | ⟨k⟩ | ⟨k²⟩/⟨k⟩ | threshold T | large outbreaks | their size |",
+            "|---|---|---|---|---|---|---|"]
+    for label, net in NETS.items():
+        ex = excess(net)
+        Tc = 1 / (ex - 1) if ex > 1 else 1
+        if net in sim["cmp"]:
+            mean, share, size = sim["cmp"][net]
+            got = f"{share:.0%} | {size:.0%}"
+        else:
+            got = "– | –"
+        rows.append(f"| {label.split(' (')[0]} | {len(adj[net])} | {mean_degree(net):.1f} | {ex:.1f} | {Tc:.3f} | {got} |")
+    return (f"The same disease (β = {b:.2f}, γ = {c:.2f}, so T = {T:.2f}) on three networks. The random and "
+            "hub networks have the same number of people and nearly the same number of contacts; the hubs "
+            "make ⟨k²⟩ larger, so the threshold lower. *Compare* runs 60 outbreaks on each.\n\n" + "\n".join(rows))
+
+
+# ---- wiring -----------------------------------------------------------------------------------------------
+def stop_all():
+    for key in ("timer", "sweeptimer", "cmptimer"):
+        if sim[key] is not None:
+            sim[key].stop()
+            sim[key] = None
+    if go_btn.text == "Pause":
+        go_btn.text = "Continue"
+
+
+def pick_net(label):
+    stop_all()
+    sim["net"] = NETS[label]
+    sim["chosen"] = None
+    sim["seed"] = None
+    sim["sweep"] = []
+    use(sim["net"])
+    constantLabelSize(size=14)
+    reset_outbreak()
+    go_btn.text = "Start an outbreak"
+
+
+def switch(title):
+    mode[0] = title
+    if title != "Outbreak" and sim["timer"] is not None and sim["timer"].running:
+        go()
+
+
+go_btn = Button("Start an outbreak", onClick=lambda: go())
+beta_sl = Slider(0.01, 0.5, 0.1, 0.01, label="β, infection per contact per step")
+gamma_sl = Slider(0.05, 1, 0.2, 0.05, label="γ, recovery per step")
+build_all()
+closeGraph("main") if "main" in graphNames() else None
+reset_outbreak()
+graphevents.clickNode = click_node
+constantLabelSize(size=14)
+ui.title("Epidemics on networks", "Networks, Section 16.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Infection travels along edges
+SIR on a contact network. Blue: susceptible. Red: infected. Grey: recovered."""),
+        Dropdown(list(NETS), label="Network", onChange=pick_net),
+        beta_sl, gamma_sl,
+        Tabs(
+            Tab("Outbreak",
+                Row(go_btn, Button("One step", onClick=lambda: one_step()),
+                    Button("To the end", onClick=lambda: finish_now())),
+                Markdown(outbreak_text), Chart(outbreak_chart)),
+            Tab("Who catches it first",
+                Row(Button("Run an outbreak to the end", onClick=lambda: finish_now())),
+                Markdown(hubs_text), Chart(hubs_chart)),
+            Tab("Simulate",
+                Button("Simulate: sweep β", onClick=lambda: sweep_start()),
+                Chart(sweep_chart), Markdown(sweep_text)),
+            Tab("Compare networks",
+                Button("Compare the three networks", onClick=lambda: compare_start()),
+                Markdown(compare_text)),
+            onChange=switch)),
+    sizes={"right": 440},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{sim['net']}: {len(adj[sim['net']])} people · step {sim['t']}"))
+center()

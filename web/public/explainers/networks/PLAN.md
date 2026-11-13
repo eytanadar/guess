@@ -1233,7 +1233,7 @@ Community detection beyond modularity: description length, statistical
 inference, edge betweenness and hierarchical clustering. Then how to test
 the algorithms, and structures other than communities.
 
-**`ch14-infomap`: Communities as codes for random walks (§14.3)** · planned
+**`ch14-infomap`: Communities as codes for random walks (§14.3)** · built
 - *Idea:*
   - a random walker stays inside communities for long stretches;
   - naming communities and then nodes within them describes the walk in fewer bits;
@@ -1245,7 +1245,7 @@ the algorithms, and structures other than communities.
   - drag nodes between groups to see the code length change.
 - *GUESS:* `infomapClusters`, `everyPaced`, a map-equation calculation in Python.
 
-**`ch14-sbm-inference`: Community detection by statistical inference (§14.4)** · planned
+**`ch14-sbm-inference`: Community detection by statistical inference (§14.4)** · built
 - *Idea:*
   - fit a stochastic block model by maximum likelihood;
   - the plain SBM tends to split networks into hubs and periphery (the karate club!), so the degree-corrected SBM is needed;
@@ -1257,7 +1257,7 @@ the algorithms, and structures other than communities.
   - block-model matrices for each fit.
 - *GUESS:* an SBM fitter (see gaps), `showMatrix(order=)`, `compareClusters`.
 
-**`ch14-girvan-newman`: Betweenness-based division (§14.5.1)** · planned
+**`ch14-girvan-newman`: Betweenness-based division (§14.5.1)** · built
 - *Idea:*
   - edges between communities carry many shortest paths;
   - removing the highest-betweenness edge repeatedly (and recomputing) breaks the network into its communities;
@@ -1269,7 +1269,7 @@ the algorithms, and structures other than communities.
   - the dendrogram building up beside it.
 - *GUESS:* `edgeBetweennessClusters`, edge `betweenness`, a dendrogram chart (see gaps).
 
-**`ch14-hierarchical-clustering`: Hierarchical clustering (§14.5.2)** · planned
+**`ch14-hierarchical-clustering`: Hierarchical clustering (§14.5.2)** · built
 - *Idea:*
   - measure how similar each pair of nodes is (e.g. cosine similarity), then merge the most similar groups step by step;
   - single, complete and average linkage give different trees;
@@ -1281,7 +1281,7 @@ the algorithms, and structures other than communities.
   - single linkage's "chaining" shown on a network where it fails.
 - *GUESS:* `cutDendrogram`, `encircle`, numpy and SciPy-free linkage in Python, a dendrogram chart (see gaps).
 
-**`ch14-measuring-performance`: Testing community detection (§14.6)** · planned
+**`ch14-measuring-performance`: Testing community detection (§14.6)** · built
 - *Idea:*
   - test on real networks with known groups (the karate club), but mostly on artificial benchmarks with planted communities (planted partition, LFR);
   - compare found and planted groups with normalized mutual information;
@@ -1293,7 +1293,7 @@ the algorithms, and structures other than communities.
   - a table for the karate club.
 - *GUESS:* `makeBlockModel`, an LFR generator (see gaps), the clustering commands, `compareClusters`.
 
-**`ch14-other-structure`: Overlapping, hierarchical, core–periphery and ranked structure (§14.7)** · planned
+**`ch14-other-structure`: Overlapping, hierarchical, core–periphery and ranked structure (§14.7)** · built
 - *Idea:* communities aren't the only large-scale structure:
   - groups overlap (link communities);
   - groups nest (hierarchy);
@@ -1314,6 +1314,16 @@ the algorithms, and structures other than communities.
 | Fitting a stochastic block model (plain and degree-corrected) | ch14-sbm-inference, ch14-other-structure | `blockmodel` finds structural-equivalence positions, which is not SBM inference | `fitBlockModel(k, degreeCorrected=True, sweeps=, seed=)`: Monte Carlo maximum likelihood, field `sbm_class`, returning the log-likelihood |
 | LFR benchmark networks | ch14-measuring-performance | `makeBlockModel` (planted partition) only | `makeLFR(n, tau1, tau2, mu, ...)` via networkx, with a `community` field |
 | Core–periphery and ranking | ch14-other-structure | none | `corePeriphery()` (a two-block fit with a `core` field) and `rankNodes()` (SpringRank-style, field `rank`) |
+
+Notes from building batch 10:
+- **`showDendrogram`:**
+  - `paint=true` colours the nodes to match the tree's groups;
+  - groups of one node are grey in both chart and graph;
+  - tied group sizes are ordered by smallest node index, so colours are predictable;
+  - the "N groups" label sits at the left.
+- **networkx's random generators** (e.g. `planted_partition_graph`) give different graphs for the same seed in the browser and natively (different networkx versions). GUESS's own generators (`makeBlockModel`, `makeConfigurationModel`, `makeLFR`'s seed handling aside) are reproducible, so prefer them.
+- **`labelPropagationClusters`, `infomapClusters` and `walktrapClusters` need igraph,** which loads in the background in the browser. Explainers skip them with a note until it's ready, or use networkx equivalents.
+- **On the karate club,** the degree-corrected block-model optimum (−739.4) beats the true split (−743.2) and misplaces nodes 8 and 9. The explainers say so.
 
 ## Batch 11: book pages 568–624 (Chapter 15, *Percolation and network resilience*, and Chapter 16.1–16.2)
 
@@ -1404,13 +1414,76 @@ slow-fast-slow, and chart the epidemic curve live.
   - networks: random, power-law, the school contacts.
 - *GUESS:* `spread(model="SIR")` (with its timeline), or the explainer's own step function, and `everyPaced`.
 
-### Gaps expected in batch 11
+### Gaps in batch 11 (added before building: `percolation(order, bond=, trials=)`, Newman–Ziff with union-find (site or bond; random, degree or field order; matches S = φs with s = 1 − e^{−cφs}); `spread` and `outbreaks` with SIS, SIRS (`waning=`) and SEIR (`sigma=`; its counts carry `.exposed`))
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|
 | Newman–Ziff percolation: the whole S(φ) curve in one pass, for site or bond percolation, random or ordered | ch15-percolation-algorithms, ch15-random-failure | `robustness` recomputes components at each removal share | `percolation(order="random", bond=False, trials=1, show=True)` → [(φ, S)], with union-find; `robustness` could use it |
 | SIS, SIRS and SEIR on networks | ch16-sis-sirs, ch16-epidemics-on-networks | `spread` has SI, SIR, cascade and threshold | add `model="SIS"`, `"SIRS"` (`waning=`) and `"SEIR"` (`sigma=`) to `spread` |
 | Fully mixed compartmental curves | ch16-si-sir, ch16-sis-sirs | none (numpy is enough) | probably none; the explainers integrate the equations |
+
+## Batch 12: book pages 625–674 (the rest of Chapter 16, *Epidemics on networks*)
+
+How big an outbreak gets (it maps onto percolation), what happens with two
+diseases, and how epidemics unfold in time on networks, compared with the
+pair and degree-based approximations. Every simulation shows its
+transmissions on the edges, runs slow-fast-slow, and charts the theory dashed.
+
+**`ch16-outbreak-percolation`: Outbreak sizes and percolation (§§16.3.1–16.3.2)** · planned
+- *Idea:*
+  - in the SIR model each edge transmits at most once, with probability T (the transmissibility), so the final outbreak is a cluster of bond percolation with occupation probability T;
+  - large outbreaks happen only above T_c = ⟨k⟩/(⟨k²⟩ − ⟨k⟩), and their size is the giant cluster's;
+  - below T_c, outbreaks are small, and above it they are either small or large (bimodal).
+- *Reader:*
+  - "Flip every edge's coin first": the occupied edges are drawn and the cluster around the first case lights up, which is exactly where the outbreak goes;
+  - then run the same outbreak (paced) to show it matches;
+  - a T slider;
+  - "Simulate": the outbreak-size histogram at a few T values (bimodal above T_c), and the large-outbreak size and probability against T with the configuration-model theory dashed;
+  - Poisson against heavy-tailed degrees (T_c near 0).
+- *GUESS:* `percolation(bond=true)`, `outbreaks`, `makeConfigurationModel`, a fixed infectious period (see gaps).
+
+**`ch16-two-diseases`: Coexisting diseases and coinfection (§§16.3.3–16.3.5)** · planned
+- *Idea:*
+  - with cross-immunity, a second disease can spread only on the network the first one left (the residual network), so it may fail even with a high T;
+  - with coinfection (one disease helps the other) the transition becomes discontinuous;
+  - complex contagion's analysis via the same percolation picture.
+- *Reader:*
+  - **Cross-immunity tab:** disease 1 runs, its survivors stay highlighted, then disease 2 runs on the residual network (paced). A chart of disease 2's size against T₂, with and without disease 1.
+  - **Coinfection tab:** a sweep shows the jump.
+  - Builds on `ch16-complex-contagion` from batch 11, without repeating it.
+- *GUESS:* `spread` with `immune=`, `outbreaks`, `plotLine(dashed=)`.
+
+**`ch16-si-in-time`: The SI model in time (§§16.4–16.5)** · planned
+- *Idea:*
+  - on a network the SI epidemic grows at first like e^{βκ₁t}, set by the leading eigenvalue of A, not like e^{β⟨k⟩t};
+  - the order in which nodes are infected follows eigenvector centrality;
+  - the pair approximation and the degree-based approximation predict the curve, the latter much better on heterogeneous networks.
+- *Reader:*
+  - SI from one seed (paced), with each infection's edge flashing and infected nodes sized by infection time;
+  - live charts: the infected fraction against the fully mixed, pair and degree-based predictions (dashed);
+  - a scatter of infection time against eigenvector centrality (`plotScatter`);
+  - networks: random, power-law and the political blogs.
+- *GUESS:* `spread(model="SI")`, numpy ODEs, eigenvector centrality.
+
+**`ch16-sir-sis-in-time`: SIR and SIS in time (§§16.6–16.7)** · planned
+- *Idea:*
+  - the degree-based approximation for SIR gives the epidemic curve and the threshold;
+  - for SIS it gives an endemic state where each degree class has its own prevalence (hubs are almost always infected), and on heavy-tailed networks the threshold vanishes.
+- *Reader:*
+  - a model toggle;
+  - a live simulation with nodes coloured by state and edges flashing;
+  - curves against the degree-based solution (dashed);
+  - for SIS, a chart of endemic prevalence against degree (scatter of time spent infected against degree, against the formula);
+  - "Simulate" sweeps β to show the threshold for Poisson against power-law degrees.
+- *GUESS:* `spread(model="SIR"|"SIS")`, numpy ODEs, `plotScatter`, `plotLine(dashed=)`.
+
+### Gaps expected in batch 12
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| A fixed infectious period, so SIR maps exactly onto bond percolation | ch16-outbreak-percolation | `spread` recovers with probability gamma per step (a geometric infectious period) | `spread(..., duration=k)`: infected for exactly k steps; T = 1 − (1 − β)^k |
+| Time spent infected per node (for SIS prevalence by degree) | ch16-sir-sis-in-time | `spread` stores the first infection step and the final state | an `infected_steps` field (steps spent infected) |
+| Degree-based ODE solutions | ch16-si-in-time, ch16-sir-sis-in-time | none | the explainers integrate them with numpy; probably no command |
 
 ## To do (requests not yet done)
 

@@ -1,0 +1,616 @@
+# Percolation, computed fast  (Newman, Networks, Sections 15.4-15.5)
+# Removing nodes one share at a time and recomputing the components each time
+# is slow. Newman and Ziff turned it around: start from nothing and add the
+# nodes back one at a time, in random order. Each newcomer joins the clusters
+# of the neighbours already present, and a union-find structure (every node
+# points towards a root that names its cluster) merges them almost for free.
+# One pass gives the size of the largest cluster for every occupation
+# probability phi at once. Adding edges instead of nodes gives bond
+# percolation. GUESS's percolation() is the same algorithm.
+
+import math
+import random
+import csv
+import networkx as nx
+
+NN = 60                          # nodes in the network built step by step
+MEAN_DEG = 3.0
+PAL = ["78,121,167", "89,161,79", "176,122,161", "242,142,43", "118,183,178", "237,201,72",
+       "156,117,95", "255,157,167", "134,188,182", "186,176,172"]
+BIG = "225,87,89"                # the largest cluster
+LONE = "190,192,200"             # nodes on their own
+
+net = {"seed": 4, "names": [], "edges": [], "edge_obj": {}, "nbrs": []}
+run = {"mode": "Nodes (site percolation)", "order": "Random order", "oseed": 1, "seq": [], "events": [],
+       "k": 0, "timer": None, "avg": None}
+
+
+# ---- the network ---------------------------------------------------------------------------------
+def build():
+    """A random network of NN nodes and about NN * MEAN_DEG / 2 edges, from Python's own random
+    numbers (the same in the browser and here), laid out once."""
+    stop_all()
+    r = random.Random(net["seed"])
+    m = int(round(NN * MEAN_DEG / 2))
+    pairs = set()
+    while len(pairs) < m:
+        a, b = r.randrange(NN), r.randrange(NN)
+        if a != b:
+            pairs.add((min(a, b), max(a, b)))
+    remove(list(g.nodes))
+    clearDrawings()
+    removeConvexHulls()
+    Node.born = 0
+    Edge.born = 0
+    names = [f"p{i}" for i in range(NN)]
+    for nm in names:
+        addNode(nm)
+    edge_obj = {}
+    for a, b in sorted(pairs):
+        edge_obj[(a, b)] = addEdge(g.getNodeByName(names[a]), g.getNodeByName(names[b]))
+    nbrs = [[] for _ in range(NN)]
+    for a, b in pairs:
+        nbrs[a].append(b)
+        nbrs[b].append(a)
+    net.update(names=names, edges=sorted(pairs), edge_obj=edge_obj, nbrs=nbrs)
+    for v in g.nodes:
+        v.width = v.height = 18
+        v.labelvisible = false
+    frLayout()
+    noverlapLayout(margin=8)
+    run["avg"] = None
+    new_order()
+    center(g.nodes)
+
+
+def node(i):
+    return g.getNodeByName(net["names"][i])
+
+
+def centre(v):
+    return v.x + v.width / 2, v.y + v.height / 2
+
+
+# ---- the order, and the whole run of union-find events ---------------------------------------------
+def bond():
+    return run["mode"].startswith("Edges")
+
+
+def new_order(v=None):
+    """Choose the order things come back in, and set every node's and edge's `born` step to match."""
+    stop_all()
+    r = random.Random(run["oseed"])
+    if bond():
+        seq = list(range(len(net["edges"])))
+        r.shuffle(seq)
+    elif run["order"].startswith("Hubs"):
+        deg = [len(x) for x in net["nbrs"]]
+        seq = sorted(range(NN), key=lambda i: (deg[i], r.random()))    # hubs come back last
+    else:
+        seq = list(range(NN))
+        r.shuffle(seq)
+    run["seq"] = seq
+    turn = {it: k + 1 for k, it in enumerate(seq)}
+    if bond():
+        for i in range(NN):
+            node(i).born = 0
+        for j, (a, b) in enumerate(net["edges"]):
+            net["edge_obj"][(a, b)].born = turn[j]
+    else:
+        for i in range(NN):
+            node(i).born = turn[i]
+        for (a, b), e in net["edge_obj"].items():
+            e.born = max(turn[a], turn[b])            # an edge is there once both its ends are
+    run["events"] = replay_all(seq)
+    run["avg"] = None
+    show_step(0)
+
+
+def find(par, x):
+    """The root of x's cluster, with path halving; returns (root, pointers followed)."""
+    hops = 0
+    while par[x] != x:
+        par[x] = par[par[x]]
+        x = par[x]
+        hops += 1
+    return x, hops
+
+
+def replay_all(seq):
+    """Run the whole algorithm once, recording what each step did."""
+    par = list(range(NN))
+    size = [1] * NN
+    present = [bond()] * NN
+    biggest = 1 if bond() else 0
+    events = []
+    for it in seq:
+        if bond():
+            a, b = net["edges"][it]
+            links = [(a, b)]
+            newcomer = None
+        else:
+            present[it] = True
+            biggest = max(biggest, 1)
+            links = [(it, j) for j in net["nbrs"][it] if present[j]]
+            newcomer = it
+        merged, hops = [], 0
+        for a, b in links:
+            ra, ha = find(par, a)
+            rb, hb = find(par, b)
+            hops += ha + hb
+            if ra != rb:
+                if size[ra] < size[rb]:
+                    ra, rb = rb, ra
+                merged.append((size[ra], size[rb]))
+                par[rb] = ra
+                size[ra] += size[rb]
+                biggest = max(biggest, size[ra])
+        root, _h = find(par, links[0][0] if links else newcomer)
+        events.append({"item": it, "links": links, "merged": merged, "hops": hops, "root": root,
+                       "biggest": biggest, "size": size[root]})
+    return events
+
+
+def clusters_at(k):
+    """The clusters after k steps: {root: [members]} among the nodes present."""
+    par = list(range(NN))
+    present = [bond()] * NN
+    for it in run["seq"][:k]:
+        if bond():
+            links = [net["edges"][it]]
+        else:
+            present[it] = True
+            links = [(it, j) for j in net["nbrs"][it] if present[j]]
+        for a, b in links:
+            ra, _ = find(par, a)
+            rb, _ = find(par, b)
+            if ra != rb:
+                par[rb] = ra
+    out = {}
+    for i in range(NN):
+        if present[i]:
+            out.setdefault(find(par, i)[0], []).append(i)
+    return out
+
+
+# ---- drawing a step ----------------------------------------------------------------------------------
+def show_step(k):
+    run["k"] = k
+    revealUpTo(k)
+    clearDrawings()
+    removeConvexHulls()
+    cl = clusters_at(k)
+    ranked = sorted(cl.values(), key=lambda m: (-len(m), min(m)))
+    colour = {}
+    for j, members in enumerate(ranked):
+        c = BIG if j == 0 and len(members) > 1 else (LONE if len(members) == 1 else PAL[(j - 1) % len(PAL)])
+        for i in members:
+            colour[i] = c
+    for i in range(NN):
+        v = node(i)
+        v.color = colour.get(i, LONE)
+        v.width = v.height = 18
+        v.strokecolor = "60,60,60"
+        v.strokewidth = 0
+        v.labelvisible = false
+    for e in net["edge_obj"].values():
+        e.color, e.width, e.linestyle = "150,150,150,150", 1.2, "solid"
+    ev_ = run["events"][k - 1] if k else None
+    newest_cluster = None
+    if ev_ is not None:
+        root = node(ev_["root"])
+        if bond():
+            a, b = ev_["links"][0]
+            e = net["edge_obj"][(min(a, b), max(a, b))]
+            e.color, e.width, e.linestyle = "250,150,30", 5, "flow"
+            for i in (a, b):
+                node(i).strokecolor, node(i).strokewidth = "20,20,20", 3
+            src = node(b)
+        else:
+            v = node(ev_["item"])
+            v.width = v.height = 28
+            v.strokecolor, v.strokewidth = "20,20,20", 4
+            v.labelvisible = true
+            v.label = "new"
+            for a, b in ev_["links"]:
+                e = net["edge_obj"][(min(a, b), max(a, b))]
+                e.color, e.width, e.linestyle = "250,150,30", 4, "flow"
+            src = v
+        if src is not root:                    # the newcomer joined someone else's cluster: show its root
+            root.strokecolor, root.strokewidth = "250,200,40", 5
+            root.labelvisible = true
+            root.label = "root"
+            x1, y1 = centre(src)
+            x2, y2 = centre(root)
+            drawLine(x1, y1, x2, y2, color="250,200,40", width=3, style="dashed", arrow=true)
+        newest_cluster = ev_["root"]
+    # one hull: around the cluster that just grew (colour shows the others; hulls for all would pile up)
+    for members in ranked:
+        if newest_cluster is not None and newest_cluster in members and len(members) >= 3:
+            encircle([node(i) for i in members], shape="hull", color=colour[members[0]] + ",90", padding=14)
+
+
+def step_text():
+    k, total = run["k"], len(run["seq"])
+    what = "edges" if bond() else "nodes"
+    if k == 0:
+        return (f"Nothing is there yet: **{total} {what}** will come back one at a time, "
+                + ("in random order." if bond() or run["order"].startswith("Random")
+                   else "the biggest hubs last (the reverse of an attack on the hubs).")
+                + " Press *Add them back*.")
+    ev_ = run["events"][k - 1]
+    phi = k / total
+    head = f"Step **{k}** of {total}: φ = **{phi:.2f}** of the {what} present. "
+    if bond():
+        a, b = ev_["links"][0]
+        e = net["edge_obj"][(min(a, b), max(a, b))]
+        part = f"Edge {linkTo(e)} came back. "
+    else:
+        v = node(ev_["item"])
+        nb = [node(j) for a, j in ev_["links"]]
+        part = (f"Node {linkTo(v)} came back"
+                + (f", next to {' '.join(linkTo(x) for x in nb)}. " if nb else ", with no neighbour present yet. "))
+    if ev_["merged"]:
+        sizes = " + ".join(f"{b_}" for _a, b_ in ev_["merged"])
+        part += (f"It joined clusters ({ev_['merged'][0][0]} + {sizes}) into one of **{ev_['size']}**: each merge "
+                 "just points the smaller cluster's root at the larger one's (the dashed arrow points to the root). ")
+    elif bond():
+        part += "Both ends were already in the same cluster, so nothing changed. "
+    else:
+        part += "It starts a cluster of its own. "
+    part += (f"Finding the roots took **{ev_['hops']}** pointer step{'' if ev_['hops'] == 1 else 's'}. "
+             f"Largest cluster: **{ev_['biggest']}** nodes "
+             f"(S = {ev_['biggest'] / NN:.2f}).")
+    return head + part
+
+
+# ---- playing it --------------------------------------------------------------------------------------
+def one_more():
+    if run["k"] >= len(run["seq"]):
+        return False
+    show_step(run["k"] + 1)
+    return len(run["seq"]) - run["k"]
+
+
+def play():
+    if run["timer"] is not None:
+        stop_all()
+        return
+    if run["k"] >= len(run["seq"]):
+        show_step(0)
+    run["timer"] = everyPaced(one_more, slow=0.9, fast=0.12)
+    play_btn.text = "Pause"
+
+
+def stop_all():
+    if run["timer"] is not None:
+        run["timer"].stop()
+        run["timer"] = None
+    try:
+        play_btn.text = "Add them back"
+    except NameError:
+        pass
+
+
+def all_at_once():
+    stop_all()
+    show_step(len(run["seq"]))
+
+
+def restart():
+    stop_all()
+    show_step(0)
+
+
+def reshuffle():
+    run["oseed"] += 1
+    new_order()
+
+
+def set_mode(v):
+    run["mode"] = v
+    new_order()
+
+
+def set_order(v):
+    run["order"] = v
+    if not bond():
+        new_order()
+
+
+def average_curve():
+    """GUESS's percolation() on this network: the same algorithm, averaged over many orders."""
+    if run["avg"] is None:
+        if bond():
+            run["avg"] = percolation(bond=true, trials=200, show=false)
+        elif run["order"].startswith("Hubs"):
+            run["avg"] = percolation("degree", show=false)
+        else:
+            run["avg"] = percolation(trials=200, show=false)
+    return run["avg"]
+
+
+def step_chart():
+    total = len(run["seq"])
+    mine = [(0.0, (1 / NN) if bond() else 0.0)] + [((j + 1) / total, e["biggest"] / NN)
+                                                  for j, e in enumerate(run["events"][:run["k"]])]
+    label = "percolation(), 200 random orders" if (bond() or run["order"].startswith("Random")) else \
+        "percolation('degree')"
+    return plotLine({"this order": mine, label: average_curve()}, title="Largest cluster as things come back",
+                    xlabel="φ, share present", ylabel="S", dashed=[label], yrange=(0, 1), xrange=(0, 1))
+
+
+# ---- bigger networks: the threshold sharpens ------------------------------------------------------------
+big = {"rows": [], "timer": None, "sizes": [100, 400, 1600, 6400], "i": 0}
+
+
+def nz_curve(n, pairs, order_items, site=True, points=60):
+    """Newman-Ziff on a plain edge list: the largest cluster / n after each addition (thinned)."""
+    nbrs = [[] for _ in range(n)]
+    for a, b in pairs:
+        nbrs[a].append(b)
+        nbrs[b].append(a)
+    par = list(range(n))
+    size = [1] * n
+    present = [not site] * n
+    biggest = 0 if site else 1
+    out = [(0.0, 0.0 if site else 1 / n)]
+    total = len(order_items)
+    every = max(1, total // points)
+    for k, it in enumerate(order_items, 1):
+        if site:
+            present[it] = True
+            biggest = max(biggest, 1)
+            links = [(it, j) for j in nbrs[it] if present[j]]
+        else:
+            links = [pairs[it]]
+        for a, b in links:
+            ra, _ = find(par, a)
+            rb, _ = find(par, b)
+            if ra != rb:
+                if size[ra] < size[rb]:
+                    ra, rb = rb, ra
+                par[rb] = ra
+                size[ra] += size[rb]
+                biggest = max(biggest, size[ra])
+        if k % every == 0 or k == total:
+            out.append((k / total, biggest / n))
+    return out
+
+
+def theory(c, phis):
+    """Site percolation on a Poisson random graph: S = phi s with s = 1 - exp(-c phi s)."""
+    out = []
+    for phi in phis:
+        s_ = 1.0
+        for _ in range(400):
+            s_ = 1 - math.exp(-c * phi * s_)
+        out.append((phi, phi * s_))
+    return out
+
+
+def big_step():
+    i = big["i"]
+    if i >= len(big["sizes"]):
+        big["timer"] = None
+        big_btn.text = "Simulate: bigger networks"
+        return False
+    n = big["sizes"][i]
+    r = random.Random(100 + i)
+    m = int(round(n * MEAN_DEG / 2))
+    pairs = set()
+    while len(pairs) < m:
+        a, b = r.randrange(n), r.randrange(n)
+        if a != b:
+            pairs.add((min(a, b), max(a, b)))
+    pairs = sorted(pairs)
+    curves = []
+    for t in range(3):
+        seq = list(range(n))
+        r.shuffle(seq)
+        curves.append(nz_curve(n, pairs, seq))
+    avg = [(curves[0][j][0], sum(cv[j][1] for cv in curves) / 3) for j in range(len(curves[0]))]
+    big["rows"].append((n, avg))
+    big["i"] = i + 1
+    return len(big["sizes"]) - big["i"]
+
+
+def simulate_big():
+    if big["timer"] is not None:
+        return
+    big.update(rows=[], i=0)
+    big["timer"] = everyPaced(big_step, slow=0.8, fast=0.5, ramp=1)
+    big_btn.text = "Simulating…"
+
+
+def big_chart():
+    series = {f"n = {n}": pts for n, pts in big["rows"]}
+    series["theory (n → ∞)"] = theory(MEAN_DEG, [j / 100 for j in range(101)])
+    return plotLine(series, title=f"Random networks, mean degree {MEAN_DEG:g}", xlabel="φ, share of nodes present",
+                    ylabel="S", dashed=["theory (n → ∞)"], yrange=(0, 1), xrange=(0, 1))
+
+
+def big_text():
+    base = (f"The same algorithm on random networks of mean degree c = {MEAN_DEG:g}. Theory for large networks: no "
+            f"giant cluster below φ_c = 1/c = **{1 / MEAN_DEG:.3f}**, and above it S = φs with s = 1 − e^(−cφs). "
+            "Each curve is one pass of the algorithm per order (3 orders each): no recomputing components, so even "
+            "6,400 nodes take a moment.")
+    if not big["rows"]:
+        return base + "\n\n*Press Simulate.*"
+    lines = ["| n | S at φ = 0.25 | S at φ = 0.5 | S at φ = 1 |", "|---|---|---|---|"]
+    for n, pts in big["rows"]:
+        at = lambda p: min(pts, key=lambda q: abs(q[0] - p))[1]
+        lines.append(f"| {n} | {at(0.25):.3f} | {at(0.5):.3f} | {at(1.0):.3f} |")
+    th = dict(theory(MEAN_DEG, [0.25, 0.5, 1.0]))
+    lines.append(f"| theory | {th[0.25]:.3f} | {th[0.5]:.3f} | {th[1.0]:.3f} |")
+    return (base + "\n\n" + "\n".join(lines) + "\n\nBelow the threshold the largest cluster shrinks towards 0 as n "
+            "grows; above it, it settles on the theory curve. Small networks blur the transition.")
+
+
+# ---- real networks --------------------------------------------------------------------------------------
+DATA = {"Karate club": "karate.gdf", "Dolphins": "dolphins.gdf", "Les Misérables": "lesmis.gdf",
+        "Power grid (400 stations)": "power-grid-region.gdf", "Internet (300 ASes)": "internet-as-sample.gdf",
+        "Political blogs (600)": "polblogs-sample.gdf"}
+real = {"pick": "Power grid (400 stations)", "cache": {}, "table": {}, "timer": None, "todo": []}
+
+
+def read_gdf(path):
+    """The edges of a GDF file as plain integer pairs (direction ignored)."""
+    names, pairs, part = {}, set(), None
+    with open(path, encoding="utf-8") as fh:
+        for row in csv.reader(fh):
+            if not row:
+                continue
+            if row[0].startswith("nodedef>"):
+                part = "n"
+                continue
+            if row[0].startswith("edgedef>"):
+                part = "e"
+                continue
+            if part == "n":
+                names.setdefault(row[0], len(names))
+            elif part == "e" and row[0] != row[1] and row[0] in names and row[1] in names:
+                a, b = names[row[0]], names[row[1]]
+                pairs.add((min(a, b), max(a, b)))
+    return len(names), sorted(pairs)
+
+
+def curves_for(choice):
+    if choice not in real["cache"]:
+        n, pairs = read_gdf(DATA[choice])
+        r = random.Random(7)
+        runs = []
+        for _ in range(10):
+            seq = list(range(n))
+            r.shuffle(seq)
+            runs.append(nz_curve(n, pairs, seq, points=80))
+        rand = [(runs[0][j][0], sum(cv[j][1] for cv in runs) / len(runs)) for j in range(len(runs[0]))]
+        deg = [0] * n
+        for a, b in pairs:
+            deg[a] += 1
+            deg[b] += 1
+        attack = nz_curve(n, pairs, sorted(range(n), key=lambda i: (deg[i], -i)), points=80)
+        real["cache"][choice] = (n, pairs, rand, attack)
+    return real["cache"][choice]
+
+
+def needed(curve, level=0.5):
+    """The smallest share present at which the largest cluster reaches `level` of its size with every node
+    there (so networks in pieces, like the blog sample, are judged against their own largest piece)."""
+    target = level * curve[-1][1]
+    for phi, s_ in curve:
+        if s_ >= target:
+            return phi
+    return float("nan")
+
+
+def real_chart():
+    if mode_tab[0] != "Real networks":
+        return None
+    n, pairs, rand, attack = curves_for(real["pick"])
+    return plotLine({"random failure (10 orders)": rand, "attack on the hubs": attack},
+                    title=f"{real['pick']}: {n} nodes", xlabel="φ, share of nodes still there",
+                    ylabel="S", yrange=(0, 1), xrange=(0, 1))
+
+
+def real_text():
+    if mode_tab[0] != "Real networks":
+        return ""
+    n, pairs, rand, attack = curves_for(real["pick"])
+    c = 2 * len(pairs) / n
+    a, b = needed(rand), needed(attack)
+    out = (f"**{real['pick']}**: {n} nodes, mean degree {c:.1f}. Curves from the same algorithm, read straight from "
+           f"the data file. With everything there its largest piece holds **{rand[-1][1]:.0%}** of the nodes. For it to "
+           f"keep half that size, **{a:.0%}** of the nodes must remain under random failure, but **{b:.0%}** when the "
+           "hubs are removed first.")
+    if real["table"]:
+        rows = ["| network | n | ⟨k⟩ | random | attack | gap |", "|---|---|---|---|---|---|"]
+        for nm, (nn, kk, ra, at) in real["table"].items():
+            rows.append(f"| {nm} | {nn} | {kk:.1f} | {ra:.0%} | {at:.0%} | {at - ra:+.0%} |")
+        widest = max(real["table"].items(), key=lambda kv: kv[1][3] - kv[1][2])
+        robust = min(real["table"].items(), key=lambda kv: kv[1][2])
+        out += ("\n\nShare of nodes that must remain for the largest piece to keep half its full size:\n\n"
+                + "\n".join(rows) + f"\n\nThe gap is how much the hubs hold a network together; it is widest for "
+                f"**{widest[0]}**. Random failure is survived best by **{robust[0]}**. These are small networks or "
+                "samples, so take the differences between them as a sketch.")
+    return out
+
+
+def pick_real(v):
+    real["pick"] = v
+
+
+def compare_step():
+    if not real["todo"]:
+        real["timer"] = None
+        cmp_btn.text = "Compare all the networks"
+        return False
+    nm = real["todo"].pop(0)
+    n, pairs, rand, attack = curves_for(nm)
+    real["table"][nm] = (n, 2 * len(pairs) / n, needed(rand), needed(attack))
+    real["pick"] = nm
+    real_dd.value = nm
+    return len(real["todo"]) + 1
+
+
+def compare_all():
+    if real["timer"] is not None:
+        return
+    real["todo"] = list(DATA)
+    real["timer"] = everyPaced(compare_step, slow=0.7, fast=0.3, ramp=1)
+    cmp_btn.text = "Comparing…"
+
+
+# ---- layout --------------------------------------------------------------------------------------------
+mode_tab = ["One at a time"]
+
+
+def switch(title):
+    mode_tab[0] = title
+    if title != "One at a time":
+        stop_all()
+
+
+play_btn = Button("Add them back", onClick=lambda: play())
+big_btn = Button("Simulate: bigger networks", onClick=lambda: simulate_big())
+cmp_btn = Button("Compare all the networks", onClick=lambda: compare_all())
+real_dd = Dropdown(list(DATA), label="Network", onChange=pick_real)
+real_dd.value = real["pick"]
+
+build()
+constantLabelSize(size=14)
+ui.title("Percolation, computed fast", "Networks, Sections 15.4–15.5")
+ui.layout(
+    right=Column(
+        Markdown("""### Add things back, not take them away
+Start with nothing and put the nodes back one at a time. Each one joins the
+clusters of its neighbours already there; **union-find** keeps every
+cluster as a tree of pointers to a root, so merging is cheap. One pass gives
+the whole curve."""),
+        Tabs(
+            Tab("One at a time",
+                Dropdown(["Nodes (site percolation)", "Edges (bond percolation)"], label="What comes back",
+                         onChange=set_mode),
+                Dropdown(["Random order", "Hubs last (an attack, reversed)"], label="Order", onChange=set_order),
+                Row(play_btn, Button("One step", onClick=lambda: one_more()),
+                    Button("All at once", onClick=lambda: all_at_once())),
+                Row(Button("Start again", onClick=lambda: restart()),
+                    Button("Another order", onClick=lambda: reshuffle())),
+                Markdown(step_text),
+                Chart(step_chart)),
+            Tab("Bigger networks",
+                big_btn,
+                Chart(big_chart),
+                Markdown(big_text)),
+            Tab("Real networks",
+                real_dd,
+                cmp_btn,
+                Chart(real_chart),
+                Markdown(real_text)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len([v for v in g.nodes if v.visible])} of {NN} nodes · "
+                           f"{len([e for e in g.edges if e.visible])} edges present"))
+center(g.nodes)

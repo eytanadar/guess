@@ -190,7 +190,7 @@ def cut_groups(k):
             break
         alive -= {a, b}
         alive.add(n + i)
-    return [_members_of(c) for c in sorted(alive, key=lambda c: -len(_members_of(c)))]
+    return [_members_of(c) for c in sorted(alive, key=lambda c: (-len(_members_of(c)), min(_members_of(c))))]
 
 
 def paint_cut(latest=None):

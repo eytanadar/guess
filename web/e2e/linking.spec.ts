@@ -404,8 +404,8 @@ test("commands print linked nodes and edges: predictLinks(add=true)", async ({ p
     return page.locator(".cell").last().textContent();
   }, { timeout: 60000, intervals: [1000] }).toContain("igraph ready");
   await run(page, "r = predictLinks(3, add=true)");
-  const cell = page.locator(".cell").last();
-  await expect(cell.locator(".obj.node")).toHaveCount(6, { timeout: 30_000 });   // three pairs, both ends
+  const cell = page.locator(".cell", { hasText: "predictLinks(3, add=true)" }).last();
+  await expect(cell.locator(".obj.node")).toHaveCount(6, { timeout: 60_000 });   // three pairs, both ends
   const added = cell.locator(".grp", { hasText: "3 predicted edges" });
   await expect(added).toHaveCount(1);
   await added.hover();

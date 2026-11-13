@@ -434,6 +434,97 @@ def install(session):
         return dict(census)
 
     @cmd
+    def percolation(order="random", bond=False, trials=10, seed=0, show=True):
+        """percolation() gives the size of the largest connected piece for every
+        share of nodes present, in one pass (the Newman-Ziff algorithm, Newman,
+        Networks, section 15.5): nodes are added back one at a time, in an
+        order, and the pieces they join are merged with union-find. Returns
+        [(phi, S)]: phi the share of nodes present (occupation probability),
+        S the largest piece as a share of all nodes. order: "random" (failures;
+        averaged over `trials` random orders), "degree" (the hubs are the last
+        to come back, i.e. the first removed by an attack), or a node field
+        (highest removed first). bond=true occupies edges instead of nodes:
+        phi is then the share of edges present. Charts the curve. The graph
+        isn't changed. Direction is ignored."""
+        import random as _random
+        gr = g()
+        nodes = gr._nodes_list()
+        n = len(nodes)
+        if n == 0:
+            raise GuessError("the graph has no nodes")
+        idx = {v: i for i, v in enumerate(nodes)}
+        pairs = [(idx[e._n1], idx[e._n2]) for e in gr._edges_list() if e._n1 is not e._n2]
+        nbrs = [[] for _ in range(n)]
+        for a, b in pairs:
+            nbrs[a].append(b)
+            nbrs[b].append(a)
+        o = order if isinstance(order, str) else getattr(order, "name", order)
+        rnd = _random.Random(seed)
+
+        def find(par, x):
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        def one(sequence):
+            par = list(range(n))
+            size = [1] * n
+            present = [bool(bond)] * n                   # bond: every node is there from the start
+            biggest = 1 if bond else 0
+            out = [(0.0, (1 / n) if bond else 0.0)]
+            total = len(sequence)
+            for k, item in enumerate(sequence, 1):
+                links = [item] if bond else [(item, j) for j in nbrs[item] if present[j]]
+                if not bond:
+                    present[item] = True
+                    biggest = max(biggest, 1)
+                for a, b in links:
+                    ra, rb = find(par, a), find(par, b)
+                    if ra != rb:
+                        if size[ra] < size[rb]:
+                            ra, rb = rb, ra
+                        par[rb] = ra
+                        size[ra] += size[rb]
+                        biggest = max(biggest, size[ra])
+                out.append((k / total, biggest / n))
+            return out
+
+        if bond:
+            items = list(pairs)
+            if not items:
+                raise GuessError("percolation(bond=true) needs edges")
+        else:
+            items = list(range(n))
+        if o == "random":
+            runs = []
+            for _ in range(max(1, int(trials))):
+                seq = items[:]
+                rnd.shuffle(seq)
+                runs.append(one(seq))
+            curve = [(runs[0][k][0], sum(r[k][1] for r in runs) / len(runs)) for k in range(len(runs[0]))]
+            label = f"random ({len(runs)} orders)"
+        else:
+            if bond:
+                raise GuessError('percolation(bond=true) takes order="random"')
+            if o == "degree":
+                key = [len(nbrs[i]) for i in range(n)]
+            else:
+                f = gr.node_schema.get(str(o))
+                if f is None:
+                    raise GuessError(f'order should be "random", "degree" or a node field, not {order!r}')
+                key = [(float(f.get(v)) if isinstance(f.get(v), (int, float)) else 0.0) for v in nodes]
+            seq = sorted(items, key=lambda i: (key[i], -i))  # lowest first: the highest are removed first
+            curve = one(seq)
+            label = f"{o} (highest removed first)"
+        curve = [(round(p, 6), round(s_, 6)) for p, s_ in curve]
+        if show:
+            session.ns["plotLine"]({label: curve}, title=f"{'Bond' if bond else 'Site'} percolation",
+                                   xlabel="share of edges present" if bond else "share of nodes present",
+                                   ylabel="largest piece / n")
+        return curve
+
+    @cmd
     def robustness(orders=("random", "degree"), trials=5, seed=0, show=True):
         """robustness() asks how the network falls apart as nodes fail: for
         each way of removing nodes it gives the share of nodes still in the

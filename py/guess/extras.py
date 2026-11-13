@@ -47,13 +47,19 @@ def install(session):
     # ---- spreading -------------------------------------------------------------
     @cmd
     def spread(seeds, model="SIR", beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True,
-               immune=None, weight=None):
+               immune=None, weight=None, waning=0.05, sigma=0.5):
         """spread([v1, v2], model="SIR") simulates something spreading from
         the seed nodes, one step at a time:
           "SI"         each step, every infected node infects each susceptible
                        neighbour with probability beta
           "SIR"        the same, and each infected node recovers (and can't be
                        infected again) with probability gamma
+          "SIS"        the same, but recovered nodes can be infected again (no
+                       immunity): the infection can settle at an endemic level
+          "SIRS"       SIR, but immunity wanes: each recovered node becomes
+                       susceptible again with probability `waning` per step
+          "SEIR"       SIR with a latent stage: newly infected nodes are Exposed
+                       and become infectious with probability `sigma` per step
           "cascade"    independent cascade: a newly active node gets one chance
                        (probability beta) to activate each neighbour
           "threshold"  a node becomes active when at least `threshold` of its
@@ -71,14 +77,14 @@ def install(session):
         start = nodes_of(seeds, "spread")
         m = str(model).lower()
         if m not in epidemic.MODELS:
-            raise GuessError('model should be "SI", "SIR", "cascade" or "threshold"')
+            raise GuessError(f"model should be {epidemic.MODEL_NAMES}")
         rng = random.Random(seed)
         if isinstance(weight, str):
             weight = gr.edge_schema.get(weight) or session.ns.get(weight)
         out, inc = epidemic.contacts(gr, beta, weight)
         imm = nodes_of(immune, "immune") if immune is not None else []
         state, when, counts = epidemic.simulate(gr._nodes_list(), out, inc, start, m, gamma, threshold,
-                                                steps, rng, imm)
+                                                steps, rng, imm, waning=waning, sigma=sigma)
         f_at = gr.addNodeField("infected_at", INT, -1)
         f_st = gr.addNodeField("state", STRING, None)
         for n in gr._nodes_list():
@@ -90,7 +96,10 @@ def install(session):
                   f"in {counts[-1][0]} steps")
             series = [{"name": "susceptible", "color": 0x2c7bb6, "points": [[t, s] for t, s, _i, _r in counts]},
                       {"name": "infected", "color": 0xd7191c, "points": [[t, i] for t, _s, i, _r in counts]}]
-            if m == "sir":
+            if m == "seir":
+                series.append({"name": "exposed", "color": 0xfdae61,
+                               "points": [[t, e] for (t, *_x), e in zip(counts, counts.exposed)]})
+            if m in ("sir", "sirs", "seir"):
                 series.append({"name": "recovered", "color": 0x1a9641, "points": [[t, r] for t, _s, _i, r in counts]})
             session.chart_out({"type": "chart", "id": "chart:line:spread", "kind": "line", "title": f"Spread ({model})",
                           "xlabel": "step", "ylabel": "nodes", "items": [], "series": series,

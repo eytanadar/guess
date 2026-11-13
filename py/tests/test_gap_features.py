@@ -505,3 +505,29 @@ def test_dendrogram_paint_matches_groups():
     big, single = sorted(m["dgroups"], key=lambda gp: gp[0] - gp[1])
     assert single[2] == 0xB4B4B4 and big[2] != single[2]
     assert ev(s, "e.color") != ev(s, "a.color") and ev(s, "a.color") == ev(s, "d.color")
+
+
+def test_percolation_and_new_epidemic_models():
+    s = _s()
+    assert s.run("makeErdosRenyiRandom(2000, 0.002)"), s.rec.of("error")   # mean degree about 4: phi_c = 1/4
+    curve = ev(s, "percolation(trials=3, show=false)")
+    S = dict(curve)
+    near = lambda phi: min(curve, key=lambda p: abs(p[0] - phi))[1]
+    import math
+    s_ = 0.5
+    for _ in range(200):                                   # theory at phi = 0.5: S = phi s, s = 1 - exp(-c phi s)
+        s_ = 1 - math.exp(-4 * 0.5 * s_)
+    assert near(1.0) > 0.9 and near(0.15) < 0.05 and abs(near(0.5) - 0.5 * s_) < 0.05
+    attack = dict(ev(s, "percolation('degree', show=false)"))
+    assert min(ev(s, "percolation('degree', show=false)"), key=lambda p: abs(p[0] - 0.5))[1] < near(0.5)
+    bond = ev(s, "percolation(bond=true, trials=2, show=false)")
+    assert bond[-1][1] > 0.9 and bond[0][1] < 0.01
+    assert s.run("percolation()") and _charts(s)[-1]["title"] == "Site percolation"
+    # SIS settles at an endemic level; SEIR passes through E; SIRS keeps going
+    assert s.run("c = spread([g.nodes[0]], model='SIS', beta=0.3, gamma=0.2, steps=60, show=false)"), s.rec.of("error")
+    assert ev(s, "c[-1][2]") > 100 and ev(s, "c[-1][3]") == 0
+    assert s.run("c = spread([g.nodes[0]], model='SEIR', beta=0.3, gamma=0.2, sigma=0.3, steps=200)"), s.rec.of("error")
+    assert max(ev(s, "c.exposed")) > 10 and any(sr["name"] == "exposed" for sr in _charts(s)[-1]["series"])
+    assert s.run("c = spread([g.nodes[0]], model='SIRS', beta=0.3, gamma=0.2, waning=0.1, steps=80, show=false)")
+    assert ev(s, "c[-1][2]") > 0
+    assert not s.run("spread([g.nodes[0]], model='XYZ')")

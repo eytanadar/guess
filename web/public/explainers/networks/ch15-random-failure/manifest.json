@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Random failure",
+  "description": "Remove nodes at random from a fixed drawing: the giant component holds out until a threshold, and heavy-tailed networks hardly have one.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Percolation, computed fast",
+  "description": "The Newman–Ziff algorithm: add nodes (or edges) back one at a time, merge clusters with union-find, and get the whole percolation curve in one pass; then real networks under failure and attack.",
+  "console": "toggle",
+  "script": "main.gy"
+}

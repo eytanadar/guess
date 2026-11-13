@@ -1,0 +1,498 @@
+# Percolation and random failure  (Newman, Networks, Sections 15.1-15.2)
+# Keep each node with probability phi (the occupation probability) and remove
+# the rest, as random failures would. The largest connected piece keeps a
+# fixed share of the network while phi is large, and vanishes at a threshold
+# phi_c. In the configuration model, with g0 and g1 the generating functions
+# of the degree and excess-degree distributions,
+#     u = 1 - phi + phi g1(u),   S = phi (1 - g0(u)),   phi_c = <k> / (<k^2> - <k>).
+# A heavy-tailed degree distribution makes <k^2> large, so phi_c is small:
+# such networks keep a giant component even when most nodes have failed.
+#
+# Every node gets one random number u_i, and is present while u_i < phi, so
+# lowering phi only ever removes nodes: the drawing never moves, and the
+# failing nodes fade where they are.
+
+import math
+import random
+import csv
+import numpy as np
+
+N = 300
+MODELS = ["Poisson degrees (mean 4)", "Power-law degrees (α = 2.5)"]
+st = {"model": MODELS[0], "phi": 1.0, "names": [], "edges": [], "nbrs": [], "u": [], "failing": None,
+      "timer": None, "trace": {}, "sim": {}, "simtimer": None, "simq": [], "curve": None, "pk": None}
+mode = ["Fail nodes"]
+GIANT, GIANT_EDGE = "250,165,60", "110,55,0"
+OTHER, GONE = "150,170,210", "95,95,105,55"
+
+
+# ---- degree sequences (own random numbers, so every run gives the same network) -------------------
+def poisson_degrees(n, mean, rnd):
+    out = []
+    for _ in range(n):
+        L, k, p = math.exp(-mean), 0, 1.0
+        while True:
+            p *= rnd.random()
+            if p <= L:
+                break
+            k += 1
+        out.append(k)
+    return out
+
+
+def power_degrees(n, alpha, kmin, kmax, rnd):
+    ks = list(range(kmin, kmax + 1))
+    w = [k ** -alpha for k in ks]
+    tot = sum(w)
+    cum, acc = [], 0.0
+    for x in w:
+        acc += x / tot
+        cum.append(acc)
+    out = []
+    for _ in range(n):
+        r = rnd.random()
+        lo = 0
+        while cum[lo] < r:
+            lo += 1
+        out.append(ks[lo])
+    return out
+
+
+def degree_sequence(model, n, seed):
+    rnd = random.Random(seed)
+    ks = poisson_degrees(n, 4.0, rnd) if model.startswith("Poisson") else power_degrees(n, 2.5, 2, 60, rnd)
+    if sum(ks) % 2:
+        ks[0] += 1
+    return ks
+
+
+# ---- the network ------------------------------------------------------------------------------
+def build(model):
+    stop_all()
+    st["model"] = model
+    makeConfigurationModel(degree_sequence(model, N, 7), simple=true, seed=3, layout=false)
+    frLayout()
+    binPackLayout(false)
+    noverlapLayout(margin=3)
+    center(g.nodes)
+    nodes = list(g.nodes)
+    st["names"] = [v.name for v in nodes]
+    idx = {v.name: i for i, v in enumerate(nodes)}
+    st["edges"] = [(idx[e.node1.name], idx[e.node2.name]) for e in g.edges if e.node1 != e.node2]
+    nb = [[] for _ in nodes]
+    for a, b in st["edges"]:
+        nb[a].append(b)
+        nb[b].append(a)
+    st["nbrs"] = nb
+    rnd = random.Random(11)
+    st["u"] = [rnd.random() for _ in nodes]       # node i is present while u_i < phi
+    ks = [len(x) for x in nb]
+    kmax = max(ks) if ks else 0
+    pk = np.zeros(kmax + 1)
+    for k in ks:
+        pk[k] += 1
+    st["pk"] = pk / max(1, len(ks))
+    st["trace"] = {}
+    st["curve"] = None
+    st["failing"] = None
+    st["phi"] = 1.0
+    for v in nodes:
+        k = len(nb[idx[v.name]])
+        v.width = v.height = 6 + 3.2 * math.sqrt(k)
+        v.labelvisible = false
+    show(1.0)
+
+
+def present(phi):
+    return [u < phi for u in st["u"]]
+
+
+def pieces(pres):
+    """The connected pieces among the present nodes, largest first (union-find)."""
+    n = len(pres)
+    par = list(range(n))
+
+    def find(a):
+        while par[a] != a:
+            par[a] = par[par[a]]
+            a = par[a]
+        return a
+    for a, b in st["edges"]:
+        if pres[a] and pres[b]:
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                par[ra] = rb
+    groups = {}
+    for i in range(n):
+        if pres[i]:
+            groups.setdefault(find(i), []).append(i)
+    return sorted(groups.values(), key=len, reverse=True)
+
+
+def show(phi=None):
+    phi = st["phi"] if phi is None else phi
+    st["phi"] = phi
+    pres = present(phi)
+    comps = pieces(pres)
+    big = set(comps[0]) if comps and len(comps[0]) > 1 else set()
+    fail = st["failing"]
+    idx = {nm: i for i, nm in enumerate(st["names"])}
+    for v in g.nodes:
+        i = idx[v.name]
+        if i == fail:
+            v.color, v.strokecolor, v.strokewidth = "235,45,45", "60,0,0", 3
+        elif not pres[i]:
+            v.color, v.strokecolor, v.strokewidth = GONE, "70,70,80,60", 0
+        elif i in big:
+            v.color, v.strokecolor, v.strokewidth = GIANT, GIANT_EDGE, 1.4
+        else:
+            v.color, v.strokecolor, v.strokewidth = OTHER, "50,60,90", 0.8
+    for e in g.edges:
+        a, b = idx[e.node1.name], idx[e.node2.name]
+        if fail is not None and fail in (a, b):
+            e.color, e.width, e.linestyle = "235,45,45", 2.6, "flow"
+        elif not (pres[a] and pres[b]):
+            e.color, e.width, e.linestyle = "120,120,130,22", 0.6, "solid"
+        elif a in big:
+            e.color, e.width, e.linestyle = "240,170,90,190", 1.3, "solid"
+        else:
+            e.color, e.width, e.linestyle = "150,155,175,150", 1.0, "solid"
+    S = len(big) / N if big else 0.0
+    st["trace"][round(phi, 4)] = S
+    return S
+
+
+def stop_all():
+    for key in ("timer", "simtimer"):
+        if st[key] is not None:
+            st[key].stop()
+            st[key] = None
+    fail_btn.text = "Fail nodes one by one"
+
+
+# ---- theory: generating functions of this network's own degree distribution ------------------------
+def theory_S(pk, phi):
+    ks = np.arange(len(pk))
+    mean = float((ks * pk).sum())
+    if mean <= 0 or phi <= 0:
+        return 0.0
+    q = (ks[1:] * pk[1:]) / mean                   # excess degree distribution q_{k-1}
+    u = 0.0
+    for _ in range(3000):
+        new = 1 - phi + phi * float(np.polyval(q[::-1], u)) if len(q) else 1.0
+        if abs(new - u) < 1e-12:
+            u = new
+            break
+        u = new
+    g0 = float(np.polyval(pk[::-1], u))
+    return max(0.0, phi * (1 - g0))
+
+
+def threshold(pk):
+    ks = np.arange(len(pk))
+    m1, m2 = float((ks * pk).sum()), float((ks * ks * pk).sum())
+    return m1 / (m2 - m1) if m2 > m1 else float("inf")
+
+
+def theory_curve(pk, points=51):
+    return [(k / (points - 1), theory_S(pk, k / (points - 1))) for k in range(points)]
+
+
+# ---- tab 1: fail nodes ------------------------------------------------------------------------
+def set_phi(v):
+    if st["timer"] is not None and st["timer"].running:
+        return
+    st["failing"] = None
+    show(float(v))
+
+
+fail_state = {"order": [], "k": 0}
+
+
+def start_failing():
+    if st["timer"] is not None and st["timer"].running:
+        stop_all()
+        st["failing"] = None
+        show()
+        return
+    stop_all()
+    # the present nodes, in the order they fail as phi falls: largest u first
+    fail_state["order"] = sorted((i for i, u in enumerate(st["u"]) if u < st["phi"]), key=lambda i: -st["u"][i])
+    fail_state["k"] = 0
+    st["timer"] = everyPaced(fail_one, steps=len(fail_state["order"]) + 1, slow=0.8, fast=0.05, ramp=5)
+    fail_btn.text = "Pause"
+
+
+def fail_one():
+    k = fail_state["k"]
+    order = fail_state["order"]
+    if k >= len(order):
+        st["failing"] = None
+        show(0.0)
+        fail_btn.text = "Fail nodes one by one"
+        return False
+    i = order[k]
+    fail_state["k"] = k + 1
+    st["failing"] = i                               # flashes red now, fades on the next step
+    phi = st["u"][i]
+    phislider.value = round(phi, 2)
+    show(phi)
+    return len(order) - k
+
+
+def fail_text():
+    phi = st["phi"]
+    pres = present(phi)
+    comps = pieces(pres)
+    left = sum(pres)
+    S = len(comps[0]) / N if comps and len(comps[0]) > 1 else 0.0
+    pc = threshold(st["pk"])
+    th = theory_S(st["pk"], phi)
+    out = (f"**{st['model']}**, {N} nodes. Present: **{left}** (φ = {phi:.2f}); removed {N - left}, faded in place.\n\n"
+           f"Largest piece (orange): **{len(comps[0]) if comps else 0}** nodes, S = **{S:.3f}** of all nodes. "
+           f"Theory for a large network with these degrees: **{th:.3f}**.\n\n"
+           f"Threshold φ_c = ⟨k⟩ / (⟨k²⟩ − ⟨k⟩) = **{pc:.3f}**: below it no giant piece survives.")
+    if st["failing"] is not None:
+        nm = st["names"][st["failing"]]
+        out += f"\n\nJust failed: {linkTo(g.getNodeByName(nm))} (red), with its {len(st['nbrs'][st['failing']])} links."
+    return out
+
+
+def fail_chart():
+    if mode[0] != "Fail nodes":
+        return None
+    if st["curve"] is None:
+        st["curve"] = theory_curve(st["pk"])
+    data = {"theory (configuration model)": st["curve"]}
+    seen = sorted(st["trace"].items())
+    if seen:
+        data["this network"] = seen
+    return plotLine(data, title="Largest piece as nodes fail", xlabel="φ, share of nodes kept",
+                    ylabel="largest piece / n", dots=true, dashed=["theory (configuration model)"],
+                    xrange=(0, 1), yrange=(0, 1))
+
+
+# ---- tab 2: theory and simulation -------------------------------------------------------------------
+SIM_N = 4000
+
+
+def own_network(model, n, seed):
+    """A configuration model as an edge list (pairs of stubs; self-loops and repeats dropped)."""
+    ks = degree_sequence(model, n, seed)
+    stubs = [i for i, k in enumerate(ks) for _ in range(k)]
+    random.Random(seed + 1).shuffle(stubs)
+    seen, edges = set(), []
+    for a, b in zip(stubs[::2], stubs[1::2]):
+        key = (min(a, b), max(a, b))
+        if a != b and key not in seen:
+            seen.add(key)
+            edges.append(key)
+    return edges
+
+
+def nz_curve(n, edges, order):
+    """Newman-Ziff: add nodes back in `order`, merging pieces; the largest piece after each."""
+    nb = [[] for _ in range(n)]
+    for a, b in edges:
+        nb[a].append(b)
+        nb[b].append(a)
+    par = list(range(n))
+    size = [1] * n
+    on = [False] * n
+    best, out = 0, [(0.0, 0.0)]
+
+    def find(a):
+        while par[a] != a:
+            par[a] = par[par[a]]
+            a = par[a]
+        return a
+    for k, i in enumerate(order, 1):
+        on[i] = True
+        best = max(best, 1)
+        for j in nb[i]:
+            if on[j]:
+                ri, rj = find(i), find(j)
+                if ri != rj:
+                    if size[ri] < size[rj]:
+                        ri, rj = rj, ri
+                    par[rj] = ri
+                    size[ri] += size[rj]
+                    best = max(best, size[ri])
+        out.append((k / n, best / n))
+    return out
+
+
+def run_sim():
+    stop_all()
+    st["sim"] = {}
+    st["simq"] = [(m, t) for m in MODELS for t in range(4)]
+    st["simtimer"] = everyPaced(sim_step, steps=len(st["simq"]) + 1, slow=0.7, fast=0.2, ramp=2)
+
+
+def sim_step():
+    if not st["simq"]:
+        return False
+    model, t = st["simq"].pop(0)
+    n = SIM_N
+    edges = own_network(model, n, 100 + 7 * t)
+    order = list(range(n))
+    random.Random(500 + t).shuffle(order)
+    curve = nz_curve(n, edges, order)
+    thin = [curve[int(round(p * n))] for p in [k / 50 for k in range(51)]]
+    old = st["sim"].get(model)
+    if old is None:
+        st["sim"][model] = {"sum": [s_ for _p, s_ in thin], "runs": 1, "edges": edges}
+    else:
+        old["sum"] = [a + b for a, b in zip(old["sum"], [s_ for _p, s_ in thin])]
+        old["runs"] += 1
+    return len(st["simq"])
+
+
+def sim_pk(model):
+    edges = st["sim"][model]["edges"]
+    deg = [0] * SIM_N
+    for a, b in edges:
+        deg[a] += 1
+        deg[b] += 1
+    pk = np.zeros(max(deg) + 1)
+    for k in deg:
+        pk[k] += 1
+    return pk / SIM_N
+
+
+def sim_chart():
+    if mode[0] != "Theory and simulation":
+        return None
+    data = {}
+    dashed = []
+    for model in MODELS:
+        short = "Poisson" if model.startswith("Poisson") else "power law"
+        if model in st["sim"]:
+            rec = st["sim"][model]
+            data[f"{short}: simulated, n = {SIM_N}"] = [(k / 50, v / rec["runs"]) for k, v in enumerate(rec["sum"])]
+            if "pk" not in rec:
+                rec["pk"] = sim_pk(model)
+                rec["theory"] = theory_curve(rec["pk"])
+            data[f"{short}: theory"] = rec["theory"]
+            dashed.append(f"{short}: theory")
+    if not data:
+        return None
+    return plotLine(data, title="Theory against simulation", xlabel="φ, share of nodes kept",
+                    ylabel="largest piece / n", dots=true, dashed=dashed, xrange=(0, 1), yrange=(0, 1))
+
+
+def sim_text():
+    if not st["sim"]:
+        return (f"**Simulate** builds configuration-model networks of {SIM_N:,} nodes with each degree distribution, "
+                "removes nodes in 4 random orders each, and averages the largest piece (Newman–Ziff: nodes are added "
+                "back one at a time and pieces merged, so one pass gives every φ). The dashed lines solve "
+                "u = 1 − φ + φ g₁(u), S = φ(1 − g₀(u)) for the same degrees.")
+    rows = ["| degrees | runs | φ_c (theory) | S at φ = 0.3, simulated | theory |", "|---|---|---|---|---|"]
+    for model in MODELS:
+        if model in st["sim"]:
+            rec = st["sim"][model]
+            if "pk" not in rec:
+                rec["pk"] = sim_pk(model)
+                rec["theory"] = theory_curve(rec["pk"])
+            sim03 = rec["sum"][15] / rec["runs"]
+            rows.append(f"| {model} | {rec['runs']} | {threshold(rec['pk']):.3f} | {sim03:.3f} | "
+                        f"{theory_S(rec['pk'], 0.3):.3f} |")
+    return ("\n".join(rows) + "\n\nThe simulated points follow the theory. The power-law network keeps a giant "
+            "piece at much lower φ: its hubs hold it together, and random failures rarely hit a hub.")
+
+
+# ---- tab 3: heavy tails ----------------------------------------------------------------------------
+real = {"pk": None}
+
+
+def real_degrees():
+    if real["pk"] is None:
+        seqs = {}
+        with open("degree-sequences.csv", encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                seqs.setdefault(r["network"], {})[int(r["degree"])] = int(r["count"])
+        out = {}
+        for name, cnt in seqs.items():
+            pk = np.zeros(max(cnt) + 1)
+            for k, c in cnt.items():
+                pk[k] = c
+            out[name] = pk / pk.sum()
+        real["pk"] = out
+    return real["pk"]
+
+
+def cutoff_rows():
+    rows = ["| largest degree k_max | φ_c for p_k ∝ k^−2.5, k ≥ 2 |", "|---|---|"]
+    for kmax in (100, 1000, 10000, 100000):
+        ks = np.arange(2, kmax + 1, dtype=float)
+        pk = ks ** -2.5
+        pk /= pk.sum()
+        m1, m2 = float((ks * pk).sum()), float((ks * ks * pk).sum())
+        rows.append(f"| {kmax:,} | {m1 / (m2 - m1):.4f} |")
+    return "\n".join(rows)
+
+
+def tails_text():
+    if mode[0] != "Heavy tails":
+        return ""
+    pks = real_degrees()
+    rows = ["| network (whole degree sequence) | ⟨k⟩ | ⟨k²⟩ | φ_c |", "|---|---|---|---|"]
+    for name, pk in pks.items():
+        ks = np.arange(len(pk))
+        m1, m2 = float((ks * pk).sum()), float((ks * ks * pk).sum())
+        rows.append(f"| {name} | {m1:.2f} | {m2:,.1f} | **{m1 / (m2 - m1):.4f}** |")
+    return ("φ_c = ⟨k⟩ / (⟨k²⟩ − ⟨k⟩) is small when ⟨k²⟩ is big, which is what a heavy tail does. For whole "
+            "real networks, treated as configuration models with their own degrees:\n\n" + "\n".join(rows) +
+            "\n\nThe Internet, with a few enormous hubs, keeps a giant component until all but a few per cent of its "
+            "nodes have failed; the power grid, with no hubs, falls apart much sooner.\n\n"
+            "For a pure power law with α < 3, ⟨k²⟩ grows without limit as the largest degree grows, so φ_c → 0: "
+            "a big enough network survives almost any amount of random failure.\n\n" + cutoff_rows())
+
+
+def tails_chart():
+    if mode[0] != "Heavy tails":
+        return None
+    pks = real_degrees()
+    data = {name: theory_curve(pk, 41) for name, pk in pks.items()}
+    return plotLine(data, title="Theory for whole real networks", xlabel="φ, share of nodes kept",
+                    ylabel="largest piece / n", xrange=(0, 1), yrange=(0, 1))
+
+
+# ---- wiring -----------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    if title != "Fail nodes" and st["timer"] is not None:
+        stop_all()
+        st["failing"] = None
+        show()
+
+
+def pick_model(v):
+    build(v)
+    phislider.value = 1.0
+
+
+fail_btn = Button("Fail nodes one by one", onClick=lambda: start_failing())
+phislider = Slider(0, 1, 1, 0.01, label="φ, share kept")
+phislider.onChange = set_phi
+build(MODELS[0])
+constantLabelSize(size=14)
+ui.title("Random failure", "Networks, Sections 15.1–15.2")
+ui.layout(
+    right=Column(
+        Markdown(f"""### Percolation
+{N} nodes keep their places; a node is removed (faded) when φ drops below its own random number."""),
+        Dropdown(MODELS, label="Network", onChange=pick_model),
+        phislider,
+        Tabs(
+            Tab("Fail nodes", Row(fail_btn, Button("Restore every node", onClick=lambda: (stop_all(), set_phi(1.0),
+                                                                                         setattr(phislider, "value", 1.0)))),
+                Markdown(fail_text), Chart(fail_chart)),
+            Tab("Theory and simulation", Button(f"Simulate: {SIM_N:,} nodes", onClick=lambda: run_sim()),
+                Markdown(sim_text), Chart(sim_chart)),
+            Tab("Heavy tails", Markdown(tails_text), Chart(tails_chart)),
+            onChange=switch)),
+    sizes={"right": 430},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{N} nodes · φ = {st['phi']:.2f} · {sum(present(st['phi']))} present"))

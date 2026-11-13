@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Removing the hubs",
+  "description": "Attack the best-connected nodes first and a network that shrugs off random failure falls apart; acquaintance immunisation finds the hubs without a map.",
+  "console": "toggle",
+  "script": "main.gy"
+}

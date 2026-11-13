@@ -1373,6 +1373,21 @@ similarTo(v1, method="regular")           # similar neighbours, not shared ones
 nodes almost by degree, and as `alpha` nears `limit` almost by eigenvector
 centrality. `kComponents(k)` sets the field `kcomponent`.
 
+Resilience and spreading: `robustness()` and `percolation()` chart the
+largest connected piece as nodes fail or are attacked. `percolation` uses
+the fast Newman–Ziff method, so it gives the whole curve in one pass, for
+nodes or (with `bond=true`) edges. `spread(seeds, model=)` simulates an
+outbreak with the models SI, SIR, SIS (no immunity), SIRS (immunity wanes
+at rate `waning=`), SEIR (a latent stage, leaving at rate `sigma=`), cascade
+or threshold. `outbreaks()` repeats it many times:
+
+```python
+percolation()                             # random failure: share present against largest piece
+percolation("degree")                     # attack: hubs removed first
+spread([v1], model="SIS", beta=0.3, gamma=0.2, steps=50)
+spread([v1], model="SEIR", sigma=0.3)
+```
+
 For a signed network (an edge field of +1 and -1, or "+" and "-"),
 `structuralBalance(sign)` tests whether every cycle has an even number of
 negative edges. It returns `{"balanced": ..., "unbalanced": [triangles],

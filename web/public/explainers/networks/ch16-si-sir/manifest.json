@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The SI and SIR models",
+  "description": "A fully mixed population: random contacts pass an infection on, the logistic curve, R₀, and the final size of an outbreak against the equations.",
+  "console": "toggle",
+  "script": "main.gy"
+}

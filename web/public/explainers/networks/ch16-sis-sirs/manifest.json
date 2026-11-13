@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "SIS, SIRS and other models",
+  "description": "Without lasting immunity an infection settles at an endemic level; with waning immunity it can oscillate; a latent stage (SEIR) delays everything.",
+  "console": "toggle",
+  "script": "main.gy"
+}

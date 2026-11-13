@@ -329,7 +329,8 @@ def install(session):
                     break
                 alive -= {a, b}
                 alive.add(n + i)
-            ranked = sorted(alive, key=lambda c: (-(span[c][1] - span[c][0]), span[c][0]))   # by size, then left to right
+            # largest first; ties by the smallest node index (the position in `nodes`) in each group
+            ranked = sorted(alive, key=lambda c: (-(span[c][1] - span[c][0]), min(order[span[c][0]:span[c][1] + 1])))
             palette = [0x4E79A7, 0xE15759, 0x59A14F, 0xF28E2B, 0x76B7B2, 0xB07AA1, 0xEDC948, 0xFF9DA7,
                        0x9C755F, 0x86BCB6]
             groups, j = [], 0

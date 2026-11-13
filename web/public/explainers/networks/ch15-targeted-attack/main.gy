@@ -1,0 +1,593 @@
+# Removing the hubs  (Newman, Networks, Section 15.3)
+# Random failures rarely hit the few nodes with many links, so networks with
+# heavy-tailed degrees survive them well. An attack that removes the
+# highest-degree nodes first is different: taking out a few per cent of the
+# nodes can destroy the giant component ("robust yet fragile"). In the
+# configuration model the same equations as for random failure apply, with
+# an occupation probability phi_k that depends on degree: 1 below a cut-off
+# degree k0 and 0 above it,
+#     u = 1 - f1(1) + f1(u),  S = f0(1) - f0(u),
+#     f0(z) = sum p_k phi_k z^k,  f1(z) = sum k p_k phi_k z^(k-1) / <k>.
+# Acquaintance immunisation: pick random people and immunise a random
+# friend of each. A friend is reached in proportion to their degree, so this
+# finds hubs without knowing the network.
+#
+# Nodes keep their places throughout: removed and immunised nodes stay where
+# they are, faded or marked.
+
+import math
+import random
+import csv
+import numpy as np
+
+NETS = ["Power-law degrees (300 nodes)", "Internet sample (300 ASes)", "Power grid region (400 stations)"]
+FILES = {NETS[1]: "internet-as-sample.gdf", NETS[2]: "power-grid-region.gdf"}
+st = {"net": NETS[0], "names": [], "edges": [], "nbrs": [], "deg": [], "order": [], "k": 0, "flash": None,
+      "imm": set(), "pairs": [], "random": None, "trace": {}, "timer": None, "acqtimer": None,
+      "cmp": {}, "cmptimer": None, "cmpq": [], "strat": None, "strattimer": None, "theory": None}
+mode = ["Attack"]
+GIANT, GIANT_EDGE, OTHER, GONE = "250,165,60", "110,55,0", "150,170,210", "95,95,105,55"
+
+
+# ---- networks -----------------------------------------------------------------------------------
+def power_degrees(n, alpha, kmin, kmax, seed):
+    rnd = random.Random(seed)
+    ks = list(range(kmin, kmax + 1))
+    w = [k ** -alpha for k in ks]
+    tot = sum(w)
+    cum, acc = [], 0.0
+    for x in w:
+        acc += x / tot
+        cum.append(acc)
+    out = []
+    for _ in range(n):
+        r = rnd.random()
+        j = 0
+        while cum[j] < r:
+            j += 1
+        out.append(ks[j])
+    if sum(out) % 2:
+        out[0] += 1
+    return out
+
+
+def load(net):
+    stop_all()
+    st["net"] = net
+    if net == NETS[0]:
+        makeConfigurationModel(power_degrees(300, 2.5, 2, 60, 7), simple=true, seed=3, layout=false)
+        frLayout()
+        binPackLayout(false)
+        noverlapLayout(margin=3)
+    else:
+        makeFromFile(FILES[net])
+    center(g.nodes)
+    nodes = list(g.nodes)
+    st["names"] = [v.name for v in nodes]
+    idx = {v.name: i for i, v in enumerate(nodes)}
+    st["edges"] = [(idx[e.node1.name], idx[e.node2.name]) for e in g.edges if e.node1 != e.node2]
+    nb = [[] for _ in nodes]
+    for a, b in st["edges"]:
+        nb[a].append(b)
+        nb[b].append(a)
+    st["nbrs"] = nb
+    st["deg"] = [len(x) for x in nb]
+    st["order"] = sorted(range(len(nodes)), key=lambda i: (-st["deg"][i], i))   # attack: biggest hub first
+    st["k"] = 0
+    st["flash"] = None
+    st["imm"] = set()
+    st["pairs"] = []
+    st["trace"] = {}
+    st["strat"] = None
+    # random failure on this network, for comparison: GUESS's Newman-Ziff percolation, 20 random orders
+    st["random"] = [(round(1 - p, 4), s_) for p, s_ in percolation(trials=20, show=false)]
+    pk = pk_of(st["deg"])
+    st["theory"] = [(k / 100, theory_attack(pk, k / 100)) for k in range(0, 51)]   # computed once per network
+    kmax = max(st["deg"]) if st["deg"] else 0
+    for v in nodes:
+        k = st["deg"][idx[v.name]]
+        v.width = v.height = 5 + 2.6 * math.sqrt(k) if net == NETS[0] else 5 + 2.2 * math.sqrt(k)
+        v.labelvisible = false
+    show()
+
+
+def n_nodes():
+    return len(st["names"])
+
+
+def pieces(gone):
+    n = n_nodes()
+    par = list(range(n))
+
+    def find(a):
+        while par[a] != a:
+            par[a] = par[par[a]]
+            a = par[a]
+        return a
+    for a, b in st["edges"]:
+        if a not in gone and b not in gone:
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                par[ra] = rb
+    groups = {}
+    for i in range(n):
+        if i not in gone:
+            groups.setdefault(find(i), []).append(i)
+    return sorted(groups.values(), key=len, reverse=True)
+
+
+def removed_set():
+    return set(st["order"][:st["k"]]) if mode[0] == "Attack" else set(st["imm"])
+
+
+def show():
+    gone = removed_set()
+    comps = pieces(gone)
+    big = set(comps[0]) if comps and len(comps[0]) > 1 else set()
+    flash = st["flash"]
+    idx = {nm: i for i, nm in enumerate(st["names"])}
+    acq = mode[0] == "Acquaintance immunisation"
+    picker = st["pairs"][-1][0] if acq and st["pairs"] and flash is not None else None
+    for v in g.nodes:
+        i = idx[v.name]
+        if i == flash:
+            v.color, v.strokecolor, v.strokewidth = "235,45,45", "60,0,0", 3.5
+        elif i == picker:
+            v.color, v.strokecolor, v.strokewidth = "90,200,250", "10,60,100", 3
+        elif i in gone:
+            if acq:
+                v.color, v.strokecolor, v.strokewidth = "120,205,120", "20,90,30", 1.6   # immunised
+            else:
+                v.color, v.strokecolor, v.strokewidth = GONE, "70,70,80,60", 0
+        elif i in big:
+            v.color, v.strokecolor, v.strokewidth = GIANT, GIANT_EDGE, 1.2
+        else:
+            v.color, v.strokecolor, v.strokewidth = OTHER, "50,60,90", 0.6
+    for e in g.edges:
+        a, b = idx[e.node1.name], idx[e.node2.name]
+        if flash is not None and flash in (a, b) and (not acq or picker in (a, b)):
+            # attack: the removed hub's links; acquaintance: the link from the person asked to their friend
+            e.color, e.width, e.linestyle = "235,45,45", 2.8, "flow"
+        elif a in gone or b in gone:
+            e.color, e.width, e.linestyle = "120,120,130,25", 0.6, "solid"
+        elif a in big:
+            e.color, e.width, e.linestyle = "240,170,90,190", 1.2, "solid"
+        else:
+            e.color, e.width, e.linestyle = "150,155,175,150", 0.9, "solid"
+    S = len(big) / n_nodes() if big else 0.0
+    if mode[0] == "Attack":
+        st["trace"][round(len(gone) / n_nodes(), 4)] = S
+    return S
+
+
+def stop_all():
+    for key in ("timer", "acqtimer", "cmptimer", "strattimer"):
+        if st[key] is not None:
+            st[key].stop()
+            st[key] = None
+    attack_btn.text = "Remove hubs one by one"
+    acq_btn.text = "Pick acquaintances"
+
+
+# ---- theory: degree-dependent occupation in the configuration model ---------------------------------
+def pk_of(deg):
+    pk = np.zeros(max(deg) + 1)
+    for k in deg:
+        pk[k] += 1
+    return pk / len(deg)
+
+
+def theory_attack(pk, f):
+    """S when the highest-degree share f of nodes is removed (configuration model with these degrees)."""
+    ks = np.arange(len(pk))
+    phi = np.ones(len(pk))
+    left = f
+    for k in range(len(pk) - 1, -1, -1):            # remove from the top degree down
+        take = min(pk[k], left)
+        if pk[k] > 0:
+            phi[k] = 1 - take / pk[k]
+        left -= take
+        if left <= 1e-12:
+            break
+    mean = float((ks * pk).sum())
+    if mean <= 0:
+        return 0.0
+    f1c = (ks[1:] * pk[1:] * phi[1:]) / mean          # f1(z) = sum_k f1c[k-1] z^(k-1)
+    u = 0.0
+    for _ in range(3000):
+        new = 1 - float(f1c.sum()) + float(np.polyval(f1c[::-1], u))
+        if abs(new - u) < 1e-12:
+            u = new
+            break
+        u = new
+    f0 = pk * phi
+    return max(0.0, float(f0.sum()) - float(np.polyval(f0[::-1], u)))
+
+
+# ---- tab 1: attack ---------------------------------------------------------------------------------
+def set_share(v):
+    if st["timer"] is not None and st["timer"].running:
+        return
+    st["k"] = int(round(float(v) * n_nodes()))
+    st["flash"] = None
+    show()
+
+
+def start_attack():
+    if st["timer"] is not None and st["timer"].running:
+        stop_all()
+        st["flash"] = None
+        show()
+        return
+    stop_all()
+    limit = int(0.25 * n_nodes())
+    if st["k"] >= limit:
+        st["k"] = 0
+    st["timer"] = everyPaced(attack_one, steps=limit - st["k"] + 1, slow=0.9, fast=0.12, ramp=4)
+    attack_btn.text = "Pause"
+
+
+def attack_one():
+    limit = int(0.25 * n_nodes())
+    if st["k"] >= limit:
+        st["flash"] = None
+        show()
+        attack_btn.text = "Remove hubs one by one"
+        return False
+    st["flash"] = st["order"][st["k"]]              # flashes red now, fades on the next step
+    st["k"] += 1
+    share.value = round(st["k"] / n_nodes(), 3)
+    show()
+    return limit - st["k"]
+
+
+def random_at(f):
+    pts = st["random"] or [(0, 0)]
+    return min(pts, key=lambda p: abs(p[0] - f))[1]
+
+
+def attack_text():
+    n = n_nodes()
+    gone = removed_set()
+    comps = pieces(gone)
+    S = len(comps[0]) / n if comps and len(comps[0]) > 1 else 0.0
+    f = len(gone) / n
+    out = (f"**{st['net']}**. Removed the **{len(gone)}** best-connected nodes ({f:.0%}); the largest piece "
+           f"(orange) is now **{S:.3f}** of the network. Removing the same share **at random** leaves "
+           f"**{random_at(f):.3f}** (GUESS's `percolation`, 20 random orders).")
+    if st["flash"] is not None:
+        i = st["flash"]
+        out += (f"\n\nJust removed: {linkTo(g.getNodeByName(st['names'][i]))}, with **{st['deg'][i]}** links "
+                f"(the network's mean is {sum(st['deg']) / n:.1f}).")
+    out += ("\n\nThe dashed line is the configuration-model theory for removing the top-degree nodes, using these "
+            "degrees.")
+    return out
+
+
+def attack_chart():
+    if mode[0] != "Attack":
+        return None
+    data = {"random failure": [(f, s_) for f, s_ in st["random"] if f <= 0.5],
+            "attack, theory": st["theory"]}
+    seen = sorted(st["trace"].items())
+    if seen:
+        data["attack, this network"] = [(f, s_) for f, s_ in seen if f <= 0.5]
+    return plotLine(data, title="Random failure against attack", xlabel="share of nodes removed",
+                    ylabel="largest piece / n", dots=true, dashed=["attack, theory"], xrange=(0, 0.5), yrange=(0, 1))
+
+
+# ---- tab 2: three networks compared -------------------------------------------------------------------
+def read_gdf_edges(path):
+    names, edges, part = {}, [], None
+    with open(path, encoding="utf-8") as fh:
+        for row in csv.reader(fh):
+            if not row:
+                continue
+            if row[0].startswith("nodedef>"):
+                part = "n"
+                continue
+            if row[0].startswith("edgedef>"):
+                part = "e"
+                continue
+            if part == "n":
+                names.setdefault(row[0], len(names))
+            elif part == "e" and row[0] in names and row[1] in names and row[0] != row[1]:
+                edges.append((names[row[0]], names[row[1]]))
+    return len(names), edges
+
+
+def model_edges():
+    ks = power_degrees(300, 2.5, 2, 60, 7)
+    stubs = [i for i, k in enumerate(ks) for _ in range(k)]
+    random.Random(4).shuffle(stubs)
+    seen, edges = set(), []
+    for a, b in zip(stubs[::2], stubs[1::2]):
+        key = (min(a, b), max(a, b))
+        if a != b and key not in seen:
+            seen.add(key)
+            edges.append(key)
+    return 300, edges
+
+
+def removal_curve(n, edges, removal):
+    """Largest piece after removing each share of nodes in `removal` order (Newman-Ziff, adding back in reverse)."""
+    nb = [[] for _ in range(n)]
+    for a, b in edges:
+        nb[a].append(b)
+        nb[b].append(a)
+    par, size, on = list(range(n)), [1] * n, [False] * n
+    best, sizes = 0, [0]
+
+    def find(a):
+        while par[a] != a:
+            par[a] = par[par[a]]
+            a = par[a]
+        return a
+    for i in reversed(removal):
+        on[i] = True
+        best = max(best, 1)
+        for j in nb[i]:
+            if on[j]:
+                ri, rj = find(i), find(j)
+                if ri != rj:
+                    if size[ri] < size[rj]:
+                        ri, rj = rj, ri
+                    par[rj] = ri
+                    size[ri] += size[rj]
+                    best = max(best, size[ri])
+        sizes.append(best)
+    sizes.reverse()                                 # sizes[r] = largest piece with r nodes removed
+    return [(r / n, sizes[r] / n) for r in range(n + 1)]
+
+
+def run_compare():
+    stop_all()
+    st["cmp"] = {}
+    st["cmpq"] = list(NETS)
+    st["cmptimer"] = everyPaced(compare_step, steps=len(NETS) + 1, slow=0.8, fast=0.4, ramp=1)
+
+
+def compare_step():
+    if not st["cmpq"]:
+        return False
+    net = st["cmpq"].pop(0)
+    n, edges = model_edges() if net == NETS[0] else read_gdf_edges(FILES[net])
+    deg = [0] * n
+    for a, b in edges:
+        deg[a] += 1
+        deg[b] += 1
+    attack = sorted(range(n), key=lambda i: (-deg[i], i))
+    att = removal_curve(n, edges, attack)
+    runs = []
+    for t in range(10):
+        order = list(range(n))
+        random.Random(40 + t).shuffle(order)
+        runs.append(removal_curve(n, edges, order))
+    rnd = [(runs[0][r][0], sum(c[r][1] for c in runs) / len(runs)) for r in range(n + 1)]
+    st["cmp"][net] = {"attack": att, "random": rnd, "n": n, "kmax": max(deg), "mean": 2 * len(edges) / n}
+    return len(st["cmpq"])
+
+
+def half_point(curve):
+    start = curve[0][1]
+    for f, s_ in curve:
+        if s_ < start / 2:
+            return f
+    return 1.0
+
+
+def compare_text():
+    if mode[0] != "Random vs attack":
+        return ""
+    if not st["cmp"]:
+        return ("**Compare** removes nodes from all three networks two ways: at random (10 orders) and hubs first. "
+                "It is the same union-find trick as `percolation`: add the nodes back in reverse order and merge "
+                "the pieces, so one pass gives the whole curve.")
+    rows = ["| network | nodes | mean degree | biggest hub | share removed to halve the giant: random | attack |",
+            "|---|---|---|---|---|---|"]
+    for net in NETS:
+        if net in st["cmp"]:
+            r = st["cmp"][net]
+            rows.append(f"| {net} | {r['n']} | {r['mean']:.1f} | {r['kmax']} | {half_point(r['random']):.0%} | "
+                        f"**{half_point(r['attack']):.0%}** |")
+    done = [st["cmp"][net] for net in NETS if net in st["cmp"]]
+    ratios = [half_point(r["random"]) / max(half_point(r["attack"]), 1e-9) for r in done]
+    out = "\n".join(rows)
+    out += (f"\n\nIn every network an attack halves the giant piece with **{min(ratios):.1f} to {max(ratios):.1f} times** "
+            "fewer removals than random failure: a few per cent of the nodes, chosen by degree, do what a third "
+            "removed at random does.")
+    if NETS[2] in st["cmp"] and NETS[0] in st["cmp"]:
+        grid, pl = st["cmp"][NETS[2]], st["cmp"][NETS[0]]
+        out += (f"\n\nThe networks with hubs are the robust ones to *failure* ({half_point(pl['random']):.0%} removed "
+                f"at random before the power-law network's giant halves); the power grid, with no hubs and few links "
+                f"per station, is fragile to both ({half_point(grid['random']):.0%} at random, "
+                f"{half_point(grid['attack']):.0%} by attack). Hubs buy robustness to failure at the price of an "
+                "obvious target.")
+    return out
+
+
+def compare_chart():
+    if mode[0] != "Random vs attack" or not st["cmp"]:
+        return None
+    data, dashed = {}, []
+    for net in NETS:
+        if net in st["cmp"]:
+            short = net.split(" (")[0]
+            r = st["cmp"][net]
+            data[f"{short}: random"] = [(f, s_) for f, s_ in r["random"] if f <= 0.6][::2]
+            data[f"{short}: attack"] = [(f, s_) for f, s_ in r["attack"] if f <= 0.6][::2]
+            dashed.append(f"{short}: attack")
+    return plotLine(data, title="Random failure (solid) and attack (dashed)", xlabel="share of nodes removed",
+                    ylabel="largest piece / n", dashed=dashed, xrange=(0, 0.6), yrange=(0, 1))
+
+
+# ---- tab 3: acquaintance immunisation ----------------------------------------------------------------
+acq_rnd = random.Random(21)
+
+
+def start_acq():
+    if st["acqtimer"] is not None and st["acqtimer"].running:
+        stop_all()
+        st["flash"] = None
+        show()
+        return
+    stop_all()
+    limit = int(0.2 * n_nodes())
+    if len(st["imm"]) >= limit:
+        st["imm"], st["pairs"] = set(), []
+    st["acqtimer"] = everyPaced(acq_one, steps=limit - len(st["imm"]) + 1, slow=0.9, fast=0.15, ramp=4)
+    acq_btn.text = "Pause"
+
+
+def acq_one():
+    limit = int(0.2 * n_nodes())
+    if len(st["imm"]) >= limit:
+        st["flash"] = None
+        show()
+        acq_btn.text = "Pick acquaintances"
+        return False
+    for _ in range(1000):
+        p = acq_rnd.randrange(n_nodes())
+        cands = [j for j in st["nbrs"][p] if j not in st["imm"]]
+        if p not in st["imm"] and cands:
+            friend = acq_rnd.choice(cands)
+            break
+    else:
+        return False
+    st["imm"].add(friend)
+    st["pairs"].append((p, friend))
+    st["flash"] = friend
+    show()
+    return limit - len(st["imm"])
+
+
+def acq_text():
+    if mode[0] != "Acquaintance immunisation":
+        return ""
+    n = n_nodes()
+    mean = sum(st["deg"]) / n
+    out = ("Pick a random person (blue) and immunise **a random friend of theirs** (red, then green). No one needs "
+           "to know the network, yet a friend is reached through one of their links, so people with many links are "
+           "picked more often.\n\n")
+    if st["pairs"]:
+        picked = [st["deg"][f] for _p, f in st["pairs"]]
+        firsts = [st["deg"][p] for p, _f in st["pairs"]]
+        comps = pieces(set(st["imm"]))
+        S = len(comps[0]) / n if comps else 0.0
+        p, f = st["pairs"][-1]
+        out += (f"Immunised **{len(st['imm'])}** ({len(st['imm']) / n:.0%}). Mean degree of the people picked at "
+                f"random: **{sum(firsts) / len(firsts):.1f}**; of the friends immunised: **{sum(picked) / len(picked):.1f}** "
+                f"(network mean {mean:.1f}). Largest piece of the unimmunised: **{S:.3f}**.\n\n"
+                f"Last: {linkTo(g.getNodeByName(st['names'][p]))} named {linkTo(g.getNodeByName(st['names'][f]))} "
+                f"({st['deg'][f]} links).")
+    return out
+
+
+def acq_chart():
+    if mode[0] != "Acquaintance immunisation" or not st["pairs"]:
+        return None
+    rp, rf, pts_p, pts_f = 0, 0, [], []
+    for k, (p, f) in enumerate(st["pairs"], 1):
+        rp += st["deg"][p]
+        rf += st["deg"][f]
+        pts_p.append((k, rp / k))
+        pts_f.append((k, rf / k))
+    mean = sum(st["deg"]) / n_nodes()
+    return plotLine({"friends immunised": pts_f, "people picked at random": pts_p,
+                     "network mean": [(1, mean), (len(st["pairs"]), mean)]},
+                    title="Mean degree of those chosen", xlabel="people asked", ylabel="mean degree so far",
+                    dashed=["network mean"])
+
+
+def run_strategies():
+    stop_all()
+    n, edges = n_nodes(), st["edges"]
+    st["strat"] = {"random": [], "acquaintance": [], "hubs first": None, "q": list(range(5))}
+    st["strattimer"] = everyPaced(strat_step, steps=6, slow=0.5, fast=0.3, ramp=1)
+
+
+def acq_order(seed):
+    rnd = random.Random(seed)
+    n = n_nodes()
+    done, order = set(), []
+    while len(order) < n:
+        p = rnd.randrange(n)
+        cands = [j for j in st["nbrs"][p] if j not in done]
+        if not cands:
+            rest = [i for i in range(n) if i not in done]
+            if all(not [j for j in st["nbrs"][i] if j not in done] for i in rest):
+                rnd.shuffle(rest)
+                order += rest
+                break
+            continue
+        f = rnd.choice(cands)
+        done.add(f)
+        order.append(f)
+    return order
+
+
+def strat_step():
+    s = st["strat"]
+    n, edges = n_nodes(), st["edges"]
+    if s["hubs first"] is None:
+        s["hubs first"] = removal_curve(n, edges, st["order"])
+    if not s["q"]:
+        return False
+    t = s["q"].pop(0)
+    order = list(range(n))
+    random.Random(70 + t).shuffle(order)
+    s["random"].append(removal_curve(n, edges, order))
+    s["acquaintance"].append(removal_curve(n, edges, acq_order(90 + t)))
+    return len(s["q"])
+
+
+def strat_chart():
+    s = st["strat"]
+    if mode[0] != "Acquaintance immunisation" or not s or not s["random"]:
+        return None
+    n = n_nodes()
+    avg = lambda runs: [(runs[0][r][0], sum(c[r][1] for c in runs) / len(runs)) for r in range(n + 1)]
+    data = {"random": avg(s["random"]), "acquaintance": avg(s["acquaintance"]), "hubs first": s["hubs first"]}
+    data = {k: [(f, v) for f, v in pts if f <= 0.5][::2] for k, pts in data.items()}
+    return plotLine(data, title="Immunisation strategies", xlabel="share immunised", ylabel="largest unimmunised piece / n",
+                    xrange=(0, 0.5), yrange=(0, 1))
+
+
+# ---- wiring ------------------------------------------------------------------------------------
+def switch(title):
+    stop_all()
+    mode[0] = title
+    st["flash"] = None
+    show()
+
+
+def pick_net(v):
+    load(v)
+    share.value = 0
+
+
+attack_btn = Button("Remove hubs one by one", onClick=lambda: start_attack())
+acq_btn = Button("Pick acquaintances", onClick=lambda: start_acq())
+share = Slider(0, 0.5, 0, 0.005, label="share removed (hubs first)")
+share.onChange = set_share
+load(NETS[0])
+constantLabelSize(size=14)
+ui.title("Removing the hubs", "Networks, Section 15.3")
+ui.layout(
+    right=Column(
+        Markdown("""### Robust yet fragile
+Nodes keep their places: removed ones fade, immunised ones turn green."""),
+        Dropdown(NETS, label="Network", onChange=pick_net),
+        Tabs(
+            Tab("Attack", share, Row(attack_btn, Button("Put every node back", onClick=lambda: (stop_all(), set_share(0),
+                                                                                              setattr(share, "value", 0)))),
+                Markdown(attack_text), Chart(attack_chart)),
+            Tab("Random vs attack", Button("Compare the three networks", onClick=lambda: run_compare()),
+                Markdown(compare_text), Chart(compare_chart)),
+            Tab("Acquaintance immunisation", Row(acq_btn, Button("Simulate: three strategies", onClick=lambda: run_strategies())),
+                Markdown(acq_text), Chart(acq_chart), Chart(strat_chart)),
+            onChange=switch)),
+    sizes={"right": 440},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{n_nodes()} nodes · {len(removed_set())} removed or immunised"))

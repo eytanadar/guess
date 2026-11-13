@@ -13,7 +13,12 @@ import numpy as np
 
 from .model import BOOL, DOUBLE, INT, Field, GuessError, Node, elements_of
 
-MODELS = ("si", "sir", "cascade", "threshold")
+MODELS = ("si", "sir", "sis", "sirs", "seir", "cascade", "threshold")
+MODEL_NAMES = '"SI", "SIR", "SIS", "SIRS", "SEIR", "cascade" or "threshold"'
+
+
+class Counts(list):
+    """[(step, S, I, R)] per step; .exposed lists E per step for SEIR."""
 
 
 def contacts(gr, beta, weight=None, follow_direction=True):
@@ -39,9 +44,13 @@ def contacts(gr, beta, weight=None, follow_direction=True):
     return out, inc
 
 
-def simulate(nodes, out, inc, start, model, gamma, threshold, steps, rng, immune=()):
-    """One outbreak. Returns ({node: S/I/R/V}, {node: step reached or -1},
-    [(step, S, I, R)]). Immune nodes are V: never infected."""
+def simulate(nodes, out, inc, start, model, gamma, threshold, steps, rng, immune=(), waning=0.0, sigma=0.5):
+    """One outbreak. Returns ({node: S/E/I/R/V}, {node: step first reached or -1},
+    Counts [(step, S, I, R)] with .exposed for SEIR). Immune nodes are V: never
+    infected. SIS: infected nodes recover to S with probability gamma per step;
+    SIRS: recovered nodes lose immunity with probability `waning` per step;
+    SEIR: infected nodes are first Exposed (not yet infectious) and become
+    infectious with probability `sigma` per step."""
     m = model
     state = {n: "S" for n in nodes}
     for n in immune:
@@ -52,9 +61,9 @@ def simulate(nodes, out, inc, start, model, gamma, threshold, steps, rng, immune
             state[n], when[n] = "I", 0
     fresh = [n for n in start if when[n] == 0]
     n_v = sum(1 for v in state.values() if v == "V")
-    counts = [(0, sum(1 for v in state.values() if v == "S"), len(fresh), 0)]
-    g_ = float(gamma)
-    th = float(threshold)
+    counts = Counts([(0, sum(1 for v in state.values() if v == "S"), len(fresh), 0)])
+    counts.exposed = [0]
+    g_, th, w_, s_ig = float(gamma), float(threshold), float(waning), float(sigma)
     for t in range(1, int(steps) + 1):
         new, seen = [], set()
         if m == "threshold":
@@ -69,18 +78,33 @@ def simulate(nodes, out, inc, start, model, gamma, threshold, steps, rng, immune
                     if state[nb] == "S" and nb not in seen and rng.random() < p:
                         new.append(nb)
                         seen.add(nb)
-        recovered = []
-        if m == "sir":
+        recovered, waned, onset = [], [], []
+        if m in ("sir", "sis", "sirs", "seir"):
             recovered = [n for n in nodes if state[n] == "I" and rng.random() < g_]
+        if m == "sirs" and w_ > 0:
+            waned = [n for n in nodes if state[n] == "R" and rng.random() < w_]
+        if m == "seir":
+            onset = [n for n in nodes if state[n] == "E" and rng.random() < s_ig]
         for n in new:
-            state[n], when[n] = "I", t
+            state[n] = "E" if m == "seir" else "I"
+            if when[n] < 0:
+                when[n] = t
+        for n in onset:
+            state[n] = "I"
         for n in recovered:
-            state[n] = "R"
+            state[n] = "S" if m == "sis" else "R"
+        for n in waned:
+            state[n] = "S"
         fresh = new
         s_ = sum(1 for v in state.values() if v == "S")
         i_ = sum(1 for v in state.values() if v == "I")
-        counts.append((t, s_, i_, len(state) - s_ - i_ - n_v))
-        if not new and (m != "sir" or i_ == 0):
+        e_ = sum(1 for v in state.values() if v == "E")
+        counts.append((t, s_, i_, len(state) - s_ - i_ - e_ - n_v))
+        counts.exposed.append(e_)
+        if m in ("sir", "sis", "sirs", "seir"):
+            if i_ == 0 and e_ == 0:
+                break
+        elif not new:
             break
     return state, when, counts
 
@@ -171,7 +195,7 @@ def install(session):
 
     @cmd
     def outbreaks(runs=200, seeds=1, model="SIR", beta=0.3, gamma=0.1, threshold=0.5, immune=None,
-                  weight=None, steps=1000, large=0.1, seed=0, name="risk", show=True):
+                  weight=None, steps=1000, large=0.1, seed=0, name="risk", show=True, waning=0.05, sigma=0.5):
         """outbreaks(runs) repeats spread() many times, because one simulated
         outbreak is an anecdote. Each run starts from `seeds` random nodes (a
         number) or from the given nodes. immune=nodes (vaccinated, isolated)
@@ -184,7 +208,7 @@ def install(session):
         gr = g()
         m = str(model).lower()
         if m not in MODELS:
-            raise GuessError('model should be "SI", "SIR", "cascade" or "threshold"')
+            raise GuessError(f"model should be {MODEL_NAMES}")
         nodes = gr._nodes_list()
         out, inc = contacts(gr, beta, weight_field(weight))
         imm = set(node_list(immune, "immune")) if immune is not None else set()
@@ -198,7 +222,8 @@ def install(session):
         runs = max(1, int(runs))
         for _ in range(runs):
             start = fixed if fixed is not None else rng.sample(pool, min(len(pool), max(1, int(seeds))))
-            _st, when, _c = simulate(nodes, out, inc, start, m, gamma, threshold, steps, rng, imm)
+            _st, when, _c = simulate(nodes, out, inc, start, m, gamma, threshold, steps, rng, imm,
+                                     waning=waning, sigma=sigma)
             reached = [n for n, t in when.items() if t >= 0]
             for n in reached:
                 hits[n] += 1

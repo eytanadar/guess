@@ -15,7 +15,7 @@ Commands can be called without parentheses when they take no arguments
 - [Clustering and generators](#clustering-and-generators) (11)
 - [More measures: Katz, prestige, bridging, cliques, MDS, k-brace; field tools and generators](#more-measures-katz-prestige-bridging-cliques-mds-k-brace;-field-tools-and-generators) (13)
 - [More clustering: Chinese Whispers, MCL, DBSCAN, MCODE, overlapping communities](#more-clustering-chinese-whispers-mcl-dbscan-mcode-overlapping-communities) (7)
-- [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (16)
+- [Structure: bridges, cut nodes, backbones, directed graphs, mixing, comparing partitions](#structure-bridges-cut-nodes-backbones-directed-graphs-mixing-comparing-partitions) (17)
 - [networkx bridge and sample graphs](#networkx-bridge-and-sample-graphs) (4)
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
@@ -797,7 +797,7 @@ transmissions caused by the top 20% of cases. offspring(cases) uses
 only those cases, e.g. offspring(onset < 28); their infections count
 wherever they lead. Stores the count in the field `offspring`.
 
-### `outbreaks(runs=200, seeds=1, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, immune=None, weight=None, steps=1000, large=0.1, seed=0, name='risk', show=True)`
+### `outbreaks(runs=200, seeds=1, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, immune=None, weight=None, steps=1000, large=0.1, seed=0, name='risk', show=True, waning=0.05, sigma=0.5)`
 
 outbreaks(runs) repeats spread() many times, because one simulated
 outbreak is an anecdote. Each run starts from `seeds` random nodes (a
@@ -935,7 +935,7 @@ Direction and weights are ignored (edges count once each way). The
 Laplacian has as many zero eigenvalues as the network has
 components; the second smallest is the algebraic connectivity.
 
-### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None)`
+### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None, waning=0.05, sigma=0.5)`
 
 spread([v1, v2], model="SIR") simulates something spreading from
 the seed nodes, one step at a time:
@@ -943,6 +943,12 @@ the seed nodes, one step at a time:
                neighbour with probability beta
   "SIR"        the same, and each infected node recovers (and can't be
                infected again) with probability gamma
+  "SIS"        the same, but recovered nodes can be infected again (no
+               immunity): the infection can settle at an endemic level
+  "SIRS"       SIR, but immunity wanes: each recovered node becomes
+               susceptible again with probability `waning` per step
+  "SEIR"       SIR with a latent stage: newly infected nodes are Exposed
+               and become infectious with probability `sigma` per step
   "cascade"    independent cascade: a newly active node gets one chance
                (probability beta) to activate each neighbour
   "threshold"  a node becomes active when at least `threshold` of its
@@ -1464,6 +1470,20 @@ mixingMatrix(dept) counts the edges between each pair of values of a
 node field (dept1-dept1, dept1-dept2, ...), printed as a table and
 returned as {value: {value: count}}. Direction is ignored. With many
 values only the 20 most common are printed.
+
+### `percolation(order='random', bond=False, trials=10, seed=0, show=True)`
+
+percolation() gives the size of the largest connected piece for every
+share of nodes present, in one pass (the Newman-Ziff algorithm, Newman,
+Networks, section 15.5): nodes are added back one at a time, in an
+order, and the pieces they join are merged with union-find. Returns
+[(phi, S)]: phi the share of nodes present (occupation probability),
+S the largest piece as a share of all nodes. order: "random" (failures;
+averaged over `trials` random orders), "degree" (the hubs are the last
+to come back, i.e. the first removed by an attack), or a node field
+(highest removed first). bond=true occupies edges instead of nodes:
+phi is then the share of edges present. Charts the curve. The graph
+isn't changed. Direction is ignored.
 
 ### `reciprocity()`
 
@@ -3163,7 +3183,7 @@ Bar chart of how many elements share each value of field (largest first).
 
 Pie chart of how many elements share each value of field.
 
-### `showDendrogram(merges=None, nodes=None, heights=None, cut=None, field=None, title=None)`
+### `showDendrogram(merges=None, nodes=None, heights=None, cut=None, field=None, title=None, paint=False)`
 
 showDendrogram() draws the tree of the last walktrapClusters() or
 fastGreedyClusters(); showDendrogram(merges, nodes) draws any

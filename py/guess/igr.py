@@ -377,8 +377,17 @@ def install(session):
         communities. Stored in eigen_class."""
         need("eigenvectorClusters")
         I = undirected()
-        cl = I.G.community_leading_eigenvector(clusters=None if count is None else int(count),
-                                               weights=I.positive_weights())
+        last = None
+        for attempt in range(5):        # ARPACK starts from a random vector: seed it, and retry if it doesn't converge
+            try:
+                with _Seeded(attempt):
+                    cl = I.G.community_leading_eigenvector(clusters=None if count is None else int(count),
+                                                           weights=I.positive_weights())
+                break
+            except Exception as ex:  # noqa: BLE001 - igraph's InternalError
+                last = ex
+        else:
+            raise GuessError(f"eigenvectorClusters: the eigenvector calculation didn't converge ({last})")
         return store(I, cl.membership, "eigen_class", "community")
 
     @cmd

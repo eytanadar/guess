@@ -1,0 +1,397 @@
+# SIS, SIRS and other models  (Newman, Networks, Sections 16.1.5-16.1.7)
+# The same fully mixed population as the SIR explainer: every infected person
+# meets one random person a step (spread over five sub-steps, so the
+# simulation follows the differential equations) and infects them with
+# probability beta if they're susceptible. What changes is what happens after:
+#   SIS   recovery (probability gamma) brings no immunity: back to susceptible.
+#         The infection settles at an endemic level x* = 1 - 1/R0 (R0 = beta/gamma).
+#   SIRS  recovery brings immunity that wanes (probability w per step):
+#         the shares spiral in towards s* = 1/R0, x* = (1 - 1/R0) / (1 + gamma/w).
+#   SEIR  newly infected people are first exposed (E): infected but not yet
+#         infectious; they become infectious with probability sigma per step.
+
+import math
+import random
+import numpy as np
+
+SIDE = 12
+N = SIDE * SIDE
+GAP = 50
+COL = {"S": "70,130,220", "E": "245,170,40", "I": "225,45,45", "R": "120,175,110"}
+OUTLINE = {"S": "30,60,120", "E": "120,70,0", "I": "90,10,10", "R": "50,90,45"}
+NAMES = {"S": "susceptible", "E": "exposed", "I": "infected", "R": "recovered"}
+
+for k in range(N):
+    addNode(f"p{k}", x=(k % SIDE) * GAP, y=(k // SIDE) * GAP)
+PEOPLE = [g.getNodeByName(f"p{k}") for k in range(N)]
+
+beta_sl = Slider(0.05, 1.0, 0.6, 0.05, label="β: chance a contact infects")
+gamma_sl = Slider(0.02, 0.5, 0.2, 0.01, label="γ: chance of recovering per step")
+wane_sl = Slider(0.005, 0.2, 0.05, 0.005, label="w: immunity wanes (SIRS)")
+sigma_sl = Slider(0.05, 1.0, 0.2, 0.05, label="σ: exposed → infectious (SEIR)")
+model_dd = Dropdown(["SIS", "SIRS", "SEIR"], label="Model")
+MAX_T = 300
+SUB = 5          # each step is 5 small sub-steps (contacts 1/5 as often, rates /5): close to continuous time,
+                 # so the simulation follows the book's differential equations
+
+ep = {"model": "SIS", "who": [], "t": 0, "rows": [], "timer": None, "rnd": random.Random(5), "seeds": 3,
+      "new": [], "done": False}
+
+
+def b_():
+    return float(beta_sl.value)
+
+
+def gm_():
+    return float(gamma_sl.value)
+
+
+def w_():
+    return float(wane_sl.value)
+
+
+def sg_():
+    return float(sigma_sl.value)
+
+
+def tally():
+    w = ep["who"]
+    return {k: w.count(k) for k in "SEIR"}
+
+
+def record():
+    c = tally()
+    ep["rows"].append((ep["t"], c["S"] / N, c["E"] / N, c["I"] / N, c["R"] / N))
+
+
+def restart():
+    stop_run()
+    r = ep["rnd"] = random.Random(5)
+    ep["who"] = ["S"] * N
+    for k in r.sample(range(N), ep["seeds"]):
+        ep["who"][k] = "I"
+    ep.update(t=0, rows=[], new=[], done=False)
+    record()
+    clearDrawings()
+    show_people()
+
+
+def show_people(new=()):
+    for k, nd in enumerate(PEOPLE):
+        st = ep["who"][k]
+        nd.color, nd.strokecolor = COL[st], OUTLINE[st]
+        nd.width = nd.height = {"I": 30, "E": 26, "R": 18, "S": 22}[st]
+        nd.strokewidth = 3 if st in "EI" else 1
+        nd.labelvisible = false
+    for k in new:
+        nd = PEOPLE[k]
+        nd.width = nd.height = 38
+        nd.strokewidth = 5
+        nd.strokecolor = "40,0,0"
+
+
+def centre(nd):
+    return nd.x + nd.width / 2, nd.y + nd.height / 2
+
+
+def one_step():
+    """One step = SUB sub-steps. In each, every infectious person makes a contact with probability 1/SUB
+    (one contact a step on average), and the other changes happen at their rates / SUB."""
+    r, who, m = ep["rnd"], ep["who"], ep["model"]
+    contacts, new_all = [], []
+    for _sub in range(SUB):
+        infectious = [k for k in range(N) if who[k] == "I"]
+        new = []
+        for k in infectious:
+            if r.random() >= 1.0 / SUB:
+                continue
+            other = r.randrange(N - 1)
+            other = other + 1 if other >= k else other
+            hit = who[other] == "S" and other not in new and r.random() < b_()
+            contacts.append((k, other, hit))
+            if hit:
+                new.append(other)
+        recovered = [k for k in infectious if r.random() < gm_() / SUB]
+        waned = [k for k in range(N) if who[k] == "R" and r.random() < w_() / SUB] if m == "SIRS" else []
+        onset = [k for k in range(N) if who[k] == "E" and r.random() < sg_() / SUB] if m == "SEIR" else []
+        for k in new:
+            who[k] = "E" if m == "SEIR" else "I"
+        for k in onset:
+            who[k] = "I"
+        for k in recovered:
+            who[k] = "S" if m == "SIS" else "R"
+        for k in waned:
+            who[k] = "S"
+        new_all += new
+    ep["t"] += 1
+    ep["new"] = [k for k in new_all if who[k] in "EI"]
+    record()
+    return contacts, ep["new"]
+
+
+def draw_contacts(contacts):
+    clearDrawings()
+    for a, b, hit in contacts:
+        (x1, y1), (x2, y2) = centre(PEOPLE[a]), centre(PEOPLE[b])
+        if hit:
+            drawLine(x1, y1, x2, y2, color="225,45,45", width=4, arrow=true)
+        else:
+            drawLine(x1, y1, x2, y2, color="150,150,150,120", width=1.2, style="dashed")
+
+
+def step_once():
+    if ep["done"]:
+        return False
+    contacts, new = one_step()
+    show_people(new)
+    draw_contacts(contacts)
+    c = tally()
+    if (c["I"] == 0 and c["E"] == 0) or ep["t"] >= MAX_T:
+        ep["done"] = True
+        return False
+    return True
+
+
+def stop_run():
+    if ep["timer"] is not None:
+        ep["timer"].stop()
+        ep["timer"] = None
+    run_btn.text = "Run"
+
+
+def play():
+    if ep["timer"] is not None:
+        stop_run()
+        return
+    if ep["done"]:
+        restart()
+    ep["timer"] = everyPaced(step_once, slow=0.9, fast=0.1, ramp=4)
+    run_btn.text = "Pause"
+
+
+def finish():
+    stop_run()
+    while not ep["done"]:
+        step_once()
+
+
+def pick_model(v):
+    ep["model"] = v
+    restart()
+
+
+# ---- the equations ---------------------------------------------------------------------------
+def theory(m, steps, x0=None):
+    b, gm, w, sg = b_(), gm_(), w_(), sg_()
+    x0 = ep["seeds"] / N if x0 is None else x0
+    s, e, x, r = 1.0 - x0, 0.0, x0, 0.0
+    out = [(0, s, e, x, r)]
+    h = 1.0 / SUB                                  # the differential equations, in steps of 1/SUB
+    for t in range(1, steps + 1):
+        for _sub in range(SUB):
+            inf = b * s * x * h
+            if m == "SIS":
+                s, x = s - inf + gm * x * h, x + inf - gm * x * h
+            elif m == "SIRS":
+                s, x, r = s - inf + w * r * h, x + inf - gm * x * h, r + (gm * x - w * r) * h
+            else:
+                s, e, x, r = s - inf, e + inf - sg * e * h, x + (sg * e - gm * x) * h, r + gm * x * h
+        out.append((t, s, e, x, r))
+    return out
+
+
+def steady():
+    """The endemic level of the infected share (None for SEIR, which burns out like SIR)."""
+    r0 = b_() / gm_()
+    if ep["model"] == "SEIR":
+        return None
+    if r0 <= 1:
+        return 0.0
+    if ep["model"] == "SIS":
+        return 1 - 1 / r0
+    return (1 - 1 / r0) / (1 + gm_() / w_())
+
+
+def run_chart():
+    rows, m = ep["rows"], ep["model"]
+    end = MAX_T
+    if m == "SEIR":                                # it burns out: show the outbreak, not 200 empty steps
+        th_full = theory(m, MAX_T)
+        end = next((t for t, _s, e, x, _r in th_full if t > 10 and e + x < 0.3 / N), MAX_T)
+        end = min(MAX_T, max(end, ep["t"]))
+    th = theory(m, end)
+    keys = {"S": 1, "E": 2, "I": 3, "R": 4}
+    # in this order the lines take the dots' colours: S blue, I red, R green, E orange
+    show = {"SIS": "SI", "SIRS": "SIR", "SEIR": "SIRE"}[m]
+    data = {}
+    for k in show:
+        data[NAMES[k]] = [(row[0], row[keys[k]]) for row in rows]
+    for k in show:
+        data[f"{NAMES[k]} (equations)"] = [(row[0], row[keys[k]]) for row in th]
+    dashed = [f"{NAMES[k]} (equations)" for k in show]
+    x_star = steady()
+    if x_star is not None:
+        data["endemic level"] = [(0, x_star), (MAX_T, x_star)]
+        dashed.append("endemic level")
+    return plotLine(data, title=f"{m}: shares over time", xlabel="step", ylabel="share of people", yrange=(0, 1),
+                    xrange=(0, end), dashed=dashed)
+
+
+def run_text():
+    c, m = tally(), ep["model"]
+    r0 = b_() / gm_()
+    head = (f"Step **{ep['t']}** of {MAX_T}: " + ", ".join(f"**{c[k]}** {NAMES[k]}" for k in "SEIR"
+                                                         if k in {"SIS": "SI", "SIRS": "SIR", "SEIR": "SEIR"}[m])
+            + f". **R₀ = β/γ = {r0:.2f}**.")
+    if ep["new"]:
+        head += " Just infected: " + " ".join(linkTo(PEOPLE[k]) for k in ep["new"][:8]) + (
+            " …" if len(ep["new"]) > 8 else "")
+    if m == "SIS":
+        body = ("Recovering gives **no immunity**, so people go round and round: S → I → S. Above the threshold "
+                f"R₀ = 1 the infection never dies out (barring bad luck in a small population) but settles where "
+                f"new infections balance recoveries: the **endemic level** x* = 1 − 1/R₀ = "
+                f"**{max(0.0, 1 - 1 / r0):.0%}**.")
+        if r0 <= 1:
+            body = "R₀ ≤ 1: each case is replaced by fewer than one, so the infection dies out."
+    elif m == "SIRS":
+        body = (f"Immunity **wanes** (w = {w_():.3f} a step), so recovered people slowly return to the "
+                "susceptible pool. The infection comes back in **waves**: an outbreak burns through the "
+                "susceptible, dies down while immunity holds, and returns once enough have lost it. The waves "
+                f"shrink towards s* = 1/R₀ = {min(1.0, 1 / r0):.0%} susceptible and "
+                f"x* = **{steady():.1%}** infected; see the *Phase plane* tab for the spiral.")
+    else:
+        body = (f"A **latent stage**: the newly infected (amber) aren't infectious yet; each becomes so with "
+                f"probability σ = {sg_():.2f} a step, about {1 / sg_():.0f} steps on average. The outbreak "
+                "is slower and its peak later and lower, but it ends where SIR would: the final size still "
+                "solves r = 1 − e^(−R₀ r), because the latent stage changes when people are infectious, "
+                "not for how long.")
+    return head + "\n\n" + body
+
+
+def phase_chart():
+    m = ep["model"]
+    th = theory(m, 1500)
+    data = {"this run": [(row[1], row[3]) for row in ep["rows"]],
+            "equations": [(row[1], row[3]) for row in th]}
+    x_star = steady()
+    out = dict(title=f"{m}: infected against susceptible", xlabel="susceptible share s",
+               ylabel="infected share x", xrange=(0, 1), dashed=["equations"])
+    if x_star is not None and x_star > 0:
+        data["steady state"] = [(min(1.0, gm_() / b_()), x_star)]
+        out["highlight"] = ["steady state"]
+    return plotLine(data, **out)
+
+
+def phase_text():
+    m = ep["model"]
+    if m == "SIRS":
+        return ("Each step moves the point (s, x). The equations (dashed) **spiral in** to the steady state "
+                "(large dot): too many infected use up the susceptible, the infection falls, immunity wanes, "
+                "the susceptible pile up again, and the next wave comes. The run follows the spiral roughly; in "
+                "only 144 people chance can end it.")
+    if m == "SIS":
+        return ("In SIS everyone is either susceptible or infected (s + x = 1), so the path runs along a straight "
+                "line to the endemic point.")
+    return ("SEIR runs once through: the infected share rises while the susceptible fall, peaks when s = 1/R₀ "
+            "(the point where each case is just replaced), and falls back to zero, leaving the "
+            "susceptible who escaped.")
+
+
+# ---- the endemic threshold ---------------------------------------------------------------------
+sweep = {"pts": {}, "timer": None, "todo": [], "rnd": None}
+R0S = [0.5, 0.8, 1.0, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
+SWEEP_N = 1000
+
+
+def sis_level(r0, rng, n=SWEEP_N, gm=0.2, steps=400, sub=10):
+    """Average infected share over the last 100 of `steps` steps of stochastic SIS in a fully mixed
+    population (each step `sub` sub-steps, as in the drawn simulation)."""
+    b = min(1.0, r0 * gm)
+    I = 50
+    tail = []
+    for t in range(steps * sub):
+        S = n - I
+        p = 1.0 - (1.0 - b / (sub * (n - 1))) ** I
+        new = rng.binomial(S, p)
+        rec = rng.binomial(I, gm / sub)
+        I = I + new - rec
+        if t >= (steps - 100) * sub and t % sub == 0:
+            tail.append(I / n)
+        if I == 0:
+            tail = [0.0]
+            break
+    return sum(tail) / len(tail)
+
+
+def sweep_step():
+    if not sweep["todo"]:
+        sweep["timer"] = None
+        return False
+    r0 = sweep["todo"].pop(0)
+    sweep["pts"][r0] = [sis_level(r0, sweep["rnd"]) for _ in range(3)]
+    return bool(sweep["todo"])
+
+
+def run_sweep():
+    if sweep["timer"] is not None:
+        sweep["timer"].stop()
+    sweep.update(pts={}, todo=list(R0S), rnd=np.random.default_rng(11))
+    sweep["timer"] = everyPaced(sweep_step, steps=len(R0S), slow=0.6, fast=0.2, ramp=2)
+
+
+def sweep_chart():
+    grid = [i / 20 for i in range(0, 121)]
+    data = {"simulated (1,000 people)": sorted((r0, v) for r0, vs in sweep["pts"].items() for v in vs),
+            "x* = 1 − 1/R₀": [(r0, max(0.0, 1 - 1 / r0) if r0 > 0 else 0.0) for r0 in grid]}
+    return plotLine(data, title="SIS: endemic level against R₀", xlabel="R₀ = β/γ", ylabel="share infected (long run)",
+                    yrange=(0, 1), xrange=(0, 6), dashed=["x* = 1 − 1/R₀"], dots=true)
+
+
+def sweep_text():
+    if not sweep["pts"]:
+        return ("SIS in 1,000 people, starting from 50 cases, γ = 0.2 and β = R₀ γ: *Simulate* runs 400 steps three "
+                "times at each R₀ and averages the share infected over the last 100.")
+    below = [v for r0, vs in sweep["pts"].items() if r0 < 1 for v in vs]
+    out = (f"{len(sweep['pts'])} of {len(R0S)} values done. Below R₀ = 1 the infection dies out "
+           f"(long-run share {max(below) if below else 0:.1%} at most); above it, it settles near 1 − 1/R₀. ")
+    out += ("The level rises continuously from zero at R₀ = 1: a phase transition again, now between an "
+            "infection-free state and an **endemic** one. Just above the threshold the runs fluctuate most and "
+            "can die out by chance.")
+    return out
+
+
+def sliders_changed(v=None):
+    if ep["t"] == 0:
+        show_people()
+
+
+for sl in (beta_sl, gamma_sl, wane_sl, sigma_sl):
+    sl.onChange = sliders_changed
+model_dd.onChange = pick_model
+run_btn = Button("Run", onClick=lambda: play())
+restart()
+center(g.nodes)
+constantLabelSize(size=14)
+ui.title("SIS, SIRS and other models", "Networks, Sections 16.1.5–16.1.7")
+ui.layout(
+    right=Column(
+        Markdown("""### When immunity doesn't last
+144 people, fully mixed. Each step every infected person (red) meets one
+person at random; a **red arrow** passes the infection on. **Blue**
+susceptible, **amber** exposed (SEIR), **green** recovered."""),
+        model_dd, beta_sl, gamma_sl, wane_sl, sigma_sl,
+        Tabs(
+            Tab("Run",
+                Row(run_btn, Button("One step", onClick=lambda: step_once()),
+                    Button("To the end", onClick=lambda: finish()), Button("Start again", onClick=lambda: restart())),
+                Markdown(run_text), Chart(run_chart)),
+            Tab("Phase plane", Chart(phase_chart), Markdown(phase_text)),
+            Tab("Endemic threshold",
+                Button("Simulate: endemic level against R₀", onClick=lambda: run_sweep()),
+                Chart(sweep_chart), Markdown(sweep_text))),
+    ),
+    sizes={"right": 460},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{N} people · step {ep['t']} · {ep['model']}"))
+center(g.nodes)
