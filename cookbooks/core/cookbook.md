@@ -346,6 +346,75 @@ plotDistrib(betweenness)
 heavy tails (a few hubs, many small nodes) obvious. The charts appear in a
 panel and can be saved as images.
 
+## Scatter two measures [Basic]{.level}
+
+**You want** to see how two measures go together: are the best-connected
+characters also the ones on most shortest paths?
+
+```python
+makeFromGDF("lesmis.gdf")
+plotScatter(degree, betweenness)                            # one dot per node
+plotScatter(degree, ends=true, line=[(1, 1), (36, 36)])     # degree at both ends of every edge
+```
+
+![Betweenness against degree in Les Misérables](img/core-scatter.png)
+
+**How it works.** `plotScatter(x, y)` draws one dot per node (or edge, for
+edge fields) in the element's own colour. Pointing at a dot highlights its
+node in the graph, and clicking selects it, so the outliers are a click
+away: here, characters with modest degree but high betweenness are the
+brokers between parts of the story. `plotScatter(field, ends=true)` plots
+the value at one end of every edge against the other end (both ways round
+for undirected edges). Dots near the diagonal mean like links to like,
+which is what `assortativity(field)` measures. `line=` adds a dashed
+reference line, `log=true` (or `logX=`, `logY=`) uses log axes, and
+`xrange=`/`yrange=` fix the axes.
+
+**Pitfalls.** Many dots on top of each other look like one: use log axes for
+heavy-tailed measures, or colour the nodes first (`colorize(...)`) so the
+dots carry a third variable.
+
+## Fit a power law [Intermediate]{.level}
+
+**You want** to know whether a degree distribution has a power-law tail,
+p(k) ∝ k^−α, and what α is.
+
+```python
+makeFromGDF("polblogs-sample.gdf")
+plotFrequency(degree, cumulative=true, log=true, fit=true)
+fitPowerLaw(degree)                       # {'alpha': ..., 'sigma': ..., 'kmin': ..., 'n': ..., 'ks': ...}
+```
+
+![The cumulative degree distribution of 600 political blogs, with a fitted power law](img/core-power-law.png)
+
+```python
+import csv
+rows = list(csv.DictReader(open("degree-sequences.csv")))
+internet = [int(r["degree"]) for r in rows if r["network"].startswith("Internet")
+            for _ in range(int(r["count"]))]
+fitPowerLaw(internet)                     # the whole 2006 Internet: alpha about 2.08, from k = 5
+```
+
+**How it works.** `plotFrequency(field, cumulative=true, log=true)` plots
+the share of nodes with at least each degree, which is much less noisy in
+the tail than a histogram. `fit=true` adds the fitted power law as a dashed
+line. `fitPowerLaw` estimates α by maximum likelihood (not by drawing a
+line through the log-log plot, which is biased) and gives its standard
+error `sigma`. Unless you pass `kmin=`, it chooses where the tail starts
+by the Kolmogorov–Smirnov method; `n` is how many values the fit used. It
+also takes a plain list of numbers, as for the Internet's 22,963 degrees in
+`degree-sequences.csv`, a network too big to draw.
+
+**Pitfalls.**
+
+- A tail of a few dozen nodes can't establish a power law: look at `n` and
+  `sigma` before quoting α.
+- A small KS distance doesn't rule out other heavy tails, such as an
+  exponential or log-normal one; compare them before claiming a power law.
+- Some growth models give a power law in k + a rather than k (Price's model,
+  for one). `fitPowerLaw(degree, shift=a)` fits that form; fitting k
+  directly then reads too low.
+
 ## Charts of your own with Altair [Intermediate]{.level}
 
 **You want** a chart GUESS has no command for, such as one measure plotted
@@ -387,6 +456,36 @@ them. Click *● Live* on a chart and it redraws after every change. Run
 `louvainClusters();` again and the bar chart follows. `nodeData(dept ==
 "x", ...)` charts just some nodes, and `edgeData("weight")` gives one row
 per edge.
+
+## Read the adjacency matrix [Intermediate]{.level}
+
+**You want** the network as a matrix, with groups as blocks.
+
+```python
+makeFromGDF("karate.gdf")
+louvainClusters()
+showMatrix(order=louvain_class)
+```
+
+![The karate club's adjacency matrix, ordered by community](img/core-matrix.png)
+
+```python
+makeFromGDF("southern-women.gdf")
+showMatrix(rows=(kind == "event"), cols=(kind == "woman"), numbers=true)
+```
+
+**How it works.** `showMatrix()` draws a row and a column per node and a
+dark cell for each edge. `order=field` sorts the rows and columns by a
+field, with lines between its groups, so communities show as dense blocks
+on the diagonal. `weight=` shades cells by an edge field, and
+`numbers=true` writes each cell's value (for small matrices). `rows=` and
+`cols=` give a rectangular matrix, such as the incidence matrix of people
+and the events they attended. Pointing at a cell highlights its edge and
+two nodes.
+
+**Pitfalls.** Without an order the matrix looks like noise even when the
+network has strong groups: the blocks only appear once rows are sorted by
+something meaningful. Above a few hundred nodes, cells shrink below a pixel.
 
 ## Paths and distances [Basic]{.level}
 
@@ -487,6 +586,18 @@ a field (0 = the largest community):
 `modularity(field)` scores any partition, including one you supply
 (`modularity(dept)`).
 
+Hierarchical methods (walktrap, fast greedy) build a tree of merges. Draw
+it to choose how many communities to keep:
+
+```python
+walktrapClusters()
+showDendrogram(cut=4, paint=true)         # the tree, cut into 4 groups, nodes coloured to match
+```
+
+Pointing at a branch highlights its nodes; `cut=k` colours the k groups,
+`paint=true` gives the nodes the same colours, and `field="name"` stores
+the groups. `cutDendrogram(k)` re-cuts the stored field.
+
 **Pitfalls.** Every method finds communities, even in random graphs. Check
 that the modularity is well above what you get after `rewire()`, and that
 the result is stable (`seed=None`, run again, then `compareClusters`).
@@ -505,6 +616,56 @@ mixingMatrix(dept)
 the adjusted Rand index) between two partitions, such as found communities
 and a known attribute. `mixingMatrix(field)` counts edges between each pair
 of values, which shows *which* groups mix.
+
+To test a method where the right answer is known, run it on a benchmark
+network with planted communities:
+
+```python
+makeLFR(250, mu=0.3, seed=1)              # 30% of each node's edges leave its community
+louvainClusters()
+compareClusters(louvain_class, community) # near 1 for small mu; falls as mu grows
+```
+
+`makeLFR` gives the planted groups in the field `community`. Every method
+finds them when `mu` is small and fails somewhere between about 0.3 and 0.5.
+Where it fails, and how gracefully, is the fair comparison between methods.
+
+## Compare with a random network [Intermediate]{.level}
+
+**You want** to know whether a measure is surprising, or just what any
+network with the same degrees would give.
+
+```python
+makeFromGDF("karate.gdf")
+real = (averageClustering(), assortativity())
+makeConfigurationModel(degree, simple=true)      # the same degrees, wired at random
+wired = (averageClustering(), assortativity())
+makeErdosRenyiRandom(34, 0.139)                  # only the same size and density
+plain = averageClustering()
+print(real, wired, plain)
+```
+
+**How it works.** A random network with the same degrees as the real one
+(the configuration model) is the usual baseline: whatever it shares with the
+real network comes from the degrees alone. The karate club's clustering
+(0.57) is more than twice the rewired network's (about 0.23): the club's
+triangles are real structure, not an effect of its hubs.
+`makeConfigurationModel(degree)` copies the current graph's degrees (any
+numeric field or list works); `simple=true` removes the self-loops and
+repeated edges the random wiring makes. `makeExpectedDegree(weights)` joins
+each pair independently with probability w_i w_j / Σw instead.
+`makeErdosRenyiRandom(n, p)` keeps only the size and density. `rewire()`
+does the same as the configuration model in place, by swapping edge ends.
+
+**Pitfalls.**
+
+- One random network is one sample: repeat with different seeds and compare
+  with the spread, not a single value.
+- Random generators are seeded (`seed=0` by default), so the same call gives
+  the same network every time. Pass `seed=None` for a new one each time, or
+  other numbers for a set of samples.
+- The generators replace the current graph; save it first (`saveState`) or
+  use a separate graph (`newGraph`).
 
 ## Collapse groups into single nodes [Intermediate]{.level}
 
@@ -540,7 +701,18 @@ forceAtlas2Layout()
 
 Layouts start from the current positions, so running one twice refines it.
 `removeOverlap()` (or `noverlapLayout()`) pushes overlapping nodes apart
-afterwards.
+afterwards. For a hand-drawn look, `lombardiLayout()` draws edges as
+circular arcs that leave each node at evenly spread angles (a "Lombardi
+drawing"), and `lombardiEdges()` rounds the edges of any layout without
+moving the nodes:
+
+```python
+makeFromGDF("karate.gdf")
+lombardiLayout()                          # returns how even the angles were, before and after
+```
+
+Layouts are seeded, so the same network and starting positions give the
+same picture every time.
 
 ## Pin nodes while the rest moves [Basic]{.level}
 
@@ -575,6 +747,21 @@ is a gradient for numbers. `sizeBy(field, min, max)` scales sizes
 sizes by rank. Legends follow the colours: re-run `colorize` and the legend
 updates.
 
+```python
+directedEdges("arrow")       # arrowheads on directed edges
+directedEdges("taper")       # back to the default: wide at the source, a point at the target
+v1.strokewidth = 4           # a thicker outline marks one node
+```
+
+Directed edges are drawn tapered by default, with no arrowhead: in a user
+study (Holten and van Wijk, CHI 2009), tapered edges were read fastest and
+most accurately, and arrowheads among the worst. `directedEdges("fade")`
+uses a dark-to-light ramp instead. A node's `strokewidth` field sets its
+outline (0 = the display's default), which is a good way to mark a state
+without changing the fill. For a cyclic value, such as a phase or an angle,
+`colorByPhase(field, period=)` colours around a colour wheel so the two ends
+of the cycle match.
+
 ## Labels that don't collide [Basic]{.level}
 
 ```python
@@ -592,7 +779,9 @@ hideOverlappingLabels()
 GUESS choose a free spot. `optimizeLabels()` runs a longer search for
 positions, and `hideOverlappingLabels()` drops the labels that still
 collide, smallest nodes first. `labelSizeBy(degree)` makes important labels
-bigger.
+bigger. `constantLabelSize(size=14)` keeps labels the same size on screen as
+you zoom, so they stay readable on a big graph (zooming in then reveals
+more of them).
 
 ## Outline groups and bundle the hairball [Intermediate]{.level}
 
@@ -669,6 +858,22 @@ showTime(150, since, window=50)             # only the last 50
 field is at most `t` (and within `window` of it, if given). For
 elements that come and go, give them ranges with `addRange(node,
 "1999-2003,2007")` and use `showTime(t)`. *View → Timeline* gives a slider.
+
+To replay how a network grew, lay out the *final* network once and reveal
+it in arrival order, so every node appears where it will stay:
+
+```python
+makePriceModel(200, c=2, a=1)             # a citation network; born = when each paper arrived
+center(g.nodes)                           # frame the final picture
+revealUpTo(20)                            # the first 20 papers and their citations
+revealUpTo(199)                           # everything
+```
+
+`revealUpTo(step)` shows the nodes whose `born` field (or `field=`) is at
+most `step`, and the edges between them, and returns what arrived at exactly
+that step, ready to highlight. The growth models (`makePriceModel`,
+`makeBarabasiAlbertRandom`, `makeGrowingNetwork`, `makeCopyingModel`) set
+`born` themselves; for your own data, store the step or year in a field.
 
 # Sharing
 
@@ -775,6 +980,93 @@ view) to one file that `makeFromSession` (or *File → Open*) restores.
 `.py` file and `execfile` replays it on new data.
 
 # Capstone
+
+## Animate a process step by step [Advanced]{.level}
+
+**You want** an app that runs a process on the network (here, an infection
+spreading from the best-connected member of the karate club) slowly enough
+to watch, with a live chart and a running commentary.
+
+```python
+import random
+makeFromGDF("karate.gdf")
+frLayout()
+constantLabelSize(size=14)
+rnd = random.Random(4)
+first = max(g.nodes, key=lambda n: n.degree)
+run = {"sick": {first.name}, "new": [first], "curve": [(0, 1)]}
+
+def look():
+    for n in g.nodes:
+        ill = n.name in run["sick"]
+        n.color = "230,60,50" if ill else "120,160,220"
+        n.width = n.height = 26 if n in run["new"] else (18 if ill else 12)
+        n.strokewidth = 3 if n in run["new"] else 0          # the newest cases stand out
+    fresh = {n.name for n in run["new"]}
+    for e in g.edges:                                        # the edges the infection just crossed
+        hit = (e.node1.name in fresh) != (e.node2.name in fresh) \
+            and e.node1.name in run["sick"] and e.node2.name in run["sick"]
+        e.color, e.width, e.linestyle = ("240,140,30", 3, "flow") if hit else ("160,160,160,120", 1, "solid")
+
+def step():
+    new = [m for n in g.nodes if n.name in run["sick"] for m in n.getNeighbors()
+           if m.name not in run["sick"] and rnd.random() < 0.25]
+    new = list({m.name: m for m in new}.values())
+    run["sick"] |= {m.name for m in new}
+    run["new"] = new
+    run["curve"].append((len(run["curve"]), len(run["sick"])))
+    look()
+    return len(g.nodes) - len(run["sick"])                   # 0 stops the timer
+
+def start():
+    everyPaced(step, slow=0.9, fast=0.2)
+
+def chart():
+    t = len(run["curve"])
+    return plotLine({"infected": run["curve"], "everyone": [(0, len(g.nodes)), (t, len(g.nodes))]},
+                    title="Infected so far", xlabel="step", ylabel="people", yrange=(0, len(g.nodes)),
+                    dashed=["everyone"], colors={"infected": "230,60,50", "everyone": "150,150,150"})
+
+def story():
+    names = " ".join(linkTo(n) for n in run["new"]) or "none"
+    return (f"**{len(run['sick'])}** of {len(g.nodes)} infected. Newest: {names}. More in "
+            "[the epidemics explainer](?app=explainers/networks/ch16-epidemics-on-networks/manifest.json).")
+
+ui.layout(right=Column(Markdown(story), Chart(chart), Row(Button("Spread", onClick=lambda: start()))),
+          sizes={"right": 360})
+look()
+for _ in range(3):
+    step()
+```
+
+![An infection stepping through the karate club, with a live chart and the newest cases as chips](img/app-core-animate.png)
+
+**How it works.**
+
+- **Pacing.** `everyPaced(step, slow=, fast=)` calls `step` on a timer that
+  starts slow, speeds up, and slows down again as `step`'s return value (the
+  steps left) runs out, so the start and end of a process can be watched
+  and the middle doesn't drag. Returning 0 or `False` stops it; `steps=`
+  fixes the number of steps instead.
+- **Making changes visible.** The newest cases are bigger and outlined
+  (`strokewidth`), and the edges the infection just crossed flow orange. A
+  colour change alone is easy to miss on small nodes.
+  `constantLabelSize(size=14)` keeps labels readable at any zoom.
+- **Live text and charts.** `Markdown(story)` and `Chart(chart)` take
+  functions, which run again after every step. `linkTo(n)` writes a chip
+  that highlights its node when pointed at and selects it when clicked. A
+  Markdown link to `?app=…/manifest.json` opens another app on the same
+  site. In `plotLine`, `dashed=` and `colors=` mark a reference or theory
+  curve and give it a matching colour.
+- **Growth.** For a network that grows, build the final network first, lay it
+  out once, and give each node and edge the step it arrives in a `born`
+  field. Then call `revealUpTo(step)` from the timer, so each node appears
+  where it will stay.
+
+**Pitfalls.** A process that runs at full speed is over before anyone sees
+it, which is what the pacing is for. Keep the work in `step` small: it runs
+inside the timer, and in the browser a slow step stalls the whole page. Do
+expensive simulations off screen and chart the results.
 
 ## Capstone: an explorer for any network [Advanced]{.level}
 

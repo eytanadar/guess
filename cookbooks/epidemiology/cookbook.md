@@ -233,6 +233,75 @@ bigger ⟨k²⟩ and the lower the threshold. In networks with very uneven
 contacts, like sexual contact networks, the threshold can be close to
 zero (Pastor-Satorras and Vespignani 2001).
 
+**An outbreak is a percolation cluster.** If everyone stays infectious for
+exactly the same time, say 5 days, each contact passes the infection on
+with the same chance T = 1 − (1 − β)⁵, independently of every other
+contact. Toss that coin once for every edge in advance and keep the edges
+that come up heads: the people an outbreak reaches are exactly the cluster
+of kept edges around the first case. So outbreak sizes can be read off
+*bond percolation*, which `percolation(bond=True)` computes in one pass:
+
+```python
+makeFromGDF("school-contacts-SIMULATED.gdf")
+percolation(bond=True, trials=20)        # largest cluster against the share of edges kept
+for b in [0.01, 0.02, 0.03, 0.05]:
+    T = 1 - (1 - b) ** 5
+    sz = outbreaks(200, beta=b, duration=5, show=False)
+    print(b, round(T, 3), sz.large, round(sz.meanLarge / len(g.nodes), 2))
+```
+
+![Bond percolation on the school's contacts: the largest cluster against the share of contacts that transmit](img/epi-percolation.png)
+
+`duration=5` makes every infection last exactly 5 steps, instead of ending
+with chance γ each step. The threshold is then T_c = ⟨k⟩/(⟨k²⟩ − ⟨k⟩),
+0.054 here; the outbreaks take off where the curve rises:
+
+| beta | T | share of outbreaks that take off | their mean size |
+|---|---|---|---|
+| 0.01 | 0.049 | 3% | 12% of the school |
+| 0.02 | 0.096 | 57% | 58% |
+| 0.03 | 0.141 | 83% | 84% |
+| 0.05 | 0.226 | 93% | 95% |
+
+The large outbreaks are as big as the giant cluster at the same T (63% at
+T = 0.1, 85% at 0.15). The two questions, "how likely?" and "how big?",
+have one answer here because contacts are symmetric; with a random
+infectious period they come apart a little.
+
+## Diseases without lasting immunity [Intermediate]{.level}
+
+**You want** to model an infection people can catch again, or one with a
+quiet stage before they become infectious.
+
+```python
+makeFromGDF("school-contacts-SIMULATED.gdf")
+c = spread(g.nodes[:3], model="SIS", beta=0.03, gamma=0.2, steps=300)
+plotScatter(degree, infected_steps, title="Time spent infected, by contacts")
+```
+
+![SIS in the school: pupils with more contacts are infected more of the time](img/epi-sis.png)
+
+**How it works.** `spread` has three more models:
+
+| model | course of an infection | what happens |
+|---|---|---|
+| `"SIS"` | S → I → S | no immunity: the infection settles at an *endemic* level |
+| `"SIRS"` | S → I → R → S | immunity wanes (chance `waning` each step): it comes back in waves |
+| `"SEIR"` | S → E → I → R | a latent stage, left with chance `sigma` each step, delays the peak |
+
+In this school, SIS with γ = 0.2 dies out at β = 0.02 but settles with
+about half the school infected at any time at β = 0.03 (53%), and two
+thirds at β = 0.05. `infected_steps` records how many steps each person
+spent infected: over 300 steps the 59 best-connected people (22 or more
+contacts) were infected for 182 on average, the 80 least connected (12 or
+fewer) for 111. In SEIR, `spread` returns the number exposed at each step
+as `c.exposed`, and the chart gets an *exposed* line.
+
+**Pitfalls.** An SIS run never finishes by itself while the infection is
+endemic: `steps` sets how long it goes on. A small population can lose an
+endemic infection by chance in a trough, as SIRS waves often do in a
+school this size.
+
 ## Where an outbreak starts matters [Intermediate]{.level}
 
 ```python

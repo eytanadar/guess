@@ -22,6 +22,8 @@ are in the cookbooks' `data` folder:
 |---|---|
 | `us-airports.gdf` | 549 airports in the United States and the 2,787 airport pairs with scheduled domestic service. `weight` is the number of airline routes listed between the two. Node fields: `iata` (code), `city`, `latitude`, `longitude`, `airport` (name). |
 | `world-airports.gdf` | The same for the whole world: 3,257 airports and 18,930 pairs, with `country`. |
+| `power-grid-region.gdf` | A connected region of 400 of the 4,941 stations of the Western US power grid (Watts and Strogatz), laid out by Kamada–Kawai; positions are not geographic. |
+| `internet-as-sample.gdf` | A snowball sample of 300 autonomous systems (the networks that make up the Internet) from a 2006 snapshot, with the links among them. |
 
 Both come from the OpenFlights airport and route databases (Open Database
 License), a 2014 snapshot. They record which routes exist, not how often
@@ -121,6 +123,44 @@ route's length in `km` and its `bearing`, and prints the mean route length.
 
 **Pitfalls.** Shapefile column names are cut to 10 characters, so long
 field names come out shortened (and numbered when two would clash).
+
+## Colour a map [Intermediate]{.level}
+
+**You want** a network of regions that share a border, for questions of
+adjacency: how many colours a map needs, which regions are neighbours,
+how far apart two regions are in border crossings.
+
+::: ingredients
+**Ingredients:** `makeFromMap` · `colorGraph` · `edgeCrossings`
+:::
+
+```python
+makeFromMap("usa")
+colorGraph()
+labelBy(abbrev)
+edgeCrossings()
+```
+
+![The lower 48 states, joined where they share a border, in four colours](img/infrastructure-map-colours.png)
+
+**How it works.** `makeFromMap("usa")` makes a node for each of the lower
+48 states and an edge wherever two share a border: 106 borders. Touching
+at a single point (the Four Corners) doesn't count. It places the states on
+a map (`geoLayout`) with their outlines behind. `makeFromMap("world")` does
+the same for 241 countries. `colorGraph()` gives each node a colour unlike
+its neighbours' (the DSATUR method), stores it in `color_class` and colours
+by it. A map needs at most four colours (the four-colour theorem), and the
+states take four. Region networks like these are *planar*: they can be drawn
+without crossing edges, and `edgeCrossings()` counts 0 here.
+
+**Variations.** `colorGraph(strategy="largest_first")` uses a simpler
+greedy order and needs five colours on the states: greedy colourings are
+not always optimal. `shortestPath(Washington, Florida)` counts border
+crossings between two states.
+
+**Pitfalls.** The world map's drawing has 12 crossing edges: borders across
+the edges of the projection, and countries in several pieces, drawn at one
+point. Adjacency through the sea (ferries, tunnels) isn't a border here.
 
 ## Draw flows, not lines [Intermediate]{.level}
 
@@ -263,6 +303,27 @@ attack on the bridges with 3%. This *robust yet fragile* pattern is
 typical of networks with hubs. Random failures mostly hit small airports
 that nothing depends on, while a few removals in the right places split
 the system. The world network is similar (37% at random, 8% by degree).
+
+**The whole curve, fast.** `percolation()` gives the same kind of curve in
+one pass, for every share of nodes at once: it adds the nodes back one at a
+time in random (or attack) order and merges the pieces they join (the
+Newman–Ziff algorithm), so it suits big networks and many trials. It
+returns (share present, largest piece) pairs and charts them:
+
+```python
+makeFromFile("power-grid-region.gdf")
+percolation(trials=20)                    # random failures
+percolation("degree")                     # hubs removed first
+percolation(bond=true, trials=20)         # lines fail instead of stations
+```
+
+A region of the Western US power grid (400 stations) loses half its
+largest piece when 27% of stations fail at random, but when only 6% are
+removed hubs first. The Internet sample of 300 networks of the 2006
+Internet behaves the same way (41% against 14%), and so do the airports
+(37% against 6%). With `bond=true` lines rather than stations fail: the
+grid's largest piece falls below half the stations once about 40% of
+lines are down.
 
 **Pitfalls.** Connectivity isn't capacity. A network can stay connected
 while its remaining hubs are overloaded, so simulate load (or use

@@ -111,10 +111,22 @@ tied. The instructor and the officer top every list here. Further down
 the lists differ. Member `m32` has only 6 ties but almost the betweenness
 of `m33`, who has 12, because `m32`'s friends are on both sides of the club.
 
+**Variations.** Eigenvector centrality gives zero to anyone no one points
+to in a directed network, and to everyone they point to. *Katz centrality*
+gives every node a free amount β as well, so it works on any network:
+
+```python
+f, limit = katzCentrality(alpha=0.1)
+limit                                     # alpha must stay below this: 1/κ₁
+[n.label for n in sortBy(katz)[-3:]]
+```
+
+With α near 0 it ranks almost by degree; as α approaches the limit it
+ranks almost like eigenvector centrality.
+
 **Pitfalls.** Betweenness and closeness assume things flow along shortest
 paths. Gossip, which wanders, is better modelled by `rwbetweenness`
 (random-walk betweenness) or `pagerank`.
-
 ## The Medici: power from position [Intermediate]{.level}
 
 **You have** the Florentine marriage network. **You want** to see why one
@@ -237,6 +249,54 @@ club's dense centre. *Cohesive blocks* (Moody and White) are nested groups
 that stay connected after removing any *k*−1 members, so they catch groups
 held together by many independent paths.
 
+**Variations.** `kComponents(k)` finds the *k-components*: groups in which
+every pair is joined by *k* independent paths (no shared members), largest
+first, in the field `kcomponent`. A k-core only counts ties, so two dense
+groups joined through a single member can form one k-core; they can't form
+one k-component:
+
+```python
+[len(c) for c in kComponents(2)]          # bicomponents: 28 and 6 members
+[len(c) for c in kComponents(3)]
+```
+
+## Core and periphery [Intermediate]{.level}
+
+**You want** to know whether a network is organised around a dense core
+that everyone else hangs off, rather than around separate groups.
+
+```python
+makeFromGDF("karate.gdf")
+frLayout()
+corePeriphery()                           # {'core': 5, 'fit': 0.43}
+colorize(core)
+sizeBy(degree, 10, 40)
+showMatrix(order=core)
+```
+
+![Five members form the karate club's core](img/sna-core-periphery.png)
+
+**How it works.** `corePeriphery()` looks for the split that best matches
+an ideal pattern: every pair that includes a core member is tied, and no
+pair of peripheral members is (Borgatti and Everett). It stores 1 in `core`
+for core members and returns the core's size and the correlation with the
+ideal. In the matrix, ordered by `core`, the core's rows and columns are
+dense and the periphery's corner is nearly empty. In the karate club the
+core is the instructor, the officer and three of their closest
+associates: `m1`, `m2`, `m3`, `m33`, `m34`.
+
+**Variations.** A two-group block model without degree correction finds the
+same split here, because it groups nodes by how many ties they have:
+
+```python
+fitBlockModel(2, degreeCorrected=false)
+compareClusters(core, sbm_class)          # 1.0: the same five members
+```
+
+**Pitfalls.** Every network has a best core, so look at the fit and the
+matrix before calling it core–periphery. A network with two communities can
+also have a "core" of their leaders, as the karate club does.
+
 ## Members of several groups at once [Intermediate]{.level}
 
 **You want** groups that may overlap, because people belong to more than
@@ -357,10 +417,23 @@ same few officer-side contacts.
 position. Try several *k*: there is no single right number, only
 more or less useful simplifications.
 
+Structural equivalence asks for the *same* contacts. Two
+team leaders in different departments share no contacts at all, yet play
+the same role. *Regular equivalence* calls two members similar when their
+contacts are similar, counting paths of every length (Leicht, Holme and
+Newman):
+
+```python
+top = similarTo(m34, method="regular", alpha=0.9, top=3)
+[n.label for n in top]
+colorBy(similarity, white, red)
+```
+
+`alpha` (below 1) weighs longer paths; the score is in `similarity`.
+
 **Pitfalls.** Communities and positions answer different questions. A
 position can hold people with no ties to each other at all (the followers
 of one leader), and a community can mix leaders and followers.
-
 # Homophily and mixing
 
 ## Do like link to like? [Basic]{.level}
@@ -388,10 +461,22 @@ sides. These are the most prominent blogs, which watched and answered each
 other. Adamic and Glance's study of many more blogs found the two sides
 far more separated.
 
+**Variations.** A numeric field is treated as a quantity: `assortativity(age)`
+is the correlation of the values at the two ends of each tie. If the numbers
+are codes for categories (a grade, a class, a department number), say so,
+and the categorical measure is used instead:
+
+```python
+makeFromGDF("karate.gdf")
+addNodeField("side_code", INTEGER, 0)
+for n in g.nodes:
+    n.side_code = 1 if n.club == "Mr Hi" else 2
+assortativity(side_code, categorical=true)
+```
+
 **Pitfalls.** Homophily has two explanations that the network alone can't
 separate: people choose similar others (*selection*), or tied people grow
 alike (*influence*). Telling them apart needs data over time.
-
 # Directed ties
 
 ## Reciprocity, triads and status [Intermediate]{.level}
@@ -415,6 +500,66 @@ links are returned, and transitive triads outnumber cycles 455 to 29: a
 pecking order, not a ring. `authority` and
 `hub` (HITS) split status into being pointed to by good hubs (authorities)
 and pointing to good authorities (hubs).
+
+**Variations.** `rankNodes()` places every node on a ladder so that ties
+mostly point one way (SpringRank, De Bacco, Larremore and Moore). By default
+an edge a → b pulls a one step above b, which suits dominance (a beat b)
+and placement (b hired a's graduates). A link to a blog endorses the blog
+linked, so here the edges are read the other way with `endorsements=true`.
+It stores the position in `rank` and returns the share of ties that agree
+with the ladder:
+
+```python
+rankNodes(endorsements=true)              # 0.65 of the links agree with the ladder
+[n.name for n in sortBy(rank)[-3:]]       # the top: Wonkette, JuanCole, BlogJohnKerry
+```
+
+# Signed ties
+
+## Friends and enemies [Intermediate]{.level}
+
+**You have** ties that are positive or negative (friend or rival, trust or
+distrust). **You want** to know whether the group is stable, and if not,
+which ties are the trouble.
+
+```python
+newGraph("rivals")
+for v in ["Ann", "Bob", "Cy", "Dee", "Eve", "Fay", "Gus"]:
+    addNode(v)
+Edge.sign = 1
+ties = [("Ann", "Bob", 1), ("Ann", "Cy", 1), ("Bob", "Cy", 1), ("Dee", "Eve", 1), ("Eve", "Fay", 1),
+        ("Dee", "Fay", 1), ("Fay", "Gus", 1), ("Cy", "Dee", -1), ("Bob", "Eve", -1), ("Ann", "Fay", -1),
+        ("Cy", "Gus", -1), ("Gus", "Dee", -1)]
+for a, b, sg in ties:
+    e = addEdge(g.getNodeByName(a), g.getNodeByName(b))
+    e.sign = sg
+circleLayout()
+r = structuralBalance(sign)
+colorize(camp)
+(sign < 0).linestyle = "dashed"
+r["frustrated"].color = red
+r["balanced"], r["unbalanced"]
+```
+
+![Two camps, with the one tie that doesn't fit in red](img/sna-balance.png)
+
+**How it works.** A network of friends and enemies is *balanced* (Heider,
+Cartwright and Harary) when every cycle has an even number of negative
+ties: "the enemy of my enemy is my friend". Harary showed that a balanced
+network splits into at most two camps, with friendship inside each and
+enmity between. `structuralBalance(sign)` reads an edge field of +1 and
+−1 (or "+" and "−"), puts the best two-camp split in `camp`, and returns
+whether the network is balanced, the triangles with an odd number of
+negative ties, and the ties that disagree with the camps. Here Gus is a
+friend of Fay but an enemy of Dee, who is Fay's friend. Two triangles are
+unbalanced (Dee, Fay, Gus, with one negative tie, and Cy, Dee, Gus, with
+three), and both run through the same tie: Gus–Dee, the one the camps
+can't place.
+
+**Pitfalls.** Balance theory predicts which configurations are under
+strain, not that they will change. Real signed networks are rarely
+perfectly balanced; compare the number of unbalanced triangles with what
+the same signs shuffled at random would give.
 
 # Two-mode networks
 
@@ -586,6 +731,23 @@ yet he followed the instructor. Zachary's explanation is one no network
 holds: he was close to his black-belt examination, and staying with the
 instructor protected years of training. Report the mistakes, not just the
 score.
+
+**A model's view.** Instead of a community method, fit a stochastic block
+model: the two groups that make the observed friendships most probable.
+
+```python
+fitBlockModel(2, degreeCorrected=false)   # the plain model
+sorted(n.name for n in g.nodes if n.sbm_class == 1)
+fitBlockModel(2)                          # degree-corrected (the default)
+compareClusters(sbm_class, club)
+```
+
+The plain model splits the club into its five best-connected members and
+everyone else: in that model, members of a group have similar numbers of
+ties, so hubs group with hubs. Allowing for degree (Karrer and Newman)
+recovers the two factions, except `m9` and `m10`. That is not a failure of
+the search: this split has a higher likelihood (−739.4) than the real one
+(−743.2). The model, too, can't see why `m9` stayed with the instructor.
 
 ## Case study: marriage, money and the Medici [Intermediate]{.level}
 

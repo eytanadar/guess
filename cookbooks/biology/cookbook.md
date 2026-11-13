@@ -474,6 +474,79 @@ each gene as a pie of its values. Pies work best with positive amounts
 
 # Case studies
 
+## A protein's contact network [Intermediate]{.level}
+
+**You want** to see a protein's fold as a network, and find the residues
+that hold it together.
+
+```python
+makeFromPDB("1ubq.pdb")
+colorize(structure)
+legendFor(structure)
+sizeBy(betweenness, 6, 26)
+(kind == "chain").color = "120,120,120"
+sortBy(betweenness, descending=True)[:6]
+```
+
+![Ubiquitin as a residue contact network: helix, strands and coil, sized by betweenness](img/bio-protein.png)
+
+**How it works.** `makeFromPDB` reads a structure file (or downloads a
+four-character PDB id from RCSB) and makes one node per amino acid. Two
+residues are joined if they follow each other along the chain (`kind`
+"chain") or if their alpha carbons are closer than `cutoff` angstroms
+(default 8; `kind` "contact", with the `distance`). Nodes carry `residue`,
+the one-letter `aa`, the position `seq`, the `structure` (helix, strand or
+coil, from the file's HELIX and SHEET records) and the 3D position. They
+are placed by the structure's two main directions, so the picture looks
+like the folded protein.
+
+Ubiquitin (1ubq) has 76 residues, 75 chain links and 251 contacts. The
+residues with the highest betweenness, the ones most shortest paths run
+through, are in the hydrophobic core between the helix and the sheet:
+LEU15, LEU50, GLN41, LEU69, ILE23 and ILE30. Residue networks like this
+are used to find residues that pass signals across a protein (allostery)
+and those whose mutation would most disturb the fold.
+
+**Pitfalls.** The picture is a 2D shadow of a 3D object: residues that
+look close may not be, so trust the edges, not the distances on screen.
+The contact network depends on `cutoff`; 7 to 8.5 Å is usual.
+
+## The worm's wiring [Intermediate]{.level}
+
+**You want** a first look at a whole nervous system: who sends signals,
+who receives them, and the hubs.
+
+```python
+makeFromFile("celegans-neural.gdf")
+sizeBy(degree, 3, 24)
+colorBy(outdegree, "200,210,240", "200,40,40")
+plotFrequency(degree, cumulative=True, log=True)
+plotSpectrum("adjacency")
+```
+
+![The C. elegans neural network, sized by connections and coloured by outgoing synapses](img/bio-worm.png)
+
+**How it works.** This is the neural network of the worm *C. elegans*
+(White et al. 1986, as compiled by Watts and Strogatz): 297 neurons and
+2,345 directed connections, with `weight` the number of synapses (1 to
+70). The mean neuron has 15.8 connections, but a few have far more: n305
+receives 134 and sends none (signals end there), and n71 and n72 have 83
+and 80, about half in, half out. `plotFrequency(degree, cumulative=True,
+log=True)` shows the heavy tail.
+
+`plotSpectrum("adjacency")` charts the eigenvalues of the adjacency matrix
+(direction ignored). The largest, 24.4, stands well clear of the next
+(14.2): one dominant pattern of connection, centred on the hubs. It is
+close to, but below, ⟨k²⟩/⟨k⟩ = 28, the value it would have if neurons were
+wired at random with these degrees. `spectrum()` gives the numbers;
+the Laplacian's (the default) has a single zero, so the network is in one
+piece.
+
+**Pitfalls.** The neurons are named by number (n1 to n306, as in Watts and
+Strogatz's version), not by their biological names. Weights count
+synapses, so a single connection can stand for many; `sizeBy(weight)` on
+the edges shows them.
+
 ## Case study: how pheromone stops the cell cycle [Intermediate]{.level}
 
 A haploid yeast cell that senses mating pheromone stops dividing in G1, so

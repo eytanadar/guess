@@ -300,7 +300,7 @@ def install(session):
             raise GuessError(f"{what}: no values")
         return out
 
-    def _replace_graph(n, edges, field, values, label, layout=True):
+    def _replace_graph(n, edges, field, values, label, layout=True, report_loops=True):
         import random as _r
         gr = session.graph
         gr.clear()
@@ -326,7 +326,8 @@ def install(session):
                 key = (min(a, b), max(a, b))
                 pairs[key] = pairs.get(key, 0) + 1
         multi = sum(c - 1 for c in pairs.values())
-        print(f"generated {label}: {n} nodes, {len(edges)} edges ({loops} self-loops, {multi} repeated edges)")
+        print(f"generated {label}: {n} nodes, {len(edges)} edges"
+              + (f" ({loops} self-loops, {multi} repeated edges)" if report_loops else ""))
         return {"selfloops": loops, "multiedges": multi}
 
     def makeConfigurationModel(degrees, simple=False, seed=0, layout=True):
@@ -362,9 +363,10 @@ def install(session):
             counts = {"selfloops": sum(1 for a, b in edges if a == b),
                       "multiedges": len(edges) - len(kept) - sum(1 for a, b in edges if a == b)}
             edges = kept
-        made = _replace_graph(len(ks), edges, "stubs", ks, "makeConfigurationModel", layout)
+        label = "makeConfigurationModel" + (f" (simple: removed {counts['selfloops']} self-loops and "
+                                            f"{counts['multiedges']} repeated edges)" if counts is not None else "")
+        made = _replace_graph(len(ks), edges, "stubs", ks, label, layout, report_loops=counts is None)
         if counts is not None:
-            print(f"  simple=true removed {counts['selfloops']} self-loops and {counts['multiedges']} repeated edges")
             return {**counts, "removed": True}
         return made
 
@@ -690,7 +692,7 @@ def install(session):
                 M[grp[i], grp[j]] += 1
         return M, np.bincount(grp, minlength=k).astype(float), np.bincount(grp, weights=deg, minlength=k)
 
-    def makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=0, layout=True):
+    def makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=None, layout=True):
         """makeLFR(n, tau1, tau2, mu) makes a Lancichinetti-Fortunato-Radicchi
         benchmark network: power-law degrees (exponent tau1) and community sizes
         (exponent tau2), with a share mu of each node's edges leaving its
@@ -699,9 +701,11 @@ def install(session):
         node field `community` holds the planted groups (0 = largest), to
         compare with what an algorithm finds: compareClusters(louvain_class,
         community). degree= is the mean degree. The construction fails for some
-        seeds, so up to ten seeds from seed= are tried (the one used is
-        printed); if all fail, try larger communities or a lower mu."""
+        seeds, so up to ten seeds from seed= (default 0) are tried, the same
+        ones every time; if all fail, try larger communities or a lower mu."""
         nx = __import__("networkx")
+        chosen = seed is not None
+        seed = 0 if seed is None else seed
         G, last = None, None
         for tries in range(10):                       # networkx gives up on some seeds: try the next few
             try:
@@ -714,7 +718,7 @@ def install(session):
         if G is None:
             raise GuessError(f"makeLFR couldn't build that network ({type(last).__name__}: {last}); "
                              "try a larger minCommunity, a larger n or a lower mu") from None
-        if tries:
+        if tries and chosen:
             print(f"  (seed {int(seed)} didn't work out; used seed {int(seed) + tries})")
         comms = []
         for v in G:
@@ -778,15 +782,17 @@ def install(session):
         session.ns["setField"]({nodes[i]: int(core[i]) for i in range(n)}, str(name))
         return {"core": int(core.sum()), "fit": round(best, 4)}
 
-    def rankNodes(name="rank", alpha=0.0):
+    def rankNodes(name="rank", alpha=0.0, endorsements=False):
         """rankNodes() places the nodes of a directed network on a ladder so that
         edges mostly point the same way (Newman, Networks, section 14.7.4): the
         SpringRank method (De Bacco, Larremore and Moore 2018), where each edge
-        i -> j is a spring pulling i one unit above j. Use it for dominance,
-        endorsement or who-hires-whose-graduates networks. Sets the node field
-        `rank` (higher = above) and returns the share of edges that point
-        downwards, from higher to lower rank. alpha > 0 pulls ranks toward 0
-        (useful when the network is in pieces)."""
+        i -> j is a spring pulling i one unit above j, as in dominance networks
+        (i beat j) or who-hires-whose-graduates (j hired from i).
+        endorsements=true reads each edge the other way, j above i, for links,
+        citations or votes, where pointing to someone ranks them up. Sets the
+        node field `rank` (higher = above) and returns the share of edges that
+        agree with the ladder. alpha > 0 pulls ranks toward 0 (useful when the
+        network is in pieces)."""
         import numpy as np
         gr = g()
         nodes = gr._nodes_list()
@@ -798,6 +804,8 @@ def install(session):
                 A[idx[e._n1], idx[e._n2]] += 1.0
                 if not e._directed:
                     A[idx[e._n2], idx[e._n1]] += 1.0
+        if endorsements:
+            A = A.T                                    # i -> j endorses j: j goes up
         dout, din = A.sum(1), A.sum(0)
         L = np.diag(dout + din) - (A + A.T) + float(alpha) * np.eye(n)
         b = dout - din

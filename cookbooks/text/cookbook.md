@@ -24,6 +24,7 @@ are in the cookbooks' `data` folder:
 | `vis-papers-nodes.csv` | the same papers as a node table |
 | `vis-paper-authors.csv` | paper, author: one row per authorship |
 | `vis-paper-keywords.csv` | paper, keyword, score: OpenAlex's keywords for each paper |
+| `polblogs-sample.gdf` | 600 US political blogs from 2004 and the 2,786 links among them (a random sample of Adamic and Glance's 1,490), directed. Node fields: `label` (the blog's address), `leaning` (liberal or conservative). From Mark Newman's network data page. |
 | `vis-institutions.gdf` | the 932 institutions of those papers' authors, located (`latitude`, `longitude`, `country`), with `papers` (how many) and `firstyear` (their first paper in the set), linked when they co-author (edge `firstyear`: their first joint paper). From OpenAlex, CC0. |
 
 # Networks from text
@@ -126,6 +127,55 @@ spring heuristic rank highest. `generation` is each paper's topological
 level, counting back through chains of citation.
 `removeDisconnected()` drops the 265 papers with no citation links to the
 rest of the set.
+
+## Cumulative advantage [Intermediate]{.level}
+
+**You want** to know why a few papers collect most of the citations, and
+whether "the cited get cited more" is enough to explain it.
+
+::: ingredients
+**Ingredients:** `makePriceModel` · `born` · `revealUpTo` · `fitPowerLaw`
+:::
+
+```python
+makePriceModel(500, c=3, a=1, seed=1)
+sizeBy(indegree, 4, 30)
+colorBy(born, "200,60,40", "120,160,230")
+center(g.nodes)
+revealUpTo(150)
+```
+
+![Price's model after 150 of 500 papers: early papers (red) already collect the citations](img/text-price-model.png)
+
+**How it works.** In Price's model (1976) papers arrive one at a time and
+each cites c earlier ones, chosen in proportion to their citations so far
+plus a head start a: *cumulative advantage*. `makePriceModel(n, c, a)`
+grows such a network and records when each paper (and citation) arrived
+in the field `born`. `revealUpTo(step)` shows the network as it was at
+that step, with every paper already in its final place, so calling it with
+growing steps (or from a timer) replays the growth. The oldest papers end
+up the most cited: they have had the longest to accumulate.
+
+The model predicts a power-law tail with exponent α = 2 + a/c, and a power
+law in k + a rather than in k, so fit it with `shift=a`:
+
+```python
+makePriceModel(20000, c=3, a=1, seed=1, layout=false)
+fitPowerLaw(indegree, shift=1)            # alpha about 2.24; theory 2.33
+makeFromGDF("vis-papers.gdf")
+fitPowerLaw(indegree)                     # the real set: about 3.0, from 13 citations up
+```
+
+The real graph-drawing papers have a steeper tail (α ≈ 3.0 from 13
+citations up, only 80 papers in the tail) than the model with the same
+mean of about 4 references per paper. A citation set chosen by topic is a
+slice of the literature, not a closed system.
+
+**Pitfalls.** Fitted exponents come out below the formula on finite
+networks, and creep up as n grows (2.09 at 2,000 papers, 2.24 at
+20,000). Fitting `indegree` without `shift=a` reads lower still. A good
+fit is not evidence of the mechanism: other models, such as copying
+citations from a paper you read, give the same tail.
 
 ## What is this collection about? [Basic]{.level}
 
@@ -354,6 +404,50 @@ by `indegree` shows which linked articles the neighbourhood itself
 points to most: the topic's core concepts. Pages that citation templates
 link to everywhere (such as "Doi (identifier)") are left out. `lang=`
 picks another language edition. Comparing editions is a study in itself.
+
+## The bow tie of a link network [Intermediate]{.level}
+
+**You want** to know how a directed network of links hangs together: which
+pages can reach which, and which only receive or only send.
+
+::: ingredients
+**Ingredients:** `polblogs-sample.gdf` · `bowTie` · `bowtie`
+:::
+
+```python
+makeFromFile("polblogs-sample.gdf")
+bowTie()
+colorize(bowtie)
+legendFor(bowtie)
+```
+
+![The bow tie of 600 political blogs](img/text-bowtie.png)
+
+**How it works.** In 2000 Broder and colleagues found that the Web is shaped
+like a bow tie. A strongly connected *core* of pages can all reach one
+another. An *in* set can reach the core but not be reached from it, and an
+*out* set is reached from the core but doesn't link back. *Tendrils* hang
+off in or out, *tubes* run from in to out past the core, and the rest
+isn't connected to the core at all. `bowTie()` sorts the nodes into those
+parts, stores the part in the field `bowtie`, and returns the sizes:
+
+| part | blogs | share | the Web, 1999 |
+|---|---|---|---|
+| core | 224 | 37% | 28% |
+| in | 89 | 15% | 21% |
+| out | 69 | 12% | 21% |
+| tendrils | 22 | 4% | 22% (with tubes) |
+| outside | 196 | 33% | 8% |
+
+The blogs' core is liberal and conservative alike (92 of 224 liberal), so
+the two camps are linked into one structure even if they link mostly to
+their own side. Many blogs in `in` link to the big blogs but nobody links
+back to them.
+
+**Pitfalls.** This is a random sample of 600 of the 1,490 blogs, which
+keeps the proportions but cuts links: the third outside the bow tie is
+partly an effect of sampling. In-sets and out-sets depend on direction,
+so check that edges run from the linking page to the linked one.
 
 ## Any field's literature, from OpenAlex [Basic]{.level}
 

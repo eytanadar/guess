@@ -88,6 +88,35 @@ them point upwards. In GUESS, the data model (`model`) and the colour
 table (`colors`) are at the bottom, imported by nearly everything, and the
 session at the top ties the parts together.
 
+**Layers without breaking cycles.** `generation` needs the cycles broken
+first. `rankNodes()` instead gives every module a height directly, a
+*rank*, chosen so that imports point downhill as often as possible (the
+SpringRank method: each import pulls the importer one unit above the module
+it imports). Cycles are no problem: the modules in one just end up at
+nearly the same height.
+
+```python
+makeFromGDF("guess-imports.gdf")
+labelBy(label)
+g.nodes.labelpos = "inside"
+fitNodesToLabels()
+rankNodes()                               # 0.97: the share of imports that point down
+orderedLayout(rank, axis="y", inverted=True)
+colorBy(rank, purple, lightgray)
+```
+
+![GUESS's modules placed by rank: importers high, the modules they import low](img/sw-ranks.png)
+
+`rankNodes` stores the height in the field `rank` (0 at the bottom) and
+returns the share of edges that point down: 97% here, so GUESS is close to
+strictly layered. The package `guess` is at the top (3.9), then the
+session (2.9) and the commands; the colour table, the map data, `colors`
+and `model` are at the bottom. Only 3 of the 106 imports point up, and they
+are the ones to look at: `algorithms` → `igr`, `model` → `states` and
+`visuals` → `styles`. All three are imports made inside a function, the
+usual way to avoid a circular import. `orderedLayout` fixes each module's height by its rank and spreads
+them sideways.
+
 ## Which modules does everything depend on? [Basic]{.level}
 
 ```python
