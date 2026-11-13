@@ -567,3 +567,16 @@ def test_generators_and_starting_positions_are_reproducible():
     assert s.run("makeErdosRenyiRandom(80, 0.05, seed=3)") and edges() != a
     from guess.model import scatter_position
     assert scatter_position("v1") == scatter_position("v1") != scatter_position("v2")
+
+
+def test_fixed_infectious_period_and_steps_infected():
+    s = _s()
+    assert s.run("makeErdosRenyiRandom(300, 0.02)"), s.rec.of("error")
+    assert s.run("c = spread([g.nodes[0]], model='SIR', beta=0.2, duration=3, steps=200, show=false)"), s.rec.of("error")
+    # every infected node is infectious for exactly 3 steps (unless the run stopped first)
+    steps = ev(s, "[n.infected_steps for n in g.nodes if n.infected_at >= 0]")
+    assert steps and set(steps) == {3}
+    assert ev(s, "all(n.infected_steps == 0 for n in g.nodes if n.infected_at < 0)")
+    assert s.run("o = outbreaks(20, model='SIR', beta=0.2, duration=3, show=false)"), s.rec.of("error")
+    assert s.run("c = spread([g.nodes[0]], model='SIS', beta=0.1, gamma=0.2, steps=40, show=false)")
+    assert ev(s, "max(n.infected_steps for n in g.nodes)") > 3

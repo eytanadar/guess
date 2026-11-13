@@ -44,13 +44,17 @@ def contacts(gr, beta, weight=None, follow_direction=True):
     return out, inc
 
 
-def simulate(nodes, out, inc, start, model, gamma, threshold, steps, rng, immune=(), waning=0.0, sigma=0.5):
+def simulate(nodes, out, inc, start, model, gamma, threshold, steps, rng, immune=(), waning=0.0, sigma=0.5,
+             duration=None):
     """One outbreak. Returns ({node: S/E/I/R/V}, {node: step first reached or -1},
     Counts [(step, S, I, R)] with .exposed for SEIR). Immune nodes are V: never
     infected. SIS: infected nodes recover to S with probability gamma per step;
     SIRS: recovered nodes lose immunity with probability `waning` per step;
     SEIR: infected nodes are first Exposed (not yet infectious) and become
-    infectious with probability `sigma` per step."""
+    infectious with probability `sigma` per step. duration=k: infectious for
+    exactly k steps instead of recovering with probability gamma (then SIR is
+    exactly bond percolation with T = 1 - (1 - beta)**k). counts.infected_steps
+    gives each node's number of steps spent infectious."""
     m = model
     state = {n: "S" for n in nodes}
     for n in immune:
@@ -63,6 +67,9 @@ def simulate(nodes, out, inc, start, model, gamma, threshold, steps, rng, immune
     n_v = sum(1 for v in state.values() if v == "V")
     counts = Counts([(0, sum(1 for v in state.values() if v == "S"), len(fresh), 0)])
     counts.exposed = [0]
+    since = {n: 0 for n in start if when[n] == 0}       # step each infectious node became infectious
+    steps_in = {n: 0 for n in nodes}
+    dur = None if duration is None else max(1, int(duration))
     g_, th, w_, s_ig = float(gamma), float(threshold), float(waning), float(sigma)
     for t in range(1, int(steps) + 1):
         new, seen = [], set()
@@ -79,18 +86,27 @@ def simulate(nodes, out, inc, start, model, gamma, threshold, steps, rng, immune
                         new.append(nb)
                         seen.add(nb)
         recovered, waned, onset = [], [], []
+        for n in nodes:
+            if state[n] == "I":
+                steps_in[n] += 1
         if m in ("sir", "sis", "sirs", "seir"):
-            recovered = [n for n in nodes if state[n] == "I" and rng.random() < g_]
+            if dur is not None:
+                recovered = [n for n in nodes if state[n] == "I" and t - since.get(n, 0) >= dur]
+            else:
+                recovered = [n for n in nodes if state[n] == "I" and rng.random() < g_]
         if m == "sirs" and w_ > 0:
             waned = [n for n in nodes if state[n] == "R" and rng.random() < w_]
         if m == "seir":
             onset = [n for n in nodes if state[n] == "E" and rng.random() < s_ig]
         for n in new:
             state[n] = "E" if m == "seir" else "I"
+            if m != "seir":
+                since[n] = t
             if when[n] < 0:
                 when[n] = t
         for n in onset:
             state[n] = "I"
+            since[n] = t
         for n in recovered:
             state[n] = "S" if m == "sis" else "R"
         for n in waned:
@@ -106,6 +122,7 @@ def simulate(nodes, out, inc, start, model, gamma, threshold, steps, rng, immune
                 break
         elif not new:
             break
+    counts.infected_steps = steps_in
     return state, when, counts
 
 
@@ -195,7 +212,8 @@ def install(session):
 
     @cmd
     def outbreaks(runs=200, seeds=1, model="SIR", beta=0.3, gamma=0.1, threshold=0.5, immune=None,
-                  weight=None, steps=1000, large=0.1, seed=0, name="risk", show=True, waning=0.05, sigma=0.5):
+                  weight=None, steps=1000, large=0.1, seed=0, name="risk", show=True, waning=0.05, sigma=0.5,
+                  duration=None):
         """outbreaks(runs) repeats spread() many times, because one simulated
         outbreak is an anecdote. Each run starts from `seeds` random nodes (a
         number) or from the given nodes. immune=nodes (vaccinated, isolated)
@@ -223,7 +241,7 @@ def install(session):
         for _ in range(runs):
             start = fixed if fixed is not None else rng.sample(pool, min(len(pool), max(1, int(seeds))))
             _st, when, _c = simulate(nodes, out, inc, start, m, gamma, threshold, steps, rng, imm,
-                                     waning=waning, sigma=sigma)
+                                     waning=waning, sigma=sigma, duration=duration)
             reached = [n for n, t in when.items() if t >= 0]
             for n in reached:
                 hits[n] += 1

@@ -47,7 +47,7 @@ def install(session):
     # ---- spreading -------------------------------------------------------------
     @cmd
     def spread(seeds, model="SIR", beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True,
-               immune=None, weight=None, waning=0.05, sigma=0.5):
+               immune=None, weight=None, waning=0.05, sigma=0.5, duration=None):
         """spread([v1, v2], model="SIR") simulates something spreading from
         the seed nodes, one step at a time:
           "SI"         each step, every infected node infects each susceptible
@@ -64,12 +64,16 @@ def install(session):
                        (probability beta) to activate each neighbour
           "threshold"  a node becomes active when at least `threshold` of its
                        neighbours are (complex contagion: ideas, adoption)
+        duration=k makes every infection last exactly k steps (instead of
+        recovering with probability gamma); SIR is then exactly bond percolation
+        with transmissibility T = 1 - (1 - beta)**k.
         Directed edges are followed in their direction. immune=nodes can't be
         infected (vaccinated, say: state V). weight=field makes long contacts
         riskier: beta is then the chance per unit of weight, so an edge of
         weight w transmits with chance 1 - (1 - beta)**w per step. Stores
-        `infected_at` (the step a node was reached; -1 = never) and `state`
-        (S, I, R or V at the end), plots how many are in each state at each
+        `infected_at` (the step a node was reached; -1 = never), `state`
+        (S, E, I, R or V at the end) and `infected_steps` (steps spent
+        infected, e.g. for SIS prevalence by degree), plots how many are in each state at each
         step, and returns those counts. Replay it with showTime(t,
         infected_at); outbreaks() repeats it many times."""
         from . import epidemic
@@ -84,12 +88,14 @@ def install(session):
         out, inc = epidemic.contacts(gr, beta, weight)
         imm = nodes_of(immune, "immune") if immune is not None else []
         state, when, counts = epidemic.simulate(gr._nodes_list(), out, inc, start, m, gamma, threshold,
-                                                steps, rng, imm, waning=waning, sigma=sigma)
+                                                steps, rng, imm, waning=waning, sigma=sigma, duration=duration)
         f_at = gr.addNodeField("infected_at", INT, -1)
         f_st = gr.addNodeField("state", STRING, None)
+        f_steps = gr.addNodeField("infected_steps", INT, 0)
         for n in gr._nodes_list():
             f_at.set(n, when[n])
             f_st.set(n, state[n])
+            f_steps.set(n, counts.infected_steps.get(n, 0))
         reached = sum(1 for v in when.values() if v >= 0)
         if show:
             print(f"{model}: reached {reached} of {len(state)} nodes ({reached / max(1, len(state)):.0%}) "

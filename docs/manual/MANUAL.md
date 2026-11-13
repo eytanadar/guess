@@ -1379,7 +1379,9 @@ the fast Newman–Ziff method, so it gives the whole curve in one pass, for
 nodes or (with `bond=true`) edges. `spread(seeds, model=)` simulates an
 outbreak with the models SI, SIR, SIS (no immunity), SIRS (immunity wanes
 at rate `waning=`), SEIR (a latent stage, leaving at rate `sigma=`), cascade
-or threshold. `outbreaks()` repeats it many times:
+or threshold. `duration=k` makes each infection last exactly k steps,
+which makes SIR exactly bond percolation; each node's steps spent infected
+end up in `infected_steps`. `outbreaks()` repeats it many times:
 
 ```python
 percolation()                             # random failure: share present against largest piece

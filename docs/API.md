@@ -797,7 +797,7 @@ transmissions caused by the top 20% of cases. offspring(cases) uses
 only those cases, e.g. offspring(onset < 28); their infections count
 wherever they lead. Stores the count in the field `offspring`.
 
-### `outbreaks(runs=200, seeds=1, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, immune=None, weight=None, steps=1000, large=0.1, seed=0, name='risk', show=True, waning=0.05, sigma=0.5)`
+### `outbreaks(runs=200, seeds=1, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, immune=None, weight=None, steps=1000, large=0.1, seed=0, name='risk', show=True, waning=0.05, sigma=0.5, duration=None)`
 
 outbreaks(runs) repeats spread() many times, because one simulated
 outbreak is an anecdote. Each run starts from `seeds` random nodes (a
@@ -935,7 +935,7 @@ Direction and weights are ignored (edges count once each way). The
 Laplacian has as many zero eigenvalues as the network has
 components; the second smallest is the algebraic connectivity.
 
-### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None, waning=0.05, sigma=0.5)`
+### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None, waning=0.05, sigma=0.5, duration=None)`
 
 spread([v1, v2], model="SIR") simulates something spreading from
 the seed nodes, one step at a time:
@@ -953,12 +953,16 @@ the seed nodes, one step at a time:
                (probability beta) to activate each neighbour
   "threshold"  a node becomes active when at least `threshold` of its
                neighbours are (complex contagion: ideas, adoption)
+duration=k makes every infection last exactly k steps (instead of
+recovering with probability gamma); SIR is then exactly bond percolation
+with transmissibility T = 1 - (1 - beta)**k.
 Directed edges are followed in their direction. immune=nodes can't be
 infected (vaccinated, say: state V). weight=field makes long contacts
 riskier: beta is then the chance per unit of weight, so an edge of
 weight w transmits with chance 1 - (1 - beta)**w per step. Stores
-`infected_at` (the step a node was reached; -1 = never) and `state`
-(S, I, R or V at the end), plots how many are in each state at each
+`infected_at` (the step a node was reached; -1 = never), `state`
+(S, E, I, R or V at the end) and `infected_steps` (steps spent
+infected, e.g. for SIS prevalence by degree), plots how many are in each state at each
 step, and returns those counts. Replay it with showTime(t,
 infected_at); outbreaks() repeats it many times.
 
