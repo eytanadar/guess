@@ -368,7 +368,7 @@ def sweep_h_text():
     n = N_HOPS
     rows = ["| λ | edges m | ℓ | biggest hub |", "|---|---|---|---|"]
     for lam, m, ell, hub in sweep_h["rows"]:
-        rows.append(f"| {lam:.4f} | {m} | {ell:.2f} | {hub} of {n - 1} |")
+        rows.append(f"| {lam:.4g} | {m} | {ell:.2f} | {hub} of {n - 1} |")
     return ("Hill climbs from random starts, one per λ:\n\n" + "\n".join(rows) +
             "\n\nTiny λ: everything joined to everything. Moderate λ: a hub-and-spoke star. Large λ: stuck in "
             "random-looking trees (local minima), though the star would still be best.")
