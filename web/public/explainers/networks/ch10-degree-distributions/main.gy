@@ -39,6 +39,8 @@ def load(choice):
     count.update(order=[], i=0, hist={})
     fit_state.update(kmin=None, result=None)
     base()
+    if mode[0] == "Fit a power law":
+        best_fit()                         # a new network on the fit tab: show its best fit straight away
     center()
 
 
@@ -362,8 +364,11 @@ def switch(title):
     mode[0] = title
     stop_all()
     base()
-    if title == "Fit a power law" and fit_state["result"]:
-        mark_tail()
+    if title == "Fit a power law":
+        if fit_state["result"]:
+            mark_tail()
+        else:
+            best_fit()                     # open with the best fit showing, rather than an empty chart
 
 
 kslider.onChange = do_fit
