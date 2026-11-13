@@ -717,7 +717,7 @@ has a `born` step; removed edges stay in the graph, hidden, with the
 step they were removed in `died` (-1 for edges still there), so
 revealUpTo(step) replays additions and removals.
 
-### `makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=0, layout=True)`
+### `makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=None, layout=True)`
 
 makeLFR(n, tau1, tau2, mu) makes a Lancichinetti-Fortunato-Radicchi
 benchmark network: power-law degrees (exponent tau1) and community sizes
@@ -727,8 +727,8 @@ communities; past about 0.5 they stop being communities at all. The
 node field `community` holds the planted groups (0 = largest), to
 compare with what an algorithm finds: compareClusters(louvain_class,
 community). degree= is the mean degree. The construction fails for some
-seeds, so up to ten seeds from seed= are tried (the one used is
-printed); if all fail, try larger communities or a lower mu.
+seeds, so up to ten seeds from seed= (default 0) are tried, the same
+ones every time; if all fail, try larger communities or a lower mu.
 
 ### `makeNicheModel(species=30, connectance=0.15, seed=0)`
 
@@ -824,16 +824,18 @@ plotSpectrum() charts the eigenvalues of the Laplacian (or
 to count components; a small second eigenvalue means the network
 nearly splits in two.
 
-### `rankNodes(name='rank', alpha=0.0)`
+### `rankNodes(name='rank', alpha=0.0, endorsements=False)`
 
 rankNodes() places the nodes of a directed network on a ladder so that
 edges mostly point the same way (Newman, Networks, section 14.7.4): the
 SpringRank method (De Bacco, Larremore and Moore 2018), where each edge
-i -> j is a spring pulling i one unit above j. Use it for dominance,
-endorsement or who-hires-whose-graduates networks. Sets the node field
-`rank` (higher = above) and returns the share of edges that point
-downwards, from higher to lower rank. alpha > 0 pulls ranks toward 0
-(useful when the network is in pieces).
+i -> j is a spring pulling i one unit above j, as in dominance networks
+(i beat j) or who-hires-whose-graduates (j hired from i).
+endorsements=true reads each edge the other way, j above i, for links,
+citations or votes, where pointing to someone ranks them up. Sets the
+node field `rank` (higher = above) and returns the share of edges that
+agree with the ladder. alpha > 0 pulls ranks toward 0 (useful when the
+network is in pieces).
 
 ### `readSets(filename, item=None, set=None, where=None)`
 
