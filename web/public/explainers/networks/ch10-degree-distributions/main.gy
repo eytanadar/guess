@@ -1,0 +1,396 @@
+# Degree distributions and power laws  (Newman, Networks, Sections 10.3-10.4.1)
+# The degree distribution p(k) is the share of nodes with degree k. In most
+# real networks it is right-skewed: most nodes have few edges and a few hubs
+# have very many. Some follow a power law, p(k) ~ k^-alpha, a straight line
+# on log-log axes. A plain histogram is too noisy in the tail to tell, so use
+# logarithmic bins or, better, the cumulative distribution P(K >= k). Estimate
+# alpha by maximum likelihood rather than by drawing a line by eye.
+
+import csv
+import math
+import random
+
+DATA = {"Political blogs (600-blog sample)": "polblogs-sample.gdf", "US airports (routes)": "us-airports.gdf",
+        "Internet (300-AS sample)": "internet-as-sample.gdf", "Power grid region (400 stations)": "power-grid-region.gdf",
+        "C. elegans neurons": "celegans-neural.gdf", "Les Misérables (characters)": "lesmis.gdf"}
+VIEWS = ["Plain histogram", "Log–log histogram", "Logarithmic bins", "Cumulative (log–log)"]
+cur = {"choice": None, "view": VIEWS[0], "names": {}}
+mode = ["Histograms"]
+
+# whole networks, as degree sequences (network, degree, count): too big to draw here
+WHOLE = {}
+with open("degree-sequences.csv", encoding="utf-8") as fh:
+    for r in csv.DictReader(fh):
+        WHOLE.setdefault(r["network"], []).extend([int(r["degree"])] * int(r["count"]))
+WHOLE_NAMES = list(WHOLE)
+
+
+def degs():
+    return [v.degree for v in g.nodes]
+
+
+def load(choice):
+    stop_all()
+    cur["choice"] = choice
+    makeFromFile(DATA[choice])
+    if choice.startswith("US airports"):
+        geoLayout()
+    cur["names"] = {v.name: (str(v.label) if v.label else v.name) for v in g.nodes}
+    count.update(order=[], i=0, hist={})
+    fit_state.update(kmin=None, result=None)
+    base()
+    center()
+
+
+def short(v):
+    lab = cur["names"].get(v.name, v.name)
+    return lab if len(lab) < 24 else lab[:22] + "…"
+
+
+def base():
+    top = sorted(g.nodes, key=lambda v: -v.degree)[:5]
+    kmax = max(1, max(degs()))
+    for v in g.nodes:
+        t = math.sqrt(v.degree / kmax)
+        v.width = v.height = 6 + 30 * t
+        v.color = f"{int(110 + 130 * t)},{int(150 - 60 * t)},{int(210 - 150 * t)}"
+        v.strokecolor = "80,80,80"
+        v.strokewidth = 0
+        v.labelvisible = false
+        v.labelpos = "right"
+    for v in top:                                       # the hubs, by name
+        v.label = short(v)
+        v.labelvisible = true
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,60", 0.8, "solid"
+
+
+def stop_all():
+    for st in (count, sim):
+        if st.get("timer") is not None:
+            st["timer"].stop()
+            st["timer"] = None
+
+
+# ---- histograms -------------------------------------------------------------------------------
+count = {"order": [], "i": 0, "hist": {}, "timer": None}
+
+
+def count_step():
+    """Count the next batch of nodes: each one adds 1 to the bar for its degree."""
+    if not count["order"]:
+        count["order"] = random.Random(2).sample(list(g.nodes), len(g.nodes))
+    n = len(count["order"])
+    batch = count["order"][count["i"]:count["i"] + max(1, n // 30)]
+    count["i"] += len(batch)
+    for e in g.edges:
+        if e.linestyle == "flow":
+            e.color, e.width, e.linestyle = "150,150,150,60", 0.8, "solid"
+    for v in g.nodes:
+        v.strokewidth = 0
+    now = set(batch)
+    for v in batch:
+        count["hist"][v.degree] = count["hist"].get(v.degree, 0) + 1
+        v.strokecolor = "250,200,40"
+        v.strokewidth = 3
+    for e in g.edges:                                   # the edges being counted
+        if e.node1 in now or e.node2 in now:
+            e.color, e.width, e.linestyle = "235,120,30", 1.6, "flow"
+    return n - count["i"] or False
+
+
+def run_count():
+    stop_all()
+    base()
+    count.update(order=[], i=0, hist={})
+    count["timer"] = everyPaced(count_step, slow=0.8, fast=0.15, ramp=3)
+
+
+def pick_view(v):
+    cur["view"] = v
+
+
+def log_bins():
+    ks = [k for k in degs() if k > 0]
+    n = len(ks)
+    top = max(ks)
+    edges = [1]
+    while edges[-1] <= top:
+        edges.append(edges[-1] * 2)
+    pts = []
+    for a, b in zip(edges, edges[1:]):
+        c = sum(1 for k in ks if a <= k < b)
+        if c:
+            pts.append((math.sqrt(a * (b - 1)) if b - 1 > a else a, c / (n * (b - a))))
+    return pts
+
+
+def hist_chart():
+    if mode[0] != "Histograms":
+        return None
+    if count["timer"] is not None or (count["hist"] and count["i"] < len(count["order"])):
+        n = max(1, count["i"])
+        return plotLine({"counted so far": sorted((k, c / n) for k, c in count["hist"].items())},
+                        title="Degree distribution, counting", xlabel="degree k", ylabel="share p(k)", dots=true)
+    v = cur["view"]
+    if v == VIEWS[0]:
+        return plotFrequency(degree)
+    if v == VIEWS[1]:
+        return plotFrequency(degree, log=true)
+    if v == VIEWS[2]:
+        return plotLine({"log bins": log_bins()}, title="Degree distribution, logarithmic bins", xlabel="degree k",
+                        ylabel="p(k), per unit k", log=true, dots=true)
+    return plotFrequency(degree, cumulative=true, log=true)
+
+
+def hist_text():
+    ks = degs()
+    n = len(ks)
+    mean = sum(ks) / n
+    top = max(ks)
+    below = sum(1 for k in ks if k <= mean) / n
+    hubs = sorted(g.nodes, key=lambda v: -v.degree)[:3]
+    out = (f"**{n}** nodes, mean degree **{mean:.1f}**, largest **{top}**; **{100 * below:.0f}%** of nodes are at or "
+           f"below the mean. Hubs: {' '.join(linkTo(v, f'{short(v)} ({v.degree})') for v in hubs)}.\n\n")
+    v = cur["view"]
+    if v == VIEWS[0]:
+        out += ("**Plain histogram**: a tall spike at small k and a long thin tail. The tail is where the hubs are, "
+                "but it is almost invisible on linear axes.")
+    elif v == VIEWS[1]:
+        out += ("**Log–log**: the tail spreads out. A power law would be a straight line, but the tail is noisy: "
+                "most degrees there have 0 or 1 node (and zeros can't be shown at all).")
+    elif v == VIEWS[2]:
+        out += ("**Logarithmic bins** (1, 2–3, 4–7, 8–15, …), each count divided by the bin's width: wide bins in "
+                "the tail collect enough nodes to average out the noise.")
+    else:
+        out += ("**Cumulative**: P(K ≥ k), the share of nodes with degree k or more. No binning at all, and no "
+                "noise from empty bins; a power law with exponent α is a straight line of slope −(α − 1). "
+                "*Point at the tail* to see which nodes it is.")
+    return out
+
+
+# ---- fitting ------------------------------------------------------------------------------------------
+fit_state = {"kmin": None, "result": None}
+kslider = Slider(1, 60, 1, 1, label="k_min")
+
+
+def mark_tail():
+    base()
+    k0 = fit_state["result"]["kmin"] if fit_state["result"] else int(kslider.value)
+    for v in g.nodes:
+        if v.degree >= k0:
+            v.strokecolor = "200,30,30"
+            v.strokewidth = 3
+        else:
+            v.color = "200,205,215"
+
+
+def do_fit(v=None):
+    k0 = int(kslider.value)
+    top = max(degs())
+    if k0 > top:
+        k0 = top
+    try:
+        fit_state["result"] = fitPowerLaw(degree, kmin=k0)
+    except Exception:
+        fit_state["result"] = None
+    fit_state["kmin"] = k0
+    mark_tail()
+
+
+def best_fit():
+    fit_state["result"] = fitPowerLaw(degree)
+    fit_state["kmin"] = fit_state["result"]["kmin"]
+    kslider.value = min(60, fit_state["kmin"])
+    mark_tail()
+
+
+def fit_chart():
+    if mode[0] != "Fit a power law" or not fit_state["result"]:
+        return None
+    return plotFrequency(degree, cumulative=true, log=true, fit=true, kmin=fit_state["result"]["kmin"])
+
+
+def fit_text():
+    r = fit_state["result"]
+    if not r:
+        return ("Pick where the power law starts, k_min, with the slider (nodes with k ≥ k_min get red rings), or let "
+                "the **best k_min** be chosen. The fit uses maximum likelihood: α = 1 + N / Σ ln(kᵢ / (k_min − ½)), "
+                "over the N nodes in the tail.")
+    out = (f"Fitted from k ≥ **{r['kmin']}** ({r['n']} nodes): **α = {r['alpha']:.2f} ± {r['sigma']:.2f}**. "
+           f"The largest gap between the data and the fit (the KS distance) is **{r['ks']:.3f}**")
+    lr = versus_exponential(degs(), r)
+    out += (f". Against an exponential tail from the same k_min the log-likelihood ratio is **{lr:+.2f}** per node: "
+            f"**{verdict(lr)}**" + (" fits better." if verdict(lr) != "can't tell" else ", the two fit about as well."))
+    if r["n"] < 50:
+        out += (f"\n\nOnly {r['n']} nodes in the tail, so α is uncertain (± {r['sigma']:.1f}). Small networks, and "
+                "samples of big ones, can't show a power law convincingly; see *Whole networks*.")
+    if cur["choice"].startswith("Internet"):
+        out += ("\n\nThis is a 300-AS snowball sample: following links from one AS collects mid-sized ones and "
+                "cuts off most of each hub's links, so the tail of the real Internet is lost. The whole Internet "
+                "gives α ≈ 2.1.")
+    if cur["choice"].startswith("Power grid"):
+        out += "\n\nPower grids have no hubs: the cumulative plot bends down, which is closer to an exponential."
+    return out
+
+
+# ---- whole networks ---------------------------------------------------------------------------------
+whole = {"name": WHOLE_NAMES[0]}
+sim = {"timer": None, "rows": [], "plan": [], "k": 0}
+
+
+def quick_fit(vals, tries=None):
+    """fitPowerLaw at a few k_min values, keeping the one with the smallest KS distance (fast enough for the browser)."""
+    best = None
+    top = sorted(vals)[-10] if len(vals) > 10 else max(vals)
+    for k in (tries or [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40]):
+        if k > top:
+            break
+        r = fitPowerLaw(vals, kmin=k)
+        if best is None or r["ks"] < best["ks"]:
+            best = r
+    return best
+
+
+def versus_exponential(vals, r):
+    """Log-likelihood ratio, per node in the tail, of the fitted power law against the best exponential
+    tail from the same k_min (both as continuous densities from k_min - 1/2). Positive: the power law fits
+    better; negative: the exponential does."""
+    xm = r["kmin"] - 0.5
+    tail = [k for k in vals if k >= r["kmin"]]
+    lam = len(tail) / sum(k - xm for k in tail)
+    a = r["alpha"]
+    tot = sum(math.log((a - 1) / xm) - a * math.log(k / xm) - (math.log(lam) - lam * (k - xm)) for k in tail)
+    return tot / len(tail)
+
+
+def verdict(lr):
+    if lr > 0.05:
+        return "power law"
+    if lr < -0.02:
+        return "exponential"
+    return "can't tell"
+
+
+FITS = {name: quick_fit(vals) for name, vals in WHOLE.items()}
+LR = {name: versus_exponential(WHOLE[name], FITS[name]) for name in WHOLE}
+
+
+def ccdf(vals):
+    vals = sorted(vals)
+    n = len(vals)
+    out, i = [], 0
+    while i < n:
+        k = vals[i]
+        out.append((k, (n - i) / n))
+        while i < n and vals[i] == k:
+            i += 1
+    return [p for p in out if p[0] > 0]
+
+
+def pick_whole(v):
+    whole["name"] = v
+
+
+def whole_chart():
+    if mode[0] != "Whole networks":
+        return None
+    if sim["rows"]:
+        full = FITS[WHOLE_NAMES[0]]["alpha"]
+        return plotScatter({"fits of random samples": sim["rows"]}, logX=true,
+                           line=[(sim["rows"][0][0], full), (len(WHOLE[WHOLE_NAMES[0]]), full)],
+                           title="α estimated from samples of the Internet's nodes",
+                           xlabel="nodes in the sample (log scale)", ylabel="fitted α")
+    r = FITS[whole["name"]]
+    vals = WHOLE[whole["name"]]
+    share = r["n"] / len(vals)
+    top = max(vals)
+    k0 = r["kmin"]
+    line = [(k0 * (top / k0) ** (i / 30), share * ((k0 * (top / k0) ** (i / 30) - 0.5) / (k0 - 0.5)) ** (1 - r["alpha"]))
+            for i in range(31)]
+    return plotScatter({nm: ccdf(v) for nm, v in WHOLE.items()}, log=true, line=line,
+                       title=f"Cumulative degree distributions (dashed: the fit for {whole['name']})",
+                       xlabel="degree k", ylabel="P(K ≥ k)")
+
+
+def whole_text():
+    rows = ["| network | nodes | k_min | α | KS | better tail |", "|---|---|---|---|---|---|"]
+    for nm in WHOLE_NAMES:
+        r = FITS[nm]
+        rows.append(f"| {nm} | {len(WHOLE[nm]):,} | {r['kmin']} | {r['alpha']:.2f} ± {r['sigma']:.2f} | "
+                    f"{r['ks']:.3f} | {verdict(LR[nm])} ({LR[nm]:+.2f}) |")
+    out = ("The whole networks, as degree sequences (too big to draw here):\n\n" + "\n".join(rows) +
+           "\n\nA small KS distance isn't enough: some other curve may fit the tail as well. *Better tail* compares "
+           "the power law with an exponential tail from the same k_min (the log-likelihood ratio per node; "
+           "positive favours the power law). The **Internet** is a straight line over two decades, α ≈ 2.1, and "
+           "the power law wins clearly. The **power grid** fits a power law from k = 3 only loosely, and the "
+           "exponential fits it better: a grid has no hubs. The **political blogs** are in between: a heavy tail, "
+           "but not clearly a power law.")
+    if sim["rows"]:
+        out += ("\n\n**Simulate**: each dot fits α to a random sample of the Internet's nodes (their degrees in the "
+                "whole network). Small samples scatter widely around the full value (the dashed line); it takes "
+                "thousands of nodes to pin α down to ±0.1.")
+    return out
+
+
+def sim_step():
+    if sim["k"] >= len(sim["plan"]):
+        return False
+    size, seed = sim["plan"][sim["k"]]
+    sim["k"] += 1
+    vals = random.Random(seed).sample(WHOLE[WHOLE_NAMES[0]], size)
+    r = quick_fit(vals, tries=[2, 3, 4, 5, 6, 8, 10])
+    if r:
+        sim["rows"].append((size, r["alpha"]))
+    return len(sim["plan"]) - sim["k"] or False
+
+
+def run_sim():
+    stop_all()
+    sim.update(rows=[], k=0, plan=[(s, s * 10 + j) for s in (100, 300, 1000, 3000, 10000) for j in range(4)])
+    sim["timer"] = everyPaced(sim_step, slow=0.6, fast=0.2, ramp=2)
+
+
+def clear_sim():
+    stop_all()
+    sim.update(rows=[], k=0, plan=[])
+
+
+# ---- wiring -------------------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    stop_all()
+    base()
+    if title == "Fit a power law" and fit_state["result"]:
+        mark_tail()
+
+
+kslider.onChange = do_fit
+graphevents.clickNode = lambda v: None
+load(list(DATA)[0])
+constantLabelSize(size=14)
+ui.title("Degree distributions and power laws", "Networks, Sections 10.3–10.4.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Many small, a few huge
+Node size and colour show degree; the five biggest hubs are named."""),
+        Dropdown(list(DATA), label="Network", onChange=load),
+        Tabs(
+            Tab("Histograms",
+                Row(Dropdown(VIEWS, label="View", onChange=pick_view),
+                    Button("Count, node by node", onClick=lambda: run_count())),
+                Markdown(hist_text), Chart(hist_chart)),
+            Tab("Fit a power law",
+                Row(kslider, Button("Best k_min", onClick=lambda: best_fit())),
+                Markdown(fit_text), Chart(fit_chart)),
+            Tab("Whole networks",
+                Row(Dropdown(WHOLE_NAMES, label="Fit shown", onChange=pick_whole),
+                    Button("Simulate: samples", onClick=lambda: run_sim()),
+                    Button("Back to the curves", onClick=lambda: clear_sim())),
+                Markdown(whole_text), Chart(whole_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

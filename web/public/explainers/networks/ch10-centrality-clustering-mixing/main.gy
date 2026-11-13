@@ -1,0 +1,434 @@
+# Centralities, clustering and mixing across real networks
+# (Newman, Networks, Sections 10.5-10.7)
+# The measures of Chapter 7, applied to many real networks at once. Centrality
+# values are right-skewed like degrees: a few nodes score far above the rest.
+# Real networks have more triangles than chance gives: the configuration model
+# (random edges, same degrees) predicts C = (<k^2> - <k>)^2 / (n <k>^3), and
+# social networks beat it by a large factor. Local clustering falls with
+# degree. Social networks tend to be assortative by degree (hubs with hubs),
+# technological and biological ones disassortative (hubs with small nodes).
+
+import csv
+import random
+import networkx as nx
+
+NETS = {"Karate club": ("karate.gdf", "social"), "Dolphins": ("dolphins.gdf", "social"),
+        "Les Misérables": ("lesmis.gdf", "social"), "Florentine families": ("florentine.gdf", "social"),
+        "Power grid (region)": ("power-grid-region.gdf", "technological"),
+        "Internet (AS sample)": ("internet-as-sample.gdf", "technological"),
+        "US airports": ("us-airports.gdf", "technological"),
+        "C. elegans neurons": ("celegans-neural.gdf", "biological"),
+        "Yeast proteins": ("yeast-modules.gdf", "biological"),
+        "Political blogs (sample)": ("polblogs-sample.gdf", "information"),
+        "Visualisation papers": ("vis-papers.gdf", "information")}
+GEO = {"US airports"}                          # positions are places: never repacked
+KINDCOL = {"social": "228,26,28", "technological": "55,126,184", "biological": "77,175,74", "information": "152,78,163"}
+
+
+def read_gdf(path):
+    """The edges of a GDF file as a simple undirected networkx graph (the measures here ignore direction)."""
+    G = nx.Graph()
+    part = None
+    with open(path, encoding="utf-8") as fh:
+        for row in csv.reader(fh):
+            if not row:
+                continue
+            if row[0].startswith("nodedef>"):
+                part = "n"
+                continue
+            if row[0].startswith("edgedef>"):
+                part = "e"
+                continue
+            if part == "n":
+                G.add_node(row[0])
+            elif part == "e" and row[0] != row[1]:
+                G.add_edge(row[0], row[1])
+    return G
+
+
+def stats(G):
+    n = G.number_of_nodes()
+    ks = [d for _, d in G.degree()]
+    k1 = sum(ks) / n
+    k2 = sum(k * k for k in ks) / n
+    return {"n": n, "m": G.number_of_edges(), "C": nx.transitivity(G),
+            "Cconf": (k2 - k1) ** 2 / (n * k1 ** 3) if k1 else 0.0,
+            "r": nx.degree_assortativity_coefficient(G), "kmax": max(ks), "kmean": k1}
+
+
+# ---- the comparison table, filled in the background one network at a time ----------------------------------
+table = {}
+todo = list(NETS)
+
+
+def compute_next():
+    if not todo:
+        return
+    name = todo.pop(0)
+    table[name] = stats(read_gdf(NETS[name][0]))
+    if todo:
+        after(0.05, compute_next)
+
+
+def compare_text():
+    rows = ["| network | kind | n | C | C if random | × | r |", "|---|---|---|---|---|---|---|"]
+    for name, (_, kind) in NETS.items():
+        st = table.get(name)
+        if st is None:
+            rows.append(f"| {name} | {kind} | … | | | | |")
+            continue
+        ratio = st["C"] / st["Cconf"] if st["Cconf"] else float("inf")
+        rows.append(f"| {name} | {kind} | {st['n']:,} | {st['C']:.3f} | {st['Cconf']:.3f} | **{ratio:.1f}** | "
+                    f"{st['r']:+.2f} |")
+    note = ("**C** is the clustering coefficient (3 × triangles / connected triples). **C if random** is what a "
+            "network with the same degrees but random edges would have, (⟨k²⟩ − ⟨k⟩)² / n⟨k⟩³; **×** is how many "
+            "times more clustered the real one is. **r** is degree assortativity: positive when hubs link to hubs.")
+    if len(table) < len(NETS):
+        note += f"\n\n*Working through the networks… ({len(table)} of {len(NETS)})*"
+    else:
+        soc = [table[k]["r"] for k, (_, kd) in NETS.items() if kd == "social"]
+        tech = [table[k]["r"] for k, (_, kd) in NETS.items() if kd != "social"]
+        note += (f"\n\nSocial networks here average r = **{sum(soc) / len(soc):+.2f}**, the others **"
+                 f"{sum(tech) / len(tech):+.2f}**. Newman's larger table shows the same split more clearly: big "
+                 "social networks are assortative, technological and biological ones disassortative. Small "
+                 "networks are noisy (the karate club's two leaders make it strongly negative).")
+    return "\n".join(rows) + "\n\n" + note
+
+
+def real_vs_random_chart():
+    if not table:
+        return None
+    series = {}
+    for name, st in table.items():
+        if st["Cconf"] > 0 and st["C"] > 0:
+            series.setdefault(NETS[name][1], []).append((st["Cconf"], st["C"]))
+    return plotScatter(series, log=true, line=[(0.002, 0.002), (1, 1)], title="Clustering: real against random",
+                       xlabel="C if edges were random (same degrees)", ylabel="real C")
+
+
+def mixing_chart():
+    if not table:
+        return None
+    series = {}
+    for name, st in table.items():
+        series.setdefault(NETS[name][1], []).append((st["n"], st["r"]))
+    return plotScatter(series, logX=true, line=[(10, 0), (2000, 0)], title="Degree assortativity r by network",
+                       xlabel="n (nodes)", ylabel="r")
+
+
+# ---- the network on screen --------------------------------------------------------------------------------
+shown = {"name": "Les Misérables"}
+mode = ["Compare"]
+
+
+def load(name=None):
+    if name:
+        shown["name"] = name
+    makeFromFile(NETS[shown["name"]][0])
+    if shown["name"] not in GEO and nx.number_connected_components(toNetworkX(directed=False)) > 1:
+        binPackLayout(false)                    # several pieces: pack them, then keep nodes apart
+        noverlapLayout()
+    style()
+    center()
+
+
+def plain():
+    top = max([n.degree for n in g.nodes] + [1])
+    kind = NETS[shown["name"]][1]
+    for n in g.nodes:
+        n.width = n.height = 7 + 30 * (n.degree / top) ** 0.5
+        n.color = KINDCOL[kind]
+        n.strokecolor, n.strokewidth = "60,60,60", 0
+        n.labelvisible = false
+    for e in g.edges:
+        e.color, e.width = "150,150,150,90", 0.9
+
+
+def style():
+    if mode[0] == "Centralities":
+        paint_centrality()
+    elif mode[0] == "Clustering":
+        paint_clustering()
+    elif mode[0] == "Mixing":
+        paint_mixing()
+    else:
+        plain()
+
+
+def name_of(n):
+    lab = n.label
+    return str(lab) if lab not in (None, "") else n.name
+
+
+# ---- centralities ----------------------------------------------------------------------------------------
+MEASURES = ["degree", "eigenvector", "betweenness"]
+measure = ["eigenvector"]
+cent = {"sim": None}
+
+
+def values(field):
+    return {n.name: float(getattr(n, field)) for n in g.nodes}
+
+
+def paint_centrality():
+    vals = values(measure[0])
+    top = max(vals.values()) or 1
+    ranked = sorted(g.nodes, key=lambda n: -vals[n.name])
+    for n in g.nodes:
+        t = (vals[n.name] / top) ** 0.5
+        n.width = n.height = 6 + 40 * t
+        n.color = f"{int(255 - 70 * t)},{int(225 - 170 * t)},{int(120 - 80 * t)}"
+        n.strokecolor, n.strokewidth = "90,60,30", 0
+        n.labelvisible = false
+    for n in ranked[:5]:                         # the five most central: ringed and named
+        n.strokecolor, n.strokewidth = "20,20,20", 3
+        n.labelvisible = true
+        n.label = name_of(n)
+    for e in g.edges:
+        e.color, e.width = "150,150,150,80", 0.8
+
+
+def centrality_text():
+    vals = sorted(values(measure[0]).values(), reverse=True)
+    n = len(vals)
+    tot = sum(vals) or 1
+    k = max(1, round(0.1 * n))
+    mean = tot / n
+    med = vals[n // 2]
+    return (f"**{shown['name']}**, {measure[0]} centrality: the largest is **{vals[0] / mean:.1f}×** the mean and the "
+            f"mean is {mean / med:.1f}× the median, and the top 10% of nodes hold **{100 * sum(vals[:k]) / tot:.0f}%** "
+            "of the total. Like degree, centralities are **right-skewed**: a long tail of a few very central nodes "
+            "(ringed and named). The chart is the cumulative distribution on log–log axes.")
+
+
+def centrality_chart():
+    if mode[0] != "Centralities":
+        return None
+    return plotFrequency(measure[0], cumulative=true, log=true)
+
+
+def pick_measure(v):
+    measure[0] = v
+    cent["sim"] = None
+    paint_centrality()
+
+
+def simulate_centrality():
+    """The same measure on 5 copies with the same degrees but random edges (degree-keeping swaps)."""
+    G = toNetworkX(directed=False)
+    G.remove_edges_from(list(nx.selfloop_edges(G)))
+    G = nx.Graph(G)
+    fn = {"degree": lambda H: dict(H.degree()),
+          "eigenvector": lambda H: nx.eigenvector_centrality_numpy(H),
+          "betweenness": lambda H: nx.betweenness_centrality(H, k=min(len(H), 120), seed=1)}[measure[0]]
+
+    def ccdf(vals):
+        vs = sorted(v for v in vals if v > 0)
+        n = len(vs)
+        return [(v, (n - i) / n) for i, v in enumerate(vs)]
+
+    out = {"real": ccdf(fn(G).values())}
+    rnd = random.Random(3)
+    pool = []
+    for _ in range(5):
+        H = G.copy()
+        try:
+            nx.double_edge_swap(H, nswap=2 * H.number_of_edges(), max_tries=20 * H.number_of_edges(),
+                                seed=rnd.randrange(10 ** 6))
+        except nx.NetworkXException:
+            pass
+        pool.extend(fn(H).values())
+    out["random edges, same degrees (5 copies)"] = ccdf(pool)
+    cent["sim"] = out
+
+
+def sim_chart():
+    if mode[0] != "Centralities" or cent["sim"] is None:
+        return None
+    return plotLine(cent["sim"], title=f"{measure[0]}: real against randomised", xlabel=measure[0],
+                    ylabel="fraction with this value or more", log=true)
+
+
+# ---- clustering --------------------------------------------------------------------------------------------
+picked = {"node": None}
+
+
+def paint_clustering():
+    top = max([n.degree for n in g.nodes] + [1])
+    for n in g.nodes:
+        c = n.clustering
+        n.width = n.height = 7 + 30 * (n.degree / top) ** 0.5
+        n.color = f"{int(250 - 200 * c)},{int(215 - 75 * c)},{int(90 + 130 * c)}"
+        n.strokecolor, n.strokewidth = "60,60,60", 0
+        n.labelvisible = false
+    for e in g.edges:
+        e.color, e.width = "150,150,150,80", 0.8
+    nd = g.getNodeByName(picked["node"]) if picked["node"] else None
+    if nd is not None:
+        nbrs = {e.node2.name if e.node1 is nd else e.node1.name for e in g.edges if nd in (e.node1, e.node2)}
+        nd.strokecolor, nd.strokewidth = "20,20,20", 4
+        nd.labelvisible = true
+        nd.label = name_of(nd)
+        for e in g.edges:
+            a, b = e.node1.name, e.node2.name
+            if a in nbrs and b in nbrs:              # a triangle through the picked node
+                e.color, e.width = "40,170,80", 3
+            elif nd.name in (a, b):
+                e.color, e.width = "240,140,30", 2.2
+
+
+def clustering_text():
+    nodes = [n for n in g.nodes if n.degree >= 2]
+    if not nodes:
+        return ""
+    st = stats(nx.Graph(toNetworkX(directed=False)))
+    by = sorted(nodes, key=lambda n: n.degree)
+    q = max(1, len(by) // 4)
+    low = sum(n.clustering for n in by[:q]) / q
+    high = sum(n.clustering for n in by[-q:]) / q
+    out = (f"**{shown['name']}**: C = **{st['C']:.3f}**, against **{st['Cconf']:.3f}** for random edges with the same "
+           f"degrees. Colour is each node's local clustering (blue high, yellow low). The quarter of nodes with the "
+           f"fewest links average **{low:.2f}**, the best-connected quarter **{high:.2f}**: local clustering **falls "
+           "with degree**. Hubs join different groups whose members don't know each other.")
+    nd = g.getNodeByName(picked["node"]) if picked["node"] else None
+    if nd is not None:
+        out += (f"\n\n**{name_of(nd)}**: degree {nd.degree}, local clustering **{nd.clustering:.2f}** (green: links "
+                "between its neighbours, each closing a triangle).")
+    else:
+        out += "\n\n*Click a node* to see its triangles."
+    return out
+
+
+def clustering_chart():
+    if mode[0] != "Clustering":
+        return None
+    by = {}
+    for n in g.nodes:
+        if n.degree >= 2:
+            by.setdefault(n.degree, []).append(n.clustering)
+    avg = [(k, sum(v) / len(v)) for k, v in sorted(by.items())]
+    return plotScatter(degree, clustering, line=avg, title="Local clustering against degree (dashed: average)",
+                       logX=true)
+
+
+# ---- mixing --------------------------------------------------------------------------------------------
+mix = {"sim": None}
+
+
+def hub_cut():
+    ks = sorted((n.degree for n in g.nodes), reverse=True)
+    return ks[max(0, len(ks) // 5 - 1)]
+
+
+def paint_mixing():
+    cut = hub_cut()
+    top = max([n.degree for n in g.nodes] + [1])
+    for n in g.nodes:
+        hub = n.degree >= cut
+        n.width = n.height = 7 + 30 * (n.degree / top) ** 0.5
+        n.color = "230,90,60" if hub else "120,150,200"
+        n.strokecolor, n.strokewidth = ("120,20,10", 2) if hub else ("60,60,60", 0)
+        n.labelvisible = false
+    for e in g.edges:
+        h1, h2 = e.node1.degree >= cut, e.node2.degree >= cut
+        if h1 and h2:
+            e.color, e.width = "220,40,40,200", 2.2           # hub with hub
+        elif h1 or h2:
+            e.color, e.width = "240,170,60,140", 1.2          # hub with small node
+        else:
+            e.color, e.width = "120,150,200,90", 0.8
+
+
+def mixing_text():
+    cut = hub_cut()
+    es = [e for e in g.edges if e.node1 is not e.node2]
+    hh = sum(1 for e in es if e.node1.degree >= cut and e.node2.degree >= cut)
+    ends = [n.degree for n in g.nodes]
+    hub_share = sum(k for k in ends if k >= cut) / (sum(ends) or 1)
+    expect = len(es) * hub_share ** 2
+    r = assortativity()
+    lean = ("**assortative**: hubs link to hubs more than chance" if r > 0.05 else
+            "**disassortative**: hubs link to small nodes" if r < -0.05 else "close to **neutral**")
+    out = (f"**{shown['name']}**: r = **{r:+.3f}**, {lean}. Hubs (red; degree ≥ {cut}, about the top 20%) are joined "
+           f"by **{hh}** edges (red), against about **{expect:.0f}** if edge ends were paired at random. Orange edges join a "
+           "hub to a small node.")
+    if mix["sim"] is not None:
+        real, fake = mix["sim"]
+        out += (f"\n\nWith the same degrees but random edges (20 shuffles), r = {sum(fake) / len(fake):+.3f} on average "
+                f"(from {min(fake):+.3f} to {max(fake):+.3f}); the real network's {real:+.3f} is "
+                + ("outside that range: a real preference." if not (min(fake) <= real <= max(fake)) else
+                   "inside it: no clear preference beyond what the degrees force.")
+                + " Simple networks with big hubs lean negative even at random: there are too few hubs to link to "
+                "each other.")
+    return out
+
+
+def mixing_scatter():
+    if mode[0] != "Mixing":
+        return None
+    return plotScatter(degree, ends=true, log=true, title="Degree at either end of each edge")
+
+
+def simulate_mixing():
+    G = nx.Graph(toNetworkX(directed=False))
+    G.remove_edges_from(list(nx.selfloop_edges(G)))
+    real = nx.degree_assortativity_coefficient(G)
+    rnd = random.Random(5)
+    fake = []
+    for _ in range(20):
+        H = G.copy()
+        try:
+            nx.double_edge_swap(H, nswap=2 * H.number_of_edges(), max_tries=20 * H.number_of_edges(),
+                                seed=rnd.randrange(10 ** 6))
+        except nx.NetworkXException:
+            pass
+        fake.append(nx.degree_assortativity_coefficient(H))
+    mix["sim"] = (real, fake)
+
+
+def click(n):
+    if mode[0] == "Clustering":
+        picked["node"] = n.name
+        paint_clustering()
+
+
+def switch(title):
+    mode[0] = title
+    style()
+
+
+def pick_network(v):
+    picked["node"] = None
+    cent["sim"] = None
+    mix["sim"] = None
+    load(v)
+
+
+load()
+after(0.3, compute_next)
+graphevents.clickNode = click
+constantLabelSize(size=14)
+ui.title("Centralities, clustering and mixing compared", "Networks, Sections 10.5–10.7")
+ui.layout(
+    right=Column(
+        Markdown("""### The measures of Chapter 7, across real networks
+Pick a network to draw; the comparison table covers them all."""),
+        Dropdown(list(NETS), label="Network", value="Les Misérables", onChange=pick_network),
+        Tabs(
+            Tab("Compare", Markdown(compare_text), Chart(real_vs_random_chart), Chart(mixing_chart)),
+            Tab("Centralities",
+                Dropdown(MEASURES, label="Measure", value="eigenvector", onChange=pick_measure),
+                Markdown(lambda: centrality_text() if mode[0] == "Centralities" else ""),
+                Chart(centrality_chart),
+                Button("Simulate: random edges, same degrees", onClick=lambda: simulate_centrality()),
+                Chart(sim_chart)),
+            Tab("Clustering", Markdown(lambda: clustering_text() if mode[0] == "Clustering" else ""),
+                Chart(clustering_chart)),
+            Tab("Mixing", Markdown(lambda: mixing_text() if mode[0] == "Mixing" else ""), Chart(mixing_scatter),
+                Button("Simulate: 20 shuffles keeping degrees", onClick=lambda: simulate_mixing())),
+            onChange=switch)),
+    sizes={"right": 430},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{shown['name']}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

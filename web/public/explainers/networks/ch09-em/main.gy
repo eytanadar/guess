@@ -1,0 +1,332 @@
+# Estimating errors from repeated measurements  (Newman, Networks, Section 9.3)
+# Measure a network N times and each pair of nodes is seen together E times out
+# of N. Real edges are seen with some probability alpha (the true-positive
+# rate), non-edges with a smaller probability beta (the false-positive rate),
+# and a share rho of all pairs are real edges. None of these is known. The EM
+# algorithm alternates two steps: given alpha, beta and rho, the probability Q
+# that each pair is a real edge (Bayes' rule); given the Qs, the most likely
+# alpha, beta and rho. Repeating them converges on both the error rates and
+# the network.
+
+import math
+import random
+import numpy as np
+import networkx as nx
+
+# ---- the hidden truth: 30 students in six friendship groups ------------------------------------------
+TRUE = nx.relaxed_caveman_graph(6, 5, 0.15, seed=2)
+TRUE = nx.relabel_nodes(TRUE, {v: f"s{v}" for v in TRUE})
+NAMES = sorted(TRUE, key=lambda v: int(v[1:]))
+for v in TRUE:
+    TRUE.nodes[v]["group"] = int(v[1:]) // 5
+pos = nx.spring_layout(TRUE, seed=5, iterations=300)
+for v in TRUE:
+    TRUE.nodes[v]["pos"] = (pos[v][0] * 420, pos[v][1] * 420)
+fromNetworkX(TRUE)
+remove(list(g.edges))                       # edges are drawn from the observations, not the truth
+Edge.ecount = 0
+Edge.qreal = 0.0
+Edge.real = false
+GROUPCOL = ["120,160,220", "230,150,80", "120,190,120", "200,120,190", "200,190,90", "140,190,200"]
+for nd in g.nodes:
+    nd.color = GROUPCOL[TRUE.nodes[nd.name]["group"]]
+    nd.labelvisible = false
+
+PAIRS = [(NAMES[i], NAMES[j]) for i in range(len(NAMES)) for j in range(i + 1, len(NAMES))]
+REAL = np.array([TRUE.has_edge(u, v) for u, v in PAIRS])
+RHO_TRUE = REAL.mean()
+
+scans = Slider(1, 20, 8, 1, label="measurements N (days of scans)")
+alpha_true = Slider(50, 95, 80, 5, label="true α: chance friends are seen together (%)")
+beta_true = Slider(0, 10, 3, 1, label="true β: chance others are seen together (%)")
+
+data = {"E": None, "N": 8, "seed": 1, "edge": {}}
+est = {"a": 0.6, "b": 0.2, "rho": 0.2, "Q": None, "hist": [], "it": 0, "timer": None, "done": False}
+START = (0.6, 0.2, 0.2)
+
+
+def observe(N, a0, b0, seed):
+    rng = np.random.default_rng(seed)
+    return np.where(REAL, rng.binomial(N, a0, len(PAIRS)), rng.binomial(N, b0, len(PAIRS)))
+
+
+def posterior(E, N, a, b, rho):
+    """Q: the probability that each pair is a real edge, by Bayes' rule."""
+    a, b, rho = (min(max(x, 1e-9), 1 - 1e-9) for x in (a, b, rho))
+    l1 = math.log(rho) + E * math.log(a) + (N - E) * math.log(1 - a)
+    l0 = math.log(1 - rho) + E * math.log(b) + (N - E) * math.log(1 - b)
+    return 1 / (1 + np.exp(np.clip(l0 - l1, -700, 700)))
+
+
+def em_step(E, N, a, b, rho):
+    Q = posterior(E, N, a, b, rho)
+    a2 = float((E * Q).sum() / (N * Q.sum())) if Q.sum() > 0 else a
+    b2 = float((E * (1 - Q)).sum() / (N * (1 - Q).sum())) if (1 - Q).sum() > 0 else b
+    rho2 = float(Q.mean())
+    return Q, a2, b2, rho2
+
+
+def em_converge(E, N, iters=300):
+    a, b, rho = START
+    for _ in range(iters):
+        Q, a2, b2, rho2 = em_step(E, N, a, b, rho)
+        if max(abs(a2 - a), abs(b2 - b), abs(rho2 - rho)) < 1e-8:
+            a, b, rho = a2, b2, rho2
+            break
+        a, b, rho = a2, b2, rho2
+    return posterior(E, N, a, b, rho), a, b, rho
+
+
+# ---- the observations as edges ----------------------------------------------------------------------------------
+def build_edges(show_unseen):
+    """An edge for every pair seen at least once (and, with the truth shown, for real pairs never seen)."""
+    remove(list(g.edges))
+    data["edge"] = {}
+    E = data["E"]
+    for k, (u, v) in enumerate(PAIRS):
+        if E[k] > 0 or (show_unseen and REAL[k]):
+            e = addEdge(g.getNodeByName(u), g.getNodeByName(v))
+            e.ecount, e.real = int(E[k]), bool(REAL[k])
+            data["edge"][k] = e
+
+
+def new_data(v=None, new_seed=True):
+    stop_em()
+    if new_seed:
+        data["seed"] += 1
+    data["N"] = int(scans.value)
+    data["E"] = observe(data["N"], alpha_true.value / 100, beta_true.value / 100, data["seed"])
+    reset_em()
+
+
+def reset_em():
+    stop_em()
+    est.update(a=START[0], b=START[1], rho=START[2], Q=None, hist=[], it=0, done=False)
+    build_edges(truth.checked)
+    paint()
+
+
+def mix(t):
+    t = max(0.0, min(1.0, t))
+    return f"{int(220 - 180 * t)},{int(60 + 110 * t)},{int(50 + 30 * t)}"
+
+
+def paint(flash=()):
+    E, N, Q = data["E"], data["N"], est["Q"]
+    show = truth.checked
+    for k, e in data["edge"].items():
+        share = E[k] / N
+        e.width = 0.8 + 4.5 * share
+        e.linestyle = "solid"
+        if Q is None:
+            e.color = f"110,110,110,{int(60 + 190 * share)}"
+            e.qreal = 0.0
+        else:
+            q = float(Q[k])
+            e.qreal = round(q, 4)
+            e.color = mix(q)
+            if q < 0.5:
+                e.linestyle = "dashed"
+        if show:
+            kept = Q[k] > 0.5 if Q is not None else E[k] > 0
+            if kept and not REAL[k]:
+                e.color, e.width, e.linestyle = "255,140,0", 4, "solid"
+            elif REAL[k] and not kept:
+                e.color, e.width, e.linestyle = "50,110,240", 3, "dashed"
+        if k in flash:
+            e.width, e.linestyle = max(e.width, 4), "flow"
+    for nd in g.nodes:
+        i = NAMES.index(nd.name)
+        if Q is None:
+            k = sum(1 for kk, (u, v) in enumerate(PAIRS) if E[kk] > N / 2 and nd.name in (u, v))
+        else:
+            k = sum(float(Q[kk]) for kk, (u, v) in enumerate(PAIRS) if nd.name in (u, v))
+        nd.width = nd.height = 12 + 3.5 * min(k, 8)
+        nd.strokecolor, nd.strokewidth = "50,50,50", 1
+
+
+# ---- EM, one iteration at a time ------------------------------------------------------------------------------
+def em_once():
+    if est["done"]:
+        return False
+    E, N = data["E"], data["N"]
+    old = est["Q"] if est["Q"] is not None else posterior(E, N, est["a"], est["b"], est["rho"])
+    Q, a2, b2, rho2 = em_step(E, N, est["a"], est["b"], est["rho"])
+    change = max(abs(a2 - est["a"]), abs(b2 - est["b"]), abs(rho2 - est["rho"]))
+    est.update(a=a2, b=b2, rho=rho2, it=est["it"] + 1)
+    est["Q"] = posterior(E, N, a2, b2, rho2)
+    est["hist"].append((est["it"], a2, b2, rho2))
+    moved = np.abs(est["Q"] - old)
+    flash = [int(k) for k in np.argsort(-moved)[:8] if moved[k] > 0.01 and int(k) in data["edge"]]
+    paint(flash)
+    if change < 1e-6 or est["it"] >= 80:
+        est["done"] = True
+        return 1                                     # one more tick to settle the flashing edges
+    return 80 - est["it"]
+
+
+def run_em():
+    if est["timer"] is not None and est["timer"].running:
+        stop_em()
+        return
+    if est["done"]:
+        reset_em()
+    est["timer"] = everyPaced(em_once, slow=0.8, fast=0.15, ramp=3)
+
+
+def stop_em():
+    if est["timer"] is not None:
+        est["timer"].stop()
+        est["timer"] = None
+
+
+def show_truth(v):
+    build_edges(bool(v))
+    paint()
+
+
+truth = Checkbox("Show the truth (orange: kept but not real; blue dashed: real but dropped)", false,
+                 onChange=show_truth)
+
+
+def data_text():
+    E, N = data["E"], data["N"]
+    seen = int((E > 0).sum())
+    real_seen = int(((E > 0) & REAL).sum())
+    return (f"**{N}** measurements of {len(PAIRS)} pairs. **{seen}** pairs were seen together at least once; "
+            f"only **{real_seen}** of them are real friendships (of {int(REAL.sum())}). Edge width shows E/N, "
+            "the share of measurements in which the pair was seen. Thick edges are probably real; thin ones "
+            "could be chance meetings. EM decides where the line falls, and how reliable the scans were.")
+
+
+def em_text():
+    if est["Q"] is None:
+        return (f"Start from a guess: α = {START[0]}, β = {START[1]}, ρ = {START[2]}. *Run EM* repeats the two steps; "
+                "edges turn green as Q → 1 and red (dashed) as Q → 0, and the ones that change most flash.")
+    state = "converged" if est["done"] else "running"
+    return (f"Iteration **{est['it']}** ({state}): α̂ = **{est['a']:.3f}** (true {alpha_true.value / 100:.2f}), "
+            f"β̂ = **{est['b']:.4f}** (true {beta_true.value / 100:.2f}), ρ̂ = **{est['rho']:.4f}** "
+            f"(true {RHO_TRUE:.4f}). Node size: expected degree, the sum of its Qs.")
+
+
+def rules(E, N, Q):
+    out = [("seen at least once", E > 0), ("seen in most measurements", E > N / 2)]
+    if Q is not None:
+        out.append(("EM: Q > ½", Q > 0.5))
+    return out
+
+
+def confusion():
+    E, N = data["E"], data["N"]
+    rows = ["| rule | real edges kept | real edges lost | false edges kept |", "|---|---|---|---|"]
+    for name, keep in rules(E, N, est["Q"]):
+        rows.append(f"| {name} | {int((keep & REAL).sum())} | {int((~keep & REAL).sum())} | "
+                    f"{int((keep & ~REAL).sum())} |")
+    return "Against the truth (which EM never sees):\n\n" + "\n".join(rows)
+
+
+def param_chart():
+    if len(est["hist"]) < 2:
+        return None
+    return plotLine({"α̂": [(i, a) for i, a, b, r in est["hist"]], "β̂": [(i, b) for i, a, b, r in est["hist"]],
+                     "ρ̂": [(i, r) for i, a, b, r in est["hist"]]},
+                    title="EM estimates, iteration by iteration", xlabel="iteration", ylabel="estimate", dots=true)
+
+
+def q_chart():
+    if est["Q"] is None:
+        return None
+    return plotHistogram(qreal, 10)
+
+
+# ---- how many measurements? (Simulate) -----------------------------------------------------------------------
+sim = {"rows": [], "Ns": [], "timer": None}
+DRAWS = 4
+
+
+def sim_one():
+    if not sim["Ns"]:
+        return False
+    N = sim["Ns"].pop(0)
+    errs = {"seen at least once": 0, "seen in most measurements": 0, "EM: Q > ½": 0}
+    for d in range(DRAWS):
+        E = observe(N, alpha_true.value / 100, beta_true.value / 100, 500 + 31 * N + d)
+        Q, a, b, rho = em_converge(E, N)
+        for name, keep in rules(E, N, Q):
+            errs[name] += int((keep != REAL).sum()) / DRAWS
+        if d == 0:                                   # show this one in the graph
+            data.update(E=E, N=N)
+            est.update(a=a, b=b, rho=rho, Q=Q, it=0, hist=[], done=True)
+            build_edges(truth.checked)
+            paint()
+    sim["rows"].append((N, errs))
+    return len(sim["Ns"]) or False
+
+
+def simulate():
+    stop_em()
+    if sim["timer"] is not None:
+        sim["timer"].stop()
+    sim["rows"] = []
+    sim["Ns"] = list(range(1, 16))
+    sim["timer"] = everyPaced(sim_one, steps=15, slow=0.7, fast=0.2, ramp=2)
+
+
+def sim_chart():
+    if len(sim["rows"]) < 2:
+        return None
+    names = ["seen at least once", "seen in most measurements", "EM: Q > ½"]
+    return plotLine({nm: [(N, e[nm]) for N, e in sim["rows"]] for nm in names},
+                    title="Pairs classified wrongly", xlabel="measurements N", ylabel="wrong pairs", dots=true)
+
+
+def sim_text():
+    if not sim["rows"]:
+        return ("*Simulate* repeats the study with N = 1 to 15 measurements (4 times each, with the true α and β set "
+                "on the first tab) and counts the pairs each rule gets wrong: real friendships dropped plus "
+                "chance meetings kept.")
+    N, e = sim["rows"][-1]
+    return (f"With **{N}** measurements: keeping every pair ever seen gets **{e['seen at least once']:.0f}** wrong "
+            f"(chance meetings pile up), a majority vote **{e['seen in most measurements']:.0f}**, and EM "
+            f"**{e['EM: Q > ½']:.0f}**. Errors in single measurements are common; a few repeats and a model of the "
+            "errors recover the network almost exactly.")
+
+
+def switch(title):
+    stop_em()
+    if sim["timer"] is not None and not title.startswith("How"):
+        sim["timer"].stop()
+        sim["timer"] = None
+
+
+for sl in (scans, alpha_true, beta_true):
+    sl.onChange = lambda v: new_data()
+new_data(new_seed=False)
+constantLabelSize(size=14)
+ui.title("Estimating errors from repeated measurements", "Networks, Section 9.3")
+ui.layout(
+    right=Column(
+        Markdown("""### Who was really friends with whom?
+Thirty students carry phones that log who is near whom. Each day of scans is
+one measurement: friends are usually seen together, other pairs now and then
+by chance. Colours are the six real friendship groups (unknown to EM)."""),
+        Tabs(
+            Tab("Observations",
+                scans, alpha_true, beta_true,
+                Button("New observations", onClick=lambda: new_data()),
+                Markdown(data_text)),
+            Tab("Run EM",
+                Row(Button("Run EM", onClick=lambda: run_em()), Button("One iteration", onClick=lambda: em_once()),
+                    Button("Start over", onClick=lambda: reset_em())),
+                truth, Markdown(em_text), Chart(param_chart), Markdown(confusion),
+                Markdown("Q for the pairs drawn (most are near 0 or near 1):"), Chart(q_chart)),
+            Tab("How many measurements?",
+                Button("Simulate: 1 to 15 measurements", onClick=lambda: simulate()),
+                Chart(sim_chart), Markdown(sim_text)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(NAMES)} students · {int(REAL.sum())} real friendships · "
+                           f"{int((data['E'] > 0).sum())} pairs seen at least once in {data['N']} measurements"))
+center()

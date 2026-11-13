@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Link prediction and disambiguation",
+  "description": "Guess the edges a measurement missed, and pull apart (or join up) people recorded under the same or different names.",
+  "console": "toggle",
+  "script": "main.gy"
+}
