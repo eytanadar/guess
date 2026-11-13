@@ -79,9 +79,10 @@ def install(session):
                         out.append((a, b, round(score, 3)))
         out.sort(key=lambda t: (-t[2], t[0]._id, t[1]._id))
         if show:
-            print(f"{len(out)} likely duplicate pairs (score >= {threshold})")
+            session.say((f"{len(out)} likely duplicate pairs", [x for a, b, _s in out for x in (a, b)]),
+                        f" (score >= {threshold})")
             for a, b, sc in out[:int(top)]:
-                print(f"  {sc:.2f}  {f.get(a)!s}  ~  {f.get(b)!s}")
+                session.say(f"  {sc:.2f}  ", (f"{f.get(a)!s}", [a]), "  ~  ", (f"{f.get(b)!s}", [b]))
         return out
 
     @cmd
@@ -99,7 +100,7 @@ def install(session):
         else:
             items = [x for x in elements_of(nodes) if isinstance(x, Node)]
             groups = [items]
-        done = 0
+        done, kept = 0, []
         for items in groups:
             items = [x for x in items if gr._node_ids.get(x._id) is x]
             if len(items) < 2:
@@ -113,10 +114,11 @@ def install(session):
             others = [x for x in items if x is not keep]
             _merge(gr, keep, others)
             done += 1
+            kept.append(keep)
         if not done:
             raise GuessError("mergeNodes needs at least two nodes (or duplicate pairs)")
         session.scene()
-        print(f"merged {done} group{'s' if done != 1 else ''}")
+        session.say("merged ", (f"{done} group{'s' if done != 1 else ''}", kept), " (into these nodes)")
         return done
 
     def _merge(gr, keep, others):
@@ -222,8 +224,11 @@ def install(session):
         if show:
             print(f"{'group':>14}  {'size':>5}  {'inside':>6}  {'density':>7}  {'boundary':>8}  {'conduct.':>8}  hub")
             for r in rows[:int(top)]:
-                print(f"{str(r['group'])[:14]:>14}  {r['size']:>5}  {r['internal']:>6}  {r['density']:7.2f}  "
-                      f"{r['boundary']:>8}  {r['conductance']:8.2f}  {r['hub'].label or r['hub'].name}")
+                gname = str(r["group"])[:14]
+                session.say(" " * (14 - len(gname)), (gname, r["members"]),
+                            f"  {r['size']:>5}  {r['internal']:>6}  {r['density']:7.2f}  "
+                            f"{r['boundary']:>8}  {r['conductance']:8.2f}  ",
+                            (str(r["hub"].label or r["hub"].name), [r["hub"]]))
             if len(rows) > top:
                 print(f"  … {len(rows) - top} more groups")
         return rows
@@ -260,6 +265,7 @@ def install(session):
             if len(out) >= int(limit):
                 break
         out.sort(key=len)
-        print(f"{len(out)} cycles of up to {maxLength} nodes" + (" (limit reached)" if len(out) >= int(limit) else ""))
+        session.say((f"{len(out)} cycles", out), f" of up to {maxLength} nodes",
+                    " (limit reached)" if len(out) >= int(limit) else "")
         return GSet(out, annotation="cycles")
 

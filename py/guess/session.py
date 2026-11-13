@@ -1015,6 +1015,10 @@ class Session:
                 segs.append(segment(a) if _linkable(a) else str(a))
         self.emit({"type": "out", "segs": segs, "gid": self.graph_gen})
 
+    def say(self, *parts):
+        """Print a line whose nodes and edges are linked (see linked()); for commands."""
+        self._print(linked(*parts))
+
     def display(self, value):
         if value is None:
             return
@@ -1667,6 +1671,53 @@ class LinkedStr(str):
         obj.segs = segs
         obj.linked = any(isinstance(sg, dict) for sg in segs)
         return obj
+
+
+def linked(*parts):
+    """A line of output whose nodes and edges are linked (hover highlights them,
+    click selects), for commands to print. Each part is
+      - text,
+      - a node or edge (shown by name, or "a-b"),
+      - (element, spec): the name formatted with a spec such as ">14", with the
+        padding kept outside the link,
+      - (text, elements): text standing for a group, e.g. ("12 edges", added),
+        so pointing at it highlights them all.
+    Print it with session.say(...), or print() from Gython."""
+    texts, segs = [], []
+
+    def add(seg, text):
+        texts.append(text)
+        if isinstance(seg, str) and segs and isinstance(segs[-1], str):
+            segs[-1] += seg
+        else:
+            segs.append(seg)
+
+    for p in parts:
+        if isinstance(p, (Node, Edge)):
+            sg = segment(p)
+            add(sg, sg["t"])
+        elif isinstance(p, tuple) and len(p) == 2 and isinstance(p[0], (Node, Edge)) and isinstance(p[1], str):
+            el, spec = p
+            name = el._name if isinstance(el, Node) else repr(el)
+            padded = format(name, p[1])
+            i = padded.find(name)
+            if i < 0:                                   # truncated by the spec: link the whole thing
+                add({"n": el._id, "t": padded} if isinstance(el, Node) else edge_seg(el, padded), padded)
+                continue
+            if i:
+                add(padded[:i], padded[:i])
+            add({"n": el._id, "t": name} if isinstance(el, Node) else edge_seg(el), name)
+            if padded[i + len(name):]:
+                add(padded[i + len(name):], padded[i + len(name):])
+        elif isinstance(p, tuple) and len(p) == 2 and isinstance(p[0], str):
+            items = _all_items(p[1])
+            if items:
+                add({"g": [p[0]], "x": items}, p[0])
+            else:
+                add(p[0], p[0])
+        else:
+            add(str(p), str(p))
+    return LinkedStr("".join(texts), segs)
 
 
 def fstring(*parts):

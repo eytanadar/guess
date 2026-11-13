@@ -914,9 +914,11 @@ def install(session):
             nodes_from = f"sheet {nodes_from!r}"
         kind = kinds[sheet]
         if kind == "nodes" and node_rows is None and len(g._nodes):
+            before = set(g._node_ids)
             _k, added, _ne = gexf.read_csv(g, None, rows=sheets[sheet])
             session.scene()
-            print(f"node sheet {sheet!r}: {added} new nodes, {len(g._nodes) - added} updated")
+            new = [n for i, n in g._node_ids.items() if i not in before]
+            session.say(f"node sheet {sheet!r}: ", (f"{added} new nodes", new), f", {len(g._nodes) - added} updated")
             return
         g.clear()
         kind, _nn, ne = gexf.read_csv(g, None, bool(directed), rows=sheets[sheet])

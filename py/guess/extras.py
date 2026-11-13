@@ -149,7 +149,8 @@ def install(session):
         collapseMotifs(kind) replaces each with one meta-node."""
         groups = motifs(kind, int(smallest))
         if show:
-            print(f"{len(groups)} {kind} motifs of {smallest}+ nodes, covering {sum(len(m) for _a, m in groups)} nodes")
+            session.say((f"{len(groups)} {kind} motifs", [x for _a, m in groups for x in m]),
+                        f" of {smallest}+ nodes, covering {sum(len(m) for _a, m in groups)} nodes")
         return GSet([GSet(m, annotation=f"{kind} {i + 1}") for i, (_a, m) in enumerate(groups)],
                     annotation=f"{kind} motifs")
 
@@ -168,7 +169,7 @@ def install(session):
                 meta = collapse(members, f"{kind}{i + 1}")
                 meta.label = f"{kind} ({len(members)})"
                 metas.append(meta)
-        print(f"collapsed {len(metas)} {kind} motifs")
+        session.say("collapsed ", (f"{len(metas)} {kind} motifs", metas), " into meta-nodes")
         return GSet(metas, annotation=f"{kind} motifs")
 
     # ---- report ----------------------------------------------------------------
@@ -347,7 +348,7 @@ def install(session):
                     e, c = arc[(u, v)]
                     f.set(e, (f.get(e) or 0.0) + x)
                     total += x * c
-        print(f"sent {amount} from {a._name} to {b._name} at total cost {total:g}")
+        session.say(f"sent {amount} from ", a, " to ", b, f" at total cost {total:g}")
         return total
 
     @cmd
@@ -404,7 +405,8 @@ def install(session):
         route.append(gr._node_ids[tour[-1]])
         out = GSet(route, annotation=f"route of {len(set(tour))} nodes, length {length:g}")
         object.__setattr__(out, "length", length)    # on the set itself, not its members
-        print(f"route through {len(S)} stops: {len(tour) - 1} steps, length {length:g}")
+        session.say("route through ", (f"{len(S)} stops", S), ": ", (f"{len(tour) - 1} steps", out),
+                    f", length {length:g}")
         return out
 
     # ---- embeddings ------------------------------------------------------------

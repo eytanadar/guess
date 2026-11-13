@@ -145,6 +145,8 @@ def install(session):
             print(f"{n} of {N} annotated nodes; {tested} sets tested")
             print(f"{'set':<{w}}  {'k/n':>7}  {'K/N':>8}  {'fold':>5}  {'p':>8}  {'q':>8}")
             for r in rows[:top]:
-                print(f"{str(r['set'])[:w]:<{w}}  {r['k']:>3}/{r['n']:<3}  {r['K']:>4}/{r['N']:<3}  "
-                      f"{r['fold']:5.1f}  {r['p']:8.1e}  {r['q']:8.1e}")
+                name = str(r["set"])[:w]                  # the set's name links to its members in the selection
+                session.say((name, r["members"]), " " * (w - len(name)),
+                            f"  {r['k']:>3}/{r['n']:<3}  {r['K']:>4}/{r['N']:<3}  "
+                            f"{r['fold']:5.1f}  {r['p']:8.1e}  {r['q']:8.1e}")
         return rows

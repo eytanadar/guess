@@ -687,13 +687,16 @@ def install(session):
         out = [(I.nodes[a], I.nodes[b], round(s, 4)) for (a, b), s in best]
         if show:
             for a, b, s in out:
-                print(f"{a._name:>14} - {b._name:<14} {s}")
+                session.say((a, ">14"), " - ", (b, "<14"), f" {s}")
         if add and out:
             gr = g()
             f = gr.addEdgeField("predicted", "VARCHAR", None)
+            made = []
             for a, b, _s in out:
-                f.set(gr.addEdge(a, b, False), m)
-            print(f"added {len(out)} predicted edges (predicted = {m!r})")
+                e = gr.addEdge(a, b, False)
+                f.set(e, m)
+                made.append(e)
+            session.say("added ", (f"{len(made)} predicted edges", made), f" (predicted = {m!r})")
         return out
 
     # ---- patterns, cuts, flows -------------------------------------------------
@@ -740,7 +743,8 @@ def install(session):
             out.append(GSet(sorted((I.nodes[v] for v in mp), key=lambda n: n._id), f"match {len(out)}"))
             if len(out) >= int(limit):
                 break
-        print(f"{len(out)} match{'es' if len(out) != 1 else ''}" + (" (limit reached)" if len(out) >= int(limit) else ""))
+        session.say((f"{len(out)} match{'es' if len(out) != 1 else ''}", out),
+                    " (limit reached)" if len(out) >= int(limit) else "")
         return GSet(out, f"{len(out)} matches")
 
     @cmd
@@ -761,7 +765,7 @@ def install(session):
             cap = [sum(float(f.get(e) or 0) for e in es) for es in I.pairs]
         cut = I.G.mincut(source=va, target=vb, capacity=cap)
         edges = [e for k in cut.cut for e in I.pairs[k]]
-        print(f"cut value {cut.value:g}: {len(edges)} edges")
+        session.say(f"cut value {cut.value:g}: ", (f"{len(edges)} edges", edges))
         return GSet(sorted(edges, key=lambda e: e._id), f"cut between {I.nodes[va]._name} and {I.nodes[vb]._name}")
 
     @cmd
@@ -840,7 +844,7 @@ def install(session):
         I = undirected()
         cl = I.G.largest_cliques()
         out = [GSet(sorted((I.nodes[v] for v in c), key=lambda n: n._id), f"clique {i}") for i, c in enumerate(cl)]
-        print(f"{len(out)} cliques of size {len(cl[0]) if cl else 0}")
+        session.say((f"{len(out)} cliques", out), f" of size {len(cl[0]) if cl else 0}")
         return GSet(out, f"{len(out)} largest cliques")
 
     @cmd

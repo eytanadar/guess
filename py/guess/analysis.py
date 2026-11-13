@@ -600,7 +600,7 @@ def install(session):
         try:
             path = nx.shortest_path(G, a, b, weight=(lambda u, v, d: abs(d["weight"]) or 1e-9) if weighted else None)
         except nx.NetworkXNoPath:
-            print(f"no path from {a._name} to {b._name}")
+            session.say("no path from ", a, " to ", b)
             return GSet(annotation="no path")
         out = GSet(annotation=f"path {a._name} to {b._name}")
         for i, v in enumerate(path):

@@ -388,3 +388,42 @@ def test_fit_power_law_shift():
         assert abs(shifted["alpha"] - 3.0) < 0.35 < abs(plain - 3.0) and shifted["kmin"] == k
     assert s.run("plotFrequency(indegree, cumulative=true, log=true, fit=true, shift=3)"), s.rec.of("error")
     assert "k + 3" in _charts(s)[-1]["series"][1]["name"]
+
+
+def _linked_outs(s):
+    """The structured output lines since the last clear, as (text, node ids, edge ids, group items)."""
+    out = []
+    for m in s.rec.of("out"):
+        nodes = [sg["n"] for sg in m["segs"] if isinstance(sg, dict) and "n" in sg]
+        edges = [sg["e"] for sg in m["segs"] if isinstance(sg, dict) and "e" in sg]
+        groups = [sg.get("x", []) for sg in m["segs"] if isinstance(sg, dict) and "g" in sg]
+        text = "".join(sg if isinstance(sg, str) else sg.get("t", "".join(map(str, sg.get("g", []))))
+                       for sg in m["segs"])
+        out.append((text, nodes, edges, groups))
+    return out
+
+
+def test_commands_print_linked_nodes_and_edges():
+    s = _s()
+    s.rec.clear()
+    assert s.run("r = predictLinks(3, add=true)"), s.rec.of("error")
+    lines = _linked_outs(s)
+    pairs = [ln for ln in lines if len(ln[1]) == 2]
+    assert len(pairs) == 3                                      # each predicted pair: both names linked
+    assert pairs[0][0].strip().count(" - ") == 1
+    added = [ln for ln in lines if ln[0].startswith("added 3 predicted edges")]
+    assert added and len(added[0][3][0]) == 3 and all(k == "e" for k, _i in added[0][3][0])
+    # every one of those edges exists and is marked predicted
+    assert ev(s, "len([e for e in g.edges if e.predicted])") == 3
+    s.rec.clear()
+    assert s.run("newGraph('two')\naddNode('a'); addNode('b')\nshortestPath(a, b)"), s.rec.of("error")
+    assert any(t.startswith("no path from a to b") and len(n) == 2 for t, n, _e, _g in _linked_outs(s))
+
+
+def test_linked_line_keeps_columns():
+    from guess.session import linked
+    s = _s()
+    v1 = s.graph._nodes["v1"]
+    line = linked((v1, ">6"), "|", ("2 nodes", [v1]), (v1, "<4"), "!")
+    assert str(line) == "    v1|2 nodesv1  !"
+    assert line.segs[0] == "    " and line.segs[1] == {"n": v1._id, "t": "v1"}

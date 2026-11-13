@@ -396,3 +396,19 @@ test("hovering hidden nodes and edges elsewhere draws ghosts of them in the grap
   await page.locator(".result").last().locator(".obj.edge .conn").first().hover();
   await expect.poll(drawn).toBeGreaterThan(0);
 });
+
+test("commands print linked nodes and edges: predictLinks(add=true)", async ({ page }) => {
+  await boot(page);
+  await expect.poll(async () => {        // predictLinks needs igraph, which loads in the background
+    await run(page, "try:\n    import igraph\n    print('igraph ready')\nexcept ImportError:\n    print('still loading')");
+    return page.locator(".cell").last().textContent();
+  }, { timeout: 60000, intervals: [1000] }).toContain("igraph ready");
+  await run(page, "r = predictLinks(3, add=true)");
+  const cell = page.locator(".cell").last();
+  await expect(cell.locator(".obj.node")).toHaveCount(6, { timeout: 30_000 });   // three pairs, both ends
+  const added = cell.locator(".grp", { hasText: "3 predicted edges" });
+  await expect(added).toHaveCount(1);
+  await added.hover();
+  await cell.locator(".obj.node").first().hover();
+  expect(await lastError(page)).toBeNull();
+});

@@ -1221,3 +1221,7 @@ detection by modularity. The growth models replay their growth in place
 
 - (done) Lombardi-style layout and edge rounding: `lombardiLayout()`, `lombardiEdges()`, `lombardiness()`, `straightenEdges()`, edge field `arc`.
 - (done) Directed edges follow Holten & van Wijk (CHI 2009): tapered by default, no arrowheads; `directedEdges("taper"|"fade"|"arrow")`, line style `fade`.
+- (done) Command output links to the graph: nodes and edges a command prints can be hovered and clicked in the console, like returned values.
+  - `predictLinks` links the names in its pairs, and "added N predicted edges" links to those edges.
+  - The same holds for `shortestPath` ("no path from a to b"), bridging centrality's top node, `minCostFlow`'s ends, the route command's stops and steps, `minCut`'s edges, the counts of cliques, matches and cycles, motifs and collapsed motifs, `findDuplicates` pairs, `mergeNodes`, the group-statistics table (group name and hub), enrichment set names, and the new nodes from node-table imports.
+  - Commands print through `session.say(...)` / `linked(...)`, which keep column widths.

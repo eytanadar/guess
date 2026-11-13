@@ -280,7 +280,7 @@ def install(session):
             fw.set(v, float(btw.get(v, 0.0)) * bc[v])
         top = max(g._nodes_list(), key=lambda v: fw.get(v), default=None)
         if top is not None:
-            print(f"highest weighted bridging centrality: {top._name} ({fw.get(top):.4g})")
+            session.say("highest weighted bridging centrality: ", top, f" ({fw.get(top):.4g})")
         return fw
 
     # ---- cliques -------------------------------------------------------------------
