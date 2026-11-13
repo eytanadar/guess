@@ -534,6 +534,8 @@ for a, b, sg in ties:
     e = addEdge(g.getNodeByName(a), g.getNodeByName(b))
     e.sign = sg
 circleLayout()
+g.nodes.width = g.nodes.height = 30
+labelBy(name)
 r = structuralBalance(sign)
 colorize(camp)
 (sign < 0).linestyle = "dashed"

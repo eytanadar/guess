@@ -101,7 +101,9 @@ labelBy(label)
 g.nodes.labelpos = "inside"
 fitNodesToLabels()
 rankNodes()                               # 0.97: the share of imports that point down
-orderedLayout(rank, axis="y", inverted=True)
+frLayout()                                # spread the modules out sideways first...
+orderedLayout(rank, axis="y", inverted=True)   # ...then set each one's height by its rank
+noverlapLayout()
 colorBy(rank, purple, lightgray)
 ```
 

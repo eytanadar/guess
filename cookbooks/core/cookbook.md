@@ -357,7 +357,7 @@ plotScatter(degree, betweenness)                            # one dot per node
 plotScatter(degree, ends=true, line=[(1, 1), (36, 36)])     # degree at both ends of every edge
 ```
 
-![Betweenness against degree in Les Misérables](img/core-scatter.png)
+![Betweenness against degree in Les Misérables](img/app-core-scatter.png)
 
 **How it works.** `plotScatter(x, y)` draws one dot per node (or edge, for
 edge fields) in the element's own colour. Pointing at a dot highlights its
@@ -385,7 +385,7 @@ plotFrequency(degree, cumulative=true, log=true, fit=true)
 fitPowerLaw(degree)                       # {'alpha': ..., 'sigma': ..., 'kmin': ..., 'n': ..., 'ks': ...}
 ```
 
-![The cumulative degree distribution of 600 political blogs, with a fitted power law](img/core-power-law.png)
+![The cumulative degree distribution of 600 political blogs, with a fitted power law](img/app-core-power-law.png)
 
 ```python
 import csv
@@ -467,7 +467,7 @@ louvainClusters()
 showMatrix(order=louvain_class)
 ```
 
-![The karate club's adjacency matrix, ordered by community](img/core-matrix.png)
+![The karate club's adjacency matrix, ordered by community](img/app-core-matrix.png)
 
 ```python
 makeFromGDF("southern-women.gdf")

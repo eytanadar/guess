@@ -248,9 +248,11 @@ for b in [0.01, 0.02, 0.03, 0.05]:
     T = 1 - (1 - b) ** 5
     sz = outbreaks(200, beta=b, duration=5, show=False)
     print(b, round(T, 3), sz.large, round(sz.meanLarge / len(g.nodes), 2))
+spread(g.nodes[:1], beta=0.03, duration=5, steps=200, show=False)
+(infected_at >= 0).color = "220,60,50"   # one outbreak: the cluster of transmitting contacts around the first case
 ```
 
-![Bond percolation on the school's contacts: the largest cluster against the share of contacts that transmit](img/epi-percolation.png)
+![One outbreak with a fixed infectious period (red): exactly one cluster of contacts that transmit](img/epi-percolation.png)
 
 `duration=5` makes every infection last exactly 5 steps, instead of ending
 with chance γ each step. The threshold is then T_c = ⟨k⟩/(⟨k²⟩ − ⟨k⟩),
@@ -277,6 +279,8 @@ quiet stage before they become infectious.
 makeFromGDF("school-contacts-SIMULATED.gdf")
 c = spread(g.nodes[:3], model="SIS", beta=0.03, gamma=0.2, steps=300)
 plotScatter(degree, infected_steps, title="Time spent infected, by contacts")
+colorBy(infected_steps, "210,225,250", "200,30,30")   # red: infected most of the time
+sizeBy(degree, 6, 26)
 ```
 
 ![SIS in the school: pupils with more contacts are infected more of the time](img/epi-sis.png)

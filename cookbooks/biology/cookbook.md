@@ -518,6 +518,8 @@ who receives them, and the hubs.
 
 ```python
 makeFromFile("celegans-neural.gdf")
+g.edges.width = 0.4                       # thin connections, so the neurons show
+g.edges.color = "150,150,150,60"
 sizeBy(degree, 3, 24)
 colorBy(outdegree, "200,210,240", "200,40,40")
 plotFrequency(degree, cumulative=True, log=True)
