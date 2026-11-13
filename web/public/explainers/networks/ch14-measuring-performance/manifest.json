@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Testing community detection",
+  "description": "Planted communities with a mixing knob, normalized mutual information, and the point where every method fails.",
+  "console": "toggle",
+  "script": "main.gy"
+}

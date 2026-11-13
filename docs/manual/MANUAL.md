@@ -960,6 +960,28 @@ biComponentClusters()              # biconnected components
 groupsOfSize(dept, 40)             # groups with at least 40 members
 ```
 
+Fitting a model instead of optimising modularity: `fitBlockModel(k)` finds
+the k groups of a stochastic block model that make the edges most probable.
+It is degree-corrected by default; `degreeCorrected=false` gives the plain
+model, which tends to put the hubs in a group of their own.
+`corePeriphery()` splits a network into a dense core and a periphery
+(field `core`), and `rankNodes()` puts the nodes of a directed network on a
+ladder so that edges mostly point down (SpringRank; field `rank`).
+`makeLFR(n, mu=)` makes benchmark networks with planted communities (field
+`community`) to test the methods on. Hierarchical methods draw their tree
+with `showDendrogram()`; `cut=` colours that many groups and `field=`
+stores them:
+
+```python
+fitBlockModel(2)                          # field sbm_class; returns the log-likelihood
+corePeriphery()
+showDendrogram([(0, 1), (2, 3), (4, 5)], nodes=list(g.nodes)[:4] + [v1, v2], cut=2)
+makeLFR(250, mu=0.2)
+louvainClusters()
+compareClusters(louvain_class, community) # 1: the planted groups found exactly
+makeFromGDF("sample.gdf")
+```
+
 More algorithms, each storing its result in a field named after it:
 
 | command | finds |

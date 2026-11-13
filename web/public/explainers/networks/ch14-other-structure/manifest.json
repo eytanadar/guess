@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Beyond communities",
+  "description": "Overlapping groups, hierarchies, a core and a periphery, rankings, and hidden spaces: other large-scale structure in networks.",
+  "console": "toggle",
+  "script": "main.gy"
+}

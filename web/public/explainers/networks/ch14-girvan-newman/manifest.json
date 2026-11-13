@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Cutting the busiest edges",
+  "description": "Girvan–Newman: remove the edge on the most shortest paths, recompute, repeat, and watch communities come apart; the splits as a dendrogram.",
+  "console": "toggle",
+  "script": "main.gy"
+}

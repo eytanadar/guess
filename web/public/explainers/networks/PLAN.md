@@ -1306,7 +1306,7 @@ the algorithms, and structures other than communities.
   - **Ranking:** nodes placed by an inferred rank (SpringRank-style), with edges coloured by whether they point up or down; and a latent-space layout.
 - *GUESS:* `linkCommunities`, `showOverlaps`, `showMatrix`, `orderedLayout`, a core–periphery fit and a ranking (see gaps).
 
-### Gaps expected in batch 10
+### Gaps in batch 10 (added before building: `showDendrogram(merges, nodes=, heights=, cut=, field=)`, a linked dendrogram chart (it shows the last walktrap or fast-greedy tree with no arguments); `fitBlockModel(k, degreeCorrected=)` (Karrer–Newman likelihood, Kernighan–Lin moves; on karate the plain model groups the hubs together, and the degree-corrected optimum (−739.4) scores above the true club split (−743.2)); `makeLFR(n, tau1, tau2, mu)` (retries seeds); `corePeriphery()` (Borgatti–Everett); `rankNodes()` (SpringRank))
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|
@@ -1314,6 +1314,103 @@ the algorithms, and structures other than communities.
 | Fitting a stochastic block model (plain and degree-corrected) | ch14-sbm-inference, ch14-other-structure | `blockmodel` finds structural-equivalence positions, which is not SBM inference | `fitBlockModel(k, degreeCorrected=True, sweeps=, seed=)`: Monte Carlo maximum likelihood, field `sbm_class`, returning the log-likelihood |
 | LFR benchmark networks | ch14-measuring-performance | `makeBlockModel` (planted partition) only | `makeLFR(n, tau1, tau2, mu, ...)` via networkx, with a `community` field |
 | Core–periphery and ranking | ch14-other-structure | none | `corePeriphery()` (a two-block fit with a `core` field) and `rankNodes()` (SpringRank-style, field `rank`) |
+
+## Batch 11: book pages 568–624 (Chapter 15, *Percolation and network resilience*, and Chapter 16.1–16.2)
+
+What happens when nodes fail or are attacked (percolation), then the
+standard models of epidemics, first fully mixed and then on networks. The
+spreading processes highlight the edges that carry each transmission, run
+slow-fast-slow, and chart the epidemic curve live.
+
+**`ch15-random-failure`: Percolation and random failure (§§15.1–15.2)** · planned
+- *Idea:*
+  - keep each node with occupation probability φ;
+  - the giant component survives above a threshold φ_c = 1/(g₁′(1)) and vanishes below it;
+  - in the configuration model S(φ) follows from u = 1 − φ + φ g₁(u);
+  - networks with heavy-tailed degrees have φ_c → 0: they are very robust to random failure.
+- *Reader:*
+  - a φ slider removes nodes from a fixed drawing (removed ones fade, kept ones keep their place), with the giant component outlined;
+  - "Fail nodes one by one" (paced), each failure flashing red;
+  - theory S(φ) dashed against simulated points ("Simulate");
+  - Poisson against power-law networks.
+- *GUESS:* `makeConfigurationModel`, `robustness`, `plotLine(dashed=)`.
+
+**`ch15-targeted-attack`: Removing the hubs (§15.3)** · planned
+- *Idea:*
+  - remove the highest-degree nodes first and the giant component collapses after a few per cent: robust yet fragile;
+  - the threshold comes from the same equations with a cut-off degree;
+  - acquaintance immunisation (vaccinate a random neighbour of a random person) finds hubs without knowing the network.
+- *Reader:*
+  - an attack replayed hub by hub (paced), the removed hub and its edges flashing;
+  - random failure and attack curves on one chart, for a power-law network, the Internet sample and the power grid;
+  - an acquaintance-immunisation tab where random people point to a friend and that friend is immunised, with the degree of those chosen against random choice.
+- *GUESS:* `robustness(orders=)`, `plotLine`, `everyPaced`.
+
+**`ch15-percolation-algorithms`: Percolation on real networks, computed fast (§§15.4–15.5)** · planned
+- *Idea:*
+  - the Newman–Ziff algorithm adds nodes back one at a time in random order, merging clusters with union-find, so one pass gives the whole curve S(φ) for every φ;
+  - this gives curves for real networks without equations.
+- *Reader:*
+  - nodes are restored one at a time (paced; nodes stay in place, and the merged clusters' hulls join), with the union-find "pointer to root" drawn for the newest node;
+  - a live chart of the largest cluster against the number of nodes added;
+  - bond percolation (edges instead of nodes) as a toggle;
+  - "Real networks" runs the algorithm on the bundled networks for random and degree-ordered removal and compares the curves.
+- *GUESS:* a Newman–Ziff command (see gaps), `revealUpTo` (each node's `born` = its turn), `encircle`.
+
+**`ch16-si-sir`: The SI and SIR models (§§16.1.1–16.1.4)** · planned
+- *Idea:*
+  - in a fully mixed population, SI grows logistically;
+  - SIR adds recovery;
+  - the basic reproduction number R₀ = β/γ decides whether an outbreak takes off;
+  - the final size solves S = 1 − e^{−R₀S}.
+- *Reader:*
+  - a population drawn as dots in a grid; each step a few random contacts flash as lines between the people they join, and infections spread along them (paced);
+  - live S, I and R curves against the solved equations (dashed);
+  - sliders for β and γ, with R₀ shown;
+  - "Simulate" sweeps R₀ and charts the final size against the theory.
+- *GUESS:* numpy ODE stepping, `everyPaced`, `drawLine` for contacts, `plotLine(dashed=)`.
+
+**`ch16-sis-sirs`: SIS, SIRS and other models (§§16.1.5–16.1.7)** · planned
+- *Idea:*
+  - without lasting immunity (SIS) the infection settles at an endemic level 1 − 1/R₀;
+  - with waning immunity (SIRS) it can oscillate;
+  - other models add a latent stage (SEIR) and more.
+- *Reader:*
+  - a model dropdown (SIS, SIRS, SEIR) on the same dots-and-contacts picture;
+  - live curves with their steady states dashed;
+  - an R₀ slider showing the threshold;
+  - a phase-plane chart (S against I) for SIRS spiralling in.
+- *GUESS:* `plotLine`, `everyPaced`.
+
+**`ch16-complex-contagion`: Two diseases, and complex contagion (§§16.1.8–16.1.9)** · planned
+- *Idea:*
+  - two diseases can help each other (co-infection), giving explosive outbreaks;
+  - ideas and behaviours often need several contacts before they are adopted (complex contagion);
+  - clustered networks then spread them better than random ones, the reverse of simple contagion.
+- *Reader:*
+  - a cooperative-diseases tab with two colours, co-infected nodes outlined, and the sudden jump in outbreak size as transmission rises;
+  - a complex-contagion tab on a clustered lattice against the same lattice rewired, with a threshold slider: adoption spreads (paced, the adopting node's infected neighbours' edges highlighted) on the lattice and stalls on the rewired network.
+- *GUESS:* `spread(model="threshold")`, `makeWattsStrogatz`, `everyPaced`.
+
+**`ch16-epidemics-on-networks`: Epidemic models on networks (§16.2)** · planned
+- *Idea:*
+  - on a network, infection travels only along edges;
+  - hubs get infected early and spread widely;
+  - the outbreak depends on the network's structure as well as β and γ.
+- *Reader:*
+  - SIR on a contact network (paced), with each transmission's edge flashing, infected nodes enlarged and outlined, and recovered ones greyed;
+  - live S, I and R curves against the fully mixed prediction with the same mean degree;
+  - a degree-of-the-infected-over-time chart showing hubs first;
+  - networks: random, power-law, the school contacts.
+- *GUESS:* `spread(model="SIR")` (with its timeline), or the explainer's own step function, and `everyPaced`.
+
+### Gaps expected in batch 11
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| Newman–Ziff percolation: the whole S(φ) curve in one pass, for site or bond percolation, random or ordered | ch15-percolation-algorithms, ch15-random-failure | `robustness` recomputes components at each removal share | `percolation(order="random", bond=False, trials=1, show=True)` → [(φ, S)], with union-find; `robustness` could use it |
+| SIS, SIRS and SEIR on networks | ch16-sis-sirs, ch16-epidemics-on-networks | `spread` has SI, SIR, cascade and threshold | add `model="SIS"`, `"SIRS"` (`waning=`) and `"SEIR"` (`sigma=`) to `spread` |
+| Fully mixed compartmental curves | ch16-si-sir, ch16-sis-sirs | none (numpy is enough) | probably none; the explainers integrate the equations |
 
 ## To do (requests not yet done)
 

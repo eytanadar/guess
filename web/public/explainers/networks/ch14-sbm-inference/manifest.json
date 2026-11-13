@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Fitting a block model",
+  "description": "Community detection by statistical inference: fit a stochastic block model by maximum likelihood, plain or degree-corrected.",
+  "console": "toggle",
+  "script": "main.gy"
+}

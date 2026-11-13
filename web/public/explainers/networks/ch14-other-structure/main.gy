@@ -1,0 +1,667 @@
+# Beyond communities  (Newman, Networks, Section 14.7)
+# Dividing nodes into separate groups is only one kind of large-scale
+# structure. Groups can overlap (a person in a family and a workplace); groups
+# can nest inside bigger groups (a hierarchy); a network can have a dense
+# core that everyone links to and a sparse periphery that links mostly to
+# the core; nodes can sit on a ladder, with edges mostly running one way
+# (dominance, endorsement, hiring); or they can be points in a hidden space,
+# linked when they are close.
+
+import math
+import random
+import numpy as np
+import networkx as nx
+
+PALETTE = ["230,120,60", "70,140,230", "90,180,90", "200,90,200", "235,200,60", "60,190,190",
+           "220,80,90", "150,150,235", "180,140,90", "130,210,150"]
+HULL = ["230,120,60,40", "70,140,230,40", "90,180,90,40", "200,90,200,40", "235,200,60,40", "60,190,190,40",
+        "220,80,90,40", "150,150,235,40", "180,140,90,40", "130,210,150,40"]
+mode = ["Overlapping"]
+st = {"note": ""}
+
+
+def place(G, seed=1, scale=420):
+    pos = nx.spring_layout(G, seed=seed, iterations=200)
+    for v in G:
+        G.nodes[v]["pos"] = (float(pos[v][0]) * scale, float(pos[v][1]) * scale)
+
+
+def clean():
+    removeConvexHulls()
+    try:
+        removePies()
+    except Exception:
+        pass
+
+
+def plain(size=16, labels=true):
+    for v in g.nodes:
+        v.color, v.strokecolor, v.strokewidth = "190,195,205", "60,60,60", 0
+        v.width = v.height = size
+        v.labelvisible = labels
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,140", 1.2, "solid"
+
+
+# ---- overlapping ---------------------------------------------------------------------------------
+OV = {"Work": [f"w{i}" for i in range(9)] + ["Ana", "Ben"],
+      "Family": [f"f{i}" for i in range(8)] + ["Ana", "Cai"],
+      "Team": [f"t{i}" for i in range(9)] + ["Ben", "Cai"]}
+ov = {"view": "plain", "found": 0}
+
+
+def build_overlap():
+    r = random.Random(4)
+    G = nx.Graph()
+    for grp, members in OV.items():
+        for i, a in enumerate(members):
+            for b in members[i + 1:]:
+                if r.random() < 0.7:
+                    G.add_edge(a, b)
+    for v in G:
+        G.nodes[v]["groups"] = ", ".join(k for k, ms in OV.items() if v in ms)
+    place(G, seed=3)
+    fromNetworkX(G)
+    plain(18)
+    ov["view"] = "plain"
+
+
+def find_overlaps():
+    clean()
+    plain(18)
+    found = linkCommunities()
+    showOverlaps(found, hulls=true)
+    ov["view"], ov["found"] = "link", len(found)
+
+
+def clique_perc():
+    clean()
+    plain(18)
+    found = cliquePercolationClusters(4)
+    showOverlaps(found, hulls=true)
+    ov["view"], ov["found"] = "cpm", len(found)
+    ov["cpm_multi"] = [v for v in g.nodes if len([c for c in found if v in c]) > 1]
+
+
+def one_each():
+    clean()
+    plain(18)
+    louvainClusters()
+    for v in g.nodes:
+        v.color = PALETTE[v.louvain_class % len(PALETTE)]
+        if "," in v.groups:
+            v.strokecolor, v.strokewidth = "220,30,30", 4
+            v.width = v.height = 26
+    ov["view"] = "louvain"
+
+
+def overlap_text():
+    if mode[0] != "Overlapping":
+        return ""
+    many = [v for v in g.nodes if "," in v.groups]
+    head = ("Three circles of people: a workplace (w), a family (f) and a team (t). Three people belong to two of "
+            "them: " + " ".join(linkTo(v, f"{v.name} ({v.groups})") for v in many) + ".")
+    if ov["view"] == "link":
+        multi = [v for v in g.nodes if v.link_count > 1]
+        return (head + f"\n\n**Link communities** (Ahn, Bagrow and Lehmann) cluster the *edges*, and a node belongs "
+                f"to every community its edges do: **{ov['found']}** communities, and **{len(multi)}** people in "
+                "more than one, drawn as pies with a slice per community: "
+                + " ".join(linkTo(v) for v in multi) + ".")
+    if ov["view"] == "cpm":
+        return (head + f"\n\n**Clique percolation** (Palla et al.) grows communities from 4-cliques that share "
+                f"3 nodes: **{ov['found']}** communities, and a node can belong to several: "
+                + " ".join(linkTo(v) for v in ov["cpm_multi"]) + ". Both methods find the three circles and the "
+                "three people who belong to two.")
+    if ov["view"] == "louvain":
+        return (head + "\n\n**Louvain** gives each person exactly one group, so the people in two circles "
+                "(red rings) are forced to choose; each is counted with only one of their groups.")
+    return head + "\n\nFind the groups with a method that allows overlaps, or one that doesn't."
+
+
+# ---- hierarchy -------------------------------------------------------------------------------------
+HI = {"merges": [], "heights": [], "names": [], "truth": {}, "k": 4, "link": "average", "step": None,
+      "timer": None}
+
+
+def build_hierarchy():
+    r = random.Random(5)
+    G = nx.Graph()
+    names = [f"h{i}" for i in range(40)]
+    team = {v: i // 10 for i, v in enumerate(names)}
+    G.add_nodes_from(names)
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            same, pair = team[a] == team[b], team[a] // 2 == team[b] // 2
+            p = 0.55 if same else 0.12 if pair else 0.008
+            if r.random() < p:
+                G.add_edge(a, b)
+    for v in G:
+        G.nodes[v]["team"] = team[v]
+    place(G, seed=2)
+    fromNetworkX(G)
+    HI["names"], HI["truth"] = names, team
+    cluster()
+    plain(16, labels=false)
+    paint_cut()
+
+
+def cluster():
+    """Agglomerative clustering on the cosine similarity of the nodes' neighbourhoods (A + I)."""
+    names = HI["names"]
+    idx = {v: i for i, v in enumerate(names)}
+    n = len(names)
+    A = np.eye(n)
+    for e in g.edges:
+        a, b = idx[e.node1.name], idx[e.node2.name]
+        A[a, b] = A[b, a] = 1.0
+    norm = np.sqrt((A * A).sum(1))
+    S = (A @ A.T) / np.outer(norm, norm)
+    members = {i: [i] for i in range(n)}
+    merges, heights, nxt = [], [], n
+    link = HI["link"]
+    while len(members) > 1:
+        keys = list(members)
+        best = None
+        for x in range(len(keys)):
+            for z in range(x + 1, len(keys)):
+                block = S[np.ix_(members[keys[x]], members[keys[z]])]
+                s_ = block.mean() if link == "average" else block.max() if link == "single" else block.min()
+                if best is None or s_ > best[0]:
+                    best = (s_, keys[x], keys[z])
+        s_, a, b = best
+        merges.append((a, b))
+        heights.append(round(1 - float(s_), 4))
+        members[nxt] = members.pop(a) + members.pop(b)
+        nxt += 1
+    HI["merges"], HI["heights"] = merges, heights
+
+
+# showDendrogram's colours, in its order (largest group first), so the drawing and the tree agree
+TREE = ["78,121,167", "225,87,89", "89,161,79", "242,142,43", "118,183,178", "176,122,161", "237,201,72",
+        "255,157,167", "156,117,95", "134,188,182"]
+
+
+def cut_groups(k):
+    """The groups at a cut into k, ordered exactly as showDendrogram orders (and colours) them."""
+    n = len(HI["names"])
+    alive = set(range(n))
+    for i, (a, b) in enumerate(HI["merges"]):
+        if len(alive) <= k:
+            break
+        alive -= {a, b}
+        alive.add(n + i)
+    return [_members_of(c) for c in sorted(alive, key=lambda c: -len(_members_of(c)))]
+
+
+def paint_cut(latest=None):
+    removeConvexHulls()
+    n = len(HI["names"])
+    k = n - HI["step"] if HI["step"] is not None else HI["k"]
+    for j, grp in enumerate(cut_groups(k)):
+        nodes_ = [g.getNodeByName(HI["names"][i]) for i in grp]
+        for v in nodes_:
+            v.color = TREE[j % len(TREE)]
+            v.strokewidth = 0
+            v.width = v.height = 16
+        if len(grp) > 2:
+            encircle(nodes_, shape="hull", color=TREE[j % len(TREE)] + ",45", padding=8)
+    latest_names = {HI["names"][i] for i in latest} if latest is not None else set()
+    for v in g.nodes:
+        if v.name in latest_names:
+            v.strokecolor, v.strokewidth = "20,20,20", 4
+            v.width = v.height = 24
+    for e in g.edges:
+        inside = e.node1.name in latest_names and e.node2.name in latest_names
+        e.color, e.width = ("240,140,30", 2.5) if inside else ("150,150,150,140", 1.2)
+
+
+def set_k(v):
+    HI["k"] = int(v)
+    HI["step"] = None
+    paint_cut()
+
+
+def set_link(v):
+    HI["link"] = v
+    HI["step"] = None
+    cluster()
+    paint_cut()
+
+
+def merge_play():
+    if HI["timer"] is not None:
+        HI["timer"].stop()
+    HI["step"] = 0
+    paint_cut()
+    HI["timer"] = everyPaced(merge_step, steps=len(HI["merges"]), slow=0.8, fast=0.15, ramp=4)
+
+
+def merge_step():
+    n = len(HI["names"])
+    if HI["step"] is None or HI["step"] >= len(HI["merges"]):
+        HI["timer"] = None
+        return False
+    HI["step"] += 1
+    latest = _members_of(n + HI["step"] - 1)              # the group this merge just made
+    paint_cut(latest)
+    return len(HI["merges"]) - HI["step"] or False
+
+
+def _members_of(c):
+    n = len(HI["names"])
+    if c < n:
+        return [c]
+    a, b = HI["merges"][c - n]
+    return _members_of(a) + _members_of(b)
+
+
+def dendro_chart():
+    if mode[0] != "Hierarchy" or not HI["merges"]:
+        return None
+    n = len(HI["names"])
+    k = n - HI["step"] if HI["step"] is not None else HI["k"]
+    return showDendrogram(HI["merges"], nodes=[g.getNodeByName(v) for v in HI["names"]], heights=HI["heights"],
+                          cut=k, title=f"{HI['link']} linkage")
+
+
+def hier_text():
+    if mode[0] != "Hierarchy":
+        return ""
+    n = len(HI["names"])
+    steps = HI["step"] if HI["step"] is not None else n - HI["k"]
+    grps = cut_groups(n - steps)
+    lab = {}
+    for j, grp in enumerate(grps):
+        for i in grp:
+            lab[HI["names"][i]] = j
+    from_truth = lambda f: [f(HI["truth"][v]) for v in HI["names"]]
+
+    def nmi(a, b):
+        ca, cb, cab = {}, {}, {}
+        for x, y in zip(a, b):
+            ca[x] = ca.get(x, 0) + 1
+            cb[y] = cb.get(y, 0) + 1
+            cab[(x, y)] = cab.get((x, y), 0) + 1
+        N_ = len(a)
+        ha = -sum(c / N_ * math.log(c / N_) for c in ca.values())
+        hb = -sum(c / N_ * math.log(c / N_) for c in cb.values())
+        mi = sum(c / N_ * math.log(c * N_ / (ca[x] * cb[y])) for (x, y), c in cab.items())
+        return 1.0 if ha + hb == 0 else 2 * mi / (ha + hb)
+    found = [lab[v] for v in HI["names"]]
+    m4, m2 = nmi(found, from_truth(lambda t: t)), nmi(found, from_truth(lambda t: t // 2))
+    playing = HI["step"] is not None and HI["step"] < len(HI["merges"])
+    return ("Forty people in four teams of ten; teams 1–2 and 3–4 are also two departments, with some links "
+            "between teams of the same department. Each step **merges the two most similar groups** (similarity "
+            "of neighbourhoods); the tree records the order, and cutting it at a height gives groups at that scale.\n\n"
+            + (f"Merging: step {HI['step']} of {len(HI['merges'])}, **{len(grps)}** groups left (the latest merge is "
+               "ringed).\n\n" if playing else f"Cut into **{len(grps)}** groups. ")
+            + f"Agreement with the four teams: NMI **{m4:.2f}**; with the two departments: **{m2:.2f}**. "
+            + ("Single linkage joins groups through their single most similar pair, so it tends to chain: one "
+               "group grows by swallowing the rest." if HI["link"] == "single" else ""))
+
+
+# ---- core and periphery -------------------------------------------------------------------------------
+CP_NETS = ["Planted: a core of 12, a periphery of 48", "Karate club", "Dolphins"]
+cp = {"net": CP_NETS[0], "res": None, "sbm": None}
+
+
+def build_core():
+    choice = cp["net"]
+    if choice.startswith("Planted"):
+        makeBlockModel([12, 48], [[0.8, 0.35], [0.35, 0.02]], seed=2, layout=false)
+        G = toNetworkX(directed=False)
+    elif choice.startswith("Karate"):
+        G = nx.relabel_nodes(nx.karate_club_graph(), {v: f"k{v}" for v in range(34)})
+    else:
+        makeFromFile("dolphins.gdf")
+        G = toNetworkX(directed=False)
+    G = nx.Graph(G)
+    place(G, seed=4)
+    fromNetworkX(G)
+    cp["res"], cp["sbm"] = None, None
+    plain(14, labels=false)
+
+
+def find_core():
+    cp["res"] = corePeriphery()
+    radial()
+    for v in g.nodes:
+        v.color = "230,110,60" if v.core == 1 else "120,160,220"
+        v.width = v.height = 22 if v.core == 1 else 14
+        v.strokecolor, v.strokewidth = "40,40,40", 2 if v.core == 1 else 0
+    for e in g.edges:
+        both = e.node1.core + e.node2.core
+        e.color = "230,110,60,200" if both == 2 else "150,150,150,120" if both == 1 else "200,60,200,220"
+        e.width = 2.2 if both == 2 else 1 if both == 1 else 1.6
+    center()
+
+
+def radial():
+    """The core on a small inner circle, the periphery on an outer ring next to its core contacts."""
+    core = sorted((v for v in g.nodes if v.core == 1), key=lambda v: -v.degree)
+    ang = {}
+    for i, v in enumerate(core):
+        a = 2 * math.pi * i / max(1, len(core))
+        ang[v.name] = a
+        v.x, v.y = 110 * math.cos(a), 110 * math.sin(a)
+    rest = [v for v in g.nodes if v.core != 1]
+    nb = {}
+    for e in g.edges:
+        nb.setdefault(e.node1.name, []).append(e.node2.name)
+        nb.setdefault(e.node2.name, []).append(e.node1.name)
+
+    def where(v):
+        cs = [ang[u] for u in nb.get(v.name, []) if u in ang]
+        if not cs:
+            return 7.0
+        return math.atan2(sum(math.sin(c) for c in cs), sum(math.cos(c) for c in cs)) % (2 * math.pi)
+    rest.sort(key=where)
+    for i, v in enumerate(rest):
+        a = 2 * math.pi * i / max(1, len(rest))
+        v.x, v.y = 330 * math.cos(a), 330 * math.sin(a)
+
+
+def plain_sbm():
+    if cp["res"] is None:
+        find_core()
+    cp["sbm"] = fitBlockModel(2, degreeCorrected=false)
+    agree = compareClusters(sbm_class, core)
+    cp["sbm_nmi"] = agree
+
+
+def core_text():
+    if mode[0] != "Core and periphery":
+        return ""
+    if cp["res"] is None:
+        return "Press **Find core and periphery**."
+    core_ = [v for v in g.nodes if v.core == 1]
+    per = [v for v in g.nodes if v.core != 1]
+    cn, pn = len(core_), len(per)
+    ins = {"cc": 0, "cp": 0, "pp": 0}
+    for e in g.edges:
+        k = e.node1.core + e.node2.core
+        ins["cc" if k == 2 else "cp" if k == 1 else "pp"] += 1
+    dens = lambda m, pairs: m / pairs if pairs else 0
+    out = (f"**{cn}** nodes in the core (orange, inside), **{pn}** in the periphery (blue, around it). Fit to the "
+           f"ideal pattern (every pair involving a core node linked, no periphery pair linked): **{cp['res']['fit']:.2f}**."
+           "\n\n| | edges | density |\n|---|---|---|\n"
+           f"| core–core | {ins['cc']} | {dens(ins['cc'], cn * (cn - 1) / 2):.2f} |\n"
+           f"| core–periphery | {ins['cp']} | {dens(ins['cp'], cn * pn):.2f} |\n"
+           f"| periphery–periphery (purple) | {ins['pp']} | {dens(ins['pp'], pn * (pn - 1) / 2):.3f} |")
+    if cp["sbm"] is not None:
+        out += (f"\n\nA **plain block model** with two groups (no degree correction) agrees with this split: NMI "
+                f"**{cp['sbm_nmi']:.2f}**. Core–periphery is itself a block structure, dense–dense, dense–sparse, "
+                "sparse–sparse, which is why the plain model, fitted to a network with communities, often finds "
+                "hubs and periphery instead.")
+    return out
+
+
+def core_matrix():
+    if mode[0] != "Core and periphery" or cp["res"] is None:
+        return None
+    return showMatrix(order="core", title="Adjacency matrix, core first")
+
+
+# ---- ranking ----------------------------------------------------------------------------------------
+RK = {"strength": {}, "scrambled": False, "ranked": False, "sim": [], "timer": None, "share": None}
+
+
+def contests(r, steep, n=30):
+    """Who beat whom: pairs meet with probability 0.35; the stronger wins more often (logistic in the gap)."""
+    strength = {f"a{i}": r.gauss(0, 1) for i in range(n)}
+    names = list(strength)
+    wins = []
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            if r.random() < 0.35:
+                pa = 1 / (1 + math.exp(-steep * (strength[a] - strength[b])))
+                wins.append((a, b) if r.random() < pa else (b, a))
+    return strength, wins
+
+
+def build_ranking():
+    r = random.Random(7)
+    strength, wins = contests(r, 2.5)
+    if RK["scrambled"]:
+        coin = random.Random(1)                         # each contest's winner a coin toss
+        wins = [(a, b) if coin.random() < 0.5 else (b, a) for a, b in wins]
+    G = nx.DiGraph()
+    G.add_nodes_from(strength)
+    G.add_edges_from(wins)
+    place(G.to_undirected(), seed=6)
+    for v in G:
+        G.nodes[v]["pos"] = G.to_undirected().nodes[v].get("pos", (0, 0))
+    U = G.to_undirected()
+    pos = nx.spring_layout(U, seed=6, iterations=200)
+    for v in G:
+        G.nodes[v]["pos"] = (float(pos[v][0]) * 420, float(pos[v][1]) * 420)
+        G.nodes[v]["strength"] = strength[v]
+    RK["strength"] = strength
+    fromNetworkX(G)
+    RK["ranked"] = False
+    plain(18)
+    for v in g.nodes:
+        v.label = v.name[1:]
+        v.labelpos = "inside"
+
+
+def rank_them():
+    RK["share"] = rankNodes()
+    RK["ranked"] = True
+    top = max(v.rank for v in g.nodes) or 1
+    for v in g.nodes:
+        t = v.rank / top
+        v.color = f"{int(240 - 120 * t)},{int(200 - 60 * t)},{int(90 + 150 * t)}"
+        v.y = -560 * t
+    order = sorted(g.nodes, key=lambda v: v.rank)
+    for i, v in enumerate(order):                       # spread sideways within each level
+        v.x = ((i * 7) % 11 - 5) * 46
+    noverlapLayout(margin=8)
+    for e in g.edges:
+        up = e.node1.rank < e.node2.rank
+        e.color, e.width = ("220,40,40", 2) if up else ("150,150,150,150", 1.2)
+    center()
+
+
+def scramble(v=None):
+    RK["scrambled"] = not RK["scrambled"]
+    scr_btn.text = "Real contests" if RK["scrambled"] else "Scramble who won"
+    build_ranking()
+
+
+def spearman(a, b):
+    ra = {v: i for i, v in enumerate(sorted(a, key=a.get))}
+    rb = {v: i for i, v in enumerate(sorted(b, key=b.get))}
+    n = len(a)
+    d2 = sum((ra[v] - rb[v]) ** 2 for v in a)
+    return 1 - 6 * d2 / (n * (n * n - 1))
+
+
+def rank_text():
+    if mode[0] != "Ranking":
+        return ""
+    head = ("Thirty animals and who beat whom (an arrow from winner to loser); each has a hidden strength, and "
+            "the stronger usually, not always, wins. "
+            + ("**The winners are scrambled** (each contest's winner a coin toss). " if RK["scrambled"] else ""))
+    if not RK["ranked"]:
+        return head + "\n\nPress **Rank them**: SpringRank puts each animal on a ladder so arrows mostly point down."
+    rho = spearman({v.name: v.rank for v in g.nodes}, RK["strength"])
+    ups = len([e for e in g.edges if e.node1.rank < e.node2.rank])
+    return (head + f"\n\nOn the ladder **{RK['share']:.0%}** of the contests go downhill; the **{ups}** red arrows "
+            f"point up (upsets). Rank against the hidden strength: Spearman **{rho:.2f}**."
+            + (" With scrambled winners the ladder still fits some arrows (it is built to), but it no longer "
+               "matches strength." if RK["scrambled"] else ""))
+
+
+def sim_ranks():
+    if RK["timer"] is not None:
+        RK["timer"].stop()
+    RK["sim"] = []
+    RK["todo"] = [(s_, rep) for s_ in (0.0, 0.5, 1.0, 1.5, 2.5, 4.0, 6.0) for rep in range(4)]
+    RK["timer"] = everyPaced(sim_rank_step, steps=len(RK["todo"]) + 1, slow=0.5, fast=0.1, ramp=2)
+
+
+def spring_rank(names, wins):
+    idx = {v: i for i, v in enumerate(names)}
+    n = len(names)
+    A = np.zeros((n, n))
+    for a, b in wins:
+        A[idx[a], idx[b]] += 1
+    dout, din = A.sum(1), A.sum(0)
+    L = np.diag(dout + din) - (A + A.T)
+    s_ = np.linalg.lstsq(L, dout - din, rcond=None)[0]
+    return {v: float(s_[idx[v]]) for v in names}
+
+
+def sim_rank_step():
+    if not RK["todo"]:
+        RK["timer"] = None
+        return False
+    steep, rep = RK["todo"].pop(0)
+    strength, wins = contests(random.Random(100 + rep * 13 + int(steep * 10)), steep)
+    ranks = spring_rank(list(strength), wins)
+    down = len([1 for a, b in wins if ranks[a] > ranks[b]]) / max(1, len(wins))
+    RK["sim"].append((steep, spearman(ranks, strength), down))
+    return len(RK["todo"]) or False
+
+
+def rank_chart():
+    if mode[0] != "Ranking" or not RK["sim"]:
+        return None
+    by = {}
+    for s_, rho, down in RK["sim"]:
+        by.setdefault(s_, []).append((rho, down))
+    return plotLine({"rank vs strength (Spearman)": [(s_, sum(r for r, _d in v) / len(v)) for s_, v in sorted(by.items())],
+                     "share of contests downhill": [(s_, sum(d for _r, d in v) / len(v)) for s_, v in sorted(by.items())]},
+                    title="How clear the pecking order is", xlabel="steepness (how often the stronger wins)",
+                    ylabel="", dots=true, yrange=(-0.2, 1))
+
+
+# ---- latent space ------------------------------------------------------------------------------------
+LS = {"hidden": {}}
+
+
+def build_latent():
+    r = random.Random(9)
+    pts = {f"p{i}": (r.random(), r.random()) for i in range(70)}
+    G = nx.Graph()
+    G.add_nodes_from(pts)
+    names = list(pts)
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            d = math.dist(pts[a], pts[b])
+            if r.random() < 0.9 * math.exp(-(d / 0.17) ** 2):
+                G.add_edge(a, b)
+    rr = random.Random(2)
+    for v in G:
+        G.nodes[v]["pos"] = (rr.random() * 500, rr.random() * 500)
+    LS["hidden"] = pts
+    fromNetworkX(G)
+    plain(14, labels=false)
+    for v in g.nodes:
+        x0, y0 = pts[v.name]
+        v.color = f"{int(60 + 190 * x0)},{int(90 + 110 * (1 - y0))},{int(60 + 190 * y0)}"
+        v.strokewidth = 1
+
+
+def show_hidden():
+    for v in g.nodes:
+        v.x, v.y = LS["hidden"][v.name][0] * 500, LS["hidden"][v.name][1] * 500
+    center()
+
+
+def scatter():
+    rr = random.Random()
+    for v in g.nodes:
+        v.x, v.y = rr.random() * 500, rr.random() * 500
+    center()
+
+
+def from_edges():
+    kkLayout()                     # Kamada-Kawai: drawing distances follow graph distances
+    center()
+
+
+def latent_text():
+    if mode[0] != "Latent space":
+        return ""
+    names = [v.name for v in g.nodes]
+    pos = {v.name: (v.x, v.y) for v in g.nodes}
+    hid, now = [], []
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            hid.append(math.dist(LS["hidden"][a], LS["hidden"][b]))
+            now.append(math.dist(pos[a], pos[b]))
+    c = float(np.corrcoef(hid, now)[0, 1]) if len(hid) > 2 else 0.0
+    return ("Seventy points scattered in a hidden square; each nearby pair is linked with a probability that "
+            "falls with distance. Colour encodes the **hidden position** (left–right: red, top–bottom: blue), so "
+            "a drawing that recovers the space shows smooth colour gradients.\n\n"
+            f"Distances in the drawing against hidden distances: correlation **{c:.2f}** "
+            "(1 = the same shape up to rotation and scale). Scatter the nodes, then lay them out from the edges "
+            "alone: Kamada–Kawai places nodes so that drawing distances follow the number of steps between them, "
+            "and since links are short in the hidden space, steps track hidden distance. That is a crude way of "
+            "inferring a latent space; statistical methods fit the hidden positions directly.")
+
+
+# ---- switching tabs ------------------------------------------------------------------------------------
+BUILD = {"Overlapping": build_overlap, "Hierarchy": build_hierarchy, "Core and periphery": build_core,
+         "Ranking": build_ranking, "Latent space": build_latent}
+
+
+def switch(title):
+    mode[0] = title
+    for t in (HI["timer"], RK["timer"]):
+        if t is not None:
+            t.stop()
+    HI["timer"] = RK["timer"] = None
+    HI["step"] = None
+    clean()
+    BUILD[title]()
+    center()
+
+
+def pick_core_net(v):
+    cp["net"] = v
+    build_core()
+    center()
+
+
+scr_btn = Button("Scramble who won", onClick=lambda: scramble())
+build_overlap()
+constantLabelSize(size=14)
+ui.title("Beyond communities", "Networks, Section 14.7")
+ui.layout(
+    right=Column(
+        Markdown("### Other large-scale structure"),
+        Tabs(
+            Tab("Overlapping",
+                Row(Button("Link communities", onClick=lambda: find_overlaps()),
+                    Button("Clique percolation", onClick=lambda: clique_perc())),
+                Button("One group each (Louvain)", onClick=lambda: one_each()),
+                Markdown(overlap_text)),
+            Tab("Hierarchy",
+                Row(Slider(1, 10, 4, 1, label="groups", onChange=set_k),
+                    Dropdown(["average", "complete", "single"], label="linkage", onChange=set_link)),
+                Button("Merge step by step", onClick=lambda: merge_play()),
+                Markdown(hier_text), Chart(dendro_chart)),
+            Tab("Core and periphery",
+                Dropdown(CP_NETS, label="Network", onChange=pick_core_net),
+                Row(Button("Find core and periphery", onClick=lambda: find_core()),
+                    Button("Plain block model, 2 groups", onClick=lambda: plain_sbm())),
+                Markdown(core_text), Chart(core_matrix)),
+            Tab("Ranking",
+                Row(Button("Rank them", onClick=lambda: rank_them()), scr_btn),
+                Markdown(rank_text),
+                Button("Simulate: clearer and murkier contests", onClick=lambda: sim_ranks()),
+                Chart(rank_chart)),
+            Tab("Latent space",
+                Row(Button("Hidden positions", onClick=lambda: show_hidden()),
+                    Button("Scatter", onClick=lambda: scatter()),
+                    Button("Lay out from the edges", onClick=lambda: from_edges())),
+                Markdown(latent_text)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{mode[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

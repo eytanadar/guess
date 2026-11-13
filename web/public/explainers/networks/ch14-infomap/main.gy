@@ -1,0 +1,511 @@
+# Communities as codes for random walks  (Newman, Networks, Section 14.3)
+# A random walker on a network with communities stays inside one community
+# for a long time before moving on. If we want to write down where it goes as
+# compactly as possible, we can give each community its own short code book
+# for its nodes, plus an "index" code book for naming the community entered.
+# Then most steps cost only a short in-community codeword. The map equation
+# (Rosvall and Bergstrom) gives the average number of bits per step for a
+# partition; the best communities are the ones that minimise it (Infomap).
+#
+# For an undirected network the walker is found at node a with probability
+# p_a = k_a / 2m, and leaves module i with probability q_i (the share of edge
+# ends that cross out of it). Then, with H the entropy in bits,
+#   L = q H(index) + sum_i (q_i + p_i) H(module i)
+# which this script computes directly (plogp form), so nothing needs igraph.
+
+import math
+import heapq
+import random
+import networkx as nx
+
+NETS = ["Three planted groups (36 nodes)", "Karate club (34 members)"]
+COLS = ["240,140,60", "80,150,230", "120,190,90", "200,110,200", "230,200,70", "100,200,200",
+        "220,110,110", "160,160,230", "190,150,100", "150,210,160"]
+PARTS = ["The real groups", "One group (no communities)", "Best map equation (found here)"]
+st = {"net": NETS[0], "menu": PARTS[0], "part_name": PARTS[0], "part": {}, "truth": {}, "edges": [], "deg": {}, "nbrs": {},
+      "names": [], "at": None, "prev": None, "steps": 0, "bits": 0, "bits1": 0, "hist": [], "strip": [],
+      "codes": None, "codes1": None, "timer": None, "rnd": random.Random(1), "sim": None, "rows": None}
+mode = ["Random walk"]
+
+
+# ---- the map equation -------------------------------------------------------------------------------
+def plogp(x):
+    return x * math.log2(x) if x > 0 else 0.0
+
+
+def mapeq(edges, deg, part):
+    """Two-level map equation L (bits per step) of a partition {node: module}, undirected."""
+    m2 = float(sum(deg.values())) or 1.0
+    exit_ends, pin = {}, {}
+    for a_, b_ in edges:
+        if part[a_] != part[b_]:
+            exit_ends[part[a_]] = exit_ends.get(part[a_], 0) + 1
+            exit_ends[part[b_]] = exit_ends.get(part[b_], 0) + 1
+    for v, k in deg.items():
+        pin[part[v]] = pin.get(part[v], 0.0) + k / m2
+    qs = {i: exit_ends.get(i, 0) / m2 for i in pin}
+    q = sum(qs.values())
+    return (plogp(q) - 2 * sum(plogp(x) for x in qs.values()) - sum(plogp(k / m2) for k in deg.values())
+            + sum(plogp(qs[i] + pin[i]) for i in pin))
+
+
+def best_partition(edges, deg, start, seed=1):
+    """Greedy map-equation minimisation: single nodes move to the neighbouring module that lowers L
+    most, then whole modules merge while that helps; repeated until nothing improves."""
+    part = dict(start)
+    nb = {v: set() for v in deg}
+    for a_, b_ in edges:
+        nb[a_].add(b_)
+        nb[b_].add(a_)
+    rnd = random.Random(seed)
+    best = mapeq(edges, deg, part)
+    improved = True
+    while improved:
+        improved = False
+        order = list(deg)
+        rnd.shuffle(order)
+        for v in order:
+            here = part[v]
+            options = {part[u] for u in nb[v]} - {here}
+            choice = None
+            for t in options:
+                part[v] = t
+                L = mapeq(edges, deg, part)
+                if L < best - 1e-12 and (choice is None or L < choice[0]):
+                    choice = (L, t)
+            part[v] = here
+            if choice:
+                best, part[v] = choice[0], choice[1]
+                improved = True
+        mods = sorted(set(part.values()))
+        for i in mods:
+            for j in mods:
+                if i >= j or i not in part.values() or j not in part.values():
+                    continue
+                trial = {v: (i if t == j else t) for v, t in part.items()}
+                L = mapeq(edges, deg, trial)
+                if L < best - 1e-12:
+                    part, best, improved = trial, L, True
+    return renumber(part), best
+
+
+def renumber(part):
+    """Modules numbered 0, 1, ... by size (largest first)."""
+    sizes = {}
+    for t in part.values():
+        sizes[t] = sizes.get(t, 0) + 1
+    order = sorted(sizes, key=lambda t: (-sizes[t], str(t)))
+    new = {t: i for i, t in enumerate(order)}
+    return {v: new[t] for v, t in part.items()}
+
+
+def huffman(weights):
+    """Huffman codewords for {symbol: weight}: frequent symbols get short codes."""
+    items = [(w, i, s_) for i, (s_, w) in enumerate(weights.items()) if w > 0]
+    if not items:
+        return {}
+    if len(items) == 1:
+        return {items[0][2]: "0"}
+    heap = [(w, i, [s_]) for w, i, s_ in items]
+    heapq.heapify(heap)
+    code = {s_: "" for _w, _i, s_ in items}
+    counter = len(heap)
+    while len(heap) > 1:
+        w1, _i1, s1 = heapq.heappop(heap)
+        w2, _i2, s2 = heapq.heappop(heap)
+        for x in s1:
+            code[x] = "0" + code[x]
+        for x in s2:
+            code[x] = "1" + code[x]
+        counter += 1
+        heapq.heappush(heap, (w1 + w2, counter, s1 + s2))
+    return code
+
+
+def code_books(part):
+    """An index code book (which module is entered) and one code book per module (its nodes, and 'exit')."""
+    m2 = float(sum(st["deg"].values()))
+    exits = {}
+    for a_, b_ in st["edges"]:
+        if part[a_] != part[b_]:
+            exits[part[a_]] = exits.get(part[a_], 0) + 1 / m2
+            exits[part[b_]] = exits.get(part[b_], 0) + 1 / m2
+    mods = sorted(set(part.values()))
+    index = huffman({i: exits.get(i, 0) for i in mods}) if len(mods) > 1 else {}
+    books = {}
+    for i in mods:
+        w = {v: st["deg"][v] / m2 for v in st["names"] if part[v] == i}
+        if len(mods) > 1:
+            w["exit"] = exits.get(i, 0)
+        books[i] = huffman(w)
+    return index, books
+
+
+# ---- the network --------------------------------------------------------------------------------------
+def load(choice):
+    stop_all()
+    st["net"] = choice
+    if choice.startswith("Karate"):
+        makeSample("karate")
+        st["truth"] = {v.name: (0 if v.club == "Mr. Hi" else 1) for v in g.nodes}
+    else:
+        G = nx.planted_partition_graph(3, 12, 0.42, 0.035, seed=7)
+        comps = list(nx.connected_components(G))
+        for c in comps[1:]:                                 # join any stray piece to the rest
+            G.add_edge(min(c), min(comps[0]))
+        truth = {v: v // 12 for v in G}
+        pos = nx.spring_layout(G, seed=3, iterations=200)
+        for v in G:
+            G.nodes[v]["pos"] = (pos[v][0] * 420, pos[v][1] * 420)
+        fromNetworkX(G)
+        st["truth"] = {f"n{v}": t for v, t in truth.items()}
+    st["names"] = sorted((v.name for v in g.nodes), key=lambda s_: int("".join(c for c in s_ if c.isdigit()) or 0))
+    st["edges"] = [(e.node1.name, e.node2.name) for e in g.edges if e.node1 is not e.node2]
+    st["deg"] = {nm: 0 for nm in st["names"]}
+    st["nbrs"] = {nm: [] for nm in st["names"]}
+    for a_, b_ in st["edges"]:
+        st["deg"][a_] += 1
+        st["deg"][b_] += 1
+        st["nbrs"][a_].append(b_)
+        st["nbrs"][b_].append(a_)
+    louv = nx.community.louvain_communities(toNetworkX(directed=False), seed=1)
+    start = {v: i for i, c in enumerate(louv) for v in c}
+    st["found"], st["found_L"] = best_partition(st["edges"], st["deg"], start)
+    for v in g.nodes:
+        v.label = "".join(c for c in v.name if c.isdigit())
+        v.labelpos = "inside"
+        v.labelvisible = true
+        v.width = v.height = 26
+    st["rows"] = None
+    use_partition(st["menu"])
+    center()
+
+
+def use_partition(name):
+    st["part_name"] = name
+    if name.startswith("One"):
+        part = {v: 0 for v in st["names"]}
+    elif name.startswith("The real"):
+        part = dict(st["truth"])
+    else:
+        part = dict(st["found"])
+    set_part(part)
+
+
+def set_part(part):
+    st["part"] = renumber(part)
+    st["codes"] = code_books(st["part"])
+    st["codes1"] = code_books({v: 0 for v in st["names"]})
+    reset_walk()
+
+
+def reset_walk():
+    st.update(at=st["names"][0], prev=None, steps=0, bits=0, bits1=0, hist=[], strip=[])
+    st["rnd"] = random.Random(1)
+    repaint()
+
+
+def L_now():
+    return mapeq(st["edges"], st["deg"], st["part"])
+
+
+def L_one():
+    return mapeq(st["edges"], st["deg"], {v: 0 for v in st["names"]})
+
+
+# ---- the walk ----------------------------------------------------------------------------------------------
+def step_once():
+    a_ = st["at"]
+    b_ = st["rnd"].choice(st["nbrs"][a_])
+    index, books = st["codes"]
+    ia, ib = st["part"][a_], st["part"][b_]
+    if ia == ib:
+        token = ("in", books[ib][b_], ib)
+        cost = len(books[ib][b_])
+    else:
+        token = ("move", books[ia]["exit"] + "|" + index[ib] + "|" + books[ib][b_], ib)
+        cost = len(books[ia]["exit"]) + len(index[ib]) + len(books[ib][b_])
+    st["bits"] += cost
+    st["bits1"] += len(st["codes1"][1][0][b_])
+    st["steps"] += 1
+    st["prev"], st["at"] = a_, b_
+    st["strip"].append(token)
+    del st["strip"][:-14]
+    if st["steps"] % max(1, st["steps"] // 60) == 0 or st["steps"] < 60:
+        st["hist"].append((st["steps"], st["bits"] / st["steps"], st["bits1"] / st["steps"]))
+    return cost
+
+
+def walk_step():
+    step_once()
+    repaint()
+    return 400 - st["steps"] if st["steps"] < 400 else False
+
+
+def walk_play():
+    if st["timer"] is not None and st["timer"].running:
+        stop_all()
+        return
+    st["timer"] = everyPaced(walk_step, slow=0.7, fast=0.05, ramp=4)
+
+
+def walk_many():
+    stop_all()
+    for _ in range(2000):
+        step_once()
+    repaint()
+
+
+def stop_all():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+    if st["sim"] is not None and st["sim"].get("timer") is not None:
+        st["sim"]["timer"].stop()
+        st["sim"]["timer"] = None
+
+
+def repaint():
+    part = st["part"]
+    for v in g.nodes:
+        v.color = COLS[part[v.name] % len(COLS)]
+        v.strokecolor = "50,50,50"
+        v.strokewidth = 0
+        v.width = v.height = 26
+    for e in g.edges:
+        cross = part[e.node1.name] != part[e.node2.name]
+        e.color = "150,150,150,110" if not cross else "200,90,90,150"
+        e.width = 1.2
+        e.linestyle = "dashed" if cross else "solid"
+    if st["at"] is not None and st["steps"]:
+        here = g.getNodeByName(st["at"])
+        here.color, here.strokecolor, here.strokewidth = "255,225,60", "30,30,30", 4
+        here.width = here.height = 36
+        for e in g.edges:
+            if {e.node1.name, e.node2.name} == {st["prev"], st["at"]}:
+                moved = part[st["prev"]] != part[st["at"]]
+                e.color = "230,60,60" if moved else "250,170,40"
+                e.width, e.linestyle = 4, "flow"
+
+
+def click(v):
+    """Move the clicked node to the next module (or a new one), to see L change."""
+    if mode[0] != "Random walk":
+        return
+    part = dict(st["part"])
+    k = len(set(part.values()))
+    part[v.name] = (part[v.name] + 1) % (k + 1)
+    st["part_name"] = "edited by hand"
+    set_part(part)
+
+
+def walk_text():
+    if mode[0] != "Random walk":
+        return ""
+    index, books = st["codes"]
+    k = len(books)
+    L, L1 = L_now(), L_one()
+    out = (f"Partition: **{st['part_name']}**, {k} module{'s' if k != 1 else ''}. The map equation gives "
+           f"**L = {L:.3f} bits per step**, against **{L1:.3f}** with no communities (one code book for "
+           f"all nodes). ")
+    if k > 1:
+        out += ("Each module has a code book for its own nodes plus an *exit* word; leaving a module costs "
+                "its exit word, then the next module's name from the *index* book, then the node.")
+    if st["steps"]:
+        out += (f"\n\nAfter **{st['steps']}** steps the walk took **{st['bits'] / st['steps']:.2f}** bits a step with "
+                f"these code books, **{st['bits1'] / st['steps']:.2f}** with one: close to L, which is what the best possible code would average. (Huffman codes use "
+                "whole bits, and a finite walk is only a sample.)")
+        toks = []
+        for kind, code, mod in st["strip"]:
+            if kind == "in":
+                toks.append(f"`{code}`")
+            else:
+                ex, ix, nd = code.split("|")
+                toks.append(f"**↑**`{ex}`·**{mod}:**`{ix}`·`{nd}`")
+        out += "\n\nThe last steps, encoded: " + " ".join(toks)
+    else:
+        out += "\n\n*Walk*, or click a node to move it to another module and watch L change."
+    return out
+
+
+def walk_chart():
+    if mode[0] != "Random walk" or len(st["hist"]) < 2:
+        return None
+    L, L1 = L_now(), L_one()
+    xs = [h[0] for h in st["hist"]]
+    return plotLine({"these code books": [(h[0], h[1]) for h in st["hist"]],
+                     "one code book": [(h[0], h[2]) for h in st["hist"]],
+                     "L (map equation)": [(xs[0], L), (xs[-1], L)],
+                     "L, one module": [(xs[0], L1), (xs[-1], L1)]},
+                    title="Bits per step, as the walk goes on", xlabel="steps", ylabel="bits per step",
+                    dashed=["L (map equation)", "L, one module"])
+
+
+# ---- comparing partitions ---------------------------------------------------------------------------------------
+def _nmi(pa, pb):
+    """Normalized mutual information between two partitions {node: group}."""
+    n = float(len(pa))
+    ca, cb, cab = {}, {}, {}
+    for v in pa:
+        x, y = pa[v], pb[v]
+        ca[x] = ca.get(x, 0) + 1
+        cb[y] = cb.get(y, 0) + 1
+        cab[(x, y)] = cab.get((x, y), 0) + 1
+    ha = -sum(c / n * math.log(c / n) for c in ca.values())
+    hb = -sum(c / n * math.log(c / n) for c in cb.values())
+    mi = sum(c / n * math.log((c / n) / ((ca[x] / n) * (cb[y] / n))) for (x, y), c in cab.items())
+    return 1.0 if ha + hb == 0 else 2 * mi / (ha + hb)
+
+
+def q_of(part):
+    m = float(len(st["edges"]))
+    inside, degs = {}, {}
+    for a_, b_ in st["edges"]:
+        if part[a_] == part[b_]:
+            inside[part[a_]] = inside.get(part[a_], 0) + 1
+    for v, k in st["deg"].items():
+        degs[part[v]] = degs.get(part[v], 0) + k
+    return sum(inside.get(r, 0) / m - (d / (2 * m)) ** 2 for r, d in degs.items())
+
+
+def compare_rows():
+    if st["rows"] is None:
+        G = toNetworkX(directed=False)
+        louv = nx.community.louvain_communities(G, seed=1)
+        cands = [("One group", {v: 0 for v in st["names"]}), ("The real groups", dict(st["truth"])),
+                 ("Best modularity (Louvain)", {v: i for i, c in enumerate(louv) for v in c}),
+                 ("Best map equation (found here)", dict(st["found"]))]
+        rows = []
+        for name, part in cands:
+            rows.append((name, len(set(part.values())), mapeq(st["edges"], st["deg"], part), q_of(part),
+                         _nmi(part, st["truth"])))
+        st["rows"] = rows
+    return st["rows"]
+
+
+def compare_text():
+    if mode[0] != "Compare partitions":
+        return ""
+    rows = compare_rows()
+    lines = ["| partition | modules | L (bits/step) | Q | NMI with the real groups |", "|---|---|---|---|---|"]
+    for name, k, L, q, s_ in rows:
+        lines.append(f"| {name} | {k} | {L:.3f} | {q:.3f} | {s_:.2f} |")
+    low = min(r[2] for r in rows)
+    winners = [r[0].lower() for r in rows if r[2] < low + 1e-9]
+    which = winners[0] if len(winners) == 1 else " and ".join(winners) + ", which give the same division"
+    return ("Each way of dividing the network gives a different description length. The map equation prefers "
+            f"**{which}** ({low:.3f} bits a step). Modularity and the map equation often agree, "
+            "but not always: the map equation is about where a walker gets *trapped*, modularity about "
+            "edges compared with chance.\n\n" + "\n".join(lines) +
+            "\n\nUse the partition menu above to try each one on the walk.")
+
+
+def compare_chart():
+    if mode[0] != "Compare partitions":
+        return None
+    rows = compare_rows()
+    Ls = [r[2] for r in rows]
+    d = (max(Ls) - min(Ls)) or 0.5
+    return plotScatter({"L": [(i + 1, L) for i, L in enumerate(Ls)]},
+                       title="Description length: 1 one group · 2 real · 3 Louvain · 4 map equation",
+                       xlabel="partition", ylabel="bits per step", xrange=(0.5, 4.5),
+                       yrange=(min(Ls) - 0.15 * d, max(Ls) + 0.15 * d))
+
+
+def sim_start():
+    stop_all()
+    mixes = [0.02, 0.05, 0.08, 0.11, 0.14, 0.17, 0.2, 0.24]
+    st["sim"] = {"todo": [(x, r) for x in mixes for r in range(2)], "res": {}, "timer": None}
+    st["sim"]["timer"] = everyPaced(sim_step, steps=len(st["sim"]["todo"]), slow=0.5, fast=0.15, ramp=2)
+
+
+def sim_step():
+    sm = st["sim"]
+    if not sm or not sm["todo"]:
+        return False
+    pout, rep = sm["todo"].pop(0)
+    G = nx.planted_partition_graph(3, 20, 0.35, pout, seed=100 + rep)
+    edges = [(a_, b_) for a_, b_ in G.edges() if a_ != b_]
+    deg = {v: G.degree(v) for v in G}
+    deg = {v: k for v, k in deg.items()}
+    keep = [v for v in G if deg[v] > 0]
+    deg = {v: deg[v] for v in keep}
+    truth = {v: v // 20 for v in keep}
+    louv = nx.community.louvain_communities(G.subgraph(keep), seed=1)
+    found, Lf = best_partition(edges, deg, {v: i for i, c in enumerate(louv) for v in c}, seed=rep)
+    rec = sm["res"].setdefault(pout, [])
+    rec.append((mapeq(edges, deg, {v: 0 for v in keep}), mapeq(edges, deg, truth), Lf, len(set(found.values())),
+                _nmi(found, truth)))
+    return len(sm["todo"]) or False
+
+
+def sim_chart():
+    sm = st["sim"]
+    if mode[0] != "Compare partitions" or not sm or not sm["res"]:
+        return None
+    xs = sorted(sm["res"])
+    avg = lambda x, j: sum(r[j] for r in sm["res"][x]) / len(sm["res"][x])
+    return plotLine({"one module": [(x, avg(x, 0)) for x in xs], "planted groups": [(x, avg(x, 1)) for x in xs],
+                     "best found": [(x, avg(x, 2)) for x in xs]},
+                    title="Bits per step as the groups mix (3 groups of 20)", xlabel="chance of an edge between groups",
+                    ylabel="bits per step", dots=true, dashed=["one module"])
+
+
+def sim_text():
+    sm = st["sim"]
+    if mode[0] != "Compare partitions" or not sm or not sm["res"]:
+        return "*Simulate* builds networks with three planted groups and more and more edges between them."
+    xs = sorted(sm["res"])
+    lines = ["| between-group chance | modules found | NMI with the planted groups |", "|---|---|---|"]
+    for x in xs:
+        rs = sm["res"][x]
+        lines.append(f"| {x:.2f} | {sum(r[3] for r in rs) / len(rs):.1f} | {sum(r[4] for r in rs) / len(rs):.2f} |")
+    return ("While the groups are clear, describing the walk module by module saves bits, and the best "
+            "partition is the planted one. As more edges cross between groups the saving shrinks; once it is "
+            "gone, a single module describes the walk as cheaply and the map equation finds **no** "
+            "communities, rather than inventing some.\n\n" + "\n".join(lines))
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    repaint()
+
+
+def pick_net(v):
+    load(v)
+
+
+def pick_part(v):
+    st["menu"] = v
+    stop_all()
+    use_partition(v)
+
+
+graphevents.clickNode = click
+netpick = Dropdown(NETS, label="Network", onChange=pick_net)
+partpick = Dropdown(PARTS, label="Partition", onChange=lambda v: pick_part(v))
+load(NETS[0])
+constantLabelSize(size=14)
+ui.title("Communities as codes", "Networks, Section 14.3")
+ui.layout(
+    right=Column(
+        Markdown("""### Describe a random walk in as few bits as possible
+Colours are modules; red dashed edges cross between them. The walker is the
+big yellow node."""),
+        netpick, partpick,
+        Tabs(
+            Tab("Random walk",
+                Row(Button("Walk", onClick=lambda: walk_play()), Button("2,000 steps at once", onClick=lambda: walk_many()),
+                    Button("Start the walk again", onClick=lambda: reset_walk())),
+                Markdown(walk_text), Chart(walk_chart)),
+            Tab("Compare partitions",
+                Markdown(compare_text), Chart(compare_chart),
+                Button("Simulate: mix the groups", onClick=lambda: sim_start()),
+                Markdown(sim_text), Chart(sim_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · L = {L_now():.3f} bits/step"))
+center()

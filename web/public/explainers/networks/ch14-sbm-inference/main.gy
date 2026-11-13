@@ -1,0 +1,424 @@
+# Community detection by statistical inference  (Newman, Networks, Section 14.4)
+# Instead of scoring partitions with a quality function, write down a model
+# that could have generated the network, the stochastic block model, and ask
+# which division into groups makes the observed edges most probable. Karrer
+# and Newman's profile log-likelihood is
+#     plain:            L = sum over group pairs r, s of m_rs log( m_rs / (n_r n_s) )
+#     degree-corrected: L = sum over group pairs r, s of m_rs log( m_rs / (k_r k_s) )
+# where m_rs counts edge ends between groups r and s (an edge inside a group
+# counts twice), n_r is the size of group r and k_r its total degree. The
+# plain model assumes everyone in a group has about the same degree, so it
+# likes to put hubs together; the degree-corrected model lets each node keep
+# its own degree. This script fits by moving one node at a time to wherever
+# raises L most (steepest ascent), which stops at a local maximum; GUESS's
+# fitBlockModel does the same with Kernighan-Lin passes from several starts.
+
+import math
+import random
+import networkx as nx
+
+NETS = ["Karate club (34 members)", "Three planted groups (36 nodes)"]
+MODELS = ["Degree-corrected block model", "Plain block model"]
+COLS = ["240,140,60", "80,150,230", "120,190,90", "200,110,200", "230,200,70", "100,200,200"]
+st = {"net": NETS[0], "model": MODELS[0], "k": 2, "part": {}, "truth": {}, "edges": [], "deg": {}, "nbrs": {},
+      "names": [], "moved": None, "hist": [], "timer": None, "seed": 1, "done": False, "starts": [], "sim": None,
+      "both": None}
+mode = ["Fit"]
+
+
+# ---- the likelihood ------------------------------------------------------------------------------------
+def counts(part, k):
+    M = [[0] * k for _ in range(k)]
+    nr, kr = [0] * k, [0] * k
+    for a_, b_ in st["edges"]:
+        M[part[a_]][part[b_]] += 1
+        M[part[b_]][part[a_]] += 1
+    for v in st["names"]:
+        nr[part[v]] += 1
+        kr[part[v]] += st["deg"][v]
+    return M, nr, kr
+
+
+def loglik(part, k=None, dc=None):
+    k = st["k"] if k is None else k
+    dc = st["model"].startswith("Degree") if dc is None else dc
+    M, nr, kr = counts(part, k)
+    size = kr if dc else nr
+    total = 0.0
+    for r in range(k):
+        for s_ in range(k):
+            if M[r][s_] > 0 and size[r] > 0 and size[s_] > 0:
+                total += M[r][s_] * math.log(M[r][s_] / (size[r] * size[s_]))
+    return total
+
+
+def best_move(part):
+    """The single move (node, new group) that raises L most, or None at a local maximum."""
+    here = loglik(part)
+    best = None
+    for v in st["names"]:
+        r = part[v]
+        for t in range(st["k"]):
+            if t == r:
+                continue
+            part[v] = t
+            L = loglik(part)
+            part[v] = r
+            if L > here + 1e-9 and (best is None or L > best[0]):
+                best = (L, v, t)
+    return best
+
+
+# ---- the network ---------------------------------------------------------------------------------------
+def load(choice):
+    stop_all()
+    st["net"] = choice
+    if choice.startswith("Karate"):
+        makeSample("karate")
+        st["truth"] = {v.name: (0 if v.club == "Mr. Hi" else 1) for v in g.nodes}
+        st["k"] = 2
+    else:
+        G = nx.planted_partition_graph(3, 12, 0.45, 0.04, seed=11)
+        comps = list(nx.connected_components(G))
+        for c in comps[1:]:
+            G.add_edge(min(c), min(comps[0]))
+        pos = nx.spring_layout(G, seed=3, iterations=200)
+        for v in G:
+            G.nodes[v]["pos"] = (pos[v][0] * 420, pos[v][1] * 420)
+        fromNetworkX(G)
+        st["truth"] = {f"n{v}": v // 12 for v in G}
+        st["k"] = 3
+    st["names"] = sorted((v.name for v in g.nodes), key=lambda s_: int("".join(c for c in s_ if c.isdigit()) or 0))
+    st["edges"] = [(e.node1.name, e.node2.name) for e in g.edges if e.node1 is not e.node2]
+    st["deg"] = {nm: 0 for nm in st["names"]}
+    st["nbrs"] = {nm: [] for nm in st["names"]}
+    for a_, b_ in st["edges"]:
+        st["deg"][a_] += 1
+        st["deg"][b_] += 1
+        st["nbrs"][a_].append(b_)
+        st["nbrs"][b_].append(a_)
+    kmax = max(st["deg"].values())
+    Node.fit = 0
+    for v in g.nodes:
+        v.label = "".join(c for c in v.name if c.isdigit())
+        v.labelpos = "inside"
+        v.labelvisible = true
+        v.width = v.height = 20 + 22 * math.sqrt(st["deg"][v.name] / kmax)   # size: degree
+    st["both"], st["starts"] = None, []
+    random_start()
+    center()
+
+
+def random_start():
+    stop_all()
+    rnd = random.Random(st["seed"])
+    st["seed"] += 1
+    st["part"] = {v: rnd.randrange(st["k"]) for v in st["names"]}
+    st["moved"], st["done"] = None, False
+    st["hist"] = [(0, loglik(st["part"]))]
+    repaint()
+
+
+def stop_all():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+    if st["sim"] is not None and st["sim"].get("timer") is not None:
+        st["sim"]["timer"].stop()
+        st["sim"]["timer"] = None
+
+
+def repaint():
+    part = st["part"]
+    for v in g.nodes:
+        v.color = COLS[part[v.name] % len(COLS)]
+        v.strokecolor = "50,50,50"
+        v.strokewidth = 0
+        v.fit = part[v.name]
+    for e in g.edges:
+        cross = part[e.node1.name] != part[e.node2.name]
+        e.color = "200,90,90,150" if cross else "150,150,150,120"
+        e.width, e.linestyle = 1.2, ("dashed" if cross else "solid")
+    if st["moved"]:
+        v = g.getNodeByName(st["moved"])
+        v.strokecolor, v.strokewidth = "20,20,20", 5
+        for e in g.edges:
+            if v in (e.node1, e.node2):
+                e.color, e.width, e.linestyle = "250,170,40", 3, "flow"
+
+
+# ---- fitting step by step --------------------------------------------------------------------------------------
+def fit_step():
+    mv = best_move(st["part"])
+    if mv is None:
+        st["done"], st["moved"] = True, None
+        repaint()
+        return False
+    L, v, t = mv
+    st["part"][v] = t
+    st["moved"] = v
+    st["hist"].append((len(st["hist"]), L))
+    repaint()
+    return True
+
+
+def fit_play():
+    if st["timer"] is not None and st["timer"].running:
+        stop_all()
+        return
+    if st["done"]:
+        random_start()
+    st["timer"] = everyPaced(fit_step, slow=0.8, fast=0.08, ramp=4)
+
+
+def fit_all():
+    stop_all()
+    while fit_step():
+        pass
+
+
+def fit_guess():
+    """GUESS's fitBlockModel: Kernighan-Lin passes from 10 random starts, the best kept."""
+    stop_all()
+    r = fitBlockModel(st["k"], degreeCorrected=st["model"].startswith("Degree"), restarts=10, seed=0, name="sbm_class")
+    st["part"] = {v.name: v.sbm_class for v in g.nodes}
+    st["moved"], st["done"] = None, True
+    st["hist"].append((len(st["hist"]), loglik(st["part"])))
+    repaint()
+    return r
+
+
+def nmi(pa, pb):
+    n = float(len(pa))
+    ca, cb, cab = {}, {}, {}
+    for v in pa:
+        x, y = pa[v], pb[v]
+        ca[x] = ca.get(x, 0) + 1
+        cb[y] = cb.get(y, 0) + 1
+        cab[(x, y)] = cab.get((x, y), 0) + 1
+    ha = -sum(c / n * math.log(c / n) for c in ca.values())
+    hb = -sum(c / n * math.log(c / n) for c in cb.values())
+    mi = sum(c / n * math.log((c / n) / ((ca[x] / n) * (cb[y] / n))) for (x, y), c in cab.items())
+    return 1.0 if ha + hb == 0 else max(0.0, 2 * mi / (ha + hb))
+
+
+def chip(name):
+    """A linked chip showing the node's label (the number on it)."""
+    v = g.getNodeByName(name)
+    return linkTo(v, text=str(v.label or name))
+
+
+def span(values, pad=0.08):
+    """A y range around the data, so changes of a few units show (log-likelihoods are large negative numbers)."""
+    lo, hi = min(values), max(values)
+    d = (hi - lo) or abs(hi) * 0.05 or 1.0
+    return (lo - pad * d, hi + pad * d)
+
+
+def hubs(n=5):
+    return sorted(st["names"], key=lambda v: -st["deg"][v])[:n]
+
+
+def fit_text():
+    if mode[0] != "Fit":
+        return ""
+    part = st["part"]
+    L, Lt = loglik(part), loglik(st["truth"])
+    sizes = [sum(1 for v in part.values() if v == r) for r in range(st["k"])]
+    out = (f"**{st['model']}**, {st['k']} groups. Log-likelihood now **{L:.1f}**; the real groups score "
+           f"**{Lt:.1f}**. Group sizes {' + '.join(map(str, sizes))}; agreement with the real groups "
+           f"(NMI) **{nmi(part, st['truth']):.2f}**.")
+    if st["moved"]:
+        out += f"\n\nLast move: {chip(st['moved'])} to group {part[st['moved']]}."
+    if st["done"]:
+        out += ("\n\n**No single move raises L**: a local maximum. A new random start may end somewhere else; "
+                "*Best of 10 starts* uses GUESS's fitBlockModel.")
+    hs = hubs()
+    out += ("\n\nThe five biggest hubs are in groups " + ", ".join(f"{chip(v)}→{part[v]}" for v in hs)
+            + (". **All in one group**: the plain model's habit of sorting nodes by degree." if
+               len({part[v] for v in hs}) == 1 and not st["model"].startswith("Degree") else "."))
+    return out
+
+
+def fit_chart():
+    if mode[0] != "Fit" or len(st["hist"]) < 2:
+        return None
+    Lt = loglik(st["truth"])
+    xs = [h[0] for h in st["hist"]]
+    return plotLine({"log-likelihood": st["hist"], "the real groups": [(xs[0], Lt), (xs[-1], Lt)]},
+                    title="Log-likelihood, move by move", xlabel="moves", ylabel="log-likelihood",
+                    dots=true, dashed=["the real groups"], yrange=span([h[1] for h in st["hist"]] + [Lt]))
+
+
+# ---- the block matrix --------------------------------------------------------------------------------------------
+def matrix_chart():
+    if mode[0] != "Block matrix":
+        return None
+    return showMatrix(order="fit", title="Adjacency matrix, ordered by the fitted groups")
+
+
+def matrix_text():
+    if mode[0] != "Block matrix":
+        return ""
+    M, nr, kr = counts(st["part"], st["k"])
+    k = st["k"]
+    lines = ["| group | nodes | total degree | " + " | ".join(f"edges to {s_}" for s_ in range(k)) + " |",
+             "|---" * (k + 3) + "|"]
+    for r in range(k):
+        cells = [str(M[r][s_] // 2 if r == s_ else M[r][s_]) for s_ in range(k)]
+        lines.append(f"| {r} | {nr[r]} | {kr[r]} | " + " | ".join(cells) + " |")
+    return ("The fitted model is the table below: how many nodes each group has and how many edges run between "
+            "each pair of groups. The plain model turns these counts into a probability per pair of nodes, "
+            "m_rs / (n_r n_s); the degree-corrected one shares each group's edges out by degree, "
+            "m_rs k_i k_j / (k_r k_s).\n\n" + "\n".join(lines))
+
+
+# ---- plain against degree-corrected -------------------------------------------------------------------------------
+def both_rows():
+    if st["both"] is None:
+        rows = []
+        for model in MODELS:
+            dc = model.startswith("Degree")
+            r = fitBlockModel(st["k"], degreeCorrected=dc, restarts=10, seed=0, name="sbm_class")
+            part = {v.name: v.sbm_class for v in g.nodes}
+            sizes = sorted((sum(1 for x in part.values() if x == t) for t in range(st["k"])), reverse=True)
+            off = [v for v in st["names"] if part[v] != st["truth"][v]]
+            if len(off) > len(st["names"]) / 2:              # group numbers are arbitrary: compare the other way round
+                off = [v for v in st["names"] if part[v] == st["truth"][v]] if st["k"] == 2 else off
+            rows.append((model, r["loglik"], loglik(st["truth"], dc=dc), nmi(part, st["truth"]), sizes,
+                         len({part[v] for v in hubs()}) == 1, off))
+        st["both"] = rows
+    return st["both"]
+
+
+def both_text():
+    if mode[0] != "Plain or degree-corrected":
+        return ""
+    rows = both_rows()
+    lines = ["| model | best log-likelihood found | the real groups | NMI with the real groups | sizes | 5 hubs together? |",
+             "|---|---|---|---|---|---|"]
+    for model, Lb, Lt, s_, sizes, together, _off in rows:
+        lines.append(f"| {model} | {Lb:.1f} | {Lt:.1f} | {s_:.2f} | {' + '.join(map(str, sizes))} | "
+                     f"{'yes' if together else 'no'} |")
+    out = "Both models fitted with fitBlockModel (10 random starts each):\n\n" + "\n".join(lines)
+    if st["net"].startswith("Karate"):
+        dcL, dcT, off = rows[0][1], rows[0][2], rows[0][6]
+        who = " and ".join(chip(v) for v in off) if off else "no one"
+        out += ("\n\nOn the karate club the **plain** model puts the hubs together and everyone else in the other "
+                "group: for that model, a split by degree explains the edges better than the two factions. The "
+                f"**degree-corrected** model finds the factions except for {len(off)} member"
+                f"{'s' if len(off) != 1 else ''} ({who}). Its best fit ({dcL:.1f}) is in fact *more* likely than "
+                f"the real split ({dcT:.1f}): maximum likelihood finds the division that makes the edges most "
+                "probable, and the factions are almost, but not exactly, that.")
+    else:
+        out += ("\n\nHere every node has about the same degree, so the two models agree and both find the planted "
+                "groups.")
+    return out
+
+
+def sim_start():
+    stop_all()
+    st["starts"] = []
+    st["sim"] = {"left": 20, "timer": None}
+    st["sim"]["timer"] = everyPaced(sim_step, steps=20, slow=0.5, fast=0.1, ramp=3)
+
+
+def sim_step():
+    sm = st["sim"]
+    if not sm or sm["left"] <= 0:
+        return False
+    rnd = random.Random(1000 + sm["left"])
+    part = {v: rnd.randrange(st["k"]) for v in st["names"]}
+    while True:
+        mv = best_move(part)
+        if mv is None:
+            break
+        part[mv[1]] = mv[2]
+    st["starts"].append((loglik(part), nmi(part, st["truth"])))
+    st["part"], st["moved"], st["done"] = part, None, True
+    repaint()
+    sm["left"] -= 1
+    return sm["left"] or False
+
+
+def sim_chart():
+    if mode[0] != "Plain or degree-corrected" or not st["starts"]:
+        return None
+    Ls = sorted((x[0] for x in st["starts"]), reverse=True)
+    Lt = loglik(st["truth"])
+    return plotLine({"local maxima (best first)": [(i + 1, L) for i, L in enumerate(Ls)],
+                     "the real groups": [(1, Lt), (max(2, len(Ls)), Lt)]},
+                    title=f"Where 20 single-move climbs end ({st['model'].split()[0].lower()} model)",
+                    xlabel="start (sorted)", ylabel="log-likelihood", dots=true, dashed=["the real groups"],
+                    yrange=span(Ls + [Lt]))
+
+
+def sim_text():
+    if mode[0] != "Plain or degree-corrected":
+        return ""
+    if not st["starts"]:
+        return ("*Simulate* climbs from 20 random starts with the current model, one best move at a time, to "
+                "see how many different local maxima there are.")
+    Ls = [x[0] for x in st["starts"]]
+    best = max(Ls)
+    hit = sum(1 for L in Ls if abs(L - best) < 1e-6)
+    return (f"{len(Ls)} climbs: **{hit}** reached the best value found ({best:.1f}); the others stopped lower. "
+            "That is why fitting uses several starts, or smarter moves (Kernighan-Lin passes, Monte Carlo).")
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    repaint()
+
+
+def pick_net(v):
+    load(v)
+
+
+def pick_model(v):
+    st["model"] = v
+    st["starts"] = []
+    random_start()
+
+
+def click(v):
+    """Move a node to the next group by hand."""
+    if mode[0] != "Fit":
+        return
+    st["part"][v.name] = (st["part"][v.name] + 1) % st["k"]
+    st["moved"], st["done"] = v.name, False
+    st["hist"].append((len(st["hist"]), loglik(st["part"])))
+    repaint()
+
+
+graphevents.clickNode = click
+netpick = Dropdown(NETS, label="Network", onChange=pick_net)
+modelpick = Dropdown(MODELS, label="Model", onChange=pick_model)
+load(NETS[0])
+constantLabelSize(size=14)
+ui.title("Fitting a block model", "Networks, Section 14.4")
+ui.layout(
+    right=Column(
+        Markdown("""### Which groups make these edges most probable?
+Colours are the fitted groups, node size is degree; red dashed edges run
+between groups. *Click* a node to move it yourself."""),
+        netpick, modelpick,
+        Tabs(
+            Tab("Fit",
+                Row(Button("Fit, one move at a time", onClick=lambda: fit_play()),
+                    Button("Climb to the top", onClick=lambda: fit_all())),
+                Row(Button("New random start", onClick=lambda: random_start()),
+                    Button("Best of 10 starts", onClick=lambda: fit_guess())),
+                Markdown(fit_text), Chart(fit_chart)),
+            Tab("Block matrix", Markdown(matrix_text), Chart(matrix_chart)),
+            Tab("Plain or degree-corrected",
+                Markdown(both_text),
+                Button("Simulate: 20 random starts", onClick=lambda: sim_start()),
+                Markdown(sim_text), Chart(sim_chart)),
+            onChange=switch)),
+    sizes={"right": 430},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · log-likelihood {loglik(st['part']):.1f}"))
+center()

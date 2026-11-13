@@ -1,0 +1,444 @@
+# Hierarchical clustering  (Newman, Networks, Section 14.5.2)
+# Choose a measure of how similar two nodes are (here: cosine similarity of
+# their neighbourhoods, how much their friends overlap), start with every
+# node in a group of its own, and repeatedly merge the two most similar
+# groups. How similar two *groups* are needs a rule: single linkage uses the
+# most similar pair of members, complete linkage the least similar pair,
+# average linkage the mean over all pairs. The merges form a tree, a
+# dendrogram; cutting it at some height gives communities.
+
+import random
+import numpy as np
+import networkx as nx
+
+NETS = ["Karate club (34 members)", "Planted groups: 3 × 12 (block model)"]
+LINKS = ["average linkage", "single linkage", "complete linkage"]
+SIMS = ["cosine, counting each node as its own neighbour", "cosine of the neighbour lists"]
+COLS = ["240,140,60", "80,150,230", "120,190,90", "200,110,200", "230,200,70", "100,200,200",
+        "220,110,110", "160,160,230", "190,150,100", "150,210,160"]
+hc = {"net": NETS[0], "link": LINKS[0], "sim": SIMS[0], "names": [], "S": None, "merges": [], "heights": [],
+      "t": 0, "timer": None, "truth": {}, "G": None, "simrows": {}, "simstate": None}
+mode = ["Merge step by step"]
+
+
+def short(nm):
+    return "".join(c for c in nm if c.isdigit())
+
+
+# the dendrogram chart's colours for a cut into k groups, so the network matches the tree: the same
+# palette, and the groups in the same order (largest first) as showDendrogram assigns them
+DPAL = ["78,121,167", "225,87,89", "89,161,79", "242,142,43", "118,183,178", "176,122,161", "237,201,72",
+        "255,157,167", "156,117,95", "134,188,182"]
+
+
+def dendro_colours(merges, n, k):
+    size = {c: 1 for c in range(n)}
+    members = {c: [c] for c in range(n)}
+    alive = set(range(n))
+    for i, (a_, b_) in enumerate(merges):
+        if len(alive) <= k:
+            break
+        alive -= {a_, b_}
+        alive.add(n + i)
+        size[n + i] = size[a_] + size[b_]
+        members[n + i] = members[a_] + members[b_]
+    ranked = sorted(alive, key=lambda c: -size[c])
+    out = {}
+    for j, c in enumerate(ranked):
+        for x in members[c]:
+            out[x] = DPAL[j % len(DPAL)] if size[c] > 1 else "185,185,185"
+    return out
+
+
+# ---- networks ------------------------------------------------------------------------------------------
+def load(choice):
+    stop_all()
+    hc["net"] = choice
+    if choice.startswith("Karate"):
+        makeSample("karate")
+        hc["truth"] = {v.name: (0 if v.club == "Mr. Hi" else 1) for v in g.nodes}
+        hc["truth_name"] = "the club's actual split"
+    else:
+        makeBlockModel([12, 12, 12], 0.45, 0.04, seed=4, layout=false)
+        hc["truth"] = {v.name: v.block for v in g.nodes}
+        hc["truth_name"] = "the planted groups"
+    G = toNetworkX(directed=False)
+    hc["G"] = G
+    pos = nx.spring_layout(G, seed=3, iterations=200)    # seeded: groups sit apart the same way every time
+    for v in g.nodes:
+        v.x, v.y = float(pos[v.name][0]) * 430, float(pos[v.name][1]) * 430
+        v.label = short(v.name)
+        v.labelpos = "inside"
+        v.labelvisible = true
+    def numkey(s_):
+        d = "".join(c for c in s_ if c.isdigit())
+        return (s_[0], int(d) if d else 0)
+    hc["names"] = sorted(G, key=numkey)
+    rebuild_tree()
+
+
+def similarity():
+    nm = hc["names"]
+    A = nx.to_numpy_array(hc["G"], nodelist=nm, weight=None)
+    np.fill_diagonal(A, 0)
+    if hc["sim"].startswith("cosine, counting"):
+        A = A + np.eye(len(nm))
+    k = A.sum(1)
+    norm = np.sqrt(np.outer(k, k))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        S = np.where(norm > 0, (A @ A) / np.where(norm > 0, norm, 1), 0.0)
+    return S
+
+
+def agglomerate(S, rule):
+    """Merge the most similar pair of groups until one is left (Lance-Williams updates of the group
+    similarities). Returns igraph-style merges and the dissimilarity 1 - sigma of each merge."""
+    n = len(S)
+    D = S.astype(float).copy()
+    np.fill_diagonal(D, -np.inf)
+    alive = list(range(n))
+    ident = list(range(n))                 # row -> cluster id
+    size = [1] * n
+    merges, heights = [], []
+    for step in range(n - 1):
+        sub = D[np.ix_(alive, alive)]
+        i, j = np.unravel_index(int(np.argmax(sub)), sub.shape)
+        a_, b_ = alive[i], alive[j]
+        if a_ > b_:
+            a_, b_ = b_, a_
+        sim = D[a_, b_]
+        merges.append((ident[a_], ident[b_]))
+        heights.append(max(heights[-1] if heights else 0.0, 1.0 - float(sim)))
+        # the merged group lives on in row a_
+        if rule.startswith("single"):
+            row = np.maximum(D[a_], D[b_])
+        elif rule.startswith("complete"):
+            row = np.minimum(D[a_], D[b_])
+        else:
+            row = (size[a_] * D[a_] + size[b_] * D[b_]) / (size[a_] + size[b_])
+        D[a_, :] = row
+        D[:, a_] = row
+        D[a_, a_] = -np.inf
+        size[a_] += size[b_]
+        ident[a_] = n + step
+        alive.remove(b_)
+    return merges, heights
+
+
+def rebuild_tree():
+    hc["S"] = similarity()
+    hc["merges"], hc["heights"] = agglomerate(hc["S"], hc["link"])
+    hc["t"] = 0
+    repaint()
+
+
+def groups_after(t):
+    """The groups (lists of name indices) after the first t merges."""
+    n = len(hc["names"])
+    members = {i: [i] for i in range(n)}
+    for k, (a_, b_) in enumerate(hc["merges"][:t]):
+        members[n + k] = members.pop(a_) + members.pop(b_)
+    return sorted(members.values(), key=lambda m: (-len(m), min(m)))
+
+
+def cut(k):
+    return groups_after(len(hc["names"]) - max(1, int(k)))
+
+
+def colour(groups, focus=()):
+    nm = hc["names"]
+    t = len(nm) - len(groups)                     # groups after t merges: the tree's colours for that cut
+    cols = dendro_colours(hc["merges"][:t], len(nm), len(groups))
+    for grp in groups:
+        for x in grp:
+            v = g.getNodeByName(nm[x])
+            v.color = cols[x]
+            v.width = v.height = 26
+            v.strokecolor, v.strokewidth = "50,50,50", 0
+    for x in focus:
+        v = g.getNodeByName(nm[x])
+        v.strokecolor, v.strokewidth = "20,20,20", 4
+        v.width = v.height = 32
+    side = {}
+    for i, grp in enumerate(groups):
+        for x in grp:
+            side[nm[x]] = i
+    for e in g.edges:
+        same = side[e.node1.name] == side[e.node2.name]
+        e.color = "120,120,120,150" if same else "200,200,200,60"
+        e.width = 1.6 if same else 1
+
+
+def repaint(focus=()):
+    t = hc["t"]
+    groups = groups_after(t)
+    colour(groups, focus)
+    removeConvexHulls()
+    if focus:
+        encircle([g.getNodeByName(hc["names"][x]) for x in focus], shape="hull", color="250,200,40,60", padding=18)
+
+
+# ---- merging step by step ---------------------------------------------------------------------------------
+def merge_once():
+    t = hc["t"]
+    n = len(hc["names"])
+    if t >= n - 1:
+        return False
+    hc["t"] = t + 1
+    a_, b_ = hc["merges"][t]
+    members = {i: [i] for i in range(n)}
+    for k, (x, y) in enumerate(hc["merges"][:t + 1]):
+        members[n + k] = members.pop(x) + members.pop(y)
+    repaint(focus=members[n + t])
+    return n - 1 - hc["t"] or False
+
+
+def play():
+    if hc["timer"] is not None and hc["timer"].running:
+        stop_all()
+        return
+    if hc["t"] >= len(hc["names"]) - 1:
+        hc["t"] = 0
+    hc["timer"] = everyPaced(merge_once, slow=0.9, fast=0.1, ramp=3)
+    play_btn.text = "Pause"
+
+
+def restart():
+    stop_all()
+    hc["t"] = 0
+    repaint()
+
+
+def last_merge_text():
+    t = hc["t"]
+    n = len(hc["names"])
+    if t == 0:
+        return (f"Every node starts alone. *Merge* joins the two most similar groups ({hc['link']}); the "
+                "dendrogram grows from the bottom, the height of each join being 1 − similarity.")
+    groups_before = {i: [i] for i in range(n)}
+    for k, (x, y) in enumerate(hc["merges"][:t - 1]):
+        groups_before[n + k] = groups_before.pop(x) + groups_before.pop(y)
+    a_, b_ = hc["merges"][t - 1]
+    A, B = groups_before[a_], groups_before[b_]
+
+    def show(grp):
+        nm = hc["names"]
+        first = " ".join(linkTo(g.getNodeByName(nm[x]), short(nm[x])) for x in grp[:6])
+        return first + (f" … ({len(grp)} nodes)" if len(grp) > 6 else "")
+    return (f"Merge {t} of {n - 1}: {show(A)} **+** {show(B)}, similarity {1 - hc['heights'][t - 1]:.3f}. "
+            f"Now **{n - t}** groups.")
+
+
+def tree_now():
+    n = len(hc["names"])
+    t = hc["t"] if mode[0] == "Merge step by step" else n - 1
+    if mode[0] == "Merge step by step" and t == 0:
+        return None
+    k = n - t if mode[0] == "Merge step by step" else int(kslider.value)
+    return showDendrogram(hc["merges"][:t], nodes=[g.getNodeByName(x) for x in hc["names"]],
+                          heights=hc["heights"][:t], cut=k, title=f"Dendrogram ({hc['link']})")
+
+
+# ---- cutting the tree ----------------------------------------------------------------------------------------
+kslider = Slider(1, 10, 2, 1, label="groups")
+
+
+def q_of(groups):
+    nm = hc["names"]
+    return nx.community.modularity(hc["G"], [{nm[x] for x in grp} for grp in groups])
+
+
+def nmi_of(a, b):
+    import math
+    from collections import Counter
+    n = len(a)
+    ca, cb, cab = Counter(a.values()), Counter(b.values()), Counter((a[v], b[v]) for v in a)
+    mi = sum(c / n * math.log((c / n) / (ca[x] / n * cb[y] / n)) for (x, y), c in cab.items())
+    ha = -sum(c / n * math.log(c / n) for c in ca.values())
+    hb = -sum(c / n * math.log(c / n) for c in cb.values())
+    return 2 * mi / (ha + hb) if ha + hb > 0 else 1.0
+
+
+def labels_of(groups):
+    return {hc["names"][x]: i for i, grp in enumerate(groups) for x in grp}
+
+
+def cut_now(v=None):
+    stop_all()
+    colour(cut(kslider.value))
+    removeConvexHulls()
+
+
+def best_k():
+    ks = range(1, min(10, len(hc["names"])) + 1)
+    return max(ks, key=lambda k: (q_of(cut(k)), -k))
+
+
+def cut_text():
+    k = int(kslider.value)
+    grp = cut(k)
+    sizes = ", ".join(str(len(x)) for x in grp[:8]) + (" …" if len(grp) > 8 else "")
+    b = best_k()
+    return (f"Cut into **{k}** groups (sizes {sizes}): Q = **{q_of(grp):.3f}**, agreement with "
+            f"{hc['truth_name']} (NMI): **{nmi_of(hc['truth'], labels_of(grp)):.2f}**.\n\n"
+            f"Of cuts into 1–10 groups, modularity is highest at **{b}** (Q = {q_of(cut(b)):.3f}). "
+            "Point at a branch of the tree to see its members.")
+
+
+def q_chart():
+    if mode[0] != "Cut the tree":
+        return None
+    pts = [(k, q_of(cut(k))) for k in range(1, min(10, len(hc["names"])) + 1)]
+    k = int(kslider.value)
+    return plotLine({"Q": pts, "this cut": [(k, q_of(cut(k)))]}, title="Modularity of each cut",
+                    xlabel="groups", ylabel="Q", dots=true, highlight=["this cut"])
+
+
+def to_best():
+    kslider.value = best_k()
+    cut_now()
+
+
+# ---- linkage compared ---------------------------------------------------------------------------------------------
+def linkage_table():
+    if mode[0] != "Linkage and chaining":
+        return ""
+    rows = ["| linkage | sizes at 2 groups | NMI at 2 | best-Q groups | Q | NMI |", "|---|---|---|---|---|---|"]
+    for rule in LINKS:
+        merges, heights = agglomerate(hc["S"], rule)
+        saved = hc["merges"]
+        hc["merges"] = merges
+        two = cut(2)
+        bk = best_k()
+        grp = cut(bk)
+        rows.append(f"| {rule.split()[0]} | {len(two[0])} + {len(two[1]) if len(two) > 1 else 0} | "
+                    f"{nmi_of(hc['truth'], labels_of(two)):.2f} | {bk} | {q_of(grp):.3f} | "
+                    f"{nmi_of(hc['truth'], labels_of(grp)):.2f} |")
+        hc["merges"] = saved
+    note = ("**Single linkage chains**: a group joins whichever group has *one* member similar to it, so one "
+            "group grows by stringing nodes along, one at a time, and a cut into two leaves a huge group and a "
+            "stray node or two (see its sizes below). **Complete linkage** wants every pair similar and makes "
+            "compact groups; **average linkage** is in between and usually the safest choice. The same cut, "
+            "into the number of groups with the best modularity, scored against the known groups:")
+    return note + "\n\n" + "\n".join(rows)
+
+
+def sim_start():
+    stop_all()
+    hc["simrows"] = {rule: [] for rule in LINKS}
+    hc["simstate"] = {"i": 0, "cases": [(a_, r_) for a_ in (7.0, 6.0, 5.0, 4.0, 3.0) for r_ in range(2)]}
+    hc["timer"] = everyPaced(sim_step, slow=0.6, fast=0.2, ramp=1)
+
+
+def sim_step():
+    sm = hc["simstate"]
+    if sm is None or sm["i"] >= len(sm["cases"]):
+        return False
+    inside, rep = sm["cases"][sm["i"]]
+    sm["i"] += 1
+    G = nx.planted_partition_graph(3, 12, inside / 11, (8 - inside) / 24, seed=31 + rep + int(inside * 10))
+    nodes = list(G)
+    A = nx.to_numpy_array(G, nodelist=nodes, weight=None) + np.eye(len(nodes))
+    k = A.sum(1)
+    S = (A @ A) / np.sqrt(np.outer(k, k))
+    truth = {v: v // 12 for v in nodes}
+    for rule in LINKS:
+        merges, _h = agglomerate(S, rule)
+        best = None
+        for kk in range(1, 11):
+            n = len(nodes)
+            members = {i: [i] for i in range(n)}
+            for j, (a_, b_) in enumerate(merges[:n - kk]):
+                members[n + j] = members.pop(a_) + members.pop(b_)
+            parts = [{nodes[x] for x in m} for m in members.values()]
+            q = nx.community.modularity(G, parts)
+            if best is None or q > best[0]:
+                best = (q, parts)
+        found = {v: i for i, p in enumerate(best[1]) for v in p}
+        hc["simrows"][rule].append((inside - (8 - inside), nmi_of(truth, found)))
+    return len(sm["cases"]) - sm["i"] or False
+
+
+def sim_chart():
+    if not any(hc["simrows"].values()):
+        return None
+    series = {}
+    for rule, rows in hc["simrows"].items():
+        by = {}
+        for d, v in rows:
+            by.setdefault(d, []).append(v)
+        series[rule.split()[0]] = sorted((d, sum(v) / len(v)) for d, v in by.items())
+    return plotLine(series, title="Finding planted groups (best-Q cut)", xlabel="neighbours inside − outside",
+                    ylabel="NMI", dots=true, yrange=(0, 1.05))
+
+
+# ---- plumbing ---------------------------------------------------------------------------------------------------------
+def stop_all():
+    if hc["timer"] is not None:
+        hc["timer"].stop()
+        hc["timer"] = None
+    if "play_btn" in globals():
+        play_btn.text = "Merge, one pair at a time"
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    if title == "Merge step by step":
+        repaint()
+    else:
+        cut_now()
+
+
+def pick_link(v):
+    hc["link"] = v
+    rebuild_tree()
+    if mode[0] != "Merge step by step":
+        cut_now()
+
+
+def pick_sim(v):
+    hc["sim"] = v
+    rebuild_tree()
+    if mode[0] != "Merge step by step":
+        cut_now()
+
+
+def pick_net(v):
+    load(v)
+    if mode[0] != "Merge step by step":
+        cut_now()
+    center()
+
+
+play_btn = Button("Merge, one pair at a time", onClick=lambda: play())
+kslider.onChange = cut_now
+load(NETS[0])
+constantLabelSize(size=14)
+ui.title("Hierarchical clustering", "Networks, Section 14.5.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Merge the most similar, repeat
+Similarity: how much two nodes' neighbourhoods overlap."""),
+        Dropdown(NETS, label="Network", onChange=pick_net),
+        Dropdown(LINKS, label="Groups compared by", onChange=pick_link),
+        Dropdown(SIMS, label="Similarity", onChange=pick_sim),
+        Tabs(
+            Tab("Merge step by step",
+                Row(play_btn, Button("One merge", onClick=lambda: merge_once()),
+                    Button("Start over", onClick=lambda: restart())),
+                Markdown(last_merge_text), Chart(tree_now)),
+            Tab("Cut the tree",
+                Row(kslider, Button("Best modularity", onClick=lambda: to_best())),
+                Markdown(cut_text), Chart(tree_now), Chart(q_chart)),
+            Tab("Linkage and chaining",
+                Markdown(linkage_table),
+                Button("Simulate: planted groups", onClick=lambda: sim_start()),
+                Chart(sim_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(groups_after(hc['t']))} groups after {hc['t']} merges"
+                   if mode[0] == "Merge step by step" else f"{len(g.nodes)} nodes · cut into {int(kslider.value)} groups"))
+center()

@@ -117,7 +117,7 @@ export type BarItem = WidgetRec | { kind: "action"; name: string; text?: string 
 export interface PanelRec extends WidgetRec { children: WidgetRec[] }
 
 export interface ChartMsg {
-  type: "chart"; id: string; kind: "bar" | "pie" | "distrib" | "line" | "matrix";
+  type: "chart"; id: string; kind: "bar" | "pie" | "distrib" | "line" | "matrix" | "dendrogram";
   /** live: recomputed after every change; canLive: it knows how it was made */
   live?: boolean; canLive?: boolean;
   title: string; xlabel: string; ylabel: string;
@@ -135,6 +135,11 @@ export interface ChartMsg {
     /** large markers at its points (highlight=) */
     big?: boolean;
   }[];
+  /** dendrograms (showDendrogram): leaves in drawing order; each merge's position, its two
+   *  children's [x, height], and its leaves as the range lo..hi; groups of a cut [lo, hi, colour, height] */
+  leaves?: { id: number; label: string }[];
+  clusters?: { x: number; y: number; a: [number, number]; b: [number, number]; lo: number; hi: number }[];
+  dgroups?: [number, number, number, number][];
   /** fixed axis ranges (xrange=/yrange=), in data units */
   xRange?: [number, number]; yRange?: [number, number];
   /** line charts drawn as dots only (plotScatter): each dot links to its elements */

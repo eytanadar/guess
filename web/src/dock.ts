@@ -462,6 +462,10 @@ export class Dock {
       this.drawMatrix(c, body, key);
       return;
     }
+    if (c.kind === "dendrogram") {
+      this.drawDendrogram(c, body, key);
+      return;
+    }
     const W = 300, H = c.kind === "pie" ? 230 : 190;
     const svg = document.createElementNS(SVG, "svg");
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -841,6 +845,106 @@ export class Dock {
 
   /** showMatrix: one cell per edge (both ways when undirected), rows and columns in the given
    *  order, lines between groups; hovering a cell highlights its edge and nodes. */
+  /** A dendrogram: leaves along the bottom, merges at their heights; every branch links to its nodes. */
+  private drawDendrogram(c: ChartMsg, body: HTMLElement, key: string) {
+    const leaves = c.leaves ?? [], clusters = c.clusters ?? [], groups = c.dgroups ?? [];
+    const n = Math.max(leaves.length, 1);
+    const named = n <= 50;
+    const W = 300, left = 34, right = 8, top = 10, bottom = named ? 46 : 14;
+    const H = 200;
+    const pw = W - left - right, ph = H - top - bottom;
+    const ymax = Math.max(1e-9, ...clusters.map((k) => k.y));
+    const X = (x: number) => left + (n === 1 ? pw / 2 : (pw * x) / (n - 1));
+    const Y = (y: number) => top + ph * (1 - y / ymax);
+    const svg = document.createElementNS(SVG, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("class", "chart dendrogram");
+    const marks: { el: SVGElement; keys: Set<string> }[] = [];
+    const items = (lo: number, hi: number): Item[] => leaves.slice(lo, hi + 1).map((l) => ["n", l.id] as Item);
+    // the colour of a branch: its cut group's, if it lies inside one below the cut
+    const colour = (lo: number, hi: number, y: number) => {
+      const gp = groups.find(([a, b, , h]) => lo >= a && hi <= b && y <= h + 1e-9);
+      return gp ? hex(gp[2]) : "var(--muted, #8a8a8a)";
+    };
+    const link = (el: SVGElement, lo: number, hi: number) => {
+      const its = items(lo, hi);
+      const title = hi > lo ? `${hi - lo + 1} nodes` : leaves[lo]?.label ?? "";
+      el.classList.add("mark");
+      marks.push({ el, keys: new Set(its.map(([k, id]) => k + id)) });
+      el.addEventListener("mouseenter", (ev) => {
+        el.classList.add("hot");
+        this.host.hover(its, title, hi > lo ? [leaves.slice(lo, Math.min(hi + 1, lo + 6)).map((l) => l.label).join(", ") + (hi - lo > 5 ? ", …" : "")] : [], ev);
+      });
+      el.addEventListener("mouseleave", () => { el.classList.remove("hot"); this.host.hover(null, "", [], null); });
+      el.addEventListener("click", (ev) => this.host.click(its, ev));
+    };
+    for (const k of clusters) {
+      const col = colour(k.lo, k.hi, k.y);
+      const p = document.createElementNS(SVG, "path");
+      p.setAttribute("d", `M${X(k.a[0])},${Y(k.a[1])} V${Y(k.y)} H${X(k.b[0])} V${Y(k.b[1])}`);
+      p.setAttribute("fill", "none");
+      p.setAttribute("stroke", col);
+      p.setAttribute("stroke-width", "1.4");
+      svg.append(p);
+      // a wide, invisible bar along the merge to point at
+      const hit = document.createElementNS(SVG, "rect");
+      const x0 = Math.min(X(k.a[0]), X(k.b[0])), x1 = Math.max(X(k.a[0]), X(k.b[0]));
+      hit.setAttribute("x", String(x0 - 2)); hit.setAttribute("y", String(Y(k.y) - 4));
+      hit.setAttribute("width", String(Math.max(4, x1 - x0 + 4))); hit.setAttribute("height", "8");
+      hit.setAttribute("fill", "transparent");
+      link(hit, k.lo, k.hi);
+      svg.append(hit);
+    }
+    // a dashed line at the cut
+    if (groups.length > 1) {
+      const top = Math.max(...groups.map((gp) => gp[3]));
+      const above = clusters.filter((k) => k.y > top + 1e-9).map((k) => k.y);
+      const yc = above.length ? (top + Math.min(...above)) / 2 : top;
+      const l = document.createElementNS(SVG, "line");
+      l.setAttribute("x1", String(left)); l.setAttribute("x2", String(W - right));
+      l.setAttribute("y1", String(Y(yc))); l.setAttribute("y2", String(Y(yc)));
+      l.setAttribute("stroke", "var(--accent, #e0457b)"); l.setAttribute("stroke-dasharray", "4 3");
+      svg.append(l);
+      const t = document.createElementNS(SVG, "text");
+      t.setAttribute("x", String(left)); t.setAttribute("y", String(Y(yc) - 3));
+      t.setAttribute("class", "tick"); t.style.textAnchor = "start";
+      t.style.paintOrder = "stroke"; t.style.stroke = "var(--bg, #1b1b1d)"; t.style.strokeWidth = "3px";
+      t.textContent = `${groups.length} groups`;
+      svg.append(t);
+    }
+    leaves.forEach((l, i) => {
+      const dot = document.createElementNS(SVG, "circle");
+      dot.setAttribute("cx", String(X(i))); dot.setAttribute("cy", String(Y(0)));
+      dot.setAttribute("r", n > 120 ? "1.2" : "2.2");
+      dot.setAttribute("fill", colour(i, i, 0));
+      link(dot, i, i);
+      svg.append(dot);
+      if (named) {
+        const t = document.createElementNS(SVG, "text");
+        t.setAttribute("x", String(X(i))); t.setAttribute("y", String(Y(0) + 5));
+        t.setAttribute("class", "tick");
+        t.setAttribute("transform", `rotate(-60 ${X(i)} ${Y(0) + 5})`);
+        t.style.textAnchor = "end";
+        t.style.fontSize = `${Math.max(5, Math.min(9, pw / n))}px`;
+        t.textContent = l.label.length > 10 ? l.label.slice(0, 9) + "…" : l.label;
+        svg.append(t);
+      }
+    });
+    const axis = document.createElementNS(SVG, "path");
+    axis.setAttribute("d", `M${left - 4},${top} V${Y(0)}`);
+    axis.setAttribute("class", "axis");
+    svg.append(axis);
+    for (const v of [0, ymax]) {
+      const t = document.createElementNS(SVG, "text");
+      t.setAttribute("x", String(left - 6)); t.setAttribute("y", String(Y(v) + 3));
+      t.setAttribute("class", "tick");
+      t.textContent = fmt(+v.toPrecision(3));
+      svg.append(t);
+    }
+    body.append(svg);
+    this.marks.set(key, marks);
+  }
+
   private drawMatrix(c: ChartMsg, body: HTMLElement, key: string) {
     const rl = c.labels ?? [], rids = c.ids ?? [], cells = c.cells ?? [];
     const cl = c.clabels ?? rl, cids = c.cids ?? rids;

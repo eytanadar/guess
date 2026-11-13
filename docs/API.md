@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (117)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (121)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (21)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -38,7 +38,7 @@ Commands can be called without parentheses when they take no arguments
 - [Import and export: Excel, RDF, Bluesky, JSON, KML, shapefiles, standalone HTML](#import-and-export-excel-rdf-bluesky-json-kml-shapefiles-standalone-html) (7)
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
-- [Charts](#charts) (9)
+- [Charts](#charts) (10)
 - [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (25)
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
@@ -143,6 +143,16 @@ shortcutNodes until nothing changes. Returns [removed, added].
 ### `copyNode(template, name, **extra)`
 
 Create node `name` with all field values copied from `template`.
+
+### `corePeriphery(name='core')`
+
+corePeriphery() splits the nodes into a densely connected core and a
+periphery that links to the core but hardly to itself (Newman, Networks,
+section 14.7.3; Borgatti and Everett's discrete model): the split that
+best matches the ideal pattern where every pair involving a core node
+is linked and no pair of peripheral nodes is. Sets the node field
+`core` (1 in the core, 0 outside) and returns {"core": size, "fit": the
+correlation with the ideal pattern}. Direction is ignored.
 
 ### `demo(step=1)`
 
@@ -311,6 +321,20 @@ collapseMotifs(kind) replaces each with one meta-node.
 ### `findNodes(seq)`
 
 The nodes among the members of a (possibly mixed) set.
+
+### `fitBlockModel(k=2, degreeCorrected=True, restarts=5, seed=0, name='sbm_class')`
+
+fitBlockModel(k) divides the nodes into k groups by fitting a
+stochastic block model by maximum likelihood (Newman, Networks,
+section 14.4; Karrer and Newman 2011): the groups that make the
+observed edges most probable. degreeCorrected=True (the default)
+allows hubs and small nodes in the same group; the plain model
+(False) tends to put hubs in one group and everyone else in another,
+as on the karate club. Uses Kernighan-Lin passes of single-node moves
+from `restarts` random starts and keeps the best. Stores the groups in
+the field `name` (0 = largest) and returns {"loglik": ..., "k": k}.
+Edge direction and self-loops are ignored. Meant for networks of up to
+a few hundred nodes.
 
 ### `fitNodesToLabels(seq=None, padding=4)`
 
@@ -685,6 +709,19 @@ has a `born` step; removed edges stay in the graph, hidden, with the
 step they were removed in `died` (-1 for edges still there), so
 revealUpTo(step) replays additions and removals.
 
+### `makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=0, layout=True)`
+
+makeLFR(n, tau1, tau2, mu) makes a Lancichinetti-Fortunato-Radicchi
+benchmark network: power-law degrees (exponent tau1) and community sizes
+(exponent tau2), with a share mu of each node's edges leaving its
+community (Newman, Networks, section 14.6.2). mu near 0 gives obvious
+communities; past about 0.5 they stop being communities at all. The
+node field `community` holds the planted groups (0 = largest), to
+compare with what an algorithm finds: compareClusters(louvain_class,
+community). degree= is the mean degree. The construction fails for some
+seeds, so up to ten seeds from seed= are tried (the one used is
+printed); if all fail, try larger communities or a lower mu.
+
 ### `makeNicheModel(species=30, connectance=0.15, seed=0)`
 
 makeNicheModel(species, connectance) builds a food web with the niche
@@ -778,6 +815,17 @@ plotSpectrum() charts the eigenvalues of the Laplacian (or
 "adjacency", "normalized") in order, one dot each: count the zeros
 to count components; a small second eigenvalue means the network
 nearly splits in two.
+
+### `rankNodes(name='rank', alpha=0.0)`
+
+rankNodes() places the nodes of a directed network on a ladder so that
+edges mostly point the same way (Newman, Networks, section 14.7.4): the
+SpringRank method (De Bacco, Larremore and Moore 2018), where each edge
+i -> j is a spring pulling i one unit above j. Use it for dominance,
+endorsement or who-hires-whose-graduates networks. Sets the node field
+`rank` (higher = above) and returns the share of edges that point
+downwards, from higher to lower rank. alpha > 0 pulls ranks toward 0
+(useful when the network is in pieces).
 
 ### `readSets(filename, item=None, set=None, where=None)`
 
@@ -3114,6 +3162,17 @@ Bar chart of how many elements share each value of field (largest first).
 ### `plotSizesPie(field)`
 
 Pie chart of how many elements share each value of field.
+
+### `showDendrogram(merges=None, nodes=None, heights=None, cut=None, field=None, title=None)`
+
+showDendrogram() draws the tree of the last walktrapClusters() or
+fastGreedyClusters(); showDendrogram(merges, nodes) draws any
+hierarchy: merges is a list of pairs in merge order, where 0..n-1 are
+the nodes (leaves) and merge i makes cluster n + i (igraph's and
+scipy's convention). heights= gives each merge's height (default: its
+step). cut=k colours the k groups left when the last merges are undone,
+and field="name" also stores each node's group (0 = largest) in a node
+field. Pointing at a branch highlights its nodes; clicking selects them.
 
 ### `showMatrix(order=None, weight=None, nodes=None, title=None, numbers=False, rows=None, cols=None)`
 

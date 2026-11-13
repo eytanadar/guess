@@ -258,6 +258,103 @@ def install(session):
         return emit("line", str(title), str(xlabel or "x"), str(ylabel or "y"), [], series=series, logX=lx, logY=ly,
                     scatter=True, **_ranges(xrange, yrange))
 
+    def showDendrogram(merges=None, nodes=None, heights=None, cut=None, field=None, title=None, paint=False):
+        """showDendrogram() draws the tree of the last walktrapClusters() or
+        fastGreedyClusters(); showDendrogram(merges, nodes) draws any
+        hierarchy: merges is a list of pairs in merge order, where 0..n-1 are
+        the nodes (leaves) and merge i makes cluster n + i (igraph's and
+        scipy's convention). heights= gives each merge's height (default: its
+        step). cut=k colours the k groups left when the last merges are undone,
+        and field="name" also stores each node's group (0 = largest) in a node
+        field. Pointing at a branch highlights its nodes; clicking selects them."""
+        if merges is None:
+            last = getattr(session, "last_dendrogram", None)
+            if not last:
+                raise GuessError("no hierarchy yet: run walktrapClusters() or fastGreedyClusters(), "
+                                 "or pass showDendrogram(merges, nodes)")
+            merges, leaves = last["merges"], last["nodes"]
+            title = title or last["title"]
+        else:
+            leaves = list(nodes) if nodes is not None else session.graph._nodes_list()
+        leaves = [x for x in leaves if isinstance(x, Node)]
+        n = len(leaves)
+        merges = [(int(a), int(b)) for a, b in merges]
+        if n < 1:
+            raise GuessError("showDendrogram: no nodes")
+        for i, (a, b) in enumerate(merges):
+            if not (0 <= a < n + i and 0 <= b < n + i) or a == b:
+                raise GuessError(f"showDendrogram: merge {i} ({a}, {b}) refers to a cluster that doesn't exist yet")
+        hs = [float(h) for h in heights] if heights is not None else [float(i + 1) for i in range(len(merges))]
+        if len(hs) != len(merges):
+            raise GuessError("showDendrogram: one height per merge")
+        kids = {n + i: (a, b) for i, (a, b) in enumerate(merges)}
+        parent = {}
+        for c, (a, b) in kids.items():
+            parent[a] = parent[b] = c
+        roots = [c for c in list(range(n)) + list(kids) if c not in parent]
+        order, span = [], {}
+
+        def walk(c):                                   # leaves left to right, without recursion limits
+            stack = [(c, False)]
+            while stack:
+                x, done = stack.pop()
+                if x < n:
+                    span[x] = (len(order), len(order))
+                    order.append(x)
+                elif done:
+                    a, b = kids[x]
+                    span[x] = (min(span[a][0], span[b][0]), max(span[a][1], span[b][1]))
+                else:
+                    a, b = kids[x]
+                    stack += [(x, True), (b, False), (a, False)]
+        for r in roots:
+            walk(r)
+        xpos = {}
+        for c in range(n):
+            xpos[c] = span[c][0]
+        clusters = []
+        for i, (a, b) in enumerate(merges):
+            c = n + i
+            xpos[c] = (xpos[a] + xpos[b]) / 2
+            ya = 0.0 if a < n else hs[a - n]
+            yb = 0.0 if b < n else hs[b - n]
+            clusters.append({"x": xpos[c], "y": hs[i], "a": [xpos[a], ya], "b": [xpos[b], yb],
+                             "lo": span[c][0], "hi": span[c][1]})
+        groups = []
+        if cut is not None:
+            k = max(1, int(cut))
+            alive = set(range(n))
+            for i, (a, b) in enumerate(merges):
+                if len(alive) <= k:
+                    break
+                alive -= {a, b}
+                alive.add(n + i)
+            ranked = sorted(alive, key=lambda c: (-(span[c][1] - span[c][0]), span[c][0]))   # by size, then left to right
+            palette = [0x4E79A7, 0xE15759, 0x59A14F, 0xF28E2B, 0x76B7B2, 0xB07AA1, 0xEDC948, 0xFF9DA7,
+                       0x9C755F, 0x86BCB6]
+            groups, j = [], 0
+            for c in ranked:
+                if span[c][1] > span[c][0]:
+                    col = palette[j % len(palette)]
+                    j += 1
+                else:
+                    col = 0xB4B4B4                         # a group of one node: grey
+                groups.append([span[c][0], span[c][1], col, (hs[c - n] if c >= n else 0.0)])
+            if paint:
+                for lo, hi, col, _h in groups:
+                    for pos in range(lo, hi + 1):
+                        leaves[order[pos]].color = f"{(col >> 16) & 255},{(col >> 8) & 255},{col & 255}"
+            if field is not None:
+                from .model import INT
+                f = session.graph.addNodeField(str(field), INT, -1)
+                for j, (lo, hi, _c, _h) in enumerate(groups):
+                    for pos in range(lo, hi + 1):
+                        f.set(leaves[order[pos]], j)
+                print(f"{len(groups)} groups in {field}")
+        leaf_rec = [{"id": leaves[c]._id, "label": str(leaves[c]._vals.get("label") or leaves[c]._name)} for c in order]
+        return emit("dendrogram", str(title or "Dendrogram"), "", "height", [], leaves=leaf_rec,
+                    clusters=clusters, dgroups=groups)
+
     def _sizes(f):
         groups = sorted(group_by(f.elements(), f), key=len, reverse=True)
         return [{"label": _label(getattr(grp[0], f.name)), "value": len(grp),
@@ -379,5 +476,5 @@ def install(session):
                 session.emit({"type": "liveState", "id": cid, "live": False})
             session.live_charts.clear()
 
-    for fn in (plotHistogram, plotFrequency, plotLine, plotScatter, showMatrix, plotSizes, plotSizesPie, plotDistrib, liveCharts):
+    for fn in (plotHistogram, plotFrequency, plotLine, plotScatter, showDendrogram, showMatrix, plotSizes, plotSizesPie, plotDistrib, liveCharts):
         session.register_command(fn.__name__, fn)

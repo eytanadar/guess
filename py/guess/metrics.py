@@ -581,6 +581,234 @@ def install(session):
         _build(n, edges, True, {"born": (INTEGER, node_born), "copied": (INTEGER, copied)},
                {"born": (INTEGER, born)}, "makeCopyingModel", layout)
 
+    def _adjacency_lists():
+        gr = g()
+        nodes = gr._nodes_list()
+        idx = {v: i for i, v in enumerate(nodes)}
+        nbrs = [[] for _ in nodes]
+        for e in gr._edges_list():
+            a, b = idx[e._n1], idx[e._n2]
+            nbrs[a].append(b)
+            if a != b:
+                nbrs[b].append(a)
+        return nodes, nbrs
+
+    def _sbm_loglik(M, nr, kr, dc):
+        """Karrer and Newman's profile log-likelihoods: sum over group pairs r, s of
+        m_rs log(m_rs / (n_r n_s)), or with degree correction m_rs log(m_rs / (k_r k_s));
+        m_rr counts each inside edge twice."""
+        import numpy as np
+        size = kr if dc else nr
+        den = np.outer(size, size)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t = np.where((M > 0) & (den > 0), M * np.log(M / np.where(den > 0, den, 1)), 0.0)
+        return float(t.sum())
+
+    def fitBlockModel(k=2, degreeCorrected=True, restarts=5, seed=0, name="sbm_class"):
+        """fitBlockModel(k) divides the nodes into k groups by fitting a
+        stochastic block model by maximum likelihood (Newman, Networks,
+        section 14.4; Karrer and Newman 2011): the groups that make the
+        observed edges most probable. degreeCorrected=True (the default)
+        allows hubs and small nodes in the same group; the plain model
+        (False) tends to put hubs in one group and everyone else in another,
+        as on the karate club. Uses Kernighan-Lin passes of single-node moves
+        from `restarts` random starts and keeps the best. Stores the groups in
+        the field `name` (0 = largest) and returns {"loglik": ..., "k": k}.
+        Edge direction and self-loops are ignored. Meant for networks of up to
+        a few hundred nodes."""
+        import numpy as np
+        nodes, nbrs = _adjacency_lists()
+        nbrs = [[j for j in ns if j != i] for i, ns in enumerate(nbrs)]
+        n, k = len(nodes), int(k)
+        if not 1 <= k <= n:
+            raise GuessError("fitBlockModel: k should be between 1 and the number of nodes")
+        deg = np.array([len(x) for x in nbrs], float)
+        dc = bool(degreeCorrected)
+        rng = np.random.default_rng(seed)
+
+        def kl_pass(grp):
+            M, nr, kr = _counts(grp, nbrs, deg, k)
+            L = _sbm_loglik(M, nr, kr, dc)
+            moved = np.zeros(n, bool)
+            best_state, best_L = grp.copy(), L
+            for _step in range(n):
+                choice = None
+                for i in np.flatnonzero(~moved):
+                    r = grp[i]
+                    cnt = np.bincount(grp[nbrs[i]], minlength=k).astype(float) if nbrs[i] else np.zeros(k)
+                    for t in range(k):
+                        if t == r:
+                            continue
+                        M2 = M.copy()
+                        _move(M2, cnt, r, t)
+                        nr2, kr2 = nr.copy(), kr.copy()
+                        nr2[r] -= 1; nr2[t] += 1
+                        kr2[r] -= deg[i]; kr2[t] += deg[i]
+                        L2 = _sbm_loglik(M2, nr2, kr2, dc)
+                        if choice is None or L2 > choice[0]:
+                            choice = (L2, i, t, M2, nr2, kr2)
+                if choice is None:
+                    break
+                L, i, t, M, nr, kr = choice
+                grp[i] = t
+                moved[i] = True
+                if L > best_L + 1e-9:
+                    best_state, best_L = grp.copy(), L
+            return best_state, best_L
+
+        best = None
+        for _ in range(max(1, int(restarts))):
+            grp = rng.integers(k, size=n)
+            L = _sbm_loglik(*_counts(grp, nbrs, deg, k), dc)
+            while True:                                   # passes until one no longer helps
+                new_grp, new_L = kl_pass(grp.copy())
+                if new_L <= L + 1e-9:
+                    break
+                grp, L = new_grp, new_L
+            if best is None or L > best[0]:
+                best = (L, grp.copy())
+        L, grp = best
+        order = sorted(range(k), key=lambda r: -int((grp == r).sum()))
+        relabel = {r: i for i, r in enumerate(order)}
+        session.ns["setField"]({nodes[i]: relabel[int(grp[i])] for i in range(n)}, str(name))
+        return {"loglik": round(L, 4), "k": k}
+
+    def _move(M, cnt, r, t):
+        """Update the group-pair counts m (each edge counted from both ends) when a node with
+        cnt[u] neighbours in each group u moves from group r to group t."""
+        for u in range(len(cnt)):
+            c = cnt[u]
+            if c:
+                M[r, u] -= c; M[u, r] -= c
+                M[t, u] += c; M[u, t] += c
+
+    def _counts(grp, nbrs, deg, k):
+        import numpy as np
+        M = np.zeros((k, k))
+        for i, ns in enumerate(nbrs):
+            for j in ns:
+                M[grp[i], grp[j]] += 1
+        return M, np.bincount(grp, minlength=k).astype(float), np.bincount(grp, weights=deg, minlength=k)
+
+    def makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=0, layout=True):
+        """makeLFR(n, tau1, tau2, mu) makes a Lancichinetti-Fortunato-Radicchi
+        benchmark network: power-law degrees (exponent tau1) and community sizes
+        (exponent tau2), with a share mu of each node's edges leaving its
+        community (Newman, Networks, section 14.6.2). mu near 0 gives obvious
+        communities; past about 0.5 they stop being communities at all. The
+        node field `community` holds the planted groups (0 = largest), to
+        compare with what an algorithm finds: compareClusters(louvain_class,
+        community). degree= is the mean degree. The construction fails for some
+        seeds, so up to ten seeds from seed= are tried (the one used is
+        printed); if all fail, try larger communities or a lower mu."""
+        nx = __import__("networkx")
+        G, last = None, None
+        for tries in range(10):                       # networkx gives up on some seeds: try the next few
+            try:
+                G = nx.LFR_benchmark_graph(int(n), float(tau1), float(tau2), float(mu), average_degree=float(degree),
+                                           max_degree=int(maxDegree) if maxDegree else None,
+                                           min_community=int(minCommunity), seed=int(seed) + tries, max_iters=500)
+                break
+            except Exception as ex:  # noqa: BLE001
+                last = ex
+        if G is None:
+            raise GuessError(f"makeLFR couldn't build that network ({type(last).__name__}: {last}); "
+                             "try a larger minCommunity, a larger n or a lower mu") from None
+        if tries:
+            print(f"  (seed {int(seed)} didn't work out; used seed {int(seed) + tries})")
+        comms = []
+        for v in G:
+            c = frozenset(G.nodes[v]["community"])
+            if c not in comms:
+                comms.append(c)
+        comms.sort(key=lambda c: (-len(c), min(c)))
+        cid = {v: i for i, c in enumerate(comms) for v in c}
+        G.remove_edges_from(list(nx.selfloop_edges(G)))
+        order = sorted(G)
+        index = {v: i for i, v in enumerate(order)}
+        _build(len(order), [(index[a], index[b]) for a, b in G.edges()], False,
+               {"community": (INTEGER, [cid[v] for v in order])}, {}, "makeLFR", layout)
+        print(f"  {len(comms)} planted communities (field community), mixing mu = {float(mu):g}")
+
+    def corePeriphery(name="core"):
+        """corePeriphery() splits the nodes into a densely connected core and a
+        periphery that links to the core but hardly to itself (Newman, Networks,
+        section 14.7.3; Borgatti and Everett's discrete model): the split that
+        best matches the ideal pattern where every pair involving a core node
+        is linked and no pair of peripheral nodes is. Sets the node field
+        `core` (1 in the core, 0 outside) and returns {"core": size, "fit": the
+        correlation with the ideal pattern}. Direction is ignored."""
+        import numpy as np
+        nodes, nbrs = _adjacency_lists()
+        n = len(nodes)
+        if n < 3:
+            raise GuessError("corePeriphery needs at least 3 nodes")
+        A = np.zeros((n, n))
+        for i, ns in enumerate(nbrs):
+            for j in ns:
+                if i != j:
+                    A[i, j] = A[j, i] = 1.0
+        iu = np.triu_indices(n, 1)
+        a = A[iu]
+
+        def fit(core):
+            ideal = (core[:, None] | core[None, :]).astype(float)[iu]
+            if ideal.std() == 0 or a.std() == 0:
+                return -1.0
+            return float(np.corrcoef(a, ideal)[0, 1])
+        deg = A.sum(1)
+        best_core, best = None, -2.0
+        for size in range(1, n):                       # start from the top nodes by degree, then refine
+            core = np.zeros(n, bool)
+            core[np.argsort(-deg)[:size]] = True
+            f = fit(core)
+            if f > best:
+                best, best_core = f, core
+        core = best_core.copy()
+        improved = True
+        while improved:                                # single-node flips while they help
+            improved = False
+            for i in np.argsort(-deg):
+                core[i] = not core[i]
+                f = fit(core)
+                if f > best + 1e-12:
+                    best, improved = f, True
+                else:
+                    core[i] = not core[i]
+        session.ns["setField"]({nodes[i]: int(core[i]) for i in range(n)}, str(name))
+        return {"core": int(core.sum()), "fit": round(best, 4)}
+
+    def rankNodes(name="rank", alpha=0.0):
+        """rankNodes() places the nodes of a directed network on a ladder so that
+        edges mostly point the same way (Newman, Networks, section 14.7.4): the
+        SpringRank method (De Bacco, Larremore and Moore 2018), where each edge
+        i -> j is a spring pulling i one unit above j. Use it for dominance,
+        endorsement or who-hires-whose-graduates networks. Sets the node field
+        `rank` (higher = above) and returns the share of edges that point
+        downwards, from higher to lower rank. alpha > 0 pulls ranks toward 0
+        (useful when the network is in pieces)."""
+        import numpy as np
+        gr = g()
+        nodes = gr._nodes_list()
+        idx = {v: i for i, v in enumerate(nodes)}
+        n = len(nodes)
+        A = np.zeros((n, n))
+        for e in gr._edges_list():
+            if e._n1 is not e._n2:
+                A[idx[e._n1], idx[e._n2]] += 1.0
+                if not e._directed:
+                    A[idx[e._n2], idx[e._n1]] += 1.0
+        dout, din = A.sum(1), A.sum(0)
+        L = np.diag(dout + din) - (A + A.T) + float(alpha) * np.eye(n)
+        b = dout - din
+        rank = np.linalg.lstsq(L, b, rcond=None)[0]
+        rank -= rank.min()
+        session.ns["setField"]({nodes[i]: float(rank[i]) for i in range(n)}, str(name))
+        down = sum(A[i, j] for i in range(n) for j in range(n) if A[i, j] and rank[i] > rank[j])
+        total = A.sum()
+        return round(float(down / total), 4) if total else 1.0
+
     for fn in (katzCentrality, structuralBalance, kComponents, bowTie, fitPowerLaw, makeConfigurationModel,
-               makeExpectedDegree, makePriceModel, makeBlockModel, makeGrowingNetwork, makeCopyingModel):
+               makeExpectedDegree, makePriceModel, makeBlockModel, makeGrowingNetwork, makeCopyingModel,
+               fitBlockModel, makeLFR, corePeriphery, rankNodes):
         reg(fn.__name__, fn)

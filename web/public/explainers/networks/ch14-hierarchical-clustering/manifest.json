@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Hierarchical clustering",
+  "description": "Merge the most similar groups step by step, compare single, complete and average linkage, and cut the dendrogram into communities.",
+  "console": "toggle",
+  "script": "main.gy"
+}

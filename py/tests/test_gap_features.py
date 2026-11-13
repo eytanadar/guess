@@ -466,3 +466,42 @@ def test_growing_network_extra_edges_join_old_nodes():
     own = ev(s, "[e for e in g.edges if e.born > 0 and (e.node1.born == e.born or e.node2.born == e.born)]")
     extra = ev(s, "[e for e in g.edges if e.born > 0 and e.node1.born < e.born and e.node2.born < e.born]")
     assert len(own) == 2 * (150 - 3) and len(extra) > 100           # the starting clique is m + 1 = 3 nodes
+
+
+def test_dendrogram_chart_and_cut_field():
+    s = _s()
+    assert s.run("newGraph('d')\nfor v in 'abcde':\n    addNode(v)\n"
+                 "showDendrogram([(0, 1), (2, 3), (5, 6), (4, 7)], cut=2, field='hc')"), s.rec.of("error")
+    m = _charts(s)[-1]
+    assert m["kind"] == "dendrogram" and len(m["clusters"]) == 4 and len(m["leaves"]) == 5
+    top = m["clusters"][-1]
+    assert (top["lo"], top["hi"]) == (0, 4) and len(m["dgroups"]) == 2
+    assert ev(s, "sorted(n.hc for n in g.nodes)") == [0, 0, 0, 0, 1]
+    assert not s.run("showDendrogram([(0, 9)])")
+
+
+def test_block_model_fit_lfr_core_periphery_and_ranks():
+    s = _s()
+    assert s.run("makeSample('karate')"), s.rec.of("error")
+    plain = ev(s, "fitBlockModel(2, degreeCorrected=false, restarts=5)")
+    hubs = ev(s, "set(n.sbm_class for n in sorted(g.nodes, key=lambda n: -n.degree)[:5])")
+    assert len(hubs) == 1                                   # the plain model groups the hubs together
+    assert ev(s, "fitBlockModel(2, restarts=5)")["loglik"] > -745
+    assert ev(s, "compareClusters(sbm_class, club)") > 0.5  # degree-corrected: close to the two clubs
+    assert s.run("makeLFR(200, mu=0.1, seed=1, layout=false)\nlouvainClusters()"), s.rec.of("error")
+    assert ev(s, "compareClusters(louvain_class, community)") > 0.9
+    assert s.run("makeBlockModel([10, 40], [[0.9, 0.5], [0.5, 0.02]], seed=1, layout=false)")
+    assert ev(s, "corePeriphery()")["core"] == 10 and ev(s, "all(n.core == (n.block == 0) for n in g.nodes)")
+    assert s.run("newGraph('r')\nfor i in range(4):\n    addNode(f'p{i}')\n"
+                 "for i in range(3):\n    addDirectedEdge(g.getNodeByName(f'p{i}'), g.getNodeByName(f'p{i+1}'))")
+    assert ev(s, "rankNodes()") == 1.0 and ev(s, "[n.rank for n in g.nodes] == sorted([n.rank for n in g.nodes], reverse=True)")
+
+
+def test_dendrogram_paint_matches_groups():
+    s = _s()
+    assert s.run("newGraph('d')\nfor v in 'abcde':\n    addNode(v)\n"
+                 "showDendrogram([(0, 1), (2, 3), (5, 6), (4, 7)], cut=2, paint=true)"), s.rec.of("error")
+    m = _charts(s)[-1]
+    big, single = sorted(m["dgroups"], key=lambda gp: gp[0] - gp[1])
+    assert single[2] == 0xB4B4B4 and big[2] != single[2]
+    assert ev(s, "e.color") != ev(s, "a.color") and ev(s, "a.color") == ev(s, "d.color")

@@ -309,6 +309,8 @@ def install(session):
 
     def dendro(dendrogram, I, count, fieldname, label):
         state["dendrogram"] = (dendrogram, I, fieldname, label)
+        session.last_dendrogram = {"nodes": list(I.nodes), "merges": [tuple(m) for m in dendrogram.merges],
+                                   "title": f"{fieldname.split('_')[0]} hierarchy"}
         return store(I, cut(dendrogram, I, count).membership, fieldname, label)
 
     @cmd

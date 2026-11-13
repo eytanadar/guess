@@ -78,3 +78,17 @@ test("linkTo chips in a Markdown panel highlight and select their node", async (
   await run(page, "print(sorted(n.name for n in sel))");
   await expect(page.locator(".console-out").last()).toContainText("['v2']");
 });
+
+test("showDendrogram draws a linked tree and colours a cut", async ({ page }) => {
+  const errors = await boot(page);
+  await run(page, "newGraph('d')\nfor v in 'abcdef':\n    addNode(v)\nshowDendrogram([(0, 1), (2, 3), (6, 7), (4, 5), (8, 9)], cut=2, field='hc')");
+  const svg = page.locator("svg.dendrogram").last();
+  await expect(svg).toBeVisible();
+  await expect(svg.locator("path:not(.axis)")).toHaveCount(5);
+  await expect(svg).toContainText("2 groups");
+  // the top merge holds all six; clicking a branch selects its nodes
+  await svg.locator("rect.mark").first().click({ force: true });
+  await run(page, "print(len(sel), sorted(set(n.hc for n in g.nodes)))");
+  await expect(page.locator(".cell").last()).toContainText("[0, 1]");
+  expect(errors).toEqual([]);
+});

@@ -1,0 +1,429 @@
+# Testing community detection  (Newman, Networks, Section 14.6)
+# How good is a community detection method? Run it on networks whose groups
+# we know. Real networks with known groups are few (and their "known" groups
+# are metadata, which need not be what the edges say), so most tests use
+# artificial benchmarks: planted communities, joined more or less strongly.
+# In the LFR benchmark (Lancichinetti, Fortunato and Radicchi) degrees and
+# group sizes follow power laws, and a share mu of each node's edges leads
+# out of its group. Found and planted groups are compared with normalized
+# mutual information (NMI): 1 when they are the same, about 0 when unrelated.
+# As mu grows every method fails, some sooner than others.
+
+import csv
+import math
+import random
+import networkx as nx
+
+METHODS = ["Louvain", "Label propagation", "Greedy modularity", "Infomap", "Walktrap"]
+NEEDS_IGRAPH = {"Infomap", "Walktrap"}
+PALETTE = ["230,120,60", "70,140,230", "90,180,90", "200,90,200", "235,200,60", "60,190,190",
+           "220,80,90", "150,150,235", "180,140,90", "130,210,150", "240,150,190", "120,120,120"]
+HULLS = ["230,120,60,45", "70,140,230,45", "90,180,90,45", "200,90,200,45", "235,200,60,45", "60,190,190,45",
+         "220,80,90,45", "150,150,235,45", "180,140,90,45", "130,210,150,45", "240,150,190,45", "160,160,160,45"]
+N = 250
+st = {"mu": 0.2, "seed": 1, "method": "Louvain", "found": None, "note": "", "planted": 0,
+      "sim": {}, "simtimer": None, "simtodo": [], "real": None}
+
+
+def have_igraph():
+    try:
+        import igraph  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def methods_ready():
+    return [m for m in METHODS if m not in NEEDS_IGRAPH or have_igraph()]
+
+
+# ---- detection, measured the same way on screen and off it --------------------------------------
+def detect(G, method, seed=0):
+    """Communities of an undirected networkx graph, as a list of node sets."""
+    if method == "Louvain":
+        return [set(c) for c in nx.community.louvain_communities(G, seed=seed)]
+    if method == "Label propagation":
+        return [set(c) for c in nx.community.asyn_lpa_communities(G, seed=seed)]
+    if method == "Greedy modularity":
+        return [set(c) for c in nx.community.greedy_modularity_communities(G)]
+    import igraph
+    nodes = list(G)
+    idx = {v: i for i, v in enumerate(nodes)}
+    H = igraph.Graph(n=len(nodes), edges=[(idx[a], idx[b]) for a, b in G.edges()])
+    random.seed(seed)
+    if method == "Infomap":
+        memb = H.community_infomap(trials=3).membership
+    else:
+        memb = H.community_walktrap(steps=4).as_clustering().membership
+    groups = {}
+    for v, c in zip(nodes, memb):
+        groups.setdefault(c, set()).add(v)
+    return list(groups.values())
+
+
+def labels_of(groups, nodes):
+    lab = {}
+    for i, grp in enumerate(groups):
+        for v in grp:
+            lab[v] = i
+    return [lab.get(v, -1) for v in nodes]
+
+
+def nmi(a, b):
+    """Normalized mutual information of two labellings (arithmetic-mean normalization)."""
+    n = len(a)
+    if n == 0:
+        return 0.0
+    ca, cb, cab = {}, {}, {}
+    for x, y in zip(a, b):
+        ca[x] = ca.get(x, 0) + 1
+        cb[y] = cb.get(y, 0) + 1
+        cab[(x, y)] = cab.get((x, y), 0) + 1
+    ha = -sum(c / n * math.log(c / n) for c in ca.values())
+    hb = -sum(c / n * math.log(c / n) for c in cb.values())
+    mi = sum(c / n * math.log(c * n / (ca[x] * cb[y])) for (x, y), c in cab.items())
+    if ha + hb == 0:
+        return 1.0
+    return max(0.0, 2 * mi / (ha + hb))
+
+
+def share_correct(found, truth):
+    """Share of nodes whose found group's commonest planted group is their own."""
+    by = {}
+    for f_, t_ in zip(found, truth):
+        by.setdefault(f_, {}).setdefault(t_, 0)
+        by[f_][t_] += 1
+    return sum(max(c.values()) for c in by.values()) / max(1, len(truth))
+
+
+def lfr_graph(mu, seed):
+    """An LFR benchmark off screen (networkx), trying further seeds if one fails."""
+    for t in range(12):
+        try:
+            G = nx.LFR_benchmark_graph(N, 2.5, 1.5, mu, average_degree=10, max_degree=40, min_community=20,
+                                       seed=seed + t, max_iters=500)
+            G.remove_edges_from(list(nx.selfloop_edges(G)))
+            comms = []
+            for v in G:
+                c = frozenset(G.nodes[v]["community"])
+                if c not in comms:
+                    comms.append(c)
+            truth = {v: i for i, c in enumerate(comms) for v in c}
+            return G, truth
+        except Exception:
+            pass
+    return None, None
+
+
+# ---- the drawn benchmark -----------------------------------------------------------------------
+def build():
+    stop_sim()
+    removeConvexHulls()
+    makeLFR(N, mu=st["mu"], degree=10, maxDegree=40, minCommunity=20, seed=st["seed"], layout=false)
+    # edges inside a planted group pull harder, so the groups sit apart and found groups can be judged by eye
+    G = toNetworkX(directed=False)
+    comm = {v.name: v.community for v in g.nodes}
+    for a_, b_ in G.edges():
+        G[a_][b_]["pull"] = 1.0 if comm[a_] == comm[b_] else 0.05
+    pos = nx.spring_layout(G, seed=1, iterations=150, weight="pull")
+    for v in g.nodes:
+        v.x, v.y = float(pos[v.name][0]) * 560, float(pos[v.name][1]) * 560
+    st["planted"] = len(set(v.community for v in g.nodes))
+    st["found"] = None
+    st["note"] = ""
+    base()
+    center()
+
+
+def base():
+    removeConvexHulls()
+    for v in g.nodes:
+        v.color = PALETTE[v.community % len(PALETTE)]
+        v.width = v.height = 11
+        v.strokecolor = "50,50,50"
+        v.strokewidth = 0
+        v.labelvisible = false
+    for e in g.edges:
+        inside = e.node1.community == e.node2.community
+        e.color = "150,150,150,110" if inside else "220,90,90,55"
+        e.width = 0.9 if inside else 0.7
+
+
+def find():
+    m = st["method"]
+    if m in NEEDS_IGRAPH and not have_igraph():
+        st["note"] = (f"*{m} needs igraph, which is still loading in the background. Try again in a few "
+                      "seconds, or pick another method.*")
+        return
+    G = toNetworkX(directed=False)
+    groups = sorted(detect(G, m, seed=st["seed"]), key=len, reverse=True)
+    setField({v: i for i, grp in enumerate(groups) for v in grp}, "found_class")
+    st["found"] = m
+    st["note"] = ""
+    base()
+    # found groups as shaded hulls; nodes whose found group is mostly another planted group: red rings
+    major = {}
+    for i, grp in enumerate(groups):
+        counts = {}
+        for nm in grp:
+            c = g.getNodeByName(nm).community
+            counts[c] = counts.get(c, 0) + 1
+        major[i] = max(counts, key=counts.get)
+        members = [g.getNodeByName(nm) for nm in grp]
+        if len(members) >= 3:
+            encircle(members, shape="hull", color=HULLS[major[i] % len(HULLS)], padding=6)
+    for v in g.nodes:
+        if major[v.found_class] != v.community:
+            v.strokecolor, v.strokewidth = "230,30,30", 3
+            v.width = v.height = 15
+
+
+def scores():
+    planted = [v.community for v in g.nodes]
+    found = [v.found_class for v in g.nodes]
+    return {"nmi": compareClusters(found_class, community), "ari": compareClusters(found_class, community, method="ari"),
+            "correct": share_correct(found, planted), "groups": len(set(found))}
+
+
+def bench_text():
+    head = (f"**{N}** nodes in **{st['planted']}** planted communities (colours); a share **μ = {st['mu']:.2f}** of "
+            "each node's edges leaves its community (faint red edges). The drawing pulls edges inside a planted "
+            "group tighter, so the groups sit apart; the method sees only the edges. ")
+    if st["note"]:
+        return head + "\n\n" + st["note"]
+    if not st["found"]:
+        return head + "\n\nPick a method and press **Find communities**: its groups appear as shaded hulls."
+    sc = scores()
+    wrong = len([v for v in g.nodes if v.strokewidth >= 3])
+    verdict = ("found them all" if sc["nmi"] > 0.97 else "mostly right" if sc["nmi"] > 0.8 else
+               "partly right" if sc["nmi"] > 0.4 else "lost")
+    return (head + f"\n\n**{st['found']}** finds **{sc['groups']}** groups: **{verdict}**.\n\n"
+            "| measure | value | reads |\n|---|---|---|\n"
+            f"| NMI | **{sc['nmi']:.3f}** | 1 = the planted groups exactly, ≈ 0 = unrelated |\n"
+            f"| adjusted Rand | {sc['ari']:.3f} | pairs of nodes put together or apart alike; 0 = chance |\n"
+            f"| share placed right | {sc['correct']:.0%} | flattering: splitting everyone up scores 100% |\n\n"
+            f"Red rings: **{wrong}** node{'s' if wrong != 1 else ''} {'sit' if wrong != 1 else 'sits'} in a found "
+            "group made mostly of another community. "
+            + ("" if st["mu"] < 0.5 else "With μ ≥ 0.5 a node has as many edges out of its group as in it: the "
+               "planted groups are barely communities any more."))
+
+
+def set_mu(v):
+    st["mu"] = round(float(v), 2)
+    build()
+
+
+def set_method(v):
+    st["method"] = v
+    if st["found"]:
+        find()
+
+
+def new_net():
+    st["seed"] += 1
+    build()
+
+
+def run_all():
+    """Every method on this network, as a table."""
+    G = toNetworkX(directed=False)
+    nodes = list(G)
+    truth = [g.getNodeByName(v).community for v in nodes]
+    rows = []
+    for m in METHODS:
+        if m in NEEDS_IGRAPH and not have_igraph():
+            rows.append((m, None, None, None))
+            continue
+        lab = labels_of(detect(G, m, seed=st["seed"]), nodes)
+        rows.append((m, len(set(lab)), nmi(lab, truth), share_correct(lab, truth)))
+    st["table"] = rows
+
+
+def table_text():
+    rows = st.get("table")
+    if not rows:
+        return ""
+    out = ["| method | groups | NMI | placed right |", "|---|---|---|---|"]
+    for m, k, s_, c in rows:
+        out.append(f"| {m} | – | *igraph still loading* | – |" if k is None else f"| {m} | {k} | {s_:.3f} | {c:.0%} |")
+    return f"All methods on this network (μ = {st['mu']:.2f}, {st['planted']} planted groups):\n\n" + "\n".join(out)
+
+
+# ---- simulate: NMI against mu -------------------------------------------------------------------
+MUS = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7]
+
+
+def start_sim():
+    stop_sim()
+    st["sim"] = {}
+    st["simtodo"] = [(mu, rep) for mu in MUS for rep in range(2)]
+    st["simmethods"] = methods_ready()
+    st["simtimer"] = everyPaced(sim_step, steps=len(st["simtodo"]) + 1, slow=0.6, fast=0.2, ramp=2)
+
+
+def stop_sim():
+    if st["simtimer"] is not None:
+        st["simtimer"].stop()
+        st["simtimer"] = None
+
+
+def sim_step():
+    if not st["simtodo"]:
+        st["simtimer"] = None
+        return False
+    mu, rep = st["simtodo"].pop(0)
+    G, truth = lfr_graph(mu, 100 + 17 * rep + int(mu * 1000))
+    if G is not None:
+        nodes = list(G)
+        tr = [truth[v] for v in nodes]
+        for m in st["simmethods"]:
+            lab = labels_of(detect(G, m, seed=rep), nodes)
+            st["sim"].setdefault(m, {}).setdefault(mu, []).append(nmi(lab, tr))
+    return len(st["simtodo"]) or False
+
+
+def sim_chart():
+    if not st["sim"]:
+        return None
+    series = {}
+    for m in METHODS:
+        pts = st["sim"].get(m)
+        if pts:
+            series[m] = [(mu, sum(v) / len(v)) for mu, v in sorted(pts.items())]
+    if st["found"]:
+        series["this network"] = [(st["mu"], scores()["nmi"])]
+    return plotLine(series, title="Finding planted communities as they blur", xlabel="mixing μ",
+                    ylabel="NMI with the planted groups", dots=true, yrange=(0, 1),
+                    highlight=["this network"])
+
+
+def sim_text():
+    if not st["sim"]:
+        return ("**Simulate** builds fresh LFR networks of 250 nodes for μ from 0.05 to 0.7 (two at each μ) and runs "
+                "every method on each: the standard benchmark plot. "
+                + ("" if have_igraph() else "*(Infomap and walktrap join once igraph has loaded.)*"))
+    done = len(MUS) * 2 - len(st["simtodo"])
+    out = [f"{done} of {len(MUS) * 2} networks measured."]
+    fails, where = [], []
+    for m in METHODS:
+        pts = st["sim"].get(m)
+        if not pts:
+            continue
+        worse = [mu for mu, v in sorted(pts.items()) if sum(v) / len(v) < 0.5]
+        if worse:
+            fails.append(f"{m} drops below NMI 0.5 at μ ≈ {worse[0]:.2f}")
+            where.append(worse[0])
+    if fails:
+        out.append("; ".join(fails) + ".")
+    if not st["simtodo"] and where:
+        out.append(f"Every method is near perfect for small μ and fails between μ ≈ {min(where):.2f} and "
+                   f"{max(where):.2f}, before μ reaches 0.5, where a node has as many edges out of its group as in. "
+                   "In networks this small the groups blur early; bigger LFR networks hold out longer. Methods "
+                   "differ in *where* they fail and *how*: label propagation and Infomap collapse into one group "
+                   "(NMI 0), while Louvain and walktrap keep finding groups that no longer match.")
+    return " ".join(out)
+
+
+# ---- real networks with known groups -----------------------------------------------------------
+def read_gdf(path, attr):
+    nodes, edges, section, head = {}, [], None, []
+    with open(path, encoding="utf-8") as fh:
+        for row in csv.reader(fh):
+            if not row:
+                continue
+            if row[0].startswith("nodedef>"):
+                section = "n"
+                head = [h.strip().split()[0] for h in [row[0].split(">", 1)[1]] + row[1:]]
+                continue
+            if row[0].startswith("edgedef>"):
+                section = "e"
+                continue
+            if section == "n":
+                rec = dict(zip(head, row))
+                nodes[row[0]] = rec.get(attr)
+            elif section == "e" and row[0] != row[1]:
+                edges.append((row[0], row[1]))
+    G = nx.Graph()
+    G.add_nodes_from(nodes)
+    G.add_edges_from(edges)
+    big = max(nx.connected_components(G), key=len)
+    G = G.subgraph(big).copy()
+    return G, {v: nodes[v] for v in G}
+
+
+def real_rows():
+    if st["real"] is not None:
+        return st["real"]
+    K = nx.karate_club_graph()
+    nets = [("Karate club: the two clubs after the split", K, {v: K.nodes[v]["club"] for v in K})]
+    try:
+        P, lean = read_gdf("polblogs-sample.gdf", "leaning")
+        nets.append(("Political blogs (sample): liberal or conservative", P, lean))
+    except OSError:
+        pass
+    rows = []
+    for label, G, meta in nets:
+        nodes = list(G)
+        tr = [meta[v] for v in nodes]
+        res = []
+        for m in methods_ready():
+            lab = labels_of(detect(G, m, seed=1), nodes)
+            res.append((m, len(set(lab)), nmi(lab, tr)))
+        rows.append((label, len(G), len(set(tr)), res))
+    st["real"] = rows
+    return rows
+
+
+def real_text():
+    if mode[0] != "Real networks":
+        return ""
+    out = []
+    for label, n, k, res in real_rows():
+        out.append(f"**{label}** ({n} nodes, {k} known groups)\n\n| method | groups found | NMI |\n|---|---|---|\n"
+                   + "\n".join(f"| {m} | {kk} | {s_:.2f} |" for m, kk, s_ in res))
+    out.append("Methods that find *more* groups than the metadata can still be right about the network: the clubs "
+               "and the political leanings are labels people carry, and the edges may say something finer. "
+               "Metadata are a useful check, not the ground truth (Peel, Larremore and Clauset 2017). That is "
+               "why benchmarks with planted groups do most of the testing.")
+    if not have_igraph():
+        out.append("*Infomap and walktrap join this table once igraph has loaded.*")
+    return "\n\n".join(out)
+
+
+mode = ["Benchmark"]
+
+
+def switch(title):
+    mode[0] = title
+    if title == "Real networks":
+        st["real"] = None if st["real"] is not None and len(st["real"][0][3]) < len(methods_ready()) else st["real"]
+
+
+mu_slider = Slider(0.05, 0.7, 0.2, 0.05, label="mixing μ")
+mu_slider.onChange = set_mu
+build()
+constantLabelSize(size=14)
+ui.title("Testing community detection", "Networks, Section 14.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Plant communities, then see who finds them
+An LFR benchmark: groups of different sizes, nodes of different degrees,
+and a share μ of every node's edges crossing to other groups."""),
+        Tabs(
+            Tab("Benchmark",
+                mu_slider,
+                Row(Dropdown(METHODS, label="Method", onChange=set_method),
+                    Button("Find communities", onClick=lambda: find())),
+                Row(Button("New network", onClick=lambda: new_net()),
+                    Button("Run every method", onClick=lambda: run_all())),
+                Markdown(bench_text), Markdown(table_text)),
+            Tab("Simulate",
+                Button("Simulate: μ from 0.05 to 0.7", onClick=lambda: start_sim()),
+                Chart(sim_chart), Markdown(sim_text)),
+            Tab("Real networks", Markdown(real_text)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · μ = {st['mu']:.2f}"))
+center()

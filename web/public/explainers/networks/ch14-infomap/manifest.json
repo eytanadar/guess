@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Communities as codes",
+  "description": "A random walker, a code book per community, and the map equation: good communities make the walk cheap to describe.",
+  "console": "toggle",
+  "script": "main.gy"
+}
