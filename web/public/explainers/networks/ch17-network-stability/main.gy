@@ -1,0 +1,445 @@
+# Dynamics on networks and linear stability  (Newman, Networks, Sections 17.2-17.3)
+# Each node i has a variable x_i (an activity, a concentration) that relaxes on
+# its own and is pushed by its neighbours:
+#     dx_i/dt = -a x_i + s b sum_j A_ij tanh(x_j)
+# with s = +1 (neighbours push the same way: excitation) or -1 (the opposite way:
+# inhibition). x = 0 everywhere is a fixed point. Linearising around it,
+#     de/dt = (-a I + s b A) e,
+# so a small disturbance is a mix of the eigenvectors of A, and the mode of
+# eigenvalue k grows like e^{(-a + s b k) t}. Excitation is stable while
+# b k_1 < a (k_1 the largest eigenvalue); inhibition while b |k_n| < a (k_n the
+# most negative one), and the mode that grows then alternates in sign. With a
+# second variable per node (Section 17.3) each mode becomes a 2 x 2 problem and
+# the threshold moves.
+
+import math
+import numpy as np
+
+NETWORKS = ["Random (60 nodes, mean degree 4)", "A few hubs (60 nodes)", "Ring (60 nodes, 4 neighbours each)",
+            "Karate club"]
+A_RATE = 1.0                      # a: each node's own relaxation rate
+VSCALE = 1.0                      # the deviation drawn at full colour
+DT, SUB = 0.05, 4                 # integration step and steps per frame
+
+st = {"net": NETWORKS[0], "sign": 1, "vars": 1, "x": None, "y": None, "t": 0.0, "hist": [], "timer": None,
+      "kicked": None, "names": [], "A": None, "ev": None, "vec": None, "sweep": {}, "sweep_timer": None}
+
+
+# ---- the networks --------------------------------------------------------------------------------
+def build(choice):
+    stop_all()
+    st["net"] = choice
+    if choice.startswith("Random"):
+        makeErdosRenyiRandom(60, 4 / 59, seed=3)
+        frLayout()
+        binPackLayout(false)
+        noverlapLayout()
+    elif choice.startswith("A few hubs"):
+        makeBarabasiAlbertRandom(3, 2, 57, seed=2)
+        frLayout()
+    elif choice.startswith("Ring"):
+        makeWattsStrogatz(60, 4, 0)
+    else:
+        makeSample("karate")
+    Node.dev = 0.0                    # each new graph needs the field again
+    nodes = list(g.nodes)
+    st["names"] = [n.name for n in nodes]
+    idx = {n.name: i for i, n in enumerate(nodes)}
+    A = np.zeros((len(nodes), len(nodes)))
+    for e in g.edges:
+        i, j = idx[e.node1.name], idx[e.node2.name]
+        if i != j:
+            A[i, j] = A[j, i] = 1.0
+    st["A"] = A
+    vals, vecs = np.linalg.eigh(A)
+    st["ev"], st["vec"] = vals, vecs
+    SPECTRA[choice] = (float(A.sum() / len(nodes)), float(vals[-1]), float(vals[0]))
+    for n in g.nodes:
+        n.labelvisible = false
+    reset()
+    center(g.nodes)
+
+
+def k1():
+    return float(st["ev"][-1])
+
+
+def kn():
+    return float(st["ev"][0])
+
+
+def b():
+    return float(coupling.value)
+
+
+def threshold():
+    """The coupling b at which x = 0 stops being stable."""
+    edge = A_RATE + (1.0 if st["vars"] == 2 else 0.0)        # one variable: b k < a; two: b k < a + 1
+    k = k1() if st["sign"] > 0 else -kn()
+    return edge / k
+
+
+def growth_rate(kappa):
+    """The growth rate of the mode with eigenvalue kappa (the largest real part)."""
+    s_b = st["sign"] * b()
+    if st["vars"] == 1:
+        return -A_RATE + s_b * kappa
+    J = np.array([[-A_RATE + s_b * kappa, -1.0], [1.0, -1.0]])
+    return float(max(np.linalg.eigvals(J).real))
+
+
+# ---- the dynamics -------------------------------------------------------------------------------------
+def deriv(xv, yv):
+    push = st["sign"] * b() * (st["A"] @ np.tanh(xv))
+    if st["vars"] == 1:
+        return -A_RATE * xv + push, None
+    return -A_RATE * xv - yv + push, xv - yv
+
+
+def reset():
+    n = len(st["names"])
+    st.update(x=np.zeros(n), y=np.zeros(n), t=0.0, hist=[], kicked=None)
+    stop_all()                        # also puts the run button back to "Kick the busiest node"
+    show()
+
+
+def kick(name=None):
+    stop_all()
+    n = len(st["names"])
+    if st["x"] is None or len(st["x"]) != n:
+        reset()
+    if name is None:
+        degs = st["A"].sum(1)
+        name = st["names"][int(np.argmax(degs))] if st["kicked"] is None else \
+            st["names"][int(np.random.default_rng(len(st["hist"]) + 7).integers(n))]
+    i = st["names"].index(name)
+    st["x"] = np.zeros(n)
+    st["y"] = np.zeros(n)
+    st["x"][i] = 0.5
+    st.update(t=0.0, kicked=name, hist=[(0.0, norm())])
+    show()
+    st["timer"] = everyPaced(frame, steps=300, slow=0.5, fast=0.05, ramp=4)
+    run_btn.text = "Pause"
+
+
+def norm():
+    v = float(np.sqrt((st["x"] ** 2).sum() + ((st["y"] ** 2).sum() if st["vars"] == 2 else 0.0)))
+    return v
+
+
+def frame():
+    for _ in range(SUB):
+        dx, dy = deriv(st["x"], st["y"])
+        st["x"] = st["x"] + DT * dx
+        if dy is not None:
+            st["y"] = st["y"] + DT * dy
+        st["t"] += DT
+    nv = norm()
+    st["hist"].append((st["t"], nv))
+    show()
+    if nv < 1e-4 or st["t"] > 60:
+        stop_all()
+        return False
+    return True
+
+
+def stop_all():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+    try:
+        run_btn.text = "Continue" if (st["kicked"] is not None and st["hist"] and st["hist"][-1][1] >= 1e-4
+                                      and st["t"] <= 60) else "Kick the busiest node"
+    except NameError:
+        pass
+
+
+def run_or_pause():
+    if st["timer"] is not None:
+        stop_all()
+    elif st["kicked"] is not None and st["hist"] and st["hist"][-1][1] >= 1e-4 and st["t"] <= 60:
+        st["timer"] = everyPaced(frame, steps=300, slow=0.5, fast=0.05, ramp=4)
+        run_btn.text = "Pause"
+    else:
+        kick()
+
+
+def to_the_end():
+    if st["kicked"] is None:
+        kick()
+    stop_all()
+    for _ in range(400):
+        if not frame():
+            break
+
+
+def colour(v, scale):
+    t = max(-1.0, min(1.0, v / scale))
+    if t >= 0:
+        return f"{int(250 - 30 * t)},{int(250 - 200 * t)},{int(250 - 210 * t)}"
+    t = -t
+    return f"{int(250 - 210 * t)},{int(250 - 140 * t)},{int(250 - 30 * t)}"
+
+
+def show():
+    xs = st["x"] if st["x"] is not None else np.zeros(len(st["names"]))
+    scale = max(float(np.abs(xs).max()), 1e-12)     # relative: the pattern shows even as it fades (the chart has the size)
+    by_name = {}
+    for i, nm in enumerate(st["names"]):
+        n = g.getNodeByName(nm)
+        by_name[nm] = n
+        v = float(xs[i])
+        n.dev = v
+        n.color = colour(v, scale) if abs(v) > 1e-12 else "235,235,235"
+        n.width = n.height = 16 + 26 * min(1.0, abs(v) / scale)
+        n.strokecolor = "255,210,40" if nm == st["kicked"] else "40,40,40"
+        n.strokewidth = 4 if nm == st["kicked"] else 0.8
+    # where the coupling acts: an edge carries tanh of each end's value to the other
+    pushes = []
+    idx = {nm: i for i, nm in enumerate(st["names"])}
+    for e in g.edges:
+        i, j = idx[e.node1.name], idx[e.node2.name]
+        p = b() * (abs(math.tanh(xs[i])) + abs(math.tanh(xs[j])))
+        pushes.append((e, p))
+    top = max([p for _e, p in pushes] + [1e-9])
+    for e, p in pushes:
+        if p > 0.25 * top and p > 1e-12:
+            e.color = "240,150,40" if st["sign"] > 0 else "120,90,220"
+            e.width = 1.2 + 4 * p / top
+            e.linestyle = "flow"
+        else:
+            e.color, e.width, e.linestyle = "170,170,170,110", 1.0, "solid"
+
+
+def click(n):
+    kick(n.name)
+
+
+# ---- the modes ------------------------------------------------------------------------------------------
+def show_mode():
+    """Colour the nodes by the mode that grows first: the eigenvector of k_1 (excitation) or k_n (inhibition)."""
+    stop_all()
+    vec = st["vec"][:, -1] if st["sign"] > 0 else st["vec"][:, 0]
+    vec = vec / (np.abs(vec).max() or 1) * VSCALE
+    if vec.sum() < 0:
+        vec = -vec
+    st["x"] = vec.copy()
+    st["y"] = np.zeros(len(vec))
+    st.update(kicked=None, hist=[], t=0.0)
+    show()
+
+
+# ---- text and charts ---------------------------------------------------------------------------------------
+def kick_text():
+    th = threshold()
+    rate = growth_rate(k1() if st["sign"] > 0 else kn())
+    which = "κ₁ (the largest eigenvalue)" if st["sign"] > 0 else "κₙ (the most negative eigenvalue)"
+    out = (f"**{st['net']}**: κ₁ = {k1():.2f}, κₙ = {kn():.2f}. Coupling b = **{b():.3f}**; x = 0 is stable "
+           f"while b < **{th:.3f}**, set by {which}. "
+           + ("**Stable**: a kick dies away." if b() < th else "**Unstable**: a kick grows until tanh saturates it.")
+           + f" The deciding mode's rate: **{rate:+.3f}** per unit time "
+           + ("(the slowest decay)." if rate < 0 else "(the fastest growth)."))
+    if st["kicked"] is not None:
+        n = g.getNodeByName(st["kicked"])
+        out += (f"\n\nKicked {linkTo(n) if n else st['kicked']} at t = 0; now t = {st['t']:.1f} and the "
+                f"disturbance's size is **{norm():.4f}**. Orange (or purple, for inhibition) edges carry the "
+                "strongest pushes between neighbours. Red nodes are above 0 and blue below, with colour and "
+                "size relative to the largest deviation now (the chart shows the actual size).")
+        if st["sign"] < 0 and b() > th and st["t"] > 5:
+            out += " With inhibition the growing pattern **alternates**: neighbours take opposite signs."
+    else:
+        out += "\n\n*Click a node* to kick it, or kick the busiest one."
+    return out
+
+
+def kick_chart():
+    if len(st["hist"]) < 2:
+        return None
+    pts = [(t, v) for t, v in st["hist"] if v > 0]
+    rate = growth_rate(k1() if st["sign"] > 0 else kn())
+    t_end, v_end = pts[-1]
+    if rate < 0:                              # decaying: the slowest mode is what is left at the end
+        name = f"slowest mode: e^({rate:+.2f} t)"
+        t0 = max(0.0, t_end - 10)
+        line = [(t, v_end * math.exp(rate * (t - t_end))) for t in np.linspace(t0, t_end, 25)]
+    else:                                     # growing: from the kick, until tanh caps it
+        name = f"fastest mode: e^({rate:+.2f} t)"
+        top = max(v for _t, v in pts)
+        t_cap = min(t_end, pts[0][0] + math.log(max(top / pts[0][1], 1.0001)) / max(rate, 1e-9))
+        line = [(t, pts[0][1] * math.exp(rate * (t - pts[0][0]))) for t in np.linspace(pts[0][0], t_cap, 25)]
+    data = {"size of the disturbance": pts, name: line}
+    return plotLine(data, title="How big the disturbance is", xlabel="t", ylabel="‖x‖", logY=true,
+                    dashed=[name], colors={"size of the disturbance": "240,140,30", name: "60,60,60"})
+
+
+def mode_chart():
+    """Growth rate against eigenvalue: a line (one variable) or curve (two); the network's eigenvalues sit on it."""
+    lo, hi = kn() - 0.5, k1() + 0.5
+    curve = [(k, growth_rate(k)) for k in np.linspace(lo, hi, 60)]
+    pts = [(float(k), growth_rate(float(k))) for k in st["ev"]]
+    zero = [(lo, 0.0), (hi, 0.0)]
+    return plotLine({"growth rate of a mode": curve, "this network's eigenvalues": pts, "zero": zero},
+                    title="Each eigenvalue is a mode", xlabel="eigenvalue κ of A", ylabel="growth rate",
+                    dashed=["zero"], highlight=["this network's eigenvalues"],
+                    colors={"growth rate of a mode": "120,120,200", "this network's eigenvalues": "230,70,60",
+                            "zero": "150,150,150"})
+
+
+def mode_text():
+    grow = [float(k) for k in st["ev"] if growth_rate(float(k)) > 0]
+    out = ("Any disturbance is a mix of the eigenvectors of A. The one with eigenvalue κ grows or shrinks at "
+           "the rate on the chart; a red dot above the line at zero is a mode that grows. "
+           + (f"**{len(grow)}** mode{'s' if len(grow) != 1 else ''} grow at this coupling." if grow else
+              "No mode grows at this coupling: the fixed point is stable."))
+    if st["vars"] == 2:
+        out += ("\n\n**Two variables per node** (x and a slower y that holds x back: dx/dt = −x − y + push, "
+                "dy/dt = x − y). Each mode is now a 2 × 2 matrix, the threshold moves from b κ = a to "
+                "b κ = a + 1, and a mode turns as it grows or decays (complex eigenvalues).")
+    return out
+
+
+def table_text():
+    rows = ["| network | ⟨k⟩ | κ₁ | κₙ | excitation stable while b < | inhibition stable while b < |",
+            "|---|---|---|---|---|---|"]
+    for name, (kmean, a1, an) in sorted(SPECTRA.items(), key=lambda kv: -kv[1][1]):
+        rows.append(f"| {name} | {kmean:.2f} | {a1:.2f} | {an:.2f} | {A_RATE / a1:.3f} | {A_RATE / -an:.3f} |")
+    first = max(SPECTRA, key=lambda k: SPECTRA[k][1])
+    close = max(SPECTRA, key=lambda k: -SPECTRA[k][2] / SPECTRA[k][1])
+    r_close = -SPECTRA[close][2] / SPECTRA[close][1]
+    return ("The thresholds come straight from the spectrum (one variable per node, a = 1). The biggest κ₁ "
+            f"here is the **{first}**'s ({SPECTRA[first][1]:.2f}), so it goes unstable at the weakest "
+            "excitatory coupling: κ₁ grows with the best-connected nodes (it is at least √k_max). κₙ is never "
+            "further from 0 than κ₁, so inhibition is always at least as stable; the gap is smallest for "
+            f"the **{close}** (|κₙ|/κ₁ = {r_close:.2f}). For a bipartite network, where κₙ = −κ₁, the two "
+            "thresholds would be equal.\n\n" + "\n".join(rows))
+
+
+# ---- simulate: measured growth rate against b ---------------------------------------------------------------
+def run_sweep():
+    stop_all()
+    bs = list(np.linspace(0.02, 2.2 * threshold(), 11))
+    st["sweep"] = {"bs": bs, "i": 0, "pts": []}
+    if st["sweep_timer"] is not None:
+        st["sweep_timer"].stop()
+    st["sweep_timer"] = everyPaced(sweep_step, steps=len(bs), slow=0.6, fast=0.25, ramp=2)
+
+
+def sweep_step():
+    sw = st["sweep"]
+    if sw["i"] >= len(sw["bs"]):
+        return False
+    bv = sw["bs"][sw["i"]]
+    keep = coupling.value
+    coupling.value = float(bv)
+    n = len(st["names"])
+    xv = np.zeros(n)
+    yv = np.zeros(n)
+    xv[int(np.argmax(st["A"].sum(1)))] = 1e-8          # a tiny kick: it stays in the linear regime
+    norms = []
+    for k in range(600):
+        dx, dy = deriv(xv, yv)
+        xv = xv + DT * dx
+        if dy is not None:
+            yv = yv + DT * dy
+        nv = math.sqrt(float((xv ** 2).sum() + (yv ** 2).sum()))
+        norms.append(nv)
+        if nv > 1e-3:                                     # growing out of the linear regime: stop measuring
+            break
+    # the long-run rate: the slope of log size over the last 100 steps (after the start-up mix of modes)
+    tail = np.log(np.array(norms[-100:]) + 1e-300)
+    rate = float((tail[-1] - tail[0]) / (DT * (len(tail) - 1)))
+    sw["pts"].append((float(bv), rate))
+    coupling.value = keep
+    sw["i"] += 1
+    return len(sw["bs"]) - sw["i"]
+
+
+def sweep_chart():
+    sw = st["sweep"]
+    if not sw or not sw.get("pts"):
+        return None
+    bs = sw["bs"]
+    kap = k1() if st["sign"] > 0 else kn()
+    keep = coupling.value
+    theory = []
+    for bv in bs:
+        coupling.value = float(bv)
+        theory.append((float(bv), growth_rate(kap)))
+    coupling.value = keep
+    return plotLine({"measured rate": sw["pts"], "theory: the deciding mode": theory, "zero": [(bs[0], 0), (bs[-1], 0)]},
+                    title="Growth rate of a small kick against coupling", xlabel="coupling b", ylabel="rate",
+                    dashed=["theory: the deciding mode", "zero"], highlight=["measured rate"],
+                    colors={"measured rate": "240,140,30", "theory: the deciding mode": "60,60,60", "zero": "150,150,150"})
+
+
+def sweep_text():
+    sw = st["sweep"]
+    if not sw or not sw.get("pts"):
+        return ("*Simulate* kicks one node very gently at 11 couplings and measures how fast the disturbance "
+                "grows or shrinks in the long run, against the prediction −a + b κ.")
+    cross = None
+    for (b0, r0), (b1, r1) in zip(sw["pts"], sw["pts"][1:]):
+        if r0 <= 0 < r1:                                  # where the measured rate crosses zero
+            cross = b0 + (b1 - b0) * (-r0) / (r1 - r0)
+            break
+    return (f"{len(sw['pts'])} of {len(sw['bs'])} couplings done. The measured rates sit on the line: the "
+            f"long-run behaviour is the slowest mode's. They cross zero at b ≈ "
+            f"**{cross:.3f}**" + f" (theory {threshold():.3f})." if cross is not None else
+            f"{len(sw['pts'])} of {len(sw['bs'])} couplings done; all decay so far (threshold {threshold():.3f}).")
+
+
+# ---- controls ---------------------------------------------------------------------------------------------
+def pick_net(v):
+    build(v)
+
+
+def pick_sign(v):
+    st["sign"] = 1 if v.startswith("Excitation") else -1
+    reset()
+
+
+def pick_vars(v):
+    st["vars"] = 2 if v.startswith("Two") else 1
+    reset()
+
+
+def on_coupling(v):
+    show()
+
+
+SPECTRA = {}
+coupling = Slider(0.0, 1.2, 0.15, 0.005, label="coupling b", onChange=lambda v: on_coupling(v))
+run_btn = Button("Kick the busiest node", onClick=lambda: run_or_pause())
+graphevents.clickNode = click
+Node.dev = 0.0
+for nm in reversed(NETWORKS):         # each network once, for the comparison table; the first one last
+    build(nm)
+constantLabelSize(size=14)
+ui.title("Stability of dynamics on networks", "Networks, Sections 17.2–17.3")
+ui.layout(
+    right=Column(
+        Markdown("""### Kick a node: does it die away?
+Every node relaxes back to 0 at rate a = 1 and is pushed by its neighbours,
+dxᵢ/dt = −a xᵢ + b Σⱼ Aᵢⱼ tanh(xⱼ). Whether a small kick dies away or
+takes over depends on b **and on the network's eigenvalues**."""),
+        Dropdown(NETWORKS, label="Network", onChange=pick_net),
+        Dropdown(["Excitation (neighbours push the same way)", "Inhibition (neighbours push the opposite way)"],
+                 label="Coupling", onChange=pick_sign),
+        Dropdown(["One variable per node", "Two variables per node"], label="Model", onChange=pick_vars),
+        coupling,
+        Tabs(
+            Tab("Kick it",
+                Row(run_btn, Button("To the end", onClick=lambda: to_the_end()),
+                    Button("Reset", onClick=lambda: reset())),
+                Chart(kick_chart), Markdown(kick_text)),
+            Tab("Modes",
+                Button("Show the mode that grows first", onClick=lambda: show_mode()),
+                Chart(mode_chart), Markdown(mode_text)),
+            Tab("Networks compared",
+                Button("Simulate: growth rate against b", onClick=lambda: run_sweep()),
+                Chart(sweep_chart), Markdown(sweep_text), Markdown(table_text)))),
+    sizes={"right": 440},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(st['names'])} nodes · t = {st['t']:.1f} · threshold b = {threshold():.3f}"))
+center(g.nodes)

@@ -1,0 +1,516 @@
+# Dynamical systems, fixed points and stability  (Newman, Networks, Section 17.1)
+# A system dx/dt = f(x) heads for its fixed points, where f(x⋆) = 0. Whether a
+# fixed point attracts or repels is decided by linearising: near x⋆,
+# x = x⋆ + e and de/dt = f'(x⋆) e, so e grows if f'(x⋆) > 0 and dies away if
+# f'(x⋆) < 0. With two variables the slope becomes the 2 x 2 Jacobian, and its
+# eigenvalues decide: both negative real parts = stable (a sink, or a spiral
+# if they are complex), both positive = unstable (a source), one of each = a
+# saddle, purely imaginary = a centre (neutral cycles).
+#
+# There is no network here in the book's sense: the drawing is a phase
+# portrait made of nodes (grid points, fixed points, the moving state) and
+# arrows (tapered directed edges and drawn lines). Click anywhere on it to
+# start a trajectory.
+
+import math
+import numpy as np
+
+# ---- the systems ----------------------------------------------------------------------------------
+ONE_D = {
+    "Logistic growth: dx/dt = x(1 − x)": {
+        "f": lambda v: v * (1 - v), "range": (-0.4, 1.4), "fixed": [0.0, 1.0],
+        "note": "A population grows when it is small and shrinks when it is above the carrying capacity 1."},
+    "Two stable states: dx/dt = x − x³": {
+        "f": lambda v: v - v ** 3, "range": (-1.6, 1.6), "fixed": [-1.0, 0.0, 1.0],
+        "note": "Bistable: where you end up depends on which side of 0 you start."},
+    "A pendulum's angle: dx/dt = sin x": {
+        "f": lambda v: math.sin(v), "range": (-7.0, 7.0), "fixed": [-2 * math.pi, -math.pi, 0.0, math.pi, 2 * math.pi],
+        "note": "Fixed points at every multiple of π, alternately unstable and stable."},
+}
+
+TWO_D = {
+    "Competing species": {
+        "f": lambda u, w: (u * (3 - u - 2 * w), w * (2 - u - w)), "xr": (-0.2, 3.6), "yr": (-0.2, 2.8),
+        "fixed": [(0.0, 0.0), (3.0, 0.0), (0.0, 2.0), (1.0, 1.0)],
+        "note": "Two species eat the same food (Lotka–Volterra competition). One always wins: which one "
+                "depends on where you start, and the saddle at (1, 1) separates the two outcomes."},
+    "Predator and prey": {
+        "f": lambda u, w: (u * (1 - w), w * (u - 1)), "xr": (-0.2, 3.2), "yr": (-0.2, 3.2),
+        "fixed": [(0.0, 0.0), (1.0, 1.0)],
+        "note": "Prey u grow and are eaten; predators w starve without prey. The fixed point (1, 1) is a "
+                "centre: trajectories circle it for ever, neither approaching nor leaving."},
+    "Damped pendulum": {
+        "f": lambda u, w: (w, -math.sin(u) - 0.3 * w), "xr": (-4.6, 4.6), "yr": (-3.0, 3.0),
+        "fixed": [(-math.pi, 0.0), (0.0, 0.0), (math.pi, 0.0)],
+        "note": "Angle u and angular speed w. Friction makes the swing die away: a stable spiral at the "
+                "bottom (0, 0), and saddles at the top (±π, 0), balanced upside down."},
+}
+
+W, H = 900.0, 600.0                       # the drawing's size in graph units
+GRID = 15                                 # grid points per side in 2-D
+COL_STABLE, COL_UNSTABLE, COL_NEUTRAL = "40,150,90", "230,70,60", "230,160,40"
+TRAIL_COLS = ["240,140,30", "60,150,230", "190,90,200", "40,170,150", "220,80,140"]
+
+ph = {"dim": 1, "sys1": list(ONE_D)[0], "sys2": list(TWO_D)[0], "timer": None, "pos": None, "t": 0.0,
+      "path": [], "trails": [], "done": False, "nodes": [], "arrows": []}
+
+
+def deriv(v):
+    """f'(x), numerically."""
+    f = ONE_D[ph["sys1"]]["f"]
+    h = 1e-5
+    return (f(v + h) - f(v - h)) / (2 * h)
+
+
+def jacobian(u, w):
+    f = TWO_D[ph["sys2"]]["f"]
+    h = 1e-5
+    a = (np.array(f(u + h, w)) - np.array(f(u - h, w))) / (2 * h)
+    b = (np.array(f(u, w + h)) - np.array(f(u, w - h))) / (2 * h)
+    return np.column_stack([a, b])
+
+
+def classify(J):
+    """(kind, eigenvalues, colour) for a 2 x 2 Jacobian."""
+    ev = np.linalg.eigvals(J)
+    re = ev.real
+    complex_ = abs(ev[0].imag) > 1e-9
+    if complex_ and max(abs(re)) < 1e-6:
+        return "centre (neutral)", ev, COL_NEUTRAL
+    if re.max() < -1e-9:
+        return ("stable spiral" if complex_ else "stable node (sink)"), ev, COL_STABLE
+    if re.min() > 1e-9:
+        return ("unstable spiral" if complex_ else "unstable node (source)"), ev, COL_UNSTABLE
+    return "saddle (unstable)", ev, COL_UNSTABLE
+
+
+def fmt_ev(z):
+    if abs(z.imag) < 1e-9:
+        return f"{z.real:+.2f}"
+    return f"{z.real:+.2f} {'+' if z.imag > 0 else '−'} {abs(z.imag):.2f}i"
+
+
+# ---- drawing helpers: system coordinates <-> graph coordinates ------------------------------------
+def X1(v):
+    lo, hi = ONE_D[ph["sys1"]]["range"]
+    return (v - lo) / (hi - lo) * W
+
+
+def to2(u, w):
+    s = TWO_D[ph["sys2"]]
+    (x0, x1), (y0, y1) = s["xr"], s["yr"]
+    return (u - x0) / (x1 - x0) * W, -(w - y0) / (y1 - y0) * H     # math y up = screen y down
+
+
+def from2(px, py):
+    s = TWO_D[ph["sys2"]]
+    (x0, x1), (y0, y1) = s["xr"], s["yr"]
+    return x0 + px / W * (x1 - x0), y0 + (-py) / H * (y1 - y0)
+
+
+def put(n, cx, cy):
+    """Place a node by its centre."""
+    n.x, n.y = cx - n.width / 2, cy - n.height / 2
+
+
+def centre(n):
+    return n.x + n.width / 2, n.y + n.height / 2
+
+
+# ---- building the picture -------------------------------------------------------------------------
+def stop_run():
+    if ph["timer"] is not None:
+        ph["timer"].stop()
+        ph["timer"] = None
+    going = ph["pos"] is not None and not ph["done"]
+    btn1.text = "Continue" if (going and ph["dim"] == 1) else "Start at x = 0.1"
+    btn2.text = "Continue" if (going and ph["dim"] == 2) else "Random start"
+
+
+def clear_all():
+    ph.update(pos=None, t=0.0, path=[], trails=[], done=False, arrows=[])
+    stop_run()                            # after the reset, so the buttons read "Start…", not "Continue"
+    remove(list(g.nodes))
+    clearDrawings()
+
+
+def build1():
+    clear_all()
+    s = ONE_D[ph["sys1"]]
+    f = s["f"]
+    lo, hi = s["range"]
+    xs = [lo + (hi - lo) * i / 300 for i in range(301)]
+    fmax = max(abs(f(v)) for v in xs) or 1.0
+    Y = lambda val: -val / fmax * 220
+    # axes and the curve f(x)
+    drawLine(0, 0, W, 0, color="150,150,150", width=1.5)
+    drawText(W + 14, 4, "x", size=16, anchor="start")
+    drawText(X1(lo) - 6, Y(fmax) - 8, "dx/dt = f(x)", size=14, anchor="start")
+    for a_, b_ in zip(xs, xs[1:]):
+        drawLine(X1(a_), Y(f(a_)), X1(b_), Y(f(b_)), color="120,120,200", width=2.5)
+    # points along the axis (click one to start there), with flow arrows between them
+    pts = []
+    for i in range(41):
+        v = lo + (hi - lo) * i / 40
+        n = addNode(f"ax{i}")
+        n.width = n.height = 8
+        n.color, n.strokecolor, n.labelvisible = "170,170,170", "110,110,110", false
+        n.xv = v
+        put(n, X1(v), 0)
+        pts.append(n)
+    for a_, b_ in zip(pts, pts[1:]):
+        mid = (a_.xv + b_.xv) / 2
+        speed = f(mid)
+        if abs(speed) < 1e-3 * fmax:
+            continue
+        e = addDirectedEdge(a_, b_) if speed > 0 else addDirectedEdge(b_, a_)
+        e.color = "90,90,90"
+        e.width = 3 + 7 * abs(speed) / fmax
+    # the fixed points
+    for i, v in enumerate(s["fixed"]):
+        d = deriv(v)
+        n = addNode(f"fixed{i}")
+        n.width = n.height = 26
+        n.xv = v
+        stable = d < 0
+        n.color = COL_STABLE if stable else "250,250,250"
+        n.strokecolor = "20,60,30" if stable else COL_UNSTABLE
+        n.strokewidth = 2 if stable else 4
+        k = round(v / math.pi)
+        if abs(v - round(v)) < 1e-9:
+            n.label = f"x⋆ = {v:g}"
+        else:
+            n.label = "x⋆ = " + ("−" if k < 0 else "") + ("" if abs(k) == 1 else str(abs(k))) + "π"
+        n.labelvisible = true
+        n.labelpos = "above"                # clear of the flow arrows on the axis
+        put(n, X1(v), 0)
+    center(g.nodes)
+
+
+def build2():
+    clear_all()
+    s = TWO_D[ph["sys2"]]
+    f = s["f"]
+    (x0, x1), (y0, y1) = s["xr"], s["yr"]
+    ox, oy = to2(0, 0)
+    if x0 <= 0 <= x1:
+        drawLine(ox, 0, ox, -H, color="190,190,190", width=1)
+    if y0 <= 0 <= y1:
+        drawLine(0, oy, W, oy, color="190,190,190", width=1)
+    drawText(W + 12, oy + 4 if y0 <= 0 <= y1 else 4, "u", size=16, anchor="start")
+    drawText(ox if x0 <= 0 <= x1 else 0, -H - 10, "w", size=16)
+    # grid points and direction arrows (length fixed; darkness = speed)
+    speeds = []
+    for i in range(GRID):
+        for j in range(GRID):
+            u = x0 + (x1 - x0) * (i + 0.5) / GRID
+            w = y0 + (y1 - y0) * (j + 0.5) / GRID
+            du, dw = f(u, w)
+            speeds.append(math.hypot(du, dw))
+    top = max(speeds) or 1.0
+    cell = W / GRID
+    for i in range(GRID):
+        for j in range(GRID):
+            u = x0 + (x1 - x0) * (i + 0.5) / GRID
+            w = y0 + (y1 - y0) * (j + 0.5) / GRID
+            n = addNode(f"q{i}_{j}")
+            n.width = n.height = 6
+            n.color, n.strokecolor, n.labelvisible = "175,175,175", "130,130,130", false
+            n.xv, n.yv = u, w
+            px, py = to2(u, w)
+            put(n, px, py)
+            du, dw = f(u, w)
+            sp = math.hypot(du, dw)
+            if sp < 1e-9:
+                continue
+            # the arrow's direction in screen units (axes are scaled differently)
+            sx, sy = du / (x1 - x0) * W, -dw / (y1 - y0) * H
+            ln = math.hypot(sx, sy) or 1
+            k = 0.42 * cell / ln
+            shade = int(200 - 150 * min(1.0, (sp / top) ** 0.5))
+            drawLine(px, py, px + sx * k, py + sy * k, color=f"{shade},{shade},{shade}", width=1.6, arrow=true)
+    # fixed points, coloured and outlined by type
+    for i, (u, w) in enumerate(s["fixed"]):
+        kind, ev, col = classify(jacobian(u, w))
+        n = addNode(f"fixed{i}")
+        n.width = n.height = 26
+        n.xv, n.yv = u, w
+        stable = col == COL_STABLE
+        n.color = col if stable else ("255,240,200" if col == COL_NEUTRAL else "250,250,250")
+        n.strokecolor = "20,60,30" if stable else col
+        n.strokewidth = 2 if stable else 4
+        n.label = kind.split(" (")[0]
+        n.labelvisible = true
+        put(n, *to2(u, w))
+    center(g.nodes)
+
+
+def rebuild():
+    build1() if ph["dim"] == 1 else build2()
+
+
+# ---- trajectories ----------------------------------------------------------------------------------
+def marker():
+    m = g.getNodeByName("here")
+    if m is None:
+        m = addNode("here")
+        m.width = m.height = 22
+        m.color, m.strokecolor, m.strokewidth = "255,215,40", "60,40,0", 3
+        m.labelvisible = true
+        m.labelpos = "below"
+    return m
+
+
+def start_at(v, w=None):
+    stop_run()
+    if ph["dim"] == 1:
+        ph["pos"] = float(v)
+    else:
+        ph["pos"] = (float(v), float(w))
+        ph["trails"].append(TRAIL_COLS[len(ph["trails"]) % len(TRAIL_COLS)])
+    ph.update(t=0.0, path=[(0.0, ph["pos"])], done=False)
+    show_marker()
+    ph["timer"] = everyPaced(advance, steps=400, slow=0.6, fast=0.05, ramp=4)
+    (btn1 if ph["dim"] == 1 else btn2).text = "Pause"
+
+
+def show_marker():
+    m = marker()
+    if ph["dim"] == 1:
+        v = ph["pos"]
+        put(m, X1(v), 0)
+        m.label = f"x = {v:.3f}"
+        for d in list(ph["arrows"]):
+            d.remove()
+        ph["arrows"] = []
+        s = ONE_D[ph["sys1"]]
+        lo, hi = s["range"]
+        fmax = max(abs(s["f"](lo + (hi - lo) * i / 100)) for i in range(101)) or 1
+        sp = s["f"](v)
+        if abs(sp) > 1e-4 * fmax:      # its speed: an arrow from the axis up (or down) to the curve
+            ph["arrows"].append(drawLine(X1(v), 0, X1(v), -sp / fmax * 220, color="255,170,0", width=2.5,
+                                         style="dashed"))
+    else:
+        u, w = ph["pos"]
+        put(m, *to2(u, w))
+        m.label = f"({u:.2f}, {w:.2f})"
+
+
+def rk4_1(v, dt):
+    f = ONE_D[ph["sys1"]]["f"]
+    k1 = f(v); k2 = f(v + dt / 2 * k1); k3 = f(v + dt / 2 * k2); k4 = f(v + dt * k3)
+    return v + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+
+
+def rk4_2(p, dt):
+    f = TWO_D[ph["sys2"]]["f"]
+    a = np.array(p)
+    k1 = np.array(f(*a)); k2 = np.array(f(*(a + dt / 2 * k1)))
+    k3 = np.array(f(*(a + dt / 2 * k2))); k4 = np.array(f(*(a + dt * k3)))
+    return tuple(float(z) for z in a + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4))
+
+
+def advance():
+    """One frame: a few small integration steps; returns False when the trajectory has settled."""
+    if ph["pos"] is None or ph["done"]:
+        return False
+    dt, sub = 0.025, 4
+    old = ph["pos"]
+    for _ in range(sub):
+        ph["pos"] = rk4_1(ph["pos"], dt) if ph["dim"] == 1 else rk4_2(ph["pos"], dt)
+        ph["t"] += dt
+    ph["path"].append((ph["t"], ph["pos"]))
+    if ph["dim"] == 2:
+        (x0, x1), (y0, y1) = TWO_D[ph["sys2"]]["xr"], TWO_D[ph["sys2"]]["yr"]
+        a_, b_ = to2(*old), to2(*ph["pos"])
+        drawLine(a_[0], a_[1], b_[0], b_[1], color=ph["trails"][-1], width=3)
+        u, w = ph["pos"]
+        speed = math.hypot(*TWO_D[ph["sys2"]]["f"](u, w))
+        left = not (x0 - 1 <= u <= x1 + 1 and y0 - 1 <= w <= y1 + 1)
+        settled = speed < 2e-3 or left or ph["t"] > 60
+    else:
+        lo, hi = ONE_D[ph["sys1"]]["range"]
+        v = ph["pos"]
+        settled = abs(ONE_D[ph["sys1"]]["f"](v)) < 2e-4 or not (lo - 1 <= v <= hi + 1) or ph["t"] > 40
+    show_marker()
+    if settled:
+        ph["done"] = True
+        stop_run()
+        return False
+    return True
+
+
+def play():
+    if ph["timer"] is not None:
+        stop_run()
+        return
+    if ph["pos"] is not None and not ph["done"]:
+        ph["timer"] = everyPaced(advance, steps=400, slow=0.6, fast=0.05, ramp=4)
+        (btn1 if ph["dim"] == 1 else btn2).text = "Pause"
+    elif ph["dim"] == 1:
+        start_at(0.1)
+    else:
+        rs = np.random.default_rng(len(ph["trails"]) + 1)
+        s = TWO_D[ph["sys2"]]
+        start_at(rs.uniform(*s["xr"]), rs.uniform(*s["yr"]))
+
+
+def to_the_end():
+    if ph["pos"] is None:
+        play()
+    stop_run()
+    for _ in range(2000):
+        if not advance():
+            break
+
+
+def click(n):
+    if n.name == "here":
+        return
+    if ph["dim"] == 1:
+        start_at(n.xv + (0.02 if n.name.startswith("fixed") else 0.0))     # nudged off a fixed point
+    else:
+        if n.name.startswith("fixed"):
+            start_at(n.xv + 0.05, n.yv + 0.05)
+        else:
+            start_at(n.xv, n.yv)
+
+
+# ---- text and charts ---------------------------------------------------------------------------------
+def text1():
+    if ph["dim"] != 1:
+        return ""
+    s = ONE_D[ph["sys1"]]
+    rows = ["| fixed point | slope f′(x⋆) | so a small push … |", "|---|---|---|"]
+    for i, v in enumerate(s["fixed"]):
+        d = deriv(v)
+        n = g.getNodeByName(f"fixed{i}")
+        rows.append(f"| {linkTo(n, n.label) if n else v} | {d:+.2f} | "
+                    + ("**dies away** (stable)" if d < 0 else "**grows** (unstable)") + " |")
+    out = (s["note"] + "\n\nThe blue curve is f(x); arrows on the axis show which way x moves and how fast. "
+           "Where f(x) = 0, x stops: a **fixed point**. Near one, x = x⋆ + ε with dε/dt ≈ f′(x⋆) ε, so "
+           "ε ∝ e^(f′(x⋆) t).\n\n" + "\n".join(rows))
+    if ph["pos"] is not None:
+        out += (f"\n\n**Now:** t = {ph['t']:.1f}, x = {ph['pos']:.4f}"
+                + (" — settled." if ph["done"] else "."))
+    else:
+        out += "\n\n*Click a point on the axis* to start there."
+    return out
+
+
+def chart1():
+    if ph["dim"] != 1 or not ph["path"]:
+        return None
+    s = ONE_D[ph["sys1"]]
+    data = {"x(t)": [(t, v) for t, v in ph["path"]]}
+    tmax = max(1.0, ph["t"])
+    cols = {"x(t)": "240,140,30"}
+    for i, v in enumerate(s["fixed"]):
+        lo, hi = s["range"]
+        if lo <= v <= hi:
+            name = f"x⋆ = {v:.3g} ({'stable' if deriv(v) < 0 else 'unstable'})"
+            data[name] = [(0, v), (tmax, v)]
+            cols[name] = COL_STABLE if deriv(v) < 0 else COL_UNSTABLE
+    return plotLine(data, title="The trajectory x(t)", xlabel="t", ylabel="x", xrange=(0, tmax),
+                    dashed=[k for k in data if k != "x(t)"], colors=cols)
+
+
+def text2():
+    if ph["dim"] != 2:
+        return ""
+    s = TWO_D[ph["sys2"]]
+    rows = ["| fixed point | eigenvalues of the Jacobian | type |", "|---|---|---|"]
+    for i, (u, w) in enumerate(s["fixed"]):
+        kind, ev, _c = classify(jacobian(u, w))
+        n = g.getNodeByName(f"fixed{i}")
+        nm = f"({u:.2f}, {w:.2f})"
+        rows.append(f"| {linkTo(n, nm) if n else nm} | {fmt_ev(ev[0])}, {fmt_ev(ev[1])} | **{kind}** |")
+    out = (s["note"] + "\n\nArrows show the direction of motion (darker = faster). Each fixed point's type comes "
+           "from the **eigenvalues of the Jacobian** there: negative real parts pull in, positive push out, "
+           "imaginary parts make it turn.\n\n" + "\n".join(rows))
+    if ph["pos"] is not None:
+        u, w = ph["pos"]
+        out += f"\n\n**Now:** t = {ph['t']:.1f}, (u, w) = ({u:.3f}, {w:.3f})" + (" — settled." if ph["done"] else ".")
+    else:
+        out += "\n\n*Click anywhere on the grid* to start a trajectory there."
+    return out
+
+
+def nearest_fixed(p):
+    s = TWO_D[ph["sys2"]]
+    return min(range(len(s["fixed"])), key=lambda i: math.hypot(p[0] - s["fixed"][i][0], p[1] - s["fixed"][i][1]))
+
+
+def chart2():
+    """Distance to the fixed point the trajectory approaches, on a log scale: near a stable fixed
+    point it shrinks like e^{Re λ t}, a straight line with the slope of the slowest eigenvalue."""
+    if ph["dim"] != 2 or len(ph["path"]) < 3:
+        return None
+    s = TWO_D[ph["sys2"]]
+    k = nearest_fixed(ph["path"][-1][1])
+    fu, fw = s["fixed"][k]
+    pts = [(t, math.hypot(p[0] - fu, p[1] - fw)) for t, p in ph["path"]]
+    pts = [(t, d) for t, d in pts if d > 1e-6]
+    if len(pts) < 2:
+        return None
+    kind, ev, _c = classify(jacobian(fu, fw))
+    lam = max(ev.real)
+    t_end, d_end = pts[-1]
+    data = {"distance to the fixed point": pts}
+    cols = {"distance to the fixed point": ph["trails"][-1] if ph["trails"] else "240,140,30"}
+    if lam < 0:
+        name = f"e^(Re λ t), Re λ = {lam:.2f}"
+        t0 = max(0.0, t_end - 8)
+        data[name] = [(t, d_end * math.exp(lam * (t - t_end))) for t in np.linspace(t0, t_end, 20)]
+        cols[name] = COL_STABLE
+    return plotLine(data, title=f"Distance to the {kind.split(' (')[0]} it approaches", xlabel="t",
+                    ylabel="distance", logY=true, dashed=[n for n in data if n.startswith("e^")], colors=cols)
+
+
+# ---- controls ---------------------------------------------------------------------------------------
+def pick1(v):
+    ph["sys1"] = v
+    build1()
+
+
+def pick2(v):
+    ph["sys2"] = v
+    build2()
+
+
+def switch(title):
+    ph["dim"] = 1 if title.startswith("One") else 2
+    rebuild()
+
+
+btn1 = Button("Start at x = 0.1", onClick=lambda: play())
+btn2 = Button("Random start", onClick=lambda: play())
+graphevents.clickNode = click
+Node.xv = 0.0
+Node.yv = 0.0
+build1()
+constantLabelSize(size=14)
+ui.title("Fixed points and stability", "Networks, Section 17.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Where does a system go?
+A dynamical system says how its state changes: dx/dt = f(x). It settles at
+**fixed points**, and whether a fixed point attracts or repels is a matter of
+the slope there."""),
+        Tabs(
+            Tab("One variable",
+                Dropdown(list(ONE_D), label="System", onChange=pick1),
+                Row(btn1, Button("To the end", onClick=lambda: to_the_end())),
+                Chart(chart1), Markdown(text1)),
+            Tab("Two variables",
+                Dropdown(list(TWO_D), label="Phase plane", onChange=pick2),
+                Row(btn2,
+                    Button("Finish the trajectory", onClick=lambda: to_the_end()),
+                    Button("Clear the trails", onClick=lambda: build2())),
+                Chart(chart2), Markdown(text2)),
+            onChange=switch)),
+    sizes={"right": 440},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{'one variable' if ph['dim'] == 1 else 'two variables'} · t = {ph['t']:.1f}"))
+center(g.nodes)

@@ -1,0 +1,390 @@
+# Synchronization  (Newman, Networks, Section 17.5)
+# Put an oscillator on every node: each has a phase theta_i that turns at its
+# own natural frequency omega_i, and neighbours pull each other's phases
+# together (the Kuramoto model on a network):
+#     d theta_i / dt = omega_i + K sum_j A_ij sin(theta_j - theta_i).
+# With weak coupling everyone runs at their own pace; past a threshold the
+# oscillators lock into step. The order parameter r = |mean of e^(i theta)|
+# measures it (0 = scattered, 1 = in step). For a network with uncorrelated
+# degrees the threshold is about K_c = 2 <k> / (pi g(0) <k^2>), where g is the
+# distribution of natural frequencies (here normal with spread SIGMA, so
+# g(0) = 1 / (SIGMA sqrt(2 pi))): hubs make synchronization easier. Whether
+# the fully synchronized state is stable is decided (Section 17.5, the master
+# stability function) by the Laplacian's eigenvalues: the smaller the ratio of
+# the largest to the smallest non-zero one, the easier to synchronize.
+#
+# The equations are integrated with small Euler steps in numpy.
+
+import math
+import random
+import numpy as np
+
+N = 150
+SIGMA = 0.5                    # spread of the natural frequencies
+DT = 0.05
+NETS = {"Random (Poisson, mean degree 6)": "random", "Ring (each linked to 6 neighbours)": "ring",
+        "Small world (ring with 10% shortcuts)": "smallworld", "Hubs (power-law degrees)": "powerlaw"}
+PULL_EDGE, BASE_EDGE = "255,140,40", "150,150,160,70"
+R_COL, KC_COL = "78,121,167", "225,87,89"
+
+osc = {"net": "random", "names": [], "A": None, "theta": None, "omega": None, "t": 0.0, "rs": [],
+       "timer": None, "lit": [], "sweep": {}, "sweeptimer": None, "sweepq": []}
+emap = {}
+
+
+# ---- networks ------------------------------------------------------------------------------------
+def power_degrees(n, alpha, kmin, kmax, r):
+    out = []
+    while len(out) < n:
+        k = int(kmin * (1 - r.random()) ** (-1 / (alpha - 1)))
+        if k <= kmax:
+            out.append(k)
+    if sum(out) % 2:
+        out[0] += 1
+    return out
+
+
+def make_net(net):
+    if net == "random":
+        makeErdosRenyiRandom(N, 6.0 / (N - 1), seed=4)
+    elif net == "ring":
+        makeWattsStrogatz(N, 6, 0.0, seed=1)
+    elif net == "smallworld":
+        makeWattsStrogatz(N, 6, 0.1, seed=1)
+    else:
+        makeConfigurationModel(power_degrees(N, 2.3, 3, 50, random.Random(3)), simple=true, seed=5, layout=false)
+    if net in ("random", "powerlaw"):
+        frLayout()
+        binPackLayout(false)
+        noverlapLayout(margin=3)
+
+
+def adjacency_now():
+    names = [v.name for v in g.nodes]
+    idx = {nm: i for i, nm in enumerate(names)}
+    A = np.zeros((len(names), len(names)))
+    for e in g.edges:
+        a, b = idx[e.node1.name], idx[e.node2.name]
+        if a != b:
+            A[a, b] = A[b, a] = 1.0
+    return names, A
+
+
+def build(net):
+    stop_run()
+    make_net(net)
+    osc["net"] = net
+    osc["names"], osc["A"] = adjacency_now()
+    emap.clear()
+    for e in g.edges:
+        emap[(e.node1.name, e.node2.name)] = e
+    Node.phase = 0.0
+    Node.cx = 0.0
+    Node.cy = 0.0
+    for v in g.nodes:
+        v.labelvisible = false
+        v.strokecolor = "40,40,40"
+        v.strokewidth = 1
+    rng = np.random.default_rng(7)
+    osc["omega"] = rng.normal(0.0, SIGMA, len(osc["names"]))
+    scramble()
+    center(g.nodes)
+
+
+def scramble():
+    osc["theta"] = np.random.default_rng(int(osc["t"] * 1000) % 9973 + 1).uniform(0, 2 * math.pi, len(osc["names"]))
+    osc["t"] = 0.0
+    osc["rs"] = [(0.0, order_param(osc["theta"]))]
+    show()
+
+
+# ---- the model --------------------------------------------------------------------------------------
+def order_param(theta):
+    return float(abs(np.exp(1j * theta).mean()))
+
+
+def advance(theta, omega, A, K, steps):
+    """Euler steps of d theta_i/dt = omega_i + K sum_j A_ij sin(theta_j - theta_i)."""
+    for _ in range(steps):
+        z = np.exp(1j * theta)
+        pull = np.imag(np.conj(z) * (A @ z))       # sum_j A_ij sin(theta_j - theta_i)
+        theta = theta + DT * (omega + K * pull)
+    return np.mod(theta, 2 * math.pi)
+
+
+def coupling():
+    return float(k_sl.value)
+
+
+def degrees(A):
+    return A.sum(1)
+
+
+def k_crit(A):
+    """The mean-field threshold for uncorrelated networks: 2 <k> / (pi g(0) <k^2>)."""
+    k = degrees(A)
+    g0 = 1 / (SIGMA * math.sqrt(2 * math.pi))
+    return 2 * k.mean() / (math.pi * g0 * (k * k).mean())
+
+
+def show():
+    th = osc["theta"]
+    for i, nm in enumerate(osc["names"]):
+        v = g.getNodeByName(nm)
+        v.phase = float(th[i])
+        v.cx = float(math.cos(th[i]))
+        v.cy = float(math.sin(th[i]))
+    colorByPhase(phase)
+    # edges: where neighbours are out of step they pull hardest; light those up
+    for e in osc["lit"]:
+        e.color, e.width, e.linestyle = BASE_EDGE, 1.0, "solid"
+    idx = {nm: i for i, nm in enumerate(osc["names"])}
+    strength = []
+    for (a, b), e in emap.items():
+        d = abs(math.sin(th[idx[b]] - th[idx[a]]))
+        strength.append((d, e))
+    strength.sort(key=lambda t: -t[0])
+    lit = [e for d, e in strength[:max(1, len(strength) // 8)] if d > 0.3]
+    for e in lit:
+        e.color, e.width, e.linestyle = PULL_EDGE, 2.2, "flow"
+    for d, e in strength[len(lit):]:
+        if e.linestyle != "solid" or e.width != 1.0:
+            e.color, e.width, e.linestyle = BASE_EDGE, 1.0, "solid"
+    osc["lit"] = lit
+    k = degrees(osc["A"])
+    for i, nm in enumerate(osc["names"]):
+        v = g.getNodeByName(nm)
+        v.width = v.height = 8 + 2.2 * math.sqrt(k[i])
+
+
+def run_step():
+    osc["theta"] = advance(osc["theta"], osc["omega"], osc["A"], coupling(), 4)
+    osc["t"] += 4 * DT
+    osc["rs"].append((round(osc["t"], 3), order_param(osc["theta"])))
+    del osc["rs"][:-400]
+    show()
+    return true
+
+
+def toggle_run():
+    if osc["timer"] is not None:
+        stop_run()
+        return
+    go_btn.text = "Pause"
+    osc["timer"] = everyPaced(run_step, slow=0.5, fast=0.12, ramp=3)
+
+
+def stop_run():
+    if osc["timer"] is not None:
+        osc["timer"].stop()
+    osc["timer"] = None
+    go_btn.text = "Run the oscillators"
+
+
+def jump_ahead():
+    osc["theta"] = advance(osc["theta"], osc["omega"], osc["A"], coupling(), 400)
+    osc["t"] += 400 * DT
+    osc["rs"].append((round(osc["t"], 3), order_param(osc["theta"])))
+    show()
+
+
+def r_chart():
+    if len(osc["rs"]) < 2:
+        return None
+    return plotLine({"order parameter r": osc["rs"]}, title="How much in step: r(t)", xlabel="time", ylabel="r",
+                    yrange=(0, 1), colors={"order parameter r": R_COL})
+
+
+def wheel_chart():
+    """Every oscillator as a dot on the unit circle at its phase, in its node's colour."""
+    ring = [(math.cos(2 * math.pi * i / 60), math.sin(2 * math.pi * i / 60)) for i in range(61)]
+    th = osc["theta"]
+    return plotScatter(cx, cy, title="Phases on the circle", xlabel="cos θ", ylabel="sin θ",
+                       xrange=(-1.15, 1.15), yrange=(-1.15, 1.15),
+                       line=ring) if th is not None else None
+
+
+def run_text():
+    A = osc["A"]
+    if A is None:
+        return ""
+    k = degrees(A)
+    K = coupling()
+    kc = k_crit(A)
+    r = osc["rs"][-1][1] if osc["rs"] else 0.0
+    zc = np.exp(1j * osc["theta"]).mean()
+    state = ("**well in step**" if r > 0.7 else "**partly in step**: a synchronized cluster with stragglers"
+             if r > 0.3 else "**out of step**: each turns at its own pace")
+    return (f"Coupling **K = {K:.3f}**; for this network the mean-field threshold is K_c = 2⟨k⟩/(π g(0) ⟨k²⟩) = "
+            f"**{kc:.3f}** (⟨k⟩ = {k.mean():.2f}, ⟨k²⟩ = {(k * k).mean():.1f}). "
+            f"{'Above' if K > kc else 'Below'} it. Time {osc['t']:.1f}: r = **{r:.2f}**, {state}. "
+            f"Colours are phases on a colour wheel, so synchrony shows as one colour spreading; orange flowing "
+            f"edges join neighbours far out of step, which pull hardest. In the circle chart each dot is an "
+            f"oscillator; when they bunch up, r is the length of their average (here pointing at "
+            f"{math.degrees(math.atan2(zc.imag, zc.real)) % 360:.0f}°).")
+
+
+# ---- the coupling sweep ---------------------------------------------------------------------------
+SWEEP_K = [0.0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.13, 0.16, 0.2, 0.25, 0.3, 0.4]
+SWEEP_NETS = ["random", "ring", "powerlaw"]
+SWEEP_LABEL = {"random": "random", "ring": "ring", "powerlaw": "hubs", "smallworld": "small world"}
+
+
+def sweep_adjacency(net):
+    """The same networks as drawn, built off screen as matrices (so the view isn't disturbed)."""
+    rng = random.Random({"random": 4, "ring": 1, "powerlaw": 3, "smallworld": 1}[net])
+    A = np.zeros((N, N))
+    if net == "random":
+        p = 6.0 / (N - 1)
+        for i in range(N):
+            for j in range(i + 1, N):
+                if rng.random() < p:
+                    A[i, j] = A[j, i] = 1.0
+    elif net in ("ring", "smallworld"):
+        for i in range(N):
+            for d in (1, 2, 3):
+                A[i, (i + d) % N] = A[(i + d) % N, i] = 1.0
+        if net == "smallworld":
+            for i in range(N):
+                if rng.random() < 0.3:
+                    j = rng.randrange(N)
+                    if j != i:
+                        A[i, j] = A[j, i] = 1.0
+    else:
+        ks = power_degrees(N, 2.3, 3, 50, rng)
+        stubs = [i for i, k in enumerate(ks) for _ in range(k)]
+        rng.shuffle(stubs)
+        for i in range(0, len(stubs) - 1, 2):
+            a, b = stubs[i], stubs[i + 1]
+            if a != b:
+                A[a, b] = A[b, a] = 1.0
+    return A
+
+
+def sweep_step():
+    if not osc["sweepq"]:
+        sweep_btn.text = "Simulate: sweep the coupling"
+        osc["sweeptimer"] = None
+        return false
+    net, K = osc["sweepq"].pop(0)
+    A = osc["sweepA"][net]
+    omega = np.random.default_rng(7).normal(0.0, SIGMA, N)
+    th = np.random.default_rng(11).uniform(0, 2 * math.pi, N)
+    th = advance(th, omega, A, K, 600)                 # settle
+    rs = []
+    for _ in range(10):                                # then average r over a while
+        th = advance(th, omega, A, K, 20)
+        rs.append(order_param(th))
+    osc["sweep"].setdefault(net, []).append((K, sum(rs) / len(rs)))
+    return len(osc["sweepq"]) or false
+
+
+def start_sweep():
+    osc["sweep"] = {}
+    osc["sweepA"] = {net: sweep_adjacency(net) for net in SWEEP_NETS}
+    osc["sweepq"] = [(net, K) for K in SWEEP_K for net in SWEEP_NETS]
+    sweep_btn.text = "Sweeping…"
+    osc["sweeptimer"] = everyPaced(sweep_step, steps=len(osc["sweepq"]) + 1, slow=0.4, fast=0.08, ramp=2)
+
+
+def sweep_chart():
+    if not osc["sweep"]:
+        return None
+    data, cols, dashed = {}, {}, []
+    palette = {"random": "78,121,167", "ring": "89,161,79", "powerlaw": "225,87,89"}
+    for net, pts in osc["sweep"].items():
+        lab = SWEEP_LABEL[net]
+        data[f"r, {lab}"] = sorted(pts)
+        cols[f"r, {lab}"] = palette[net]
+        kc = k_crit(osc["sweepA"][net])
+        data[f"K_c, {lab}"] = [(kc, 0.0), (kc, 1.0)]
+        cols[f"K_c, {lab}"] = palette[net]
+        dashed.append(f"K_c, {lab}")
+    return plotLine(data, title="Order parameter against coupling", xlabel="K", ylabel="r (long run)", dots=true,
+                    yrange=(0, 1), xrange=(0, max(SWEEP_K)), dashed=dashed, colors=cols)
+
+
+def sweep_text():
+    if not osc["sweep"]:
+        return ("For three networks with the same number of nodes (random, ring, hubs), run the oscillators to "
+                "a steady state at each coupling K and measure r. Dashed lines are the mean-field thresholds.")
+    rows = ["| network | ⟨k⟩ | ⟨k²⟩/⟨k⟩ | K_c (theory) | first K with r > 0.5 |", "|---|---|---|---|---|"]
+    for net in SWEEP_NETS:
+        A = osc["sweepA"][net]
+        k = degrees(A)
+        pts = sorted(osc["sweep"].get(net, []))
+        first = next((K for K, r in pts if r > 0.5), None)
+        rows.append(f"| {SWEEP_LABEL[net]} | {k.mean():.2f} | {(k * k).mean() / k.mean():.2f} | "
+                    f"{k_crit(A):.3f} | {'–' if first is None else f'{first:.2f}'} |")
+    return ("Each curve rises from near 0 (random phases give r ≈ 1/√n) to near 1. The network with hubs locks "
+            "in first: its ⟨k²⟩ is large, so its threshold is low. The ring has no shortcuts, so distant parts "
+            "drift apart and it needs far stronger coupling than the mean-field formula, which assumes a "
+            "well-mixed network, predicts.\n\n" + "\n".join(rows))
+
+
+# ---- the Laplacian and the master stability function ----------------------------------------------
+def laplacian_table():
+    rows = ["| network | λ₂ (spectral gap) | λ_max | λ_max/λ₂ |", "|---|---|---|---|"]
+    out = {}
+    for net in ["random", "ring", "smallworld", "powerlaw"]:
+        A = sweep_adjacency(net)
+        k = A.sum(1)
+        lam = np.linalg.eigvalsh(np.diag(k) - A)
+        nz = [v for v in lam if v > 1e-8]
+        l2, lmax = (nz[0], nz[-1]) if nz else (0.0, 0.0)
+        out[net] = (l2, lmax)
+        rows.append(f"| {SWEEP_LABEL[net]} | {l2:.3f} | {lmax:.2f} | {lmax / l2 if l2 else float('inf'):.1f} |")
+    return out, rows
+
+
+def msf_text():
+    if "lap" not in osc:
+        osc["lap"] = laplacian_table()
+    out, rows = osc["lap"]
+    ring, sw = out["ring"], out["smallworld"]
+    return ("For identical oscillators, perfect synchrony is stable when every one of the Laplacian's non-zero "
+            "eigenvalues, times the coupling, falls where the **master stability function** is negative. For many "
+            "systems that region is a window, so what matters is the ratio λ_max/λ₂: the smaller, the easier "
+            f"the network is to synchronize. A ring's λ₂ is tiny ({ring[0]:.3f}), so its ratio is huge; adding "
+            f"10% random shortcuts (small world) raises λ₂ to {sw[0]:.3f} and cuts the ratio from "
+            f"{ring[1] / ring[0]:.0f} to {sw[1] / sw[0]:.0f}: shortcuts make networks much easier to "
+            "synchronize.\n\n" + "\n".join(rows))
+
+
+# ---- controls --------------------------------------------------------------------------------------
+def pick_net(choice):
+    build(NETS[choice])
+
+
+def switch(title):
+    if title != "Oscillators":
+        stop_run()
+
+
+k_sl = Slider(0.0, 0.4, 0.25, 0.01, label="coupling K")
+go_btn = Button("Run the oscillators", onClick=lambda: toggle_run())
+sweep_btn = Button("Simulate: sweep the coupling", onClick=lambda: start_sweep())
+
+build("random")
+constantLabelSize(size=14)
+ui.title("Synchronization", "Networks, Section 17.5")
+ui.layout(
+    right=Column(
+        Markdown("""### Coupled oscillators
+Every node is an oscillator; its colour is its phase. Neighbours pull each
+other into step."""),
+        Dropdown(list(NETS), label="Network", onChange=pick_net),
+        k_sl,
+        Tabs(
+            Tab("Oscillators",
+                Row(go_btn, Button("Jump ahead", onClick=lambda: jump_ahead()),
+                    Button("Scramble the phases", onClick=lambda: scramble())),
+                Chart(wheel_chart), Chart(r_chart), Markdown(run_text)),
+            Tab("Coupling sweep", sweep_btn, Chart(sweep_chart), Markdown(sweep_text)),
+            Tab("Master stability", Markdown(msf_text)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{osc['net']}: {len(g.nodes)} oscillators · {len(g.edges)} links · K = {coupling():.2f}"))
+center(g.nodes)

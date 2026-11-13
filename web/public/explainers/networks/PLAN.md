@@ -15,6 +15,7 @@ Conventions for every explainer (from review feedback):
 - Evolving processes (transmission, flow, mutation, search) highlight the edges involved.
 - Simulations run slow-fast-slow (`everyPaced`) so they can be watched.
 - Show data as it is collected (live `Chart(fn)`), and give "Simulate" buttons that sweep parameters.
+- Link to related explainers with `[text](?app=explainers/networks/<id>/manifest.json)`.
 - **Several components:** lay out, then `binPackLayout()` to pack the components side by side, then `noverlapLayout()` so no nodes overlap; use `binPackLayout(false)` when rescaling would stretch small pieces, and a bigger `margin=` when labels are shown. This doesn't apply where positions mean something (maps, anatomy, time axes).
 - **Growing networks:** build the final network first and lay it out once. Give each node and edge the step at which it arrives (`born`), fit the view to the final picture (`center(g.nodes)`), then reveal it with `revealUpTo(step)`. Nodes appear where they will stay; nothing moves as it grows.
 
@@ -1506,7 +1507,7 @@ synchronise (and how the network's spectrum decides which), then how to
 find things in networks, from web search to Kleinberg's navigable
 small worlds.
 
-**`ch17-fixed-points`: Dynamical systems, fixed points and stability (§17.1)** · planned
+**`ch17-fixed-points`: Dynamical systems, fixed points and stability (§17.1)** · built
 - *Idea:*
   - a system dx/dt = f(x) heads for fixed points;
   - a fixed point is stable if small perturbations shrink, which linearisation decides from the sign of f′(x*) (one variable) or the eigenvalues of the Jacobian (two).
@@ -1516,7 +1517,7 @@ small worlds.
   - presets: logistic growth and a predator–prey model.
 - *GUESS:* `plotLine`, `plotScatter`, numpy, `everyPaced`. (No network here: the drawing is a phase portrait, built from nodes and edges as markers.)
 
-**`ch17-network-stability`: Dynamics on networks and linear stability (§§17.2–17.3)** · planned
+**`ch17-network-stability`: Dynamics on networks and linear stability (§§17.2–17.3)** · built
 - *Idea:*
   - with dx_i/dt = f(x_i) + Σ_j A_ij g(x_i, x_j), a symmetric fixed point is stable when every eigenvalue of the linearised system is negative;
   - in special cases that becomes a condition on the largest eigenvalue κ₁ of A, or the Laplacian's spectrum, so the network's structure decides stability;
@@ -1529,7 +1530,7 @@ small worlds.
   - a table of κ₁ for several networks and their thresholds.
 - *GUESS:* numpy, `everyPaced`, `spectrum`.
 
-**`ch17-spectra`: Spectra of networks (§17.4)** · planned
+**`ch17-spectra`: Spectra of networks (§17.4)** · built
 - *Idea:*
   - the eigenvalues of A and L summarise a network;
   - random graphs have Wigner's semicircle (with κ₁ ≈ ⟨k⟩ sitting outside it);
@@ -1543,7 +1544,7 @@ small worlds.
   - power-law networks with κ₁ against √k_max.
 - *GUESS:* `spectrum`, `plotSpectrum`, a histogram of a list of numbers (see gaps).
 
-**`ch17-synchronization`: Synchronization (§17.5)** · planned
+**`ch17-synchronization`: Synchronization (§17.5)** · built
 - *Idea:*
   - coupled oscillators on a network (the Kuramoto model) lock into step once the coupling passes a threshold;
   - the order parameter r measures it;
@@ -1556,7 +1557,7 @@ small worlds.
   - "Simulate" sweeps the coupling for a random network and a ring, showing the transition.
 - *GUESS:* numpy, `everyPaced`, node colours by hue, `plotLine`.
 
-**`ch18-web-search`: Web search (§18.1)** · planned
+**`ch18-web-search`: Web search (§18.1)** · built
 - *Idea:*
   - a search engine finds pages that match the words, then ranks them by importance in the link network (PageRank) as well as relevance;
   - ranking by links alone or by text alone each fails in its own way.
@@ -1567,7 +1568,7 @@ small worlds.
   - a link-farm page shows why links alone can be gamed.
 - *GUESS:* `pagerank`, `Textfield`, `linkTo`. (Builds on `ch03-web-crawler` and `ch07-pagerank-hits`.)
 
-**`ch18-distributed-search`: Searching distributed databases (§18.2)** · planned
+**`ch18-distributed-search`: Searching distributed databases (§18.2)** · built
 - *Idea:*
   - in peer-to-peer networks a query must find the item without a central index;
   - flooding is fast but costly;
@@ -1580,7 +1581,7 @@ small worlds.
   - Builds on `ch03-p2p-search` with the analysis.
 - *GUESS:* `everyPaced`, `makeConfigurationModel`, `plotLine(logX=, logY=)`.
 
-**`ch18-kleinberg`: Navigable small worlds (§18.3.1)** · planned
+**`ch18-kleinberg`: Navigable small worlds (§18.3.1)** · built
 - *Idea:*
   - in Kleinberg's model each person on a grid has one long-range contact chosen with probability ∝ r^{−α};
   - greedy routing (always pass the message to the contact closest to the target) is fast only at α = 2 (the grid's dimension), where shortcuts are spread across every scale.
@@ -1590,7 +1591,7 @@ small worlds.
   - "Simulate": mean delivery time against α for two grid sizes, with the minimum at α = 2 sharpening as n grows.
 - *GUESS:* `makeKleinbergRandom` or the explainer's own generator, `everyPaced`, `plotLine`.
 
-**`ch18-hierarchical-search`: A hierarchical model for messages (§18.3.2)** · planned
+**`ch18-hierarchical-search`: A hierarchical model for messages (§18.3.2)** · built
 - *Idea:*
   - people belong to groups nested in a hierarchy (and to several hierarchies: where they live, what they do);
   - links are likelier between people close in the hierarchies;
@@ -1610,6 +1611,18 @@ small worlds.
 | A histogram of a list of numbers (eigenvalues, delivery times) | ch17-spectra, ch18-kleinberg | `plotHistogram` takes a field | `plotHistogram([values], bins)`: lists too |
 | Colouring nodes by a cyclic value (an oscillator's phase) | ch17-synchronization | `colorBy` ramps between two colours | `colorBy(field, cyclic=true)` (a colour wheel), or set colours in the explainer |
 | Kleinberg grids with node coordinates and α | ch18-kleinberg | `makeKleinbergRandom(size, clust)` (on a torus) | check it records grid coordinates; otherwise give it `gx`/`gy` fields |
+
+Notes from building batch 13:
+- **Added in GUESS:**
+  - line charts round both axes' ends;
+  - Markdown links to another app on the site (`[text](?app=…/manifest.json)`), so explainers can link to related ones.
+- **Kleinberg's α = 2 is a limit:** on grids of 10⁴–10⁸ people the fastest α is below 2 (0.5 → 1.75) and approaches 2 only slowly. α = 2 overtakes α = 0 from about 10⁵. `ch18-kleinberg` says so.
+- **Spectra:** κ₁ ≥ ⟨k²⟩/⟨k⟩ is not a bound; with one dominant hub κ₁ ≈ √k_max is far below it. `ch17-spectra` gives the correct bounds.
+- **Pitfalls for scripts:**
+  - computed fields such as `pagerank`, `degree` and `betweenness` shadow functions of the same name (the clash checker misses these);
+  - `*` in Markdown italicises, so write x⋆ for a fixed point.
+
+All of the book's sections now have explainers: 108 in all, Chapters 1–18.
 
 ## To do (requests not yet done)
 

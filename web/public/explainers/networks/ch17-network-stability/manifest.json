@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Stability of dynamics on networks",
+  "description": "Kick one node and watch the disturbance spread or die away: the network's eigenvalues decide which.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -2375,6 +2375,9 @@ ui.title("Organisation", "sample data")
   at the chip highlights the element in the graph and clicking selects
   it, so a panel can list a queue, a path or search results:
   `Markdown(lambda: "Queue: " + " ".join(linkTo(n) for n in queue))`.
+  Links may point to web pages (`[text](https://…)`, opened in a new tab)
+  or to another app on the same site (`[text](?app=path/manifest.json)`),
+  so an app can send readers to a related one.
 - `Chart(fn)` puts a chart in a panel instead of the dock: `fn` makes it
   with any plot command (or returns an Altair chart), and runs again after
   every command, so `Chart(lambda: plotFrequency(degree, log=true))` follows

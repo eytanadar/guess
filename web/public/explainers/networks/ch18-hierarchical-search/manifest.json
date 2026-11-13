@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "A hierarchical model for messages",
+  "description": "Why Milgram's letters arrived: people belong to groups nested in several hierarchies (where they live, what they do), friends are likelier close in a hierarchy, and passing a letter to whoever is closest to the target in any hierarchy finds short chains.",
+  "console": "toggle",
+  "script": "main.gy"
+}

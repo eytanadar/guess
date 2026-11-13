@@ -1,0 +1,402 @@
+# Web search  (Newman, Networks, Section 18.1)
+# A search engine does two jobs. First it finds the pages whose text matches
+# the query (from an index built by a crawler; see "Crawling the web" and
+# "Keyword index" in Chapter 3). Then it ranks them, and text alone ranks badly:
+# a page that repeats the words a hundred times beats a careful one. So engines
+# also use the link network: a page many good pages link to is probably good
+# (PageRank; see "PageRank, hubs and authorities" in Chapter 7). The final
+# order blends the two. Links can be gamed too: a "link farm" of pages that
+# exist only to link to one page pumps up its PageRank.
+# The web here is invented: about twenty pages on networks, cooking and travel.
+
+import math
+import re
+import numpy as np
+import networkx as nx
+
+# ---- the pages: (id, title, text) ---------------------------------------------------------------
+PAGES = [
+    ("pg_notes", "Network science lecture notes",
+     "lecture notes on network science: degree, paths, clustering, centrality and community structure of networks"),
+    ("pg_primer", "Graph theory primer", "a primer on graph theory: nodes, edges, paths, trees and the adjacency matrix"),
+    ("pg_course", "Social network analysis course",
+     "course on social network analysis: friendship networks, centrality, brokers and small worlds"),
+    ("pg_blog", "Small-world blog", "a blog about small world networks, six degrees and the kevin bacon game"),
+    ("pg_toolkit", "Network toolkit docs", "documentation for a network analysis toolkit: load a graph, compute pagerank"),
+    ("pg_wiki", "Encyclopedia: networks", "encyclopedia article on networks: graph theory, network science, internet, web"),
+    ("pg_portal", "Science portal", "news and links for science: physics, biology, networks, computing"),
+    ("pg_journal", "Journal of complex networks", "a journal publishing research on complex networks and network science"),
+    ("pg_bread", "Bread recipes", "bread recipes: sourdough, rye and quick breads with a guide to flour"),
+    ("pg_sourdough", "Sourdough guide", "the best guide to sourdough starter, flour and baking bread at home"),
+    ("pg_food", "Food portal", "recipes, cooking guides and restaurant news"),
+    ("pg_travel", "Travel guide: Lisbon", "a travel guide to lisbon: trams, food, hills and the best views"),
+    ("pg_trains", "European rail network map", "map of the european rail network: routes, stations and travel times"),
+    ("pg_tportal", "Travel portal", "travel guides, maps and rail network timetables"),
+    ("pg_forum", "Hobby forum", "forum threads about baking, travel and network cables"),
+    ("pg_spam", "BEST network guide!!!",
+     "best network guide best network guide network network network guide best best network science network guide "
+     "best network network best guide network science best"),
+]
+LINKS = [
+    ("pg_wiki", "pg_notes"), ("pg_wiki", "pg_primer"), ("pg_wiki", "pg_journal"), ("pg_wiki", "pg_trains"),
+    ("pg_portal", "pg_wiki"), ("pg_portal", "pg_notes"), ("pg_portal", "pg_journal"), ("pg_portal", "pg_toolkit"),
+    ("pg_journal", "pg_notes"), ("pg_journal", "pg_wiki"),
+    ("pg_course", "pg_notes"), ("pg_course", "pg_primer"), ("pg_course", "pg_blog"),
+    ("pg_blog", "pg_notes"), ("pg_blog", "pg_course"), ("pg_blog", "pg_wiki"),
+    ("pg_toolkit", "pg_notes"), ("pg_toolkit", "pg_primer"),
+    ("pg_primer", "pg_wiki"), ("pg_notes", "pg_primer"), ("pg_notes", "pg_wiki"),
+    ("pg_food", "pg_bread"), ("pg_food", "pg_sourdough"), ("pg_bread", "pg_sourdough"), ("pg_sourdough", "pg_bread"),
+    ("pg_forum", "pg_sourdough"), ("pg_forum", "pg_travel"), ("pg_forum", "pg_spam"),
+    ("pg_tportal", "pg_travel"), ("pg_tportal", "pg_trains"), ("pg_travel", "pg_trains"), ("pg_trains", "pg_tportal"),
+    ("pg_tportal", "pg_wiki"), ("pg_travel", "pg_food"), ("pg_portal", "pg_food"),
+    ("pg_primer", "pg_notes"), ("pg_journal", "pg_course"), ("pg_wiki", "pg_course"), ("pg_food", "pg_portal"),
+]
+POS = {"pg_notes": (0, 0), "pg_primer": (-170, 120), "pg_course": (190, 140), "pg_blog": (300, -10),
+       "pg_toolkit": (-150, -170), "pg_wiki": (-30, 260), "pg_portal": (-300, 40), "pg_journal": (120, -200),
+       "pg_bread": (-520, 330), "pg_sourdough": (-420, 450), "pg_food": (-560, 170),
+       "pg_travel": (330, 470), "pg_trains": (160, 470), "pg_tportal": (300, 330),
+       "pg_forum": (-160, 520), "pg_spam": (520, -260)}
+FARM = 10                                              # pages a spammer can add, one at a time
+for i in range(FARM):
+    a = 2 * math.pi * i / FARM
+    POS[f"pg_farm{i}"] = (640 + 150 * math.cos(a), -260 + 150 * math.sin(a))
+
+TITLE = {p: t for p, t, _x in PAGES}
+WORDS = {p: re.findall(r"[a-z]+", x.lower()) for p, _t, x in PAGES}
+for i in range(FARM):
+    TITLE[f"pg_farm{i}"] = f"farm page {i + 1}"
+    WORDS[f"pg_farm{i}"] = ["buy", "links", "here"]
+
+W = nx.DiGraph()
+for p in TITLE:
+    W.add_node(p, pos=POS[p], label=TITLE[p], born=0 if not p.startswith("pg_farm") else int(p[7:]) + 1)
+for u, v in LINKS:
+    W.add_edge(u, v, born=0)
+for i in range(FARM):                                   # each farm page links to the spam page, and it links back
+    W.add_edge(f"pg_farm{i}", "pg_spam", born=i + 1)
+    W.add_edge("pg_spam", f"pg_farm{i}", born=i + 1)
+Node.born = 0
+Edge.born = 0
+fromNetworkX(W)
+Node.textscore = 0.0
+Node.prshare = 0.0
+
+blend = Slider(0, 100, 50, 5, label="weight on links (PageRank), %")
+query = TextField("network science", placeholder="type words, then Return")
+st = {"farm": 0, "timer": None, "q": "network science", "farm_rows": [], "sweep": None}
+
+
+def live_pages():
+    return [p for p in TITLE if not p.startswith("pg_farm") or int(p[7:]) < st["farm"]]
+
+
+def live_links():
+    out = list(LINKS)
+    for i in range(st["farm"]):
+        out += [(f"pg_farm{i}", "pg_spam"), ("pg_spam", f"pg_farm{i}")]
+    return out
+
+
+def page_rank(alpha=0.85):
+    """PageRank on the pages that exist now; dangling pages jump anywhere."""
+    pages = live_pages()
+    ix = {p: i for i, p in enumerate(pages)}
+    n = len(pages)
+    outs = {p: [] for p in pages}
+    for u, v in live_links():
+        outs[u].append(v)
+    x = np.full(n, 1.0 / n)
+    for _ in range(300):
+        new = np.full(n, (1 - alpha) / n)
+        dang = sum(x[ix[p]] for p in pages if not outs[p])
+        new += alpha * dang / n
+        for p in pages:
+            if outs[p]:
+                share = alpha * x[ix[p]] / len(outs[p])
+                for v in outs[p]:
+                    new[ix[v]] += share
+        if np.abs(new - x).sum() < 1e-12:
+            x = new
+            break
+        x = new
+    return {p: float(x[ix[p]]) for p in pages}
+
+
+def text_scores(q):
+    """tf-idf: how often each query word appears in a page (as a share of its words), weighted by how rare
+    the word is across pages."""
+    words = [w for w in re.findall(r"[a-z]+", q.lower())]
+    pages = live_pages()
+    out = {p: 0.0 for p in pages}
+    for w in set(words):
+        df = sum(1 for p in pages if w in WORDS[p])
+        if not df:
+            continue
+        idf = math.log(len(pages) / df) + 0.1
+        for p in pages:
+            c = WORDS[p].count(w)
+            if c:
+                out[p] += c / len(WORDS[p]) * idf
+    return out
+
+
+def ranking(q=None, w=None):
+    q = st["q"] if q is None else q
+    w = blend.value / 100 if w is None else w
+    pr = page_rank()
+    ts = text_scores(q)
+    tmax = max(ts.values()) or 1.0
+    pmax = max(pr.values()) or 1.0
+    rows = []
+    for p in live_pages():
+        if ts[p] > 0:
+            score = (1 - w) * ts[p] / tmax + w * pr[p] / pmax
+            rows.append((score, p, ts[p] / tmax, pr[p]))
+    rows.sort(key=lambda r: (-r[0], r[1]))
+    return rows, pr, ts
+
+
+def nd(p):
+    return g.getNodeByName(p)
+
+
+def repaint(flash=None):
+    rows, pr, ts = ranking()
+    revealUpTo(st["farm"])
+    pmax = max(pr.values()) or 1.0
+    place = {p: i + 1 for i, (_s, p, _t, _r) in enumerate(rows)}
+    tmax = max(ts.values()) or 1.0
+    for p in TITLE:
+        v = nd(p)
+        if not v.visible:
+            continue
+        v.prshare = pr.get(p, 0.0)
+        v.textscore = ts.get(p, 0.0) / tmax
+        v.width = v.height = 14 + 34 * math.sqrt(pr.get(p, 0) / pmax)
+        v.strokewidth = 0
+        v.strokecolor = "60,60,60"
+        if p in place:
+            v.color = "250,200,60" if place[p] > 1 else "255,140,40"
+            v.strokecolor, v.strokewidth = "70,40,0", 3 if place[p] <= 3 else 1.5
+            v.label = f"#{place[p]} {TITLE[p]}"
+            v.labelvisible = place[p] <= 6
+        else:
+            v.color = "150,165,190" if not p.startswith("pg_farm") else "200,90,200"
+            v.label = TITLE[p]
+            v.labelvisible = p.startswith("pg_farm") is False and pr.get(p, 0) / pmax > 0.5
+    top = rows[0][1] if rows else None
+    for e in g.edges:
+        if not e.visible:
+            continue
+        a, b = e.node1.name, e.node2.name
+        if a.startswith("pg_farm") or (a == "pg_spam" and b.startswith("pg_farm")):
+            e.color, e.width, e.linestyle = "200,90,200,170", 1.5, "solid"
+        elif b == top:                                        # the links that make the top result important
+            e.color, e.width, e.linestyle = "255,140,40", 3, "flow"
+        else:
+            e.color, e.width, e.linestyle = "150,150,150,130", 1.2, "solid"
+    if flash is not None:
+        f = nd(flash)
+        f.width = f.height = 30
+        f.strokecolor, f.strokewidth = "160,0,160", 4
+        for e in g.edges:
+            if e.visible and flash in (e.node1.name, e.node2.name):
+                e.color, e.width, e.linestyle = "200,40,200", 3, "flow"
+
+
+def search(text=None):
+    st["q"] = str(query.value if text is None else text).strip() or "network"
+    if text is not None:
+        query.value = st["q"]
+    repaint()
+
+
+def results_text():
+    rows, pr, _ts = ranking()
+    if not rows:
+        return f"No page contains any of **{st['q']}**. Try *network*, *guide*, *bread* or *rail*."
+    w = blend.value
+    lines = [f"**{len(rows)}** of {len(live_pages())} pages contain a word of **{st['q']}**. Ranked by "
+             f"{100 - w}% text match and {w}% PageRank (orange: the top result, whose incoming links flow):", "",
+             "| # | page | text match | PageRank | score |", "|---|---|---|---|---|"]
+    for i, (sc, p, t, r) in enumerate(rows[:8]):
+        lines.append(f"| {i + 1} | {linkTo(nd(p), TITLE[p])} | {t:.2f} | {r:.3f} | {sc:.2f} |")
+    if w >= 85:
+        lines += ["", "Links almost alone: well-linked pages that barely match (an encyclopedia, a portal) rise "
+                  "above the pages that are really about the query."]
+    if rows[0][1] == "pg_spam":
+        lines += ["", "The keyword-stuffed page is on top: it repeats the words, and nothing else counts for "
+                  "much at this blend. Slide towards PageRank."]
+    elif any(p == "pg_spam" for _s, p, _t, _r in rows):
+        sp = next(i for i, (_s, p, _t, _r) in enumerate(rows) if p == "pg_spam") + 1
+        lines += ["", f"The keyword-stuffed page comes **#{sp}**: its text matches best, but hardly any page links "
+                  "to it."]
+    return "\n".join(lines)
+
+
+def scatter_chart():
+    if mode[0] != "Search":
+        return None
+    return plotScatter(textscore, prshare, title="Every page: text match against PageRank",
+                       xlabel="text match (best = 1)", ylabel="PageRank share")
+
+
+# ---- the link farm -----------------------------------------------------------------------------
+def spam_place(w=None):
+    rows, _pr, _ts = ranking(None, w)
+    return next((i + 1 for i, (_s, p, _t, _r) in enumerate(rows) if p == "pg_spam"), None)
+
+
+def record_farm():
+    pr = page_rank()
+    honest = max(pr[p] for p in live_pages() if p not in ("pg_spam",) and not p.startswith("pg_farm"))
+    row = (st["farm"], pr["pg_spam"], honest)
+    st["farm_rows"] = [r for r in st["farm_rows"] if r[0] != st["farm"]] + [row]
+    st["farm_rows"].sort()
+
+
+def farm_one():
+    if st["farm"] >= FARM:
+        return False
+    st["farm"] += 1
+    record_farm()
+    repaint(flash=f"pg_farm{st['farm'] - 1}")
+    if st["farm"] >= FARM:
+        farm_btn.text = "Build a link farm, page by page"
+    return FARM - st["farm"]
+
+
+def build_farm():
+    if st["timer"] is not None and st["timer"].running:
+        st["timer"].stop()
+        st["timer"] = None
+        farm_btn.text = "Build a link farm, page by page"
+        return
+    if st["farm"] >= FARM:
+        remove_farm()
+    st["timer"] = everyPaced(farm_one, steps=FARM, slow=0.9, fast=0.3, ramp=2)
+    farm_btn.text = "Pause"
+
+
+def remove_farm():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+    farm_btn.text = "Build a link farm, page by page"
+    st["farm"] = 0
+    st["farm_rows"] = []
+    record_farm()
+    repaint()
+
+
+def farm_text():
+    pr = page_rank()
+    k = st["farm"]
+    honest = max((pr[p], p) for p in live_pages() if p != "pg_spam" and not p.startswith("pg_farm"))
+    place = spam_place()
+    out = (f"The spammer's page {linkTo(nd('pg_spam'), 'BEST network guide!!!')} has **{k}** farm page"
+           f"{'s' if k != 1 else ''} (purple) linking to it, and it links back to each, so the importance it gets "
+           f"stays among them. Its PageRank share: **{pr['pg_spam']:.3f}**, against **{honest[0]:.3f}** for the "
+           f"best honest page, {linkTo(nd(honest[1]), TITLE[honest[1]])}. "
+           + (f"For the query *{st['q']}* at the current blend (both set on the Search tab) it ranks **#{place}**."
+              if place else f"It doesn't match the query *{st['q']}* at all; try *network science* on the Search tab."))
+    if k == FARM:
+        out += ("\n\nWith the whole farm the spam page has the most PageRank in this little web, so links no "
+                "longer protect the ranking. Real engines look for farms: groups of pages that link mostly to each "
+                "other and that no trusted page links to (TrustRank starts PageRank only from hand-checked pages).")
+    return out
+
+
+def farm_chart():
+    if mode[0] != "Link farm":
+        return None
+    if st["sweep"]:
+        return plotLine({"stuffed page on top, at this share of blends": st["sweep"]},
+                        title="Who wins, as the farm grows", xlabel="farm pages",
+                        ylabel="share of blends where spam is #1", yrange=(0, 1), dots=true,
+                        colors={"stuffed page on top, at this share of blends": "200,60,200"})
+    rows = st["farm_rows"]
+    if not rows:
+        return None
+    return plotLine({"spam page": [(k, a) for k, a, _h in rows], "best honest page": [(k, h) for k, _a, h in rows]},
+                    title="PageRank share as the farm grows", xlabel="farm pages", ylabel="PageRank share",
+                    dots=true, dashed=["best honest page"],
+                    colors={"spam page": "200,60,200", "best honest page": "255,140,40"}, xrange=(0, FARM))
+
+
+def sweep_one():
+    """For one farm size: at how many blends (0%..100% PageRank) the stuffed page comes first."""
+    k = len(st["sweep"])
+    if k > FARM:
+        return False
+    keep = st["farm"]
+    st["farm"] = k
+    wins = sum(1 for w in range(0, 101, 5) if spam_place(w / 100) == 1)
+    st["sweep"].append((k, wins / 21))
+    st["farm"] = keep
+    return FARM + 1 - len(st["sweep"])
+
+
+def simulate_farm():
+    st["sweep"] = []
+    everyPaced(sweep_one, steps=FARM + 1, slow=0.4, fast=0.1, ramp=2)
+
+
+def sweep_text():
+    if not st["sweep"] or len(st["sweep"]) <= FARM:
+        return (f"*Simulate:* for each farm size, try every blend from all-text to all-PageRank on the query "
+                f"*{st['q']}* and count where the stuffed page wins.")
+    first = st["sweep"][0][1]
+    last = st["sweep"][-1][1]
+    return (f"With no farm the stuffed page wins at **{first:.0%}** of blends, only where text dominates. With "
+            f"{FARM} farm pages it wins at **{last:.0%}**: the links that were meant to catch it now help it.")
+
+
+mode = ["Search"]
+
+
+def switch(title):
+    mode[0] = title
+    if title == "Search" and st["timer"] is not None:
+        build_farm()
+    farm_btn.text = "Pause" if (st["timer"] is not None and st["timer"].running) else "Build a link farm, page by page"
+    repaint()
+
+
+query.onEnter = lambda text: search(text)
+blend.onChange = lambda v: repaint()
+farm_btn = Button("Build a link farm, page by page", onClick=lambda: build_farm())
+graphevents.clickNode = lambda v: None
+record_farm()
+repaint()
+constantLabelSize(size=14)
+ui.title("Web search", "Networks, Section 18.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Match the words, then rank by the links
+Pages are sized by PageRank. Matching pages are yellow, the top result
+orange, numbered by rank. The crawler and the index are in Chapter 3
+(*Crawling the web*, *Keyword index*); PageRank is explained in Chapter 7."""),
+        Tabs(
+            Tab("Search",
+                Row(query, Button("Search", onClick=lambda: search())),
+                Row(Button("network science", onClick=lambda: search("network science")),
+                    Button("best guide", onClick=lambda: search("best guide")),
+                    Button("rail network", onClick=lambda: search("rail network"))),
+                blend,
+                Markdown(results_text),
+                Chart(scatter_chart)),
+            Tab("Link farm",
+                Markdown("""A spammer can't buy links from good pages, but can make pages of their own.
+Each farm page links to the spam page, which links back."""),
+                Row(farm_btn, Button("Remove the farm", onClick=lambda: remove_farm())),
+                Markdown(farm_text),
+                Chart(farm_chart),
+                Button("Simulate: who wins at each blend", onClick=lambda: simulate_farm()),
+                Markdown(sweep_text)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(live_pages())} pages · {len(live_links())} links · query: {st['q']}"))
+center(g.nodes)

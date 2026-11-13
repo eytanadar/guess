@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Navigable small worlds",
+  "description": "Kleinberg's model: people on a grid, each with one long-range contact at distance r chosen with probability r^-alpha. Greedy routing finds short chains only when alpha = 2, where shortcuts come at every scale.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Fixed points and stability",
+  "description": "Phase portraits in one and two variables: fixed points, linearisation, and sinks, sources, saddles, spirals and centres.",
+  "console": "toggle",
+  "script": "main.gy"
+}

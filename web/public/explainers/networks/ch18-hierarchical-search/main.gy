@@ -1,0 +1,511 @@
+# A hierarchical model for messages  (Newman, Networks, Section 18.3.2)
+# Watts, Dodds and Newman's model of why Milgram's letters arrived. Everyone
+# belongs to a small group at the bottom of a hierarchy: groups make up
+# bigger groups, and so on up (a neighbourhood in a town in a region; a team
+# in a department in a company). The distance between two people in a
+# hierarchy is the height of the lowest group that contains them both. People
+# belong to several such hierarchies at once (where they live, what they do),
+# placed independently in each. Friendships form preferentially between
+# people close in a hierarchy: a link chooses a hierarchy at random, then a
+# distance x with probability ~ exp(-alpha x), then a person at that distance.
+# alpha is homophily: 0 is random friendship, large alpha keeps friends in the
+# same small group.
+#
+# A letter goes from holder to holder: each passes it to the friend who seems
+# closest to the target, the smallest distance in ANY hierarchy (the "social
+# distance"), and gives up with probability p at each step, as many of
+# Milgram's participants did. Searches succeed when homophily is moderate and
+# people belong to two or three hierarchies: friends are then close in some
+# dimension (so the network is navigable) but spread out in others (so there
+# are shortcuts).
+
+import math
+import random
+
+D_DRAWN, G_DRAWN = 4, 8           # 2^4 = 16 small groups of 8: 128 people
+Z_HALF = 4                         # each person makes 4 friendships, so the mean degree is about 8
+GROUP_DX, LEVEL_DY, RING = 92, 80, 26
+QUARTER = ["78,121,167", "225,87,89", "89,161,79", "242,142,43"]
+FRIEND_EDGE, NEAR_EDGE = "150,150,165,45", "150,150,165,90"
+PATH_EDGE, HOP_EDGE = "245,150,40", "255,110,30"
+HOLD, HOLD_LINE = "255,215,60", "120,80,0"
+TARGET, TARGET_LINE = "235,70,60", "100,0,0"
+TREE_LINE, TREE_HOT = "140,140,150", "245,150,40"
+
+net = {"alpha": 1.0, "H": 2, "seed": 1, "leaf": [], "adj": [], "edges": {}}
+msg = {"src": None, "dst": None, "at": None, "path": [], "ydist": [], "state": "ready", "timer": None,
+       "pick": None, "via": [], "rnd": None, "fresh_build": True}
+drop = [0.25]
+sim = {"rows": {}, "len": {}, "timer": None, "i": 0}
+
+
+# ---- the model --------------------------------------------------------------------------------------------
+def hdist(a, b):
+    """Distance in one hierarchy between leaf groups a and b: 1 in the same group, else the height of the
+    lowest group containing both (binary tree, leaves at height 1)."""
+    if a == b:
+        return 1
+    return (a ^ b).bit_length() + 1
+
+
+def social(u, v, leaf, H):
+    if u == v:
+        return 0
+    return min(hdist(leaf[h][u], leaf[h][v]) for h in range(H))
+
+
+def make_model(D, G, H, alpha, zhalf, seed):
+    """People 0..n-1, each in a random leaf group of every hierarchy, and friendships formed by homophily."""
+    rnd = random.Random(seed)
+    groups = 2 ** D
+    n = groups * G
+    leaf, members = [], []
+    for h in range(H):
+        if h == 0:
+            lf = [i // G for i in range(n)]               # hierarchy 1 also sets the drawing: people in order
+        else:
+            lf = [i // G for i in range(n)]
+            rnd.shuffle(lf)
+        leaf.append(lf)
+        mem = [[] for _ in range(groups)]
+        for i, gr in enumerate(lf):
+            mem[gr].append(i)
+        members.append(mem)
+    xs = list(range(1, D + 2))
+    w = [math.exp(-alpha * x) for x in xs]
+    tot = sum(w)
+    cum, acc = [], 0.0
+    for x in w:
+        acc += x / tot
+        cum.append(acc)
+    adj = [set() for _ in range(n)]
+    for u in range(n):
+        made = 0
+        tries = 0
+        while made < zhalf and tries < 50:
+            tries += 1
+            h = rnd.randrange(H)
+            r = rnd.random()
+            x = xs[next(k for k, c in enumerate(cum) if r <= c)]
+            a = leaf[h][u]
+            if x == 1:
+                pool = members[h][a]
+            else:
+                lo = ((a >> (x - 2)) ^ 1) << (x - 2)       # the sibling subtree at height x - 1
+                pool = members[h][lo + rnd.randrange(2 ** (x - 2))]
+            v = pool[rnd.randrange(len(pool))]
+            if v != u and v not in adj[u]:
+                adj[u].add(v)
+                adj[v].add(u)
+                made += 1
+    return leaf, [sorted(a) for a in adj]
+
+
+def route(src, dst, leaf, adj, H, p, rnd, cap=60):
+    """Greedy search: (delivered?, path)."""
+    path, seen, at = [src], {src}, src
+    while at != dst and len(path) <= cap:
+        if dst in adj[at]:
+            nxt = dst
+        else:
+            if rnd.random() < p:
+                return False, path
+            fresh = [v for v in adj[at] if v not in seen] or adj[at]
+            if not fresh:
+                return False, path
+            nxt = min(fresh, key=lambda v: (social(v, dst, leaf, H), v))
+        path.append(nxt)
+        seen.add(nxt)
+        at = nxt
+    return at == dst, path
+
+
+# ---- the drawing ------------------------------------------------------------------------------------------
+def nm(i):
+    return f"h{i:03d}"
+
+
+def node_xy(i):
+    gr, k = i // G_DRAWN, i % G_DRAWN
+    ang = 2 * math.pi * k / G_DRAWN
+    return gr * GROUP_DX + RING * math.cos(ang), RING * math.sin(ang)
+
+
+def tree_xy(level, idx):
+    """Tree node at `level` (0 = leaf groups) and index idx: centred over its leaves, LEVEL_DY per level up."""
+    span = 2 ** level
+    x = (idx * span + (span - 1) / 2) * GROUP_DX
+    return x, -LEVEL_DY * (level + 0.6)
+
+
+def build():
+    stop_message()
+    remove(list(g.nodes))
+    leaf, adj = make_model(D_DRAWN, G_DRAWN, net["H"], net["alpha"], Z_HALF, net["seed"])
+    net["leaf"], net["adj"] = leaf, adj
+    net["edges"] = {}
+    n = len(adj)
+    for i in range(n):
+        x, y = node_xy(i)
+        v = addNode(nm(i), x=x, y=y)
+        v.width = v.height = 14
+    for u in range(n):
+        for v in adj[u]:
+            if u < v:
+                e = addEdge(g.getNodeByName(nm(u)), g.getNodeByName(nm(v)))
+                e.near = hdist(leaf[0][u], leaf[0][v]) <= 2
+                if leaf[0][u] != leaf[0][v]:
+                    e.arc = 50                           # between groups: an arc below the row, deeper for farther groups
+                net["edges"][(u, v)] = e
+    msg["fresh_build"] = True
+    new_pair()
+
+
+def edge_of(u, v):
+    return net["edges"].get((min(u, v), max(u, v)))
+
+
+def draw_tree(hot=None):
+    """The first hierarchy as a tree above the groups; hot = (leaf a, leaf b) highlights their paths to the
+    lowest common group."""
+    clearDrawings()
+    hot_nodes = set()
+    if hot is not None:
+        a, b = hot
+        top = hdist(a, b) - 1                              # the level of the lowest common group
+        for lf in (a, b):
+            for lev in range(0, top + 1):
+                hot_nodes.add((lev, lf >> lev))
+    for lev in range(1, D_DRAWN + 1):
+        for idx in range(2 ** (D_DRAWN - lev)):
+            px, py = tree_xy(lev, idx)
+            for c in (2 * idx, 2 * idx + 1):
+                cx, cy = tree_xy(lev - 1, c)
+                both = (lev, idx) in hot_nodes and (lev - 1, c) in hot_nodes
+                drawLine(px, py, cx, cy, color=TREE_HOT if both else TREE_LINE, width=4 if both else 1.5)
+    for idx in range(2 ** D_DRAWN):
+        x, y = tree_xy(0, idx)
+        drawLine(x, y, x, -RING - 8, color=TREE_HOT if (0, idx) in hot_nodes else TREE_LINE,
+                 width=4 if (0, idx) in hot_nodes else 1.5)
+    x, y = tree_xy(D_DRAWN, 0)
+    drawText(x, y - 40, "hierarchy 1: where people live", size=34)
+
+
+def letter_rnd(src, dst):
+    return random.Random(net["seed"] * 7 + src * 131 + dst)
+
+
+def new_pair():
+    stop_message()
+    rnd = random.Random(net["seed"] * 101 + len(msg["path"]))
+    n = len(net["adj"])
+    pairs = [(rnd.randrange(n // 4), n - 1 - rnd.randrange(n // 4)) for _ in range(30)]   # left quarter to right
+    src, dst = pairs[0]
+    if msg["fresh_build"]:
+        # the first letter on a new network is one that arrives, in at least 3 hops, so there is something to
+        # watch; later letters take their chances (each holder may give up)
+        for a, b in pairs:
+            good, path = route(a, b, net["leaf"], net["adj"], net["H"], drop[0], letter_rnd(a, b))
+            if good and len(path) >= 4:
+                src, dst = a, b
+                break
+        msg["fresh_build"] = False
+    reset_message(src, dst)
+
+
+def reset_message(src, dst):
+    msg.update(src=src, dst=dst, at=src, path=[src], ydist=[social(src, dst, net["leaf"], net["H"])],
+               state="ready", via=[], rnd=letter_rnd(src, dst))
+    repaint()
+
+
+def repaint():
+    leaf, H = net["leaf"], net["H"]
+    for v in g.nodes:
+        i = int(v.name[1:])
+        v.color = QUARTER[(leaf[0][i] * 4) // (2 ** D_DRAWN)]
+        v.strokecolor, v.strokewidth = "60,60,70", 0.8
+        v.width = v.height = 14
+        v.labelvisible = False
+    for (u, w), e in net["edges"].items():
+        e.color, e.width, e.linestyle = (NEAR_EDGE if e.near else FRIEND_EDGE), 1, "solid"
+    for a, b in zip(msg["path"], msg["path"][1:]):
+        e = edge_of(a, b)
+        if e is not None:
+            e.color, e.width = PATH_EDGE, 3.5
+    if len(msg["path"]) > 1:
+        e = edge_of(msg["path"][-2], msg["path"][-1])
+        if e is not None:
+            e.color, e.width, e.linestyle = HOP_EDGE, 5, "flow"
+    for i in msg["path"]:
+        v = g.getNodeByName(nm(i))
+        v.width = v.height = 20
+        v.strokecolor, v.strokewidth = PATH_EDGE, 2.5
+    t = g.getNodeByName(nm(msg["dst"]))
+    t.color, t.strokecolor, t.strokewidth, t.width, t.height = TARGET, TARGET_LINE, 4, 28, 28
+    t.label, t.labelvisible = "target", True
+    s0 = g.getNodeByName(nm(msg["src"]))
+    s0.label, s0.labelvisible = "start", True
+    h = g.getNodeByName(nm(msg["at"]))
+    if msg["at"] != msg["dst"]:
+        h.color, h.strokecolor, h.strokewidth, h.width, h.height = HOLD, HOLD_LINE, 4, 28, 28
+        if msg["state"] == "dropped":
+            h.label, h.labelvisible = "gave up", True
+        elif msg["at"] != msg["src"]:
+            h.label, h.labelvisible = f"distance {social(msg['at'], msg['dst'], leaf, H)}", True
+    else:
+        h.label = "delivered"
+    draw_tree((leaf[0][msg["at"]], leaf[0][msg["dst"]]))
+
+
+def hop():
+    if msg["state"] in ("delivered", "dropped"):
+        return False
+    leaf, adj, H = net["leaf"], net["adj"], net["H"]
+    at, dst = msg["at"], msg["dst"]
+    rnd = msg["rnd"]
+    if dst in adj[at]:
+        nxt, why = dst, "the target is a friend"
+    else:
+        if rnd.random() < drop[0]:
+            msg["state"] = "dropped"
+            repaint()
+            run_btn.text = "Send the letter"
+            return False
+        fresh = [v for v in adj[at] if v not in msg["path"]] or adj[at]
+        if not fresh:
+            msg["state"] = "dropped"
+            repaint()
+            return False
+        nxt = min(fresh, key=lambda v: (social(v, dst, leaf, H), v))
+        hs = [h for h in range(H) if hdist(leaf[h][nxt], leaf[h][dst]) == social(nxt, dst, leaf, H)]
+        why = f"closest in hierarchy {hs[0] + 1}"
+    msg["via"].append(why)
+    msg["at"] = nxt
+    msg["path"].append(nxt)
+    msg["ydist"].append(social(nxt, dst, leaf, H))
+    if nxt == dst:
+        msg["state"] = "delivered"
+        run_btn.text = "Send the letter"
+    else:
+        msg["state"] = "travelling"
+    repaint()
+    if len(msg["path"]) > 60:
+        msg["state"] = "dropped"
+        return False
+    return msg["state"] == "travelling"
+
+
+def play():
+    if msg["timer"] is not None and msg["timer"].running:
+        stop_message()
+        return
+    if msg["state"] in ("delivered", "dropped"):
+        reset_message(msg["src"], msg["dst"])
+    run_btn.text = "Pause"
+    msg["timer"] = everyPaced(hop, slow=1.0, fast=0.35, ramp=3)
+
+
+def stop_message():
+    if msg["timer"] is not None:
+        msg["timer"].stop()
+    msg["timer"] = None
+    try:
+        run_btn.text = "Send the letter"
+    except NameError:
+        pass
+
+
+def click(v):
+    i = int(v.name[1:])
+    stop_message()
+    if msg["pick"] is None:
+        msg["pick"] = i
+        reset_message(i, msg["dst"] if msg["dst"] != i else 0)
+    else:
+        if i != msg["pick"]:
+            reset_message(msg["pick"], i)
+        msg["pick"] = None
+
+
+def set_alpha(v=None):
+    net["alpha"] = round(float(aslider.value), 2)
+    build()
+
+
+def set_h(v=None):
+    net["H"] = int(hslider.value)
+    build()
+
+
+def set_drop(v=None):
+    drop[0] = round(float(pslider.value), 2)
+
+
+def new_network():
+    net["seed"] += 1
+    build()
+
+
+def where(i):
+    leaf, H = net["leaf"], net["H"]
+    names = ["lives in", "works in", "plays in"]
+    return ", ".join(f"{names[h]} group {leaf[h][i] + 1}" for h in range(H))
+
+
+def letter_chart():
+    d = msg["ydist"]
+    if len(d) < 1:
+        return None
+    return plotLine({"social distance to the target": [(t, x) for t, x in enumerate(d)]},
+                    title="How close the letter is", xlabel="hops", ylabel="social distance (0 = there)",
+                    colors={"social distance to the target": PATH_EDGE}, dots=True, yrange=(0, D_DRAWN + 1),
+                    xrange=(0, max(4, len(d) - 1)))
+
+
+def letter_text():
+    leaf, H = net["leaf"], net["H"]
+    hops = len(msg["path"]) - 1
+    st = msg["state"]
+    head = {"ready": "Ready.",
+            "travelling": f"Hop **{hops}**: {msg['via'][-1] if msg['via'] else ''}.",
+            "delivered": f"**Delivered** in **{hops}** hops.",
+            "dropped": f"**Dropped** after {hops} hops: this holder gave up (chance {drop[0]:.0%} at each step)."}[st]
+    chain = " → ".join(linkTo(g.getNodeByName(nm(i)), f"#{i}") for i in msg["path"][-8:])
+    return (f"Homophily α = **{net['alpha']:g}**, **{H}** "
+            + ("hierarchy" if H == 1 else "hierarchies") + f". {head}\n\n"
+            f"Target {linkTo(g.getNodeByName(nm(msg['dst'])), '#' + str(msg['dst']))}: {where(msg['dst'])}. "
+            f"Holder: {where(msg['at'])}.\n\n"
+            "Each holder passes the letter to the friend closest to the target *in any hierarchy*. The tree "
+            "shows hierarchy 1; orange marks the lowest group that holds both the holder and the target, and "
+            "the other hierarchies are invisible here: people close in them can sit anywhere.\n\n"
+            f"Chain (last 8): {chain}\n\n*Click a person to start there, then another for the target. "
+            "This is the model behind the Milgram explainer's six steps (Chapter 4).*")
+
+
+# ---- searchability against homophily ----------------------------------------------------------------------
+SIM_D, SIM_G, SIM_ZH, SIM_MSGS = 7, 20, 25, 150     # 2,560 people, about 50 friends each
+SIM_ALPHAS = [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+SIM_COL = {"1 hierarchy": "225,87,89", "2 hierarchies": "89,161,79", "3 hierarchies": "78,121,167"}
+
+
+def sim_step():
+    i = sim["i"]
+    if i >= len(SIM_ALPHAS):
+        sim["timer"] = None
+        return False
+    a = SIM_ALPHAS[i]
+    for H in (1, 2, 3):
+        leaf, adj = make_model(SIM_D, SIM_G, H, a, SIM_ZH, 500 + 17 * i + H)
+        rnd = random.Random(9 * i + H)
+        n = len(adj)
+        ok, lengths = 0, []
+        for _ in range(SIM_MSGS):
+            s0 = rnd.randrange(n)
+            t0 = rnd.randrange(n)
+            while t0 == s0:
+                t0 = rnd.randrange(n)
+            good, path = route(s0, t0, leaf, adj, H, drop[0], rnd)
+            if good:
+                ok += 1
+                lengths.append(len(path) - 1)
+        label = f"{H} hierarch{'y' if H == 1 else 'ies'}"
+        sim["rows"].setdefault(label, []).append((a, ok / SIM_MSGS))
+        if lengths:
+            sim["len"].setdefault(label, []).append((a, sum(lengths) / len(lengths)))
+    sim["i"] = i + 1
+    return len(SIM_ALPHAS) - sim["i"] or False
+
+
+def start_sim():
+    if sim["timer"] is not None and sim["timer"].running:
+        return
+    sim.update(rows={}, len={}, i=0)
+    sim["timer"] = everyPaced(sim_step, steps=len(SIM_ALPHAS), slow=0.6, fast=0.15, ramp=2)
+
+
+def success_chart():
+    if not sim["rows"]:
+        return None
+    return plotLine(sim["rows"], title="Letters delivered against homophily", xlabel="homophily α",
+                    ylabel="share delivered", colors=SIM_COL, dots=True, yrange=(0, 1))
+
+
+def length_chart():
+    if not sim["len"]:
+        return None
+    return plotLine(sim["len"], title="Length of the chains that arrived", xlabel="homophily α",
+                    ylabel="hops", colors=SIM_COL, dots=True)
+
+
+def sim_text():
+    n = 2 ** SIM_D * SIM_G
+    if not sim["rows"]:
+        return (f"*Simulate* builds bigger networks, of {n:,} people ({2 ** SIM_D} groups of {SIM_G}, about "
+                f"{2 * SIM_ZH} friends each) at each homophily α, with one, two and three hierarchies, and sends "
+                f"{SIM_MSGS} letters between random people; each holder gives up with chance {drop[0]:.0%}.")
+    best = {}
+    for label, pts in sim["rows"].items():
+        best[label] = max(pts, key=lambda p: p[1])
+    lines = [f"- {label}: best **{q:.0%}** delivered, at α = {a:g}" for label, (a, q) in best.items()]
+    if sim["i"] < len(SIM_ALPHAS):
+        return "\n".join(lines) + "\n\n*…running…*"
+    at = lambda label, a: dict(sim["rows"].get(label, []))
+    one, two, three = at("1 hierarchy", 0), at("2 hierarchies", 0), at("3 hierarchies", 0)
+    hi = SIM_ALPHAS[-1]
+    return ("\n".join(lines) +
+            f"\n\nWithout homophily (α = 0) friendships ignore the hierarchies, so closeness is no guide: "
+            f"{one.get(0.0, 0):.0%}, {two.get(0.0, 0):.0%} and {three.get(0.0, 0):.0%} delivered with one, two and "
+            "three hierarchies (extra hierarchies only add misleading closeness), and holders give up along the "
+            "way. With "
+            f"**one** hierarchy, strong homophily (α = {hi:g}) is a disaster ({one.get(hi, 0):.0%}): all your "
+            f"friends sit in your own small group, so the letter can't get out. With **two or three**, strong "
+            f"homophily still works ({two.get(hi, 0):.0%}, {three.get(hi, 0):.0%}): friends who are close in one "
+            "hierarchy are scattered in the others, and those are the shortcuts. Moderate homophily in several "
+            "dimensions is Watts, Dodds and Newman's explanation of Milgram's result.")
+
+
+# ---- plumbing -----------------------------------------------------------------------------------------------
+def switch(title):
+    if title != "Send a letter":
+        stop_message()
+
+
+Edge.near = False
+aslider = Slider(0, 2, 1, 0.25, label="homophily α")
+aslider.onChange = set_alpha
+hslider = Slider(1, 3, 2, 1, label="hierarchies")
+hslider.onChange = set_h
+pslider = Slider(0, 0.5, 0.25, 0.05, label="chance a holder gives up")
+pslider.onChange = set_drop
+run_btn = Button("Send the letter", onClick=lambda *a: play())
+graphevents.clickNode = click
+build()
+constantLabelSize(size=14)
+ui.title("A hierarchical model for messages", "Networks, Section 18.3.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Why the letters arrived
+128 people in 16 small groups (circles), nested two by two into bigger
+groups (the tree). Colours: the four biggest groups. People also belong to
+other hierarchies, placed at random."""),
+        aslider, hslider, pslider,
+        Tabs(
+            Tab("Send a letter",
+                Row(run_btn, Button("One hop", onClick=lambda *a: (stop_message(), hop())),
+                    Button("New pair", onClick=lambda *a: new_pair()),
+                    Button("New network", onClick=lambda *a: new_network())),
+                Chart(letter_chart),
+                Markdown(letter_text)),
+            Tab("Searchable networks",
+                Button("Simulate: letters at each homophily", onClick=lambda *a: start_sim()),
+                Chart(success_chart),
+                Chart(length_chart),
+                Markdown(sim_text)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(net['adj'])} people · {sum(len(a) for a in net['adj']) // 2} friendships · "
+                           f"α = {net['alpha']:g} · {net['H']} hierarch{'y' if net['H'] == 1 else 'ies'}"))
+center()                                  # the nodes and the tree drawn above them

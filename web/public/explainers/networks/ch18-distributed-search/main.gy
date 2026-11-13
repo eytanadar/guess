@@ -1,0 +1,431 @@
+# Searching distributed databases  (Newman, Networks, Section 18.2)
+# In a peer-to-peer network nobody holds an index of who has what, so a query
+# has to travel. Flooding (ask every neighbour, who ask theirs, up to a hop
+# limit) finds things fast but sends a message along almost every edge. A
+# random walk sends one message per step but wanders. On networks with
+# heavy-tailed degrees a walk that heads for the best-connected neighbour
+# reaches the hubs at once, and if every peer also knows what its neighbours
+# hold, the hubs "see" most of the network: few messages and few steps
+# (Adamic, Lukose, Puniyani and Huberman 2001). The flooding protocol itself,
+# and two-tier networks with supernodes, are in "Searching a peer-to-peer
+# network" (Chapter 3); this explainer is about how the costs grow.
+
+import math
+import random
+import numpy as np
+
+N_DRAWN = 220
+ALPHA = 2.3                 # the drawn network: heavy-tailed, but still readable
+SIM_ALPHAS = (2.1, 2.5)     # the simulation: a very heavy tail against a thinner one
+
+
+def power_degrees(n, alpha, kmin, rnd):
+    ks = [min(n - 1, int(kmin * (1 - rnd.random()) ** (-1 / (alpha - 1)))) for _ in range(n)]
+    if sum(ks) % 2:
+        ks[0] += 1
+    return ks
+
+
+def wire(ks, rnd):
+    """A simple configuration-model network (stubs paired at random, loops and repeats dropped),
+    cut down to its largest connected piece. Returns adjacency lists."""
+    stubs = [i for i, k in enumerate(ks) for _ in range(k)]
+    rnd.shuffle(stubs)
+    adj = {i: set() for i in range(len(ks))}
+    for a, b in zip(stubs[::2], stubs[1::2]):
+        if a != b:
+            adj[a].add(b)
+            adj[b].add(a)
+    seen, best = set(), []
+    for s in adj:
+        if s in seen:
+            continue
+        comp, todo = [s], [s]
+        seen.add(s)
+        while todo:
+            u = todo.pop()
+            for v in adj[u]:
+                if v not in seen:
+                    seen.add(v)
+                    comp.append(v)
+                    todo.append(v)
+        if len(comp) > len(best):
+            best = comp
+    keep = set(best)
+    return {u: sorted(adj[u] & keep) for u in best}
+
+
+# ---- the three strategies, as step-by-step generators -----------------------------------------
+# Each step yields (current nodes, edges used this step, messages so far, found?)
+def flood(adj, src, target, index):
+    seen, frontier, msgs = {src}, [src], 0
+    if src == target or (index and target in adj[src]):
+        yield [src], [], 0, True
+        return
+    while frontier:
+        nxt, used = [], []
+        for u in frontier:
+            for v in adj[u]:
+                msgs += 1
+                used.append((u, v))
+                if v not in seen:
+                    seen.add(v)
+                    nxt.append(v)
+        found = target in seen or (index and any(target in adj[v] for v in nxt))
+        yield nxt, used, msgs, found
+        if found:
+            return
+        frontier = nxt
+
+
+def walk(adj, src, target, index, biased, rnd, limit):
+    u, prev, msgs, visited = src, None, 0, {src}
+    if src == target or (index and target in adj[src]):
+        yield [src], [], 0, True
+        return
+    for _ in range(limit):
+        nb = adj[u]
+        if biased:
+            fresh = [v for v in nb if v not in visited]
+            v = max(fresh, key=lambda w: (len(adj[w]), -w)) if fresh else rnd.choice(nb)
+        else:
+            choices = [v for v in nb if v != prev] or nb
+            v = rnd.choice(choices)
+        msgs += 1
+        prev, u = u, v
+        visited.add(u)
+        found = u == target or (index and target in adj[u])
+        yield [u], [(prev, u)], msgs, found
+        if found:
+            return
+
+
+STRATS = ["Flooding", "Random walk", "Walk to the best-connected neighbour"]
+COLOR = {"Flooding": "225,80,60", "Random walk": "70,130,220", "Walk to the best-connected neighbour": "245,160,30"}
+
+
+def run_to_end(adj, src, target, strat, index, rnd, limit):
+    gen = flood(adj, src, target, index) if strat == "Flooding" else \
+        walk(adj, src, target, index, strat != "Random walk", rnd, limit)
+    steps, msgs, found = 0, 0, False
+    for _cur, _used, m, f in gen:
+        steps += 1
+        msgs, found = m, f
+        if f:
+            break
+    return steps, msgs, found
+
+
+# ---- the drawn network ---------------------------------------------------------------------------
+rnd0 = random.Random(7)
+ADJ0 = wire(power_degrees(N_DRAWN, ALPHA, 2, rnd0), rnd0)
+NODES = sorted(ADJ0)
+EDGES = sorted({(min(u, v), max(u, v)) for u in ADJ0 for v in ADJ0[u]})
+ks_local = [len(ADJ0[u]) for u in NODES]
+newGraph("peers")
+for u in NODES:
+    addNode(f"peer{u}")
+for a, b in EDGES:
+    addEdge(g.getNodeByName(f"peer{a}"), g.getNodeByName(f"peer{b}"))
+closeGraph("main") if "main" in graphNames() else None
+frLayout()
+noverlapLayout(margin=4)
+KMAX = max(len(ADJ0[u]) for u in NODES)
+st = {"src": None, "target": None, "strat": STRATS[2], "index": True, "gen": None, "cur": [], "used": [],
+      "visited": set(), "path": [], "msgs": 0, "steps": 0, "found": False, "timer": None, "curve": [],
+      "done": {}, "rnd": random.Random(3), "sim": None, "simrows": []}
+
+
+def nd(u):
+    return g.getNodeByName(f"peer{u}")
+
+
+def pick_pair(seed=None):
+    """A file at a random peer, and a random peer asking (not the same one, and not a neighbour)."""
+    r = random.Random(seed) if seed is not None else st["rnd"]
+    st["target"] = r.choice(NODES)
+    while True:
+        s = r.choice(NODES)
+        if s != st["target"] and s not in ADJ0[st["target"]]:
+            st["src"] = s
+            break
+
+
+def reset_search():
+    stop()
+    st.update(gen=None, cur=[st["src"]], used=[], visited={st["src"]}, path=[], msgs=0, steps=0, found=False,
+              curve=[(0, 0)])
+    redraw()
+
+
+def start_gen():
+    limit = 20 * len(NODES)
+    rnd = random.Random(11)
+    st["gen"] = flood(ADJ0, st["src"], st["target"], st["index"]) if st["strat"] == "Flooding" else \
+        walk(ADJ0, st["src"], st["target"], st["index"], st["strat"] != "Random walk", rnd, limit)
+
+
+def step_once():
+    if st["found"]:
+        return False
+    if st["gen"] is None:
+        start_gen()
+    try:
+        cur, used, msgs, found = next(st["gen"])
+    except StopIteration:
+        st["found"] = st["found"] or False
+        return False
+    st["steps"] += 1
+    st["cur"], st["used"], st["msgs"], st["found"] = cur, used, msgs, found
+    st["visited"].update(cur)
+    st["path"] += used
+    st["curve"].append((st["steps"], msgs))
+    if found:
+        st["done"][st["strat"] + (" (+ index)" if st["index"] else "")] = list(st["curve"])
+        play_btn.text = "Search"
+    redraw()
+    return not found
+
+
+def play():
+    if st["timer"] is not None and st["timer"].running:
+        stop()
+        return
+    if st["found"]:
+        reset_search()
+    st["timer"] = everyPaced(step_once, slow=0.8, fast=0.08, ramp=4)
+    play_btn.text = "Pause"
+
+
+def stop():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+    play_btn.text = "Search"
+
+
+def to_end():
+    stop()
+    for _ in range(40 * len(NODES)):
+        if not step_once():
+            break
+
+
+def redraw():
+    used = {(min(a, b), max(a, b)) for a, b in st["used"]}
+    path = {(min(a, b), max(a, b)) for a, b in st["path"]}
+    for u in NODES:
+        v = nd(u)
+        k = len(ADJ0[u])
+        v.width = v.height = 8 + 26 * math.sqrt(k / KMAX)
+        v.color, v.strokecolor, v.strokewidth = "175,185,205", "70,70,70", 0
+        v.labelvisible = false
+        if u in st["visited"]:
+            v.color, v.strokecolor, v.strokewidth = "120,170,240", "30,60,140", 2
+    if st["src"] is not None:
+        s = nd(st["src"])
+        s.color, s.strokecolor, s.strokewidth = "250,215,60", "90,60,0", 3
+        s.label, s.labelvisible = "asks", true
+        t = nd(st["target"])
+        t.color, t.strokecolor, t.strokewidth = "60,190,90", "0,70,20", 3
+        t.width = t.height = max(t.width, 18)
+        t.label, t.labelvisible = "has the file", true
+    for u in st["cur"]:
+        v = nd(u)
+        if u not in (st["src"], st["target"]):
+            v.color, v.strokecolor, v.strokewidth = COLOR[st["strat"]], "40,40,40", 3
+            v.width, v.height = v.width + 6, v.height + 6
+    for e in g.edges:
+        a, b = int(e.node1.name[4:]), int(e.node2.name[4:])
+        key = (min(a, b), max(a, b))
+        if key in used:
+            e.color, e.width, e.linestyle = COLOR[st["strat"]], 3, "flow"
+        elif key in path:
+            e.color, e.width, e.linestyle = "120,150,210,200", 1.6, "solid"
+        else:
+            e.color, e.width, e.linestyle = "150,150,150,90", 1, "solid"
+
+
+def click(v):
+    u = int(v.name[4:])
+    if u == st["target"]:
+        return
+    st["src"] = u
+    reset_search()
+
+
+def set_strat(v):
+    st["strat"] = v
+    reset_search()
+
+
+def set_index(v):
+    st["index"] = v.startswith("its neighbours")
+    reset_search()
+
+
+def new_pair():
+    pick_pair()
+    reset_search()
+
+
+def search_text():
+    s, t = st["src"], st["target"]
+    k = st["steps"]
+    lead = (f"{linkTo(nd(s), 'The yellow peer')} asks for a file only {linkTo(nd(t), 'the green peer')} has "
+            f"({len(NODES)} peers, degrees from a power law with exponent {ALPHA}; size is degree). ")
+    how = {"Flooding": "Every peer passes the query to all its neighbours: each round is one step, and every edge "
+                       "used is a message.",
+           "Random walk": "One message hops to a random neighbour (not straight back) each step.",
+           "Walk to the best-connected neighbour": "One message hops to the neighbour with the most links that "
+                                                  "it hasn't visited yet."}[st["strat"]]
+    idx = (" Every peer also knows its neighbours' files, so reaching a neighbour of the green peer is enough."
+           if st["index"] else " Peers know only their own files.")
+    state = (f"\n\nAfter **{k}** step{'s' if k != 1 else ''}: **{st['msgs']}** messages, **{len(st['visited'])}** "
+             f"peers reached.")
+    if st["found"]:
+        state += " **Found.**"
+        if st["strat"] == "Flooding":
+            state += " Fast, but count the messages."
+        elif st["strat"] == "Random walk":
+            state += " Cheap per step, but it wanders."
+        else:
+            hub = max(st["visited"], key=lambda u: len(ADJ0[u]))
+            state += (f" It went straight for the hubs (it passed {linkTo(nd(hub), f'one with {len(ADJ0[hub])} links')}), "
+                      "and hubs see most of the network.")
+    return lead + how + idx + state
+
+
+def search_chart():
+    if mode[0] != "Search":
+        return None
+    data = {name: pts for name, pts in st["done"].items()}
+    label = "this search"
+    if st["curve"] and len(st["curve"]) > 1 and not st["found"]:      # once found it is stored with the others
+        data[label] = st["curve"]
+    if not data:
+        return None
+    cols = {name: COLOR[next(sname for sname in STRATS if name.startswith(sname))] for name in st["done"]}
+    cols[label] = COLOR[st["strat"]]
+    return plotLine(data, title="Messages sent as the search goes on", xlabel="steps", ylabel="messages",
+                    dots=true, colors=cols, logY=true, highlight=[label])
+
+
+# ---- how the costs grow ---------------------------------------------------------------------------
+SIZES = [250, 500, 1000, 2000, 4000, 8000]
+SEARCHES = 40
+
+
+def sim_one():
+    i = len(st["simrows"])
+    if i >= len(SIZES):
+        return False
+    n = SIZES[i]
+    row = {"n": n}
+    for alpha in SIM_ALPHAS:
+        rnd = random.Random(100 + i)
+        adj = wire(power_degrees(n, alpha, 2, rnd), rnd)
+        nodes = sorted(adj)
+        for strat in STRATS:
+            costs = []
+            for _ in range(SEARCHES):
+                t, s = rnd.choice(nodes), rnd.choice(nodes)
+                steps, msgs, found = run_to_end(adj, s, t, strat, True, rnd, 20 * len(nodes))
+                costs.append(msgs)
+            row[(alpha, strat)] = float(np.median(costs))
+    st["simrows"].append(row)
+    return len(SIZES) - len(st["simrows"])
+
+
+def simulate():
+    st["simrows"] = []
+    everyPaced(sim_one, steps=len(SIZES), slow=0.6, fast=0.3, ramp=1)
+
+
+def sim_chart():
+    if mode[0] != "How costs grow" or len(st["simrows"]) < 2:
+        return None
+    data, cols, dashed = {}, {}, []
+    for alpha in SIM_ALPHAS:
+        for s in STRATS:
+            name = f"{s.split(' to the')[0].replace('Walk', 'hub-seeking walk')}, α = {alpha}"
+            data[name] = [(r["n"], max(1, r[(alpha, s)])) for r in st["simrows"]]
+            cols[name] = COLOR[s]
+            if alpha != SIM_ALPHAS[0]:
+                dashed.append(name)
+    return plotLine(data, title="Median messages to find one file", xlabel="peers (n)", ylabel="messages",
+                    log=true, dots=true, colors=cols, dashed=dashed)
+
+
+def slope(xs, ys):
+    lx, ly = np.log(np.array(xs, float)), np.log(np.maximum(np.array(ys, float), 1.0))
+    return float(np.polyfit(lx, ly, 1)[0])
+
+
+def sim_text():
+    rows = st["simrows"]
+    if len(rows) < 3:
+        return (f"*Simulate:* networks from 250 to 8,000 peers with power-law degrees, a very heavy tail "
+                f"(α = {SIM_ALPHAS[0]}, solid) and a thinner one (α = {SIM_ALPHAS[1]}, dashed); {SEARCHES} searches "
+                "for a file at a random peer, each peer knowing its neighbours' files. Log–log axes: a straight line "
+                "means messages ∝ n^slope. Medians, since a few unlucky walks take very long.")
+    ns = [r["n"] for r in rows]
+    out = ["| strategy | α | at n = 250 | at the largest n | slope |", "|---|---|---|---|---|"]
+    for alpha in SIM_ALPHAS:
+        for s in STRATS:
+            ms = [r[(alpha, s)] for r in rows]
+            out.append(f"| {s} | {alpha} | {ms[0]:.0f} | {ms[-1]:.0f} | {slope(ns, ms):.2f} |")
+    a0, a1 = SIM_ALPHAS
+    hub0 = [r[(a0, STRATS[2])] for r in rows]
+    fl0 = [r[(a0, STRATS[0])] for r in rows]
+    hub1 = [r[(a1, STRATS[2])] for r in rows]
+    out.append("")
+    out.append(f"With the heavy tail (α = {a0}) the hub-seeking walk needs about **{np.median(hub0):.0f}** messages "
+               f"whatever the size: one or two hubs are linked to a large share of everyone, and knowing their "
+               f"neighbours' files they answer almost any query. Flooding pays for every edge it crosses "
+               f"(**{fl0[0]:.0f} → {fl0[-1]:.0f}**). With the thinner tail (α = {a1}) there are no such hubs and "
+               f"the hub-seeking walk's cost grows too (**{hub1[0]:.0f} → {hub1[-1]:.0f}**): the trick needs heavy tails.")
+    return "\n".join(out)
+
+
+mode = ["Search"]
+
+
+def switch(title):
+    mode[0] = title
+    if title != "Search":
+        stop()
+
+
+play_btn = Button("Search", onClick=lambda: play())
+graphevents.clickNode = click
+pick_pair(seed=4)
+reset_search()
+constantLabelSize(size=14)
+ui.title("Searching distributed databases", "Networks, Section 18.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Finding a file with no index
+How many messages does it take? Flooding against walks, on a network with
+hubs. (The flooding protocol and supernodes: *Searching a peer-to-peer
+network*, Chapter 3.)"""),
+        Tabs(
+            Tab("Search",
+                Dropdown(STRATS, label="Strategy", value=STRATS[2], onChange=set_strat),
+                Dropdown(["its neighbours' files too", "only its own files"], label="Each peer knows",
+                         onChange=set_index),
+                Row(play_btn, Button("One step", onClick=lambda: step_once()),
+                    Button("To the end", onClick=lambda: to_end()), Button("New pair", onClick=lambda: new_pair())),
+                Markdown(search_text),
+                Chart(search_chart),
+                Markdown("*Click a peer* to ask from there. Each finished search stays on the chart, so you can compare strategies.")),
+            Tab("How costs grow",
+                Button("Simulate: bigger and bigger networks", onClick=lambda: simulate()),
+                Chart(sim_chart),
+                Markdown(sim_text)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(NODES)} peers · {len(EDGES)} links · biggest hub {KMAX} links"))
+center()

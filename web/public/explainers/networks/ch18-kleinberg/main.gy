@@ -1,0 +1,472 @@
+# Navigable small worlds  (Newman, Networks, Section 18.3.1)
+# Milgram's letters reached their targets in about six steps, so short chains
+# exist; but people found them knowing only their own contacts. Kleinberg's
+# model asks when that is possible. People live on an L x L grid, linked to
+# their lattice neighbours, and each has one long-range contact chosen with
+# probability proportional to r^-alpha, r the lattice (Manhattan) distance.
+# A message moves greedily: each holder passes it to whichever of their
+# contacts is closest to the target. Kleinberg proved that the delivery time
+# grows like a power of n unless alpha equals the dimension (2 here), where it
+# grows only like (log n)^2: shortcuts are then spread evenly over every
+# scale of distance, so there is always one that roughly halves the distance.
+#
+# A long-range contact is drawn by first picking its distance r with
+# probability proportional to (4r points at distance r) x r^-alpha, then a
+# point at that distance at random, rejecting points outside the grid: this
+# gives each grid point exactly the probability ~ r^-alpha. In the
+# simulations contacts are drawn only for the people a message visits, so
+# grids of a million people cost no more than small ones.
+
+import bisect
+import math
+import random
+
+L_DRAWN = 15
+SPACING = 46
+LAT_EDGE, LONG_EDGE = "150,150,165,70", "110,120,220,55"
+PATH_EDGE, HOP_EDGE, OFFER_EDGE = "245,150,40", "255,110,30", "60,110,240"
+PERSON, PERSON_LINE = "170,185,210", "80,90,110"
+HOLD, HOLD_LINE = "255,215,60", "120,80,0"
+TARGET, TARGET_LINE = "235,70,60", "100,0,0"
+VISITED = "250,170,90"
+
+net = {"alpha": 2.0, "seed": 1, "contact": {}, "edges": {}}
+msg = {"src": None, "dst": None, "at": None, "path": [], "dist": [], "timer": None, "pick": None, "offer": None}
+sweep = {"rows": {}, "timer": None, "i": 0}
+scale = {"rows": {}, "timer": None, "i": 0}
+hist = {"times": [], "alpha": None}
+
+
+# ---- the model, independent of the drawing ------------------------------------------------------------
+_cdf_cache = {}
+
+
+def ring_cdf(L, alpha):
+    """Cumulative weights for the distance r = 1 .. 2L-2: (4r points) x r^-alpha."""
+    key = (L, round(alpha, 4))
+    if key not in _cdf_cache:
+        acc, out = 0.0, []
+        for r in range(1, 2 * L - 1):
+            acc += 4 * r * r ** (-alpha)
+            out.append(acc)
+        _cdf_cache[key] = out
+    return _cdf_cache[key]
+
+
+def draw_contact(i, j, L, alpha, rnd):
+    """One long-range contact for the person at (i, j), with probability ~ r^-alpha (r >= 1)."""
+    cdf = ring_cdf(L, alpha)
+    total = cdf[-1]
+    while True:
+        r = bisect.bisect_left(cdf, rnd.random() * total) + 1
+        k = rnd.randrange(4 * r)
+        q, t = divmod(k, r)
+        dx, dy = [(r - t, t), (-t, r - t), (-(r - t), -t), (t, -(r - t))][q]
+        a, b = i + dx, j + dy
+        if 0 <= a < L and 0 <= b < L:
+            return (a, b)
+
+
+def lattice(i, j, L):
+    out = []
+    for a, b in ((i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)):
+        if 0 <= a < L and 0 <= b < L:
+            out.append((a, b))
+    return out
+
+
+def dist(p, q):
+    return abs(p[0] - q[0]) + abs(p[1] - q[1])
+
+
+def greedy_next(at, dst, L, contact):
+    """The contact (lattice neighbour or long-range) closest to the target."""
+    options = lattice(at[0], at[1], L) + [contact]
+    return min(options, key=lambda p: (dist(p, dst), p))
+
+
+def deliver(L, alpha, rnd, src=None, dst=None):
+    """Greedy delivery on a fresh network whose contacts are drawn as the message needs them."""
+    if src is None:
+        src = (rnd.randrange(L), rnd.randrange(L))
+        while True:
+            dst = (rnd.randrange(L), rnd.randrange(L))
+            if dst != src:
+                break
+    contacts = {}
+    at, steps = src, 0
+    while at != dst:
+        if at not in contacts:
+            contacts[at] = draw_contact(at[0], at[1], L, alpha, rnd)
+        at = greedy_next(at, dst, L, contacts[at])
+        steps += 1
+    return steps
+
+
+# ---- the drawn grid ---------------------------------------------------------------------------------------
+def nm(p):
+    return f"c{p[0]:02d}_{p[1]:02d}"
+
+
+def build():
+    stop_message()
+    remove(list(g.nodes))
+    rnd = random.Random(net["seed"])
+    net["edges"] = {}
+    L = L_DRAWN
+    net["contact"] = {}
+    for i in range(L):
+        for j in range(L):
+            v = addNode(nm((i, j)), x=i * SPACING, y=j * SPACING)
+            v.width = v.height = 14
+    for i in range(L):
+        for j in range(L):
+            for p in ((i + 1, j), (i, j + 1)):
+                if p[0] < L and p[1] < L:
+                    e = addEdge(g.getNodeByName(nm((i, j))), g.getNodeByName(nm(p)))
+                    e.kind = "lattice"
+                    net["edges"].setdefault(frozenset(((i, j), p)), []).append(e)
+    for i in range(L):
+        for j in range(L):
+            c = draw_contact(i, j, L, net["alpha"], rnd)
+            net["contact"][(i, j)] = c
+            e = addDirectedEdge(g.getNodeByName(nm((i, j))), g.getNodeByName(nm(c)))
+            e.kind = "long"
+            e.arc = 12
+            net["edges"].setdefault(frozenset(((i, j), c)), []).append(e)
+    new_pair()
+
+
+def new_pair():
+    stop_message()
+    rnd = random.Random(net["seed"] * 1000 + len(msg["path"]) + 7)
+    L = L_DRAWN
+    src = (rnd.randrange(3), rnd.randrange(3))                  # a corner to the far corner: a long trip
+    dst = (L - 1 - rnd.randrange(3), L - 1 - rnd.randrange(3))
+    reset_message(src, dst)
+
+
+def reset_message(src, dst):
+    msg.update(src=src, dst=dst, at=src, path=[src], dist=[dist(src, dst)], offer=None)
+    repaint()
+
+
+def base_look():
+    for v in g.nodes:
+        v.color, v.strokecolor, v.strokewidth = PERSON, PERSON_LINE, 0.8
+        v.width = v.height = 14
+        v.labelvisible = False
+    for e in g.edges:
+        if e.kind == "lattice":
+            e.color, e.width, e.linestyle = LAT_EDGE, 1, "solid"
+        else:
+            e.color, e.width, e.linestyle = LONG_EDGE, 1, "solid"
+
+
+def repaint():
+    base_look()
+    on_path = set(msg["path"])
+    for p in on_path:
+        v = g.getNodeByName(nm(p))
+        v.color, v.width, v.height = VISITED, 18, 18
+    for a, b in zip(msg["path"], msg["path"][1:]):
+        for e in hop_edges(a, b):
+            e.color, e.width, e.linestyle = PATH_EDGE, 3, "solid"
+    if len(msg["path"]) > 1:                          # the newest hop flows
+        for e in hop_edges(msg["path"][-2], msg["path"][-1]):
+            e.color, e.width, e.linestyle = HOP_EDGE, 4.5, "flow"
+    if msg["at"] is not None and msg["at"] != msg["dst"]:
+        c = net["contact"][msg["at"]]
+        for e in hop_edges(msg["at"], c):             # the holder's long-range contact: their best shot
+            if e.kind == "long":
+                e.color, e.width = OFFER_EDGE, 3
+        cv = g.getNodeByName(nm(c))
+        cv.strokecolor, cv.strokewidth = OFFER_EDGE, 3
+    t = g.getNodeByName(nm(msg["dst"]))
+    t.color, t.strokecolor, t.strokewidth, t.width, t.height = TARGET, TARGET_LINE, 4, 26, 26
+    t.label, t.labelvisible = "target", True
+    s0 = g.getNodeByName(nm(msg["src"]))
+    s0.label, s0.labelvisible = "start", True
+    h = g.getNodeByName(nm(msg["at"]))
+    h.color, h.strokecolor, h.strokewidth, h.width, h.height = HOLD, HOLD_LINE, 4, 26, 26
+    if msg["at"] == msg["dst"]:
+        h.color, h.label = TARGET, "delivered"
+    elif msg["at"] != msg["src"]:
+        h.label, h.labelvisible = f"{dist(msg['at'], msg['dst'])} to go", True
+
+
+def hop_edges(a, b):
+    return net["edges"].get(frozenset((a, b)), [])
+
+
+def hop():
+    if msg["at"] == msg["dst"]:
+        return False
+    nxt = greedy_next(msg["at"], msg["dst"], L_DRAWN, net["contact"][msg["at"]])
+    msg["at"] = nxt
+    msg["path"].append(nxt)
+    msg["dist"].append(dist(nxt, msg["dst"]))
+    repaint()
+    if msg["at"] == msg["dst"]:
+        run_btn.text = "Send a message"
+        return False
+    return True
+
+
+def play():
+    if msg["timer"] is not None and msg["timer"].running:
+        stop_message()
+        return
+    if msg["at"] == msg["dst"]:
+        reset_message(msg["src"], msg["dst"])
+    run_btn.text = "Pause"
+    msg["timer"] = everyPaced(hop, slow=0.9, fast=0.3, ramp=3)
+
+
+def stop_message():
+    if msg["timer"] is not None:
+        msg["timer"].stop()
+    msg["timer"] = None
+    try:
+        run_btn.text = "Send a message"
+    except NameError:
+        pass
+
+
+def click(v):
+    p = (int(v.name[1:3]), int(v.name[4:6]))
+    stop_message()
+    if msg["pick"] is None:
+        msg["pick"] = p
+        reset_message(p, msg["dst"] if msg["dst"] != p else (L_DRAWN - 1, L_DRAWN - 1))
+    else:
+        if p != msg["pick"]:
+            reset_message(msg["pick"], p)
+        msg["pick"] = None
+
+
+def set_alpha(v=None):
+    net["alpha"] = round(float(aslider.value), 2)
+    build()
+
+
+def new_contacts():
+    net["seed"] += 1
+    build()
+
+
+def message_chart():
+    d = msg["dist"]
+    if not d:
+        return None
+    walk = [(t, max(0, d[0] - t)) for t in range(d[0] + 1)]
+    return plotLine({"greedy, with shortcuts": [(t, x) for t, x in enumerate(d)], "the grid alone": walk},
+                    title="Distance to the target", xlabel="hops", ylabel="lattice distance",
+                    dashed=["the grid alone"], colors={"greedy, with shortcuts": PATH_EDGE, "the grid alone": "150,150,150"},
+                    dots=True, xrange=(0, max(len(d) - 1, d[0])), yrange=(0, d[0]))
+
+
+def message_text():
+    a = net["alpha"]
+    hops = len(msg["path"]) - 1
+    d0 = msg["dist"][0]
+    chain = " → ".join(linkTo(g.getNodeByName(nm(p)), f"{p[0]},{p[1]}") for p in msg["path"][-8:])
+    state = ("**Delivered** in **%d** hops (the grid alone would take %d)." % (hops, d0)
+             if msg["at"] == msg["dst"] else
+             f"Hop **{hops}**: **{dist(msg['at'], msg['dst'])}** steps of grid still to go. The holder (yellow) "
+             "looks at their four neighbours and their long-range contact (blue) and passes the message to "
+             "whichever is closest to the target (red).")
+    return (f"α = **{a:g}**: long-range contacts at distance r are chosen with probability ∝ r^−{a:g}. "
+            + {True: "Shortcuts are spread across every distance, which is what greedy routing needs.",
+               False: ("Most contacts are far away and random: good shortcuts exist, but greedy routing can't "
+                       "steer with them near the target." if a < 2 else
+                       "Most contacts are close by: they rarely help on a long trip.")}[abs(a - 2) < 1e-9]
+            + f"\n\n{state}\n\nChain (last 8): {chain}\n\n*Click a person to start there, then another for the target.*")
+
+
+# ---- delivery time against alpha ------------------------------------------------------------------------
+ALPHAS = [0.0, 0.5, 1.0, 1.5, 1.75, 2.0, 2.25, 2.5, 3.0]
+SIZES = {"n = 10⁴ (100 × 100)": 100, "n = 10⁶ (1,000 × 1,000)": 1000, "n = 10⁸ (10,000 × 10,000)": 10000}
+TRIALS = 30
+
+
+def sweep_step():
+    i = sweep["i"]
+    if i >= len(ALPHAS):
+        sweep["timer"] = None
+        return False
+    a = ALPHAS[i]
+    for label, L in SIZES.items():
+        rnd = random.Random(1000 * i + L)
+        times = [deliver(L, a, rnd) for _ in range(TRIALS)]
+        sweep["rows"].setdefault(label, []).append((a, sum(times) / len(times)))
+    sweep["i"] = i + 1
+    return len(ALPHAS) - sweep["i"] or False
+
+
+def start_sweep():
+    if sweep["timer"] is not None and sweep["timer"].running:
+        return
+    sweep.update(rows={}, i=0)
+    sweep["timer"] = everyPaced(sweep_step, steps=len(ALPHAS), slow=0.6, fast=0.15, ramp=2)
+
+
+def sweep_chart():
+    if not sweep["rows"]:
+        return None
+    data = dict(sweep["rows"])
+    top = max(y for pts in data.values() for _x, y in pts)
+    data["α = 2"] = [(2, 0), (2, top)]
+    return plotLine(data, title="Mean delivery time against α", xlabel="α", ylabel="hops", dashed=["α = 2"],
+                    colors={"α = 2": "150,150,150"}, dots=True, logY=True)
+
+
+def sweep_text():
+    if not sweep["rows"]:
+        return ("*Simulate* sends 30 messages between random people at each α, on grids of ten thousand, a million "
+                "and a hundred million people. Contacts are drawn only for the people a message visits, so even "
+                "the biggest grid is cheap.")
+    out = []
+    for label, pts in sweep["rows"].items():
+        best = min(pts, key=lambda p: p[1])
+        out.append(f"- {label}: fastest at **α = {best[0]:g}** ({best[1]:.1f} hops)")
+    done = sweep["i"] >= len(ALPHAS)
+    return ("\n".join(out) + ("\n\nTwo things to see. The dip deepens as n grows: far from α = 2 delivery time "
+                              "explodes (at α = 3 it grows like a power of n), near it only like (log n)². And the "
+                              "fastest α creeps *up towards 2* as n grows. Kleinberg's theorem is about the limit "
+                              "of very large n; on finite grids a slightly smaller α wins, because shortcuts a "
+                              "little longer than ideal still help when the grid isn't infinite."
+                              if done else "\n\n*…running…*"))
+
+
+def hist_run():
+    rnd = random.Random(77)
+    hist["times"] = [deliver(L_DRAWN, net["alpha"], rnd) for _ in range(400)]
+    hist["alpha"] = net["alpha"]
+
+
+def hist_chart():
+    if not hist["times"]:
+        return None
+    return plotHistogram(hist["times"], 12, title=f"400 messages on this grid (α = {hist['alpha']:g})")
+
+
+def hist_text():
+    if not hist["times"]:
+        return "*400 messages* between random people on a 15 × 15 grid at the current α."
+    t = hist["times"]
+    return (f"Mean **{sum(t) / len(t):.1f}** hops, longest **{max(t)}**, for random pairs whose mean grid distance "
+            f"is {2 * (L_DRAWN ** 2 - 1) / (3 * L_DRAWN):.1f}. On a grid this small every α does fairly well; "
+            "the differences show as n grows.")
+
+
+# ---- how it scales with n -----------------------------------------------------------------------------------
+SCALE_L = [10, 30, 100, 300, 1000, 3000, 10000]
+SCALE_ALPHAS = [0.0, 2.0, 3.0]
+
+
+def scale_step():
+    i = scale["i"]
+    if i >= len(SCALE_L):
+        scale["timer"] = None
+        return False
+    L = SCALE_L[i]
+    for a in SCALE_ALPHAS:
+        rnd = random.Random(31 * L + int(10 * a))
+        times = [deliver(L, a, rnd) for _ in range(30)]
+        scale["rows"].setdefault(a, []).append((L * L, sum(times) / len(times)))
+    scale["i"] = i + 1
+    return len(SCALE_L) - scale["i"] or False
+
+
+def start_scale():
+    if scale["timer"] is not None and scale["timer"].running:
+        return
+    scale.update(rows={}, i=0)
+    scale["timer"] = everyPaced(scale_step, steps=len(SCALE_L), slow=0.6, fast=0.15, ramp=2)
+
+
+def scale_chart():
+    if not scale["rows"]:
+        return None
+    data, cols = {}, {}
+    pal = {0.0: "225,87,89", 2.0: "89,161,79", 3.0: "78,121,167"}
+    for a, pts in scale["rows"].items():
+        name = f"α = {a:g}"
+        data[name] = pts
+        cols[name] = pal[a]
+        n0, t0 = pts[0]
+        if a == 2.0:
+            ref = [(n, t0 * (math.log(n) / math.log(n0)) ** 2) for n, _t in pts]
+            label = "(log n)²"
+        else:
+            e = 2 / 3 if a == 0 else 1 / 2
+            ref = [(n, t0 * (n / n0) ** e) for n, _t in pts]
+            label = f"n^{'2/3' if a == 0 else '1/2'}"
+        data[f"{label} (α = {a:g})"] = ref
+        cols[f"{label} (α = {a:g})"] = pal[a]
+    return plotLine(data, title="Delivery time as the grid grows", xlabel="n (people)", ylabel="hops",
+                    dashed=[k for k in data if "(" in k], colors=cols, dots=True, log=True)
+
+
+def scale_text():
+    if not scale["rows"]:
+        return ("*Simulate* grows the grid from 100 to a hundred million people and sends 30 messages at α = 0, 2 "
+                "and 3. Dashed: the growth Kleinberg predicts, n^(2−α)/3 for α < 2, (log n)² at α = 2, "
+                "n^(α−2)/(α−1) for α > 2, each started at the first point.")
+    lines = []
+    for a, pts in scale["rows"].items():
+        if len(pts) > 1:
+            (n0, t0), (n1, t1) = pts[0], pts[-1]
+            lines.append(f"- α = {a:g}: {t0:.1f} → {t1:.1f} hops as n goes from {n0:,} to {n1:,}")
+    return "\n".join(lines) + ("\n\nOn log–log axes a power of n is a straight line: α = 0 and α = 3 climb "
+                               "steadily, while α = 2 bends over like (log n)². α = 0 is a little faster on small grids, "
+                               "but α = 2 overtakes it at around a hundred thousand people, and by a hundred "
+                               "million it is three times faster and the gap keeps widening."
+                               if scale["i"] >= len(SCALE_L) else "\n\n*…running…*")
+
+
+# ---- plumbing -----------------------------------------------------------------------------------------------
+def switch(title):
+    if title != "Send a message":
+        stop_message()
+
+
+Edge.kind = ""
+aslider = Slider(0, 4, 2, 0.25, label="α (contacts thin out)")
+aslider.onChange = set_alpha
+run_btn = Button("Send a message", onClick=lambda *a: play())
+graphevents.clickNode = click
+build()
+constantLabelSize(size=14)
+ui.title("Navigable small worlds", "Networks, Section 18.3.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Finding the short chains
+People on a grid, each with one long-range contact (faint blue arrows). The
+message always goes to the contact closest to the target."""),
+        aslider,
+        Tabs(
+            Tab("Send a message",
+                Row(run_btn, Button("One hop", onClick=lambda *a: (stop_message(), hop())),
+                    Button("New pair", onClick=lambda *a: new_pair()),
+                    Button("New contacts", onClick=lambda *a: new_contacts())),
+                Chart(message_chart),
+                Markdown(message_text)),
+            Tab("Best α",
+                Button("Simulate: delivery time at each α", onClick=lambda *a: start_sweep()),
+                Chart(sweep_chart),
+                Markdown(sweep_text),
+                Button("400 messages on this grid", onClick=lambda *a: hist_run()),
+                Chart(hist_chart),
+                Markdown(hist_text)),
+            Tab("As n grows",
+                Button("Simulate: growing grids", onClick=lambda *a: start_scale()),
+                Chart(scale_chart),
+                Markdown(scale_text)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{L_DRAWN} × {L_DRAWN} grid · α = {net['alpha']:g} · hops so far: {len(msg['path']) - 1}"))
+center(g.nodes)

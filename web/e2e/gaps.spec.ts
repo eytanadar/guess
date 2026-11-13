@@ -92,3 +92,13 @@ test("showDendrogram draws a linked tree and colours a cut", async ({ page }) =>
   await expect(page.locator(".cell").last()).toContainText("[0, 1]");
   expect(errors).toEqual([]);
 });
+
+test("Markdown links to another app on the site", async ({ page }) => {
+  await boot(page);
+  await run(page, "ui.layout(right=Markdown('See [Milgram](?app=explainers/networks/ch04-milgram/manifest.json).'))");
+  const a = page.locator(".w-markdown a", { hasText: "Milgram" });
+  await expect(a).toHaveAttribute("href", "?app=explainers/networks/ch04-milgram/manifest.json");
+  await a.click();
+  await page.waitForFunction(() => (window as any).__guess?.renderer?.nodes?.size > 0, null, { timeout: 90000 });
+  await expect(page).toHaveURL(/ch04-milgram/);
+});

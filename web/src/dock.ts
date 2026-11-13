@@ -55,6 +55,10 @@ export function markdown(text: string): DocumentFragment {
       } else if ((m = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(part)) && /^https?:\/\//.test(m[2])) {
         const a = document.createElement("a"); a.textContent = m[1]; a.href = m[2]; a.target = "_blank"; a.rel = "noopener";
         into.append(a);
+      } else if ((m = /^\[([^\]]+)\]\((\?app=[\w./-]+)\)$/.exec(part))) {
+        // another app on this site (an explainer linking to a related one): opens here
+        const a = document.createElement("a"); a.textContent = m[1]; a.href = m[2];
+        into.append(a);
       } else into.append(part);
     }
   };
@@ -535,8 +539,10 @@ export class Dock {
         // scatter plots fit the data rather than always including zero
         if (!c.logX) [xmin, xmax] = pad(Math.min(...txs), Math.max(...txs));
         if (!c.logY) [ymin, ymax] = pad(Math.min(...tys), Math.max(...tys));
-      } else if (all.length && !c.logY && ymax > ymin) {
-        [ymin, ymax] = pad(ymin, ymax);                   // line charts: a round number at the top
+      } else if (all.length) {
+        // line charts: round numbers at the ends of both axes
+        if (!c.logY && ymax > ymin) [ymin, ymax] = pad(ymin, ymax);
+        if (!c.logX && xmax > xmin) [xmin, xmax] = pad(xmin, xmax);
       }
       if (!all.length) { xmin = 0; xmax = 1; ymin = 0; ymax = 1; }
       if (c.xRange) [xmin, xmax] = c.logX ? [Math.log10(c.xRange[0]), Math.log10(c.xRange[1])] : c.xRange;

@@ -1,0 +1,444 @@
+# Spectra of networks  (Newman, Networks, Section 17.4)
+# A network's matrices have eigenvalues that summarise its structure, and
+# Chapter 17 shows they decide how processes on the network behave. For the
+# adjacency matrix A of a random graph with mean degree c, the bulk of the
+# eigenvalues fills a semicircle of radius about 2 sqrt(c) (Wigner's law),
+# and the largest, kappa_1, sits outside it near c + 1. In networks with hubs
+# kappa_1 is set by the hubs instead: it is never less than sqrt(k_max), and
+# for networks with many hubs it is close to <k^2>/<k>. The Laplacian L = D - A has one zero eigenvalue per component;
+# its smallest non-zero one (the spectral gap) says how well connected the
+# network is. The normalised Laplacian's eigenvalues lie between 0 and 2,
+# with the bulk of a random graph around 1.
+#
+# Eigenvalues are computed with numpy (eigh: the matrices are symmetric).
+
+import math
+import random
+import numpy as np
+
+NETS = {"Random (Poisson, mean degree 6)": "random", "Hubs (power-law degrees)": "powerlaw",
+        "Small world (ring with shortcuts)": "smallworld", "Karate club": "karate"}
+MATS = {"Adjacency A": "A", "Laplacian L = D − A": "L", "Normalised Laplacian": "N"}
+N = 200
+POS_COL, NEG_COL, MID_COL = (225, 70, 55), (60, 120, 220), (238, 238, 238)
+HIST_COL, THEORY_COL, MARK_COL = "78,121,167", "225,87,89", "242,142,43"
+
+st = {"net": "random", "mat": "A", "vals": None, "vecs": None, "names": [], "shown": None,
+      "walk": None, "grow": [], "growspec": None, "hubs": [], "timer": None}
+
+
+# ---- networks ---------------------------------------------------------------------------------
+def power_degrees(n, alpha, kmin, kmax, r):
+    out = []
+    while len(out) < n:
+        k = int(kmin * (1 - r.random()) ** (-1 / (alpha - 1)))
+        if k <= kmax:
+            out.append(k)
+    if sum(out) % 2:
+        out[0] += 1
+    return out
+
+
+def build(net):
+    stop_walk()
+    if net == "random":
+        makeErdosRenyiRandom(N, 6.0 / (N - 1), seed=3)
+    elif net == "powerlaw":
+        makeConfigurationModel(power_degrees(N, 2.3, 2, 80, random.Random(5)), simple=true, seed=7, layout=false)
+    elif net == "smallworld":
+        makeWattsStrogatz(N, 6, 0.08, seed=2)
+    else:
+        makeSample("karate")
+    if net in ("random", "powerlaw"):
+        frLayout()
+        binPackLayout(false)
+        noverlapLayout(margin=3)
+    st["net"] = net
+    st["names"] = [v.name for v in g.nodes]
+    decompose()
+    paint_vector(0)
+    center(g.nodes)
+
+
+def adjacency():
+    idx = {nm: i for i, nm in enumerate(st["names"])}
+    A = np.zeros((len(idx), len(idx)))
+    for e in g.edges:
+        a, b = idx[e.node1.name], idx[e.node2.name]
+        if a != b:
+            A[a, b] = A[b, a] = 1.0
+    return A
+
+
+def matrix_of(A, kind):
+    k = A.sum(1)
+    if kind == "A":
+        return A
+    if kind == "L":
+        return np.diag(k) - A
+    inv = np.where(k > 0, 1 / np.sqrt(np.where(k > 0, k, 1)), 0.0)
+    return np.eye(len(k)) - inv[:, None] * A * inv[None, :]
+
+
+def decompose():
+    A = adjacency()
+    vals, vecs = np.linalg.eigh(matrix_of(A, st["mat"]))
+    st["vals"], st["vecs"], st["deg"] = vals, vecs, A.sum(1)
+
+
+def order():
+    """Eigenvector indices in the order worth looking at: A from the largest, L from the smallest."""
+    n = len(st["vals"])
+    return list(range(n - 1, -1, -1)) if st["mat"] == "A" else list(range(n))
+
+
+# ---- colouring by an eigenvector ----------------------------------------------------------------
+def mix(a, b, t):
+    return ",".join(str(int(a[i] + (b[i] - a[i]) * t)) for i in range(3))
+
+
+def paint_vector(pos):
+    """Nodes coloured by the eigenvector at position pos in order(): red positive, blue negative."""
+    j = order()[pos]
+    v = st["vecs"][:, j]
+    if v.sum() < 0:
+        v = -v                                 # an eigenvector's sign is arbitrary: make the larger side red
+    top = max(1e-12, float(np.abs(v).max()))
+    by = {nm: float(v[i]) for i, nm in enumerate(st["names"])}
+    big = sorted(by, key=lambda nm: -abs(by[nm]))[:4]
+    for nd in g.nodes:
+        t = by[nd.name] / top
+        nd.color = mix(MID_COL, POS_COL if t >= 0 else NEG_COL, min(1.0, abs(t)))
+        nd.strokecolor = "60,60,60"
+        nd.strokewidth = 0.8
+        nd.width = nd.height = 7 + 20 * abs(t)
+        nd.labelvisible = nd.name in big
+        nd.label = f"{by[nd.name]:+.2f}"
+    for e in g.edges:
+        same = by[e.node1.name] * by[e.node2.name] > 0
+        e.color = "150,150,160,110" if same else "120,120,130,45"
+        e.width = 1.0
+        e.linestyle = "solid"
+    st["shown"] = pos
+
+
+def walk_step():
+    pos = st["walk"]
+    if pos is None or pos >= min(8, len(st["vals"])):
+        st["walk"] = None
+        st["timer"] = None
+        walk_btn.text = "Show eigenvectors one by one"
+        return False
+    paint_vector(pos)
+    st["walk"] = pos + 1
+    return True
+
+
+def toggle_walk():
+    if st["timer"] is not None:
+        stop_walk()
+        return
+    st["walk"] = 0
+    walk_btn.text = "Pause"
+    st["timer"] = everyPaced(walk_step, slow=1.6, fast=0.9, ramp=2)
+
+
+def stop_walk():
+    if st["timer"] is not None:
+        st["timer"].stop()
+    st["timer"] = None
+    st["walk"] = None
+    walk_btn.text = "Show eigenvectors one by one"
+
+
+# ---- the histogram and its theory ---------------------------------------------------------------
+def densities(vals, bins=30, lo=None, hi=None):
+    lo = float(vals.min()) if lo is None else lo
+    hi = float(vals.max()) if hi is None else hi
+    if hi <= lo:
+        hi = lo + 1
+    counts, edges = np.histogram(vals, bins=bins, range=(lo, hi))
+    w = edges[1] - edges[0]
+    return [(float((edges[i] + edges[i + 1]) / 2), float(counts[i] / (len(vals) * w))) for i in range(bins)]
+
+
+def semicircle(centre, radius, steps=60):
+    pts = []
+    for i in range(steps + 1):
+        x0 = centre - radius + 2 * radius * i / steps
+        h = max(0.0, radius * radius - (x0 - centre) ** 2)
+        pts.append((x0, 2 * math.sqrt(h) / (math.pi * radius * radius)))
+    return pts
+
+
+def mean_degree():
+    return float(st["deg"].mean())
+
+
+def theory_for(mat, c):
+    """The random-graph bulk: A's semicircle of radius 2 sqrt(c) at 0; the normalised
+    Laplacian's of radius 2/sqrt(c) around 1. None for L (no simple law)."""
+    if mat == "A":
+        return semicircle(0.0, 2 * math.sqrt(c))
+    if mat == "N":
+        return semicircle(1.0, 2 / math.sqrt(c))
+    return None
+
+
+def hist_chart():
+    vals = st["vals"]
+    if vals is None:
+        return None
+    data = {"eigenvalues": densities(vals)}
+    cols = {"eigenvalues": HIST_COL}
+    dashed = []
+    th = theory_for(st["mat"], mean_degree()) if st["net"] in ("random", "smallworld", "powerlaw") else None
+    if th is not None and st["net"] == "random":
+        data["semicircle (random-graph theory)"] = th
+        cols["semicircle (random-graph theory)"] = THEORY_COL
+        dashed.append("semicircle (random-graph theory)")
+    hl = []
+    if st["shown"] is not None:
+        lam = float(vals[order()[st["shown"]]])
+        data["eigenvector shown"] = [(lam, 0.0)]
+        cols["eigenvector shown"] = MARK_COL
+        hl.append("eigenvector shown")
+    title = {"A": "Eigenvalues of A", "L": "Eigenvalues of L", "N": "Eigenvalues of the normalised Laplacian"}[st["mat"]]
+    lo, hi = math.floor(float(vals[0])), math.ceil(float(vals[-1]))
+    if th is not None and st["net"] == "random":
+        lo, hi = min(lo, math.floor(th[0][0])), max(hi, math.ceil(th[-1][0]))
+    return plotLine(data, title=title, xlabel="eigenvalue", ylabel="density", dots=true, dashed=dashed,
+                    highlight=hl, colors=cols, xrange=(lo, hi))      # round numbers at the ends of the axis
+
+
+def hist_text():
+    vals = st["vals"]
+    if vals is None:
+        return ""
+    c = mean_degree()
+    n = len(vals)
+    kmax = float(st["deg"].max())
+    k2k = float((st["deg"] ** 2).sum() / max(1.0, st["deg"].sum()))
+    out = [f"**{n}** nodes, mean degree ⟨k⟩ = **{c:.2f}**, largest degree **{kmax:.0f}**."]
+    if st["mat"] == "A":
+        k1, k2 = float(vals[-1]), float(vals[-2])
+        out.append(f"Largest eigenvalue **κ₁ = {k1:.2f}**; the next is {k2:.2f}.")
+        if st["net"] == "random":
+            out.append(f"For a random graph the bulk fills a semicircle of radius 2√c = **{2 * math.sqrt(c):.2f}** "
+                       f"(dashed), and κ₁ sits outside it, near c + 1 = **{c + 1:.2f}**: the leading eigenvector is "
+                       "spread over the whole network.")
+        elif st["net"] == "powerlaw":
+            out.append(f"With hubs, κ₁ is set by them. It is never less than √k_max = **{math.sqrt(kmax):.2f}**, "
+                       f"and with many hubs it is close to ⟨k²⟩/⟨k⟩ = **{k2k:.2f}** (the estimate for "
+                       "uncorrelated networks). The leading eigenvector concentrates on the hubs (big red nodes).")
+        else:
+            out.append(f"⟨k⟩ = {c:.2f}, ⟨k²⟩/⟨k⟩ = {k2k:.2f}, √k_max = {math.sqrt(kmax):.2f}. "
+                       "κ₁ is never less than ⟨k⟩, nor than √k_max.")
+    else:
+        zeros = int((np.abs(vals) < 1e-8).sum())
+        nz = [float(v) for v in vals if abs(v) > 1e-8]
+        gap = nz[0] if nz else 0.0
+        out.append(f"**{zeros}** zero eigenvalue{'s' if zeros != 1 else ''}: one per component. The smallest "
+                   f"non-zero one, the **spectral gap**, is **{gap:.3f}**: small when the network nearly falls "
+                   "into two pieces (a bottleneck), as the ring-like small world shows.")
+        if st["mat"] == "N":
+            out.append(f"Every eigenvalue lies between 0 and 2 (here up to {float(vals[-1]):.2f}); a random "
+                       "graph's bulk sits around 1 with radius about 2/√c.")
+        else:
+            out.append(f"The largest is {float(vals[-1]):.2f}, never more than 2 k_max = {2 * kmax:.0f}.")
+    if st["shown"] is not None:
+        j = order()[st["shown"]]
+        which = ["largest", "2nd largest", "3rd largest"] if st["mat"] == "A" else ["smallest", "2nd smallest", "3rd smallest"]
+        nth = which[st["shown"]] if st["shown"] < 3 else f"number {st['shown'] + 1}"
+        out.append(f"\n\nOn the nodes: the eigenvector of the **{nth}** eigenvalue ({float(st['vals'][j]):.3f}), "
+                   "red positive, blue negative, size its magnitude (the four biggest are labelled).")
+    return " ".join(out)
+
+
+# ---- grow n: the semicircle emerging -----------------------------------------------------------
+GROW_N = [100, 200, 400, 800]
+GROW_C = 6.0
+
+
+def random_adjacency(n, c, r):
+    p = c / (n - 1)
+    up = np.triu((r.random((n, n)) < p).astype(float), 1)
+    return up + up.T
+
+
+def grow_step():
+    k = len(st["grow"])
+    if k >= len(GROW_N):
+        grow_btn.text = "Simulate: grow n"
+        st["growtimer"] = None
+        return False
+    n = GROW_N[k]
+    A = random_adjacency(n, GROW_C, np.random.default_rng(10 + k))
+    vals = np.linalg.eigvalsh(A)
+    st["grow"].append((n, float(vals[-1]), float(vals[-2]), float(A.sum() / n)))
+    st["growspec"] = (n, vals)
+    return len(GROW_N) - len(st["grow"])
+
+
+def start_grow():
+    st["grow"] = []
+    st["growspec"] = None
+    grow_btn.text = "Growing…"
+    st["growtimer"] = everyPaced(grow_step, steps=len(GROW_N) + 1, slow=1.2, fast=0.6, ramp=1)
+
+
+def grow_hist_chart():
+    if st["growspec"] is None:
+        return None
+    n, vals = st["growspec"]
+    c = GROW_C
+    data = {f"eigenvalues (n = {n})": densities(vals, bins=40, lo=-2.6 * math.sqrt(c), hi=c + 2),
+            "semicircle": semicircle(0.0, 2 * math.sqrt(c)),
+            "κ₁": [(float(vals[-1]), 0.0)]}
+    return plotLine(data, title="Random graph: eigenvalues of A", xlabel="eigenvalue", ylabel="density", dots=true,
+                    dashed=["semicircle"], highlight=["κ₁"], xrange=(math.floor(-2.6 * math.sqrt(c)), math.ceil(c + 2)),
+                    colors={f"eigenvalues (n = {n})": HIST_COL, "semicircle": THEORY_COL, "κ₁": MARK_COL})
+
+
+def grow_chart():
+    if not st["grow"]:
+        return None
+    ns = [n for n, *_r in st["grow"]]
+    lo, hi = min(ns), max(ns)
+    data = {"κ₁ (largest)": [(n, k1) for n, k1, _k2, _c in st["grow"]],
+            "next largest (bulk edge)": [(n, k2) for n, _k1, k2, _c in st["grow"]],
+            "c + 1": [(lo, GROW_C + 1), (hi, GROW_C + 1)],
+            "2√c": [(lo, 2 * math.sqrt(GROW_C)), (hi, 2 * math.sqrt(GROW_C))]}
+    return plotLine(data, title="As the network grows (mean degree 6)", xlabel="n", ylabel="eigenvalue", logX=true,
+                    dots=true, dashed=["c + 1", "2√c"], yrange=(0, 9),
+                    colors={"κ₁ (largest)": MARK_COL, "c + 1": MARK_COL,
+                            "next largest (bulk edge)": HIST_COL, "2√c": HIST_COL})
+
+
+def grow_text():
+    if not st["grow"]:
+        return ("Random graphs with mean degree 6 and more and more nodes. Watch the histogram settle onto the "
+                "semicircle while κ₁ stays apart from it.")
+    rows = ["| n | κ₁ | c + 1 | bulk edge | 2√c |", "|---|---|---|---|---|"]
+    for n, k1, k2, c in st["grow"]:
+        rows.append(f"| {n} | {k1:.2f} | {c + 1:.2f} | {k2:.2f} | {2 * math.sqrt(c):.2f} |")
+    return ("κ₁ stays near c + 1 while the rest of the spectrum fills the semicircle of radius 2√c; the gap "
+            "between them is why the leading eigenvector (eigenvector centrality) is well defined.\n\n" + "\n".join(rows))
+
+
+# ---- hubs: kappa_1 against sqrt(k_max) ---------------------------------------------------------
+HUB_KMAX = [10, 20, 40, 80, 160, 320]
+HUB_N = 600
+
+
+def config_adjacency(ks, r):
+    stubs = [i for i, k in enumerate(ks) for _ in range(k)]
+    r.shuffle(stubs)
+    n = len(ks)
+    A = np.zeros((n, n))
+    for i in range(0, len(stubs) - 1, 2):
+        a, b = stubs[i], stubs[i + 1]
+        if a != b:
+            A[a, b] = A[b, a] = 1.0
+    return A
+
+
+def hub_step():
+    k = len(st["hubs"])
+    if k >= len(HUB_KMAX):
+        hub_btn.text = "Simulate: bigger and bigger hubs"
+        return False
+    km = HUB_KMAX[k]
+    r = random.Random(20 + k)
+    ks = power_degrees(HUB_N - 1, 2.6, 2, 8, r) + [km]      # one hub of degree k_max among small nodes
+    if sum(ks) % 2:
+        ks[0] += 1
+    A = config_adjacency(ks, r)
+    d = A.sum(1)
+    k1 = float(np.linalg.eigvalsh(A)[-1])
+    st["hubs"].append((float(d.max()), k1, float((d * d).sum() / d.sum())))
+    return len(HUB_KMAX) - len(st["hubs"])
+
+
+def start_hubs():
+    st["hubs"] = []
+    hub_btn.text = "Growing the hub…"
+    everyPaced(hub_step, steps=len(HUB_KMAX) + 1, slow=1.0, fast=0.5, ramp=1)
+
+
+def hub_chart():
+    if not st["hubs"]:
+        return None
+    pts = sorted(st["hubs"])
+    data = {"κ₁ (measured)": [(km, k1) for km, k1, _r in pts],
+            "√k_max": [(km, math.sqrt(km)) for km, _k1, _r in pts],
+            "⟨k²⟩/⟨k⟩": [(km, r_) for km, _k1, r_ in pts]}
+    return plotLine(data, title="κ₁ against the biggest hub", xlabel="k_max", ylabel="κ₁", logX=true, logY=true,
+                    dots=true, highlight=["κ₁ (measured)"], dashed=["√k_max", "⟨k²⟩/⟨k⟩"],
+                    colors={"κ₁ (measured)": MARK_COL, "√k_max": THEORY_COL, "⟨k²⟩/⟨k⟩": HIST_COL})
+
+
+def hub_text():
+    if not st["hubs"]:
+        return ("Networks of 600 nodes with small degrees and **one hub** whose degree grows from 10 to 320. "
+                "Where does the largest eigenvalue go?")
+    rows = ["| k_max | κ₁ | √k_max | ⟨k²⟩/⟨k⟩ |", "|---|---|---|---|"]
+    for km, k1, r_ in sorted(st["hubs"]):
+        rows.append(f"| {km:.0f} | {k1:.2f} | {math.sqrt(km):.2f} | {r_:.2f} |")
+    last = sorted(st["hubs"])[-1]
+    return (f"Once the hub is big enough, κ₁ follows **√k_max** (a star of k leaves has κ₁ = √k exactly): at "
+            f"k_max = {last[0]:.0f}, κ₁ = {last[1]:.2f} against √k_max = {math.sqrt(last[0]):.2f}. "
+            f"⟨k²⟩/⟨k⟩ is a good guide only while no single node dominates: here it overshoots "
+            f"({last[2]:.1f}), because one hub swells ⟨k²⟩ without giving the network many paths to circulate "
+            "on. (Networks with hubs are built with simple=true, so the hub ends up a little below its "
+            "target degree.) In real heavy-tailed networks (the Internet's biggest hub has "
+            "degree 2,390, so √k_max ≈ 49) the hubs set the top of the spectrum, and with it epidemic and "
+            "stability thresholds that depend on κ₁.\n\n" + "\n".join(rows))
+
+
+# ---- controls --------------------------------------------------------------------------------------
+def pick_net(choice):
+    build(NETS[choice])
+
+
+def pick_mat(choice):
+    st["mat"] = MATS[choice]
+    stop_walk()
+    decompose()
+    paint_vector(0)
+
+
+def show_next():
+    stop_walk()
+    nxt = 0 if st["shown"] is None else (st["shown"] + 1) % min(8, len(st["vals"]))
+    paint_vector(nxt)
+
+
+walk_btn = Button("Show eigenvectors one by one", onClick=lambda: toggle_walk())
+grow_btn = Button("Simulate: grow n", onClick=lambda: start_grow())
+hub_btn = Button("Simulate: bigger and bigger hubs", onClick=lambda: start_hubs())
+st["growtimer"] = None
+
+build("random")
+constantLabelSize(size=14)
+ui.title("Spectra of networks", "Networks, Section 17.4")
+ui.layout(
+    right=Column(
+        Markdown("""### Eigenvalues summarise a network
+Nodes are coloured by an eigenvector: red positive, blue negative, size its
+magnitude."""),
+        Dropdown(list(NETS), label="Network", onChange=pick_net),
+        Dropdown(list(MATS), label="Matrix", onChange=pick_mat),
+        Tabs(
+            Tab("Spectrum",
+                Row(walk_btn, Button("Next eigenvector", onClick=lambda: show_next())),
+                Chart(hist_chart), Markdown(hist_text)),
+            Tab("Grow n",
+                grow_btn, Chart(grow_hist_chart), Chart(grow_chart), Markdown(grow_text)),
+            Tab("Hubs",
+                hub_btn, Chart(hub_chart), Markdown(hub_text)))),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{st['net']}: {len(g.nodes)} nodes · {len(g.edges)} edges · matrix {st['mat']}"))
+center(g.nodes)
