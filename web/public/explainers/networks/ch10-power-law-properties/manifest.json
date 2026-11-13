@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Properties of power laws",
+  "description": "Averages that never settle down, and why a few hubs hold most of the links (the 80/20 rule).",
+  "console": "toggle",
+  "script": "main.gy"
+}

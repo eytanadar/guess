@@ -4,6 +4,8 @@ export interface NodeRec {
   i: number; name: string;
   x: number; y: number; w: number; h: number;
   c: number; a: number; s: number; sc: number;
+  /** border width (strokewidth; absent: the display's) */
+  bw?: number;
   l: string; lv: boolean; lc: number; v: boolean;
   img: string | null;
   /** 1 if this node is a collapsed group (meta-node) */
@@ -128,6 +130,8 @@ export interface ChartMsg {
     name: string; color: number; points: [number, number][];
     /** scatter charts: each point's colour, elements and label; line: draw this series as a line */
     colors?: number[]; ids?: ["n" | "e", number][][]; labels?: string[]; line?: boolean;
+    /** drawn dashed and without dots (a fitted curve) */
+    dash?: boolean;
   }[];
   /** line charts drawn as dots only (plotScatter): each dot links to its elements */
   scatter?: boolean;

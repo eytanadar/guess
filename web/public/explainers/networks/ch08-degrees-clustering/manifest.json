@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Computing degrees and clustering",
+  "description": "A degree is a list length; clustering checks every pair of a node's neighbours, so hubs make it expensive.",
+  "console": "toggle",
+  "script": "main.gy"
+}

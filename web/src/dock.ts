@@ -44,6 +44,14 @@ export function markdown(text: string): DocumentFragment {
         const b = document.createElement("strong"); b.textContent = part.slice(2, -2); into.append(b);
       } else if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
         const i = document.createElement("em"); i.textContent = part.slice(1, -1); into.append(i);
+      } else if ((m = /^\[([^\]]+)\]\(guess:([ne])(\d+)\)$/.exec(part))) {
+        // linkTo(node): a chip for a node or edge; pointing at it highlights the element (see the markdown widget)
+        const c = document.createElement("span");
+        c.className = "md-el";
+        c.dataset.k = m[2];
+        c.dataset.id = m[3];
+        c.textContent = m[1];
+        into.append(c);
       } else if ((m = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(part)) && /^https?:\/\//.test(m[2])) {
         const a = document.createElement("a"); a.textContent = m[1]; a.href = m[2]; a.target = "_blank"; a.rel = "noopener";
         into.append(a);
@@ -292,10 +300,22 @@ export class Dock {
         el = input;
         break;
       }
-      case "markdown":
+      case "markdown": {
         el = document.createElement("div");
         el.className = "w-markdown";
+        // chips made by linkTo(): hover highlights their element in the graph, click selects it
+        const item = (ev: Event): Item[] | null => {
+          const t = (ev.target as HTMLElement).closest?.(".md-el") as HTMLElement | null;
+          return t ? [[t.dataset.k as "n" | "e", Number(t.dataset.id)]] : null;
+        };
+        el.addEventListener("mouseover", (ev) => {
+          const it = item(ev);
+          if (it) this.host.hover(it, (ev.target as HTMLElement).textContent ?? "", [], ev as MouseEvent);
+        });
+        el.addEventListener("mouseout", (ev) => { if (item(ev)) this.host.hover(null, "", [], null); });
+        el.addEventListener("click", (ev) => { const it = item(ev); if (it) this.host.click(it, ev as MouseEvent); });
         break;
+      }
       case "chart":
         el = document.createElement("div");
         el.className = "w-chart";
@@ -475,7 +495,20 @@ export class Dock {
       svg.append(el);
     };
     if (c.kind === "line") {
-      const left = 40, bottom = 30, top = c.scatter ? 18 : 8, right = 8;   // scatter: room for the y label above
+      // the series key goes in rows above the plot, never over the data
+      const keyPos: [number, number][] = [];
+      if (!c.scatter && (c.series?.length ?? 0) > 1) {          // one series: the axis label says it
+        let kx = 40, ky = 9;
+        for (const s of c.series ?? []) {
+          const w = s.name.length * 5.6 + 14;
+          if (kx + w > W - 4 && kx > 40) { kx = 40; ky += 12; }
+          keyPos.push([kx, ky]);
+          kx += w;
+        }
+      }
+      const keyRows = keyPos.length ? keyPos[keyPos.length - 1][1] / 12 + 0.25 : 0;
+      const left = 40, bottom = 30, right = 8;
+      const top = c.scatter ? 18 : keyPos.length ? Math.round(6 + 12 * keyRows) : 8;   // room for the y label or key above
       const pw = W - left - right, ph = H - top - bottom;
       const all = (c.series ?? []).flatMap((s) => s.points)
         .filter((p) => (!c.logX || p[0] > 0) && (!c.logY || p[1] > 0));
@@ -485,14 +518,22 @@ export class Dock {
       let ymin = c.logY ? Math.min(...tys) : Math.min(0, ...tys), ymax = c.logY ? Math.max(...tys) : Math.max(1e-9, ...tys);
       if (c.scatter && all.length) {
         // scatter plots fit the data (with a margin) rather than always including zero
+        // round outward to a 1-2-5 step, so the axis ends are round numbers
         const pad = (lo: number, hi: number): [number, number] => {
-          const d = (hi - lo) || Math.abs(hi) || 1;
-          return [lo - d * 0.05, hi + d * 0.05];
+          const raw = ((hi - lo) || Math.abs(hi) || 1) / 5;
+          const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+          const step = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= raw) ?? 10 * mag;
+          const a = Math.floor(lo / step + 1e-9) * step, b = Math.ceil(hi / step - 1e-9) * step;
+          const r = (v: number) => +v.toPrecision(12);
+          return [r(a), r(b > a ? b : a + step)];
         };
         if (!c.logX) [xmin, xmax] = pad(Math.min(...txs), Math.max(...txs));
         if (!c.logY) [ymin, ymax] = pad(Math.min(...tys), Math.max(...tys));
       }
       if (!all.length) { xmin = 0; xmax = 1; ymin = 0; ymax = 1; }
+      // a single point (or all at one value): give the axis a sensible span
+      if (!c.logX && xmax - xmin < 1e-6) xmax = xmin + (Math.abs(xmin) || 1);
+      if (!c.logY && ymax - ymin < 1e-6) ymax = ymin + (Math.abs(ymin) || 1);
       if (c.logX && xmax - xmin < 1) { xmin = Math.floor(xmin); xmax = Math.max(xmax, xmin + 1); }
       if (c.logY && ymax - ymin < 1) { ymin = Math.floor(ymin); ymax = Math.max(ymax, ymin + 1); }
       // X, Y take data values; XT, YT values already on the axis' scale
@@ -607,10 +648,11 @@ export class Dock {
         line.setAttribute("points", pts.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" "));
         line.setAttribute("fill", "none");
         line.setAttribute("stroke", hex(s.color));
-        line.setAttribute("stroke-width", c.dots ? "1" : "1.8");
-        if (c.dots) line.setAttribute("stroke-opacity", "0.5");
+        line.setAttribute("stroke-width", c.dots && !s.dash ? "1" : "1.8");
+        if (c.dots && !s.dash) line.setAttribute("stroke-opacity", "0.5");
+        if (s.dash) line.setAttribute("stroke-dasharray", "5 3");
         svg.append(line);
-        if (c.dots) {
+        if (c.dots && !s.dash) {
           for (const [x, y] of pts) {
             const dot = document.createElementNS(SVG, "circle");
             dot.setAttribute("cx", X(x).toFixed(1));
@@ -620,10 +662,20 @@ export class Dock {
             svg.append(dot);
           }
         }
+        if (!keyPos[i]) return;
+        const [kx, ky] = keyPos[i];
+        const sw = document.createElementNS(SVG, "rect");
+        sw.setAttribute("x", String(kx));
+        sw.setAttribute("y", String(ky - 6));
+        sw.setAttribute("width", "8");
+        sw.setAttribute("height", "3");
+        sw.setAttribute("fill", hex(s.color));
+        svg.append(sw);
         const key = document.createElementNS(SVG, "text");
-        key.setAttribute("x", String(W - right - 2));
-        key.setAttribute("y", String(top + 10 + i * 12));
+        key.setAttribute("x", String(kx + 11));
+        key.setAttribute("y", String(ky));
         key.setAttribute("class", "tick");
+        key.style.textAnchor = "start";
         key.setAttribute("fill", hex(s.color));
         key.textContent = s.name;
         svg.append(key);
@@ -1019,5 +1071,5 @@ function arc(cx: number, cy: number, r: number, a0: number, a1: number) {
 }
 
 function fmt(v: number) {
-  return Number.isInteger(v) ? String(v) : v.toPrecision(4);
+  return Number.isInteger(v) ? String(v) : String(+v.toPrecision(4));   // 0.05, not 0.05000
 }

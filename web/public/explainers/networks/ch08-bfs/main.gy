@@ -1,0 +1,426 @@
+# Breadth-first search  (Newman, Networks, Sections 8.5.1-8.5.5)
+# Breadth-first search finds the distance from one node to every other, layer
+# by layer: the source is at distance 0, its neighbours at 1, their unseen
+# neighbours at 2, and so on. A naive version rescans every node in each round
+# to find the current layer, which costs about n times the number of rounds:
+# O(n^2) on a long thin network. A first-in-first-out queue hands each node
+# over exactly once, so the whole search is O(m + n). Remembering where each
+# node was reached from gives the shortest-path tree; remembering every node
+# it could have been reached from at the same distance gives every shortest
+# path.
+
+import networkx as nx
+
+G0 = nx.connected_watts_strogatz_graph(30, 4, 0.12, seed=11)
+G0 = nx.relabel_nodes(G0, {v: f"v{v}" for v in G0})
+pos = nx.spring_layout(G0, seed=4, iterations=300)
+for v in G0:
+    G0.nodes[v]["pos"] = (pos[v][0] * 330, pos[v][1] * 330)
+fromNetworkX(G0)
+NAMES = sorted(G0, key=lambda s: int(s[1:]))
+NBRS = {v: sorted(G0[v], key=lambda s: int(s[1:])) for v in G0}
+LAYER = ["250,200,40", "240,140,50", "220,90,90", "180,90,170", "110,110,210", "60,150,200", "60,170,130",
+         "120,170,60", "150,150,150"]
+Edge.overlay = false
+
+
+def layer_colour(d):
+    return LAYER[min(d, len(LAYER) - 1)]
+
+
+def edge_of(a, b):
+    for e in g.edges:
+        if not e.overlay and {e.node1.name, e.node2.name} == {a, b}:
+            return e
+
+
+def clear_overlay():
+    remove([e for e in g.edges if e.overlay])
+    for e in g.edges:
+        e.visible = true
+
+
+# ---- the search -----------------------------------------------------------------------------------
+IMPLS = ["A queue (first in, first out)", "Naive: rescan every node each round"]
+st = {"src": "v0", "impl": IMPLS[0], "dist": {}, "pred": {}, "queue": [], "read": 0, "ops": 0, "round": 0,
+      "current": [], "new": [], "done": False, "timer": None, "hist": {}}
+
+
+def reset_search():
+    stop_all()
+    s = st["src"]
+    st.update(dist={s: 0}, pred={}, queue=[s], read=0, ops=0, round=0, current=[], new=[], done=False)
+    st["hist"][st["impl"]] = [(1, 0)]
+    draw_search()
+
+
+def queue_step():
+    if st["read"] >= len(st["queue"]):
+        st.update(done=True, current=[], new=[])
+        draw_search()
+        return False
+    u = st["queue"][st["read"]]
+    st["read"] += 1
+    new = []
+    for w in NBRS[u]:
+        st["ops"] += 1                                  # one look at a neighbour
+        if w not in st["dist"]:
+            st["dist"][w] = st["dist"][u] + 1
+            st["pred"][w] = u
+            st["queue"].append(w)
+            new.append(w)
+    st["ops"] += 1                                      # taking u off the queue
+    st.update(current=[u], new=new)
+    st["hist"][st["impl"]].append((len(st["dist"]), st["ops"]))
+    draw_search()
+    return len(st["queue"]) - st["read"] + 1
+
+
+def naive_step():
+    d = st["round"]
+    st["ops"] += len(NAMES)                             # scan every node, looking for those at distance d
+    layer = [v for v in NAMES if st["dist"].get(v) == d]
+    if not layer:
+        st.update(done=True, current=[], new=[])
+        st["hist"][st["impl"]].append((len(st["dist"]), st["ops"]))
+        draw_search()
+        return False
+    new = []
+    for u in layer:
+        for w in NBRS[u]:
+            st["ops"] += 1
+            if w not in st["dist"]:
+                st["dist"][w] = d + 1
+                st["pred"][w] = u
+                new.append(w)
+    st["round"] += 1
+    st.update(current=layer, new=new)
+    st["hist"][st["impl"]].append((len(st["dist"]), st["ops"]))
+    draw_search()
+    return true
+
+
+def search_step():
+    if st["done"]:
+        return False
+    return queue_step() if st["impl"] == IMPLS[0] else naive_step()
+
+
+def play():
+    if st["timer"] is not None:
+        stop_all()
+        return
+    if st["done"]:
+        reset_search()
+    st["timer"] = everyPaced(search_step, slow=1.0, fast=0.2)
+    go_btn.text = "Pause"
+
+
+def run_all():
+    stop_all()
+    if st["done"]:
+        reset_search()
+    while search_step():
+        pass
+
+
+def draw_search():
+    clear_overlay()
+    dist = st["dist"]
+    waiting = set(st["queue"][st["read"]:]) if st["impl"] == IMPLS[0] else set()
+    for nd in g.nodes:
+        d = dist.get(nd.name)
+        nd.labelpos = "inside"
+        nd.labelvisible = true
+        nd.width = nd.height = 34
+        nd.strokecolor = "70,70,70"
+        if d is None:
+            nd.color, nd.label = "215,215,215", ""
+        else:
+            nd.color, nd.label = layer_colour(d), str(d)
+        if nd.name in waiting:
+            nd.strokecolor = "230,110,20"               # in the queue, waiting its turn
+            nd.width = nd.height = 40
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        tree = st["pred"].get(a) == b or st["pred"].get(b) == a
+        e.color, e.width, e.linestyle = ("90,160,90", 2.6, "solid") if tree else ("170,170,170,130", 1.2, "solid")
+    for u in st["current"]:
+        nd = g.getNodeByName(u)
+        nd.strokecolor = "20,20,20"
+        nd.width = nd.height = 46
+        for w in NBRS[u]:
+            e = edge_of(u, w)
+            e.color, e.width, e.linestyle = "240,130,30", 3.2, "flow"
+    for w in st["new"]:
+        e = edge_of(w, st["pred"][w])
+        e.color, e.width, e.linestyle = "30,180,70", 5, "flow"
+        nd = g.getNodeByName(w)
+        nd.width = nd.height = 42
+    s = g.getNodeByName(st["src"])
+    s.strokecolor = "200,30,30"
+    s.width = s.height = max(s.width, 42)
+
+
+def chips(names, show_d=True):
+    if not names:
+        return "*(empty)*"
+    return " ".join(linkTo(g.getNodeByName(v), f"{v}·{st['dist'][v]}" if show_d else v) for v in names)
+
+
+def search_text():
+    n = len(NAMES)
+    m = G0.number_of_edges()
+    head = (f"Source **{st['src']}** (red ring); *click any node* to search from it instead. Labels are "
+            f"distances; colours are layers.")
+    if st["impl"] == IMPLS[0]:
+        done = st["queue"][:st["read"]]
+        wait = st["queue"][st["read"]:]
+        body = (f"**Taken off the queue** (finished): {chips(done)}\n\n"
+                f"**In the queue** (orange rings, first in first out): {chips(wait)}\n\n"
+                "Each step takes the next node off the front, looks at its neighbours (orange) and puts the unseen "
+                "ones on the back of the queue with distance one more (green: the edge they were found along).")
+    else:
+        body = (f"Round **{st['round']}**: each round scans all {n} nodes for those at the current distance, then "
+                "looks at their neighbours. Nodes found so far: " + chips(sorted(st["dist"], key=lambda v:
+                                                                                (st["dist"][v], int(v[1:])))))
+    tail = (f"\n\nOperations so far: **{st['ops']}**. "
+            + (f"Done: every node reached. A queue search costs about n + 2m = {n + 2 * m}; the naive one about "
+               f"n × (number of rounds) + 2m." if st["done"] else ""))
+    return head + "\n\n" + body + tail
+
+
+def search_chart():
+    series = {k.split(" (")[0].split(":")[0]: v for k, v in st["hist"].items() if len(v) > 1}
+    if not series:
+        return None
+    return plotLine(series, title="Work done as nodes are found", xlabel="nodes found", ylabel="operations",
+                    dots=true)
+
+
+def pick_impl(v):
+    st["impl"] = v
+    reset_search()
+
+
+# ---- shortest paths ---------------------------------------------------------------------------------
+sp = {"all": False, "target": None}
+
+
+def all_preds(src):
+    dist = {src: 0}
+    preds = {src: []}
+    sigma = {src: 1}
+    queue = [src]
+    i = 0
+    while i < len(queue):
+        u = queue[i]
+        i += 1
+        for w in NBRS[u]:
+            if w not in dist:
+                dist[w] = dist[u] + 1
+                preds[w] = []
+                sigma[w] = 0
+                queue.append(w)
+            if dist[w] == dist[u] + 1:
+                preds[w].append(u)
+                sigma[w] += sigma[u]
+    return dist, preds, sigma
+
+
+def draw_paths():
+    clear_overlay()
+    src = st["src"]
+    dist, preds, sigma = all_preds(src)
+    for nd in g.nodes:
+        d = dist[nd.name]
+        nd.color, nd.strokecolor = layer_colour(d), "70,70,70"
+        nd.width = nd.height = 34
+        nd.labelpos = "inside"
+        nd.labelvisible = true
+        nd.label = str(sigma[nd.name]) if sp["all"] else str(d)
+    g.getNodeByName(src).strokecolor = "200,30,30"
+    g.getNodeByName(src).width = g.getNodeByName(src).height = 42
+    links = []
+    for v, ps in preds.items():
+        for p in (ps if sp["all"] else ps[:1]):
+            links.append((v, p))
+    for e in g.edges:
+        e.color, e.width = "170,170,170,90", 1
+    for v, p in links:                                  # each node points back to where it was reached from
+        old = edge_of(v, p)
+        old.visible = false
+        e = addDirectedEdge(g.getNodeByName(v), g.getNodeByName(p))
+        e.overlay = true
+        e.color, e.width = "90,150,90", 3.6
+    t = sp["target"]
+    if t is None or t == src:
+        return
+    on = {t}
+    todo = [t]
+    while todo:                                         # every node on a shortest path back from t
+        v = todo.pop()
+        for p in (preds[v] if sp["all"] else preds[v][:1]):
+            if p not in on:
+                on.add(p)
+                todo.append(p)
+    for e in g.edges:
+        if e.overlay and e.node1.name in on and e.node2.name in on:
+            e.color, e.width = "230,60,40", 6
+    for v in on:
+        g.getNodeByName(v).strokecolor = "200,30,30"
+    nd = g.getNodeByName(t)
+    nd.width = nd.height = 46
+    nd.strokecolor = "20,20,20"
+
+
+def paths_of(t, preds, limit=6):
+    out = []
+
+    def walk(v, tail):
+        if len(out) >= limit:
+            return
+        if not preds[v]:
+            out.append([v] + tail)
+            return
+        for p in preds[v]:
+            walk(p, [v] + tail)
+    walk(t, [])
+    return out
+
+
+def paths_text():
+    src = st["src"]
+    dist, preds, sigma = all_preds(src)
+    lab = "the **number of shortest paths** from the source (σ)" if sp["all"] else "distances"
+    head = (f"From **{src}** (red ring). Each node **points back** to the node it was reached from (the taper is wide "
+            f"at the node, narrow at its predecessor); follow the arrows to get back to the source. Labels: {lab}.")
+    if sp["all"]:
+        head += (" With every predecessor kept, a node's σ is the sum of its predecessors' σ, counted during the same "
+                 "search at no extra cost.")
+    t = sp["target"]
+    if t is None or t == src:
+        return head + "\n\n*Click a node* to trace its path back."
+    ps = paths_of(t, preds) if sp["all"] else [paths_of(t, {v: p[:1] for v, p in preds.items()})[0]]
+    lines = "\n".join("- " + " → ".join(linkTo(g.getNodeByName(v)) for v in p) for p in ps)
+    more = f" (showing {len(ps)})" if sigma[t] > len(ps) and sp["all"] else ""
+    if sp["all"]:
+        what = (f"**1** shortest path, of length {dist[t]}" if sigma[t] == 1 else
+                f"**{sigma[t]}** shortest paths{more}, all of length {dist[t]}")
+    else:
+        what = (f"the only shortest path, of length {dist[t]}" if sigma[t] == 1 else
+                f"one shortest path of length {dist[t]} (there are {sigma[t]}; keep all predecessors to see them all)")
+    return head + f"\n\n**{src}** to **{t}**: {what}:\n\n{lines}"
+
+
+def pick_pred(v):
+    sp["all"] = v.startswith("All")
+    draw_paths()
+
+
+# ---- running time ----------------------------------------------------------------------------------
+rt = {"rows": [], "timer": None, "sizes": [100, 200, 400, 800, 1600, 3200, 6400]}
+
+
+def rt_step():
+    i = len(rt["rows"])
+    if i >= len(rt["sizes"]):
+        return False
+    n = rt["sizes"][i]
+    out = [n]
+    for p in (0.1, 0.0):
+        H = nx.watts_strogatz_graph(n, 4, p, seed=i) if p else nx.watts_strogatz_graph(n, 4, 0.0)
+        m = H.number_of_edges()
+        rounds = max(nx.single_source_shortest_path_length(H, 0).values()) + 2   # the last round finds nothing
+        out.append((n + 2 * m, n * rounds + 2 * m))
+    rt["rows"].append(out)
+    return len(rt["sizes"]) - len(rt["rows"]) or False
+
+
+def simulate():
+    stop_all()
+    rt["rows"] = []
+    rt["timer"] = everyPaced(rt_step, steps=len(rt["sizes"]), slow=0.7, fast=0.3, ramp=2)
+
+
+def rt_chart():
+    if len(rt["rows"]) < 2:
+        return None
+    r = rt["rows"]
+    return plotLine({"queue (either network)": [(n, sw[0]) for n, sw, _ in r],
+                     "naive, small world": [(n, sw[1]) for n, sw, _ in r],
+                     "naive, ring (long and thin)": [(n, ring[1]) for n, _, ring in r]},
+                    title="Operations for one search", xlabel="n", ylabel="operations", log=true, dots=true)
+
+
+def rt_text():
+    if len(rt["rows"]) < 2:
+        return ("*Simulate* to count the operations of both versions on growing networks: a small world, whose "
+                "diameter grows slowly, and a ring, which is long and thin.")
+    (n0, sw0, ring0), (n1, sw1, ring1) = rt["rows"][0], rt["rows"][-1]
+    f = n1 / n0
+    return (f"n grew ×{f:g}. The queue version's work grew ×{sw1[0] / sw0[0]:.0f}, in proportion: **O(m + n)**. "
+            f"The naive version grew ×{sw1[1] / sw0[1]:.0f} on the small world (rounds grow like log n) but "
+            f"×{ring1[1] / ring0[1]:.0f} on the ring, where the number of rounds grows with n: **O(n²)**, a slope of "
+            "2 on the log–log chart.")
+
+
+# ---- wiring ---------------------------------------------------------------------------------------
+mode = ["Search"]
+
+
+def stop_all():
+    for s in (st, rt):
+        if s.get("timer") is not None:
+            s["timer"].stop()
+            s["timer"] = None
+    go_btn.text = "Search"
+
+
+def click(nd):
+    if mode[0] == "Search":
+        st["src"] = nd.name
+        reset_search()
+    elif mode[0] == "Shortest paths":
+        sp["target"] = nd.name
+        draw_paths()
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    if title == "Shortest paths":
+        draw_paths()
+    else:
+        draw_search()
+
+
+go_btn = Button("Search", onClick=lambda *a: play())
+graphevents.clickNode = click
+reset_search()
+constantLabelSize(size=14)
+ui.title("Breadth-first search", "Networks, Sections 8.5.1–8.5.5")
+ui.layout(
+    right=Column(
+        Markdown("""### Distances, layer by layer
+30 nodes, 60 edges. Find the distance from one node to every other."""),
+        Tabs(
+            Tab("Search",
+                Dropdown(IMPLS, label="Version", onChange=pick_impl),
+                Row(go_btn, Button("Step", onClick=lambda *a: (stop_all(), search_step())),
+                    Button("Run to the end", onClick=lambda *a: run_all()),
+                    Button("Reset", onClick=lambda *a: reset_search())),
+                Markdown(search_text), Chart(search_chart)),
+            Tab("Shortest paths",
+                Dropdown(["One predecessor each (the shortest-path tree)", "All predecessors (every shortest path)"],
+                         label="Keep", onChange=pick_pred),
+                Markdown(paths_text)),
+            Tab("Running time",
+                Button("Simulate: bigger networks", onClick=lambda *a: simulate()),
+                Markdown(rt_text), Chart(rt_chart)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(NAMES)} nodes · {G0.number_of_edges()} edges · source {st['src']}"))
+center()

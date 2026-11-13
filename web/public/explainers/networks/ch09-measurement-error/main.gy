@@ -1,0 +1,384 @@
+# Errors in network data  (Newman, Networks, Sections 9.1-9.2)
+# Measured networks are never quite the real thing. Edges are missed (false
+# negatives: a friendship nobody mentioned), edges appear that aren't there
+# (false positives: a spurious interaction in a noisy experiment), whole nodes
+# are missed (people who didn't answer the survey), and nodes get merged (two
+# people with the same name). Here a "true" network is measured with errors of
+# each kind, and a table compares what we would conclude with the truth. Some
+# measures barely move; others are thrown off badly.
+
+import random
+import networkx as nx
+
+# ---- the true network: tight groups of friends (many triangles) and a few well-connected people ----
+TRUE = nx.relaxed_caveman_graph(9, 6, 0.15, seed=3)
+_r = random.Random(3)
+for h in range(5):
+    for v in _r.sample(range(54), 11):
+        TRUE.add_edge(54 + h, v)
+TRUE = nx.relabel_nodes(TRUE, {v: f"n{v}" for v in TRUE})
+NAMES = sorted(TRUE, key=lambda v: int(v[1:]))
+pos = nx.spring_layout(TRUE, seed=4, iterations=300)
+for v in TRUE:
+    TRUE.nodes[v]["pos"] = (pos[v][0] * 480, pos[v][1] * 480)
+fromNetworkX(TRUE)
+Edge.origin = "true"
+PAIR = {frozenset((e.node1.name, e.node2.name)): e for e in g.edges}
+
+missing_edges = Slider(0, 60, 20, 5, label="missed edges (%)")
+spurious_edges = Slider(0, 60, 0, 5, label="spurious edges (% of m)")
+missing_nodes = Slider(0, 40, 0, 5, label="nodes not surveyed (%)")
+merged_pairs = Slider(0, 6, 0, 1, label="pairs of nodes merged")
+
+st = {"M": None, "missed": set(), "extra": set(), "via_merge": {}, "gone": set(), "merged": {},
+      "seed": 1, "events": [], "timer": None}
+
+
+def draw_measurement(fn, fp, pn, k, seed):
+    """One measurement of TRUE: returns the measured graph and what went wrong."""
+    r = random.Random(seed)
+    gone = set(r.sample(NAMES, int(round(pn * len(NAMES)))))
+    present = [v for v in NAMES if v not in gone]
+    M = nx.Graph()
+    M.add_nodes_from(present)
+    missed = set()
+    for u, v in TRUE.edges():
+        if u in gone or v in gone or r.random() < fn:
+            missed.add(frozenset((u, v)))
+        else:
+            M.add_edge(u, v)
+    extra = set()
+    want = int(round(fp * TRUE.number_of_edges()))
+    while len(extra) < want and len(present) > 1:
+        u, v = r.sample(present, 2)
+        p = frozenset((u, v))
+        if not TRUE.has_edge(u, v) and p not in extra:
+            extra.add(p)
+            M.add_edge(u, v)
+    merged, via = {}, {}
+    pool = [v for v in present]
+    r.shuffle(pool)
+    for i in range(min(k, len(pool) // 2)):
+        a, b = pool[2 * i], pool[2 * i + 1]       # b is recorded as if it were a
+        merged[b] = a
+        via[b] = set()
+        for x in list(M[b]):
+            if x != a:
+                if not M.has_edge(a, x):
+                    via[b].add(frozenset((a, x)))
+                M.add_edge(a, x)
+            if TRUE.has_edge(b, x):
+                missed.add(frozenset((b, x)))
+        M.remove_node(b)
+    return M, missed, extra, via, gone, merged
+
+
+def stats(G, n_true):
+    """The numbers one would report from a network."""
+    n = G.number_of_nodes()
+    m = G.number_of_edges()
+    giant = max(nx.connected_components(G), key=len) if n else set()
+    H = G.subgraph(giant)
+    dist = nx.average_shortest_path_length(H) if len(H) > 1 else 0.0
+    hubs = [v for v, _ in sorted(G.degree(), key=lambda t: (-t[1], t[0]))[:5]]
+    return {"n": n, "m": m, "c": 2 * m / n if n else 0, "C": nx.transitivity(G), "giant": len(giant) / n_true,
+            "dist": dist, "hubs": hubs}
+
+
+TRUE_STATS = stats(TRUE, len(NAMES))
+
+
+# ---- drawing ------------------------------------------------------------------------------------------------
+def base():
+    for nd in g.nodes:
+        nd.labelvisible = false
+        nd.strokecolor, nd.strokewidth = "60,60,60", 0.8
+        nd.color = "150,175,215"
+        nd.visible = true
+
+
+def node_sizes(M):
+    for nd in g.nodes:
+        k = M.degree(nd.name) if nd.name in M else 0
+        nd.width = nd.height = 9 + 2.2 * min(k, 14)
+
+
+def edge_style(e, state):
+    if state == "seen":
+        e.color, e.width, e.linestyle = "140,140,140,170", 1.2, "solid"
+    elif state == "missed":
+        e.color, e.width, e.linestyle = "200,120,60,140", 1.6, "dashed"
+    elif state == "extra":
+        e.color, e.width, e.linestyle = "230,40,40", 2.2, "solid"
+    elif state == "merge":
+        e.color, e.width, e.linestyle = "150,70,200", 2.2, "solid"
+    elif state == "flash":
+        e.color, e.width, e.linestyle = "255,170,0", 4, "flow"
+
+
+def add_edge_for(p, origin):
+    u, v = sorted(p)
+    e = addEdge(g.getNodeByName(u), g.getNodeByName(v))
+    e.origin = origin
+    return e
+
+
+def clear_extras():
+    remove([e for e in g.edges if e.origin != "true"])
+
+
+def paint_nodes():
+    for nd in g.nodes:
+        if nd.name in st["gone"]:
+            nd.color, nd.strokecolor, nd.strokewidth = "240,240,240", "120,120,120", 1.5
+        elif nd.name in st["merged"]:
+            nd.color, nd.strokecolor, nd.strokewidth = "220,200,240", "150,70,200", 3
+        elif nd.name in st["merged"].values():
+            nd.strokecolor, nd.strokewidth = "150,70,200", 4
+    M = st["M"]
+    if M is not None and len(M):
+        giant = max(nx.connected_components(M), key=len)
+        for nd in g.nodes:
+            if nd.name in M and nd.name not in giant:      # fell off the large component
+                nd.strokecolor, nd.strokewidth = "230,40,40", 3
+
+
+def draw_all():
+    """Show the current measurement at once."""
+    base()
+    clear_extras()
+    for p, e in PAIR.items():
+        edge_style(e, "missed" if p in st["missed"] else "seen")
+    for p in st["extra"]:
+        edge_style(add_edge_for(p, "extra"), "extra")
+    for b in st["via_merge"]:
+        for p in st["via_merge"][b]:
+            edge_style(add_edge_for(p, "merge"), "merge")
+    node_sizes(st["M"])
+    paint_nodes()
+
+
+def measure(v=None, new_seed=False):
+    stop_watch()
+    if new_seed:
+        st["seed"] += 1
+    M, missed, extra, via, gone, merged = draw_measurement(missing_edges.value / 100, spurious_edges.value / 100,
+                                                           missing_nodes.value / 100, int(merged_pairs.value),
+                                                           st["seed"])
+    st.update(M=M, missed=missed, extra=extra, via_merge=via, gone=gone, merged=merged)
+    draw_all()
+
+
+# ---- a measurement, step by step ----------------------------------------------------------------------------
+def watch():
+    """Make a new measurement and show it edge by edge: each true edge is either seen (grey) or missed
+    (orange dashed); then the spurious edges arrive (red) and merged nodes pull their edges over (purple)."""
+    stop_watch()
+    st["seed"] += 1
+    M, missed, extra, via, gone, merged = draw_measurement(missing_edges.value / 100, spurious_edges.value / 100,
+                                                           missing_nodes.value / 100, int(merged_pairs.value),
+                                                           st["seed"])
+    st.update(M=M, missed=missed, extra=extra, via_merge=via, gone=gone, merged=merged)
+    base()
+    clear_extras()
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "200,200,200,60", 1, "solid"
+    for nd in g.nodes:
+        nd.width = nd.height = 12
+    pairs = sorted(PAIR, key=lambda p: sorted(p))
+    events = [("true", pairs[i:i + 6]) for i in range(0, len(pairs), 6)]
+    events += [("extra", sorted(extra, key=sorted)[i:i + 3]) for i in range(0, len(extra), 3)]
+    events += [("merge", [b]) for b in sorted(merged)]
+    st["events"] = events
+    st["flashing"] = []
+    st["timer"] = everyPaced(watch_step, steps=len(events), slow=0.8, fast=0.12, ramp=3)
+
+
+def watch_step():
+    for e, state in st.get("flashing", []):
+        edge_style(e, state)
+    st["flashing"] = []
+    if not st["events"]:
+        draw_all()
+        return False
+    what, items = st["events"].pop(0)
+    if what == "true":
+        for p in items:
+            e = PAIR[p]
+            st["flashing"].append((e, "missed" if p in st["missed"] else "seen"))
+            edge_style(e, "flash")
+    elif what == "extra":
+        for p in items:
+            e = add_edge_for(p, "extra")
+            st["flashing"].append((e, "extra"))
+            edge_style(e, "flash")
+    else:
+        b = items[0]
+        a = st["merged"][b]
+        for p in st["via_merge"][b]:
+            e = add_edge_for(p, "merge")
+            st["flashing"].append((e, "merge"))
+            edge_style(e, "flash")
+        nb, na = g.getNodeByName(b), g.getNodeByName(a)
+        nb.color, nb.strokecolor, nb.strokewidth = "220,200,240", "150,70,200", 3
+        na.strokecolor, na.strokewidth = "150,70,200", 4
+    if not st["events"]:
+        return 1                                        # one more tick to settle the last flash
+    return len(st["events"])
+
+
+def stop_watch():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+
+
+def stats_table():
+    if st["M"] is None:
+        return ""
+    s = stats(st["M"], len(NAMES))
+    t = TRUE_STATS
+
+    def row(label, a, b, fmt="{:.2f}"):
+        ch = (b - a) / a * 100 if a else 0
+        return f"| {label} | {fmt.format(a)} | {fmt.format(b)} | {ch:+.0f}% |"
+
+    overlap = len(set(s["hubs"]) & set(t["hubs"]))
+    lines = ["| measure | true | measured | change |", "|---|---|---|---|",
+             row("nodes", t["n"], s["n"], "{:.0f}"), row("edges", t["m"], s["m"], "{:.0f}"),
+             row("mean degree", t["c"], s["c"]), row("clustering C", t["C"], s["C"], "{:.3f}"),
+             row("largest component", t["giant"], s["giant"], "{:.0%}"),
+             row("mean distance", t["dist"], s["dist"]),
+             f"| top-5 hubs found | 5 | {overlap} | |"]
+    return "\n".join(lines)
+
+
+def legend_text():
+    return ("Grey: edges seen. **Orange dashed: missed** (false negatives). **Red: spurious** (false positives). "
+            "**Purple:** two nodes recorded as one, with the merged node's edges moved over. Pale nodes weren't "
+            "surveyed; a **red ring** marks a node that fell off the large component. Size: measured degree.")
+
+
+# ---- which measures survive? (Simulate) ---------------------------------------------------------------------
+KINDS = ["missed edges", "spurious edges", "nodes not surveyed"]
+sim = {"kind": KINDS[0], "rows": [], "timer": None, "rates": []}
+DRAWS = 5
+
+
+def sweep_one():
+    if not sim["rates"]:
+        return False
+    rate = sim["rates"].pop(0)
+    acc = {"c": 0, "C": 0, "giant": 0, "dist": 0, "hubs": 0}
+    for d in range(DRAWS):
+        args = {"missed edges": (rate, 0, 0), "spurious edges": (0, rate, 0),
+                "nodes not surveyed": (0, 0, rate)}[sim["kind"]]
+        M, missed, extra, via, gone, merged = draw_measurement(args[0], args[1], args[2], 0, 1000 + d)
+        s = stats(M, len(NAMES))
+        for k in ("c", "C", "giant", "dist"):
+            acc[k] += s[k] / TRUE_STATS[k] / DRAWS
+        acc["hubs"] += len(set(s["hubs"]) & set(TRUE_STATS["hubs"])) / 5 / DRAWS
+        if d == 0:                                     # show one of them in the graph as it goes
+            st.update(M=M, missed=missed, extra=extra, via_merge=via, gone=gone, merged=merged)
+            draw_all()
+    sim["rows"].append((rate * 100, acc))
+    return len(sim["rates"]) or False
+
+
+def simulate():
+    stop_watch()
+    if sim["timer"] is not None:
+        sim["timer"].stop()
+    sim["rows"] = []
+    sim["rates"] = [i / 20 for i in range(0, 11)]          # 0% to 50%
+    sim["timer"] = everyPaced(sweep_one, steps=11, slow=0.7, fast=0.25, ramp=2)
+
+
+def pick_kind(v):
+    sim["kind"] = v
+    sim["rows"] = []
+
+
+def sweep_chart():
+    if len(sim["rows"]) < 2:
+        return None
+    names = {"c": "mean degree", "C": "clustering", "giant": "largest comp.", "dist": "mean distance",
+             "hubs": "hubs found"}
+    return plotLine({names[k]: [(x, a[k]) for x, a in sim["rows"]] for k in names},
+                    title=f"Measured ÷ true, as {sim['kind']} grow", xlabel=f"{sim['kind']} (%)",
+                    ylabel="measured ÷ true", dots=true)
+
+
+def sweep_text():
+    if len(sim["rows"]) < 11:
+        return ("*Simulate* measures the network five times at each error rate from 0% to 50% and charts each "
+                "measure divided by its true value: 1 means unharmed.")
+    last = sim["rows"][-1][1]
+    worst = min(("mean degree", last["c"]), ("clustering", last["C"]), ("largest component", last["giant"]),
+                ("mean distance", last["dist"]), ("hubs found", last["hubs"]), key=lambda t: -abs(t[1] - 1))
+    why = {"missed edges": "Missing edges lower the mean degree in proportion and lengthen paths, and each "
+                           "lost edge breaks the triangles it was in; yet the big hubs are still found, and the "
+                           "network holds together until most edges are gone.",
+           "spurious edges": "Spurious edges are random, so they close almost no triangles: **clustering** falls "
+                             "fast, and the new shortcuts make distances shrink. The mean degree rises in proportion.",
+           "nodes not surveyed": "Unsurveyed people take all their edges with them. Mean degree and clustering "
+                                 "hardly move (the sample is still typical), but the network breaks into pieces "
+                                 "and the hubs go missing when they are among the unsurveyed."}[sim["kind"]]
+    return f"At 50% {sim['kind']}, the measure thrown off most is **{worst[0]}** ({worst[1]:.2f} × the truth). " + why
+
+
+switch_mode = ["Measure"]
+
+
+def switch(title):
+    switch_mode[0] = title
+    stop_watch()
+    if sim["timer"] is not None and not title.startswith("Which"):
+        sim["timer"].stop()
+        sim["timer"] = None
+
+
+for sl in (missing_edges, spurious_edges, missing_nodes, merged_pairs):
+    sl.onChange = lambda v: measure()
+measure()
+constantLabelSize(size=14)
+ui.title("Errors in network data", "Networks, Sections 9.1–9.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Measuring a network, imperfectly
+A "true" network of 59 people (we know it here; in practice nobody does) and
+one measurement of it, made with the errors you choose."""),
+        Tabs(
+            Tab("Measure",
+                missing_edges, spurious_edges, missing_nodes, merged_pairs,
+                Row(Button("Measure again", onClick=lambda: measure(new_seed=True)),
+                    Button("Watch it measured", onClick=lambda: watch())),
+                Markdown(legend_text), Markdown(stats_table)),
+            Tab("Which measures survive?",
+                Dropdown(KINDS, label="Error", onChange=pick_kind),
+                Button("Simulate: sweep the error rate", onClick=lambda: simulate()),
+                Chart(sweep_chart), Markdown(sweep_text)),
+            Tab("Where errors come from",
+                Markdown("""**Surveys and interviews**: people forget ties, recall
+recent or strong ones, and are limited by the number of names a form allows
+(a fixed-choice design caps degrees). Some don't answer at all.
+
+**Experiments and instruments**: high-throughput biology and sensors report
+interactions that didn't happen and miss ones that did; repeating the
+measurement helps (see the next explainer).
+
+**Records and archives**: names are spelled differently or shared, so one
+person becomes two or two become one; dates and boundaries are arbitrary.
+
+**Sampling**: a crawl or a snowball sample sees only part of the network,
+and not a random part.
+
+Use *Measure* to try each kind and see which conclusions change.""")),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"true: {TRUE.number_of_nodes()} nodes, {TRUE.number_of_edges()} edges · measured: "
+                           f"{st['M'].number_of_nodes() if st['M'] is not None else 0} nodes, "
+                           f"{st['M'].number_of_edges() if st['M'] is not None else 0} edges"))
+center()

@@ -1,0 +1,667 @@
+# Correcting errors: link prediction and node disambiguation  (Newman, Networks, Section 9.4)
+# Measured networks miss edges and get nodes wrong. Missing edges can be
+# guessed from structure: two nodes with many neighbours in common are likely
+# to be linked. A method is tested by hiding some edges it knows and seeing
+# whether it puts them back (precision; AUC = the chance that a hidden edge
+# scores higher than a pair that really isn't linked). Nodes go wrong when two
+# people share a name (merged into one false hub, a shortcut between groups) or
+# one person appears under two names (split). Their neighbourhoods tell them
+# apart: a merged node's coauthors fall into separate groups that never work
+# together; a split person's two records share most of their coauthors.
+
+import math
+import random
+import networkx as nx
+
+# =====================================================================================================
+# Link prediction: the Les Miserables co-appearance network
+# =====================================================================================================
+makeFromFile("lesmis.gdf")
+renameGraph("links")
+Edge.pred = 0                                   # 1 on an edge added by a prediction that was wrong
+G0 = toNetworkX(directed=False)
+G0.remove_edges_from(list(nx.selfloop_edges(G0)))
+EDGES0 = sorted(tuple(sorted(e)) for e in G0.edges())
+METHODS = ["Shared neighbours", "Jaccard", "Adamic–Adar", "Resource allocation",
+           "Preferential attachment (kᵢkⱼ)", "Random guessing"]
+lp = {"hidden": [], "frac": 0.10, "method": METHODS[2], "ranked": [], "shown": 0, "hits": 0,
+      "timer": None, "rnd": random.Random(3), "curve": [], "sims": {}, "sim_timer": None, "sim_todo": []}
+
+
+def pair(u, v):
+    return (u, v) if u < v else (v, u)
+
+
+def scores(Gobs, method, rnd):
+    """A score for every pair of nodes not linked in the observed network."""
+    nb = {v: set(Gobs[v]) for v in Gobs}
+    nodes = sorted(Gobs)
+    out = {}
+    for i, u in enumerate(nodes):
+        for v in nodes[i + 1:]:
+            if v in nb[u]:
+                continue
+            common = nb[u] & nb[v]
+            if method == "Shared neighbours":
+                sc = len(common)
+            elif method == "Jaccard":
+                both = nb[u] | nb[v]
+                sc = len(common) / len(both) if both else 0.0
+            elif method == "Adamic–Adar":
+                sc = sum(1 / math.log(len(nb[z])) for z in common if len(nb[z]) > 1)
+            elif method == "Resource allocation":
+                sc = sum(1 / len(nb[z]) for z in common)
+            elif method.startswith("Preferential"):
+                sc = len(nb[u]) * len(nb[v])
+            else:
+                sc = 0.0
+            out[(u, v)] = (sc, rnd.random())        # ties broken at random
+    return out
+
+
+def auc(sc, hidden):
+    """Chance that a hidden edge outscores a pair that isn't an edge (ties count half)."""
+    hid = set(hidden)
+    pos = [sc[p][0] for p in hidden if p in sc]
+    neg = sorted(s for p, (s, _) in sc.items() if p not in hid)
+    if not pos or not neg:
+        return 0.5
+    import bisect
+    tot = 0.0
+    for s in pos:
+        lo = bisect.bisect_left(neg, s)
+        hi = bisect.bisect_right(neg, s)
+        tot += lo + 0.5 * (hi - lo)
+    return tot / (len(pos) * len(neg))
+
+
+def observed():
+    H = nx.Graph()
+    H.add_nodes_from(G0)
+    hid = set(lp["hidden"])
+    H.add_edges_from(p for p in EDGES0 if p not in hid)
+    return H
+
+
+def edge_between(u, v):
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {u, v}:
+            return e
+
+
+def lp_base():
+    """The observed network: hidden edges invisible, predictions cleared."""
+    remove([e for e in g.edges if e.pred == 1])
+    hid = set(lp["hidden"])
+    for n in g.nodes:
+        n.width = n.height = 14
+        n.color = "150,170,205"
+        n.strokecolor = "70,80,100"
+        n.strokewidth = 0
+        n.labelvisible = false
+    for e in g.edges:
+        e.visible = pair(e.node1.name, e.node2.name) not in hid
+        e.color, e.width, e.linestyle = "150,150,150,110", 1.2, "solid"
+
+
+def hide_edges():
+    stop_predicting()
+    r = lp["rnd"]
+    k = max(1, round(lp["frac"] * len(EDGES0)))
+    lp["hidden"] = r.sample(EDGES0, k)
+    lp.update(ranked=[], shown=0, hits=0, curve=[])
+    lp_base()
+
+
+def show_all_edges():
+    stop_predicting()
+    lp.update(hidden=[], ranked=[], shown=0, hits=0, curve=[])
+    lp_base()
+
+
+def stop_predicting():
+    if lp["timer"] is not None:
+        lp["timer"].stop()
+        lp["timer"] = None
+
+
+def predict():
+    if not lp["hidden"]:
+        hide_edges()
+    stop_predicting()
+    lp_base()
+    sc = scores(observed(), lp["method"], random.Random(1))
+    ranked = sorted(sc, key=lambda p: (-sc[p][0], sc[p][1]))
+    lp.update(ranked=ranked[:len(lp["hidden"])], shown=0, hits=0, curve=[], auc=auc(sc, lp["hidden"]))
+    lp["timer"] = everyPaced(reveal_one, steps=len(lp["ranked"]), slow=0.9, fast=0.12)
+
+
+def reveal_one():
+    """Show the next prediction: green if it was a hidden edge, red if not."""
+    for e in g.edges:                                 # the last one stops flowing
+        if e.linestyle == "flow":
+            e.linestyle = "solid"
+            e.width = 3
+    for n in g.nodes:
+        n.strokewidth = 0 if n.strokewidth == 4 else n.strokewidth
+    i = lp["shown"]
+    if i >= len(lp["ranked"]):
+        return False
+    u, v = lp["ranked"][i]
+    hit = (u, v) in set(lp["hidden"])
+    if hit:
+        e = edge_between(u, v)
+        e.visible = true
+        lp["hits"] += 1
+        e.color = "40,170,80"
+    else:
+        e = addEdge(g.getNodeByName(u), g.getNodeByName(v))
+        e.pred = 1
+        e.color = "225,60,50"
+    e.width, e.linestyle = 5, "flow"
+    for name in (u, v):
+        n = g.getNodeByName(name)
+        n.width = n.height = 22
+        n.strokewidth = 4
+        n.strokecolor = "40,140,70" if hit else "200,40,30"
+        n.labelvisible = true
+    lp["shown"] = i + 1
+    lp["curve"].append((i + 1, lp["hits"] / (i + 1)))
+    if lp["shown"] == len(lp["ranked"]):
+        show_missed()
+    return len(lp["ranked"]) - lp["shown"]
+
+
+def show_missed():
+    """At the end: the hidden edges no prediction found, dashed."""
+    found = set(lp["ranked"])
+    for p in lp["hidden"]:
+        if p not in found:
+            e = edge_between(*p)
+            e.visible = true
+            e.color, e.width, e.linestyle = "120,120,140", 2, "dashed"
+
+
+def predict_all_now():
+    predict()
+    while lp["timer"] is not None and lp["shown"] < len(lp["ranked"]):
+        reveal_one()
+    stop_predicting()
+
+
+def pick_method(v):
+    lp["method"] = v
+    if lp["ranked"]:
+        predict()
+
+
+def pick_frac(v):
+    lp["frac"] = float(v) / 100
+    hide_edges()
+
+
+def lp_text():
+    if mode[0] != "Link prediction":
+        return ""
+    if not lp["hidden"]:
+        return (f"All **{len(EDGES0)}** co-appearances are shown. *Hide* some, as if the data had missed them, "
+                "then ask a method to guess them back from what is left.")
+    k = len(lp["hidden"])
+    base = k / (len(G0) * (len(G0) - 1) / 2 - len(EDGES0) + k)
+    txt = (f"**{k}** edges hidden ({100 * lp['frac']:.0f}%). A guess at random would be right "
+           f"**{100 * base:.1f}%** of the time.")
+    if lp["ranked"]:
+        n = lp["shown"]
+        txt += (f"\n\n**{lp['method']}**: of its top {n} guesses so far, **{lp['hits']}** were hidden edges "
+                f"(green) and {n - lp['hits']} were not (red): precision **{100 * lp['hits'] / max(n, 1):.0f}%**. "
+                f"AUC = **{lp['auc']:.3f}** (1 = every hidden edge outscores every non-edge; 0.5 = guessing).")
+        if n == len(lp["ranked"]):
+            txt += " Dashed: hidden edges it never found."
+        recent = lp["ranked"][max(0, n - 4):n]
+        if recent:
+            txt += "\n\nLatest guesses: " + " ".join(
+                linkTo(g.getNodeByName(u), text=f"{u}–{v}" + (" ✓" if (u, v) in set(lp["hidden"]) else " ✗"))
+                for u, v in reversed(recent))
+    else:
+        txt += " Press *Predict*."
+    return txt
+
+
+def lp_chart():
+    if mode[0] != "Link prediction":
+        return None
+    if lp["sims"]:
+        data = {m: sorted((f, sum(a) / len(a)) for f, a in per.items()) for m, per in lp["sims"].items()}
+        return plotLine(data, title="AUC against the share of edges hidden (5 tries each)",
+                        xlabel="% of edges hidden", ylabel="AUC", dots=true)
+    if len(lp["curve"]) < 2:
+        return None
+    k = len(lp["hidden"])
+    base = k / (len(G0) * (len(G0) - 1) / 2 - len(EDGES0) + k)
+    return plotLine({"this method": lp["curve"], "at random": [(1, base), (len(lp["ranked"]), base)]},
+                    title="Precision of the top guesses", xlabel="guesses made", ylabel="share right")
+
+
+def simulate_methods():
+    """Every method, at several shares hidden, 5 random hidings each: AUC, charted as it goes."""
+    if lp["sim_timer"] is not None:
+        return
+    stop_predicting()
+    lp["sims"] = {}
+    lp["sim_todo"] = [(m, f, rep) for f in (5, 10, 20, 30, 40) for m in METHODS for rep in range(5)]
+    lp["sim_timer"] = everyPaced(sim_step, steps=len(lp["sim_todo"]) // len(METHODS) + 1, slow=0.4, fast=0.05)
+
+
+def sim_step():
+    """One hiding, scored by every method."""
+    if not lp["sim_todo"]:
+        lp["sim_timer"] = None
+        return False
+    batch = [lp["sim_todo"].pop(0) for _ in range(min(len(METHODS), len(lp["sim_todo"])))]
+    f, rep = batch[0][1], batch[0][2]
+    r = random.Random(100 * f + rep)
+    hidden = r.sample(EDGES0, max(1, round(f / 100 * len(EDGES0))))
+    hid = set(hidden)
+    H = nx.Graph()
+    H.add_nodes_from(G0)
+    H.add_edges_from(p for p in EDGES0 if p not in hid)
+    for m, _, _ in batch:
+        a = auc(scores(H, m, random.Random(rep)), hidden)
+        lp["sims"].setdefault(m, {}).setdefault(f, []).append(a)
+    if not lp["sim_todo"]:
+        lp["sim_timer"] = None
+        return False
+    return len(lp["sim_todo"])
+
+
+def sim_table():
+    if mode[0] != "Link prediction" or not lp["sims"]:
+        return ""
+    rows = ["| method | AUC, 10% hidden | AUC, 40% hidden |", "|---|---|---|"]
+    for m in METHODS:
+        per = lp["sims"].get(m, {})
+        a10 = per.get(10, [])
+        a40 = per.get(40, [])
+        rows.append(f"| {m} | {sum(a10) / len(a10):.3f} | " if a10 else f"| {m} | … | ")
+        rows[-1] += f"{sum(a40) / len(a40):.3f} |" if a40 else "… |"
+    return ("\n".join(rows) + "\n\nShared-neighbour methods beat chance by far in a network with many triangles; "
+            "preferential attachment only knows who is popular. The more is hidden, the less there is to go on.")
+
+
+# =====================================================================================================
+# Disambiguation: an invented coauthorship network
+# =====================================================================================================
+GROUPS = [
+    ("genomics", ["J. Smith", "A. Chen", "L. Rossi", "P. Novak", "K. Osei", "M. Haddad", "R. Silva", "T. Berg"]),
+    ("networks", ["Y. Wang", "S. Patel", "E. Moreau", "D. Kim", "F. Ahmed", "H. Larsen", "I. Costa", "Anil Kumar"]),
+    ("physics", ["J. Smith", "Q. Zhou", "X. Romero", "Z. Kowalski", "A. Lindqvist", "B. Sato", "C. Mbeki", "D. Weber"]),
+    ("economics", ["Y. Wang", "E. Rahman", "F. Moretti", "G. Hansen", "Henrik Larsen", "I. Nowak", "J. Ortiz", "K. Fischer"]),
+    ("ecology", ["M. Garcia", "B. Okafor", "C. Dubois", "G. Tanaka", "O. Nilsson", "U. Mensah", "V. Petrov", "W. Clarke"]),
+    ("epidemiology", ["M. Garcia", "L. Ng", "M. Popescu", "N. Achebe", "O. Varga", "P. Lund", "R. Ito", "S. Barros"]),
+]
+# real collaborations between groups (none joins two groups that share a name, so a merged name stands out)
+BRIDGES = [((0, "A. Chen"), (5, "L. Ng")), ((0, "R. Silva"), (1, "I. Costa")), ((1, "D. Kim"), (4, "C. Dubois")),
+           ((4, "G. Tanaka"), (2, "X. Romero")), ((1, "S. Patel"), (2, "Q. Zhou")), ((2, "B. Sato"), (3, "F. Moretti"))]
+
+
+def build_truth():
+    """True people (one node each), their positions, and the raw records' names."""
+    r = random.Random(11)
+    T = nx.Graph()
+    ident = {}
+    for gi, (field, people) in enumerate(GROUPS):
+        cx, cy = 420 * math.cos(2 * math.pi * gi / 6), 420 * math.sin(2 * math.pi * gi / 6)
+        ids = []
+        for k, name in enumerate(people):
+            pid = f"p{gi}{k}"
+            a = 2 * math.pi * k / len(people)
+            T.add_node(pid, who=name, field=field, x=cx + 120 * math.cos(a), y=cy + 120 * math.sin(a))
+            ident[(gi, name)] = pid
+            ids.append(pid)
+        for i, u in enumerate(ids):
+            for v in ids[i + 1:]:
+                if r.random() < 0.42:
+                    T.add_edge(u, v)
+        for pid in ids:                            # each person's coauthors know one another (via someone)
+            co = [w for w in T[pid] if w in ids]
+            sub = T.subgraph(co)
+            comps = [sorted(c) for c in nx.connected_components(sub)]
+            for a, b in zip(comps, comps[1:]):
+                T.add_edge(a[0], b[0])
+            if T.degree(pid) < 3:
+                for w in r.sample([w for w in ids if w != pid and not T.has_edge(pid, w)], 3 - T.degree(pid)):
+                    T.add_edge(pid, w)
+    for (ga, na), (gb, nb_) in BRIDGES:
+        T.add_edge(ident[(ga, na)], ident[(gb, nb_)])
+    return T, ident
+
+
+T, IDENT = build_truth()
+KUMAR = IDENT[(1, "Anil Kumar")]
+# the raw records: people with the same name are one node; Anil Kumar appears as "A. Kumar" on some papers
+RAWNAME = {pid: T.nodes[pid]["who"] for pid in T}
+# each of his coauthors wrote papers with him under one name, the other, or both
+_rk = random.Random(5)
+KUMAR_AS = {}
+for _co in sorted(T[KUMAR]):
+    _roll = _rk.random()
+    KUMAR_AS[_co] = ("A. Kumar", "Anil Kumar") if _roll < 0.5 else (("A. Kumar",) if _roll < 0.75 else ("Anil Kumar",))
+
+
+def raw_key(name):
+    return "r_" + "".join(c for c in name.lower() if c.isalnum())
+
+
+def build_raw():
+    R = nx.Graph()
+    members = {}
+    for pid in T:
+        members.setdefault(raw_key(RAWNAME[pid]), []).append(pid)
+    members[raw_key("A. Kumar")] = [KUMAR]
+    for key, pids in members.items():
+        name = "A. Kumar" if key == raw_key("A. Kumar") else RAWNAME[pids[0]]
+        xs = [T.nodes[p]["x"] for p in pids]
+        ys = [T.nodes[p]["y"] for p in pids]
+        off = 60 if name == "A. Kumar" else (-30 if name == "Anil Kumar" else 0)
+        R.add_node(key, label=name, people=",".join(pids), pos=(sum(xs) / len(xs) + off, sum(ys) / len(ys) + off))
+    for u, v in T.edges():
+        if KUMAR in (u, v):
+            w = v if u == KUMAR else u
+            for as_ in KUMAR_AS[w]:
+                R.add_edge(raw_key(as_), raw_key(RAWNAME[w]))
+            continue
+        ku, kv = raw_key(RAWNAME[u]), raw_key(RAWNAME[v])
+        if ku != kv:
+            R.add_edge(ku, kv)
+    return R
+
+
+RAW = build_raw()
+fromNetworkX(RAW, "authors")
+cur = {"G": RAW.copy(), "pos": {v: RAW.nodes[v]["pos"] for v in RAW}, "lab": {v: RAW.nodes[v]["label"] for v in RAW},
+       "timer": None, "queue": [], "phase": 0, "focus": None, "log": [], "hist": [], "step": 0}
+
+
+def stats(G):
+    big = G.subgraph(max(nx.connected_components(G), key=len))
+    top = max(G.degree(), key=lambda t: t[1])
+    return {"n": len(G), "m": G.number_of_edges(), "dist": nx.average_shortest_path_length(big),
+            "C": nx.transitivity(G), "top": top}
+
+
+TRUTH = stats(T)
+RAWSTATS = stats(RAW)
+
+
+def da_base():
+    G = cur["G"]
+    merged_now = {v for v in G if "," in cur.get("people", {}).get(v, "")}
+    for n in g.nodes:
+        n.width = n.height = 18
+        n.color = "150,170,205"
+        n.strokecolor = "60,70,90"
+        n.strokewidth = 0
+        n.labelvisible = true
+        n.label = cur["lab"].get(n.name, n.name)
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,130", 1.3, "solid"
+    for v in G:
+        nd = g.getNodeByName(v)
+        if nd is not None:
+            nd.width = nd.height = 14 + 2.2 * G.degree(v)
+
+
+cur["people"] = {v: RAW.nodes[v]["people"] for v in RAW}
+
+
+def suspects():
+    """Names whose coauthors fall into two or more separate groups of 2+ (a merged pair of people)."""
+    G = cur["G"]
+    out = []
+    for v in sorted(G):
+        co = list(G[v])
+        groups = [c for c in nx.connected_components(G.subgraph(co)) if len(c) >= 2]
+        if len(groups) >= 2:
+            out.append((v, [sorted(c) for c in groups]))
+    return out
+
+
+def surname(label):
+    return label.split()[-1]
+
+
+def compatible(a, b):
+    fa, fb = a.split()[0].rstrip("."), b.split()[0].rstrip(".")
+    return surname(a) == surname(b) and (fa[0] == fb[0]) and a != b
+
+
+def duplicates():
+    """Pairs of records with compatible names (same surname, same initial), scored by shared coauthors."""
+    G = cur["G"]
+    vs = sorted(G)
+    out = []
+    for i, u in enumerate(vs):
+        for v in vs[i + 1:]:
+            if compatible(cur["lab"][u], cur["lab"][v]):
+                a, b = set(G[u]) - {v}, set(G[v]) - {u}
+                jac = len(a & b) / len(a | b) if a | b else 0.0
+                out.append((u, v, jac))
+    return out
+
+
+def da_step():
+    """Two beats per fix: show the evidence, then make the change."""
+    if cur["phase"] == 0:
+        if not cur["queue"]:
+            cur["timer"] = None
+            da_base()
+            return False
+        job = cur["queue"][0]
+        da_base()
+        if job[0] == "split":
+            v, groups = job[1], job[2]
+            cols = ["230,120,40", "60,140,220", "150,80,200"]
+            nd = g.getNodeByName(v)
+            nd.strokewidth, nd.strokecolor, nd.color = 5, "200,30,30", "250,210,90"
+            for k, grp in enumerate(groups):
+                for w in grp:
+                    m = g.getNodeByName(w)
+                    m.color = cols[k % 3]
+                    e = edge_between(v, w)
+                    if e is not None:
+                        e.color, e.width, e.linestyle = cols[k % 3], 4, "flow"
+            cur["focus"] = (f"**{cur['lab'][v]}**: coauthors in {len(groups)} groups that never write with each other "
+                            f"(colours). Probably {len(groups)} different people.")
+        else:
+            u, v, jac = job[1], job[2], job[3]
+            for w in (u, v):
+                nd = g.getNodeByName(w)
+                nd.strokewidth, nd.strokecolor, nd.color = 5, "200,30,30", "250,210,90"
+            shared = set(cur["G"][u]) & set(cur["G"][v])
+            for w in shared:
+                g.getNodeByName(w).color = "60,170,90"
+                for x in (u, v):
+                    e = edge_between(x, w)
+                    e.color, e.width, e.linestyle = "60,170,90", 4, "flow"
+            cur["focus"] = (f"**{cur['lab'][u]}** and **{cur['lab'][v]}**: same surname and initial, and "
+                            f"{len(shared)} coauthors in common (green; Jaccard {jac:.2f}). Probably one person.")
+        cur["phase"] = 1
+        return len(cur["queue"]) * 2
+    job = cur["queue"].pop(0)
+    if job[0] == "split":
+        do_split(job[1], job[2])
+    else:
+        do_merge(job[1], job[2])
+    cur["phase"] = 0
+    cur["step"] += 1
+    st = stats(cur["G"])
+    cur["hist"].append((cur["step"], st["dist"]))
+    return len(cur["queue"]) * 2 + 1
+
+
+def do_split(v, groups):
+    G = cur["G"]
+    people = cur["people"][v].split(",")
+    nd = g.getNodeByName(v)
+    rest = [w for w in G[v] if not any(w in grp for grp in groups)]
+    remove(nd)
+    for k, grp in enumerate(groups):
+        # each new record goes where its coauthors are
+        x = sum(cur["pos"][w][0] for w in grp) / len(grp)
+        y = sum(cur["pos"][w][1] for w in grp) / len(grp)
+        new = f"{v}_{k + 1}"
+        cur["lab"][new] = f"{cur['lab'][v]} ({k + 1})"
+        cur["pos"][new] = (x + (cur["pos"][v][0] - x) * 0.25, y + (cur["pos"][v][1] - y) * 0.25)
+        cur["people"][new] = next((p for p in people if any(T.has_edge(p, q) for w in grp
+                                                            for q in cur["people"][w].split(","))), people[0])
+        a = addNode(new, x=cur["pos"][new][0], y=cur["pos"][new][1])
+        G.add_node(new)
+        for w in grp + ([w for w in rest if any(T.has_edge(cur["people"][new], q) for q in cur["people"][w].split(","))]):
+            G.add_edge(new, w)
+            e = addEdge(a, g.getNodeByName(w))
+    G.remove_node(v)
+    cur["log"].append(f"split {cur['lab'][v]}")
+
+
+def do_merge(u, v):
+    G = cur["G"]
+    nbrs = (set(G[u]) | set(G[v])) - {u, v}
+    x = (cur["pos"][u][0] + cur["pos"][v][0]) / 2
+    y = (cur["pos"][u][1] + cur["pos"][v][1]) / 2
+    keep = u if len(cur["lab"][u]) >= len(cur["lab"][v]) else v
+    lab = cur["lab"][keep]
+    remove([g.getNodeByName(u), g.getNodeByName(v)])
+    G.remove_nodes_from([u, v])
+    new = f"{u}_m"
+    cur["lab"][new], cur["pos"][new] = lab, (x, y)
+    cur["people"][new] = cur["people"][keep]
+    a = addNode(new, x=x, y=y)
+    G.add_node(new)
+    for w in sorted(nbrs):
+        G.add_edge(new, w)
+        addEdge(a, g.getNodeByName(w))
+    cur["log"].append(f"merged into {lab}")
+
+
+def start_fixes(kind):
+    if cur["timer"] is not None:
+        return
+    if kind == "split":
+        cur["queue"] = [("split", v, grps) for v, grps in suspects()]
+    else:
+        cur["queue"] = [("merge", u, v, j) for u, v, j in duplicates() if j >= 0.2]
+    cur["phase"] = 0
+    if cur["queue"]:
+        cur["timer"] = everyPaced(da_step, slow=1.3, fast=0.6, ramp=1)
+    else:
+        cur["focus"] = "Nothing to fix: " + ("no name has coauthors in separate groups." if kind == "split"
+                                             else "no likely duplicates left.")
+
+
+def da_reset():
+    if cur["timer"] is not None:
+        cur["timer"].stop()
+        cur["timer"] = None
+    remove(list(g.nodes))
+    cur.update(G=RAW.copy(), pos={v: RAW.nodes[v]["pos"] for v in RAW}, lab={v: RAW.nodes[v]["label"] for v in RAW},
+               people={v: RAW.nodes[v]["people"] for v in RAW}, queue=[], phase=0, focus=None, log=[], hist=[], step=0)
+    for v in RAW:
+        addNode(v, x=cur["pos"][v][0], y=cur["pos"][v][1])
+    for u, v in RAW.edges():
+        addEdge(g.getNodeByName(u), g.getNodeByName(v))
+    da_base()
+
+
+def da_text():
+    if mode[0] != "Disambiguation":
+        return ""
+    now = stats(cur["G"])
+    rows = ["| | records | now | truth |", "|---|---|---|---|",
+            f"| people | {RAWSTATS['n']} | {now['n']} | {TRUTH['n']} |",
+            f"| coauthorships | {RAWSTATS['m']} | {now['m']} | {TRUTH['m']} |",
+            f"| mean distance | {RAWSTATS['dist']:.2f} | {now['dist']:.2f} | {TRUTH['dist']:.2f} |",
+            f"| clustering | {RAWSTATS['C']:.3f} | {now['C']:.3f} | {TRUTH['C']:.3f} |",
+            f"| most coauthors | {RAWSTATS['top'][1]} | {now['top'][1]} | {TRUTH['top'][1]} |"]
+    sus = suspects()
+    dup = [d for d in duplicates()]
+    parts = ["\n".join(rows)]
+    if cur["focus"]:
+        parts.append(cur["focus"])
+    if sus:
+        parts.append("Coauthors in separate groups: " + " ".join(linkTo(g.getNodeByName(v), text=cur["lab"][v])
+                                                                  for v, _ in sus if g.getNodeByName(v) is not None))
+    if dup:
+        parts.append("Similar names: " + ", ".join(
+            f"{linkTo(g.getNodeByName(u), text=cur['lab'][u])} + {linkTo(g.getNodeByName(v), text=cur['lab'][v])} "
+            f"(shared coauthors {j:.2f})" for u, v, j in dup if g.getNodeByName(u) is not None and g.getNodeByName(v) is not None))
+    return "\n\n".join(parts)
+
+
+def da_chart():
+    if mode[0] != "Disambiguation" or len(cur["hist"]) < 1:
+        return None
+    pts = [(0, RAWSTATS["dist"])] + cur["hist"]
+    return plotLine({"mean distance": pts, "truth": [(0, TRUTH["dist"]), (max(1, pts[-1][0]), TRUTH["dist"])]},
+                    title="Mean distance as the records are fixed", xlabel="fixes made", ylabel="mean distance",
+                    dots=true)
+
+
+# =====================================================================================================
+mode = ["Link prediction"]
+
+
+def switch(title):
+    mode[0] = title
+    if title == "Link prediction":
+        if cur["timer"] is not None:
+            cur["timer"].stop()
+            cur["timer"] = None
+        use("links")
+        lp_base()
+    else:
+        stop_predicting()
+        use("authors")
+        da_base()
+    center()
+
+
+use("authors")
+da_base()
+use("links")
+closeGraph("main") if "main" in graphNames() else None
+lp_base()
+constantLabelSize(size=14)
+ui.title("Correcting errors in network data", "Networks, Section 9.4")
+ui.layout(
+    right=Column(
+        Markdown("""### Fixing what the measurement got wrong"""),
+        Tabs(
+            Tab("Link prediction",
+                Markdown("""Les Misérables characters, joined when they appear in the same chapter. Hide
+some edges, then rank every unlinked pair by a score and see whether the top
+guesses are the hidden edges."""),
+                Row(Dropdown(["5", "10", "20", "30"], label="Hide %", value="10", onChange=pick_frac),
+                    Button("Hide edges", onClick=lambda: hide_edges())),
+                Row(Dropdown(METHODS, label="Score", value=METHODS[2], onChange=pick_method),
+                    Button("Predict", onClick=lambda: predict()),
+                    Button("Predict at once", onClick=lambda: predict_all_now())),
+                Markdown(lp_text), Chart(lp_chart),
+                Row(Button("Simulate: every method", onClick=lambda: simulate_methods()),
+                    Button("Show every edge", onClick=lambda: show_all_edges())),
+                Markdown(sim_table)),
+            Tab("Disambiguation",
+                Markdown("""Six research groups, as a bibliographic database records them. Two
+**J. Smith**s, two **Y. Wang**s and two **M. Garcia**s are merged into one
+node each, and one person appears as both **A. Kumar** and **Anil Kumar**.
+Node size: number of coauthors."""),
+                Row(Button("Split merged names", onClick=lambda: start_fixes("split")),
+                    Button("Merge duplicates", onClick=lambda: start_fixes("merge")),
+                    Button("Back to the records", onClick=lambda: da_reset())),
+                Markdown(da_text), Chart(da_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len([n for n in g.nodes if n.visible])} nodes · "
+                           f"{len([e for e in g.edges if e.visible])} edges shown"))
+center()

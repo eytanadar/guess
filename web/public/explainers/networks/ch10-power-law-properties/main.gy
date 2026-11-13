@@ -1,0 +1,327 @@
+# Properties of power laws  (Newman, Networks, Section 10.4.2)
+# A quantity with a power-law distribution p(x) ~ x^-alpha behaves strangely.
+# Its mean is finite only when alpha > 2, and its mean square <x^2> only when
+# alpha > 3. Most real networks have 2 < alpha < 3, so in any sample <k^2> is
+# set by the few largest values and keeps growing as the sample grows. Power
+# laws are also top-heavy: the fraction W of all the edge ends held by the
+# fraction P of nodes with the highest degrees is W = P^((alpha-2)/(alpha-1)),
+# so a small share of hubs holds a large share of the links (the "80/20 rule").
+
+import csv
+import math
+import random
+import numpy as np
+
+N_DRAW = 300                                   # values drawn, one node each
+exponent = Slider(1.6, 4.0, 2.5, 0.1, label="exponent α")
+
+
+def draw_values(a, n, seed):
+    """n values from p(x) = (a - 1) x^-a for x >= 1 (continuous, x_min = 1)."""
+    r = random.Random(seed)
+    return [(1 - r.random()) ** (-1 / (a - 1)) for _ in range(n)]
+
+
+# ---- the sample, one node per value, placed once on a spiral -----------------------------------------
+smp = {"vals": [], "shown": 0, "timer": None, "trace": [], "seed": 1, "sim": None}
+
+
+def node_size(x):
+    return min(80, 7 + 10 * math.log10(x))
+
+
+def node_colour(x, top):
+    t = min(1.0, math.log10(x) / max(1.0, math.log10(top)))
+    return f"{int(255 - 40 * t)},{int(225 - 175 * t)},{int(130 - 100 * t)}"
+
+
+def build_sample():
+    """Draw all N_DRAW values first, place them, fit the view, then hide them:
+    the reveal shows each node where it will stay."""
+    stop_drawing()
+    a = exponent.value
+    smp["vals"] = draw_values(a, N_DRAW, smp["seed"])
+    smp["shown"] = 0
+    smp["trace"] = []
+    top = max(smp["vals"])
+    golden = math.pi * (3 - math.sqrt(5))
+    for k, x in enumerate(smp["vals"]):
+        nd = g.getNodeByName(f"x{k}")
+        nd.x = 24 * math.sqrt(k + 0.5) * math.cos(k * golden)
+        nd.y = 24 * math.sqrt(k + 0.5) * math.sin(k * golden)
+        nd.width = nd.height = node_size(x)
+        nd.color = node_colour(x, top)
+        nd.strokecolor = "90,60,40"
+        nd.strokewidth = 0
+        nd.labelvisible = false
+        nd.label = f"{x:,.0f}" if x >= 10 else f"{x:.1f}"
+        nd.born = k
+    noverlapLayout(margin=3)                    # big values push their neighbours aside, once, before the reveal
+    center(g.nodes)
+    revealUpTo(-1)
+
+
+def reveal_one():
+    k = smp["shown"]
+    if k >= N_DRAW:
+        return False
+    vals = smp["vals"]
+    if k:                                        # the previous newcomer goes back to normal
+        prev = g.getNodeByName(f"x{k - 1}")
+        prev.strokewidth = 0
+    biggest_before = max(vals[:k]) if k else 0
+    for x in revealUpTo(k):
+        x.strokecolor, x.strokewidth = "20,20,20", 3
+        if vals[k] > biggest_before:             # a new record: it changes every average
+            x.strokecolor, x.strokewidth = "220,30,30", 5
+    smp["shown"] = k + 1
+    label_top()
+    seen = np.array(vals[:k + 1])
+    smp["trace"].append((k + 1, float(seen.mean()), float((seen ** 2).mean()), float(seen.max())))
+    return N_DRAW - k - 1
+
+
+def label_top():
+    shown = [(x, k) for k, x in enumerate(smp["vals"][:smp["shown"]])]
+    top5 = {k for _, k in sorted(shown, reverse=True)[:5]}
+    for k in range(smp["shown"]):
+        g.getNodeByName(f"x{k}").labelvisible = k in top5
+
+
+def start_drawing():
+    if smp["timer"] is not None:
+        stop_drawing()
+        return
+    if smp["shown"] >= N_DRAW:
+        build_sample()
+    smp["timer"] = everyPaced(reveal_one, steps=N_DRAW - smp["shown"], slow=0.6, fast=0.03, ramp=4)
+    draw_btn.text = "Pause"
+
+
+def stop_drawing():
+    if smp["timer"] is not None:
+        smp["timer"].stop()
+        smp["timer"] = None
+    draw_btn.text = "Draw values one by one"
+
+
+def draw_all():
+    stop_drawing()
+    while reveal_one():
+        pass
+
+
+def new_sample():
+    smp["seed"] += 1
+    build_sample()
+
+
+def exponent_changed(v=None):
+    smp["sim"] = None
+    if mode[0] == "Moments":
+        build_sample()
+
+
+def moments_chart():
+    if len(smp["trace"]) < 2:
+        return None
+    tr = smp["trace"]
+    return plotLine({"mean ⟨x⟩": [(n, m) for n, m, _, _ in tr], "⟨x²⟩": [(n, s) for n, _, s, _ in tr],
+                     "largest": [(n, mx) for n, _, _, mx in tr]},
+                    title="Averages as the sample grows", xlabel="values drawn", ylabel="value", log=true)
+
+
+def limit(a, power):
+    """<x^power> for p(x) = (a-1) x^-a, x >= 1; None if it diverges."""
+    return (a - 1) / (a - 1 - power) if a - 1 - power > 0 else None
+
+
+def moments_text():
+    a = exponent.value
+    m1, m2 = limit(a, 1), limit(a, 2)
+    n = smp["shown"]
+    out = [f"Each node is one value drawn from **p(x) ∝ x^−{a:.1f}** (x ≥ 1); size and colour show the value, and "
+           "the five largest so far are labelled. A **red ring** marks a new record."]
+    if n:
+        _, mean, sq, mx = smp["trace"][-1]
+        out.append(f"After **{n}** values: mean **{mean:,.2f}**, ⟨x²⟩ **{sq:,.1f}**, largest **{mx:,.1f}**.")
+    if m1 is None:
+        out.append(f"With α ≤ 2 even the **mean diverges**: it is set by the biggest value so far, and the biggest "
+                   f"value grows like n^{1 / (a - 1):.2f}, faster than n itself.")
+    elif m2 is None:
+        out.append(f"The mean settles near **{m1:.2f}**, but with α ≤ 3 the **mean square diverges**: each new record "
+                   f"jumps ⟨x²⟩ up, and on average it keeps growing like n^{(3 - a) / (a - 1):.2f}. Most real networks "
+                   "have 2 < α < 3, so their ⟨k²⟩, which appears in many formulas later in the book, is huge and set "
+                   "by the hubs.")
+    else:
+        out.append(f"With α > 3 both settle: the mean near **{m1:.2f}** and ⟨x²⟩ near **{m2:.2f}**. Records still "
+                   "happen, but they are too small to move the averages much.")
+    return "\n\n".join(out)
+
+
+def simulate():
+    """Running <x^2> over 100,000 values for several exponents (numpy, same seed)."""
+    rng = np.random.default_rng(7)
+    u = rng.random(100000)                     # the same draws for every exponent, so the curves compare
+    sizes = np.unique(np.logspace(1, 5, 33).astype(int))
+    out = {}
+    for a in sorted({2.2, 2.6, 3.5, round(exponent.value, 1)}):
+        x = (1 - u) ** (-1 / (a - 1))
+        run = np.cumsum(x ** 2) / np.arange(1, x.size + 1)
+        out[f"α = {a:g}"] = [(int(n), float(run[n - 1])) for n in sizes]
+    smp["sim"] = out
+
+
+def sim_chart():
+    if smp["sim"] is None:
+        return None
+    return plotLine(smp["sim"], title="⟨x²⟩ over 100,000 values", xlabel="values drawn", ylabel="⟨x²⟩", log=true)
+
+
+def sim_text():
+    if smp["sim"] is None:
+        return "*Simulate* draws 100,000 values for several exponents and follows ⟨x²⟩."
+    rows = ["| α | ⟨x²⟩ at 1,000 | at 100,000 | limit |", "|---|---|---|---|"]
+    for name, pts in smp["sim"].items():
+        a = float(name.split("= ")[1])
+        at = dict(pts)
+        lim = limit(a, 2)
+        near = min(at, key=lambda n: abs(n - 1000))
+        rows.append(f"| {a:g} | {at[near]:,.1f} | {pts[-1][1]:,.1f} | {'∞' if lim is None else f'{lim:.2f}'} |")
+    return ("On log–log axes a diverging ⟨x²⟩ climbs in jumps as records arrive; for α > 3 it flattens out.\n\n"
+            + "\n".join(rows))
+
+
+# ---- top-heavy: the share of edge ends held by the biggest nodes ----------------------------------------
+SEQ = {}
+with open("degree-sequences.csv", encoding="utf-8") as fh:
+    for row in csv.DictReader(fh):
+        SEQ.setdefault(row["network"], []).extend([int(row["degree"])] * int(row["count"]))
+share = Slider(1, 50, 20, 1, label="top P (%)")
+FITS = {name: fitPowerLaw(vals) for name, vals in SEQ.items()}
+
+
+def w_of_p(degrees, p):
+    ds = sorted(degrees, reverse=True)
+    k = max(1, round(p * len(ds)))
+    return sum(ds[:k]) / sum(ds)
+
+
+def w_curve(degrees):
+    ds = np.sort(np.array(degrees, float))[::-1]
+    cum = np.concatenate([[0.0], np.cumsum(ds) / ds.sum()])
+    ps = np.linspace(0, 1, 101)
+    return [(float(p), float(cum[int(round(p * ds.size))])) for p in ps]
+
+
+def paint_top():
+    p = share.value / 100
+    nodes = sorted(g.nodes, key=lambda n: (-n.degree, n.name))
+    k = max(1, round(p * len(nodes)))
+    top = {n.name for n in nodes[:k]}
+    big = max(n.degree for n in nodes) or 1
+    for n in nodes:
+        n.width = n.height = 7 + 30 * math.sqrt(n.degree / big)
+        n.labelvisible = false
+        if n.name in top:
+            n.color, n.strokecolor, n.strokewidth = "245,130,40", "120,30,10", 3
+        else:
+            n.color, n.strokecolor, n.strokewidth = "175,185,205", "110,110,120", 0
+    for n in nodes[:3]:
+        n.labelvisible = true
+        n.label = f"k = {n.degree}"
+    for e in g.edges:
+        if e.node1.name in top or e.node2.name in top:
+            e.color, e.width = "245,130,40,170", 1.6
+        else:
+            e.color, e.width = "160,160,160,70", 0.8
+
+
+def top_text():
+    if mode[0] != "Top-heavy":
+        return ""
+    p = share.value / 100
+    here = [n.degree for n in g.nodes]
+    w_here = w_of_p(here, p)
+    lines = [f"The top **{share.value:.0f}%** of nodes by degree (orange, with their links) hold **{100 * w_here:.0f}%** "
+             f"of all edge ends in this sample of {len(here)} ASes."]
+    rows = ["| network | n | α (fit) | top P% hold |", "|---|---|---|---|"]
+    for name, vals in SEQ.items():
+        f = FITS[name]
+        rows.append(f"| {name} | {len(vals):,} | {f['alpha']:.2f} ± {f['sigma']:.2f} (k ≥ {f['kmin']}) | "
+                    f"**{100 * w_of_p(vals, p):.0f}%** |")
+    a = exponent.value
+    theory = ""
+    if a > 2:
+        theory = (f" A pure power law with α = {a:.1f} gives W = P^{(a - 2) / (a - 1):.2f}: the top {share.value:.0f}% "
+                  f"hold **{100 * p ** ((a - 2) / (a - 1)):.0f}%**.")
+    lines.append("\n".join(rows))
+    lines.append("The smaller α, the more **top-heavy**: in the whole 2006 Internet a few percent of the ASes hold "
+                 "half of the links, while in the power grid, with no heavy tail, the top 20% hold about 40%, not far from "
+                 "the 20% an even spread would give." + theory)
+    return "\n\n".join(lines)
+
+
+def top_chart():
+    if mode[0] != "Top-heavy":
+        return None
+    series = {"this sample": w_curve([n.degree for n in g.nodes])}
+    for name, vals in SEQ.items():
+        series[name] = w_curve(vals)
+    a = exponent.value
+    if a > 2:
+        series[f"power law α={a:.1f}"] = [(p, p ** ((a - 2) / (a - 1))) for p in np.linspace(0, 1, 101)]
+    return plotLine(series, title="Share of edge ends W held by the top P of nodes", xlabel="P (fraction of nodes)",
+                    ylabel="W")
+
+
+# ---- the two graphs and the tabs ---------------------------------------------------------------------------
+draw_btn = Button("Draw values one by one", onClick=lambda: start_drawing())
+renameGraph("sample")
+Node.born = -1
+for k in range(N_DRAW):
+    addNode(f"x{k}")
+newGraph("internet")
+makeFromFile("internet-as-sample.gdf")
+use("sample")
+build_sample()
+mode = ["Moments"]
+
+
+def switch(title):
+    mode[0] = title
+    stop_drawing()
+    if title == "Moments":
+        use("sample")
+        build_sample()
+    else:
+        use("internet")
+        paint_top()
+        center()
+
+
+share.onChange = lambda v: paint_top() if mode[0] == "Top-heavy" else None
+exponent.onChange = exponent_changed
+constantLabelSize(size=14)
+ui.title("Properties of power laws", "Networks, Section 10.4.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Heavy tails
+A power law p(x) ∝ x^−α has values far bigger than typical ones. The
+exponent α decides whether averages exist at all."""),
+        exponent,
+        Tabs(
+            Tab("Moments",
+                Row(draw_btn, Button("All at once", onClick=lambda: draw_all()),
+                    Button("New sample", onClick=lambda: new_sample())),
+                Markdown(moments_text), Chart(moments_chart),
+                Button("Simulate: 100,000 values", onClick=lambda: simulate()),
+                Markdown(sim_text), Chart(sim_chart)),
+            Tab("Top-heavy",
+                share, Markdown(top_text), Chart(top_chart)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len([n for n in g.nodes if n.visible])} nodes shown"))
+center(g.nodes)

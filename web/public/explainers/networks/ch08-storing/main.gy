@@ -1,0 +1,343 @@
+# Storing a network  (Newman, Networks, Section 8.3)
+# A program has to keep a network in memory somehow, and the choice decides
+# how fast the basic operations are. The adjacency matrix keeps a cell for
+# every pair of nodes: finding an edge is one look, but listing a node's
+# neighbours means reading its whole row (n cells), and the memory grows like
+# n squared. The adjacency list keeps, for each node, just the list of its
+# neighbours: listing them costs k reads, but finding a given edge means
+# scanning the list (about k/2 reads on average). Hybrids, trees and hash
+# tables trade extra memory for speed.
+
+import random
+import networkx as nx
+
+# ---- the network: ten numbered nodes, as a program would number them ------------------------------
+G0 = nx.gnm_random_graph(10, 15, seed=11)
+while not nx.is_connected(G0):
+    G0 = nx.gnm_random_graph(10, 15, seed=random.randint(0, 999))
+G0 = nx.relabel_nodes(G0, {v: v + 1 for v in G0})
+NUM = sorted(G0)                                      # 1 … 10
+pos = nx.spring_layout(G0, seed=4, iterations=200)
+F = nx.relabel_nodes(G0, {v: f"n{v:02d}" for v in G0})  # zero-padded, so the matrix rows sort 1, 2, … 10
+for v in G0:
+    F.nodes[f"n{v:02d}"]["pos"] = (pos[v][0] * 320, pos[v][1] * 320)
+fromNetworkX(F)
+
+
+def nd(i):
+    return g.getNodeByName(f"n{i:02d}")
+
+
+# the adjacency list, kept as a program would keep it: neighbours in the order the edges arrived
+adj = {i: [] for i in NUM}
+for u, v in G0.edges():
+    adj[u].append(v)
+    adj[v].append(u)
+
+st = {"a": None, "b": None, "timer": None, "pos": 0, "found": None, "mode": "Look things up"}
+oplog = []
+
+
+def edge_between(i, j):
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {f"n{i:02d}", f"n{j:02d}"}:
+            return e
+    return None
+
+
+def base():
+    for v in g.nodes:
+        v.width = v.height = 34
+        v.labelpos = "inside"
+        v.labelvisible = true
+        v.label = str(int(v.name[1:]))
+        v.color = "170,190,220"
+        v.strokecolor = "70,70,70"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150", 2, "solid"
+
+
+def num(v):
+    return int(v.name[1:])
+
+
+# ---- look things up --------------------------------------------------------------------------------
+def show_neighbours(i):
+    base()
+    me = nd(i)
+    me.color, me.strokecolor = "250,200,60", "160,90,0"
+    me.width = me.height = 42
+    for j in adj[i]:
+        nb = nd(j)
+        nb.color, nb.strokecolor = "120,200,130", "30,110,50"
+        e = edge_between(i, j)
+        e.color, e.width = "240,140,40", 4
+
+
+def scan_step():
+    """One read of node a's list while looking for b."""
+    a, b = st["a"], st["b"]
+    lst = adj[a]
+    k = st["pos"]
+    show_neighbours(a)
+    other = nd(b)
+    other.strokecolor, other.width, other.height = "220,40,40", 42, 42
+    if k >= len(lst):
+        st["found"] = False
+        return False
+    j = lst[k]
+    st["pos"] = k + 1
+    here = nd(j)
+    e = edge_between(a, j)
+    if j == b:
+        st["found"] = True
+        here.color = "60,190,90"
+        e.color, e.width, e.linestyle = "40,170,70", 6, "flow"
+        return False
+    here.color, here.strokecolor = "250,250,250", "40,40,40"
+    e.color, e.width, e.linestyle = "240,90,40", 5, "flow"
+    return len(lst) - k
+
+
+def look_click(v):
+    i = num(v)
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+    if st["a"] is None or st["b"] is not None or i == st["a"]:
+        st.update(a=i, b=None, pos=0, found=None)
+        show_neighbours(i)
+        return
+    st.update(b=i, pos=0, found=None)
+    st["timer"] = everyPaced(scan_step, slow=0.9, fast=0.4, ramp=2)
+
+
+def list_text():
+    a, b = st["a"], st["b"]
+    rows = ["| node | its adjacency list |", "|---|---|"]
+    for i in NUM:
+        chips = []
+        for k, j in enumerate(adj[i]):
+            mark = ""
+            if i == a and b is not None and k < st["pos"]:
+                mark = "✓ " if j == b else "✗ "
+            chips.append(linkTo(nd(j), mark + str(j)))
+        rows.append(f"| {linkTo(nd(i), str(i))} | {' '.join(chips) or '(none)'} |")
+    table = "\n".join(rows)
+    if a is None:
+        head = "*Click a node* to list its neighbours, then *another* to ask whether they are linked."
+    elif b is None:
+        k = len(adj[a])
+        head = (f"**Neighbours of {a}**: the list hands them over in **{k}** reads (green). The matrix has to read "
+                f"the whole of row {a}, **{len(NUM)}** cells, zeros and all. For n nodes that is n reads against k, "
+                "and k is usually tiny next to n.")
+    else:
+        reads = st["pos"]
+        verdict = ("" if st["found"] is None else
+                   f" **Found** after {reads} read{'s' if reads != 1 else ''}." if st["found"] else
+                   f" **Not there**: all {len(adj[a])} entries read.")
+        head = (f"**Is there an edge {a}–{b}?** The matrix answers in **one** read (the cell in row {a}, column {b}). "
+                f"The list has to scan {a}'s neighbours one by one (✗ checked, ✓ the match): **{reads}** "
+                f"read{'s' if reads != 1 else ''} so far.{verdict} On average a scan reads about k/2 entries; "
+                "scanning the shorter of the two lists helps.")
+    return head + "\n\n" + table
+
+
+def matrix_chart():
+    if st["mode"] != "Look things up" and st["mode"] != "Add and remove":
+        return None
+    return showMatrix(numbers=true, title="The adjacency matrix: n × n cells")
+
+
+# ---- add and remove ------------------------------------------------------------------------------------
+pick = {"a": None}
+
+
+def toggle(i, j):
+    e = edge_between(i, j)
+    if e is None:
+        addEdge(nd(i), nd(j))
+        adj[i].append(j)
+        adj[j].append(i)
+        oplog.append((f"add {i}–{j}", "2 writes (both cells)", "2 appends: O(1)"))
+    else:
+        reads = adj[i].index(j) + 1 + adj[j].index(i) + 1
+        for a, b in ((i, j), (j, i)):           # find it, then move the last entry into the hole
+            lst = adj[a]
+            k = lst.index(b)
+            lst[k] = lst[-1]
+            lst.pop()
+        remove([e])
+        oplog.append((f"remove {i}–{j}", "2 writes (both cells)", f"{reads} reads to find it, then fill the hole: O(k)"))
+    del oplog[:-6]
+    base()
+
+
+def edit_click(v):
+    i = num(v)
+    if pick["a"] is None or pick["a"] == i:
+        pick["a"] = i
+        base()
+        v.color, v.strokecolor = "250,200,60", "160,90,0"
+        v.width = v.height = 42
+        return
+    a = pick["a"]
+    pick["a"] = None
+    toggle(a, i)
+    e = edge_between(a, i)
+    for x in (a, i):
+        nd(x).strokecolor, nd(x).width, nd(x).height = "200,60,40", 40, 40
+    if e is not None:
+        e.color, e.width, e.linestyle = "240,140,40", 5, "flow"
+
+
+def edit_text():
+    rows = ["| operation | matrix | list |", "|---|---|---|"]
+    rows += [f"| {op} | {m} | {l} |" for op, m, l in oplog]
+    return ("*Click two nodes* to add the edge between them, or remove it if it is there. The matrix just writes a "
+            "cell. The list appends for free, but removing means finding the entry first.\n\n"
+            + ("\n".join(rows) if oplog else "")
+            + f"\n\nNow **m = {len(g.edges)}** edges.")
+
+
+# ---- memory and the menu of data structures ----------------------------------------------------------------
+logn = Slider(2, 9, 4, 1, label="n = 10^…")
+degc = Slider(2, 50, 4, 1, label="mean degree c")
+
+
+def human(b):
+    for unit, size in (("TB", 1e12), ("GB", 1e9), ("MB", 1e6), ("kB", 1e3)):
+        if b >= size:
+            return f"{b / size:.3g} {unit}"
+    return f"{b:.3g} bytes"
+
+
+def memory_text():
+    n = 10 ** int(logn.value)
+    m = degc.value * n / 2
+    mat, lst, hsh = n * n / 8, (2 * m + n) * 4, (4 * m + n) * 4
+    return (f"With **n = {n:,}** nodes and mean degree {degc.value}, so m = {int(m):,} edges, packing the "
+            f"matrix one bit per cell takes **{human(mat)}**. An adjacency list with 4-byte entries takes "
+            f"**{human(lst)}**, and a hash table per node, about twice the list, **{human(hsh)}**. The matrix "
+            "grows like n², the lists like m.\n\n"
+            "| stored as | add | remove | find | neighbours | memory |\n"
+            "|---|---|---|---|---|---|\n"
+            "| matrix | 1 | 1 | 1 | n | n² |\n"
+            "| list | 1 | k | k | k | m |\n"
+            "| matrix + list | 1 | 1 | 1 | k | n² |\n"
+            "| list of trees | log k | log k | log k | k | m |\n"
+            "| list of hash tables | 1 | 1 | 1 | k | m |\n\n"
+            "Each entry is the order of the time, O(…), for a node of degree k (k averages 2m/n, small in a "
+            "sparse network). Adding to a list is O(1) because new entries go at the end. Hash tables give the "
+            "best of both, at the price of some extra memory and a more complicated program.")
+
+
+def memory_chart():
+    c = degc.value
+    ns = [10 ** (k / 2) for k in range(4, 19)]
+    return plotLine({"matrix (1 bit per cell)": [(n, n * n / 8) for n in ns],
+                     "adjacency list": [(n, (c * n + n) * 4) for n in ns],
+                     "hash tables": [(n, (2 * c * n + n) * 4) for n in ns]},
+                    title="Memory against n (bytes)", xlabel="nodes n", ylabel="bytes", log=true)
+
+
+# ---- simulate: what a lookup costs, on bigger networks -----------------------------------------------------
+sim = {"rows": [], "timer": None, "sizes": [100, 200, 400, 800, 1600, 3200], "k": 0}
+
+
+def scan_cost(H, rnd, trials=1500):
+    """Average list entries read to answer 'is there an edge u–v?' for random pairs (u's list, whole)."""
+    nodes = list(H)
+    nbrs = {v: list(H[v]) for v in nodes}
+    links = list(H.edges())
+    total = 0
+    for _ in range(trials):
+        if rnd.random() < 0.5:                         # half the questions are about real edges
+            u, v = rnd.choice(links)
+            if rnd.random() < 0.5:
+                u, v = v, u
+        else:
+            u, v = rnd.sample(nodes, 2)
+        lst = nbrs[u]
+        total += lst.index(v) + 1 if v in lst else len(lst)
+    return total / trials
+
+
+def sim_step():
+    k = sim["k"]
+    if k >= len(sim["sizes"]):
+        return False
+    n = sim["sizes"][k]
+    rnd = random.Random(k)
+    even = nx.gnm_random_graph(n, 2 * n, seed=k)
+    hubs = nx.barabasi_albert_graph(n, 2, seed=k)
+    sim["rows"].append((n, scan_cost(even, rnd), scan_cost(hubs, rnd)))
+    sim["k"] = k + 1
+    return len(sim["sizes"]) - sim["k"] or False
+
+
+def simulate():
+    if sim["timer"] is not None:
+        sim["timer"].stop()
+    sim.update(rows=[], k=0)
+    sim["timer"] = everyPaced(sim_step, slow=0.8, fast=0.3, ramp=1)
+
+
+def sim_chart():
+    if not sim["rows"]:
+        return None
+    return plotLine({"matrix": [(n, 1) for n, _, _ in sim["rows"]],
+                     "list, no hubs (c = 4)": [(n, a) for n, a, _ in sim["rows"]],
+                     "list, with hubs (c = 4)": [(n, b) for n, _, b in sim["rows"]]},
+                    title="Reads to answer 'is there an edge?'", xlabel="nodes n", ylabel="reads", logX=true, dots=true)
+
+
+def sim_text():
+    if not sim["rows"]:
+        return ("**Simulate** asks 1,500 random 'is there an edge?' questions of bigger networks, all with mean "
+                "degree 4, and counts list reads.")
+    n, a, b = sim["rows"][-1]
+    return (f"At n = {n:,}: the matrix always needs **1** read. The list needs **{a:.1f}** on average with no hubs, "
+            f"and **{b:.1f}** when there are hubs, whose long lists are slow to scan. Without hubs the cost doesn't grow "
+            "with n at all: for a sparse network it depends on the degrees, not the size. With hubs it creeps up, "
+            "because the biggest hubs get bigger as the network grows.")
+
+
+# ---- wiring ---------------------------------------------------------------------------------------------
+def click(v):
+    if st["mode"] == "Add and remove":
+        edit_click(v)
+    elif st["mode"] == "Look things up":
+        look_click(v)
+
+
+def switch(title):
+    st["mode"] = title
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+    st.update(a=None, b=None, pos=0, found=None)
+    pick["a"] = None
+    base()
+
+
+graphevents.clickNode = click
+base()
+constantLabelSize(size=14)
+ui.title("Storing a network", "Networks, Section 8.3")
+ui.layout(
+    right=Column(
+        Markdown("""### Matrix or list?
+Ten nodes, numbered 1–10 as a program numbers them. Each way of storing
+them makes some questions cheap and others expensive."""),
+        Tabs(
+            Tab("Look things up", Markdown(list_text), Chart(matrix_chart)),
+            Tab("Add and remove", Markdown(edit_text), Chart(matrix_chart)),
+            Tab("Memory", Row(logn, degc), Markdown(memory_text), Chart(memory_chart)),
+            Tab("Simulate", Button("Simulate", onClick=lambda: simulate()), Markdown(sim_text), Chart(sim_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

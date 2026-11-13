@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (109)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (111)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (21)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -39,7 +39,7 @@ Commands can be called without parentheses when they take no arguments
 - [States and morphing](#states-and-morphing) (13)
 - [Ranges (existence intervals)](#ranges-existence-intervals) (6)
 - [Charts](#charts) (9)
-- [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (24)
+- [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (25)
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
 - [Colors](#colors) (4)
@@ -81,6 +81,17 @@ Add an undirected edge between two nodes (by node or name).
 ### `averageEdgeColor(edges=None)`
 
 Color edges the average of their endpoint colors (all edges by default).
+
+### `bowTie(name='bowtie')`
+
+bowTie() splits a directed network the way the Web was described in
+2000: the largest strongly connected component ("core"), the nodes that
+can reach it but not be reached from it ("in"), those reached from it
+that can't reach back ("out"), "tube" nodes on paths from in to out that
+bypass the core, "tendril" nodes hanging off in or out, and "other"
+for nodes outside the core's weakly connected component. Sets the node
+field `bowtie` and returns the sizes, e.g. {"core": 224, "in": 89, ...}.
+Undirected edges count both ways.
 
 ### `center(*d)`
 
@@ -308,6 +319,18 @@ fitNodesToLabels() puts each node's label inside it (labelpos =
 Graphviz drawing; fitNodesToLabels(dept == 'dept3') does some nodes.
 padding is the space around the text. Labels with line breaks
 (`\n`) make taller nodes.
+
+### `fitPowerLaw(field='degree', kmin=None)`
+
+fitPowerLaw(degree) fits a power law p(k) ~ k^-alpha to the values
+of a numeric node field (or a list of numbers) from kmin up, by maximum likelihood (Newman,
+Networks, eq. 10.9, with the -1/2 correction for whole numbers), not
+by drawing a line through a log-log plot. With kmin left out it is
+chosen as the value that makes the fitted distribution closest to the
+data (the smallest Kolmogorov-Smirnov distance; Clauset, Shalizi and
+Newman 2009). Returns {"alpha", "sigma" (its standard error), "kmin",
+"n" (values in the tail), "ks"}. plotFrequency(degree, cumulative=true,
+log=true, fit=true) draws the fit.
 
 ### `floatRange(a, b, inc)`
 
@@ -2958,7 +2981,7 @@ for one chart.)
 Each element's value of field, in rank order (or ordered by sortField).
 log=true draws the values on a log axis.
 
-### `plotFrequency(field, log=False, cumulative=False)`
+### `plotFrequency(field, log=False, cumulative=False, fit=False, kmin=None)`
 
 plotFrequency(degree) plots, for each value of a numeric field, the
 fraction of nodes (or edges) with that value: the degree distribution
@@ -2966,7 +2989,8 @@ p(k). log=true draws both axes on log scales (a power law is then a
 straight line; zeros are left out). cumulative=true plots the fraction
 with that value or more (the complementary cumulative distribution,
 smoother for heavy tails). Pointing at the chart highlights the
-elements with that value.
+elements with that value. fit=true adds a power law fitted by maximum
+likelihood (fitPowerLaw; kmin= fixes where it starts) as a dashed line.
 
 ### `plotHistogram(field, bins=10, log=False)`
 
@@ -3081,6 +3105,15 @@ Group(title, *widgets, collapsed=False): a titled box that can be folded.
 Label(text): a line of text in a panel; set .text to change it.
 Label(lambda: f"{len(sel)} selected") is live: the function runs again
 after every command and the label follows.
+
+### `linkTo(element, text=None)`
+
+linkTo(node) is Markdown for a small chip naming a node (or edge):
+in a Markdown panel, pointing at the chip highlights the element in the
+graph and clicking selects it. Good for listing a queue, a path or
+search results beside the graph:
+    Markdown(lambda: "Queue: " + " ".join(linkTo(n) for n in queue))
+text= replaces the shown name (e.g. "v3 (d=2)").
 
 ### `Markdown(*a, **k)`
 
@@ -4168,6 +4201,7 @@ Built-in node fields:
 | `visible` | BOOLEAN | True |
 | `color` | VARCHAR | 'cornflowerblue' |
 | `strokecolor` | VARCHAR | None |
+| `strokewidth` | DOUBLE | 0.0 |
 | `labelcolor` | VARCHAR | None |
 | `fixed` | BOOLEAN | False |
 | `style` | INTEGER | 2 |

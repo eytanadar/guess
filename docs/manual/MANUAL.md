@@ -380,6 +380,7 @@ behave, and you can set them in the file:
 | `x`, `y` | position (if missing, GUESS lays out the graph) | |
 | `color` | fill colour (a name or `"r,g,b"` / `"r,g,b,a"`) | cornflowerblue |
 | `strokecolor` | outline colour | darker fill |
+| `strokewidth` | outline width (0: the display's, 0.75) | 0 |
 | `style` | shape: 1 rectangle, 2 ellipse, 3 rounded rectangle, 4–6 the same with the label inside, 7 image, 11 triangle, 12 diamond, 13 hexagon, 14 octagon, `polygon(n)` (all pictured in §7.2) | 2 |
 | `width`, `height` | size | 10 |
 | `label`, `labelvisible`, `labelcolor` | the label text, whether it's shown, its colour (inside a node: black or white for contrast, unless set) | name, false |
@@ -1320,6 +1321,25 @@ colorize(camp)
 r["frustrated"].color = red               # edges that disagree with the camps
 ```
 
+For a directed network, `bowTie()` sorts the nodes the way the Web was
+first described: a strongly connected core, the nodes that reach it (in),
+the nodes it reaches (out), tubes and tendrils, and the rest. It sets the
+field `bowtie` and returns the sizes. For a heavy-tailed field,
+`fitPowerLaw(degree)` estimates the exponent α of p(k) ∝ k^−α by maximum
+likelihood, with its standard error. It picks k_min by the
+Kolmogorov–Smirnov method unless you give `kmin=`, and it also takes a plain
+list of numbers. `plotFrequency(..., fit=true)` draws the fit as a dashed
+line:
+
+```python
+makeFromFile("polblogs-sample.gdf")
+bowTie()                                  # {'core': 224, 'in': 89, 'out': 69, ...}
+colorize(bowtie)
+fitPowerLaw(degree)                       # {'alpha': ..., 'sigma': ..., 'kmin': ..., ...}
+plotFrequency(degree, cumulative=true, log=true, fit=true)
+makeFromGDF("sample.gdf")
+```
+
 `compareClusters` gives normalized mutual information by default (0 to 1);
 `method="ari"` (adjusted Rand), `"rand"` and `"vi"` are the alternatives.
 
@@ -2247,6 +2267,10 @@ ui.title("Organisation", "sample data")
 - `Markdown(text)` shows formatted notes. `Label` and `Markdown` given a
   function, as in `Label(lambda: f"{len(sel)} selected")`, are live: they
   update after every command and every change of selection.
+  `linkTo(node)` writes a chip for a node or edge into Markdown. Pointing
+  at the chip highlights the element in the graph and clicking selects
+  it, so a panel can list a queue, a path or search results:
+  `Markdown(lambda: "Queue: " + " ".join(linkTo(n) for n in queue))`.
 - `Chart(fn)` puts a chart in a panel instead of the dock: `fn` makes it
   with any plot command (or returns an Altair chart), and runs again after
   every command, so `Chart(lambda: plotFrequency(degree, log=true))` follows

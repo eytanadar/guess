@@ -781,6 +781,9 @@ body.app .view-col { flex: 1 1 auto; }
 .w-markdown h3, .w-markdown h4, .w-markdown h5 { margin: 4px 0; font-size: 13.5px; }
 .w-markdown p { margin: 0 0 6px; }
 .w-markdown ul, .w-markdown ol { margin: 0 0 6px; padding-left: 20px; }
+.w-markdown .md-el { display: inline-block; padding: 0 6px; margin: 1px 2px; border-radius: 9px; background: var(--border);
+  cursor: pointer; font-variant-numeric: tabular-nums; }
+.w-markdown .md-el:hover { background: var(--accent, #e0457b); color: #fff; }
 .w-markdown .md-table { border-collapse: collapse; margin: 2px 0 8px; font-variant-numeric: tabular-nums; }
 .w-markdown .md-table th, .w-markdown .md-table td { border: 1px solid var(--border); padding: 1px 6px; text-align: center; }
 .w-markdown .md-table th { background: var(--panel); }

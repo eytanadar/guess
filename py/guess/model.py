@@ -928,6 +928,7 @@ _NODE_BUILTINS = [
     ("visible", BOOL, True, True),
     ("color", STRING, "cornflowerblue", True),
     ("strokecolor", STRING, None, True),
+    ("strokewidth", DOUBLE, 0.0, True),     # border width; 0 = the display's (borderBy sets it for all)
     ("labelcolor", STRING, None, True),
     ("fixed", BOOL, False, False),
     ("style", INT, 2, True),

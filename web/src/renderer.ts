@@ -370,7 +370,8 @@ export class Renderer {
       return;
     }
     for (const id of removedEdges) this.edges.delete(id);
-    if (removedEdges.length || edges.some((e) => !this.edges.has(e.i))) this.curvesDirty = true;
+    // new edges, or edges shown or hidden: parallel-edge curves count only visible edges
+    if (removedEdges.length || edges.some((e) => !this.edges.has(e.i) || this.edges.get(e.i)!.v !== e.v)) this.curvesDirty = true;
     if (removedNodes.length) {
       const gone = new Set(removedNodes);
       for (const id of removedNodes) this.nodes.delete(id);
@@ -669,10 +670,20 @@ export class Renderer {
     }
     const W = this.app.screen.width, H = this.app.screen.height;
     const pad = 40;
+    // labels to the right of the nodes near the right edge need room too
+    let padR = pad;
+    const edge = x1 - 0.15 * Math.max(x1 - x0, 1);
+    for (const n of pick) {
+      if (!n.lv || (n.lp && n.lp !== "right") || n.x + n.w < edge) continue;
+      const chars = String(n.l ?? "").length * (n.ls ?? 1);
+      if (this.constantSize) padR = Math.max(padR, 12 + chars * 10 * this.constantScale * 0.58);
+      else x1 = Math.max(x1, n.x + n.w + 4 + chars * 10 * 0.58);
+    }
+    padR = Math.min(padR, W / 3);
     const bw = Math.max(x1 - x0, 1), bh = Math.max(y1 - y0, 1);
-    let s = Math.min((W - 2 * pad) / bw, (H - 2 * pad) / bh);
+    let s = Math.min((W - pad - padR) / bw, (H - 2 * pad) / bh);
     s = Math.min(Math.max(s, 0.01), ids.size ? 8 : 4);
-    const tx = W / 2 - ((x0 + x1) / 2) * s;
+    const tx = (pad + W - padR) / 2 - ((x0 + x1) / 2) * s;
     const ty = H / 2 - ((y0 + y1) / 2) * s;
     const to = [tx, ty, s];
     if (!animate) {
@@ -1019,7 +1030,7 @@ export class Renderer {
     this.curvesDirty = false;
     const groups = new Map<string, number[]>();
     for (const e of this.edges.values()) {
-      if (e.s === e.t) continue;
+      if (e.s === e.t || !e.v) continue;              // a hidden edge doesn't bend its visible twin
       const key = e.s < e.t ? `${e.s}-${e.t}` : `${e.t}-${e.s}`;
       const list = groups.get(key);
       if (list) list.push(e.i);
@@ -1123,7 +1134,7 @@ export class Renderer {
         this.imageLayer.addChild(sp);
         continue;
       }
-      const border = n.m ? Math.max(2.5, this.borderWidth) : this.borderWidth;
+      const border = n.bw ?? (n.m ? Math.max(2.5, this.borderWidth) : this.borderWidth);
       const pie = this.pieColors && n.p ? n.p : null;
       const total = pie ? pie.reduce((a, b) => a + b, 0) : 0;
       if (pie && total > 0) {
@@ -2052,7 +2063,7 @@ export class Renderer {
     for (const id of this.order) {
       const n = this.nodes.get(id);
       if (!n || !n.v) continue;
-      const fill = `fill="${col(n.c)}" fill-opacity="${n.a}" stroke="${col(n.sc >= 0 ? n.sc : darken(n.c))}" stroke-width="0.75"`;
+      const fill = `fill="${col(n.c)}" fill-opacity="${n.a}" stroke="${col(n.sc >= 0 ? n.sc : darken(n.c))}" stroke-width="${n.bw ?? this.borderWidth}"`;
       const poly = polyPoints(n);
       if (poly) out.push(`<polygon points="${poly.join(" ")}" ${fill}/>`);
       else if (isRound(n.s)) out.push(`<ellipse cx="${n.x + n.w / 2}" cy="${n.y + n.h / 2}" rx="${n.w / 2}" ry="${n.h / 2}" ${fill}/>`);

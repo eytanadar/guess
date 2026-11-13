@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Errors in network data",
+  "description": "Missed edges, spurious edges, unsurveyed and merged nodes: measure a network badly and see which conclusions survive.",
+  "console": "toggle",
+  "script": "main.gy"
+}

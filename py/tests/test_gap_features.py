@@ -258,3 +258,43 @@ def test_assortativity_categorical_option():
     as_cat = ev(s, "assortativity(code, categorical=true)")
     assert abs(as_cat - ev(s, "assortativity(dept)")) < 1e-9          # the same split, as categories
     assert not s.run("assortativity(dept, categorical=false)")
+
+
+def test_link_to_makes_markdown_chips():
+    s = _s()
+    assert ev(s, "linkTo(v1)") == f"[v1](guess:n{ev(s, 'v1._id')})"
+    assert ev(s, "linkTo(v1, text='v1 [d=2]')").startswith("[v1 (d=2)](guess:n")
+    assert ev(s, "linkTo(list(g.edges)[0])").startswith("[") and "(guess:e" in ev(s, "linkTo(list(g.edges)[0])")
+    assert not s.run("linkTo(3)")
+
+
+def test_node_strokewidth_reaches_the_display():
+    s = _s()
+    assert s.run("v1.strokewidth = 4"), s.rec.of("error")
+    rec = s.node_record(s.graph._nodes["v1"])
+    assert rec["bw"] == 4.0
+    rec2 = s.node_record(s.graph._nodes["v2"])
+    assert "bw" not in rec2
+
+
+def test_bow_tie_and_power_law_fit():
+    import math
+    import random
+    s = _s()
+    # a bow tie by hand: in -> core (a cycle) -> out, a tendril off in, a tube in -> out, an isolated node
+    assert s.run("newGraph('bt')\nfor v in ['i', 'c1', 'c2', 'c3', 'o', 'tend', 'tube', 'lone']:\n    addNode(v)\n"
+                 "for u, v in [('i','c1'),('c1','c2'),('c2','c3'),('c3','c1'),('c3','o'),('i','tend'),('i','tube'),('tube','o')]:\n"
+                 "    addDirectedEdge(g.getNodeByName(u), g.getNodeByName(v))\nsz = bowTie()"), s.rec.of("error")
+    assert ev(s, "sz") == {"core": 3, "in": 1, "out": 1, "tube": 1, "tendril": 1, "other": 1}
+    assert ev(s, "lone.bowtie") == "other" and ev(s, "tube.bowtie") == "tube"
+    # maximum likelihood recovers the exponent of a discrete power law (alpha 2.5 from k = 4)
+    r = random.Random(1)
+    vals = [int(math.floor((1 - r.random()) ** (-1 / 1.5) * 3.5 + 0.5)) for _ in range(5000)]
+    s.ns["__v"] = vals
+    fit = ev(s, "fitPowerLaw(__v)")
+    assert fit["kmin"] == 4 and abs(fit["alpha"] - 2.5) < 0.1 and fit["ks"] < 0.03
+    assert ev(s, "fitPowerLaw(__v, kmin=10)")["kmin"] == 10
+    assert not s.run("fitPowerLaw([1, 2])")
+    assert s.run("makeSample('karate')\nplotFrequency(degree, cumulative=true, log=true, fit=true)"), s.rec.of("error")
+    m = [c for c in s.rec.of("chart")][-1]
+    assert len(m["series"]) == 2 and m["series"][1]["dash"]

@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Centralities, clustering and mixing compared",
+  "description": "The measures of Chapter 7 across a dozen real networks: skewed centralities, more triangles than chance, clustering that falls with degree, and who mixes with whom.",
+  "console": "toggle",
+  "script": "main.gy"
+}

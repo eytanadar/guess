@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The small-world effect",
+  "description": "Distance rings, the distribution of distances, why mean distance grows like log n, and a six-degrees guessing game.",
+  "console": "toggle",
+  "script": "main.gy"
+}

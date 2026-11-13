@@ -1,0 +1,470 @@
+# The small-world effect  (Newman, Networks, Section 10.2)
+# In almost every network the typical distance between two nodes, in hops,
+# is small: a handful even when there are millions of nodes. The mean
+# distance grows only like log n (each step out multiplies the number of
+# nodes reached by about the mean degree c, so it takes about ln n / ln c
+# steps to reach everyone). The diameter, the longest shortest path, is
+# bigger but still small. Distances here ignore edge direction and are
+# measured inside the largest component.
+
+import math
+import random
+import networkx as nx
+
+DATA = {"Les Misérables (characters)": "lesmis.gdf", "Karate club (friendships)": "karate.gdf",
+        "Dolphins (associations)": "dolphins.gdf", "Power grid region (400 stations)": "power-grid-region.gdf",
+        "Internet (300 ASes)": "internet-as-sample.gdf", "Political blogs (600-blog sample)": "polblogs-sample.gdf",
+        "US airports (routes)": "us-airports.gdf", "C. elegans neurons": "celegans-neural.gdf"}
+net = {"choice": None, "G": None, "giant": set(), "n": 0, "c": 0.0, "ell": None, "diam": None, "names": {}}
+MEASURED = {}                      # dataset -> (n of the giant component, mean distance), for the growth chart
+mode = ["Rings"]
+
+
+def stop_all():
+    for st in (rings, pairs, growth, tour):
+        if st.get("timer") is not None:
+            st["timer"].stop()
+            st["timer"] = None
+
+
+def load(choice):
+    stop_all()
+    net["choice"] = choice
+    makeFromFile(DATA[choice])
+    if choice.startswith("US airports"):
+        geoLayout()
+    G = toNetworkX(directed=False)
+    G.remove_edges_from(list(nx.selfloop_edges(G)))
+    giant = max(nx.connected_components(G), key=len)
+    H = G.subgraph(giant)
+    net["names"] = {v.name: (str(v.label) if v.label else v.name) for v in g.nodes}
+    net.update(G=G, giant=set(giant), n=len(giant), c=2 * H.number_of_edges() / len(giant), ell=None, diam=None)
+    rings.update(centre=None, layer=0)
+    pairs.update(order=[], i=0, counts={}, total=0, maxd=0)
+    game.update(a=None, b=None, shown=False)
+    base()
+    center()
+
+
+def exact_stats():
+    """Mean distance and diameter of the largest component (all pairs; cached)."""
+    if net["ell"] is None:
+        H = net["G"].subgraph(net["giant"])
+        tot, cnt, diam = 0, 0, 0
+        for v, dist in nx.all_pairs_shortest_path_length(H):
+            tot += sum(dist.values())
+            cnt += len(dist) - 1
+            diam = max(diam, max(dist.values()))
+        net["ell"], net["diam"] = tot / max(cnt, 1), diam
+        MEASURED[net["choice"]] = (net["n"], net["ell"])
+    return net["ell"], net["diam"]
+
+
+def base():
+    small = len(g.nodes) <= 80
+    for v in g.nodes:
+        v.width = v.height = 16 if small else 11
+        v.color = "170,185,210" if v.name in net["giant"] else "205,205,205"
+        v.strokecolor = "90,90,90"
+        v.strokewidth = 0
+        v.labelvisible = false
+        v.labelpos = "inside"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,90", 1.0, "solid"
+
+
+def node_label(v):
+    lab = net["names"].get(v.name, v.name)
+    return lab if len(lab) < 28 else lab[:26] + "…"
+
+
+# ---- rings: distances from one node -----------------------------------------------------------
+rings = {"centre": None, "layer": 0, "timer": None, "dist": {}}
+
+
+def show_rings(v, upto=None):
+    base()
+    rings["centre"] = v.name
+    dist = nx.single_source_shortest_path_length(net["G"], v.name)
+    rings["dist"] = dist
+    heatMap(v)
+    top = max(dist.values())
+    upto = top if upto is None else upto
+    small = len(g.nodes) <= 80
+    for m in g.nodes:
+        d = dist.get(m.name)
+        if d is None or d > upto:
+            m.color = "215,215,215"
+            continue
+        m.width = m.height = (22 if small else 14) if d < upto else (30 if small else 20)
+        if small or d == upto:
+            m.label = str(d)
+            m.labelvisible = true
+    for e in g.edges:                     # edges that carry the search from one ring to the next
+        a, b = dist.get(e.node1.name), dist.get(e.node2.name)
+        if a is not None and b is not None and abs(a - b) == 1 and max(a, b) <= upto:
+            out = max(a, b) == upto and upto > 0
+            e.color = "235,120,30" if out else "120,120,120,160"
+            e.width = 3 if out else 1.4
+            e.linestyle = "flow" if out else "solid"
+    v.width = v.height = 40
+    v.color = "20,20,20"
+    v.strokecolor = "250,200,40"
+    v.strokewidth = 4
+    v.label = node_label(v)
+    v.labelvisible = true
+    v.labelpos = "right"
+
+
+def ring_step():
+    v = g.getNodeByName(rings["centre"])
+    rings["layer"] += 1
+    show_rings(v, rings["layer"])
+    left = max(rings["dist"].values()) - rings["layer"]
+    return left if left > 0 else False
+
+
+def spread_rings():
+    if rings["centre"] is None:
+        pick_random_centre()
+    if rings["timer"] is not None:
+        rings["timer"].stop()
+    rings["layer"] = 0
+    show_rings(g.getNodeByName(rings["centre"]), 0)
+    rings["timer"] = everyPaced(ring_step, slow=1.0, fast=0.5, ramp=2)
+
+
+def pick_random_centre():
+    v = random.choice(sorted(net["giant"]))
+    show_rings(g.getNodeByName(v))
+
+
+def rings_text():
+    if rings["centre"] is None:
+        return ("*Click a node* to colour everyone by their distance from it (red near, blue far; grey: not "
+                "reachable). *Spread out* shows the search ring by ring.")
+    dist = rings["dist"]
+    v = g.getNodeByName(rings["centre"])
+    reach = len(dist) - 1
+    ell = sum(dist.values()) / max(reach, 1)
+    top = max(dist.values())
+    far = [g.getNodeByName(u) for u, d in dist.items() if d == top][:4]
+    c = net["c"]
+    pred = math.log(net["n"]) / math.log(c) if c > 1 else float("nan")
+    return (f"From {linkTo(v, node_label(v))}: **{reach}** nodes reachable, on average **{ell:.2f}** hops away; "
+            f"the farthest are **{top}** hops: {' '.join(linkTo(u, node_label(u)) for u in far)}.\n\n"
+            f"Each ring is bigger than the last, by up to c = {c:.1f} times (the mean degree), until the network "
+            f"runs out, so the typical distance is about ln n / ln c = ln {net['n']} / ln {c:.1f} ≈ **{pred:.1f}** "
+            "hops: it grows only with the logarithm of the size.")
+
+
+def rings_chart():
+    if rings["centre"] is None or mode[0] != "Rings":
+        return None
+    counts = {}
+    for d in rings["dist"].values():
+        counts[d] = counts.get(d, 0) + 1
+    return plotLine({"nodes at this distance": sorted(counts.items())},
+                    title=f"Nodes at each distance from {rings['centre']}", xlabel="distance (hops)",
+                    ylabel="nodes", dots=true)
+
+
+# ---- all pairs: the distribution of distances ---------------------------------------------------
+pairs = {"order": [], "i": 0, "counts": {}, "total": 0, "maxd": 0, "timer": None}
+SOURCES = 40
+
+
+def pair_step():
+    if not pairs["order"]:
+        pairs["order"] = random.Random(3).sample(sorted(net["giant"]), min(SOURCES, net["n"]))
+    if pairs["i"] >= len(pairs["order"]):
+        return False
+    s = pairs["order"][pairs["i"]]
+    pairs["i"] += 1
+    dist = nx.single_source_shortest_path_length(net["G"], s)
+    for d in dist.values():
+        if d > 0:
+            pairs["counts"][d] = pairs["counts"].get(d, 0) + 1
+            pairs["total"] += 1
+            pairs["maxd"] = max(pairs["maxd"], d)
+    show_rings(g.getNodeByName(s))
+    rings["centre"] = None                    # the Rings tab keeps its own centre
+    return len(pairs["order"]) - pairs["i"] or False
+
+
+def run_pairs():
+    if pairs["timer"] is not None:
+        pairs["timer"].stop()
+    pairs.update(order=[], i=0, counts={}, total=0, maxd=0)
+    pairs["timer"] = everyPaced(pair_step, slow=0.9, fast=0.12, ramp=3)
+
+
+def all_pairs():
+    if pairs["timer"] is not None:
+        pairs["timer"].stop()
+        pairs["timer"] = None
+    H = net["G"].subgraph(net["giant"])
+    counts = {}
+    for v, dist in nx.all_pairs_shortest_path_length(H):
+        for d in dist.values():
+            if d > 0:
+                counts[d] = counts.get(d, 0) + 1
+    pairs.update(order=sorted(net["giant"]), i=net["n"], counts=counts, total=sum(counts.values()),
+                 maxd=max(counts))
+    exact_stats()
+    base()
+
+
+def pairs_text():
+    if not pairs["total"]:
+        return ("*Measure* runs a breadth-first search from one source after another (the black node; colours are "
+                f"its distances) and adds up how far every node is: the distribution of distances. Largest "
+                f"component: **{net['n']}** nodes, mean degree c = **{net['c']:.2f}**.")
+    ell = sum(d * k for d, k in pairs["counts"].items()) / pairs["total"]
+    c = net["c"]
+    pred = math.log(net["n"]) / math.log(c) if c > 1 else float("nan")
+    exact = net["ell"] is not None and pairs["i"] >= net["n"]
+    head = "all" if exact else f"{pairs['i']}"
+    out = (f"From **{head}** sources: mean distance ℓ = **{ell:.2f}** hops"
+           f"{' (exact)' if exact else ''}; the longest seen is **{pairs['maxd']}**"
+           f"{' (the diameter)' if exact else ''}.\n\n"
+           f"The estimate ln n / ln c = **{pred:.2f}** gets the size right. It assumes a network like a tree that "
+           "branches c ways at every step; clustering and degree differences bend it.")
+    if not exact:
+        out += " *All pairs* gives the exact values."
+    return out
+
+
+def pairs_chart():
+    if not pairs["total"] or mode[0] != "All pairs":
+        return None
+    return plotLine({"share of pairs": [(d, k / pairs["total"]) for d, k in sorted(pairs["counts"].items())]},
+                    title="How far apart are pairs of nodes?", xlabel="distance (hops)", ylabel="share of pairs",
+                    dots=true)
+
+
+# ---- growth: mean distance against n --------------------------------------------------------------
+growth = {"timer": None, "rows": [], "sizes": [50, 100, 200, 400, 800, 1600, 3200], "k": 0, "tour_rows": []}
+C_RANDOM = 4
+
+
+def mean_distance(G, sources=30, seed=0):
+    nodes = sorted(G)
+    pick = nodes if len(nodes) <= sources else random.Random(seed).sample(nodes, sources)
+    tot, cnt = 0, 0
+    for s in pick:
+        dist = nx.single_source_shortest_path_length(G, s)
+        tot += sum(dist.values())
+        cnt += len(dist) - 1
+    return tot / max(cnt, 1)
+
+
+def growth_step():
+    k = growth["k"]
+    if k >= len(growth["sizes"]):
+        return False
+    n = growth["sizes"][k]
+    R = nx.gnm_random_graph(n, C_RANDOM * n // 2, seed=k)
+    giant = R.subgraph(max(nx.connected_components(R), key=len))
+    growth["rows"].append((giant.number_of_nodes(), mean_distance(giant, seed=k)))
+    growth["k"] = k + 1
+    return len(growth["sizes"]) - growth["k"] or False
+
+
+def run_growth():
+    if growth["timer"] is not None:
+        growth["timer"].stop()
+    growth.update(rows=[], k=0)
+    growth["timer"] = everyPaced(growth_step, slow=0.8, fast=0.4, ramp=2)
+
+
+tour = {"timer": None, "todo": [], "back": None}
+
+
+def tour_step():
+    """Load the next bundled network (it shows in the view), measure it, then come back."""
+    if not tour["todo"]:
+        load(tour["back"])
+        dropdown.value = tour["back"]
+        return False
+    choice = tour["todo"].pop(0)
+    timer = tour["timer"]
+    tour["timer"] = None              # load() stops timers; keep this one running
+    load(choice)
+    tour["timer"] = timer
+    exact_stats()
+    for v in g.nodes:                  # flash the network being measured
+        if v.name in net["giant"]:
+            v.color = "235,120,30"
+    return len(tour["todo"]) + 1
+
+
+def run_tour():
+    if tour["timer"] is not None:
+        tour["timer"].stop()
+    tour.update(todo=[c for c in DATA if c not in MEASURED], back=net["choice"])
+    if not tour["todo"]:
+        return
+    tour["timer"] = everyPaced(tour_step, slow=0.9, fast=0.5, ramp=1)
+
+
+def growth_text():
+    out = (f"**Simulate** builds random networks with mean degree c = {C_RANDOM} and n from 50 to 3,200 and measures "
+           "the mean distance of each (from 30 sources). On a log axis for n the points lie on a straight line: ℓ "
+           f"grows like **log n**, as ln n / ln c (dashed) says. Doubling the network adds only about "
+           f"ln 2 / ln {C_RANDOM} = {math.log(2) / math.log(C_RANDOM):.2f} hops.")
+    if MEASURED:
+        rows = ["| network | n | ℓ |", "|---|---|---|"]
+        for ch, (n, ell) in sorted(MEASURED.items(), key=lambda t: t[1][0]):
+            rows.append(f"| {ch.split(' (')[0]} | {n} | {ell:.2f} |")
+        out += ("\n\nThe bundled networks (largest components; *Measure them all* visits each):\n\n" + "\n".join(rows) +
+                "\n\nThe power grid is the slow one: it is nearly flat (planar) and its mean degree is low, so its "
+                "rings grow slowly.")
+    return out
+
+
+def growth_chart():
+    if mode[0] != "Grows like log n":
+        return None
+    data = {}
+    if growth["rows"]:
+        data[f"random, c = {C_RANDOM}"] = growth["rows"]
+    if MEASURED:
+        data["bundled networks"] = [MEASURED[c] for c in MEASURED]
+    if not data:
+        return None
+    ns = [p[0] for pts in data.values() for p in pts]
+    lo, hi = max(10, min(ns)), max(ns)
+    guide = [(lo * (hi / lo) ** (i / 20), math.log(lo * (hi / lo) ** (i / 20)) / math.log(C_RANDOM)) for i in range(21)]
+    return plotScatter(data, logX=true, line=guide, title="Mean distance against network size",
+                       xlabel="n (log scale)", ylabel="mean distance ℓ")
+
+
+# ---- six degrees: a guessing game ----------------------------------------------------------------
+game = {"a": None, "b": None, "shown": False, "log": []}
+guess = Slider(1, 12, 3, 1, label="your guess (hops)")
+
+
+def game_mark():
+    base()
+    for key, col in (("a", "20,20,20"), ("b", "200,30,30")):
+        if game[key]:
+            v = g.getNodeByName(game[key])
+            v.width = v.height = 34
+            v.color = col
+            v.strokecolor = "250,200,40"
+            v.strokewidth = 4
+            v.label = node_label(v)
+            v.labelvisible = true
+            v.labelpos = "right"
+
+
+def game_click(v):
+    if v.name not in net["giant"]:
+        return
+    if game["a"] is None or game["b"] is not None:
+        game.update(a=v.name, b=None, shown=False)
+    elif v.name != game["a"]:
+        game["b"] = v.name
+    game_mark()
+
+
+def random_pair():
+    a, b = random.sample(sorted(net["giant"]), 2)
+    game.update(a=a, b=b, shown=False)
+    game_mark()
+
+
+def reveal():
+    if not (game["a"] and game["b"]) or game["shown"]:
+        return
+    game["shown"] = True
+    path = nx.shortest_path(net["G"], game["a"], game["b"])
+    d = len(path) - 1
+    game["log"].append((int(guess.value), d))
+    game_mark()
+    on = set(zip(path, path[1:])) | set(zip(path[1:], path))
+    for e in g.edges:
+        if (e.node1.name, e.node2.name) in on:
+            e.color, e.width, e.linestyle = "235,120,30", 4, "flow"
+    for u in path[1:-1]:
+        v = g.getNodeByName(u)
+        v.width = v.height = 24
+        v.color = "250,200,40"
+        v.label = node_label(v)
+        v.labelvisible = true
+        v.labelpos = "right"
+
+
+def game_text():
+    if not (game["a"] and game["b"]):
+        return "*Click two nodes* (or pick a random pair), guess how many hops apart they are, then reveal it."
+    a, b = g.getNodeByName(game["a"]), g.getNodeByName(game["b"])
+    out = f"From {linkTo(a, node_label(a))} to {linkTo(b, node_label(b))}."
+    if game["shown"]:
+        path = nx.shortest_path(net["G"], game["a"], game["b"])
+        d = len(path) - 1
+        mine = game["log"][-1][0]
+        verdict = "exactly right" if mine == d else ("too many" if mine > d else "too few")
+        out += (f" **{d}** hops: you said {mine}, {verdict}. One shortest path: "
+                + " → ".join(linkTo(g.getNodeByName(u), node_label(g.getNodeByName(u))) for u in path) + ".")
+    if game["log"]:
+        over = sum(1 for m, d in game["log"] if m > d)
+        out += (f"\n\nSo far: {len(game['log'])} guesses, {over} of them too far. Most people guess too far: "
+                "networks are smaller worlds than they feel.")
+    return out
+
+
+# ---- wiring ------------------------------------------------------------------------------------------
+def click(v):
+    if mode[0] == "Rings":
+        if rings["timer"] is not None:
+            rings["timer"].stop()
+            rings["timer"] = None
+        if v.name in net["G"]:
+            show_rings(v)
+    elif mode[0] == "Six degrees":
+        game_click(v)
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    base()
+    if title == "Six degrees":
+        game_mark()
+
+
+dropdown = Dropdown(list(DATA), label="Network", onChange=load)
+graphevents.clickNode = click
+load(list(DATA)[0])
+constantLabelSize(size=14)
+ui.title("The small-world effect", "Networks, Section 10.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Six degrees, more or less
+Distances in hops, ignoring direction, inside the largest component."""),
+        dropdown,
+        Tabs(
+            Tab("Rings",
+                Row(Button("Spread out from here", onClick=lambda: spread_rings()),
+                    Button("Random node", onClick=lambda: pick_random_centre())),
+                Markdown(rings_text), Chart(rings_chart)),
+            Tab("All pairs",
+                Row(Button("Measure from 40 sources", onClick=lambda: run_pairs()),
+                    Button("All pairs", onClick=lambda: all_pairs())),
+                Markdown(pairs_text), Chart(pairs_chart)),
+            Tab("Grows like log n",
+                Row(Button("Simulate: random networks", onClick=lambda: run_growth()),
+                    Button("Measure them all", onClick=lambda: run_tour())),
+                Markdown(growth_text), Chart(growth_chart)),
+            Tab("Six degrees",
+                Row(Button("Random pair", onClick=lambda: random_pair()), guess,
+                    Button("Reveal", onClick=lambda: reveal())),
+                Markdown(game_text)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · largest component {net['n']}"))
+center()

@@ -9,6 +9,7 @@ unless they are already there. Sources and citations: README.md.
 """
 import os
 import random
+import re
 import sys
 import tempfile
 import urllib.request
@@ -36,7 +37,7 @@ def fetch(name, folder, multigraph=False):
         gml = next(n for n in zf.namelist() if n.endswith(".gml"))
         text = zf.read(gml).decode("utf-8", "replace")
         if multigraph:
-            text = text.replace("graph\n[", "graph\n[\n  multigraph 1", 1)
+            text = re.sub(r"graph\s*\[", "graph\n[\n  multigraph 1", text, count=1)
         return nx.parse_gml(text.splitlines(), label="id")
 
 
@@ -122,11 +123,56 @@ def celegans(folder):
     return out
 
 
+def polblogs(folder, size=600, seed=1):
+    """Links between US political blogs before the 2004 election (Adamic and
+    Glance): a random sample of `size` blogs and the links among them, so the
+    bow tie (core, in, out, tendrils, disconnected) keeps its proportions.
+    `leaning` is liberal or conservative; `label` is the blog's address."""
+    G = fetch("polblogs", folder, multigraph=True)
+    D = nx.DiGraph(G)
+    D.remove_edges_from(list(nx.selfloop_edges(D)))
+    keep = random.Random(seed).sample(sorted(D), size)
+    out = nx.DiGraph()
+    for v in keep:
+        d = G.nodes[v]
+        out.add_node(f"b{v}", label=str(d.get("label", v)),
+                     leaning="conservative" if d.get("value") == 1 else "liberal")
+    for a, b in D.subgraph(keep).edges():
+        out.add_edge(f"b{a}", f"b{b}")
+    out.graph["layout"] = ("forceAtlas2Layout(iterations=300)\nbinPackLayout(false)\nnoverlapLayout()")
+    return out
+
+
 DATASETS = {"power-grid-region": power_region, "internet-as-sample": as_sample,
-            "dolphins": dolphins, "celegans-neural": celegans}
+            "dolphins": dolphins, "celegans-neural": celegans, "polblogs-sample": polblogs}
+
+
+def degree_sequences(folder):
+    """Whole degree sequences (no edges) of three networks too big to draw in
+    the browser: the 2006 Internet (autonomous systems), the Western US power
+    grid and the political blogs (links either way, as undirected).
+    Written as network,degree,count rows (how many nodes have each degree)."""
+    nets = {"Internet (ASes 2006)": nx.Graph(fetch("as-22july06", folder)),
+            "US power grid": nx.Graph(fetch("power", folder)),
+            "Political blogs": nx.Graph(fetch("polblogs", folder, multigraph=True))}
+    out = HERE / "degree-sequences.csv"
+    with open(out, "w") as fh:
+        fh.write("network,degree,count\n")
+        for name, G in nets.items():
+            G.remove_edges_from(list(nx.selfloop_edges(G)))
+            from collections import Counter
+            for k, c in sorted(Counter(d for _, d in G.degree()).items()):
+                fh.write(f"{name},{k},{c}\n")
+            print(f"  {name}: {len(G)} degrees")
+    print(f"  {out.relative_to(ROOT)}")
 
 
 def main(folder, names):
+    if "degree-sequences" in names:
+        degree_sequences(folder)
+        names = [n for n in names if n != "degree-sequences"]
+        if not names:
+            return
     s = Session(lambda m: print(m.get("text", "").rstrip()) if m.get("type") == "error" else None)
     for name in names or DATASETS:
         G = DATASETS[name](folder)

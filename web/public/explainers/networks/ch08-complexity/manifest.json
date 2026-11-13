@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Running time",
+  "description": "Time real calculations as the network grows, read the exponent off a log-log plot, and extrapolate to big networks.",
+  "console": "toggle",
+  "script": "main.gy"
+}

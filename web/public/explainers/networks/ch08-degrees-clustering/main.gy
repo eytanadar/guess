@@ -1,0 +1,399 @@
+# Computing degrees and clustering  (Newman, Networks, Section 8.4)
+# Stored as an adjacency list, a node's degree is just the length of its list:
+# no work at all. Local clustering takes real work. For each pair of a node's
+# k neighbours we check whether they are linked, so k(k - 1)/2 checks for that
+# node and sum k(k - 1)/2 over the network. That sum depends on the mean of k
+# squared, so a few hubs can make it far larger than the number of edges
+# suggests. Two networks of the same size, one even and one with hubs, show the
+# difference.
+
+import random
+import networkx as nx
+
+N_NODES = 40
+
+
+def make_even():
+    return nx.random_regular_graph(4, N_NODES, seed=3)         # every node has 4 neighbours: m = 80
+
+
+def make_hubs():
+    return nx.barabasi_albert_graph(N_NODES, 2, seed=5)        # preferential attachment: m = 76, a few hubs
+
+
+NETS = {"With hubs: preferential attachment": make_hubs, "Even: every node has 4 neighbours": make_even}
+net = {"name": list(NETS)[0], "G": None}
+
+
+def centre(nd):
+    return nd.x + nd.width / 2, nd.y + nd.height / 2
+
+
+def load(choice):
+    stop_all()
+    net["name"] = choice
+    H = NETS[choice]()
+    H = nx.relabel_nodes(H, {v: f"p{v}" for v in H})
+    net["G"] = H
+    pos = nx.spring_layout(H, seed=2, iterations=300)
+    remove(list(g.nodes))
+    for v in sorted(H, key=lambda s: int(s[1:])):
+        addNode(v, x=pos[v][0] * 430, y=pos[v][1] * 430)
+    for a, b in H.edges():
+        addEdge(g.getNodeByName(a), g.getNodeByName(b))
+    one.update(node=None, pairs=[], i=0, closed=[], opened=[])
+    allpass.update(done=[], checks=0, scans=0, tri=0)
+    base()
+    center()
+
+
+def k_of(name):
+    return net["G"].degree(name)
+
+
+def base():
+    clearDrawings()
+    for nd in g.nodes:
+        nd.width = nd.height = 22 + 2.2 * k_of(nd.name)
+        nd.color = "150,175,215"
+        nd.strokecolor = "70,70,70"
+        nd.labelpos = "inside"
+        nd.label = str(k_of(nd.name))
+        nd.labelvisible = true
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,140", 1.2, "solid"
+
+
+def edge_of(a, b):
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {a, b}:
+            return e
+
+
+# ---- one node: check every pair of its neighbours -----------------------------------------------
+one = {"node": None, "pairs": [], "i": 0, "closed": [], "opened": [], "timer": None}
+
+
+def pick(nd):
+    if mode[0] != "One node":
+        return
+    stop_all()
+    name = nd.name
+    nbrs = sorted(net["G"][name], key=lambda s: int(s[1:]))
+    one.update(node=name, pairs=[(nbrs[i], nbrs[j]) for i in range(len(nbrs)) for j in range(i + 1, len(nbrs))],
+               i=0, closed=[], opened=[])
+    draw_one()
+
+
+def draw_one(current=None):
+    base()
+    name = one["node"]
+    if name is None:
+        return
+    me = g.getNodeByName(name)
+    me.color, me.strokecolor = "250,200,40", "120,60,0"
+    me.width = me.height = me.width + 12
+    for v in net["G"][name]:
+        nd = g.getNodeByName(v)
+        nd.color, nd.strokecolor = "240,170,80", "150,80,20"
+        edge_of(name, v).color, edge_of(name, v).width = "120,120,120", 2.2
+    for a, b in one["closed"]:                         # checked, and linked: a triangle
+        e = edge_of(a, b)
+        e.color, e.width = "40,170,80", 4
+    for a, b in one["opened"][-120:]:                  # checked, and not linked: the missing side, dashed
+        x1, y1 = centre(g.getNodeByName(a))
+        x2, y2 = centre(g.getNodeByName(b))
+        drawLine(x1, y1, x2, y2, color="220,60,50,150", width=1.2, style="dashed")
+    if current is not None:
+        a, b = current
+        for v in (a, b):
+            nd = g.getNodeByName(v)
+            nd.strokecolor = "220,30,30"
+            nd.width = nd.height = nd.width + 10
+            e = edge_of(name, v)
+            e.color, e.width, e.linestyle = "240,130,30", 4, "flow"
+        e = edge_of(a, b)
+        if e is not None:
+            e.color, e.width, e.linestyle = "30,190,70", 6, "flow"
+
+
+def check_one():
+    if one["node"] is None or one["i"] >= len(one["pairs"]):
+        return False
+    a, b = one["pairs"][one["i"]]
+    one["i"] += 1
+    (one["closed"] if net["G"].has_edge(a, b) else one["opened"]).append((a, b))
+    draw_one((a, b))
+    return len(one["pairs"]) - one["i"] or False
+
+
+def play_one():
+    if one["node"] is None:
+        pick(g.getNodeByName(max(net["G"], key=k_of)))          # start with the best-connected node
+    if one["i"] >= len(one["pairs"]):
+        one.update(i=0, closed=[], opened=[])
+    stop_all()
+    one["timer"] = everyPaced(check_one, steps=len(one["pairs"]), slow=0.9, fast=0.12)
+
+
+def all_one():
+    stop_all()
+    if one["node"] is None:
+        pick(g.getNodeByName(max(net["G"], key=k_of)))
+    while check_one():
+        pass
+    draw_one()
+
+
+def one_text():
+    if one["node"] is None:
+        return ("*Click a node* (labels are degrees), or press **Check its pairs** to start with the best-connected "
+                "one.")
+    name = one["node"]
+    k = k_of(name)
+    nbrs = sorted(net["G"][name], key=lambda s: int(s[1:]))
+    pairs = len(one["pairs"])
+    done = one["i"]
+    t = len(one["closed"])
+    lst = " ".join(linkTo(g.getNodeByName(v)) for v in nbrs)
+    c = f"{t} / {pairs} = **{t / pairs:.3f}**" if pairs and done == pairs else (f"so far {t} of {done} checked pairs"
+                                                                                if done else "not yet known")
+    return (f"**{name}**'s adjacency list: {lst}\n\n"
+            f"Its **degree** is the length of that list, **{k}**, known at once (O(1)). Its **local clustering** "
+            f"needs every pair of neighbours checked: k(k − 1)/2 = **{pairs}** checks. Done: **{done}**; linked "
+            f"(green, a triangle): **{t}**; not linked (red dashes): **{len(one['opened'])}**. C = {c}.")
+
+
+def one_chart():
+    if one["node"] is None or not one["i"]:
+        return None
+    pts, closed = [], 0
+    seq =sorted([(p, True) for p in one["closed"]] + [(p, False) for p in one["opened"]],
+                 key=lambda x: one["pairs"].index(x[0]))
+    for i, (_, linked) in enumerate(seq):
+        closed += linked
+        pts.append((i + 1, closed / (i + 1)))
+    return plotLine({"C estimated from the pairs checked so far": pts}, title=f"Local clustering of {one['node']}",
+                    xlabel="pairs checked", ylabel="share linked", dots=true)
+
+
+# ---- every node -----------------------------------------------------------------------------------
+allpass = {"done": [], "checks": 0, "scans": 0, "tri": 0, "timer": None}
+
+
+def order():
+    return sorted(net["G"], key=lambda s: int(s[1:]))
+
+
+def do_node(name):
+    G = net["G"]
+    nbrs = list(G[name])
+    k = len(nbrs)
+    t = 0
+    for i in range(k):
+        for j in range(i + 1, k):
+            a, b = nbrs[i], nbrs[j]
+            allpass["checks"] += 1
+            allpass["scans"] += min(G.degree(a), G.degree(b))      # looking b up in a's list (the shorter one)
+            t += G.has_edge(a, b)
+    allpass["tri"] += t
+    allpass["done"].append((name, k, k * (k - 1) // 2, t))
+    return t
+
+
+def draw_every(current=None):
+    base()
+    done = {name: (k, t) for name, k, _, t in allpass["done"]}
+    for nd in g.nodes:
+        if nd.name in done:
+            k, t = done[nd.name]
+            c = t / (k * (k - 1) / 2) if k > 1 else 0
+            nd.color = f"{int(240 - 190 * c)},{int(230 - 110 * c)},{int(120 + 90 * c)}"
+        else:
+            nd.color = "215,215,215"
+            nd.labelvisible = false
+    if current is not None:
+        me = g.getNodeByName(current)
+        me.strokecolor = "20,20,20"
+        me.width = me.height = me.width + 14
+        G = net["G"]
+        nbrs = list(G[current])
+        for v in nbrs:
+            edge_of(current, v).color, edge_of(current, v).width, edge_of(current, v).linestyle = "240,130,30", 3, "flow"
+        for i in range(len(nbrs)):
+            for j in range(i + 1, len(nbrs)):
+                if G.has_edge(nbrs[i], nbrs[j]):
+                    e = edge_of(nbrs[i], nbrs[j])
+                    e.color, e.width = "40,170,80", 5
+
+
+def every_step():
+    left = [v for v in order() if v not in {d[0] for d in allpass["done"]}]
+    if not left:
+        return False
+    do_node(left[0])
+    draw_every(left[0])
+    return len(left) - 1 or False
+
+
+def play_every():
+    stop_all()
+    if len(allpass["done"]) == len(net["G"]):
+        allpass.update(done=[], checks=0, scans=0, tri=0)
+    allpass["timer"] = everyPaced(every_step, steps=len(net["G"]), slow=1.0, fast=0.1)
+
+
+def all_every():
+    stop_all()
+    while every_step():
+        pass
+    draw_every()
+
+
+def reset_every():
+    stop_all()
+    allpass.update(done=[], checks=0, scans=0, tri=0)
+    draw_every()
+
+
+def every_text():
+    G = net["G"]
+    n, m = G.number_of_nodes(), G.number_of_edges()
+    total = sum(d * (d - 1) // 2 for _, d in G.degree())
+    done = len(allpass["done"])
+    line = (f"{n} nodes, {m} edges. Checks so far: **{allpass['checks']}** of **{total}** = Σ k(k − 1)/2, after "
+            f"{done} of {n} nodes. Each check looks one neighbour up in the other's list; scanning the shorter list "
+            f"costs **{allpass['scans']}** steps so far (a hash table would make each check a single step).")
+    if done == n:
+        tri = allpass["tri"] // 3
+        triples = total
+        line += (f"\n\nEvery triangle was found three times (once from each corner): **{tri}** triangles, "
+                 f"{triples} connected triples, so the clustering coefficient C = 3 × {tri} / {triples} = "
+                 f"**{3 * tri / triples:.3f}**. Colour: each node's local clustering (blue high, yellow low).")
+    else:
+        line += "\n\nGrey nodes haven't been visited; the black-ringed one is being checked now."
+    return line
+
+
+def every_chart():
+    if not allpass["done"]:
+        return None
+    pts = [(k, c) for _, k, c, _ in allpass["done"]]
+    ks = sorted({k for _, k, _, _ in allpass["done"]})
+    return plotScatter({"one dot per node": pts}, line=[(k, k * (k - 1) / 2) for k in ks],
+                       title="Checks for each node against its degree", xlabel="degree k",
+                       ylabel="pairs checked (dashed: k(k − 1)/2)")
+
+
+# ---- hubs cost more -------------------------------------------------------------------------------
+sim = {"rows": [], "timer": None, "sizes": [100, 200, 400, 800, 1600, 3200, 6400]}
+
+
+def cost_table():
+    rows = ["| network | n | m | mean k | mean k² | checks Σ k(k − 1)/2 |", "|---|---|---|---|---|---|"]
+    for name, make in NETS.items():
+        H = make()
+        ks = [d for _, d in H.degree()]
+        n = len(ks)
+        rows.append(f"| {name.split(':')[0]} | {n} | {H.number_of_edges()} | {sum(ks) / n:.2f} | "
+                    f"{sum(k * k for k in ks) / n:.1f} | **{sum(k * (k - 1) // 2 for k in ks)}** |")
+    return ("Both networks have about the same number of nodes and edges, but the total number of checks is "
+            "n(⟨k²⟩ − ⟨k⟩)/2: it depends on the **mean square degree**, and hubs make that large.\n\n"
+            + "\n".join(rows))
+
+
+def sim_step():
+    i = len(sim["rows"])
+    if i >= len(sim["sizes"]):
+        return False
+    n = sim["sizes"][i]
+    even = n * 4 * 3 // 2                                            # k = 4 everywhere
+    ba = sum(d * (d - 1) // 2 for _, d in nx.barabasi_albert_graph(n, 2, seed=i).degree())
+    heavy = 0
+    for rep in range(5):                                             # averaged: the biggest hub varies a lot
+        r = random.Random(100 * i + rep)
+        seq = [min(n - 1, max(2, int(round(x)))) for x in nx.utils.powerlaw_sequence(n, 2.2, seed=r)]
+        heavy += sum(k * (k - 1) // 2 for k in seq) / 5
+    sim["rows"].append((n, even, ba, heavy))
+    return len(sim["sizes"]) - len(sim["rows"]) or False
+
+
+def simulate():
+    stop_all()
+    sim["rows"] = []
+    sim["timer"] = everyPaced(sim_step, steps=len(sim["sizes"]), slow=0.7, fast=0.3, ramp=2)
+
+
+def sim_chart():
+    if len(sim["rows"]) < 2:
+        return None
+    rows = sim["rows"]
+    return plotLine({"even (k = 4)": [(n, e) for n, e, _, _ in rows],
+                     "preferential attachment": [(n, b) for n, _, b, _ in rows],
+                     "power law, exponent 2.2": [(n, h) for n, _, _, h in rows]},
+                    title="Checks needed for all local clustering", xlabel="n", ylabel="checks", log=true, dots=true)
+
+
+def sim_text():
+    if len(sim["rows"]) < 2:
+        return "*Simulate* to see how the work grows with the size of the network."
+    (n0, e0, b0, h0), (n1, e1, b1, h1) = sim["rows"][0], sim["rows"][-1]
+    f = n1 / n0
+    return (f"From n = {n0} to {n1} (×{f:g}): the even network needs ×{e1 / e0:.0f} the checks, exactly in "
+            f"proportion to n; preferential attachment ×{b1 / b0:.0f}, faster than n (its ⟨k²⟩ grows with n, slowly); the "
+            f"heavy-tailed one ×{h1 / h0:.0f}, because its biggest hubs keep growing with n. On log–log axes the "
+            "slope is the exponent of the running time.")
+
+
+# ---- wiring ---------------------------------------------------------------------------------------
+mode = ["One node"]
+
+
+def stop_all():
+    for st in (one, allpass, sim):
+        if st.get("timer") is not None:
+            st["timer"].stop()
+            st["timer"] = None
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    if title == "One node":
+        draw_one()
+    elif title == "Every node":
+        draw_every()
+    else:
+        base()
+
+
+graphevents.clickNode = pick
+load(net["name"])
+constantLabelSize(size=14)
+ui.title("Computing degrees and clustering", "Networks, Section 8.4")
+ui.layout(
+    right=Column(
+        Markdown("""### What does it cost?
+Node labels are **degrees**: with an adjacency list, each is the length of a
+list, free to read. Clustering needs work."""),
+        Dropdown(list(NETS), label="Network", onChange=load),
+        Tabs(
+            Tab("One node",
+                Row(Button("Check its pairs", onClick=lambda *a: play_one()),
+                    Button("All pairs at once", onClick=lambda *a: all_one())),
+                Markdown(one_text), Chart(one_chart)),
+            Tab("Every node",
+                Row(Button("Check every node", onClick=lambda *a: play_every()),
+                    Button("All nodes at once", onClick=lambda *a: all_every()),
+                    Button("Reset", onClick=lambda *a: reset_every())),
+                Markdown(every_text), Chart(every_chart)),
+            Tab("Hubs cost more",
+                Markdown(lambda: cost_table()),
+                Button("Simulate: bigger networks", onClick=lambda *a: simulate()),
+                Markdown(sim_text), Chart(sim_chart)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{net['name']}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

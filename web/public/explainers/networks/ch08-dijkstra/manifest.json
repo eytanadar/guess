@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Shortest paths with lengths",
+  "description": "Dijkstra's algorithm step by step: tentative distances, a priority queue, relaxation, and paths with more hops that are shorter.",
+  "console": "toggle",
+  "script": "main.gy"
+}

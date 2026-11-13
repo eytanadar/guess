@@ -98,14 +98,15 @@ def install(session):
                   "value": len(b), "color": _color(b), "ids": _ids(b), "q": q(i)} for i, b in enumerate(buckets)]
         return emit("bar", f"Histogram of {f.name}", f.name, f"number of {what(f)}", items, logY=bool(log))
 
-    def plotFrequency(field, log=False, cumulative=False):
+    def plotFrequency(field, log=False, cumulative=False, fit=False, kmin=None):
         """plotFrequency(degree) plots, for each value of a numeric field, the
         fraction of nodes (or edges) with that value: the degree distribution
         p(k). log=true draws both axes on log scales (a power law is then a
         straight line; zeros are left out). cumulative=true plots the fraction
         with that value or more (the complementary cumulative distribution,
         smoother for heavy tails). Pointing at the chart highlights the
-        elements with that value."""
+        elements with that value. fit=true adds a power law fitted by maximum
+        likelihood (fitPowerLaw; kmin= fixes where it starts) as a dashed line."""
         f = need_field(field)
         elems = _numeric(f)
         from collections import Counter
@@ -121,10 +122,22 @@ def install(session):
             pts = [[x, counts[x] / n] for x in xs]
         if log:
             pts = [p for p in pts if p[0] > 0 and p[1] > 0]
+        series = [{"name": f.name, "color": 0x4E79A7, "points": pts}]
+        if fit:
+            r = session.ns["fitPowerLaw"](f, kmin=kmin)
+            a, k0, share = r["alpha"], r["kmin"], r["n"] / n
+            top = max(xs)
+            ks_ = [k0 * (top / k0) ** (i / 40) for i in range(41)] if top > k0 else [k0]
+            if cumulative:
+                curve = [[k, share * ((k - 0.5) / (k0 - 0.5)) ** (1 - a)] for k in ks_]
+            else:
+                curve = [[k, share * (a - 1) / (k0 - 0.5) * ((k - 0.5) / (k0 - 0.5)) ** (-a)] for k in ks_]
+            series.append({"name": f"fit: α = {a:.2f} ± {r['sigma']:.2f}, k ≥ {k0}", "color": 0xE15759,
+                           "points": [p for p in curve if not log or p[1] > 0], "dash": True})
         op = ">=" if cumulative else "=="
         ylabel = f"fraction with {f.name} ≥ x" if cumulative else "fraction"
         return emit("line", f"{'Cumulative distribution' if cumulative else 'Distribution'} of {f.name}", f.name, ylabel,
-                    [], series=[{"name": f.name, "color": 0x4E79A7, "points": pts}],
+                    [], series=series,
                     xq=f"{f.name} {op} {{x}}", logX=bool(log), logY=bool(log), dots=True)
 
     def plotLine(data, title="Chart", xlabel="x", ylabel="y", log=False, logX=None, logY=None, dots=False):
@@ -263,16 +276,26 @@ def install(session):
         them. Up to 600 rows and columns."""
         g = session.graph
         f = need_field(order) if order is not None else None
+        import re as _re
+
+        def natural(name):
+            # n2 before n10: numbers inside names compare as numbers
+            return [(0, int(t), "") if t.isdigit() else (1, 0, t.lower()) for t in _re.split(r"(\d+)", str(name)) if t]
+
         def key(n):
             v = f.get(n) if f is not None else None
-            return (v is None, v if not isinstance(v, str) else v.lower(), n.name)
+            return (v is None, v if not isinstance(v, str) else v.lower(), natural(n.name))
+
+        def shown(n):
+            lab = getattr(n, "label", None)
+            return str(lab) if lab not in (None, "") else n.name
 
         def ordered(seq):
             out = [n for n in seq if isinstance(n, Node) and n.visible]
             try:
                 out.sort(key=key)
             except TypeError:
-                out.sort(key=lambda n: (str(key(n)[1]), n.name))
+                out.sort(key=lambda n: (str(key(n)[1]), natural(n.name)))
             return out
         rect = rows is not None or cols is not None
         if rect:
@@ -313,8 +336,8 @@ def install(session):
         name = title or (("Incidence matrix" if rect else "Adjacency matrix") + (f" by {f.name}" if f is not None else ""))
         extra = {}
         if rect:
-            extra.update(clabels=[n.name for n in cpool], cids=[n._id for n in cpool], cgroups=cgroups)
-        return emit("matrix", name, "", "", [], labels=[n.name for n in rpool], ids=[n._id for n in rpool],
+            extra.update(clabels=[shown(n) for n in cpool], cids=[n._id for n in cpool], cgroups=cgroups)
+        return emit("matrix", name, "", "", [], labels=[shown(n) for n in rpool], ids=[n._id for n in rpool],
                     cells=cells, groups=groups, weighted=w is not None, numbers=bool(numbers), **extra)
 
     def liveCharts(on=True):

@@ -1,0 +1,483 @@
+# Computing betweenness  (Newman, Networks, Section 8.5.6)
+# Counting shortest paths through every node by brute force takes O(n^3) work or
+# more. The fast algorithm (Brandes; Newman) takes one breadth-first search per
+# source s:
+#   forward:  sigma(s) = 1, and each node's number of shortest paths from s is the
+#             sum over its predecessors (neighbours one step closer to s);
+#   backward: from the farthest nodes inwards, each node w sends to each
+#             predecessor u the share  sigma(u)/sigma(w) * (1 + delta(w)),
+#             where delta(w) is what w has collected from beyond it.
+# delta(v) is then the number of shortest paths from s (to everyone) through v,
+# shared fairly when there are several. Adding delta up over all sources counts
+# every pair twice (s to t and t to s), so half the sum is the betweenness.
+# The whole thing costs O(n(m + n)).
+
+import random
+import networkx as nx
+
+LINKS = [(1, 2), (1, 3), (2, 4), (3, 4), (2, 13), (4, 5), (4, 6), (5, 7), (6, 7), (13, 14), (14, 6), (7, 8),
+         (8, 9), (8, 10), (9, 11), (10, 11), (11, 12), (10, 12), (3, 15), (15, 16), (16, 5), (9, 12)]
+G0 = nx.Graph()
+G0.add_edges_from((f"n{a}", f"n{b}") for a, b in LINKS)
+pos = nx.spring_layout(G0, seed=11, iterations=300)
+for v in G0:
+    G0.nodes[v]["pos"] = (pos[v][1] * 460, pos[v][0] * 460)     # turned upright: room for the labels on the right
+fromNetworkX(G0)
+g.nodes.width = g.nodes.height = 30
+noverlapLayout(margin=70)                  # room for "12  σ8  δ0.333" beside every node
+NAMES = sorted(G0, key=lambda v: int(v[1:]))
+TRUE_BTW = nx.betweenness_centrality(G0, normalized=False)
+Node.btw_sofar = 0.0
+Node.btw_true = 0.0
+for nd in g.nodes:
+    nd.btw_true = TRUE_BTW[nd.name]
+LAYER = ["250,215,90", "250,165,70", "235,110,80", "200,80,150", "130,90,200", "80,120,220", "70,170,200", "90,180,120"]
+
+
+def num(v):
+    return v[1:]
+
+
+def edge_of(u, v):
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {u, v}:
+            return e
+
+
+def base(size=30):
+    removeConvexHulls()
+    for nd in g.nodes:
+        nd.width = nd.height = size
+        nd.color = "175,185,205"
+        nd.strokecolor = "80,80,80"
+        nd.labelpos = "inside"
+        nd.labelvisible = true
+        nd.label = num(nd.name)
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "160,160,160,120", 1.5, "solid"
+        e.labelvisible = false
+
+
+# ---- one source ----------------------------------------------------------------------------------
+st = {"src": "n1", "phase": "idle", "queue": [], "head": 0, "order": [], "dist": {}, "sigma": {}, "preds": {},
+      "delta": {}, "back": 0, "timer": None, "cur": None, "touched": []}
+
+
+def reset_source(src=None):
+    stop()
+    if src is not None:
+        st["src"] = src
+    s = st["src"]
+    st.update(phase="ready", queue=[s], head=0, order=[], dist={s: 0}, sigma={s: 1}, preds={s: []}, delta={},
+              back=0, cur=None, touched=[])
+    repaint()
+
+
+def forward_step():
+    if st["head"] >= len(st["queue"]):
+        st["phase"] = "counted"
+        st["cur"], st["touched"] = None, []
+        st["delta"] = {v: 0.0 for v in st["order"]}
+        repaint()
+        return False
+    st["phase"] = "forward"
+    u = st["queue"][st["head"]]
+    st["head"] += 1
+    st["order"].append(u)
+    st["cur"] = u
+    touched = []
+    for w in sorted(G0[u], key=lambda v: int(v[1:])):
+        if w not in st["dist"]:
+            st["dist"][w] = st["dist"][u] + 1
+            st["sigma"][w] = 0
+            st["preds"][w] = []
+            st["queue"].append(w)
+        if st["dist"][w] == st["dist"][u] + 1:
+            st["sigma"][w] += st["sigma"][u]
+            st["preds"][w].append(u)
+            touched.append((u, w, None))
+    st["touched"] = touched
+    repaint()
+    return len(st["queue"]) - st["head"] + 1
+
+
+def backward_step():
+    if st["phase"] in ("ready", "forward"):
+        while forward_step() is not False:
+            pass
+    rev = list(reversed(st["order"]))
+    if st["back"] >= len(rev):
+        st["phase"] = "done"
+        st["cur"], st["touched"] = None, []
+        repaint()
+        return False
+    st["phase"] = "backward"
+    w = rev[st["back"]]
+    st["back"] += 1
+    st["cur"] = w
+    touched = []
+    for u in st["preds"].get(w, []):
+        c = st["sigma"][u] / st["sigma"][w] * (1 + st["delta"][w])
+        if u != st["src"]:                         # the source's own paths don't count towards its betweenness
+            st["delta"][u] += c
+        touched.append((u, w, c))
+    st["touched"] = touched
+    repaint()
+    return len(rev) - st["back"] + 1
+
+
+def one_step():
+    stop()
+    if st["phase"] in ("ready", "forward"):
+        forward_step()
+    elif st["phase"] in ("counted", "backward"):
+        backward_step()
+
+
+def stop():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+
+
+def play(which):
+    stop()
+    if which == "forward":
+        if st["phase"] not in ("ready", "forward"):
+            reset_source()
+        st["timer"] = everyPaced(forward_step, slow=1.1, fast=0.35, ramp=2)
+    else:
+        if st["phase"] == "done":
+            reset_source()
+        if st["phase"] in ("ready", "forward"):
+            while forward_step() is not False:
+                pass
+        st["timer"] = everyPaced(backward_step, slow=1.1, fast=0.35, ramp=2)
+
+
+def repaint():
+    base()
+    s = st["src"]
+    back = st["phase"] in ("backward", "done")
+    top = max([1.0] + list(st["delta"].values())) if back else 1.0
+    for nd in g.nodes:
+        v = nd.name
+        if v not in st["dist"]:
+            nd.color = "200,200,200"
+            continue
+        d = st["dist"][v]
+        nd.color = LAYER[d % len(LAYER)]
+        waiting = v in st["queue"][st["head"]:]
+        if back:
+            dl = st["delta"].get(v, 0.0)
+            nd.width = nd.height = 28 + 34 * dl / top
+            nd.label = f"{num(v)}  σ{st['sigma'][v]}  δ{dl:.3g}" if v != s else f"{num(v)} source"
+        else:
+            nd.label = f"{num(v)}  d{d}  σ{st['sigma'][v]}" if v != s else f"{num(v)} source"
+            if waiting:
+                nd.strokecolor = "40,120,220"                     # waiting in the queue: blue ring
+        nd.labelpos = "right" if len(nd.label) > 3 else "inside"
+    for w, ps in st["preds"].items():                              # the shortest-path DAG found so far
+        for u in ps:
+            e = edge_of(u, w)
+            e.color, e.width = "90,90,90", 2.5
+    src = g.getNodeByName(s)
+    src.color, src.strokecolor = "30,30,30", "0,0,0"
+    src.labelpos = "right"
+    if st["cur"] is not None:
+        cur = g.getNodeByName(st["cur"])
+        cur.strokecolor = "230,30,30"
+        cur.width = cur.height = max(cur.width, 40)
+        for u, w, c in st["touched"]:
+            e = edge_of(u, w)
+            if c is None:                                         # forward: a path count passed along
+                e.color, e.width, e.linestyle = "240,140,30", 5, "flow"
+            else:                                                 # backward: a share of the dependency sent back
+                e.color, e.width, e.linestyle = "150,70,210", 2 + 4 * c / max(1.0, top), "flow"
+                e.label = f"{c:.3g}"
+                e.labelvisible = true
+
+
+def chips(vs, show):
+    return " ".join(linkTo(g.getNodeByName(v), show(v)) for v in vs) or "*empty*"
+
+
+def one_text():
+    s, ph = st["src"], st["phase"]
+    if ph == "ready":
+        return (f"Source **{num(s)}** (black). *Forward pass* runs a breadth-first search from it, counting shortest "
+                "paths; *Backward pass* then sends dependencies back. *Click* a node to make it the source.")
+    if ph in ("forward", "counted"):
+        q = st["queue"][st["head"]:]
+        cur = st["cur"]
+        line = ""
+        if cur is not None:
+            ps = [u for u, w, c in st["touched"]]
+            nxt = [w for u, w, c in st["touched"]]
+            line = (f"Taking **{num(cur)}** off the queue (red ring). It passes its σ = {st['sigma'][cur]} to the "
+                    f"nodes one step further out: {', '.join(num(w) for w in nxt) or 'none'} (orange).\n\n")
+        return (line + "**Forward pass**: σ is the number of shortest paths from the source; each node's σ is the sum "
+                "of its predecessors' (the dark edges lead back to them). d is the distance.\n\n"
+                f"Queue: {chips(q, num)}" + ("\n\n**All counted.** Now the backward pass." if ph == "counted" else ""))
+    rev = list(reversed(st["order"]))
+    left = rev[st["back"]:]
+    line = ""
+    if st["cur"] is not None and st["touched"]:
+        w = st["cur"]
+        parts = [f"σ{num(u)}/σ{num(w)} × (1 + δ{num(w)}) = {st['sigma'][u]}/{st['sigma'][w]} × "
+                 f"{1 + st['delta'][w]:.3g} = **{c:.3g}** to {num(u)}" for u, w2, c in st["touched"]]
+        line = f"Node **{num(w)}** sends back (purple): " + "; ".join(parts) + ".\n\n"
+    done = ""
+    if ph == "done":
+        done = (f"\n\n**Done.** δ(v) is the number of shortest paths from {num(st['src'])} to the other nodes that run "
+                "through v (paths shared equally when a target has several). Node size shows δ. Do this from every "
+                "source and add up: that is betweenness (next tab).")
+    return (line + "**Backward pass**, farthest nodes first: each node w sends each predecessor u the share "
+            "σ(u)/σ(w) of its own 1 + δ(w).\n\n" f"Still to do: {chips(left, num)}" + done)
+
+
+def one_chart():
+    if len(st["dist"]) < 2:
+        return None
+    if st["phase"] in ("backward", "done"):
+        pts = [(int(num(v)), st["delta"].get(v, 0.0)) for v in NAMES if v in st["dist"]]
+        return plotLine({"δ": pts}, title="Dependency δ of each node", xlabel="node", ylabel="δ", dots=true)
+    layers = {}
+    for v, d in st["dist"].items():
+        layers[d] = layers.get(d, 0) + 1
+    return plotLine({"nodes found": sorted(layers.items())}, title="Nodes found at each distance", xlabel="distance d",
+                    ylabel="nodes", dots=true)
+
+
+# ---- all sources -------------------------------------------------------------------------------
+acc = {"i": 0, "total": {v: 0.0 for v in NAMES}, "timer": None, "ops": 0}
+
+
+def brandes(s, count=None):
+    sigma, d, preds, order = {s: 1}, {s: 0}, {s: []}, [s]
+    k = 0
+    while k < len(order):
+        u = order[k]
+        k += 1
+        for w in G0[u]:
+            if count is not None:
+                count[0] += 1
+            if w not in d:
+                d[w] = d[u] + 1
+                sigma[w] = 0
+                preds[w] = []
+                order.append(w)
+            if d[w] == d[u] + 1:
+                sigma[w] += sigma[u]
+                preds[w].append(u)
+    delta = {v: 0.0 for v in order}
+    for w in reversed(order):
+        for u in preds[w]:
+            if count is not None:
+                count[0] += 1
+            delta[u] += sigma[u] / sigma[w] * (1 + delta[w])
+    delta[s] = 0.0
+    return delta, preds
+
+
+def acc_step():
+    if acc["i"] >= len(NAMES):
+        acc_stop()
+        return False
+    s = NAMES[acc["i"]]
+    delta, preds = brandes(s)
+    for v, x in delta.items():
+        acc["total"][v] += x
+    acc["i"] += 1
+    acc_paint(s, preds)
+    if acc["i"] >= len(NAMES):
+        acc_stop()
+        return False
+    return len(NAMES) - acc["i"]
+
+
+def acc_stop():
+    if acc["timer"] is not None:
+        acc["timer"].stop()
+        acc["timer"] = None
+    run_btn.text = "Run through every source"
+
+
+def acc_play():
+    if acc["timer"] is not None:
+        acc_stop()
+        return
+    if acc["i"] >= len(NAMES):
+        acc_reset()
+    acc["timer"] = everyPaced(acc_step, slow=1.0, fast=0.25, ramp=3)
+    run_btn.text = "Pause"
+
+
+def acc_reset():
+    acc_stop()
+    acc["i"] = 0
+    acc["total"] = {v: 0.0 for v in NAMES}
+    acc_paint()
+
+
+def acc_paint(s=None, preds=None):
+    base()
+    top = max(TRUE_BTW.values())
+    for nd in g.nodes:
+        half = acc["total"][nd.name] / 2
+        nd.btw_sofar = half
+        nd.width = nd.height = 24 + 40 * half / top
+        nd.color = "250,190,80" if half > 0 else "175,185,205"
+        nd.label = f"{num(nd.name)}  {half:.3g}" if half > 0 else num(nd.name)
+        nd.labelpos = "right" if half > 0 else "inside"
+    if s is not None:
+        for w, ps in preds.items():
+            for u in ps:
+                e = edge_of(u, w)
+                e.color, e.width, e.linestyle = "150,70,210", 3, "flow"
+        src = g.getNodeByName(s)
+        src.color, src.strokecolor = "30,30,30", "230,30,30"
+
+
+def acc_text():
+    i = acc["i"]
+    if i == 0:
+        return ("*Next source* runs both passes from one node at a time (its shortest-path DAG flows purple) and adds "
+                "its δ to a running total. Node size and label: half the total so far.")
+    exact = all(abs(acc["total"][v] / 2 - TRUE_BTW[v]) < 1e-9 for v in NAMES)
+    msg = (f"Sources done: **{i}** of {len(NAMES)}. Size and label: half the running total of δ.")
+    if i >= len(NAMES):
+        msg += (" **Finished**: " + ("half the total equals networkx's betweenness for every node, exactly. "
+                                     if exact else "mismatch with networkx! ") +
+                "Half, because each pair is counted from both ends. The dots in the chart sit on the line.")
+    return msg
+
+
+def acc_chart():
+    if acc["i"] == 0:
+        return None
+    top = max(TRUE_BTW.values())
+    return plotScatter(btw_true, btw_sofar, title="Running total against the true betweenness",
+                       xlabel="betweenness", ylabel="half the total so far", line=[(0, 0), (top, top)])
+
+
+# ---- cost ---------------------------------------------------------------------------------------
+SIZES = [8, 16, 32, 64, 128, 256]
+cost = {"rows": [], "timer": None}
+
+
+def cost_step():
+    k = len(cost["rows"])
+    if k >= len(SIZES):
+        cost["timer"] = None
+        return False
+    n = SIZES[k]
+    H = nx.gnm_random_graph(n, 2 * n, seed=k)
+    count = [0]
+    for s in H:                                   # the fast algorithm, operations counted
+        sigma, d, preds, order = {s: 1}, {s: 0}, {s: []}, [s]
+        j = 0
+        while j < len(order):
+            u = order[j]
+            j += 1
+            count[0] += 1
+            for w in H[u]:
+                count[0] += 1
+                if w not in d:
+                    d[w] = d[u] + 1
+                    sigma[w] = 0
+                    preds[w] = []
+                    order.append(w)
+                if d[w] == d[u] + 1:
+                    sigma[w] += sigma[u]
+                    preds[w].append(u)
+        for w in reversed(order):
+            count[0] += 1 + len(preds[w])
+    m = H.number_of_edges()
+    naive = n * (n + 2 * m) + n ** 3               # all distances by BFS, then every (s, t, v) triple checked
+    cost["rows"].append((n, count[0], naive))
+    return len(SIZES) - k - 1
+
+
+def simulate_cost():
+    if cost["timer"] is not None:
+        return
+    cost["rows"] = []
+    cost["timer"] = everyPaced(cost_step, slow=0.8, fast=0.4, ramp=2)
+
+
+def cost_chart():
+    if not cost["rows"]:
+        return None
+    return plotLine({"fast algorithm (counted)": [(n, b) for n, b, _ in cost["rows"]],
+                     "check every (s, t, v) triple": [(n, c) for n, _, c in cost["rows"]]},
+                    title="Operations to compute betweenness", xlabel="nodes n (m = 2n)", ylabel="operations",
+                    log=true, dots=true)
+
+
+def cost_text():
+    rows = cost["rows"]
+    if len(rows) < 2:
+        return ("*Simulate* computes betweenness on random networks with m = 2n and counts the steps, against the "
+                "obvious method: find all distances, then for every pair s, t check every node v for "
+                "d(s,v) + d(v,t) = d(s,t), about n³ checks.")
+    (n0, b0, c0), (n1, b1, c1) = rows[0], rows[-1]
+    import math
+    sb = math.log(b1 / b0) / math.log(n1 / n0)
+    sc = math.log(c1 / c0) / math.log(n1 / n0)
+    return (f"On log–log axes the slope is the exponent: the fast algorithm grows like n^**{sb:.2f}** (O(n(m + n)) = "
+            f"O(n²) when m ∝ n), the triple check like n^**{sc:.2f}**. At n = {n1} the fast way takes **{b1:,}** steps "
+            f"against **{c1:,}**, {c1 / b1:.0f} times fewer. Carried on to a million nodes, the triple check needs "
+            f"about **{(1e6) ** 3 / ((b1 / n1 ** 2) * 1e12):,.0f}** times as many steps.")
+
+
+# ---- wiring --------------------------------------------------------------------------------------
+mode = ["One source"]
+
+
+def click(nd):
+    if mode[0] == "One source":
+        reset_source(nd.name)
+
+
+def switch(title):
+    mode[0] = title
+    stop()
+    acc_stop()
+    if title == "One source":
+        repaint()
+    elif title == "Every source":
+        acc_paint()
+    else:
+        base()
+
+
+run_btn = Button("Run through every source", onClick=lambda: acc_play())
+graphevents.clickNode = click
+reset_source("n1")
+constantLabelSize(size=14)
+ui.title("Computing betweenness", "Networks, Section 8.5.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Count forwards, share backwards
+One breadth-first search per source finds every shortest path from it, and one
+sweep back shares them out. Repeat for every source and add up."""),
+        Tabs(
+            Tab("One source",
+                Row(Button("Forward pass", onClick=lambda: play("forward")),
+                    Button("Backward pass", onClick=lambda: play("backward"))),
+                Row(Button("Step", onClick=lambda: one_step()), Button("Reset", onClick=lambda: reset_source())),
+                Markdown(one_text), Chart(one_chart)),
+            Tab("Every source",
+                Row(Button("Next source", onClick=lambda: acc_step()), run_btn,
+                    Button("Start again", onClick=lambda: acc_reset())),
+                Markdown(acc_text), Chart(acc_chart)),
+            Tab("Cost",
+                Button("Simulate: count the steps", onClick=lambda: simulate_cost()),
+                Markdown(cost_text), Chart(cost_chart)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

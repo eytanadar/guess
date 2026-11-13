@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Maximum flow by augmenting paths",
+  "description": "Residual networks, flow that gets cancelled, the minimum cut, and node-independent paths by splitting nodes.",
+  "console": "toggle",
+  "script": "main.gy"
+}

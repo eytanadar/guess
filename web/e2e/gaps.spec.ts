@@ -67,3 +67,14 @@ test("menus have submenus that open by hover, click and keyboard", async ({ page
   await expect(page.locator(".console-in .cm-content")).toContainText('makeFromPDB("1ubq")');
   expect(errors).toEqual([]);
 });
+
+test("linkTo chips in a Markdown panel highlight and select their node", async ({ page }) => {
+  await boot(page);
+  await run(page, "ui.layout(right=Markdown(lambda: 'Queue: ' + ' '.join(linkTo(n) for n in [v1, v2])))");
+  const chip = page.locator(".w-markdown .md-el", { hasText: "v2" });
+  await expect(chip).toBeVisible();
+  await chip.hover();
+  await chip.click();
+  await run(page, "print(sorted(n.name for n in sel))");
+  await expect(page.locator(".console-out").last()).toContainText("['v2']");
+});

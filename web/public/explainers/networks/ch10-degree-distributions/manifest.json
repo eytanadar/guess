@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Degree distributions and power laws",
+  "description": "Histograms, logarithmic bins and cumulative plots of degree, a maximum-likelihood power-law fit, and whole real networks compared.",
+  "console": "toggle",
+  "script": "main.gy"
+}

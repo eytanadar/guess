@@ -1,0 +1,425 @@
+# Shortest paths with edge lengths  (Newman, Networks, Section 8.6)
+# When edges have lengths (kilometres, minutes, costs), the path with the fewest
+# steps need not be the shortest, and breadth-first search no longer works.
+# Dijkstra's algorithm keeps a tentative distance for every node it has heard
+# of. Each step it settles the closest unsettled node (its distance can't get
+# any shorter, because every other route would have to leave the settled region
+# from somewhere farther away) and "relaxes" its edges: a neighbour whose
+# tentative distance would shrink by going through it is updated. Keeping the
+# tentative distances in a priority queue (a binary heap) makes the whole thing
+# O((m + n) log n); scanning a plain list for the minimum costs O(n^2).
+# Data: an invented map of towns and roads; two roads wind (drawn as arcs), so
+# they are longer than the straight line.
+
+import heapq
+import math
+import random
+import networkx as nx
+
+TOWNS = ["Ashby", "Brook", "Calder", "Dunmore", "Elling", "Fairlow", "Garth", "Holm", "Irwell", "Jessop",
+         "Kirkby", "Linton", "Marsh", "Norbury", "Oakham", "Pellow", "Quarry", "Rendle"]
+r = random.Random(4)
+spots = {}
+for t in TOWNS:
+    for _ in range(500):
+        p = (r.uniform(0, 500), r.uniform(0, 560))      # taller than wide: room for labels on the right
+        if all(math.hypot(p[0] - q[0], p[1] - q[1]) > 105 for q in spots.values()):
+            break
+    spots[t] = p
+ROADS = nx.Graph()
+ROADS.add_nodes_from(TOWNS)
+for t in TOWNS:
+    near = sorted((u for u in TOWNS if u != t), key=lambda u: math.dist(spots[t], spots[u]))
+    for u in near[:2]:
+        ROADS.add_edge(t, u)
+while not nx.is_connected(ROADS):
+    parts = sorted(nx.connected_components(ROADS), key=len)
+    a, b = min(((u, v) for u in parts[0] for v in TOWNS if v not in parts[0]),
+               key=lambda p: math.dist(spots[p[0]], spots[p[1]]))
+    ROADS.add_edge(a, b)
+for u, v in ROADS.edges():
+    ROADS.edges[u, v]["km"] = round(math.dist(spots[u], spots[v]) / 10)
+    ROADS.edges[u, v]["winding"] = False
+# two winding roads: direct, but longer than going round
+twohop = sorted(((u, w) for u in TOWNS for w in TOWNS if u < w and not ROADS.has_edge(u, w)
+                 and nx.shortest_path_length(ROADS, u, w) == 2 and math.dist(spots[u], spots[w]) < 220),
+                key=lambda p: math.dist(spots[p[0]], spots[p[1]]))
+used = set()
+WINDING = []
+for u, w in twohop:
+    if u in used or w in used:
+        continue
+    ROADS.add_edge(u, w, km=round(math.dist(spots[u], spots[w]) / 10 * 1.9), winding=True)
+    WINDING.append((u, w))
+    used |= {u, w}
+    if len(WINDING) == 2:
+        break
+for t in TOWNS:
+    ROADS.nodes[t]["pos"] = spots[t]
+fromNetworkX(ROADS)
+INF = float("inf")
+
+
+def edge_of(u, v):
+    for e in g.edges:
+        if {e.node1.name, e.node2.name} == {u, v}:
+            return e
+
+
+def base():
+    for nd in g.nodes:
+        nd.width = nd.height = 22
+        nd.color = "190,195,205"
+        nd.strokecolor = "90,90,90"
+        nd.labelpos = "right"
+        nd.labelvisible = true
+        nd.label = nd.name
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,170", 2, "solid"
+        e.label = f"{e.km}"
+        e.labelvisible = true
+        e.arc = 38 if e.winding else 0
+
+
+# ---- Dijkstra step by step -------------------------------------------------------------------------
+dk = {"src": "Ashby", "dist": {}, "pred": {}, "settled": [], "heap": [], "cur": None, "looked": [], "timer": None,
+      "log": []}
+
+
+def dk_reset(src=None):
+    dk_stop()
+    if src is not None:
+        dk["src"] = src
+    s = dk["src"]
+    dk.update(dist={s: 0}, pred={}, settled=[], heap=[(0, s)], cur=None, looked=[], log=[])
+    dk_paint()
+
+
+def dk_step():
+    while dk["heap"] and dk["heap"][0][1] in dk["settled"]:
+        heapq.heappop(dk["heap"])                       # an out-of-date entry: skip it
+    if not dk["heap"]:
+        dk["cur"], dk["looked"] = None, []
+        dk["timer"] = None
+        run_btn.text = "Run"
+        dk_paint()
+        return False
+    d, u = heapq.heappop(dk["heap"])
+    dk["settled"].append(u)
+    dk["cur"] = u
+    dk["log"].append((len(dk["settled"]), d, nx.shortest_path_length(ROADS, dk["src"], u)))
+    looked = []
+    for w in ROADS[u]:
+        if w in dk["settled"]:
+            continue
+        new = d + ROADS.edges[u, w]["km"]
+        better = new < dk["dist"].get(w, INF)
+        looked.append((w, new, better, dk["dist"].get(w, INF)))
+        if better:
+            dk["dist"][w] = new
+            dk["pred"][w] = u
+            heapq.heappush(dk["heap"], (new, w))
+    dk["looked"] = looked
+    dk_paint()
+    return len(TOWNS) - len(dk["settled"]) + 1
+
+
+def dk_stop():
+    if dk["timer"] is not None:
+        dk["timer"].stop()
+        dk["timer"] = None
+    run_btn.text = "Run"
+
+
+def dk_play():
+    if dk["timer"] is not None:
+        dk_stop()
+        return
+    if len(dk["settled"]) == len(TOWNS):
+        dk_reset()
+    dk["timer"] = everyPaced(dk_step, slow=1.2, fast=0.45, ramp=3)
+    run_btn.text = "Pause"
+
+
+def dk_paint():
+    base()
+    settled = set(dk["settled"])
+    for nd in g.nodes:
+        v = nd.name
+        d = dk["dist"].get(v)
+        if v in settled:
+            nd.color, nd.strokecolor = "70,165,95", "30,90,45"
+            nd.width = nd.height = 30
+            nd.label = f"{v}  {d}"
+        elif d is not None:
+            nd.color, nd.strokecolor = "250,205,90", "220,120,20"      # tentative: heard of, not settled
+            nd.width = nd.height = 26
+            nd.label = f"{v}  {d}?"
+        else:
+            nd.label = f"{v}  ∞"
+    for w, u in dk["pred"].items():
+        e = edge_of(u, w)
+        if w in settled:
+            e.color, e.width = "50,140,70", 5                          # the shortest-path tree
+        else:
+            e.color, e.width, e.linestyle = "230,150,40", 3, "dashed"   # best route found so far
+    src = g.getNodeByName(dk["src"])
+    src.color, src.strokecolor = "30,30,30", "0,0,0"
+    src.width = src.height = 34
+    if dk["cur"] is not None:
+        cur = g.getNodeByName(dk["cur"])
+        cur.strokecolor = "230,30,30"
+        cur.width = cur.height = 40
+        for w, new, better, old in dk["looked"]:
+            e = edge_of(dk["cur"], w)
+            if better:
+                e.color, e.width, e.linestyle = "240,120,20", 6, "flow"    # relaxed: a shorter route
+            else:
+                e.color, e.width, e.linestyle = "200,60,60", 3, "dotted"   # no better
+
+
+def queue_chips():
+    best = {}
+    for d, v in dk["heap"]:
+        if v not in dk["settled"] and dk["dist"].get(v) == d:
+            best[v] = d
+    order = sorted(best, key=lambda v: (best[v], v))
+    return " ".join(linkTo(g.getNodeByName(v), f"{v} {best[v]}") for v in order) or "*empty*"
+
+
+def dk_text():
+    s = dk["src"]
+    if not dk["settled"]:
+        return (f"Start: **{s}** (black) at distance 0. *Run* or *Step* settles one town at a time. "
+                "*Click* a town to start from there. Numbers on roads are kilometres.\n\n"
+                f"Priority queue: {queue_chips()}")
+    u = dk["cur"]
+    parts = []
+    for w, new, better, old in dk["looked"]:
+        o = "∞" if old == INF else str(old)
+        parts.append(f"{w}: {dk['dist'][u]} + {ROADS.edges[u, w]['km']} = {new}" +
+                     (f" < {o}, **update**" if better else f" ≥ {o}, no change"))
+    head = (f"Settled **{u}** at **{dk['dist'][u]} km** (red ring): it was the closest unsettled town, so no "
+            "other route can beat it. Relaxing its roads:\n\n" + ("; ".join(parts) or "nothing new") + "\n\n"
+            if u is not None else "")
+    done = len(dk["settled"]) == len(TOWNS)
+    tail = ("**Finished.** The green edges form the shortest-path tree from " + s + ". Settled towns (green) were "
+            "taken in order of distance: see the chart." if done else
+            "Green: settled. Yellow with *?*: a tentative distance, which may still shrink. Grey: not reached.")
+    return head + tail + f"\n\nPriority queue (closest first): {queue_chips()}"
+
+
+def dk_chart():
+    if not dk["log"]:
+        return None
+    return plotLine({"distance (km) when settled": [(k, d) for k, d, h in dk["log"]]},
+                    title="Towns are settled in order of distance", xlabel="settling step", ylabel="km", dots=true)
+
+
+# ---- hops against kilometres ------------------------------------------------------------------------
+route = {"to": None}
+
+
+def route_paint():
+    base()
+    s, t = dk["src"], route["to"]
+    src = g.getNodeByName(s)
+    src.color, src.width, src.height = "30,30,30", 34, 34
+    if t is None:
+        return
+    hop = nx.shortest_path(ROADS, s, t)
+    km = nx.shortest_path(ROADS, s, t, weight="km")
+    for a, b in zip(hop, hop[1:]):
+        e = edge_of(a, b)
+        e.color, e.width, e.linestyle = "70,130,230", 6, "dashed"
+    for a, b in zip(km, km[1:]):
+        e = edge_of(a, b)
+        both = e.linestyle == "dashed"
+        e.color, e.width, e.linestyle = ("120,90,200" if both else "50,160,80"), 6, "flow"
+    tn = g.getNodeByName(t)
+    tn.color, tn.strokecolor, tn.width, tn.height = "230,60,50", "120,0,0", 34, 34
+
+
+def route_click(nd):
+    if nd.name == dk["src"]:
+        return
+    route["to"] = nd.name
+    route_paint()
+
+
+def surprising():
+    best = None
+    for s in TOWNS:
+        far = nx.single_source_dijkstra_path_length(ROADS, s, weight="km")
+        hops = nx.single_source_shortest_path_length(ROADS, s)
+        for t in TOWNS:
+            if t == s:
+                continue
+            p = nx.shortest_path(ROADS, s, t)
+            q = nx.shortest_path(ROADS, s, t, weight="km")
+            extra = sum(ROADS.edges[a, b]["km"] for a, b in zip(p, p[1:])) - far[t]
+            score = (len(q) - len(p), extra, -hops[t])     # the short route takes more roads, and saves the most
+            if best is None or score > best[0]:
+                best = (score, s, t)
+    dk_reset(best[1])
+    route["to"] = best[2]
+    route_paint()
+
+
+def km_of(p):
+    return sum(ROADS.edges[a, b]["km"] for a, b in zip(p, p[1:]))
+
+
+def route_text():
+    s, t = dk["src"], route["to"]
+    if t is None:
+        return (f"From **{s}** (black). *Click* a destination to compare the route with the fewest roads "
+                "(breadth-first search, blue dashed) with the shortest in kilometres (Dijkstra, green, moving).")
+    hop = nx.shortest_path(ROADS, s, t)
+    km = nx.shortest_path(ROADS, s, t, weight="km")
+    if km_of(hop) == km_of(km):
+        same = "The two agree here (purple: both). "
+    else:
+        same = (f"**They differ**: the fewest-roads route is {km_of(hop) - km_of(km)} km longer. Counting steps "
+                "ignores lengths; Dijkstra doesn't. ")
+    roads = lambda k: f"{k} road" + ("" if k == 1 else "s")
+    return (f"**{s} → {t}**. Fewest roads: {roads(len(hop) - 1)}, **{km_of(hop)} km** "
+            f"({' → '.join(hop)}). Shortest: {roads(len(km) - 1)}, **{km_of(km)} km** ({' → '.join(km)}).\n\n" + same +
+            "*Find the most surprising pair* looks for a pair whose shortest route takes more roads than the "
+            "fewest-roads route, with the biggest saving.")
+
+
+# ---- cost: a plain list against a heap ------------------------------------------------------------------
+SIZES = [25, 50, 100, 200, 400]
+cost = {"rows": [], "timer": None}
+
+
+def count_dijkstra(H, s, heap_based):
+    ops = 0
+    dist = {s: 0.0}
+    done = set()
+    if heap_based:
+        pq = [(0.0, s)]
+        while pq:
+            ops += max(1, int(math.log2(len(pq))) + 1)        # a pop costs log of the heap size
+            d, u = heapq.heappop(pq)
+            if u in done:
+                continue
+            done.add(u)
+            for w in H[u]:
+                ops += 1
+                nd_ = d + H.edges[u, w]["weight"]
+                if nd_ < dist.get(w, INF):
+                    dist[w] = nd_
+                    heapq.heappush(pq, (nd_, w))
+                    ops += max(1, int(math.log2(len(pq))) + 1)
+    else:
+        while True:
+            best, u = INF, None
+            for v in H:                                        # scan the whole list for the minimum
+                ops += 1
+                d = dist.get(v, INF)
+                if v not in done and d < best:
+                    best, u = d, v
+            if u is None:
+                break
+            done.add(u)
+            for w in H[u]:
+                ops += 1
+                nd_ = best + H.edges[u, w]["weight"]
+                if nd_ < dist.get(w, INF):
+                    dist[w] = nd_
+    return ops
+
+
+def cost_step():
+    k = len(cost["rows"])
+    if k >= len(SIZES):
+        cost["timer"] = None
+        return False
+    n = SIZES[k]
+    H = nx.random_geometric_graph(n, math.sqrt(6 / (math.pi * n)), seed=k)
+    for u, v in H.edges():
+        H.edges[u, v]["weight"] = math.dist(H.nodes[u]["pos"], H.nodes[v]["pos"])
+    big = max(nx.connected_components(H), key=len)
+    s = min(big)
+    cost["rows"].append((n, count_dijkstra(H, s, False), count_dijkstra(H, s, True)))
+    return len(SIZES) - k - 1
+
+
+def simulate_cost():
+    if cost["timer"] is None:
+        cost["rows"] = []
+        cost["timer"] = everyPaced(cost_step, slow=0.8, fast=0.4, ramp=2)
+
+
+def cost_chart():
+    if not cost["rows"]:
+        return None
+    return plotLine({"plain list: scan for the minimum": [(n, a) for n, a, b in cost["rows"]],
+                     "binary heap": [(n, b) for n, a, b in cost["rows"]]},
+                    title="Steps for Dijkstra's algorithm", xlabel="towns n (sparse road maps)", ylabel="steps",
+                    log=true, dots=true)
+
+
+def cost_text():
+    rows = cost["rows"]
+    if len(rows) < 2:
+        return ("*Simulate* runs Dijkstra on random road maps of growing size, counting steps two ways: finding the "
+                "closest unsettled town by scanning a plain list (n steps each time, so O(n²) in all), or keeping "
+                "the tentative distances in a binary heap (log n per change, so O((m + n) log n)).")
+    (n0, a0, b0), (n1, a1, b1) = rows[0], rows[-1]
+    sa = math.log(a1 / a0) / math.log(n1 / n0)
+    sb = math.log(b1 / b0) / math.log(n1 / n0)
+    return (f"Slopes on the log–log chart: plain list n^**{sa:.2f}**, heap n^**{sb:.2f}** (a little over 1, the "
+            f"log n). At n = {n1}: **{a1:,}** steps against **{b1:,}**, {a1 / b1:.0f} times fewer with the heap.")
+
+
+# ---- wiring ----------------------------------------------------------------------------------------
+mode = ["Dijkstra"]
+
+
+def click(nd):
+    if mode[0] == "Dijkstra":
+        dk_reset(nd.name)
+    elif mode[0] == "Fewest roads or fewest km":
+        route_click(nd)
+
+
+def switch(title):
+    mode[0] = title
+    dk_stop()
+    if title == "Dijkstra":
+        dk_paint()
+    elif title == "Fewest roads or fewest km":
+        route_paint()
+    else:
+        base()
+
+
+run_btn = Button("Run", onClick=lambda: dk_play())
+graphevents.clickNode = click
+dk_reset("Ashby")
+constantLabelSize(size=14)
+ui.title("Shortest paths with lengths", "Networks, Section 8.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Dijkstra's algorithm
+Towns and roads, with lengths in km. Two roads wind (the arcs): direct, but
+long. Settle the closest town, relax its roads, repeat."""),
+        Tabs(
+            Tab("Dijkstra",
+                Row(run_btn, Button("Step", onClick=lambda: dk_step()), Button("Reset", onClick=lambda: dk_reset())),
+                Markdown(dk_text), Chart(dk_chart)),
+            Tab("Fewest roads or fewest km",
+                Button("Find the most surprising pair", onClick=lambda: surprising()),
+                Markdown(route_text)),
+            Tab("Cost",
+                Button("Simulate: list or heap", onClick=lambda: simulate_cost()),
+                Markdown(cost_text), Chart(cost_chart)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} towns · {len(g.edges)} roads"))
+center()

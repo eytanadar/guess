@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Breadth-first search",
+  "description": "A queue, layers of distance, the naive version's cost, and the shortest-path tree with every shortest path.",
+  "console": "toggle",
+  "script": "main.gy"
+}

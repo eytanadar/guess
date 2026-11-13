@@ -1,0 +1,300 @@
+# Running time and computational complexity  (Newman, Networks, Sections 8.1-8.2)
+# Network calculations are done with software (libraries such as networkx,
+# igraph or graph-tool; interactive tools such as Gephi, Cytoscape or this
+# one). Whether a calculation is feasible depends on how its running time
+# grows with the size of the network: O(m) or O(n + m) stays practical for
+# millions of nodes, O(n^2) gets slow, O(n^3) soon becomes impossible,
+# whatever the constant factors. Timing a calculation at a few sizes and
+# plotting on log-log axes shows the exponent as the slope.
+
+import math
+import random
+import time
+import networkx as nx
+
+# ---- one network, grown once, used at every size: the first n nodes of it ---------------------------
+BIG = 1600
+SHOWN = 200                                       # how many of them are drawn
+rnd0 = random.Random(3)
+NBR = [[] for _ in range(BIG)]
+EDGES = []
+for k in range(1, BIG):
+    for t in set(rnd0.sample(range(k), min(2, k))):  # each newcomer links to two earlier nodes
+        EDGES.append((t, k))
+        NBR[k].append(t)
+        NBR[t].append(k)
+
+H = nx.Graph()
+for k in range(SHOWN):
+    H.add_node(k, born=k)
+H.add_edges_from((a, b) for a, b in EDGES if b < SHOWN)
+pos = nx.spring_layout(H, seed=2, iterations=80)
+for k in H:
+    H.nodes[k]["pos"] = (pos[k][0] * 520, pos[k][1] * 520)
+fromNetworkX(H)
+for v in g.nodes:
+    v.width = v.height = 12
+    v.color = "150,170,210"
+g.edges.color = "150,150,150,110"
+center(g.nodes)                                   # framed for the final picture
+
+
+def nd(k):
+    return g.getNodeByName(f"n{k}")
+
+
+# ---- the calculations being timed ----------------------------------------------------------------------
+def count_degrees(n):
+    deg = [0] * n
+    for a, b in EDGES:
+        if b >= n:
+            break                                     # EDGES are in the order the nodes arrived
+        deg[a] += 1
+        deg[b] += 1
+    return deg
+
+
+def bfs(n, s=0):
+    dist = [-1] * n
+    dist[s] = 0
+    queue = [s]
+    head = 0
+    while head < len(queue):
+        u = queue[head]
+        head += 1
+        for w in NBR[u]:
+            if w < n and dist[w] < 0:
+                dist[w] = dist[u] + 1
+                queue.append(w)
+    return dist
+
+
+def every_pair(n):
+    sets = [set(w for w in NBR[u] if w < n) for u in range(n)]
+    linked = 0
+    for i in range(n):
+        si = sets[i]
+        for j in range(i + 1, n):
+            if j in si:
+                linked += 1
+    return linked
+
+
+def every_triple(n):
+    sets = [set(w for w in NBR[u] if w < n) for u in range(n)]
+    tri = 0
+    for i in range(n):
+        si = sets[i]
+        for j in range(i + 1, n):
+            sj = sets[j]
+            for k in range(j + 1, n):                # a naive program looks at every triple
+                if k in si and k in sj and j in si:
+                    tri += 1
+    return tri
+
+
+ALGS = [("count degrees, O(m)", count_degrees, 1, BIG),
+        ("breadth-first search, O(m + n)", bfs, 1, BIG),
+        ("check every pair, O(n²)", every_pair, 2, 800),
+        ("check every triple, O(n³)", every_triple, 3, 200)]
+
+
+SHORT = {a[0]: s for a, s in zip(ALGS, ["degrees", "BFS", "pairs", "triples"])}
+
+
+def timeit_ms(fn, n):
+    """Time per call, in ms: calls are batched until a batch takes 5 ms (the browser's clock is coarse),
+    and the median of three batches is used."""
+    reps = 1
+    while True:
+        t0 = time.perf_counter()
+        for _ in range(reps):
+            fn(n)
+        dt = time.perf_counter() - t0
+        if dt >= 0.005 or reps >= 4096:
+            break
+        reps *= 4
+    batches = [dt]
+    for _ in range(2):
+        t0 = time.perf_counter()
+        for _ in range(reps):
+            fn(n)
+        batches.append(time.perf_counter() - t0)
+    batches.sort()
+    return 1000 * batches[1] / reps
+
+
+# ---- simulate: time them at growing sizes, growing the drawing as we go -----------------------------------
+SIZES = [25, 50, 100, 200, 400, 800, 1600]
+sim = {"k": 0, "rows": {a[0]: [] for a in ALGS}, "timer": None}
+
+
+def show_size(n):
+    shown = min(n, SHOWN)
+    for v in g.nodes:
+        v.width = v.height = 12
+        v.color, v.strokecolor = "150,170,210", "80,80,80"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,110", 1, "solid"
+    fresh = revealUpTo(shown - 1)
+    dist = bfs(shown)
+    far = max(dist) or 1
+    parent = {}
+    for u in sorted(range(shown), key=lambda q: dist[q]):  # each node's first neighbour one step nearer
+        for w in NBR[u]:
+            if w < shown and dist[w] == dist[u] - 1 and dist[u] > 0:
+                parent[u] = w
+                break
+    for v in g.nodes:                                  # the BFS just timed, drawn: distance from node 0
+        k = int(v.name[1:])
+        if k < shown and dist[k] >= 0:
+            t = dist[k] / far
+            v.color = f"{int(250 - 150 * t)},{int(200 - 90 * t)},{int(60 + 160 * t)}"
+    for e in g.edges:
+        a, b = int(e.node1.name[1:]), int(e.node2.name[1:])
+        if parent.get(a) == b or parent.get(b) == a:     # the breadth-first search tree
+            e.color, e.width = "240,150,40", 2.5
+    for x in fresh:
+        if hasattr(x, "node1"):
+            continue
+        if x.born >= shown // 2:
+            x.width = x.height = 16
+            x.strokecolor = "200,40,40"
+    src = nd(0)
+    src.width = src.height = 22
+    src.strokecolor = "20,20,20"
+
+
+def sim_step():
+    k = sim["k"]
+    if k >= len(SIZES):
+        return False
+    n = SIZES[k]
+    show_size(n)
+    for label, fn, _p, cap in ALGS:
+        if n <= cap:
+            sim["rows"][label].append((n, timeit_ms(fn, n)))
+    sim["k"] = k + 1
+    return len(SIZES) - sim["k"] or False
+
+
+def simulate():
+    if sim["timer"] is not None:
+        sim["timer"].stop()
+    sim.update(k=0, rows={a[0]: [] for a in ALGS})
+    revealUpTo(-1)
+    sim["timer"] = everyPaced(sim_step, slow=1.0, fast=0.5, ramp=2)
+
+
+def fit(points):
+    """Least-squares line through log t against log n: (slope, constant)."""
+    pts = [(math.log(n), math.log(t)) for n, t in points if t > 0]
+    if len(pts) < 2:
+        return None
+    mx = sum(p[0] for p in pts) / len(pts)
+    my = sum(p[1] for p in pts) / len(pts)
+    sxx = sum((p[0] - mx) ** 2 for p in pts)
+    b = sum((p[0] - mx) * (p[1] - my) for p in pts) / sxx if sxx else 0
+    return b, math.exp(my - b * mx)
+
+
+def time_chart():
+    if not any(sim["rows"].values()):
+        return None
+    series = {}
+    for label, _fn, _p, _cap in ALGS:
+        pts = sim["rows"][label]
+        if pts:
+            f = fit(pts)
+            series[SHORT[label] + (f" {f[0]:.1f}" if f else "")] = pts
+    return plotLine(series, title="Time per calculation (ms); key: slope", xlabel="nodes n", ylabel="ms", log=true, dots=true)
+
+
+def time_text():
+    if not any(sim["rows"].values()):
+        return ("**Simulate** times four calculations on the first n nodes of one network (each new node links "
+                "to two earlier ones, so m ≈ 2n), for n = 25 to 1,600, and grows the drawing as it goes. "
+                "The drawing shows the breadth-first search from node 0 (black), coloured by distance.")
+    n = SIZES[sim["k"] - 1]
+    lines = [f"n = **{n:,}** (m = {sum(1 for a, b in EDGES if b < n):,}). On log–log axes a running time ∝ nᵇ is a "
+             "straight line of slope b:", "", "| calculation | expected slope | measured |", "|---|---|---|"]
+    for label, _fn, p, cap in ALGS:
+        f = fit(sim["rows"][label])
+        lines.append(f"| {label} | {p} | {f[0]:.2f} |" if f else f"| {label} | {p} | – |")
+    lines.append("")
+    lines.append("Times are medians of repeats, and small sizes are noisy (fixed overheads flatten the slope). "
+                 f"The pair check stops at n = 800 and the triple check at 200: beyond that they take too long.")
+    return "\n".join(lines)
+
+
+# ---- extrapolate -----------------------------------------------------------------------------------------
+target = Slider(3, 9, 6, 1, label="n = 10^…")
+
+
+def human(ms):
+    s = ms / 1000
+    for unit, size in (("years", 3.15e7), ("days", 86400), ("hours", 3600), ("minutes", 60), ("seconds", 1)):
+        if s >= size:
+            return f"{s / size:,.3g} {unit}"
+    return f"{ms:.3g} ms"
+
+
+def extrapolate_text():
+    n = 10 ** int(target.value)
+    rows = ["| calculation | here, in the browser | 1,000× faster computer |", "|---|---|---|"]
+    for label, _fn, p, _cap in ALGS:
+        pts = sim["rows"][label]
+        if len(pts) >= 2:
+            big = [q for q in pts if q[0] >= 100] or pts
+            c = sum(t / q ** p for q, t in big) / len(big)     # constant for the expected exponent
+            t = c * n ** p
+            rows.append(f"| {label} | {human(t)} | {human(t / 1000)} |")
+        else:
+            rows.append(f"| {label} | run the simulation first | |")
+    return (f"For **n = {n:,}** (m ≈ 2n), scaling the measured times by the expected power of n:\n\n"
+            + "\n".join(rows) +
+            "\n\nA faster computer divides every time by the same factor, but cannot rescue an O(n³) "
+            "calculation on a big network: a 1,000× speed-up only lets n grow tenfold. Choosing a better "
+            "algorithm changes the exponent, which matters far more.")
+
+
+def growth_chart():
+    ns = [10 ** (k / 2) for k in range(2, 19)]
+    return plotLine({"n": [(n, n / 1e9) for n in ns], "n log n": [(n, n * math.log2(n) / 1e9) for n in ns],
+                     "n²": [(n, n ** 2 / 1e9) for n in ns], "n³": [(n, n ** 3 / 1e9) for n in ns]},
+                    title="Seconds, at a billion steps a second", xlabel="n", ylabel="seconds", log=true)
+
+
+# ---- wiring ---------------------------------------------------------------------------------------------
+def switch(title):
+    if title != "Time it" and sim["timer"] is not None:
+        sim["timer"].stop()
+        sim["timer"] = None
+
+
+revealUpTo(SHOWN)
+constantLabelSize(size=14)
+ui.title("Running time", "Networks, Sections 8.1–8.2")
+ui.layout(
+    right=Column(
+        Markdown("""### How does the time grow?
+A calculation that takes a second on 1,000 nodes may take a second, a
+minute or a month on a million. What decides it is how the running time
+**grows** with n and m, written O(…): only the fastest-growing term counts,
+and constant factors are ignored."""),
+        Tabs(
+            Tab("Big-O",
+                Markdown("""Programs for networks come as libraries (networkx, igraph, graph-tool) and as
+interactive tools (Gephi, Cytoscape, GUESS). Whichever you use, its algorithms
+have a **complexity**: the number of steps as a function of n and m, in the
+worst case. Doubling n doubles an O(n) time, quadruples an O(n²) one and
+multiplies an O(n³) one by eight. Most real networks are **sparse** (m ∝ n), so
+O(m + n) is as good as O(n)."""),
+                Chart(growth_chart)),
+            Tab("Time it", Button("Simulate", onClick=lambda: simulate()), Markdown(time_text), Chart(time_chart)),
+            Tab("Extrapolate", target, Markdown(extrapolate_text)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len([v for v in g.nodes if v.visible])} of {SHOWN} drawn nodes shown · timings use up to {BIG:,}"))

@@ -494,7 +494,7 @@ class Session:
     # what each cell changed -------------------------------------------------------
     _ASPECT = {"x": "position", "y": "position", "width": "size", "height": "size", "size": "size",
                "labelvisible": "label", "labelcolor": "label", "labelsize": "label", "labelpos": "label",
-               "strokecolor": "border", "linestyle": "line style", "arrowhead": "arrowheads", "arc": "edge curves"}
+               "strokecolor": "border", "strokewidth": "border", "linestyle": "line style", "arrowhead": "arrowheads", "arc": "edge curves"}
     PROVENANCE_CAP = 50000
 
     def _note_provenance(self, cell, code, journal):
@@ -1039,6 +1039,7 @@ class Session:
             "x": val("x"), "y": val("y"), "w": val("width"), "h": val("height"),
             "c": color, "a": alpha, "s": val("style"),
             "sc": colors.to_rgba_int(stroke)[0] if stroke else -1,
+            **({"bw": float(val("strokewidth"))} if val("strokewidth") else {}),
             "l": val("label") if val("label") is not None else n._name,
             "lv": bool(val("labelvisible")),
             "lc": colors.to_rgba_int(lc)[0] if lc else -1,
@@ -1275,7 +1276,7 @@ class Session:
         return {"exists": True, "type": f.type, "labels": labels, "next": nxt, "total": len(self.graph.nodes)}
 
     # display plumbing: never suggested
-    _PLUMBING = {"x", "y", "visible", "strokecolor", "labelcolor", "fixed", "style", "width", "height", "image",
+    _PLUMBING = {"x", "y", "visible", "strokecolor", "strokewidth", "labelcolor", "fixed", "style", "width", "height", "image",
                  "labelvisible", "labelsize", "labelpos", "label", "color", "name", "node1", "node2", "source",
                  "destination", "size", "linestyle", "arrowhead", "arc"}
 

@@ -167,5 +167,114 @@ def install(session):
             out.append(GSet(members, f"{k}-component {i}"))
         return out
 
-    for fn in (katzCentrality, structuralBalance, kComponents):
+    def bowTie(name="bowtie"):
+        """bowTie() splits a directed network the way the Web was described in
+        2000: the largest strongly connected component ("core"), the nodes that
+        can reach it but not be reached from it ("in"), those reached from it
+        that can't reach back ("out"), "tube" nodes on paths from in to out that
+        bypass the core, "tendril" nodes hanging off in or out, and "other"
+        for nodes outside the core's weakly connected component. Sets the node
+        field `bowtie` and returns the sizes, e.g. {"core": 224, "in": 89, ...}.
+        Undirected edges count both ways."""
+        import networkx as nx
+        G = session.ns["toNetworkX"](directed=True)
+        if len(G) == 0:
+            raise GuessError("the graph has no nodes")
+        core = max(nx.strongly_connected_components(G), key=len)
+        seed = next(iter(core))
+        out_ = nx.descendants(G, seed) - core
+        in_ = nx.ancestors(G, seed) - core
+        weak = next(c for c in nx.weakly_connected_components(G) if seed in c)
+        rest = weak - core - out_ - in_
+        from_in = set().union(*(nx.descendants(G, v) for v in in_)) if in_ else set()
+        to_out = set().union(*(nx.ancestors(G, v) for v in out_)) if out_ else set()
+        part = {}
+        for v in G:
+            if v in core:
+                part[v] = "core"
+            elif v in in_:
+                part[v] = "in"
+            elif v in out_:
+                part[v] = "out"
+            elif v in rest:
+                part[v] = "tube" if (v in from_in and v in to_out) else "tendril"
+            else:
+                part[v] = "other"
+        session.ns["setField"](part, str(name))
+        sizes = {k: 0 for k in ("core", "in", "out", "tube", "tendril", "other")}
+        for k in part.values():
+            sizes[k] += 1
+        return sizes
+
+    def _tail_fit(vals, kmin):
+        import math
+        tail = [v for v in vals if v >= kmin]
+        n = len(tail)
+        sl = sum(math.log(v / (kmin - 0.5)) for v in tail)
+        if n < 2 or sl <= 0:
+            return None
+        alpha = 1 + n / sl
+        return alpha, (alpha - 1) / math.sqrt(n), n
+
+    def fitPowerLaw(field="degree", kmin=None):
+        """fitPowerLaw(degree) fits a power law p(k) ~ k^-alpha to the values
+        of a numeric node field (or a list of numbers) from kmin up, by maximum likelihood (Newman,
+        Networks, eq. 10.9, with the -1/2 correction for whole numbers), not
+        by drawing a line through a log-log plot. With kmin left out it is
+        chosen as the value that makes the fitted distribution closest to the
+        data (the smallest Kolmogorov-Smirnov distance; Clauset, Shalizi and
+        Newman 2009). Returns {"alpha", "sigma" (its standard error), "kmin",
+        "n" (values in the tail), "ks"}. plotFrequency(degree, cumulative=true,
+        log=true, fit=true) draws the fit."""
+        from .model import as_field
+        if isinstance(field, (list, tuple)):                 # plain numbers (a degree sequence)
+            fname = "values"
+            raw = list(field)
+        else:
+            f = as_field(session.graph, field)
+            fname = f.name
+            raw = [f.get(e) for e in f.elements()]
+        vals = sorted(float(v) for v in raw if isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0)
+        if len(vals) < 5:
+            raise GuessError(f"{fname}: too few values above 0 to fit")
+
+        def ks(kmin, alpha):
+            tail = [v for v in vals if v >= kmin]
+            n = len(tail)
+            worst = 0.0
+            for i, v in enumerate(tail):            # empirical P(K >= v) against the fit's, at each distinct value
+                if i and tail[i - 1] == v:
+                    continue
+                emp = (n - i) / n
+                fit = ((v - 0.5) / (kmin - 0.5)) ** (1 - alpha)
+                worst = max(worst, abs(emp - fit))
+            return worst
+
+        if kmin is None:
+            best = None
+            for k in sorted(set(vals)):
+                if sum(1 for v in vals if v >= k) < 10:
+                    break
+                r = _tail_fit(vals, k)
+                if r is None:
+                    continue
+                d = ks(k, r[0])
+                if best is None or d < best[0]:
+                    best = (d, k, r)
+            if best is None:
+                raise GuessError(f"{fname}: not enough values to choose kmin")
+            d, k, (alpha, sigma, n) = best
+        else:
+            k = float(kmin)
+            if k <= 0.5:
+                raise GuessError("kmin must be at least 1")
+            r = _tail_fit(vals, k)
+            if r is None:
+                raise GuessError(f"{fname}: too few values at or above kmin = {k:g}")
+            alpha, sigma, n = r
+            d = ks(k, alpha)
+        k = int(k) if float(k).is_integer() else k
+        return {"alpha": round(alpha, 4), "sigma": round(sigma, 4), "kmin": k, "n": n, "ks": round(d, 4)}
+
+    for fn in (katzCentrality, structuralBalance, kComponents, bowTie, fitPowerLaw):
         reg(fn.__name__, fn)

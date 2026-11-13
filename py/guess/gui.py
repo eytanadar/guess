@@ -812,6 +812,25 @@ def install(session):
     session._bind("every", every, kind="command")
     session._bind("after", after, kind="command")
     session._bind("everyPaced", everyPaced, kind="command")
+
+    def linkTo(element, text=None):
+        """linkTo(node) is Markdown for a small chip naming a node (or edge):
+        in a Markdown panel, pointing at the chip highlights the element in the
+        graph and clicking selects it. Good for listing a queue, a path or
+        search results beside the graph:
+            Markdown(lambda: "Queue: " + " ".join(linkTo(n) for n in queue))
+        text= replaces the shown name (e.g. "v3 (d=2)")."""
+        from .model import Edge, GuessError, Node
+        if isinstance(element, Node):
+            k, label = "n", element._name
+        elif isinstance(element, Edge):
+            k, label = "e", f"{element._n1._name}–{element._n2._name}"
+        else:
+            raise GuessError("linkTo takes a node or an edge")
+        label = str(label if text is None else text).replace("[", "(").replace("]", ")")
+        return f"[{label}](guess:{k}{element._id})"
+
+    session.register_command("linkTo", linkTo)
     session.register_command("stopTimers", stopTimers)
     session._bind("openURL", openURL, kind="command")
     session._bind("ui", UI(gui), kind="graph")

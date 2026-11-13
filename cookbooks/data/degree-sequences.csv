@@ -1,0 +1,323 @@
+network,degree,count
+Internet (ASes 2006),1,7840
+Internet (ASes 2006),2,9700
+Internet (ASes 2006),3,2219
+Internet (ASes 2006),4,907
+Internet (ASes 2006),5,471
+Internet (ASes 2006),6,290
+Internet (ASes 2006),7,200
+Internet (ASes 2006),8,173
+Internet (ASes 2006),9,132
+Internet (ASes 2006),10,113
+Internet (ASes 2006),11,96
+Internet (ASes 2006),12,65
+Internet (ASes 2006),13,49
+Internet (ASes 2006),14,56
+Internet (ASes 2006),15,43
+Internet (ASes 2006),16,41
+Internet (ASes 2006),17,34
+Internet (ASes 2006),18,30
+Internet (ASes 2006),19,25
+Internet (ASes 2006),20,32
+Internet (ASes 2006),21,12
+Internet (ASes 2006),22,18
+Internet (ASes 2006),23,25
+Internet (ASes 2006),24,23
+Internet (ASes 2006),25,21
+Internet (ASes 2006),26,14
+Internet (ASes 2006),27,8
+Internet (ASes 2006),28,15
+Internet (ASes 2006),29,15
+Internet (ASes 2006),30,6
+Internet (ASes 2006),31,13
+Internet (ASes 2006),32,11
+Internet (ASes 2006),33,4
+Internet (ASes 2006),34,9
+Internet (ASes 2006),35,7
+Internet (ASes 2006),36,12
+Internet (ASes 2006),37,10
+Internet (ASes 2006),38,8
+Internet (ASes 2006),39,5
+Internet (ASes 2006),40,7
+Internet (ASes 2006),41,5
+Internet (ASes 2006),42,4
+Internet (ASes 2006),43,5
+Internet (ASes 2006),44,7
+Internet (ASes 2006),45,7
+Internet (ASes 2006),46,4
+Internet (ASes 2006),47,3
+Internet (ASes 2006),48,5
+Internet (ASes 2006),49,3
+Internet (ASes 2006),50,4
+Internet (ASes 2006),51,5
+Internet (ASes 2006),52,3
+Internet (ASes 2006),53,2
+Internet (ASes 2006),54,1
+Internet (ASes 2006),55,2
+Internet (ASes 2006),57,4
+Internet (ASes 2006),58,1
+Internet (ASes 2006),59,2
+Internet (ASes 2006),60,1
+Internet (ASes 2006),61,1
+Internet (ASes 2006),62,3
+Internet (ASes 2006),64,1
+Internet (ASes 2006),65,5
+Internet (ASes 2006),66,2
+Internet (ASes 2006),67,1
+Internet (ASes 2006),68,3
+Internet (ASes 2006),70,2
+Internet (ASes 2006),71,2
+Internet (ASes 2006),72,2
+Internet (ASes 2006),74,2
+Internet (ASes 2006),75,2
+Internet (ASes 2006),76,2
+Internet (ASes 2006),77,2
+Internet (ASes 2006),78,1
+Internet (ASes 2006),80,4
+Internet (ASes 2006),81,1
+Internet (ASes 2006),82,2
+Internet (ASes 2006),84,2
+Internet (ASes 2006),85,1
+Internet (ASes 2006),86,1
+Internet (ASes 2006),87,2
+Internet (ASes 2006),89,2
+Internet (ASes 2006),90,2
+Internet (ASes 2006),91,5
+Internet (ASes 2006),93,1
+Internet (ASes 2006),94,1
+Internet (ASes 2006),96,3
+Internet (ASes 2006),99,1
+Internet (ASes 2006),100,1
+Internet (ASes 2006),103,2
+Internet (ASes 2006),104,1
+Internet (ASes 2006),105,1
+Internet (ASes 2006),107,1
+Internet (ASes 2006),108,1
+Internet (ASes 2006),110,2
+Internet (ASes 2006),113,1
+Internet (ASes 2006),115,1
+Internet (ASes 2006),116,1
+Internet (ASes 2006),117,1
+Internet (ASes 2006),125,2
+Internet (ASes 2006),128,1
+Internet (ASes 2006),132,1
+Internet (ASes 2006),138,1
+Internet (ASes 2006),140,1
+Internet (ASes 2006),141,1
+Internet (ASes 2006),142,1
+Internet (ASes 2006),146,2
+Internet (ASes 2006),148,1
+Internet (ASes 2006),150,1
+Internet (ASes 2006),159,1
+Internet (ASes 2006),165,1
+Internet (ASes 2006),169,1
+Internet (ASes 2006),175,1
+Internet (ASes 2006),176,1
+Internet (ASes 2006),178,1
+Internet (ASes 2006),194,1
+Internet (ASes 2006),195,1
+Internet (ASes 2006),197,1
+Internet (ASes 2006),201,1
+Internet (ASes 2006),204,1
+Internet (ASes 2006),206,1
+Internet (ASes 2006),207,1
+Internet (ASes 2006),209,1
+Internet (ASes 2006),212,1
+Internet (ASes 2006),223,1
+Internet (ASes 2006),229,1
+Internet (ASes 2006),240,1
+Internet (ASes 2006),259,1
+Internet (ASes 2006),268,1
+Internet (ASes 2006),276,1
+Internet (ASes 2006),278,1
+Internet (ASes 2006),284,1
+Internet (ASes 2006),286,1
+Internet (ASes 2006),288,1
+Internet (ASes 2006),295,1
+Internet (ASes 2006),303,1
+Internet (ASes 2006),306,1
+Internet (ASes 2006),311,1
+Internet (ASes 2006),353,1
+Internet (ASes 2006),361,1
+Internet (ASes 2006),362,1
+Internet (ASes 2006),423,1
+Internet (ASes 2006),424,1
+Internet (ASes 2006),425,1
+Internet (ASes 2006),479,1
+Internet (ASes 2006),497,1
+Internet (ASes 2006),523,1
+Internet (ASes 2006),529,1
+Internet (ASes 2006),532,1
+Internet (ASes 2006),538,1
+Internet (ASes 2006),590,1
+Internet (ASes 2006),658,1
+Internet (ASes 2006),697,1
+Internet (ASes 2006),755,1
+Internet (ASes 2006),764,1
+Internet (ASes 2006),1210,1
+Internet (ASes 2006),1243,1
+Internet (ASes 2006),1298,1
+Internet (ASes 2006),1713,1
+Internet (ASes 2006),2016,1
+Internet (ASes 2006),2390,1
+US power grid,1,1226
+US power grid,2,1656
+US power grid,3,1060
+US power grid,4,401
+US power grid,5,252
+US power grid,6,137
+US power grid,7,84
+US power grid,8,46
+US power grid,9,27
+US power grid,10,26
+US power grid,11,11
+US power grid,12,5
+US power grid,13,5
+US power grid,14,3
+US power grid,18,1
+US power grid,19,1
+Political blogs,0,266
+Political blogs,1,137
+Political blogs,2,107
+Political blogs,3,77
+Political blogs,4,51
+Political blogs,5,39
+Political blogs,6,49
+Political blogs,7,29
+Political blogs,8,26
+Political blogs,9,16
+Political blogs,10,24
+Political blogs,11,25
+Political blogs,12,27
+Political blogs,13,21
+Political blogs,14,25
+Political blogs,15,24
+Political blogs,16,19
+Political blogs,17,23
+Political blogs,18,21
+Political blogs,19,13
+Political blogs,20,17
+Political blogs,21,11
+Political blogs,22,8
+Political blogs,23,9
+Political blogs,24,8
+Political blogs,25,10
+Political blogs,26,14
+Political blogs,27,10
+Political blogs,28,4
+Political blogs,29,10
+Political blogs,30,13
+Political blogs,31,6
+Political blogs,32,12
+Political blogs,33,10
+Political blogs,34,8
+Political blogs,35,7
+Political blogs,36,12
+Political blogs,37,3
+Political blogs,38,11
+Political blogs,39,10
+Political blogs,40,9
+Political blogs,41,9
+Political blogs,42,8
+Political blogs,43,7
+Political blogs,44,3
+Political blogs,45,5
+Political blogs,46,4
+Political blogs,47,4
+Political blogs,48,7
+Political blogs,49,5
+Political blogs,50,6
+Political blogs,51,3
+Political blogs,52,3
+Political blogs,53,5
+Political blogs,54,4
+Political blogs,55,3
+Political blogs,56,8
+Political blogs,57,1
+Political blogs,58,2
+Political blogs,59,7
+Political blogs,60,1
+Political blogs,61,2
+Political blogs,62,4
+Political blogs,63,3
+Political blogs,64,5
+Political blogs,65,3
+Political blogs,66,3
+Political blogs,67,3
+Political blogs,68,6
+Political blogs,69,4
+Political blogs,70,6
+Political blogs,71,7
+Political blogs,72,3
+Political blogs,73,2
+Political blogs,74,2
+Political blogs,75,4
+Political blogs,76,2
+Political blogs,77,2
+Political blogs,78,3
+Political blogs,79,6
+Political blogs,80,3
+Political blogs,81,2
+Political blogs,82,3
+Political blogs,83,1
+Political blogs,84,1
+Political blogs,85,2
+Political blogs,86,4
+Political blogs,87,3
+Political blogs,88,3
+Political blogs,89,2
+Political blogs,90,1
+Political blogs,91,2
+Political blogs,92,3
+Political blogs,93,3
+Political blogs,94,1
+Political blogs,95,1
+Political blogs,96,3
+Political blogs,97,3
+Political blogs,98,2
+Political blogs,99,1
+Political blogs,101,1
+Political blogs,102,2
+Political blogs,103,1
+Political blogs,104,4
+Political blogs,105,1
+Political blogs,107,1
+Political blogs,108,1
+Political blogs,110,1
+Political blogs,111,2
+Political blogs,112,1
+Political blogs,114,1
+Political blogs,116,1
+Political blogs,117,2
+Political blogs,118,1
+Political blogs,120,1
+Political blogs,121,1
+Political blogs,122,2
+Political blogs,123,2
+Political blogs,125,1
+Political blogs,128,3
+Political blogs,129,1
+Political blogs,130,1
+Political blogs,133,2
+Political blogs,136,1
+Political blogs,137,1
+Political blogs,138,3
+Political blogs,143,1
+Political blogs,144,1
+Political blogs,147,2
+Political blogs,149,1
+Political blogs,170,2
+Political blogs,171,1
+Political blogs,179,1
+Political blogs,182,1
+Political blogs,196,1
+Political blogs,199,1
+Political blogs,211,1
+Political blogs,218,1
+Political blogs,223,1
+Political blogs,243,1
+Political blogs,274,1
+Political blogs,277,1
+Political blogs,301,1
+Political blogs,306,1
+Political blogs,351,1

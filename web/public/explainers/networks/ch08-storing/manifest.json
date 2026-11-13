@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Storing a network",
+  "description": "Adjacency matrix, adjacency list and hash tables: what each one costs to look up, change and keep in memory.",
+  "console": "toggle",
+  "script": "main.gy"
+}

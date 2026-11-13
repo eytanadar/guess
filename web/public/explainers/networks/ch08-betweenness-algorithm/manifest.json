@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Computing betweenness",
+  "description": "The fast betweenness algorithm step by step: count shortest paths forwards, send dependencies back, add up over sources.",
+  "console": "toggle",
+  "script": "main.gy"
+}

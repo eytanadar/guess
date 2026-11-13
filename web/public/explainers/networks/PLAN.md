@@ -664,7 +664,7 @@ distances, counts) beside the graph, counts the operations, and has a
 "Run at full speed" or "Simulate" button that times the algorithm on growing
 networks and charts the running time.
 
-**`ch08-complexity`: Software and running time (§§8.1–8.2)** · planned
+**`ch08-complexity`: Software and running time (§§8.1–8.2)** · built
 - *Idea:*
   - running time is measured by how it grows with n and m (big-O), not by seconds;
   - O(m + n) beats O(n²) beats O(n³) once networks get big, whatever the constants.
@@ -674,7 +674,7 @@ networks and charts the running time.
   - a slider to extrapolate: "how long for a million nodes?".
 - *GUESS:* `plotLine(log=true)`, random generators, Python timing.
 
-**`ch08-storing`: Adjacency matrix, adjacency list and others (§8.3)** · planned
+**`ch08-storing`: Adjacency matrix, adjacency list and others (§8.3)** · built
 - *Idea:*
   - the matrix uses n² memory, finds an edge in O(1) but lists neighbours in O(n);
   - the list uses O(m) memory, lists neighbours in O(k) but finds an edge in O(k);
@@ -687,7 +687,7 @@ networks and charts the running time.
   - a memory chart against n for a sparse network (matrix n², list 2m, hash table ≈ 4m).
 - *GUESS:* `showMatrix(numbers=true)`, Markdown tables, `graphevents`.
 
-**`ch08-degrees-clustering`: Degrees and clustering, computed (§8.4)** · planned
+**`ch08-degrees-clustering`: Degrees and clustering, computed (§8.4)** · built
 - *Idea:*
   - a degree is a list length (O(1));
   - local clustering checks every pair of a node's neighbours, k(k − 1)/2 checks, so the total cost is set by Σk², large when there are hubs.
@@ -698,7 +698,7 @@ networks and charts the running time.
   - a chart comparing operations for a hub-heavy network and a uniform one with the same m.
 - *GUESS:* `everyPaced`, edge highlighting, `Chart`.
 
-**`ch08-bfs`: Breadth-first search (§§8.5.1–8.5.5)** · planned
+**`ch08-bfs`: Breadth-first search (§§8.5.1–8.5.5)** · built
 - *Idea:*
   - BFS finds distances from one node by layers: everything at distance d is found before d + 1;
   - the naive version rescans all nodes each round (O(n²) in the worst case); a first-in-first-out queue makes it O(m + n);
@@ -710,7 +710,7 @@ networks and charts the running time.
   - "all shortest paths" (multiple predecessors, path counts on the nodes).
 - *GUESS:* `everyPaced`, labels, `heatMap`-like colouring, tapered directed edges for the tree.
 
-**`ch08-betweenness-algorithm`: Computing betweenness (§8.5.6)** · planned
+**`ch08-betweenness-algorithm`: Computing betweenness (§8.5.6)** · built
 - *Idea:*
   - the fast (Brandes / Newman) algorithm: one BFS per source counts shortest paths σ (adding counts from predecessors);
   - a backward pass sends each node's dependency to its predecessors in proportion to σ;
@@ -723,7 +723,7 @@ networks and charts the running time.
   - the final sizes equal `betweenness`, and a bar chart shows the running total for every node.
 - *GUESS:* `everyPaced`, labels, edge widths, `betweenness` to check against.
 
-**`ch08-dijkstra`: Shortest paths with edge lengths (§8.6)** · planned
+**`ch08-dijkstra`: Shortest paths with edge lengths (§8.6)** · built
 - *Idea:*
   - with lengths, layers no longer work;
   - Dijkstra's algorithm keeps tentative distances, always settles the closest unsettled node, and relaxes its edges;
@@ -736,7 +736,7 @@ networks and charts the running time.
   - a path drawn on request.
 - *GUESS:* `everyPaced`, edge labels, `constantLabelSize`.
 
-**`ch08-maxflow`: Maximum flow by augmenting paths (§8.7)** · planned
+**`ch08-maxflow`: Maximum flow by augmenting paths (§8.7)** · built
 - *Idea:*
   - repeatedly find a path from source to target in the *residual* network and push flow along it;
   - flow pushed one way frees capacity the other way, so later paths can undo earlier choices;
@@ -749,7 +749,7 @@ networks and charts the running time.
   - a "Split nodes" tab that redraws a network with each node as an in/out pair and runs the same algorithm to count node-independent paths.
 - *GUESS:* `everyPaced`, `arc` edges (to separate a→b from b→a), tapered directed edges, `encircle`.
 
-### Gaps expected in batch 5
+### Gaps found in batch 5 (added: `linkTo(element)`, Markdown chips that highlight and select their node or edge; the others needed nothing new: node labels can carry two numbers, Python timing works in Pyodide, and residual edges use `arc` plus tapered edges)
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|
@@ -757,6 +757,231 @@ networks and charts the running time.
 | Two numbers on a node (distance and path count) that stay readable | bfs, betweenness-algorithm | one label per node | either a second label (`sublabel`) or keep using "d=2 · σ=3" labels; check how they read |
 | Timing calculations in the browser | complexity | Python `time` works in Pyodide, but slowly and noisily | none; use medians of repeats and say so |
 | Residual networks with an edge each way | maxflow | `arc` and tapered edges | probably none; check how it looks |
+
+Also found and fixed while building batch 5:
+- A hidden edge no longer bends its visible twin into a curve.
+- New node field `strokewidth` (per-node border width) for showing state with outlines.
+- The line-chart key now sits above the plot, not over the lines.
+- Scatter axes end on round numbers, and a one-point chart gets a proper axis.
+- `showMatrix` sorts n2 before n10 and labels rows by node label.
+- `center()` leaves room for labels to the right of the rightmost nodes.
+
+Noted, not changed:
+- Labels inside nodes fit the node rather than following `constantLabelSize`, so they are small in 30 px nodes.
+- In tests, `App.press` matches the first button with that label across tabs, so give buttons distinct labels.
+
+## Batch 6: book pages 275–339 (Chapters 9–10)
+
+Chapter 9 is about how wrong network data can be and what to do about it;
+Chapter 10 surveys the structure of real networks, using the measures of
+Chapters 6–7 across many datasets. The Chapter 10 explainers compare the
+bundled networks side by side.
+
+**`ch09-measurement-error`: Types and sources of error (§§9.1–9.2)** · planned
+- *Idea:*
+  - measured networks have missing edges (false negatives), spurious edges (false positives), missing or merged nodes, and wrong attributes;
+  - some measures are robust to this and some are not.
+- *Reader:*
+  - a true network (left) and its measured version: sliders for the false-negative and false-positive rates;
+  - each measurement draws the missed edges as faint dashed lines and the spurious ones in red;
+  - a live table compares the true and measured values: mean degree, clustering, mean distance, the size of the largest component and the top hubs;
+  - "Simulate" sweeps the error rate and charts how far each measure drifts, showing which are robust.
+- *GUESS:* numpy and networkx, `Chart`, dashed and highlighted edges.
+
+**`ch09-em`: Estimating errors from repeated measurements (§9.3)** · planned
+- *Idea:*
+  - measure a network N times; each pair is seen E out of N times;
+  - with a true-positive rate α, false-positive rate β and density ρ, the EM algorithm alternates between the probability Q that each edge is real and the best α, β and ρ.
+- *Reader:*
+  - an invented "who was near whom" study: a hidden true network, N noisy observations (a slider for N), and edge widths showing E;
+  - "Run EM" (paced): each iteration recolours edges by Q (red near 0, green near 1) and updates α, β and ρ, with a live chart of the three converging;
+  - a confusion table against the truth (real edges kept, spurious edges dropped);
+  - "Simulate" sweeps N and charts the reconstruction error;
+  - a Q histogram shows the bimodal split.
+- *GUESS:* numpy, `everyPaced`, `Chart`, `plotHistogram`.
+
+**`ch09-correcting`: Link prediction and node disambiguation (§9.4)** · planned
+- *Idea:*
+  - missing edges can be guessed from structure (shared neighbours and similar scores), and tested by hiding edges and seeing whether they come back;
+  - nodes can be wrongly merged (two "J. Smith"s become one hub) or wrongly split, and a node's neighbourhood helps tell them apart.
+- *Reader:*
+  - **Link prediction tab:**
+    - "Hide 10% of edges", then predict with a method dropdown (`predictLinks`);
+    - true predictions are green and false ones red, the hidden edges that were missed are dashed;
+    - precision and AUC (`evaluateLinks`) with a chart across methods.
+  - **Disambiguation tab:**
+    - an invented coauthorship network where several authors share a name, merged as the raw data would have them;
+    - the merged nodes are big false hubs and create shortcuts (the mean distance shrinks);
+    - "Split by neighbourhood" clusters each name's papers by shared coauthors and splits the node, and the statistics recover.
+- *GUESS:* `predictLinks`, `evaluateLinks`, `similarTo`, `linkTo` chips for candidates.
+
+**`ch10-components`: Components and the bow tie (§10.1)** · planned
+- *Idea:*
+  - most networks have one large component and many small ones;
+  - in directed networks the large weak component splits into a strongly connected core with an in-component and an out-component (the "bow tie"), plus tendrils and tubes.
+- *Reader:*
+  - a table across the bundled networks: n, the share in the largest component, the number of components;
+  - pick one to see it packed by component (`binPackLayout` + `noverlapLayout`);
+  - a directed tab draws the bow tie as three columns (in, core, out) with tendrils, sized by count;
+  - click a node to see its own in- and out-components.
+- *Data:* the bundled networks, plus a directed web-like network (political blogs, from the public network data page, if added).
+- *GUESS:* components, `strongcomponent`, `ancestors`/`descendants`, a bow-tie decomposition (see gaps).
+
+**`ch10-small-world`: Shortest paths and the small-world effect (§10.2)** · planned
+- *Idea:*
+  - mean distances are small (often under 10, even for millions of nodes) and grow like log n;
+  - the diameter is larger but still small.
+- *Reader:*
+  - pick a network and a node: distance rings from it (`heatMap`), and a live chart of how many nodes are at each distance;
+  - "Simulate": the distance distribution averaged over many sources;
+  - a scatter of mean distance against log n across the bundled networks and growing random networks, with ln n / ln c as a guide line;
+  - a "six degrees" game: click two nodes and guess their distance before it is shown.
+- *GUESS:* `heatMap`, BFS, `plotScatter`, `plotLine`.
+
+**`ch10-degree-distributions`: Degree distributions and power laws (§§10.3–10.4.1)** · planned
+- *Idea:*
+  - degree distributions are right-skewed with hubs;
+  - a power law p(k) ∝ k^−α is a straight line on log–log axes;
+  - plain histograms are noisy in the tail, so use logarithmic bins or the cumulative distribution;
+  - estimate α by maximum likelihood, not by fitting a line.
+- *Reader:*
+  - choose a network and a view: linear histogram, log–log histogram, log bins, or cumulative (`plotFrequency(cumulative=true)`);
+  - a k_min slider fits α by maximum likelihood and draws the fitted line on the cumulative plot, with α ± σ;
+  - the hubs are highlighted in the graph when you point at the tail;
+  - the Internet and the power grid side by side (heavy tail against none).
+- *GUESS:* `plotFrequency`, `plotHistogram(log=true)`, a power-law fit (see gaps).
+
+**`ch10-power-law-properties`: Properties of power laws (§10.4.2)** · planned
+- *Idea:*
+  - for α ≤ 3 the second moment ⟨k²⟩ diverges, so in practice it is dominated by the largest values and keeps growing with sample size;
+  - power laws are top-heavy: a small share of nodes holds a large share of the edges (the "80/20 rule").
+- *Reader:*
+  - an α slider and "Draw a sample" (paced, growing sample sizes): live charts of the sample mean and of ⟨k²⟩ against sample size, one settling and one not for α < 3;
+  - a top-heavy chart, W (share of edge ends held) against P (share of nodes, largest first), for real networks and for samples;
+  - in the graph, the top P% of nodes are highlighted as you drag a slider, with their share of edges.
+- *GUESS:* `plotLine`, random sampling in Python, `Chart`.
+
+**`ch10-centrality-clustering-mixing`: Centralities, clustering and mixing across networks (§§10.5–10.7)** · planned
+- *Idea:*
+  - eigenvector and betweenness centrality are right-skewed too;
+  - real networks have much more clustering than chance would give for social networks, about as much for technological ones;
+  - local clustering falls with degree;
+  - social networks are assortative by degree, and technological and biological ones are disassortative.
+- *Reader:*
+  - a comparison table across the bundled networks: C, the configuration-model expectation (⟨k²⟩ − ⟨k⟩)² / n⟨k⟩³, and r;
+  - pick one to see the cumulative distributions of eigenvector centrality and betweenness, and C(k) against k (`plotScatter`);
+  - a scatter of r across networks by kind.
+  - This links back to the Chapter 7 explainers for the definitions.
+- *GUESS:* `plotScatter`, `plotFrequency`, `assortativity`, `clustering`.
+
+### Gaps in batch 6 (added before building: `bowTie()`, `fitPowerLaw(field or list, kmin=)` with the Kolmogorov–Smirnov choice of k_min, `plotFrequency(fit=true)`, dashed chart series; data: `polblogs-sample.gdf` (600 blogs, seed 1, bow tie intact) and `degree-sequences.csv` (network,degree,count for the whole Internet AS graph, US power grid and political blogs))
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| Bow-tie decomposition of a directed network | ch10-components | `strongcomponent` and `ancestors`/`descendants` give the pieces by hand | `bowTie()`: a node field `bowtie` = core / in / out / tendril / tube / other, and the sizes |
+| Power-law fit with k_min and its uncertainty | ch10-degree-distributions, power-law-properties | none | `fitPowerLaw(field, kmin=None)`: α by maximum likelihood (with the discrete ½ correction), σ, and k_min chosen by the Kolmogorov–Smirnov method when not given; a `fit=` line on `plotFrequency(cumulative=true)` |
+| A directed web-like network with a real bow tie | ch10-components | the bundled directed networks are a worm brain (one big SCC) and a citation DAG (no core) | add political blogs (Adamic and Glance) from the public network data page |
+| A function on a cumulative plot (fitted line) | ch10-degree-distributions | `plotLine` can draw it as a second series | probably none |
+
+## Batch 7: book pages 340–400 (Part III, *Network models*: Chapter 11 and Chapter 12.1–12.9)
+
+Models of networks: random graphs with Poisson degrees, then the
+configuration model with any degrees. The generating-function sections
+(§12.10 on) are batch 8. Each explainer sets theory and simulation side by
+side: the formula's curve with a "Simulate" button that adds measured points.
+
+**`ch11-random-graph`: G(n, p) and G(n, m) (§§11.1–11.4)** · planned
+- *Idea:*
+  - every pair is joined independently with probability p;
+  - the mean degree is c = (n − 1)p and the degree distribution is Poisson for large n;
+  - clustering is C = c/(n − 1), which vanishes for large networks, unlike real ones.
+- *Reader:*
+  - "Add edges one at a time": the n nodes are placed once (the final layout), and edges appear in random order, paced, each new one highlighted;
+  - a c slider; a live chart of the degree distribution against the Poisson and binomial formulas;
+  - a table of C measured against c/(n − 1) next to a real network of the same n and m;
+  - "Simulate" averages over many graphs.
+- *GUESS:* `makeErdosRenyiRandom` or networkx, `revealUpTo` (edges given a `born` step), `plotLine`.
+
+**`ch11-giant-component`: The giant component (§11.5)** · planned
+- *Idea:*
+  - below c = 1 all components are small; above it a giant component of size S = 1 − e^{−cS} appears;
+  - S is found by solving that equation (graphically: where the curve meets the line).
+- *Reader:*
+  - drag c through 1 and watch the largest component (hull, coloured) appear;
+  - a live chart of S against c: theory curve, simulated points ("Simulate" sweeps c at two sizes of n, so the transition sharpens);
+  - a cobweb plot of the fixed-point iteration S ← 1 − e^{−cS}, stepped (paced);
+  - why there can't be two giant components (join them with probability ~1).
+- *GUESS:* networkx, `encircle`, `plotLine`, `everyPaced`.
+
+**`ch11-small-components`: Small components (§11.6)** · planned
+- *Idea:*
+  - the small components are trees (almost surely);
+  - their size distribution π_s is known exactly;
+  - the mean size of the component a node belongs to is ⟨s⟩ = 1/(1 − c + cS), which diverges at c = 1.
+- *Reader:*
+  - the small components packed beside the giant one (`binPackLayout` + `noverlapLayout`), with trees confirmed (cycles would be flagged red);
+  - a chart of π_s from simulation against the formula;
+  - ⟨s⟩ against c with its spike at 1;
+  - click a small component to see its size and that it has s − 1 edges.
+- *GUESS:* networkx components, `binPackLayout`, `noverlapLayout`, `plotLine`.
+
+**`ch11-path-lengths`: Path lengths, and what random graphs get wrong (§§11.7–11.8)** · planned
+- *Idea:*
+  - the number of nodes s steps away grows like c^s, so the diameter is about ln n / ln c (small world);
+  - but random graphs lack the clustering, skewed degrees and community structure of real networks.
+- *Reader:*
+  - click a node to see the rings at distance 1, 2, 3, … with counts against c^s (paced ball growth);
+  - "Simulate" plots the mean distance against n (log axis), with the ln n / ln c line;
+  - a side-by-side table: a real network and G(n, p) with the same n and m (C, degree spread, r, mean distance), and their degree distributions overlaid.
+- *GUESS:* BFS, `heatMap`, `plotLine`, `plotScatter`.
+
+**`ch12-configuration-model`: The configuration model (§12.1)** · planned
+- *Idea:*
+  - give each node k_i "stubs" (half-edges) and pair stubs uniformly at random;
+  - every matching is equally likely; there are some self-loops and multi-edges, but few in large sparse networks;
+  - the chance of an edge between i and j is about k_i k_j / 2m;
+  - the "expected degree" (Chung–Lu) variant joins pairs independently with that probability.
+- *Reader:*
+  - stubs drawn as short spokes on each node, paired up one pair at a time (paced), each new edge highlighted, self-loops and multi-edges flagged in red;
+  - choose the degree sequence from a real network or a slider;
+  - a chart of measured edge frequency between pairs against k_i k_j / 2m over many runs ("Simulate");
+  - self-loop and multi-edge counts against their expected values as n grows.
+- *GUESS:* stubs as `drawLine` spokes, `everyPaced`, a configuration-model generator (see gaps).
+
+**`ch12-excess-degree`: Excess degree and the friendship paradox (§§12.2–12.5)** · planned
+- *Idea:*
+  - following an edge, you reach a node with probability proportional to its degree, so your friends have more friends than you do on average;
+  - the excess degree distribution is q_k = (k + 1)p_{k+1}/⟨k⟩;
+  - the clustering is (⟨k²⟩ − ⟨k⟩)² / n⟨k⟩³;
+  - the network is locally tree-like, and the mean number of second neighbours is ⟨k²⟩ − ⟨k⟩.
+- *Reader:*
+  - "Pick a random edge end" (paced): the node reached is outlined, and a live chart builds the degree distribution of reached nodes against p_k and the formula;
+  - a "friendship paradox" table for real networks (the share of nodes with fewer friends than their friends' average);
+  - second neighbours counted in the graph against the formula.
+- *GUESS:* `plotLine`, `linkTo`, `everyPaced`.
+
+**`ch12-giant-component`: The giant component in the configuration model (§§12.6–12.9)** · planned
+- *Idea:*
+  - there is a giant component when ⟨k²⟩ − 2⟨k⟩ > 0 (Molloy–Reed);
+  - its size comes from u = g₁(u) and S = 1 − g₀(u);
+  - with power-law degrees and α < 3 there is always a giant component;
+  - the diameter is still about ln n.
+- *Reader:*
+  - the worked example: nodes of degree 1 and 3, with a slider for the share of degree-3 nodes; the giant component appears when it passes the threshold;
+  - a theory curve against simulation;
+  - the u = g₁(u) cobweb (paced);
+  - a power-law tab: lower α and see the giant component stay;
+  - a diameter chart against n.
+- *GUESS:* the configuration-model generator, `plotLine`, `encircle`.
+
+### Gaps expected in batch 7
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| Configuration model from a degree sequence, keeping self-loops and multi-edges (or not) | ch12-configuration-model, ch12-giant-component, ch11-path-lengths | none (networkx `configuration_model` works from code) | `makeConfigurationModel(degrees, simple=False, seed=0)` (degrees: a list, or a field to copy from the current graph); the field `stubs` on nodes |
+| Expected-degree (Chung–Lu) random graphs | ch12-configuration-model | none | `makeExpectedDegree(weights, seed=0)` |
+| Self-loops and multi-edges drawn visibly | ch12-configuration-model | self-loops are drawn; multi-edges curve apart | check how it looks with many |
+| Edge-by-edge growth on fixed nodes | ch11-random-graph | `revealUpTo` reveals nodes; edges with a `born` field are revealed too | none |
 
 ## To do (requests not yet done)
 
