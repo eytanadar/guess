@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Estimating errors from repeated measurements",
+  "description": "Measure a network many times; the EM algorithm works out which edges are real and how reliable the measurements were.",
+  "console": "toggle",
+  "script": "main.gy"
+}

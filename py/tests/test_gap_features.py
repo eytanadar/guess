@@ -298,3 +298,26 @@ def test_bow_tie_and_power_law_fit():
     assert s.run("makeSample('karate')\nplotFrequency(degree, cumulative=true, log=true, fit=true)"), s.rec.of("error")
     m = [c for c in s.rec.of("chart")][-1]
     assert len(m["series"]) == 2 and m["series"][1]["dash"]
+
+
+def test_label_size_and_direction_style_survive_graph_switches():
+    s = _s()
+    assert s.run("constantLabelSize(size=14)\ndirectedEdges('fade')\nnewGraph('other')"), s.rec.of("error")
+    assert s.view.labels["screen"] and s.view.labels["screenSize"] == 14 and s.view.directed == "fade"
+    assert s.run("use('main')") and s.view.labels["screenSize"] == 14 and s.view.directed == "fade"
+
+
+def test_chart_axis_ranges():
+    s = _s()
+    assert s.run("plotLine([(1, 0.9), (2, 0.95)], title='auc', yrange=(0.8, 1))"), s.rec.of("error")
+    assert _charts(s)[-1]["yRange"] == [0.8, 1.0] and "xRange" not in _charts(s)[-1]
+    assert s.run("plotScatter(degree, betweenness, xrange=(0, 10))"), s.rec.of("error")
+    assert _charts(s)[-1]["xRange"] == [0.0, 10.0]
+    assert not s.run("plotLine([(1, 2)], yrange=(1, 1))")
+
+
+def test_plot_line_dashed_series():
+    s = _s()
+    assert s.run("plotLine({'data': [(1, 1), (2, 3)], 'theory': [(1, 1), (2, 2)]}, title='t', dashed=['theory'])"), s.rec.of("error")
+    se = _charts(s)[-1]["series"]
+    assert "dash" not in se[0] and se[1]["dash"]

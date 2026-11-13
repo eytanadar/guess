@@ -19,9 +19,12 @@ TRUE = nx.relabel_nodes(TRUE, {v: f"s{v}" for v in TRUE})
 NAMES = sorted(TRUE, key=lambda v: int(v[1:]))
 for v in TRUE:
     TRUE.nodes[v]["group"] = int(v[1:]) // 5
-pos = nx.spring_layout(TRUE, seed=5, iterations=300)
+# each friendship group on a small ring, the six groups around a large one: chance meetings between
+# groups then show as long thin lines, and real friendships stay short
 for v in TRUE:
-    TRUE.nodes[v]["pos"] = (pos[v][0] * 420, pos[v][1] * 420)
+    grp, k = TRUE.nodes[v]["group"], int(v[1:]) % 5
+    a0, a1 = 2 * math.pi * grp / 6, 2 * math.pi * k / 5 + 2 * math.pi * grp / 6
+    TRUE.nodes[v]["pos"] = (330 * math.cos(a0) + 75 * math.cos(a1), 330 * math.sin(a0) + 75 * math.sin(a1))
 fromNetworkX(TRUE)
 remove(list(g.edges))                       # edges are drawn from the observations, not the truth
 Edge.ecount = 0
@@ -36,13 +39,13 @@ PAIRS = [(NAMES[i], NAMES[j]) for i in range(len(NAMES)) for j in range(i + 1, l
 REAL = np.array([TRUE.has_edge(u, v) for u, v in PAIRS])
 RHO_TRUE = REAL.mean()
 
-scans = Slider(1, 20, 8, 1, label="measurements N (days of scans)")
-alpha_true = Slider(50, 95, 80, 5, label="true α: chance friends are seen together (%)")
-beta_true = Slider(0, 10, 3, 1, label="true β: chance others are seen together (%)")
+scans = Slider(1, 20, 6, 1, label="measurements N (days of scans)")
+alpha_true = Slider(50, 95, 70, 5, label="true α: chance friends are seen together (%)")
+beta_true = Slider(0, 10, 5, 1, label="true β: chance others are seen together (%)")
 
-data = {"E": None, "N": 8, "seed": 1, "edge": {}}
-est = {"a": 0.6, "b": 0.2, "rho": 0.2, "Q": None, "hist": [], "it": 0, "timer": None, "done": False}
-START = (0.6, 0.2, 0.2)
+data = {"E": None, "N": 6, "seed": 1, "edge": {}}
+est = {"a": 0.5, "b": 0.3, "rho": 0.4, "Q": None, "hist": [], "it": 0, "timer": None, "done": False}
+START = (0.5, 0.3, 0.4)
 
 
 def observe(N, a0, b0, seed):
@@ -103,7 +106,7 @@ def reset_em():
     stop_em()
     est.update(a=START[0], b=START[1], rho=START[2], Q=None, hist=[], it=0, done=False)
     build_edges(truth.checked)
-    paint()
+    repaint()
 
 
 def mix(t):
@@ -111,7 +114,7 @@ def mix(t):
     return f"{int(220 - 180 * t)},{int(60 + 110 * t)},{int(50 + 30 * t)}"
 
 
-def paint(flash=()):
+def repaint(flash=()):
     E, N, Q = data["E"], data["N"], est["Q"]
     show = truth.checked
     for k, e in data["edge"].items():
@@ -119,13 +122,15 @@ def paint(flash=()):
         e.width = 0.8 + 4.5 * share
         e.linestyle = "solid"
         if Q is None:
-            e.color = f"110,110,110,{int(60 + 190 * share)}"
+            e.color = f"150,150,150,{int(50 + 200 * share)}"
             e.qreal = 0.0
         else:
             q = float(Q[k])
             e.qreal = round(q, 4)
             e.color = mix(q)
-            if q < 0.5:
+            if q < 0.5:                                   # probably chance: thin, faint and dashed
+                e.color = mix(q) + ",110"
+                e.width = min(e.width, 1.4)
                 e.linestyle = "dashed"
         if show:
             kept = Q[k] > 0.5 if Q is not None else E[k] > 0
@@ -141,7 +146,7 @@ def paint(flash=()):
             k = sum(1 for kk, (u, v) in enumerate(PAIRS) if E[kk] > N / 2 and nd.name in (u, v))
         else:
             k = sum(float(Q[kk]) for kk, (u, v) in enumerate(PAIRS) if nd.name in (u, v))
-        nd.width = nd.height = 12 + 3.5 * min(k, 8)
+        nd.width = nd.height = 12 + 2 * min(k, 8)
         nd.strokecolor, nd.strokewidth = "50,50,50", 1
 
 
@@ -158,7 +163,7 @@ def em_once():
     est["hist"].append((est["it"], a2, b2, rho2))
     moved = np.abs(est["Q"] - old)
     flash = [int(k) for k in np.argsort(-moved)[:8] if moved[k] > 0.01 and int(k) in data["edge"]]
-    paint(flash)
+    repaint(flash)
     if change < 1e-6 or est["it"] >= 80:
         est["done"] = True
         return 1                                     # one more tick to settle the flashing edges
@@ -182,7 +187,7 @@ def stop_em():
 
 def show_truth(v):
     build_edges(bool(v))
-    paint()
+    repaint()
 
 
 truth = Checkbox("Show the truth (orange: kept but not real; blue dashed: real but dropped)", false,
@@ -193,8 +198,9 @@ def data_text():
     E, N = data["E"], data["N"]
     seen = int((E > 0).sum())
     real_seen = int(((E > 0) & REAL).sum())
-    return (f"**{N}** measurements of {len(PAIRS)} pairs. **{seen}** pairs were seen together at least once; "
-            f"only **{real_seen}** of them are real friendships (of {int(REAL.sum())}). Edge width shows E/N, "
+    return (f"**{N}** measurements of {len(PAIRS)} pairs. **{seen}** pairs were seen together at least once, but "
+            f"only **{real_seen}** of them are real friendships ({int(REAL.sum()) - real_seen} of the "
+            f"{int(REAL.sum())} real ones were never seen). Edge width shows E/N, "
             "the share of measurements in which the pair was seen. Thick edges are probably real; thin ones "
             "could be chance meetings. EM decides where the line falls, and how reliable the scans were.")
 
@@ -258,7 +264,7 @@ def sim_one():
             data.update(E=E, N=N)
             est.update(a=a, b=b, rho=rho, Q=Q, it=0, hist=[], done=True)
             build_edges(truth.checked)
-            paint()
+            repaint()
     sim["rows"].append((N, errs))
     return len(sim["Ns"]) or False
 

@@ -231,9 +231,10 @@ def lp_chart():
     if mode[0] != "Link prediction":
         return None
     if lp["sims"]:
-        data = {m: sorted((f, sum(a) / len(a)) for f, a in per.items()) for m, per in lp["sims"].items()}
-        return plotLine(data, title="AUC against the share of edges hidden (5 tries each)",
-                        xlabel="% of edges hidden", ylabel="AUC", dots=true)
+        # 1 - AUC on a log scale separates the methods (all near 0.9) far better than AUC from 0
+        data = {m: sorted((f, 1 - sum(a) / len(a)) for f, a in per.items()) for m, per in lp["sims"].items()}
+        return plotLine(data, title="Mistakes: 1 − AUC against the share hidden (5 tries each; lower is better)",
+                        xlabel="% of edges hidden", ylabel="1 − AUC", logY=true, dots=true)
     if len(lp["curve"]) < 2:
         return None
     k = len(lp["hidden"])
@@ -331,6 +332,11 @@ def build_truth():
             if T.degree(pid) < 3:
                 for w in r.sample([w for w in ids if w != pid and not T.has_edge(pid, w)], 3 - T.degree(pid)):
                     T.add_edge(pid, w)
+    kumar = ident[(1, "Anil Kumar")]                 # enough coauthors to recognise him under both names
+    for w in [p for p in T if p.startswith("p1") and p != kumar]:
+        if T.degree(kumar) >= 5:
+            break
+        T.add_edge(kumar, w)
     for (ga, na), (gb, nb_) in BRIDGES:
         T.add_edge(ident[(ga, na)], ident[(gb, nb_)])
     return T, ident
@@ -341,11 +347,9 @@ KUMAR = IDENT[(1, "Anil Kumar")]
 # the raw records: people with the same name are one node; Anil Kumar appears as "A. Kumar" on some papers
 RAWNAME = {pid: T.nodes[pid]["who"] for pid in T}
 # each of his coauthors wrote papers with him under one name, the other, or both
-_rk = random.Random(5)
 KUMAR_AS = {}
-for _co in sorted(T[KUMAR]):
-    _roll = _rk.random()
-    KUMAR_AS[_co] = ("A. Kumar", "Anil Kumar") if _roll < 0.5 else (("A. Kumar",) if _roll < 0.75 else ("Anil Kumar",))
+for _i, _co in enumerate(sorted(T[KUMAR])):
+    KUMAR_AS[_co] = [("A. Kumar", "Anil Kumar"), ("A. Kumar", "Anil Kumar"), ("A. Kumar",), ("Anil Kumar",)][_i % 4]
 
 
 def raw_key(name):
@@ -455,6 +459,11 @@ def da_step():
         if not cur["queue"]:
             cur["timer"] = None
             da_base()
+            now = stats(cur["G"])
+            same = now["n"] == TRUTH["n"] and now["m"] == TRUTH["m"]
+            cur["focus"] = ("Done. " + ("Every number now matches the truth. " if same else "") +
+                            "Similar names with no coauthors in common (like the two Larsens) are left apart: "
+                            "the name alone isn't evidence.")
             return False
         job = cur["queue"][0]
         da_base()
@@ -622,6 +631,7 @@ def switch(title):
         stop_predicting()
         use("authors")
         da_base()
+    constantLabelSize(size=14)                      # use() resets the label size
     center()
 
 

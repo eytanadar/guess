@@ -57,7 +57,7 @@ def stats(G):
 
 
 # ---- the comparison table, filled in the background one network at a time ----------------------------------
-table = {}
+stats_by_net = {}
 todo = list(NETS)
 
 
@@ -65,41 +65,50 @@ def compute_next():
     if not todo:
         return
     name = todo.pop(0)
-    table[name] = stats(read_gdf(NETS[name][0]))
+    stats_by_net[name] = stats(read_gdf(NETS[name][0]))
     if todo:
         after(0.05, compute_next)
 
 
 def compare_text():
-    rows = ["| network | kind | n | C | C if random | × | r |", "|---|---|---|---|---|---|---|"]
+    rows = ["| network | n | C | C if random | × | r |", "|---|---|---|---|---|---|"]
     for name, (_, kind) in NETS.items():
-        st = table.get(name)
+        st = stats_by_net.get(name)
         if st is None:
-            rows.append(f"| {name} | {kind} | … | | | | |")
+            rows.append(f"| {name} | … | | | | |")
             continue
         ratio = st["C"] / st["Cconf"] if st["Cconf"] else float("inf")
-        rows.append(f"| {name} | {kind} | {st['n']:,} | {st['C']:.3f} | {st['Cconf']:.3f} | **{ratio:.1f}** | "
+        rows.append(f"| {name} | {st['n']:,} | {st['C']:.2f} | {st['Cconf']:.2f} | **{ratio:.1f}** | "
                     f"{st['r']:+.2f} |")
-    note = ("**C** is the clustering coefficient (3 × triangles / connected triples). **C if random** is what a "
+    note = ("Rows run social (4), technological (3), biological (2), information (2). **C** is the clustering coefficient (3 × triangles / connected triples). **C if random** is what a "
             "network with the same degrees but random edges would have, (⟨k²⟩ − ⟨k⟩)² / n⟨k⟩³; **×** is how many "
             "times more clustered the real one is. **r** is degree assortativity: positive when hubs link to hubs.")
-    if len(table) < len(NETS):
-        note += f"\n\n*Working through the networks… ({len(table)} of {len(NETS)})*"
+    if len(stats_by_net) < len(NETS):
+        note += f"\n\n*Working through the networks… ({len(stats_by_net)} of {len(NETS)})*"
     else:
-        soc = [table[k]["r"] for k, (_, kd) in NETS.items() if kd == "social"]
-        tech = [table[k]["r"] for k, (_, kd) in NETS.items() if kd != "social"]
-        note += (f"\n\nSocial networks here average r = **{sum(soc) / len(soc):+.2f}**, the others **"
-                 f"{sum(tech) / len(tech):+.2f}**. Newman's larger table shows the same split more clearly: big "
-                 "social networks are assortative, technological and biological ones disassortative. Small "
-                 "networks are noisy (the karate club's two leaders make it strongly negative).")
+        soc = [stats_by_net[k]["r"] for k, (_, kd) in NETS.items() if kd == "social"]
+        tech = [stats_by_net[k]["r"] for k, (_, kd) in NETS.items() if kd != "social"]
+        many = [k for k, st in stats_by_net.items() if st["C"] > 1.5 * st["Cconf"]]
+        note += (f"\n\n**Clustering.** {len(many)} of the {len(NETS)} are at least 1.5× more clustered than random "
+                 "edges would make them, social networks and the protein network (built from protein complexes) "
+                 "among them. The power grid's ratio is large because its random value is tiny. For small networks "
+                 "with big hubs (the airports, the Internet sample) the random formula overestimates: it assumes "
+                 "⟨k²⟩ is small next to n⟨k⟩², and here it is not.")
+        note += (f"\n\n**Mixing.** These networks don't show the split Newman's table of large networks does (big "
+                 "social networks assortative, technological and biological ones disassortative): the social ones "
+                 f"here average r = **{sum(soc) / len(soc):+.2f}** and the others **{sum(tech) / len(tech):+.2f}**. "
+                 "Small networks are noisy, and simple networks with big hubs are pushed negative because there are "
+                 "too few hubs to link to each other: the karate club's two leaders, each with many low-degree "
+                 "friends, give r = −0.48. The Mixing tab's *Simulate* checks a network against random edges with "
+                 "the same degrees.")
     return "\n".join(rows) + "\n\n" + note
 
 
 def real_vs_random_chart():
-    if not table:
+    if not stats_by_net:
         return None
     series = {}
-    for name, st in table.items():
+    for name, st in stats_by_net.items():
         if st["Cconf"] > 0 and st["C"] > 0:
             series.setdefault(NETS[name][1], []).append((st["Cconf"], st["C"]))
     return plotScatter(series, log=true, line=[(0.002, 0.002), (1, 1)], title="Clustering: real against random",
@@ -107,10 +116,10 @@ def real_vs_random_chart():
 
 
 def mixing_chart():
-    if not table:
+    if not stats_by_net:
         return None
     series = {}
-    for name, st in table.items():
+    for name, st in stats_by_net.items():
         series.setdefault(NETS[name][1], []).append((st["n"], st["r"]))
     return plotScatter(series, logX=true, line=[(10, 0), (2000, 0)], title="Degree assortativity r by network",
                        xlabel="n (nodes)", ylabel="r")
@@ -128,7 +137,7 @@ def load(name=None):
     if shown["name"] not in GEO and nx.number_connected_components(toNetworkX(directed=False)) > 1:
         binPackLayout(false)                    # several pieces: pack them, then keep nodes apart
         noverlapLayout()
-    style()
+    restyle()
     center()
 
 
@@ -144,7 +153,7 @@ def plain():
         e.color, e.width = "150,150,150,90", 0.9
 
 
-def style():
+def restyle():
     if mode[0] == "Centralities":
         paint_centrality()
     elif mode[0] == "Clustering":
@@ -193,10 +202,12 @@ def centrality_text():
     n = len(vals)
     tot = sum(vals) or 1
     k = max(1, round(0.1 * n))
-    mean = tot / n
+    mean = tot / n or 1
     med = vals[n // 2]
-    return (f"**{shown['name']}**, {measure[0]} centrality: the largest is **{vals[0] / mean:.1f}×** the mean and the "
-            f"mean is {mean / med:.1f}× the median, and the top 10% of nodes hold **{100 * sum(vals[:k]) / tot:.0f}%** "
+    middle = (f"the mean is {mean / med:.1f}× the median" if med > 0 else
+              f"at least half the nodes score 0 ({sum(1 for v in vals if v == 0)} of {n})")
+    return (f"**{shown['name']}**, {measure[0]} centrality: the largest is **{vals[0] / mean:.1f}×** the mean, "
+            f"{middle}, and the top 10% of nodes hold **{100 * sum(vals[:k]) / tot:.0f}%** "
             "of the total. Like degree, centralities are **right-skewed**: a long tail of a few very central nodes "
             "(ringed and named). The chart is the cumulative distribution on log–log axes.")
 
@@ -213,13 +224,23 @@ def pick_measure(v):
     paint_centrality()
 
 
+def eigvec(H):
+    """Eigenvector centrality from the leading eigenvector of A (numpy; no scipy in the browser)."""
+    import numpy as np
+    nodes = list(H)
+    A = nx.to_numpy_array(H, nodelist=nodes, weight=None)
+    w, V = np.linalg.eigh(A)
+    x = np.abs(V[:, -1])
+    return {v: float(x[i]) for i, v in enumerate(nodes)}
+
+
 def simulate_centrality():
     """The same measure on 5 copies with the same degrees but random edges (degree-keeping swaps)."""
     G = toNetworkX(directed=False)
     G.remove_edges_from(list(nx.selfloop_edges(G)))
     G = nx.Graph(G)
     fn = {"degree": lambda H: dict(H.degree()),
-          "eigenvector": lambda H: nx.eigenvector_centrality_numpy(H),
+          "eigenvector": eigvec,
           "betweenness": lambda H: nx.betweenness_centrality(H, k=min(len(H), 120), seed=1)}[measure[0]]
 
     def ccdf(vals):
@@ -394,7 +415,7 @@ def click(n):
 
 def switch(title):
     mode[0] = title
-    style()
+    restyle()
 
 
 def pick_network(v):

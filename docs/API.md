@@ -2998,16 +2998,18 @@ Histogram of a numeric field's values in `bins` equal-width bins.
 log=true uses bins of equal width on a log scale (for heavy-tailed
 values such as degree; values <= 0 are left out) and a log count axis.
 
-### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False)`
+### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False, xrange=None, yrange=None, dashed=None)`
 
 plotLine(points) draws a line chart of [(x, y), ...] pairs;
 plotLine({"infected": pts1, "recovered": pts2}) draws one line per
 series. log=true makes both axes logarithmic (or logX=/logY= one of
 them; points <= 0 are left out). dots=true marks each point. A chart
 with the same title replaces the last one, so calling it in a loop
-updates it.
+updates it. yrange=(lo, hi) fixes the y axis (e.g. (0.8, 1) for values
+near 1), xrange= the x axis. dashed=["fit", ...] draws those series
+dashed and without dots (for theory curves and fits).
 
-### `plotScatter(x, y=None, log=False, logX=None, logY=None, ends=False, title=None, xlabel=None, ylabel=None, line=None)`
+### `plotScatter(x, y=None, log=False, logX=None, logY=None, ends=False, title=None, xlabel=None, ylabel=None, line=None, xrange=None, yrange=None)`
 
 plotScatter(degree, betweenness) plots one dot per node (or edge) at
 (x, y), in its own colour; pointing at a dot highlights its element and
@@ -3017,7 +3019,8 @@ for undirected edges), which shows assortative mixing. Data works too:
 plotScatter([(x, y), ...]) or plotScatter({"name": points, ...}).
 log=true uses log scales on both axes (logX=/logY= for one; values <= 0
 are left out). line=[(x0, y0), (x1, y1), ...] adds a reference line,
-e.g. y = x. A chart with the same title replaces the last one.
+e.g. y = x. xrange=/yrange=(lo, hi) fix the axes. A chart with the same
+title replaces the last one.
 
 ### `plotSizes(field)`
 

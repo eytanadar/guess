@@ -1,0 +1,480 @@
+# Components and the bow tie  (Newman, Networks, Section 10.1)
+# Nearly every network that people study has one large component holding most
+# of its nodes, plus a scattering of small ones (often single nodes). A
+# directed network is subtler: its large weakly connected component splits
+# into a strongly connected core, an in-component that can reach the core but
+# not be reached from it, an out-component reached from the core that can't
+# reach back, and tendrils and tubes hanging off them: the "bow tie" first
+# described for the Web (Broder et al., 2000). Here: a sample of links between
+# US political blogs before the 2004 election (Adamic and Glance).
+
+import csv
+import math
+import random
+import networkx as nx
+
+# ---- the networks to compare -----------------------------------------------------------------------
+NETS = [("Political blogs (sample)", "polblogs-sample.gdf"), ("Citations (visualisation papers)", "vis-papers.gdf"),
+        ("US airports", "us-airports.gdf"), ("Karate club", "karate.gdf"), ("Dolphins", "dolphins.gdf"),
+        ("Les Misérables", "lesmis.gdf"), ("Southern women (two-mode)", "southern-women.gdf"),
+        ("Power grid region", "power-grid-region.gdf"), ("Internet (300 ASes)", "internet-as-sample.gdf"),
+        ("Yeast proteins", "yeast-modules.gdf"), ("C. elegans neurons", "celegans-neural.gdf")]
+MEANINGFUL = {"US airports"}                     # positions on a map: don't repack
+SAMPLED = {"Power grid region", "Internet (300 ASes)", "Yeast proteins"}   # grown outward from one node
+
+
+def read_gdf(path):
+    """Nodes and edges of a GDF file (without loading it into the display)."""
+    G = None
+    nodes = []
+    edges = []
+    section = None
+    with open(path, encoding="utf-8") as fh:
+        for row in csv.reader(fh):
+            if not row:
+                continue
+            if row[0].startswith("nodedef>"):
+                section = "n"
+                continue
+            if row[0].startswith("edgedef>"):
+                section = "e"
+                head = [h.strip().split()[0] for h in [row[0].split(">", 1)[1]] + row[1:]]
+                d_at = head.index("directed") if "directed" in head else None
+                continue
+            if section == "n":
+                nodes.append(row[0])
+            elif section == "e":
+                directed = d_at is not None and len(row) > d_at and row[d_at].strip().lower() == "true"
+                edges.append((row[0], row[1], directed))
+    directed = any(d for _, _, d in edges)
+    G = nx.DiGraph() if directed else nx.Graph()
+    G.add_nodes_from(nodes)
+    G.add_edges_from((a, b) for a, b, _ in edges if a != b)
+    return G
+
+
+cmp_ = {"rows": {}, "timer": None, "todo": [], "shown": NETS[0][0]}
+
+
+def describe(name, G):
+    U = G.to_undirected() if G.is_directed() else G
+    comps = sorted((len(c) for c in nx.connected_components(U)), reverse=True)
+    row = {"n": len(G), "big": comps[0], "count": len(comps), "isolated": sum(1 for c in comps if c == 1),
+           "directed": G.is_directed(), "sizes": comps}
+    if G.is_directed():
+        row["strong"] = max(len(c) for c in nx.strongly_connected_components(G))
+    return row
+
+
+def compare_step():
+    if not cmp_["todo"]:
+        cmp_["timer"] = None
+        return False
+    name, path = cmp_["todo"].pop(0)
+    cmp_["rows"][name] = describe(name, read_gdf(path))
+    return len(cmp_["todo"]) or False
+
+
+def compare_all():
+    if cmp_["timer"] is not None:
+        return
+    cmp_["todo"] = [(n, p) for n, p in NETS if n not in cmp_["rows"]]
+    if cmp_["todo"]:
+        cmp_["timer"] = everyPaced(compare_step, steps=len(cmp_["todo"]), slow=0.7, fast=0.3, ramp=1)
+
+
+def compare_table():
+    if mode[0] != "Many networks":
+        return ""
+    if not cmp_["rows"]:
+        return "*Compare the networks* to fill in the table, one network at a time."
+    rows = ["| network | n | largest | share | components | single nodes |", "|---|---|---|---|---|---|"]
+    for name, _ in NETS:
+        r = cmp_["rows"].get(name)
+        if r is None:
+            continue
+        rows.append(f"| {name}{' →' if r['directed'] else ''}{' *' if name in SAMPLED else ''} | {r['n']} | {r['big']} | "
+                    f"**{100 * r['big'] / r['n']:.0f}%** | {r['count']} | {r['isolated']} |")
+    return ("\n".join(rows) + "\n\n→ directed (counted ignoring direction). * grown outward from one node, so "
+            "connected by construction. Almost always one component holds most of the network; the rest are "
+            "small, often single nodes.")
+
+
+def show_network(choice):
+    """Load a network into the "pieces" graph, its components packed side by side."""
+    cmp_["shown"] = choice
+    path = dict(NETS)[choice]
+    use("pieces")
+    makeFromFile(path)
+    constantLabelSize(size=14)                      # use() and makeFromFile reset the label size
+    G = toNetworkX(directed=False)
+    comps = sorted(nx.connected_components(G), key=len, reverse=True)
+    biggest = set(comps[0])
+    for n in g.nodes:
+        n.labelvisible = false
+        big = n.name in biggest
+        n.color = "90,120,210" if big else "235,140,40"
+        n.width = n.height = 8 if big else 12
+        n.strokewidth = 0 if big else 1.5
+        n.strokecolor = "120,60,0"
+    g.edges.color = "150,150,150,90"
+    if choice not in MEANINGFUL and len(comps) > 1 and not choice.startswith("Political"):
+        binPackLayout(false)                      # the pieces side by side, then no node on another
+        noverlapLayout()
+    if choice not in cmp_["rows"]:
+        cmp_["rows"][choice] = describe(choice, read_gdf(path))
+    center()
+
+
+def pieces_text():
+    if mode[0] != "Many networks":
+        return ""
+    r = cmp_["rows"].get(cmp_["shown"])
+    if r is None:
+        return ""
+    small = r["sizes"][1:]
+    from collections import Counter
+    cnt = Counter(small)
+    smalls = ", ".join(f"{c} with {s} nodes" if s > 1 else f"{c} single node{'s' if c > 1 else ''}"
+                       for s, c in sorted(cnt.items(), reverse=True)[:5])
+    return (f"**{cmp_['shown']}**: the largest component (blue) has **{r['big']}** of {r['n']} nodes "
+            f"(**{100 * r['big'] / r['n']:.0f}%**)." +
+            (f" The other {len(small)} components (orange) are small: {smalls}{'…' if len(cnt) > 5 else ''}."
+             if small else " It is all one piece.") +
+            (f" Following the arrows, the largest strongly connected component has {r['strong']}."
+             if r.get("strong") else ""))
+
+
+def sizes_chart():
+    if mode[0] != "Many networks":
+        return None
+    r = cmp_["rows"].get(cmp_["shown"])
+    if r is None or len(r["sizes"]) < 2:
+        return None
+    from collections import Counter
+    cnt = Counter(r["sizes"])
+    return plotLine({"components": sorted(cnt.items())}, title="How many components of each size",
+                    xlabel="component size (nodes)", ylabel="number of components", log=true, dots=true)
+
+
+# ---- the bow tie -------------------------------------------------------------------------------------------
+makeFromFile("polblogs-sample.gdf")
+renameGraph("blogs")
+B = toNetworkX(directed=True)
+SIZES = bowTie()
+PART = {n.name: n.bowtie for n in g.nodes}
+LEAN = {n.name: n.leaning for n in g.nodes}
+ADDR = {n.name: n.label for n in g.nodes}
+COL = {"core": "130,90,210", "in": "235,140,40", "out": "50,165,90", "tube": "200,60,140",
+       "tendril": "150,150,150", "other": "205,205,205"}
+LEANCOL = {"liberal": "60,110,220", "conservative": "215,60,50"}
+BRODER = {"core": 27.7, "in": 21.3, "out": 21.2, "tendril": 21.5, "other": 8.2}     # Web, 1999, % of 203 million pages
+
+
+def grid(names, x0, y0, cols, step):
+    for i, v in enumerate(names):
+        yield v, x0 + (i % cols) * step, y0 + (i // cols) * step
+
+
+def bowtie_positions():
+    """in | core | out as three blocks, tendrils and tubes above, everything else below."""
+    pos = {}
+    deg = dict(B.degree())
+    by = lambda part: sorted((v for v in B if PART[v] == part), key=lambda v: (LEAN[v], -deg[v]))
+    core = sorted(by("core"), key=lambda v: -deg[v])
+    for i, v in enumerate(core):                  # a sunflower: the best-linked blogs in the middle
+        r_ = 17 * math.sqrt(i + 0.5)
+        a = i * 2.39996
+        pos[v] = (r_ * math.cos(a), r_ * math.sin(a))
+    rad = 17 * math.sqrt(len(core))
+    for part, x0 in (("in", -rad - 360), ("out", rad + 120)):
+        names = by(part)
+        cols = 9
+        rows = math.ceil(len(names) / cols)
+        for v, x, y in grid(names, x0, -rows * 26 / 2, cols, 26):
+            pos[v] = (x, y)
+    top = by("tendril") + by("tube")
+    cols = min(30, max(1, len(top)))
+    for v, x, y in grid(top, -cols * 26 / 2, -rad - 120, cols, 26):
+        pos[v] = (x, y)
+    comp = {}
+    for c in nx.weakly_connected_components(B):
+        for v in c:
+            comp[v] = (-len(c), min(c))
+    other = sorted((v for v in B if PART[v] == "other"), key=lambda v: (comp[v], v))
+    for v, x, y in grid(other, -rad - 360, rad + 110, 40, 22):
+        pos[v] = (x, y)
+    return pos
+
+
+POS = bowtie_positions()
+for n in g.nodes:
+    n.x, n.y = POS[n.name]
+colour_by = ["Part of the bow tie"]
+tie = {"timer": None, "path": [], "i": 0, "note": "", "picked": None}
+
+
+def edge_kind(u, v):
+    a, b = PART[u], PART[v]
+    if a == "in" and b == "core":
+        return "in→core"
+    if a == "core" and b == "out":
+        return "core→out"
+    if a == b == "core":
+        return "core"
+    return "other"
+
+
+EKCOL = {"in→core": "235,140,40,90", "core→out": "50,165,90,90", "core": "130,90,210,28", "other": "150,150,150,70"}
+
+
+def paint_tie():
+    for n in g.nodes:
+        n.labelvisible = false
+        n.strokewidth = 0
+        n.strokecolor = "60,60,60"
+        n.width = n.height = 7 + 1.4 * math.sqrt(B.degree(n.name))
+        n.color = COL[PART[n.name]] if colour_by[0].startswith("Part") else LEANCOL[LEAN[n.name]]
+    for e in g.edges:
+        e.color, e.width, e.linestyle = EKCOL[edge_kind(e.node1.name, e.node2.name)], 1, "solid"
+
+
+def pick_colour(v):
+    colour_by[0] = v
+    paint_tie()
+
+
+def follow_path():
+    """A shortest path from a blog in the in-component, through the core, to one in the out-component."""
+    stop_timers()
+    r = random.Random(len(tie["path"]) * 7 + 3)
+    ins = sorted(v for v in B if PART[v] == "in")
+    outs = sorted(v for v in B if PART[v] == "out")
+    for _ in range(50):
+        s, t = r.choice(ins), r.choice(outs)
+        try:
+            tie["path"] = nx.shortest_path(B, s, t)
+            break
+        except nx.NetworkXNoPath:
+            continue
+    tie["i"] = 0
+    paint_tie()
+    tie["note"] = ""
+    tie["timer"] = everyPaced(path_step, steps=len(tie["path"]), slow=1.0, fast=0.5, ramp=1)
+
+
+def path_step():
+    p = tie["path"]
+    i = tie["i"]
+    if i >= len(p):
+        return False
+    v = p[i]
+    n = g.getNodeByName(v)
+    n.width = n.height = 22
+    n.strokewidth, n.strokecolor = 4, "250,210,60"
+    n.labelvisible = true
+    n.label = ADDR[v][:28]
+    if i:
+        u = p[i - 1]
+        for e in g.edges:
+            if e.node1.name == u and e.node2.name == v:
+                e.color, e.width, e.linestyle = "250,210,60", 5, "flow"
+    tie["i"] = i + 1
+    tie["note"] = " → ".join(f"{linkTo(g.getNodeByName(w), text=ADDR[w][:22])} ({PART[w]})" for w in p[:i + 1])
+    return len(p) - i - 1
+
+
+def tie_text():
+    if mode[0] != "Bow tie":
+        return ""
+    n = len(B)
+    rows = ["| part | blogs | share | the Web, 1999 |", "|---|---|---|---|"]
+    names = {"core": "core (strongly connected)", "in": "in (reach the core)", "out": "out (reached from it)",
+             "tendril": "tendrils", "tube": "tubes", "other": "outside the bow tie"}
+    for k in ("core", "in", "out", "tendril", "tube", "other"):
+        web = f"{BRODER[k]:.0f}%" if k in BRODER else "–"
+        if k == "tendril":
+            web = f"{BRODER['tendril']:.0f}% (with tubes)"
+        rows.append(f"| {names[k]} | {SIZES[k]} | {100 * SIZES[k] / n:.0f}% | {web} |")
+    txt = ("\n".join(rows) + "\n\nFrom any blog in **in** you can follow links into the core and on to every blog "
+           "in **out**, but never back. Edge colours: orange in → core, green core → out, faint purple inside the core.")
+    if tie["picked"]:
+        v = tie["picked"]
+        txt += f"\n\nSelected: {linkTo(g.getNodeByName(v), text=ADDR[v])}: **{PART[v]}**, {LEAN[v]}."
+    if tie["note"]:
+        txt += "\n\nPath: " + tie["note"]
+    return txt
+
+
+# ---- reach from one blog --------------------------------------------------------------------------------
+reach = {"timer": None, "src": None, "fwd": [], "bwd": [], "step": 0, "outset": set(), "inset": set(),
+         "curve": {"out": [], "in": []}}
+
+
+def layers(src, forward):
+    seen = {src}
+    frontier = [src]
+    out = []
+    while frontier:
+        nxt = []
+        for u in frontier:
+            for w in (B.successors(u) if forward else B.predecessors(u)):
+                if w not in seen:
+                    seen.add(w)
+                    nxt.append((u, w))
+        if nxt:
+            out.append(nxt)
+        frontier = [w for _, w in nxt]
+    return out
+
+
+def start_reach(v):
+    stop_timers()
+    paint_reach_base()
+    reach.update(src=v, fwd=layers(v, True), bwd=layers(v, False), step=0, outset={v}, inset={v},
+                 curve={"out": [(0, 1)], "in": [(0, 1)]})
+    n = g.getNodeByName(v)
+    n.color, n.width, n.height, n.strokewidth, n.strokecolor = "20,20,20", 24, 24, 4, "250,200,40"
+    n.labelvisible, n.label = true, ADDR[v][:28]
+    reach["timer"] = everyPaced(reach_step, steps=len(reach["fwd"]) + len(reach["bwd"]), slow=0.9, fast=0.35)
+
+
+def paint_reach_base():
+    for n in g.nodes:
+        n.labelvisible = false
+        n.strokewidth = 0
+        n.strokecolor = "60,60,60"
+        n.width = n.height = 8
+        n.color = "210,210,210"
+    g.edges.color = "170,170,170,25"
+    for e in g.edges:
+        e.width, e.linestyle = 1, "solid"
+
+
+def reach_step():
+    """One more layer: first outwards along the links (out-component), then backwards (in-component)."""
+    k = reach["step"]
+    nf = len(reach["fwd"])
+    forward = k < nf
+    layer = reach["fwd"][k] if forward else (reach["bwd"][k - nf] if k - nf < len(reach["bwd"]) else None)
+    if layer is None:
+        return False
+    for e in g.edges:                                  # last layer's edges settle down
+        if e.linestyle == "flow":
+            e.linestyle, e.width = "solid", 1.5
+    want = {(u, w) if forward else (w, u) for u, w in layer}
+    hit = set()
+    for e in g.edges:
+        if (e.node1.name, e.node2.name) in want:
+            e.color, e.width, e.linestyle = ("50,165,90" if forward else "235,140,40"), 3, "flow"
+    for _, w in layer:
+        hit.add(w)
+        (reach["outset"] if forward else reach["inset"]).add(w)
+    for w in hit:
+        n = g.getNodeByName(w)
+        both = w in reach["outset"] and w in reach["inset"]
+        n.color = "130,90,210" if both else ("50,165,90" if w in reach["outset"] else "235,140,40")
+        n.width = n.height = 14
+    key = "out" if forward else "in"
+    steps = (k + 1) if forward else (k - nf + 1)
+    reach["curve"][key].append((steps, len(reach["outset"] if forward else reach["inset"])))
+    reach["step"] = k + 1
+    return nf + len(reach["bwd"]) - k - 1
+
+
+def reach_text():
+    if mode[0] != "Reach":
+        return ""
+    v = reach["src"]
+    if v is None:
+        return ("*Click a blog.* Its links are followed outwards layer by layer (green: its **out-component**, "
+                "what it can reach), then backwards (orange: its **in-component**, what can reach it). Where they "
+                "overlap (purple) is its strongly connected component.")
+    o, i = len(reach["outset"]), len(reach["inset"])
+    both = len(reach["outset"] & reach["inset"])
+    return (f"{linkTo(g.getNodeByName(v), text=ADDR[v])} is in the **{PART[v]}** part. So far it reaches "
+            f"**{o}** blogs ({100 * o / len(B):.0f}%) and is reached by **{i}**; **{both}** are both: its strongly "
+            f"connected component. A core blog reaches the core and everything in *out*; a blog in *in* reaches "
+            "the same plus its own share of *in*; a blog in *out* reaches little.")
+
+
+def reach_chart():
+    if mode[0] != "Reach" or reach["src"] is None:
+        return None
+    c = reach["curve"]
+    data = {"out-component (following links)": c["out"]}
+    if len(c["in"]) > 1:
+        data["in-component (backwards)"] = c["in"]
+    return plotLine(data, title="Blogs reached, step by step", xlabel="steps", ylabel="blogs", dots=true)
+
+
+# ---- tabs and clicks -------------------------------------------------------------------------------------
+mode = ["Many networks"]
+
+
+def stop_timers():
+    for d in (tie, reach):
+        if d["timer"] is not None:
+            d["timer"].stop()
+            d["timer"] = None
+
+
+def click(n):
+    if mode[0] == "Reach":
+        start_reach(n.name)
+    elif mode[0] == "Bow tie":
+        tie["picked"] = n.name
+        paint_tie()
+        m = g.getNodeByName(n.name)
+        m.width = m.height = 20
+        m.strokewidth, m.strokecolor = 4, "250,210,60"
+        m.labelvisible, m.label = true, ADDR[n.name][:28]
+
+
+def switch(title):
+    stop_timers()
+    mode[0] = title
+    if title == "Many networks":
+        use("pieces")
+    else:
+        use("blogs")
+        if title == "Bow tie":
+            paint_tie()
+        else:
+            reach["src"] = None
+            paint_reach_base()
+    constantLabelSize(size=14)                      # use() resets the label size
+    center()
+
+
+paint_tie()
+newGraph("pieces")
+closeGraph("main") if "main" in graphNames() else None
+show_network(NETS[0][0])
+graphevents.clickNode = click
+constantLabelSize(size=14)
+ui.title("Components and the bow tie", "Networks, Section 10.1")
+ui.layout(
+    right=Column(
+        Markdown("""### One big piece, and a bow tie"""),
+        Tabs(
+            Tab("Many networks",
+                Dropdown([n for n, _ in NETS], label="Show", onChange=show_network),
+                Markdown(pieces_text), Chart(sizes_chart),
+                Button("Compare the networks", onClick=lambda: compare_all()),
+                Markdown(compare_table)),
+            Tab("Bow tie",
+                Markdown("""600 political blogs and the links between them, arranged by
+`bowTie()`: **in** (left), the strongly connected **core** (middle), **out**
+(right), tendrils above, and blogs outside the large component below."""),
+                Dropdown(["Part of the bow tie", "Political leaning"], label="Colour", onChange=pick_colour),
+                Button("Follow a path from in to out", onClick=lambda: follow_path()),
+                Markdown(tie_text)),
+            Tab("Reach",
+                Markdown(reach_text), Chart(reach_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center()

@@ -98,6 +98,16 @@ def install(session):
                   "value": len(b), "color": _color(b), "ids": _ids(b), "q": q(i)} for i, b in enumerate(buckets)]
         return emit("bar", f"Histogram of {f.name}", f.name, f"number of {what(f)}", items, logY=bool(log))
 
+    def _ranges(xrange, yrange):
+        out = {}
+        for key, r in (("xRange", xrange), ("yRange", yrange)):
+            if r is not None:
+                lo, hi = float(r[0]), float(r[1])
+                if not hi > lo:
+                    raise GuessError(f"{key[0]}range needs (low, high) with high > low")
+                out[key] = [lo, hi]
+        return out
+
     def plotFrequency(field, log=False, cumulative=False, fit=False, kmin=None):
         """plotFrequency(degree) plots, for each value of a numeric field, the
         fraction of nodes (or edges) with that value: the degree distribution
@@ -140,13 +150,16 @@ def install(session):
                     [], series=series,
                     xq=f"{f.name} {op} {{x}}", logX=bool(log), logY=bool(log), dots=True)
 
-    def plotLine(data, title="Chart", xlabel="x", ylabel="y", log=False, logX=None, logY=None, dots=False):
+    def plotLine(data, title="Chart", xlabel="x", ylabel="y", log=False, logX=None, logY=None, dots=False,
+                 xrange=None, yrange=None, dashed=None):
         """plotLine(points) draws a line chart of [(x, y), ...] pairs;
         plotLine({"infected": pts1, "recovered": pts2}) draws one line per
         series. log=true makes both axes logarithmic (or logX=/logY= one of
         them; points <= 0 are left out). dots=true marks each point. A chart
         with the same title replaces the last one, so calling it in a loop
-        updates it."""
+        updates it. yrange=(lo, hi) fixes the y axis (e.g. (0.8, 1) for values
+        near 1), xrange= the x axis. dashed=["fit", ...] draws those series
+        dashed and without dots (for theory curves and fits)."""
         palette = [0x4E79A7, 0xE15759, 0x59A14F, 0xF28E2B, 0x76B7B2, 0xB07AA1, 0xEDC948]
         if isinstance(data, dict):
             named = list(data.items())
@@ -162,12 +175,15 @@ def install(session):
                 if (lx and x <= 0) or (ly and y <= 0):
                     continue
                 clean.append([x, y])
-            series.append({"name": str(name), "color": palette[i % len(palette)], "points": clean})
+            rec = {"name": str(name), "color": palette[i % len(palette)], "points": clean}
+            if dashed is not None and str(name) in {str(d) for d in ([dashed] if isinstance(dashed, str) else dashed)}:
+                rec["dash"] = True
+            series.append(rec)
         return emit("line", str(title), str(xlabel), str(ylabel), [], series=series, logX=lx, logY=ly,
-                    dots=bool(dots))
+                    dots=bool(dots), **_ranges(xrange, yrange))
 
     def plotScatter(x, y=None, log=False, logX=None, logY=None, ends=False, title=None, xlabel=None, ylabel=None,
-                    line=None):
+                    line=None, xrange=None, yrange=None):
         """plotScatter(degree, betweenness) plots one dot per node (or edge) at
         (x, y), in its own colour; pointing at a dot highlights its element and
         clicking selects it. plotScatter(age, ends=true) plots, for every edge,
@@ -176,7 +192,8 @@ def install(session):
         plotScatter([(x, y), ...]) or plotScatter({"name": points, ...}).
         log=true uses log scales on both axes (logX=/logY= for one; values <= 0
         are left out). line=[(x0, y0), (x1, y1), ...] adds a reference line,
-        e.g. y = x. A chart with the same title replaces the last one."""
+        e.g. y = x. xrange=/yrange=(lo, hi) fix the axes. A chart with the same
+        title replaces the last one."""
         palette = [0x4E79A7, 0xE15759, 0x59A14F, 0xF28E2B, 0x76B7B2, 0xB07AA1, 0xEDC948]
         lx = bool(log) if logX is None else bool(logX)
         ly = bool(log) if logY is None else bool(logY)
@@ -231,7 +248,7 @@ def install(session):
             series.append({"name": "", "color": 0x888888, "points": [[float(p[0]), float(p[1])] for p in line
                                                                      if ok(p[0], p[1])], "line": True})
         return emit("line", str(title), str(xlabel or "x"), str(ylabel or "y"), [], series=series, logX=lx, logY=ly,
-                    scatter=True)
+                    scatter=True, **_ranges(xrange, yrange))
 
     def _sizes(f):
         groups = sorted(group_by(f.elements(), f), key=len, reverse=True)

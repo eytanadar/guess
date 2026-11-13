@@ -497,9 +497,10 @@ export class Dock {
     if (c.kind === "line") {
       // the series key goes in rows above the plot, never over the data
       const keyPos: [number, number][] = [];
-      if (!c.scatter && (c.series?.length ?? 0) > 1) {          // one series: the axis label says it
+      const keyed = (c.series ?? []).filter((s) => !s.line && s.name);    // scatter reference lines have no key
+      if (keyed.length > 1) {                                   // one series: the axis label says it
         let kx = 40, ky = 9;
-        for (const s of c.series ?? []) {
+        for (const s of keyed) {
           const w = s.name.length * 5.6 + 14;
           if (kx + w > W - 4 && kx > 40) { kx = 40; ky += 12; }
           keyPos.push([kx, ky]);
@@ -508,7 +509,8 @@ export class Dock {
       }
       const keyRows = keyPos.length ? keyPos[keyPos.length - 1][1] / 12 + 0.25 : 0;
       const left = 40, bottom = 30, right = 8;
-      const top = c.scatter ? 18 : keyPos.length ? Math.round(6 + 12 * keyRows) : 8;   // room for the y label or key above
+      const keyH = keyPos.length ? Math.round(6 + 12 * keyRows) : 0;
+      const top = keyH + (c.ylabel ? 18 : 8);                 // room above the plot for the key, then the y label
       const pw = W - left - right, ph = H - top - bottom;
       const all = (c.series ?? []).flatMap((s) => s.points)
         .filter((p) => (!c.logX || p[0] > 0) && (!c.logY || p[1] > 0));
@@ -516,21 +518,25 @@ export class Dock {
       const txs = all.map((p) => tx(p[0])), tys = all.map((p) => ty(p[1]));
       let xmin = c.logX ? Math.min(...txs) : Math.min(0, ...txs), xmax = c.logX ? Math.max(...txs) : Math.max(1e-9, ...txs);
       let ymin = c.logY ? Math.min(...tys) : Math.min(0, ...tys), ymax = c.logY ? Math.max(...tys) : Math.max(1e-9, ...tys);
+      // round outward to a 1-2-5 step, so the axis ends are round numbers
+      const pad = (lo: number, hi: number): [number, number] => {
+        const raw = ((hi - lo) || Math.abs(hi) || 1) / 5;
+        const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+        const step = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= raw) ?? 10 * mag;
+        const a = Math.floor(lo / step + 1e-9) * step, b = Math.ceil(hi / step - 1e-9) * step;
+        const r = (v: number) => +v.toPrecision(12);
+        return [r(a), r(b > a ? b : a + step)];
+      };
       if (c.scatter && all.length) {
-        // scatter plots fit the data (with a margin) rather than always including zero
-        // round outward to a 1-2-5 step, so the axis ends are round numbers
-        const pad = (lo: number, hi: number): [number, number] => {
-          const raw = ((hi - lo) || Math.abs(hi) || 1) / 5;
-          const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-          const step = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= raw) ?? 10 * mag;
-          const a = Math.floor(lo / step + 1e-9) * step, b = Math.ceil(hi / step - 1e-9) * step;
-          const r = (v: number) => +v.toPrecision(12);
-          return [r(a), r(b > a ? b : a + step)];
-        };
+        // scatter plots fit the data rather than always including zero
         if (!c.logX) [xmin, xmax] = pad(Math.min(...txs), Math.max(...txs));
         if (!c.logY) [ymin, ymax] = pad(Math.min(...tys), Math.max(...tys));
+      } else if (all.length && !c.logY && ymax > ymin) {
+        [ymin, ymax] = pad(ymin, ymax);                   // line charts: a round number at the top
       }
       if (!all.length) { xmin = 0; xmax = 1; ymin = 0; ymax = 1; }
+      if (c.xRange) [xmin, xmax] = c.logX ? [Math.log10(c.xRange[0]), Math.log10(c.xRange[1])] : c.xRange;
+      if (c.yRange) [ymin, ymax] = c.logY ? [Math.log10(c.yRange[0]), Math.log10(c.yRange[1])] : c.yRange;
       // a single point (or all at one value): give the axis a sensible span
       if (!c.logX && xmax - xmin < 1e-6) xmax = xmin + (Math.abs(xmin) || 1);
       if (!c.logY && ymax - ymin < 1e-6) ymax = ymin + (Math.abs(ymin) || 1);
@@ -540,6 +546,19 @@ export class Dock {
       const XT = (v: number) => left + (pw * (v - xmin)) / (xmax - xmin || 1);
       const YT = (v: number) => top + ph * (1 - (v - ymin) / (ymax - ymin || 1));
       const X = (v: number) => XT(tx(v)), Y = (v: number) => YT(ty(v));
+      // fixed ranges (xrange=/yrange=) can leave points outside: clip them to the plot
+      let clip = "";
+      if (c.xRange || c.yRange) {
+        clip = `clip${Math.random().toString(36).slice(2, 9)}`;
+        const cp = document.createElementNS(SVG, "clipPath");
+        cp.setAttribute("id", clip);
+        const cr = document.createElementNS(SVG, "rect");
+        cr.setAttribute("x", String(left - 4)); cr.setAttribute("y", String(top - 4));
+        cr.setAttribute("width", String(pw + 8)); cr.setAttribute("height", String(ph + 8));
+        cp.append(cr);
+        svg.append(cp);
+      }
+      const clipped = (el: SVGElement) => { if (clip) el.setAttribute("clip-path", `url(#${clip})`); return el; };
       const axis = document.createElementNS(SVG, "path");
       axis.setAttribute("d", `M${left},${top} V${top + ph} H${W - right}`);
       axis.setAttribute("class", "axis");
@@ -601,7 +620,7 @@ export class Dock {
             ln.setAttribute("stroke", hex(s.color));
             ln.setAttribute("stroke-dasharray", "4 3");
             ln.setAttribute("stroke-width", "1.2");
-            svg.append(ln);
+            svg.append(clipped(ln));
             continue;
           }
           const r = s.points.length > 400 ? 1.8 : s.points.length > 100 ? 2.5 : 3.2;
@@ -631,12 +650,14 @@ export class Dock {
             });
             if (ids.length) dot.addEventListener("click", (ev) => this.host.click(ids, ev));
             if (ids.length) marks.push({ el: dot, keys: new Set(ids.map(([kk, id]) => kk + id)) });
-            svg.append(dot);
+            svg.append(clipped(dot));
           });
         }
+      }
+      if (c.ylabel) {
         const yl = document.createElementNS(SVG, "text");
         yl.setAttribute("x", "2");
-        yl.setAttribute("y", "11");
+        yl.setAttribute("y", String(keyH + 11));
         yl.setAttribute("class", "tick");
         yl.style.textAnchor = "start";
         yl.textContent = c.ylabel;
@@ -651,7 +672,7 @@ export class Dock {
         line.setAttribute("stroke-width", c.dots && !s.dash ? "1" : "1.8");
         if (c.dots && !s.dash) line.setAttribute("stroke-opacity", "0.5");
         if (s.dash) line.setAttribute("stroke-dasharray", "5 3");
-        svg.append(line);
+        svg.append(clipped(line));
         if (c.dots && !s.dash) {
           for (const [x, y] of pts) {
             const dot = document.createElementNS(SVG, "circle");
@@ -659,9 +680,11 @@ export class Dock {
             dot.setAttribute("cy", Y(y).toFixed(1));
             dot.setAttribute("r", "2.2");
             dot.setAttribute("fill", hex(s.color));
-            svg.append(dot);
+            svg.append(clipped(dot));
           }
         }
+      });
+      keyed.forEach((s, i) => {
         if (!keyPos[i]) return;
         const [kx, ky] = keyPos[i];
         const sw = document.createElementNS(SVG, "rect");

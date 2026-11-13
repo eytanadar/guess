@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Components and the bow tie",
+  "description": "One large component and many small ones across real networks, and the bow tie of a directed network of political blogs.",
+  "console": "toggle",
+  "script": "main.gy"
+}

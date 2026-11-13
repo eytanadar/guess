@@ -7,6 +7,7 @@
 # each kind, and a table compares what we would conclude with the truth. Some
 # measures barely move; others are thrown off badly.
 
+import math
 import random
 import networkx as nx
 
@@ -18,9 +19,15 @@ for h in range(5):
         TRUE.add_edge(54 + h, v)
 TRUE = nx.relabel_nodes(TRUE, {v: f"n{v}" for v in TRUE})
 NAMES = sorted(TRUE, key=lambda v: int(v[1:]))
-pos = nx.spring_layout(TRUE, seed=4, iterations=300)
+# the nine groups of friends around a ring, each on a small ring of its own; the five hubs inside
 for v in TRUE:
-    TRUE.nodes[v]["pos"] = (pos[v][0] * 480, pos[v][1] * 480)
+    i = int(v[1:])
+    if i < 54:
+        a0, a1 = 2 * math.pi * (i // 6) / 9, 2 * math.pi * (i % 6) / 6
+        TRUE.nodes[v]["pos"] = (360 * math.cos(a0) + 60 * math.cos(a1), 360 * math.sin(a0) + 60 * math.sin(a1))
+    else:
+        a = 2 * math.pi * (i - 54) / 5 + 0.3
+        TRUE.nodes[v]["pos"] = (130 * math.cos(a), 130 * math.sin(a))
 fromNetworkX(TRUE)
 Edge.origin = "true"
 PAIR = {frozenset((e.node1.name, e.node2.name)): e for e in g.edges}
@@ -89,11 +96,20 @@ TRUE_STATS = stats(TRUE, len(NAMES))
 
 
 # ---- drawing ------------------------------------------------------------------------------------------------
+GROUPCOL = ["120,160,220", "230,150,80", "120,190,120", "200,120,190", "200,190,90", "140,190,200",
+            "220,120,120", "160,140,220", "170,200,140"]
+
+
+def node_colour(name):
+    i = int(name[1:])
+    return GROUPCOL[i // 6] if i < 54 else "250,250,250"     # groups of friends; the five hubs in white
+
+
 def base():
     for nd in g.nodes:
         nd.labelvisible = false
         nd.strokecolor, nd.strokewidth = "60,60,60", 0.8
-        nd.color = "150,175,215"
+        nd.color = node_colour(nd.name)
         nd.visible = true
 
 
@@ -130,7 +146,7 @@ def clear_extras():
 def paint_nodes():
     for nd in g.nodes:
         if nd.name in st["gone"]:
-            nd.color, nd.strokecolor, nd.strokewidth = "240,240,240", "120,120,120", 1.5
+            nd.color, nd.strokecolor, nd.strokewidth = "70,70,70", "160,160,160", 1.5     # not surveyed: dark
         elif nd.name in st["merged"]:
             nd.color, nd.strokecolor, nd.strokewidth = "220,200,240", "150,70,200", 3
         elif nd.name in st["merged"].values():
@@ -191,7 +207,7 @@ def watch():
     events += [("merge", [b]) for b in sorted(merged)]
     st["events"] = events
     st["flashing"] = []
-    st["timer"] = everyPaced(watch_step, steps=len(events), slow=0.8, fast=0.12, ramp=3)
+    st["timer"] = everyPaced(watch_step, steps=len(events) + 1, slow=0.8, fast=0.12, ramp=3)   # + 1: settle
 
 
 def watch_step():
@@ -255,7 +271,7 @@ def stats_table():
 
 def legend_text():
     return ("Grey: edges seen. **Orange dashed: missed** (false negatives). **Red: spurious** (false positives). "
-            "**Purple:** two nodes recorded as one, with the merged node's edges moved over. Pale nodes weren't "
+            "**Purple:** two nodes recorded as one, with the merged node's edges moved over. Dark grey nodes weren't "
             "surveyed; a **red ring** marks a node that fell off the large component. Size: measured degree.")
 
 
@@ -347,7 +363,8 @@ ui.layout(
     right=Column(
         Markdown("""### Measuring a network, imperfectly
 A "true" network of 59 people (we know it here; in practice nobody does) and
-one measurement of it, made with the errors you choose."""),
+one measurement of it, made with the errors you choose. Colours are groups of
+friends; the five white nodes know people in many groups."""),
         Tabs(
             Tab("Measure",
                 missing_edges, spurious_edges, missing_nodes, merged_pairs,

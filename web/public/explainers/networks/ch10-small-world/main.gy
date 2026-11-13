@@ -108,8 +108,8 @@ def show_rings(v, upto=None):
             e.width = 3 if out else 1.4
             e.linestyle = "flow" if out else "solid"
     v.width = v.height = 40
-    v.color = "20,20,20"
-    v.strokecolor = "250,200,40"
+    v.color = "250,200,40"
+    v.strokecolor = "20,20,20"
     v.strokewidth = 4
     v.label = node_label(v)
     v.labelvisible = true
@@ -312,7 +312,8 @@ def growth_text():
     out = (f"**Simulate** builds random networks with mean degree c = {C_RANDOM} and n from 50 to 3,200 and measures "
            "the mean distance of each (from 30 sources). On a log axis for n the points lie on a straight line: ℓ "
            f"grows like **log n**, as ln n / ln c (dashed) says. Doubling the network adds only about "
-           f"ln 2 / ln {C_RANDOM} = {math.log(2) / math.log(C_RANDOM):.2f} hops.")
+           f"ln 2 / ln {C_RANDOM} = {math.log(2) / math.log(C_RANDOM):.2f} hops. In the chart, **blue** dots are "
+           "random networks and **red** dots the bundled real ones.")
     if MEASURED:
         rows = ["| network | n | ℓ |", "|---|---|---|"]
         for ch, (n, ell) in sorted(MEASURED.items(), key=lambda t: t[1][0]):
@@ -347,12 +348,12 @@ guess = Slider(1, 12, 3, 1, label="your guess (hops)")
 
 def game_mark():
     base()
-    for key, col in (("a", "20,20,20"), ("b", "200,30,30")):
+    for key, col in (("a", "60,170,90"), ("b", "200,30,30")):            # start green, end red
         if game[key]:
             v = g.getNodeByName(game[key])
             v.width = v.height = 34
             v.color = col
-            v.strokecolor = "250,200,40"
+            v.strokecolor = "20,20,20"
             v.strokewidth = 4
             v.label = node_label(v)
             v.labelvisible = true
@@ -406,7 +407,7 @@ def game_text():
         d = len(path) - 1
         mine = game["log"][-1][0]
         verdict = "exactly right" if mine == d else ("too many" if mine > d else "too few")
-        out += (f" **{d}** hops: you said {mine}, {verdict}. One shortest path: "
+        out += (f" **{d}** hop{'s' if d != 1 else ''}: you said {mine}, {verdict}. One shortest path: "
                 + " → ".join(linkTo(g.getNodeByName(u), node_label(g.getNodeByName(u))) for u in path) + ".")
     if game["log"]:
         over = sum(1 for m, d in game["log"] if m > d)
@@ -429,6 +430,11 @@ def click(v):
 
 def switch(title):
     mode[0] = title
+    if tour["timer"] is not None:            # leaving mid-tour: go back to the network that was chosen
+        back = tour["back"]
+        stop_all()
+        load(back)
+        dropdown.value = back
     stop_all()
     base()
     if title == "Six degrees":

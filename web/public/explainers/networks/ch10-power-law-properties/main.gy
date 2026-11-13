@@ -27,7 +27,7 @@ smp = {"vals": [], "shown": 0, "timer": None, "trace": [], "seed": 1, "sim": Non
 
 
 def node_size(x):
-    return min(80, 7 + 10 * math.log10(x))
+    return min(90, 9 + 22 * math.log10(x))
 
 
 def node_colour(x, top):
@@ -47,8 +47,8 @@ def build_sample():
     golden = math.pi * (3 - math.sqrt(5))
     for k, x in enumerate(smp["vals"]):
         nd = g.getNodeByName(f"x{k}")
-        nd.x = 24 * math.sqrt(k + 0.5) * math.cos(k * golden)
-        nd.y = 24 * math.sqrt(k + 0.5) * math.sin(k * golden)
+        nd.x = 26 * math.sqrt(k + 0.5) * math.cos(k * golden)
+        nd.y = 26 * math.sqrt(k + 0.5) * math.sin(k * golden)
         nd.width = nd.height = node_size(x)
         nd.color = node_colour(x, top)
         nd.strokecolor = "90,60,40"

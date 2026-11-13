@@ -11,7 +11,7 @@ Status: **planned** → **built** → **checked**.
 
 Conventions for every explainer (from review feedback):
 - Labels are readable: `constantLabelSize(size=14)`.
-- State changes are visible: bigger nodes and outlines, not just a colour change.
+- State changes are visible: bigger nodes and outlines (`strokewidth`), not just a colour change; bright fills with dark outlines read on both themes, while black fills look hollow on the dark one.
 - Evolving processes (transmission, flow, mutation, search) highlight the edges involved.
 - Simulations run slow-fast-slow (`everyPaced`) so they can be watched.
 - Show data as it is collected (live `Chart(fn)`), and give "Simulate" buttons that sweep parameters.
@@ -777,7 +777,7 @@ Chapter 10 surveys the structure of real networks, using the measures of
 Chapters 6–7 across many datasets. The Chapter 10 explainers compare the
 bundled networks side by side.
 
-**`ch09-measurement-error`: Types and sources of error (§§9.1–9.2)** · planned
+**`ch09-measurement-error`: Types and sources of error (§§9.1–9.2)** · built
 - *Idea:*
   - measured networks have missing edges (false negatives), spurious edges (false positives), missing or merged nodes, and wrong attributes;
   - some measures are robust to this and some are not.
@@ -788,7 +788,7 @@ bundled networks side by side.
   - "Simulate" sweeps the error rate and charts how far each measure drifts, showing which are robust.
 - *GUESS:* numpy and networkx, `Chart`, dashed and highlighted edges.
 
-**`ch09-em`: Estimating errors from repeated measurements (§9.3)** · planned
+**`ch09-em`: Estimating errors from repeated measurements (§9.3)** · built
 - *Idea:*
   - measure a network N times; each pair is seen E out of N times;
   - with a true-positive rate α, false-positive rate β and density ρ, the EM algorithm alternates between the probability Q that each edge is real and the best α, β and ρ.
@@ -800,7 +800,7 @@ bundled networks side by side.
   - a Q histogram shows the bimodal split.
 - *GUESS:* numpy, `everyPaced`, `Chart`, `plotHistogram`.
 
-**`ch09-correcting`: Link prediction and node disambiguation (§9.4)** · planned
+**`ch09-correcting`: Link prediction and node disambiguation (§9.4)** · built
 - *Idea:*
   - missing edges can be guessed from structure (shared neighbours and similar scores), and tested by hiding edges and seeing whether they come back;
   - nodes can be wrongly merged (two "J. Smith"s become one hub) or wrongly split, and a node's neighbourhood helps tell them apart.
@@ -815,7 +815,7 @@ bundled networks side by side.
     - "Split by neighbourhood" clusters each name's papers by shared coauthors and splits the node, and the statistics recover.
 - *GUESS:* `predictLinks`, `evaluateLinks`, `similarTo`, `linkTo` chips for candidates.
 
-**`ch10-components`: Components and the bow tie (§10.1)** · planned
+**`ch10-components`: Components and the bow tie (§10.1)** · built
 - *Idea:*
   - most networks have one large component and many small ones;
   - in directed networks the large weak component splits into a strongly connected core with an in-component and an out-component (the "bow tie"), plus tendrils and tubes.
@@ -827,7 +827,7 @@ bundled networks side by side.
 - *Data:* the bundled networks, plus a directed web-like network (political blogs, from the public network data page, if added).
 - *GUESS:* components, `strongcomponent`, `ancestors`/`descendants`, a bow-tie decomposition (see gaps).
 
-**`ch10-small-world`: Shortest paths and the small-world effect (§10.2)** · planned
+**`ch10-small-world`: Shortest paths and the small-world effect (§10.2)** · built
 - *Idea:*
   - mean distances are small (often under 10, even for millions of nodes) and grow like log n;
   - the diameter is larger but still small.
@@ -838,7 +838,7 @@ bundled networks side by side.
   - a "six degrees" game: click two nodes and guess their distance before it is shown.
 - *GUESS:* `heatMap`, BFS, `plotScatter`, `plotLine`.
 
-**`ch10-degree-distributions`: Degree distributions and power laws (§§10.3–10.4.1)** · planned
+**`ch10-degree-distributions`: Degree distributions and power laws (§§10.3–10.4.1)** · built
 - *Idea:*
   - degree distributions are right-skewed with hubs;
   - a power law p(k) ∝ k^−α is a straight line on log–log axes;
@@ -851,7 +851,7 @@ bundled networks side by side.
   - the Internet and the power grid side by side (heavy tail against none).
 - *GUESS:* `plotFrequency`, `plotHistogram(log=true)`, a power-law fit (see gaps).
 
-**`ch10-power-law-properties`: Properties of power laws (§10.4.2)** · planned
+**`ch10-power-law-properties`: Properties of power laws (§10.4.2)** · built
 - *Idea:*
   - for α ≤ 3 the second moment ⟨k²⟩ diverges, so in practice it is dominated by the largest values and keeps growing with sample size;
   - power laws are top-heavy: a small share of nodes holds a large share of the edges (the "80/20 rule").
@@ -861,7 +861,7 @@ bundled networks side by side.
   - in the graph, the top P% of nodes are highlighted as you drag a slider, with their share of edges.
 - *GUESS:* `plotLine`, random sampling in Python, `Chart`.
 
-**`ch10-centrality-clustering-mixing`: Centralities, clustering and mixing across networks (§§10.5–10.7)** · planned
+**`ch10-centrality-clustering-mixing`: Centralities, clustering and mixing across networks (§§10.5–10.7)** · built
 - *Idea:*
   - eigenvector and betweenness centrality are right-skewed too;
   - real networks have much more clustering than chance would give for social networks, about as much for technological ones;
@@ -882,6 +882,20 @@ bundled networks side by side.
 | Power-law fit with k_min and its uncertainty | ch10-degree-distributions, power-law-properties | none | `fitPowerLaw(field, kmin=None)`: α by maximum likelihood (with the discrete ½ correction), σ, and k_min chosen by the Kolmogorov–Smirnov method when not given; a `fit=` line on `plotFrequency(cumulative=true)` |
 | A directed web-like network with a real bow tie | ch10-components | the bundled directed networks are a worm brain (one big SCC) and a citation DAG (no core) | add political blogs (Adamic and Glance) from the public network data page |
 | A function on a cumulative plot (fitted line) | ch10-degree-distributions | `plotLine` can draw it as a second series | probably none |
+
+Found and fixed while building batch 6:
+- `constantLabelSize` and `directedEdges` are now session-wide; switching graphs with `use()` used to reset them.
+- Chart changes:
+  - `plotLine(yrange=, xrange=, dashed=[...])` and `plotScatter(xrange=, yrange=)`, with points outside a fixed range clipped;
+  - a y-axis label on every line chart;
+  - round numbers at the top of line-chart y axes;
+  - a key for multi-series scatter plots.
+
+Noted, not changed:
+- `fitPowerLaw` picks k_min by the KS distance alone, which can't tell a power-law tail from an exponential one. `ch10-degree-distributions` adds a likelihood-ratio comparison of its own, which could move into the command.
+- `predictLinks` and `evaluateLinks` need igraph, so `ch09-correcting` scores the pairs in plain Python.
+- networkx's `eigenvector_centrality_numpy` needs scipy, which isn't installed, so use numpy's `eigh`.
+- Highlighted nodes on the dark theme should use bright fills with dark outlines; a black fill reads as a hollow ring.
 
 ## Batch 7: book pages 340–400 (Part III, *Network models*: Chapter 11 and Chapter 12.1–12.9)
 

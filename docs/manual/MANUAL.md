@@ -1184,7 +1184,9 @@ linked like any chart: hover one to highlight its edge and nodes.
 **Your own numbers.** `plotLine(points)` draws a line through a list of
 `(x, y)` pairs; a dictionary of lists draws one line per series. `log=true`
 (or `logX=`/`logY=`) makes the axes logarithmic and `dots=true` marks each
-point. A chart with the same `title` replaces the last one, so a loop can
+point. `yrange=(lo, hi)` and `xrange=` fix the axes (useful for values near
+1), and `dashed=["theory"]` draws the named series dashed, for theory
+curves beside data. A chart with the same `title` replaces the last one, so a loop can
 update it:
 
 ```python

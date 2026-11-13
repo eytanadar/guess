@@ -308,16 +308,17 @@ def whole_chart():
     k0 = r["kmin"]
     line = [(k0 * (top / k0) ** (i / 30), share * ((k0 * (top / k0) ** (i / 30) - 0.5) / (k0 - 0.5)) ** (1 - r["alpha"]))
             for i in range(31)]
-    return plotScatter({nm: ccdf(v) for nm, v in WHOLE.items()}, log=true, line=line,
-                       title=f"Cumulative degree distributions (dashed: the fit for {whole['name']})",
-                       xlabel="degree k", ylabel="P(K ≥ k)")
+    data = {nm.split(" (")[0]: ccdf(v) for nm, v in WHOLE.items()}
+    data[f"fit, {whole['name'].split(' (')[0]}"] = line
+    return plotLine(data, log=true, dots=true, title="Cumulative degree distributions, whole networks",
+                    xlabel="degree k", ylabel="P(K ≥ k)")
 
 
 def whole_text():
     rows = ["| network | nodes | k_min | α | KS | better tail |", "|---|---|---|---|---|---|"]
     for nm in WHOLE_NAMES:
         r = FITS[nm]
-        rows.append(f"| {nm} | {len(WHOLE[nm]):,} | {r['kmin']} | {r['alpha']:.2f} ± {r['sigma']:.2f} | "
+        rows.append(f"| {nm.split(' (')[0]} | {len(WHOLE[nm]):,} | {r['kmin']} | {r['alpha']:.2f} ± {r['sigma']:.2f} | "
                     f"{r['ks']:.3f} | {verdict(LR[nm])} ({LR[nm]:+.2f}) |")
     out = ("The whole networks, as degree sequences (too big to draw here):\n\n" + "\n".join(rows) +
            "\n\nA small KS distance isn't enough: some other curve may fit the tail as well. *Better tail* compares "
@@ -387,7 +388,7 @@ Node size and colour show degree; the five biggest hubs are named."""),
                 Row(Dropdown(WHOLE_NAMES, label="Fit shown", onChange=pick_whole),
                     Button("Simulate: samples", onClick=lambda: run_sim()),
                     Button("Back to the curves", onClick=lambda: clear_sim())),
-                Markdown(whole_text), Chart(whole_chart)),
+                Chart(whole_chart), Markdown(whole_text)),
             onChange=switch)),
     sizes={"right": 420},
 )

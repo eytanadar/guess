@@ -6,7 +6,8 @@
     graphNames(); closeGraph("scratch"); renameGraph("other name")
 
 Each graph keeps its fields, states, hulls, legends, groups and display
-settings. Switching saves the current graph and loads the other; Python
+settings, except reading preferences that apply to the whole session
+(constantLabelSize and directedEdges). Switching saves the current graph and loads the other; Python
 variables stay (names of nodes are rebound), and undo history starts afresh.
 """
 from . import persist
@@ -29,11 +30,20 @@ def install(session):
         order[:] = [n for n in order if n in names]
         session.emit({"type": "graphs", "names": list(order), "current": ws["current"]})
 
+    # reading preferences that belong to the session, not to one graph: they survive switching
+    SESSION_LABELS = ("screen", "screenSize")
+
     def switch_to(name, data):
         ws["stored"][ws["current"]] = persist.serialize(session, workspaces=False)
+        view = session.view
+        keep_labels = {k: view.labels[k] for k in SESSION_LABELS if k in view.labels}
+        keep_directed = getattr(view, "directed", "taper")
         ws["current"] = name
         ws["stored"].pop(name, None)
         persist.load(session, data)
+        session.view.labels.update(keep_labels)
+        session.view.directed = keep_directed
+        session.view.changed()
         session.undo_stack.clear()
         session.redo_stack.clear()
         session._history_op = True     # switching isn't an undo step

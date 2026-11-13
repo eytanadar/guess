@@ -133,6 +133,8 @@ export interface ChartMsg {
     /** drawn dashed and without dots (a fitted curve) */
     dash?: boolean;
   }[];
+  /** fixed axis ranges (xrange=/yrange=), in data units */
+  xRange?: [number, number]; yRange?: [number, number];
   /** line charts drawn as dots only (plotScatter): each dot links to its elements */
   scatter?: boolean;
   /** log axes (line charts: either; bar and distrib charts: logY) */
