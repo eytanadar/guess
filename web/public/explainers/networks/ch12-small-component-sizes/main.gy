@@ -1,0 +1,464 @@
+# Small components from generating functions  (Newman, Networks, Sections 12.10.8–12.10.9)
+# In a random network with degree distribution p_k (the configuration model)
+# the small components are trees. Follow an edge: the small component you
+# reach through it has a size whose generating function h1(z) satisfies
+#     h1(z) = z g1(h1(z)),
+# because the node you reach adds 1 (the z) and each of its other edges leads,
+# independently, to another such tree. A random node's small component has
+#     h0(z) = z g0(h1(z)),
+# whose coefficients pi_s are the chance that a node sits in a small component
+# of s nodes. Iterating h1 <- z g1(h1) from h1 = 0 fixes one more coefficient
+# each time. The mean size of the small component a node belongs to is
+#     <s> = 1 + g0'(u) u / (g0(u) [1 - g1'(u)]),   u = g1(u),
+# which is 1 + g0'(1) / (1 - g1'(1)) below the transition and diverges at it.
+
+import math
+import random
+import numpy as np
+import networkx as nx
+
+N = 400                       # nodes on screen
+NSIM = 2000                   # nodes in simulated networks
+KCAP = 60
+M = 31                        # sizes s = 1 .. 30 are predicted
+DISTS = ["Poisson degrees", "Exponential degrees"]
+dist = [DISTS[0]]
+mode = ["Iterate h₁"]
+rnd = random.Random(3)
+shown = {"comps": [], "giant": None, "of": {}, "picked": None, "who": None}
+
+
+# ---- theory ------------------------------------------------------------------------------------------------
+def pk_for(c, which=None):
+    which = dist[0] if which is None else which
+    ks = np.arange(KCAP + 1, dtype=float)
+    if which.startswith("Poisson"):
+        p = np.exp(-c + ks * math.log(c) - np.array([math.lgamma(k + 1) for k in ks])) if c > 0 else (ks == 0) * 1.0
+    else:
+        a = c / (1 + c)                               # p_k = (1 - a) a^k has mean c
+        p = (1 - a) * a ** ks
+    return p / p.sum()
+
+
+def q_of(pk):
+    kp = np.arange(1, len(pk)) * pk[1:]
+    return kp / kp.sum() if kp.sum() > 0 else np.array([1.0])
+
+
+def compose(outer, inner, L=M):
+    out = np.zeros(L)
+    pw = np.zeros(L)
+    pw[0] = 1.0
+    inner = np.asarray(inner)[:L]
+    for c in outer:
+        out += c * pw
+        pw = np.convolve(pw, inner)[:L]
+        if len(pw) < L:
+            pw = np.concatenate([pw, np.zeros(L - len(pw))])
+    return out
+
+
+def times_z(series):
+    return np.concatenate([[0.0], series[:-1]])
+
+
+def solve_u(pk):
+    """The smallest u in [0, 1] with u = g1(u): the chance an edge does not lead to the giant component."""
+    q = q_of(pk)
+    f = lambda u: float(np.polyval(q[::-1], u)) - u
+    if f(1 - 1e-9) >= 0:
+        return 1.0
+    lo, hi = 0.0, 1 - 1e-9
+    for _ in range(80):
+        mid = (lo + hi) / 2
+        if f(mid) > 0:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
+def theory(c, which=None):
+    pk = pk_for(c, which)
+    q = q_of(pk)
+    u = solve_u(pk)
+    g0u = float(np.polyval(pk[::-1], u))
+    dg0 = float(np.polyval((np.arange(1, len(pk)) * pk[1:])[::-1], u))
+    dg1 = float(np.polyval((np.arange(1, len(q)) * q[1:])[::-1], u)) if len(q) > 1 else 0.0
+    S = 1 - g0u
+    mean_s = 1 + dg0 * u / (g0u * (1 - dg1)) if g0u > 0 and dg1 < 1 - 1e-9 else float("inf")
+    return {"pk": pk, "q": q, "u": u, "S": S, "mean_s": mean_s, "mean": float((np.arange(len(pk)) * pk).sum()),
+            "slope1": float((np.arange(1, len(q)) * q[1:]).sum())}
+
+
+def pi_series(pk, q, steps=60):
+    h1 = np.zeros(M)
+    for _ in range(steps):
+        h1 = times_z(compose(q, h1))
+    return times_z(compose(pk, h1)), h1
+
+
+cache = {}
+
+
+def solution():
+    key = (dist[0], round(cs.value, 2))
+    if key not in cache:
+        th = theory(cs.value / 10)
+        pi, h1 = pi_series(th["pk"], th["q"])
+        cache[key] = (th, pi, h1)
+    return cache[key]
+
+
+# ---- the network ----------------------------------------------------------------------------------------------
+def sample_degrees(pk, n, r):
+    cum = np.cumsum(pk)
+    ks = [int(np.searchsorted(cum, r.random() * cum[-1])) for _ in range(n)]
+    if sum(ks) % 2:
+        ks[ks.index(max(ks))] += 1
+    return ks
+
+
+def components_of(ks, seed):
+    G = nx.Graph(nx.configuration_model(ks, seed=seed))
+    return sorted((len(c) for c in nx.connected_components(G)), reverse=True)
+
+
+PALETTE = {1: "185,185,195", 2: "250,215,60", 3: "250,160,50", 4: "240,110,60", 5: "220,70,90"}
+
+
+def comp_color(size):
+    return PALETTE.get(size, "170,90,200")
+
+
+def build():
+    stop_all()
+    th, _pi, _h1 = solution()
+    ks = sample_degrees(th["pk"], N, random.Random(7))
+    makeConfigurationModel(ks, seed=7, layout=false)
+    frLayout()
+    binPackLayout(false)                          # the large component and the small ones side by side,
+    noverlapLayout()                              # nodes kept apart
+    G = nx.Graph()
+    G.add_nodes_from(v.name for v in g.nodes)
+    for e in g.edges:
+        G.add_edge(e.node1.name, e.node2.name)
+    comps = sorted((sorted(c) for c in nx.connected_components(G)), key=len, reverse=True)
+    shown["comps"] = comps
+    shown["of"] = {v: i for i, c in enumerate(comps) for v in c}
+    shown["giant"] = 0 if th["S"] > 0 and comps and len(comps[0]) > 0.04 * N else None
+    shown["picked"] = None
+    base()
+    center()
+
+
+def small_counts():
+    """Nodes in small components of each size (the giant one left out) in the network on screen."""
+    counts = {}
+    for i, c in enumerate(shown["comps"]):
+        if i == shown["giant"]:
+            continue
+        counts[len(c)] = counts.get(len(c), 0) + len(c)
+    return counts
+
+
+def base():
+    for v in g.nodes:
+        i = shown["of"].get(v.name)
+        size = len(shown["comps"][i]) if i is not None else 1
+        v.width = v.height = 11
+        v.labelvisible = false
+        v.strokewidth = 0
+        v.strokecolor = "60,60,70"
+        v.color = "100,140,230" if i == shown["giant"] else comp_color(size)
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,120", 1.2, "solid"
+        if e.node1 is e.node2:
+            e.color = "230,40,40"
+
+
+def outline(comp, color="20,20,20", w=3, flow=False):
+    names = set(comp)
+    for name in comp:
+        v = g.getNodeByName(name)
+        v.strokecolor, v.strokewidth = color, w
+        v.width = v.height = 15
+    for e in g.edges:
+        if e.node1.name in names:
+            e.width, e.color = 2.5, "60,60,60"
+            if flow:
+                e.linestyle = "flow"
+
+
+def click(v):
+    i = shown["of"].get(v.name)
+    if i is None:
+        return
+    base()
+    shown["picked"] = i
+    shown["who"] = v.name
+    outline(shown["comps"][i], flow=true)
+    v.label = f"component of {len(shown['comps'][i])}"
+    v.labelvisible = true
+
+
+def picked_text():
+    i = shown["picked"]
+    if i is None:
+        return "*Click a node* to outline its component."
+    comp = shown["comps"][i]
+    names = set(comp)
+    m = sum(1 for e in g.edges if e.node1.name in names)
+    tree = m == len(comp) - 1
+    name = shown["who"] if shown["who"] in names else comp[0]
+    who = linkTo(g.getNodeByName(name), name)
+    if i == shown["giant"]:
+        return f"{who} is in the **giant component**: {len(comp)} nodes, {m} edges."
+    return (f"{who} is in a small component of **{len(comp)}** node{'s' if len(comp) != 1 else ''} with **{m}** "
+            f"edge{'s' if m != 1 else ''}: " + ("a **tree** (s − 1 edges), as the theory assumes." if tree else
+                                                "it has a loop, which random networks rarely make."))
+
+
+# ---- tab 1: iterate h1 --------------------------------------------------------------------------------------------
+it = {"timer": None, "t": 0, "h1": np.zeros(M)}
+
+
+def iter_reset():
+    stop_all()
+    it.update(t=0, h1=np.zeros(M))
+    base()
+
+
+def iter_step():
+    th, _pi, _h1 = solution()
+    it["h1"] = times_z(compose(th["q"], it["h1"]))
+    it["t"] += 1
+    t = it["t"]
+    base()
+    hit = [c for i, c in enumerate(shown["comps"]) if len(c) == t and i != shown["giant"]]
+    for c in hit:
+        outline(c, color="20,20,20", w=3, flow=true)
+    return t < M - 1
+
+
+def run_iter():
+    stop_all()
+    if it["t"] >= M - 1:
+        iter_reset()
+    it["timer"] = everyPaced(iter_step, steps=M - 1 - it["t"], slow=1.0, fast=0.2, ramp=3)
+
+
+def iter_text():
+    th, pi, _h1 = solution()
+    t = it["t"]
+    out = ("**Solve h₁(z) = z g₁(h₁(z)) one term at a time.** Start from h₁ = 0 and put the result back in: "
+           "after t rounds the coefficients of z¹ … zᵗ are exact, because a tree of s nodes needs s − 1 "
+           "levels of branching. Then **h₀(z) = z g₀(h₁(z))** gives πₛ, the chance a node is in a small "
+           "component of s nodes.")
+    if t == 0:
+        out += "\n\n*Iterate* to watch the prediction fill in, one size per round."
+    else:
+        h0 = times_z(compose(th["pk"], it["h1"]))
+        counts = small_counts()
+        out += (f"\n\nRound **{t}**: π₁ … π_{t} are fixed. π_{t} = **{h0[t]:.4f}**; on screen "
+                f"**{counts.get(t, 0)}** of {N} nodes ({counts.get(t, 0) / N:.4f}) are in small components of "
+                f"{t} node{'s' if t != 1 else ''} (outlined).")
+    out += (f"\n\nWith ⟨k⟩ = {th['mean']:.2f}: u = g₁(u) = **{th['u']:.3f}**, so the giant component holds "
+            f"S = 1 − g₀(u) = **{th['S']:.3f}** and the small ones Σ πₛ = **{1 - th['S']:.3f}** of the nodes.")
+    return out
+
+
+def iter_chart():
+    if mode[0] != "Iterate h₁":
+        return None
+    th, pi, _h1 = solution()
+    h0 = times_z(compose(th["pk"], it["h1"]))
+    data = {"solution": [(s, float(pi[s])) for s in range(1, M) if pi[s] > 1e-6],
+            f"after {it['t']} rounds": [(s, float(h0[s])) for s in range(1, M) if h0[s] > 1e-6]}
+    return plotLine(data, title="πₛ: share of nodes in small components of s nodes", xlabel="s", ylabel="πₛ",
+                    logY=true, dashed=["solution"], dots=true)
+
+
+# ---- tab 2: against simulation -------------------------------------------------------------------------------------
+sim = {"timer": None, "counts": {}, "nodes": 0, "runs": 0}
+
+
+def sim_one():
+    th, _pi, _h1 = solution()
+    r = random.Random(100 + sim["runs"])
+    ks = sample_degrees(th["pk"], NSIM, r)
+    sizes = components_of(ks, 100 + sim["runs"])
+    giant = th["S"] > 0
+    for i, s in enumerate(sizes):
+        if i == 0 and giant and s > 0.04 * NSIM:
+            continue
+        sim["counts"][s] = sim["counts"].get(s, 0) + s
+    sim["nodes"] += NSIM
+    sim["runs"] += 1
+    return sim["runs"] < 20
+
+
+def run_sim():
+    stop_all()
+    sim.update(counts={}, nodes=0, runs=0)
+    sim["timer"] = everyPaced(sim_one, steps=20, slow=0.6, fast=0.15, ramp=2)
+
+
+def sim_text():
+    th, pi, _h1 = solution()
+    counts = small_counts()
+    out = ("Dashed: the prediction πₛ. Big dots: the network on screen. Small dots: many networks of "
+           f"{NSIM} nodes pooled. ")
+    out += (f"On screen, **{sum(counts.values())}** of {N} nodes are in small components "
+            f"(predicted {N * (1 - th['S']):.0f}).")
+    if sim["runs"]:
+        small = sum(sim["counts"].values()) / sim["nodes"]
+        out += (f" In **{sim['runs']}** simulated networks: **{small:.3f}** of nodes outside the giant component, "
+                f"against 1 − S = **{1 - th['S']:.3f}**.")
+    else:
+        out += " *Simulate* for many more components."
+    out += "\n\n" + picked_text()
+    return out
+
+
+def sim_chart():
+    if mode[0] != "Against simulation":
+        return None
+    th, pi, _h1 = solution()
+    counts = small_counts()
+    data = {"prediction πₛ": [(s, float(pi[s])) for s in range(1, M) if pi[s] > 1e-6],
+            "this network": sorted((s, c / N) for s, c in counts.items() if s < M)}
+    if sim["runs"]:
+        data[f"{sim['runs']} networks of {NSIM}"] = sorted((s, c / sim["nodes"]) for s, c in sim["counts"].items()
+                                                           if s < M)
+    return plotLine(data, title="Small components: prediction and simulation", xlabel="s", ylabel="πₛ",
+                    logY=true, dashed=["prediction πₛ"], highlight=["this network"], dots=true)
+
+
+# ---- tab 3: mean size ---------------------------------------------------------------------------------------------
+sweep = {"timer": None, "pts": [], "i": 0}
+CGRID = [round(0.2 * i, 1) for i in range(1, 16)]
+
+
+def mean_small(sizes, giant):
+    tot = sum(s * s for i, s in enumerate(sizes) if not (i == 0 and giant))
+    nodes = sum(s for i, s in enumerate(sizes) if not (i == 0 and giant))
+    return tot / nodes if nodes else 0.0
+
+
+def sweep_one():
+    if sweep["i"] >= len(CGRID):
+        return False
+    c = CGRID[sweep["i"]]
+    th = theory(c)
+    vals = []
+    for rep in range(3):
+        r = random.Random(500 + 7 * sweep["i"] + rep)
+        sizes = components_of(sample_degrees(th["pk"], NSIM, r), 500 + 7 * sweep["i"] + rep)
+        vals.append(mean_small(sizes, th["S"] > 0 and sizes[0] > 0.04 * NSIM))
+    sweep["pts"].append((c, sum(vals) / len(vals)))
+    sweep["i"] += 1
+    return sweep["i"] < len(CGRID)
+
+
+def run_sweep():
+    stop_all()
+    sweep.update(pts=[], i=0)
+    sweep["timer"] = everyPaced(sweep_one, steps=len(CGRID), slow=0.7, fast=0.2, ramp=2)
+
+
+def mean_text():
+    th, _pi, _h1 = solution()
+    which = "Poisson" if dist[0].startswith("Poisson") else "exponential"
+    crit = "1" if which == "Poisson" else "½"
+    sizes = [len(c) for c in shown["comps"]]
+    here = mean_small(sizes, shown["giant"] is not None)
+    ms = th["mean_s"]
+    out = ("**Mean size.** Differentiate h₀ at z = 1: a node outside the giant component is in a small component "
+           "of mean size **⟨s⟩ = 1 + g₀′(u) u / (g₀(u) [1 − g₁′(u)])**, which below the transition (u = 1) is "
+           "1 + ⟨k⟩ / (1 − g₁′(1)). It **diverges where g₁′(1) = 1**, the point where the giant component appears: "
+           f"⟨k⟩ = {crit} for {which} degrees.")
+    out += (f"\n\nAt ⟨k⟩ = {th['mean']:.2f}: theory **{ms:.2f}**" if math.isfinite(ms) else
+            f"\n\nAt ⟨k⟩ = {th['mean']:.2f}: theory **infinite** (exactly at the transition)")
+    out += f", the network on screen **{here:.2f}** (big dot)."
+    if sweep["pts"]:
+        out += (f" Simulated at {len(sweep['pts'])} values of ⟨k⟩ (3 networks of {NSIM} each): the peak is rounded "
+                "off, because a finite network can't hold an infinite component.")
+    return out
+
+
+def mean_chart():
+    if mode[0] != "Mean size":
+        return None
+    curve = []
+    for i in range(1, 61):
+        c = 0.05 * i
+        ms = theory(c)["mean_s"]
+        if math.isfinite(ms):
+            curve.append((c, min(ms, 40.0)))
+    sizes = [len(c) for c in shown["comps"]]
+    data = {"theory": curve, "this network": [(cs.value / 10, mean_small(sizes, shown["giant"] is not None))]}
+    if sweep["pts"]:
+        data[f"simulated, n = {NSIM}"] = list(sweep["pts"])
+    return plotLine(data, title="Mean size of a node's small component", xlabel="mean degree ⟨k⟩", ylabel="⟨s⟩",
+                    dashed=["theory"], highlight=["this network"], dots=true, yrange=(0, 20), xrange=(0, 3))
+
+
+# ---- wiring ---------------------------------------------------------------------------------------------------------
+def stop_all():
+    for st in (it, sim, sweep):
+        if st.get("timer") is not None:
+            st["timer"].stop()
+            st["timer"] = None
+
+
+def changed(v=None):
+    it.update(t=0, h1=np.zeros(M))
+    sim.update(counts={}, nodes=0, runs=0)
+    build()
+
+
+def pick_dist(choice):
+    dist[0] = choice
+    sweep.update(pts=[], i=0)
+    changed()
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    base()
+    if shown["picked"] is not None:
+        outline(shown["comps"][shown["picked"]])
+
+
+cs = Slider(2, 30, 15, 1, label="mean degree ⟨k⟩ (× 10)")
+cs.onChange = changed
+graphevents.clickNode = click
+build()
+constantLabelSize(size=14)
+ui.title("Small components from generating functions", "Networks, Sections 12.10.8–12.10.9")
+ui.layout(
+    right=Column(
+        Markdown("""### How big are the small components?
+Random wiring (the configuration model) with Poisson or exponential degrees.
+Blue: the giant component; the small ones are coloured by size
+(grey 1, yellow 2, orange 3, red 4–5, purple more)."""),
+        Dropdown(DISTS, label="Degrees", onChange=pick_dist), cs,
+        Tabs(
+            Tab("Iterate h₁",
+                Row(Button("Iterate h₁ ← z g₁(h₁)", onClick=lambda: run_iter()),
+                    Button("Start from h₁ = 0", onClick=lambda: iter_reset())),
+                Markdown(iter_text), Chart(iter_chart)),
+            Tab("Against simulation",
+                Button("Simulate: 20 networks", onClick=lambda: run_sim()),
+                Markdown(sim_text), Chart(sim_chart)),
+            Tab("Mean size",
+                Button("Simulate: sweep ⟨k⟩", onClick=lambda: run_sweep()),
+                Markdown(mean_text), Chart(mean_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · ⟨k⟩ = {cs.value / 10:.1f}"))
+center()

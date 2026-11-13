@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (113)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (115)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (21)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -320,7 +320,7 @@ Graphviz drawing; fitNodesToLabels(dept == 'dept3') does some nodes.
 padding is the space around the text. Labels with line breaks
 (`\n`) make taller nodes.
 
-### `fitPowerLaw(field='degree', kmin=None)`
+### `fitPowerLaw(field='degree', kmin=None, shift=0)`
 
 fitPowerLaw(degree) fits a power law p(k) ~ k^-alpha to the values
 of a numeric node field (or a list of numbers) from kmin up, by maximum likelihood (Newman,
@@ -329,7 +329,9 @@ by drawing a line through a log-log plot. With kmin left out it is
 chosen as the value that makes the fitted distribution closest to the
 data (the smallest Kolmogorov-Smirnov distance; Clauset, Shalizi and
 Newman 2009). Returns {"alpha", "sigma" (its standard error), "kmin",
-"n" (values in the tail), "ks"}. plotFrequency(degree, cumulative=true,
+"n" (values in the tail), "ks"}. shift=a fits a power law in k + a
+rather than k, as Price's model gives (p_k ~ (k + a)^-alpha); kmin and
+the returned kmin stay in units of k. plotFrequency(degree, cumulative=true,
 log=true, fit=true) draws the fit.
 
 ### `floatRange(a, b, inc)`
@@ -478,6 +480,15 @@ with one edge are always perfect (Chernobelskiy et al., GD 2011).
 
 lowest(degree, 5): the 5 with the smallest degree, smallest first
 (see highest).
+
+### `makeBlockModel(sizes, p_in, p_out=None, seed=0, layout=True)`
+
+makeBlockModel([30, 30, 40], 0.3, 0.02) makes a stochastic block model:
+nodes in groups of the given sizes, each pair inside a group joined with
+probability p_in and each pair in different groups with p_out, so the
+network has community structure (Newman, Networks, section 12.11.6).
+p_in can instead be a matrix of probabilities between groups. The node
+field `block` gives each node's group (0, 1, ...).
 
 ### `makeConfigurationModel(degrees, simple=False, seed=0, layout=True)`
 
@@ -656,6 +667,19 @@ every species whose niche falls in a range below its own. connectance
 (links / species^2) is typically 0.05-0.3. Edges run from food to
 eater; nodes get `niche` and `range`. Species left without any link
 are dropped. seed= gives a different web.
+
+### `makePriceModel(n, c=3, a=1.0, seed=0, layout=True)`
+
+makePriceModel(n, c, a) grows a citation network by Price's model
+(Newman, Networks, section 13.1): papers arrive one at a time, and each
+cites c earlier papers (on average, when c isn't a whole number),
+chosen with probability proportional to in-degree + a, so the
+much-cited get cited more (cumulative advantage). The in-degrees end up
+with a power-law tail of exponent 2 + a/c. Uses Newman's fast method:
+with probability c/(c + a) copy a citation made by a random earlier
+paper, otherwise pick a paper uniformly. Edges point from citing to
+cited. The field `born` gives each node's and edge's arrival step (paper
+k arrives at step k), so revealUpTo(step) replays the growth.
 
 ### `mergeNodes(*nodes, name=None)`
 
@@ -1068,7 +1092,7 @@ Split the graph into `count` communities with Girvan-Newman.
 
 ### `makeBarabasiAlbertRandom(*args)`
 
-makeBarabasiAlbertRandom(vert, edges, evolve): preferential attachment; starts from `vert` nodes and adds `evolve` nodes with `edges` edges each.
+makeBarabasiAlbertRandom(vert, edges, evolve): preferential attachment; starts from `vert` nodes and adds `evolve` nodes with `edges` edges each. The field `born` records the step each node and edge arrived (0 for the seeds), so revealUpTo(step) can replay the growth.
 
 ### `makeEppsteinRandom(*args)`
 
@@ -1159,7 +1183,8 @@ network in which old nodes lose their appeal: each new node links to m
 existing ones, chosen with probability proportional to degree x
 age^-aging (age in steps since the node arrived). aging=0 is plain
 Barabási-Albert; larger values favour recent nodes (Dorogovtsev and
-Mendes' model).
+Mendes' model). The field `born` records the step each node and edge
+arrived (0 for the starting clique), for revealUpTo.
 
 ### `makeGeometricRandom(n, radius, seed=0)`
 
@@ -3007,7 +3032,7 @@ for one chart.)
 Each element's value of field, in rank order (or ordered by sortField).
 log=true draws the values on a log axis.
 
-### `plotFrequency(field, log=False, cumulative=False, fit=False, kmin=None)`
+### `plotFrequency(field, log=False, cumulative=False, fit=False, kmin=None, shift=0)`
 
 plotFrequency(degree) plots, for each value of a numeric field, the
 fraction of nodes (or edges) with that value: the degree distribution
@@ -3016,7 +3041,8 @@ straight line; zeros are left out). cumulative=true plots the fraction
 with that value or more (the complementary cumulative distribution,
 smoother for heavy tails). Pointing at the chart highlights the
 elements with that value. fit=true adds a power law fitted by maximum
-likelihood (fitPowerLaw; kmin= fixes where it starts) as a dashed line.
+likelihood (fitPowerLaw; kmin= fixes where it starts, shift= fits k + shift)
+as a dashed line.
 
 ### `plotHistogram(field, bins=10, log=False)`
 

@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Other random graph models",
+  "description": "Directed, bipartite, acyclic, clustered and community versions of the configuration model, each with the property it adds.",
+  "console": "toggle",
+  "script": "main.gy"
+}

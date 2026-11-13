@@ -636,10 +636,16 @@ def install(session):
     def make_from(G, label, positions=None):
         g = gr()
         g.clear()
+        born = any("born" in d for _v, d in G.nodes(data=True))
+        if born:                                  # growth models: when each node and edge arrived
+            g.addNodeField("born", "INTEGER", 0)
+            g.addEdgeField("born", "INTEGER", 0)
         index = {}
         for i, v in enumerate(G.nodes):
             n = g.addNode(f"nd{i}")
             n.label = f"nd{i}"
+            if born:
+                n.born = G.nodes[v].get("born", 0)
             if positions is not None:
                 x, y = positions[v]
                 n.x, n.y = 50 + 900 * x, 50 + 900 * y
@@ -647,7 +653,9 @@ def install(session):
                 n.x, n.y = random.random() * 500, random.random() * 500
             index[v] = n
         for a, b in G.edges():
-            g.addEdge(index[a], index[b], False)
+            e = g.addEdge(index[a], index[b], False)
+            if born:
+                e.born = G.edges[a, b].get("born", 0)
         session.scene()
         print(f"generated {label}: {len(g._nodes)} nodes, {len(g._edges)} edges")
 
@@ -684,7 +692,8 @@ def install(session):
         existing ones, chosen with probability proportional to degree x
         age^-aging (age in steps since the node arrived). aging=0 is plain
         Barabási-Albert; larger values favour recent nodes (Dorogovtsev and
-        Mendes' model)."""
+        Mendes' model). The field `born` records the step each node and edge
+        arrived (0 for the starting clique), for revealUpTo."""
         nx = _nx()
         n, m, aging = int(n), int(m), float(aging)
         positive("makeBarabasiAlbertAging", n=n, m=m)
@@ -692,6 +701,8 @@ def install(session):
             raise GuessError("makeBarabasiAlbertAging: m should be smaller than n")
         rng = np.random.default_rng(seed)
         G = nx.complete_graph(m + 1)
+        nx.set_node_attributes(G, 0, "born")
+        nx.set_edge_attributes(G, 0, "born")
         born = {v: 0 for v in G.nodes}
         for t in range(m + 1, n):
             olds = list(G.nodes)
@@ -700,10 +711,11 @@ def install(session):
             w = deg * age ** (-aging)
             w = w / w.sum()
             picks = rng.choice(len(olds), size=m, replace=False, p=w)
-            G.add_node(t)
+            step = t - m                         # the seed clique is step 0
+            G.add_node(t, born=step)
             born[t] = t
             for i in picks:
-                G.add_edge(t, olds[int(i)])
+                G.add_edge(t, olds[int(i)], born=step)
         make_from(G, "makeBarabasiAlbertAging")
 
     @cmd

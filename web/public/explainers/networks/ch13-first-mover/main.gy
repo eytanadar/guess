@@ -1,0 +1,477 @@
+# The first-mover advantage  (Newman, Networks, Section 13.3)
+# In a network that grows by preferential attachment, a node's degree grows
+# like the square root of time: a node that arrived when there were t_i nodes
+# has degree about m sqrt(t / t_i) once there are t. At the end (t = n) the
+# expected degree falls off as the arrival time grows, m sqrt(n / t_i): the
+# oldest nodes are the hubs, and arriving early matters more than anything
+# else in the model. Citation networks show the same pattern: the first papers
+# in a field collect the most citations (Newman 2009).
+#
+# The model network is grown first and laid out once; "Replay the growth"
+# reveals it with revealUpTo(step), so every node appears where it will stay.
+
+import math
+import random
+
+N, M = 300, 2
+st = {"born": [], "edges": [], "k": 0, "follow": None, "timer": None, "sim": None, "simtimer": None,
+      "papers": False, "paper": None}
+mode = ["Oldest win"]
+replay_btn = None
+Node.born = 0
+Edge.born = 0
+Node.arrival = 0
+
+
+def grow(n, m, seed):
+    """Preferential attachment: a clique of m + 1 nodes, then one node per step linking to m earlier
+    nodes chosen in proportion to degree. Returns arrival steps and edges (new, old, step)."""
+    rnd = random.Random(seed)
+    born = [0] * (m + 1)
+    edges = [(i, j, 0) for i in range(m + 1) for j in range(i + 1, m + 1)]
+    pool = [v for e in edges for v in e[:2]]
+    for new in range(m + 1, n):
+        step = new - m
+        chosen = set()
+        while len(chosen) < m:
+            chosen.add(rnd.choice(pool))
+        born.append(step)
+        for t in sorted(chosen):
+            edges.append((new, t, step))
+            pool += [new, t]
+    return born, edges
+
+
+def steps():
+    return N - M - 1
+
+
+def degrees_at(step):
+    deg = [0] * N
+    for a, b, s_ in st["edges"]:
+        if s_ <= step:
+            deg[a] += 1
+            deg[b] += 1
+    return deg
+
+
+def nodes_at(step):
+    """How many nodes there are after a step (the time t of the formulas)."""
+    return step + M + 1
+
+
+def arrival_of(i):
+    """t_i: the number of nodes once node i has arrived (the first clique counts as having arrived together)."""
+    return max(i + 1, M + 1)
+
+
+# ---- the model network ----------------------------------------------------------------------------------
+def build():
+    st["born"], st["edges"] = grow(N, M, 7)
+    nodes = []
+    for i in range(N):
+        nd = addNode(f"p{i}", label=str(i))
+        nd.born = st["born"][i]
+        nd.arrival = arrival_of(i)
+        nodes.append(nd)
+    for a, b, s_ in st["edges"]:
+        e = addEdge(nodes[a], nodes[b])
+        e.born = s_
+    frLayout()
+    noverlapLayout(margin=6)
+    st["k"] = steps()
+    look()
+    center(g.nodes)
+
+
+def arrival_colour(i):
+    t = i / (N - 1)                       # early: deep orange; late: pale blue
+    return f"{int(235 - 85 * t)},{int(110 + 90 * t)},{int(40 + 200 * t)}"
+
+
+def look():
+    if graphNames()[0] != "model":
+        return
+    deg = degrees_at(st["k"])
+    top = max(max(deg), 1)
+    hubs = sorted(range(N), key=lambda i: -deg[i])[:5]
+    for nd in g.nodes:
+        i = int(nd.name[1:])
+        nd.width = nd.height = 7 + 30 * math.sqrt(deg[i] / top)
+        nd.color = arrival_colour(i)
+        nd.strokecolor, nd.strokewidth = "40,40,50", 0.8
+        nd.labelvisible = i in hubs
+        nd.label = f"#{i + 1}, k={deg[i]}"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,120", 1.0, "solid"
+    f = st["follow"]
+    if f is not None and mode[0] == "Follow a node":
+        nd = g.getNodeByName(f"p{f}")
+        nd.color, nd.strokecolor, nd.strokewidth = "255,225,60", "20,20,20", 4
+        nd.labelvisible = true
+        nd.width = nd.height = max(nd.width, 26)
+
+
+# ---- tab 1: the oldest win ----------------------------------------------------------------------------------
+def spearman(xs, ys):
+    def ranks(v):
+        order = sorted(range(len(v)), key=lambda i: v[i])
+        r = [0.0] * len(v)
+        i = 0
+        while i < len(order):
+            j = i
+            while j + 1 < len(order) and v[order[j + 1]] == v[order[i]]:
+                j += 1
+            for q in range(i, j + 1):
+                r[order[q]] = (i + j) / 2
+            i = j + 1
+        return r
+    rx, ry = ranks(xs), ranks(ys)
+    mx, my = sum(rx) / len(rx), sum(ry) / len(ry)
+    cov = sum((a - mx) * (b - my) for a, b in zip(rx, ry))
+    vx = math.sqrt(sum((a - mx) ** 2 for a in rx))
+    vy = math.sqrt(sum((b - my) ** 2 for b in ry))
+    return cov / (vx * vy)
+
+
+def oldest_text():
+    if graphNames()[0] != "model":
+        return ""
+    deg = degrees_at(steps())
+    first = deg[:N // 10]
+    last = deg[N // 2:]
+    hubs = sorted(range(N), key=lambda i: -deg[i])[:5]
+    rho = spearman(list(range(N)), deg)
+    chips = " ".join(linkTo(g.getNodeByName(f"p{i}"), f"#{i + 1} (k={deg[i]})") for i in hubs)
+    return (f"A network of **{N}** nodes grown by preferential attachment (m = {M}). Colour is **arrival**: deep orange "
+            "first, pale blue last. Size is degree.\n\n"
+            f"The five biggest hubs, by order of arrival: {chips}. The first 10% of nodes have mean degree **{sum(first) / len(first):.1f}**; "
+            f"the last half **{sum(last) / len(last):.1f}**. Rank correlation between arrival and degree: "
+            f"**{rho:+.2f}**.\n\n"
+            f"In the chart (log–log), each dot is a node; the dashed line is the expected degree m√(n/tᵢ): a straight "
+            "line of slope −½. Early nodes had more newcomers to attract, and every link they won made the next more "
+            "likely.")
+
+
+def oldest_chart():
+    if mode[0] != "Oldest win" or graphNames()[0] != "model":
+        return None
+    line = [(t, M * math.sqrt(N / t)) for t in (3, 5, 10, 20, 50, 100, 200, N)]
+    return plotScatter(arrival, degree, log=true, line=line, title="Degree against arrival",
+                       xlabel="arrival tᵢ (nodes so far)", ylabel="degree at the end")
+
+
+SIM_N, SIM_RUNS = 2000, 30
+
+
+def run_sim():
+    stop_timers()
+    st["sim"] = {"runs": 0, "sums": {}, "counts": {}}
+    st["simtimer"] = everyPaced(sim_step, steps=SIM_RUNS + 1, slow=0.6, fast=0.1, ramp=3)
+
+
+def bucket(t):
+    return int(math.floor(math.log(t, 2) * 2))      # half-octave bins of arrival time
+
+
+def sim_step():
+    sim = st["sim"]
+    if sim["runs"] >= SIM_RUNS:
+        return False
+    _b, edges = grow(SIM_N, M, 500 + sim["runs"])
+    deg = [0] * SIM_N
+    for a, b, _s in edges:
+        deg[a] += 1
+        deg[b] += 1
+    for i in range(SIM_N):
+        q = bucket(arrival_of(i))
+        sim["sums"][q] = sim["sums"].get(q, 0) + deg[i]
+        sim["counts"][q] = sim["counts"].get(q, 0) + 1
+    sim["runs"] += 1
+    return SIM_RUNS - sim["runs"]
+
+
+def sim_text():
+    if mode[0] != "Oldest win":
+        return ""
+    sim = st["sim"]
+    if not sim or not sim["runs"]:
+        return "*Simulate* averages 30 networks of 2,000 nodes, so the scatter's noise averages out."
+    return (f"**{sim['runs']}** networks of {SIM_N:,} nodes: mean degree by arrival time (half-octave bins). The points "
+            "lie on m√(n/tᵢ): degree falls by √2 each time the arrival time doubles.")
+
+
+def sim_chart():
+    sim = st["sim"]
+    if mode[0] != "Oldest win" or not sim or not sim["runs"]:
+        return None
+    pts = []
+    for q in sorted(sim["sums"]):
+        t = 2 ** ((q + 0.5) / 2)
+        pts.append((t, sim["sums"][q] / sim["counts"][q]))
+    theory = [(t, M * math.sqrt(SIM_N / t)) for t in (3, 10, 30, 100, 300, 1000, SIM_N)]
+    return plotLine({"mean degree, simulated": pts, "m√(n/tᵢ)": theory}, title="Mean degree by arrival (simulated)",
+                    xlabel="arrival tᵢ", ylabel="mean degree", log=true, dots=true, dashed=["m√(n/tᵢ)"])
+
+
+# ---- tab 2: follow a node ---------------------------------------------------------------------------------------
+def follow(i):
+    stop_timers()
+    st["follow"] = i
+    st["k"] = steps()
+    revealUpTo(st["k"])
+    look()
+
+
+def trajectory(i):
+    """[(t, degree of node i once there are t nodes)] from its arrival on."""
+    out, d = [], 0
+    by_step = {}
+    for a, b, s_ in st["edges"]:
+        if a == i or b == i:
+            by_step[s_] = by_step.get(s_, 0) + 1
+    for s_ in range(st["born"][i], steps() + 1):
+        d += by_step.get(s_, 0)
+        out.append((nodes_at(s_), d))
+    return out
+
+
+def replay_one():
+    if st["k"] >= steps():
+        return False
+    st["k"] += 1
+    look()
+    f = st["follow"]
+    for x in revealUpTo(st["k"]):
+        if hasattr(x, "node1"):
+            ends = {int(x.node1.name[1:]), int(x.node2.name[1:])}
+            if f in ends:
+                x.color, x.width, x.linestyle = "245,150,40", 4, "flow"
+            else:
+                x.color, x.width = "120,170,240", 2
+        else:
+            x.strokecolor, x.strokewidth = "30,30,30", 2.5
+    return steps() - st["k"]
+
+
+def replay():
+    if st["timer"] is not None and st["timer"].running:
+        stop_timers()
+        return
+    if st["follow"] is None:
+        st["follow"] = 120
+    st["k"] = 0
+    revealUpTo(0)
+    look()
+    st["timer"] = everyPaced(replay_one, steps=steps() + 1, slow=0.6, fast=0.04, ramp=6)
+    replay_btn.text = "Pause"
+
+
+def follow_text():
+    if graphNames()[0] != "model":
+        return ""
+    f = st["follow"]
+    if f is None:
+        return "*Click a node*, or pick an early or a late one, then **Replay the growth**."
+    ti = arrival_of(f)
+    traj = trajectory(f)
+    now = [d for t, d in traj if t <= nodes_at(st["k"])]
+    k_now = now[-1] if now else 0
+    shown = nodes_at(st["k"])
+    out = (f"Following {linkTo(g.getNodeByName(f'p{f}'), 'node #' + str(f + 1))} (yellow): it arrives when there are "
+           f"**{ti}** nodes. ")
+    if shown < ti:
+        out += f"Now there are {shown}: it hasn't arrived yet."
+    else:
+        out += (f"Now there are **{shown}**, and its degree is **{k_now}**; the model expects "
+                f"m√(t/tᵢ) = {M * math.sqrt(shown / ti):.1f}. Its new links flash orange.")
+    end = traj[-1][1]
+    out += (f"\n\nAt the end it has **{end}** links against **{trajectory(0)[-1][1]}** for the very first node. "
+            "Each newcomer picks a node with probability ∝ degree, so the rate at which a node gains links is "
+            "proportional to the links it already has: k grows like √t whenever it arrived, and latecomers start "
+            "the race far behind.")
+    return out
+
+
+def follow_chart():
+    f = st["follow"]
+    if mode[0] != "Follow a node" or f is None or graphNames()[0] != "model":
+        return None
+    ti = arrival_of(f)
+    upto = nodes_at(st["k"])
+    mine = [(t, d) for t, d in trajectory(f) if t <= upto]
+    first = [(t, d) for t, d in trajectory(0) if t <= upto]
+    ts = [t for t in range(ti, N + 1, 5)] + [N]
+    theory = [(t, M * math.sqrt(t / ti)) for t in ts]
+    series = {"the first node": first, "this node": mine, "m√(t/tᵢ)": theory}
+    return plotLine(series, title="Degree as the network grows", xlabel="nodes so far, t", ylabel="degree",
+                    dashed=["m√(t/tᵢ)"], xrange=(0, N))
+
+
+def early():
+    follow(5)
+
+
+def late():
+    follow(200)
+
+
+# ---- tab 3: real citations -------------------------------------------------------------------------------------
+def open_papers():
+    if not st["papers"]:
+        newGraph("papers")
+        makeFromFile("vis-papers.gdf")
+        st["papers"] = True
+    else:
+        use("papers")
+    papers_look()
+    center()
+
+
+def papers_look():
+    years = [nd.year for nd in g.nodes if nd.year]
+    lo, hi = min(years), max(years)
+    top = sorted(g.nodes, key=lambda nd: -nd.indegree)[:5]
+    for nd in g.nodes:
+        t = ((nd.year or lo) - lo) / max(1, hi - lo)
+        nd.color = f"{int(235 - 85 * t)},{int(110 + 90 * t)},{int(40 + 200 * t)}"
+        nd.width = nd.height = 5 + 5 * math.sqrt(nd.indegree)
+        nd.strokecolor, nd.strokewidth = "40,40,50", 0.6
+        nd.labelvisible = nd in top
+    for e in g.edges:
+        e.color, e.width = "150,150,150,50", 0.6
+    if st["paper"] is not None:
+        nd = g.getNodeByName(st["paper"])
+        if nd is not None:
+            nd.strokecolor, nd.strokewidth = "255,255,255", 3
+            nd.labelvisible = true
+
+
+def papers_by_year(field="indegree"):
+    by = {}
+    for nd in g.nodes:
+        if nd.year:
+            by.setdefault(nd.year, []).append(nd.indegree if field == "indegree" else (nd.cites or 0))
+    return by
+
+
+def median(v):
+    v = sorted(v)
+    n = len(v)
+    return (v[n // 2] + v[(n - 1) // 2]) / 2
+
+
+def papers_text():
+    if mode[0] != "Real citations" or graphNames()[0] != "papers":
+        return ""
+    by = papers_by_year()
+    world = papers_by_year("cites")
+    spans = [("1980–1994", 1980, 1995), ("1995–2004", 1995, 2005), ("2005–2014", 2005, 2015), ("2015 on", 2015, 3000)]
+    rows = ["| published | papers | mean citations from this field | median citations from anywhere |",
+            "|---|---|---|---|"]
+    for name, lo, hi in spans:
+        inside = [c for y in by if lo <= y < hi for c in by[y]]
+        outside = [c for y in world if lo <= y < hi for c in world[y]]
+        if inside:
+            rows.append(f"| {name} | {len(inside)} | **{sum(inside) / len(inside):.1f}** | {median(outside):.0f} |")
+    xs = [nd.year for nd in g.nodes if nd.year]
+    ks = [nd.indegree for nd in g.nodes if nd.year]
+    rho = spearman(xs, ks)
+    out = ("**1,044** papers on graph drawing and network visualisation, each linked to the papers in this set it "
+           "cites. Colour is the year (orange early, blue late); size is **in-degree**, the citations a paper has "
+           "from the rest of the field. The five most cited are labelled.\n\n" + "\n".join(rows) +
+           f"\n\nWithin the field the pattern is the model's: rank correlation between year and in-degree "
+           f"**{rho:+.2f}**, and the early papers collect far more citations from the rest. The last column shows why "
+           "the counts from all of science don't: the collection took the most-cited papers for each search phrase, "
+           "so only well-cited papers of every era are in it.\n\nTwo effects mix here: arriving first in a growing field (the model's point), and "
+           "simply having had longer to be cited, since a paper can only be cited by later ones (the newest have "
+           "had almost no time). Newman (2009) told them apart by comparing papers with others published at the "
+           "same time; the first in a field still came out ahead.")
+    if st["paper"] is not None:
+        nd = g.getNodeByName(st["paper"])
+        if nd is not None:
+            out += (f"\n\nSelected: {linkTo(nd)} *{nd.title}* ({nd.year}): cited by **{nd.indegree}** papers here, "
+                    f"{nd.cites:,} in all.")
+    return out
+
+
+def papers_chart():
+    if mode[0] != "Real citations" or graphNames()[0] != "papers":
+        return None
+    by = papers_by_year()
+    bins = {}
+    for y in by:
+        bins.setdefault(y // 5 * 5, []).extend(by[y])
+    line = [(b + 2.5, sum(v) / len(v)) for b, v in sorted(bins.items()) if len(v) >= 5]   # 5-year means
+    over = len([nd for nd in g.nodes if nd.year and nd.indegree > 40])
+    return plotScatter(year, indegree, line=line, yrange=(0, 40),
+                       title=f"Citations from the field against year (dashed: 5-year mean; {over} papers above 40 off the top)",
+                       xlabel="year", ylabel="cited by papers in the set")
+
+
+# ---- wiring -------------------------------------------------------------------------------------------------
+def stop_timers():
+    for key in ("timer", "simtimer"):
+        if st[key] is not None:
+            st[key].stop()
+            st[key] = None
+    if replay_btn is not None:
+        replay_btn.text = "Replay the growth"
+
+
+def click(nd):
+    if graphNames()[0] == "papers":
+        st["paper"] = nd.name
+        papers_look()
+    elif mode[0] == "Follow a node":
+        follow(int(nd.name[1:]))
+    else:
+        mode_follow_hint[0] = int(nd.name[1:])
+
+
+mode_follow_hint = [None]
+
+
+def switch(title):
+    stop_timers()
+    mode[0] = title
+    if title == "Real citations":
+        open_papers()
+        return
+    if graphNames()[0] != "model":
+        use("model")
+        center()
+    st["k"] = steps()
+    revealUpTo(st["k"])
+    if title == "Follow a node" and st["follow"] is None:
+        st["follow"] = mode_follow_hint[0] if mode_follow_hint[0] is not None else 120
+    look()
+
+
+renameGraph("model")
+build()
+graphevents.clickNode = click
+replay_btn = Button("Replay the growth", onClick=lambda: replay())
+constantLabelSize(size=14)
+ui.title("The first-mover advantage", "Networks, Section 13.3")
+ui.layout(
+    right=Column(
+        Markdown("""### The oldest win
+In a network that grows by preferential attachment, *when* a node
+arrives decides, more than anything else, how many links it ends up with."""),
+        Tabs(
+            Tab("Oldest win",
+                Markdown(oldest_text), Chart(oldest_chart),
+                Button("Simulate: 30 networks of 2,000", onClick=lambda: run_sim()),
+                Markdown(sim_text), Chart(sim_chart)),
+            Tab("Follow a node",
+                Row(Button("An early node", onClick=lambda: early()), Button("A late node", onClick=lambda: late()),
+                    replay_btn),
+                Markdown(follow_text), Chart(follow_chart)),
+            Tab("Real citations",
+                Markdown(papers_text), Chart(papers_chart)),
+            onChange=switch)),
+    sizes={"right": 430},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len([nd for nd in g.nodes if nd.visible])} of {len(g.nodes)} nodes shown"))

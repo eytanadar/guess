@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The Barabási–Albert model",
+  "description": "A network grows node by node, each newcomer linking to existing nodes in proportion to their degree; against uniform attachment, hubs and a power law appear.",
+  "console": "toggle",
+  "script": "main.gy"
+}

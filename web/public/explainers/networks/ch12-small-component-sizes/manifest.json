@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Small components from generating functions",
+  "description": "Solve h₁(z) = z g₁(h₁(z)) one term at a time to predict the size of every small component, and check the prediction and the mean size against random networks.",
+  "console": "toggle",
+  "script": "main.gy"
+}

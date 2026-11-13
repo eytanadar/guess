@@ -1,0 +1,552 @@
+# Generating functions  (Newman, Networks, Sections 12.10.1–12.10.7)
+# A degree distribution p_k can be packed into one function,
+#     g0(z) = sum_k p_k z^k,
+# which holds everything about it. g0(1) = 1; the slope at z = 1 is the mean
+# degree <k>, and further derivatives give the other moments. A meaning for
+# g0(z) itself: if each end of each edge "passes" independently with probability
+# z, g0(z) is the chance that every edge of a random node passes. Adding
+# independent quantities multiplies their generating functions: the degrees of
+# two random nodes add up with generating function g0(z)^2. Following an edge,
+# the number of other edges at the node you reach (its excess degree) has the
+# generating function g1(z) = g0'(z) / g0'(1), and in a random network the
+# number of second neighbours has g0(g1(z)), with mean <k^2> - <k>.
+# Each tab checks one of these against a network on screen: a configuration
+# model drawn from the chosen distribution, or a real network.
+
+import math
+import random
+import numpy as np
+import networkx as nx
+
+N = 300                       # nodes in a model network
+KCAP = 60                     # largest degree a model distribution allows
+CHOICES = ["Poisson, mean 3", "Exponential, mean 3", "Power law, α = 2.5 (k ≥ 1)",
+           "Les Misérables (real network)", "Power grid region (real network)"]
+REAL = {"Les Misérables (real network)": "lesmis.gdf", "Power grid region (real network)": "power-grid-region.gdf"}
+net = {"choice": None, "pk": np.array([1.0]), "k": {}, "adj": {}, "ends": [], "real": False, "names": {}}
+mode = ["g₀ and its slope"]
+rnd = random.Random(11)
+
+
+# ---- distributions and their generating functions ----------------------------------------------------------
+def model_pk(choice):
+    ks = np.arange(KCAP + 1, dtype=float)
+    if choice.startswith("Poisson"):
+        p = np.exp(-3.0 + ks * math.log(3.0) - np.array([math.lgamma(k + 1) for k in ks]))
+    elif choice.startswith("Exponential"):
+        a = 3.0 / 4.0                                  # p_k = (1 - a) a^k has mean a / (1 - a) = 3
+        p = (1 - a) * a ** ks
+    else:
+        p = np.where(ks >= 1, np.maximum(ks, 1) ** -2.5, 0.0)
+    return p / p.sum()
+
+
+def g0(z, pk=None):
+    pk = net["pk"] if pk is None else pk
+    return float(np.polyval(pk[::-1], z))
+
+
+def mean_k(pk=None):
+    pk = net["pk"] if pk is None else pk
+    return float((np.arange(len(pk)) * pk).sum())
+
+
+def mean_k2(pk=None):
+    pk = net["pk"] if pk is None else pk
+    return float((np.arange(len(pk)) ** 2 * pk).sum())
+
+
+def qk(pk=None):
+    """The excess degree distribution q_k = (k+1) p_{k+1} / <k>: the coefficients of g1(z)."""
+    pk = net["pk"] if pk is None else pk
+    kp = np.arange(1, len(pk)) * pk[1:]
+    return kp / kp.sum() if kp.sum() > 0 else np.array([1.0])
+
+
+def g1(z):
+    return float(np.polyval(qk()[::-1], z))
+
+
+def compose(outer, inner, L=90):
+    """Coefficients of outer(inner(z)), both given by coefficient arrays, up to z^(L-1)."""
+    out = np.zeros(L)
+    pw = np.zeros(L)
+    pw[0] = 1.0
+    for c in outer:
+        out += c * pw
+        pw = np.convolve(pw, inner)[:L]
+        if len(pw) < L:
+            pw = np.concatenate([pw, np.zeros(L - len(pw))])
+    return out
+
+
+def sample_degrees(pk, n):
+    cum = np.cumsum(pk)
+    ks = [int(np.searchsorted(cum, rnd.random() * cum[-1])) for _ in range(n)]
+    if sum(ks) % 2:                                   # every edge has two ends: the total must be even
+        ks[ks.index(max(ks))] += 1
+    return ks
+
+
+# ---- the network on screen ------------------------------------------------------------------------------------
+def stop_all():
+    for st in (passing, pairs, walk):
+        if st.get("timer") is not None:
+            st["timer"].stop()
+            st["timer"] = None
+
+
+def load(choice):
+    stop_all()
+    net["choice"] = choice
+    net["real"] = choice in REAL
+    if net["real"]:
+        makeFromFile(REAL[choice])
+        k = {v.name: v.degree for v in g.nodes}
+        top = max(k.values())
+        counts = np.zeros(top + 1)
+        for d in k.values():
+            counts[d] += 1
+        net["pk"] = counts / counts.sum()
+    else:
+        net["pk"] = model_pk(choice)
+        makeConfigurationModel(sample_degrees(net["pk"], N), seed=5, layout=false)
+        frLayout()
+        binPackLayout(false)                          # the small pieces packed beside the large one,
+        noverlapLayout()                              # nodes kept apart
+        k = {v.name: v.stubs for v in g.nodes}        # stubs: a self-loop adds 2, as in the book
+    net["k"] = k
+    net["names"] = {v.name: (str(v.label) if v.label else v.name) for v in g.nodes}
+    adj = {v.name: [] for v in g.nodes}
+    ends = []
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        adj[a].append((e, b))
+        adj[b].append((e, a))                         # a self-loop appears twice: two ends
+        ends.append((e, a, b))
+        ends.append((e, b, a))
+    net["adj"], net["ends"] = adj, ends
+    second_cache.clear()
+    passing.update(tested=0, ok=0, order=[], z=None, results=[])
+    pairs.update(sums={}, total=0)
+    walk.update(counts={}, total=0, last=None)
+    second["at"] = None
+    base()
+    center()
+
+
+def short(name):
+    lab = net["names"].get(name, name)
+    return lab if len(lab) < 20 else lab[:18] + "…"
+
+
+def base():
+    kmax = max(1, max(net["k"].values()))
+    for v in g.nodes:
+        t = math.sqrt(net["k"][v.name] / kmax)
+        v.width = v.height = 7 + 22 * t
+        v.color = "135,170,230"
+        v.strokecolor = "60,70,90"
+        v.strokewidth = 0
+        v.labelvisible = false
+        v.label = short(v.name)
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,110", 1, "solid"
+
+
+def mark(v, color, text=None, ring="40,40,40", w=3):
+    v.color = color
+    v.strokecolor = ring
+    v.strokewidth = w
+    v.width = v.height = max(v.width, 16)
+    if text is not None:
+        v.label = text
+        v.labelvisible = true
+
+
+# ---- tab 1: g0 and its slope ----------------------------------------------------------------------------------
+passing = {"timer": None, "tested": 0, "ok": 0, "order": [], "z": None, "results": []}
+zs = Slider(5, 95, 60, 5, label="z: the chance each edge end passes (%)")
+
+
+def test_batch():
+    st = passing
+    z = st["z"]
+    for _ in range(12):
+        if not st["order"]:
+            break
+        name = st["order"].pop()
+        v = g.getNodeByName(name)
+        good = True
+        for e, other in net["adj"][name]:
+            if rnd.random() >= z:                     # this end fails: its edge turns red
+                good = False
+                e.color, e.width = "230,60,50", 2.5
+        st["tested"] += 1
+        st["ok"] += 1 if good else 0
+        if good:
+            mark(v, "250,215,60", ring="120,90,0")
+        else:
+            v.color, v.strokecolor, v.strokewidth = "120,120,140", "200,40,40", 2
+    if not st["order"]:
+        st["results"] = [r for r in st["results"] if abs(r[0] - z) > 1e-9] + [(z, st["ok"] / max(1, st["tested"]))]
+        return False
+    return True
+
+
+def run_passing():
+    stop_all()
+    base()
+    z = zs.value / 100
+    names = [v.name for v in g.nodes]
+    rnd.shuffle(names)
+    passing.update(tested=0, ok=0, order=names, z=z)
+    passing["timer"] = everyPaced(test_batch, slow=0.7, fast=0.08, ramp=3)
+
+
+def passing_all():
+    stop_all()
+    base()
+    z = zs.value / 100
+    names = [v.name for v in g.nodes]
+    passing.update(tested=0, ok=0, order=names, z=z)
+    while test_batch():
+        pass
+
+
+def g0_text():
+    pk = net["pk"]
+    m1, m2 = mean_k(), mean_k2()
+    direct = sum(net["k"].values()) / max(1, len(net["k"]))
+    out = (f"**g₀(z) = Σ pₖ zᵏ**, with pₖ the share of nodes of degree k. At z = 1 it adds up the pₖ: "
+           f"g₀(1) = **{g0(1.0):.3f}**. Its slope there is **g₀′(1) = Σ k pₖ = ⟨k⟩ = {m1:.3f}** "
+           f"(the network on screen: {direct:.3f}), the dashed tangent line. Differentiating again gives "
+           f"⟨k²⟩ = [(z d/dz)² g₀]₍z=1₎ = **{m2:.2f}**, and pₖ itself is the k-th derivative at 0 divided by k!.")
+    z = zs.value / 100
+    out += (f"\n\n**What g₀(z) means.** Let each end of each edge *pass* with probability z = {z:.2f}. A node of "
+            f"degree k has all its edges pass with probability zᵏ, so a random node does with probability "
+            f"Σ pₖ zᵏ = g₀(z) = **{g0(z):.3f}**.")
+    st = passing
+    if st["tested"]:
+        out += (f" Tested so far: **{st['ok']}** of {st['tested']} nodes passed (**{st['ok'] / st['tested']:.3f}**); "
+                "yellow nodes passed, red edges are ends that failed.")
+    else:
+        out += " Press *Test every node* to try it on the network."
+    return out
+
+
+def g0_chart():
+    if mode[0] != "g₀ and its slope":
+        return None
+    zz = [i / 50 for i in range(51)]
+    m1 = mean_k()
+    tangent = [(z, 1 + m1 * (z - 1)) for z in zz if 1 + m1 * (z - 1) >= 0]
+    data = {"g₀(z)": [(z, g0(z)) for z in zz], "slope ⟨k⟩ at z = 1": tangent}
+    if passing["results"] or passing["tested"]:
+        pts = list(passing["results"])
+        if passing["tested"] and passing["order"]:
+            pts.append((passing["z"], passing["ok"] / passing["tested"]))
+        data["tested on the network"] = pts
+    return plotLine(data, title="g₀(z) and its slope at z = 1", xlabel="z", ylabel="g₀(z)",
+                    dashed=["slope ⟨k⟩ at z = 1"], highlight=["tested on the network"], yrange=(0, 1), xrange=(0, 1))
+
+
+def pk_chart():
+    if mode[0] != "g₀ and its slope":
+        return None
+    pk = net["pk"]
+    pts = [(k, float(p)) for k, p in enumerate(pk) if p > 0 and k <= 40]
+    return plotLine({"pₖ": pts}, title="The degree distribution pₖ (log scale)", xlabel="degree k", ylabel="pₖ",
+                    logY=true, dots=true)
+
+
+# ---- tab 2: adding degrees -------------------------------------------------------------------------------------
+pairs = {"timer": None, "sums": {}, "total": 0}
+
+
+def pick_pair():
+    base()
+    names = list(net["k"])
+    a, b = rnd.choice(names), rnd.choice(names)
+    s = net["k"][a] + net["k"][b]
+    pairs["sums"][s] = pairs["sums"].get(s, 0) + 1
+    pairs["total"] += 1
+    mark(g.getNodeByName(a), "250,215,60", f"{short(a)} k={net['k'][a]}", ring="120,90,0")
+    mark(g.getNodeByName(b), "250,150,60", f"{short(b)} k={net['k'][b]}", ring="120,60,0")
+    pairs["last"] = (a, b, s)
+    return True
+
+
+def run_pairs():
+    stop_all()
+    pairs["timer"] = everyPaced(pick_pair, steps=60, slow=0.8, fast=0.1, ramp=3)
+
+
+def pairs_many():
+    stop_all()
+    names = list(net["k"])
+    for _ in range(2000):
+        s = net["k"][rnd.choice(names)] + net["k"][rnd.choice(names)]
+        pairs["sums"][s] = pairs["sums"].get(s, 0) + 1
+        pairs["total"] += 1
+    base()
+
+
+def pairs_text():
+    m1 = mean_k()
+    out = ("**Adding independent quantities multiplies generating functions.** Pick two nodes at random; their "
+           "degrees add up to j + k with probability Σ pⱼ pₖ over all ways to get that total, and those are exactly "
+           "the coefficients of **[g₀(z)]²** = Σⱼ Σₖ pⱼ pₖ zʲ⁺ᵏ. Its slope at 1 is 2 g₀′(1): the mean of the sum is "
+           f"**2⟨k⟩ = {2 * m1:.2f}**.")
+    if pairs["total"]:
+        mean = sum(s * c for s, c in pairs["sums"].items()) / pairs["total"]
+        last = pairs.get("last")
+        out += f"\n\n**{pairs['total']}** pairs so far, mean sum **{mean:.2f}**."
+        if last:
+            out += (f" Last pair: {linkTo(g.getNodeByName(last[0]), short(last[0]))} and "
+                    f"{linkTo(g.getNodeByName(last[1]), short(last[1]))}, total **{last[2]}**.")
+    else:
+        out += "\n\n*Pick pairs* to sample sums of two degrees from the network."
+    return out
+
+
+def pairs_chart():
+    if mode[0] != "Adding degrees":
+        return None
+    pk = net["pk"]
+    sq = np.convolve(pk, pk)
+    data = {"coefficients of g₀(z)²": [(s, float(p)) for s, p in enumerate(sq) if s <= 40]}
+    if pairs["total"]:
+        data["sums of two random nodes"] = sorted((s, c / pairs["total"]) for s, c in pairs["sums"].items() if s <= 40)
+    return plotLine(data, title="The sum of two degrees", xlabel="k₁ + k₂", ylabel="share",
+                    dashed=["coefficients of g₀(z)²"], dots=true)
+
+
+# ---- tab 3: excess degree ----------------------------------------------------------------------------------------
+walk = {"timer": None, "counts": {}, "total": 0, "last": None}
+
+
+def follow_one(show=True):
+    e, came, at = rnd.choice(net["ends"])
+    exc = net["k"][at] - 1
+    walk["counts"][exc] = walk["counts"].get(exc, 0) + 1
+    walk["total"] += 1
+    walk["last"] = (came, at, exc)
+    if show:
+        base()
+        e.color, e.width, e.linestyle = "70,140,240", 4, "solid"
+        mark(g.getNodeByName(came), "160,200,255", ring="40,80,160", w=2)
+        v = g.getNodeByName(at)
+        mark(v, "250,215,60", f"{short(at)}: {exc} more", ring="120,90,0")
+        seen = False
+        for f, other in net["adj"][at]:
+            if f is e and not seen:                   # the edge we came along is not part of the excess
+                seen = True
+                continue
+            f.color, f.width, f.linestyle = "250,150,40", 3, "flow"
+    return True
+
+
+def run_walk():
+    stop_all()
+    walk["timer"] = everyPaced(lambda: follow_one(True), steps=80, slow=0.9, fast=0.1, ramp=3)
+
+
+def walk_many():
+    stop_all()
+    for _ in range(3000):
+        follow_one(False)
+    base()
+
+
+def walk_text():
+    m1, m2 = mean_k(), mean_k2()
+    exp_exc = (m2 - m1) / m1 if m1 else 0
+    out = ("**Excess degree.** Follow a random edge: you arrive at a node with probability proportional to its "
+           "degree, and the number of *other* edges it has (its excess degree) has distribution "
+           "**qₖ = (k+1) pₖ₊₁ / ⟨k⟩**, whose generating function is **g₁(z) = g₀′(z) / g₀′(1)**. Its slope at 1 "
+           f"is the mean excess degree, (⟨k²⟩ − ⟨k⟩)/⟨k⟩ = **{exp_exc:.2f}**. Compare a random node's mean "
+           f"degree, ⟨k⟩ = {m1:.2f}: the more the degrees vary, the bigger the gap (your friends have more "
+           "friends than you).")
+    if walk["total"]:
+        mean = sum(x * c for x, c in walk["counts"].items()) / walk["total"]
+        out += f"\n\nFollowed **{walk['total']}** edges; mean excess degree found **{mean:.2f}**."
+        if walk["last"]:
+            came, at, exc = walk["last"]
+            out += (f" Last: from {linkTo(g.getNodeByName(came), short(came))} to "
+                    f"{linkTo(g.getNodeByName(at), short(at))}, which has **{exc}** other edge"
+                    f"{'' if exc == 1 else 's'} (orange, moving).")
+    else:
+        out += "\n\n*Follow edges* to sample excess degrees from the network."
+    return out
+
+
+def walk_chart():
+    if mode[0] != "Excess degree g₁":
+        return None
+    q = qk()
+    pk = net["pk"]
+    data = {"pₖ (random node)": [(k, float(p)) for k, p in enumerate(pk) if k <= 30],
+            "qₖ, coefficients of g₁": [(k, float(p)) for k, p in enumerate(q) if k <= 30]}
+    if walk["total"]:
+        data["excess degrees found"] = sorted((x, c / walk["total"]) for x, c in walk["counts"].items() if x <= 30)
+    return plotLine(data, title="Degree against excess degree", xlabel="k", ylabel="share",
+                    dashed=["qₖ, coefficients of g₁"], dots=true)
+
+
+# ---- tab 4: second neighbours ---------------------------------------------------------------------------------------
+second = {"at": None, "all": None}
+
+
+def show_second(name):
+    stop_all()
+    base()
+    second["at"] = name
+    first = {o for _e, o in net["adj"][name] if o != name}
+    two = set()
+    for e, o in net["adj"][name]:
+        if o == name:
+            continue
+        e.color, e.width, e.linestyle = "250,150,40", 3, "flow"
+        for f, w in net["adj"][o]:
+            if w not in (name,) and w not in first:
+                two.add(w)
+                f.color, f.width = "60,170,90", 2.5
+    for w in two:
+        mark(g.getNodeByName(w), "110,210,130", ring="20,90,40", w=2)
+    for o in first:
+        mark(g.getNodeByName(o), "250,180,80", ring="120,70,0", w=2)
+    mark(g.getNodeByName(name), "250,230,60", short(name), ring="20,20,20", w=4)
+
+
+def random_second():
+    names = [n for n in net["k"] if net["k"][n] > 0]
+    show_second(rnd.choice(names))
+
+
+def paths2(name):
+    """Two-step paths that don't come straight back: the sum over neighbours of (their degree - 1)."""
+    return sum(net["k"][o] - 1 for _e, o in net["adj"][name])
+
+
+def count_all():
+    stop_all()
+    counts = {}
+    for name in net["k"]:
+        c = paths2(name)
+        counts[c] = counts.get(c, 0) + 1
+    second["all"] = counts
+
+
+def second_text():
+    m1, m2 = mean_k(), mean_k2()
+    out = ("**Second neighbours.** A node has k neighbours with probability pₖ, and each leads on to more nodes "
+           "with generating function g₁. Multiplying k independent g₁'s and averaging over k gives "
+           "Σ pₖ [g₁(z)]ᵏ = **g₀(g₁(z))**, the generating function for the number of second neighbours. Its mean is "
+           f"g₀′(1) g₁′(1) = **⟨k²⟩ − ⟨k⟩ = {m2 - m1:.2f}**.")
+    at = second["at"]
+    if at is not None:
+        first = {o for _e, o in net["adj"][at] if o != at}
+        two = set()
+        for o in first:
+            for _f, w in net["adj"][o]:
+                if w != at and w not in first:
+                    two.add(w)
+        out += (f"\n\n{linkTo(g.getNodeByName(at), short(at))}: **{len(first)}** neighbours (orange), "
+                f"**{paths2(at)}** two-step paths onward, reaching **{len(two)}** different second neighbours "
+                "(green). The two counts differ only where paths meet again (short loops), which random "
+                "networks rarely have.")
+    else:
+        out += "\n\n*Click a node* (or *Random node*) to see its first and second neighbours."
+    if second["all"]:
+        tot = sum(second["all"].values())
+        mean = sum(c * v for c, v in second["all"].items()) / tot
+        out += (f"\n\nOver all {tot} nodes the mean number of two-step paths is **{mean:.2f}**, the formula's "
+                "value exactly: every edge end is counted once from each side, whatever the wiring. The real test "
+                "is the *shape* of the distribution in the chart.")
+        if net["real"]:
+            out += (" A real network is not random wiring: its degrees are correlated and it has triangles, so "
+                    "the formula need not fit.")
+    return out
+
+
+def second_chart():
+    if mode[0] != "Second neighbours":
+        return None
+    top = max(60, max(second["all"]) if second["all"] else 0)
+    L = top + 1
+    if L not in second_cache:
+        second_cache.clear()
+        second_cache[L] = compose(net["pk"], qk(), L=L)
+    coef = second_cache[L]
+    width = max(1, -(-top // 40))                      # bins, so the whole range fits in about 40 points
+    binned = {}
+    for s_, c in enumerate(coef):
+        binned[s_ // width] = binned.get(s_ // width, 0.0) + float(c)
+    data = {"coefficients of g₀(g₁(z))": [(b * width, v / width) for b, v in sorted(binned.items())]}
+    if second["all"]:
+        tot = sum(second["all"].values())
+        got = {}
+        for c, v in second["all"].items():
+            got[c // width] = got.get(c // width, 0) + v
+        data["this network"] = sorted((b * width, v / tot / width) for b, v in got.items())
+    xl = "number of two-step paths" + (f" (bins of {width})" if width > 1 else "")
+    return plotLine(data, title="Second neighbours (two-step paths)", xlabel=xl, ylabel="share",
+                    dashed=["coefficients of g₀(g₁(z))"], dots=true)
+
+
+second_cache = {}
+
+
+# ---- wiring ----------------------------------------------------------------------------------------------------------
+def click(v):
+    if mode[0] == "Second neighbours":
+        show_second(v.name)
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    base()
+    if title == "Second neighbours" and second["at"] is not None:
+        show_second(second["at"])
+
+
+def pick_dist(choice):
+    load(choice)
+
+
+graphevents.clickNode = click
+zs.onChange = lambda v=None: None
+load(CHOICES[0])
+constantLabelSize(size=14)
+ui.title("Generating functions", "Networks, Sections 12.10.1–12.10.7")
+ui.layout(
+    right=Column(
+        Markdown("""### A distribution packed into a function
+g₀(z) = Σ pₖ zᵏ. Each tab checks one of its properties against the network on
+screen: random wiring with the chosen degrees, or a real network."""),
+        Dropdown(CHOICES, label="Degrees", onChange=pick_dist),
+        Tabs(
+            Tab("g₀ and its slope", zs,
+                Row(Button("Test every node", onClick=lambda: run_passing()),
+                    Button("Test all at once", onClick=lambda: passing_all())),
+                Markdown(g0_text), Chart(g0_chart), Chart(pk_chart)),
+            Tab("Adding degrees",
+                Row(Button("Pick pairs of nodes", onClick=lambda: run_pairs()),
+                    Button("2,000 pairs at once", onClick=lambda: pairs_many())),
+                Markdown(pairs_text), Chart(pairs_chart)),
+            Tab("Excess degree g₁",
+                Row(Button("Follow random edges", onClick=lambda: run_walk()),
+                    Button("3,000 edges at once", onClick=lambda: walk_many())),
+                Markdown(walk_text), Chart(walk_chart)),
+            Tab("Second neighbours",
+                Row(Button("Random node", onClick=lambda: random_second()),
+                    Button("Count for every node", onClick=lambda: count_all())),
+                Markdown(second_text), Chart(second_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · ⟨k⟩ = {mean_k():.2f}"))
+center()

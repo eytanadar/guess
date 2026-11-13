@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The small-world model",
+  "description": "Rewire a few edges of a ring lattice into shortcuts: distances collapse while clustering stays high.",
+  "console": "toggle",
+  "script": "main.gy"
+}

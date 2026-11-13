@@ -1,0 +1,383 @@
+# The Barabási–Albert model  (Newman, Networks, Section 13.2)
+# A network grows one node at a time. Each newcomer brings m edges and joins
+# them to existing nodes chosen in proportion to their degree: the
+# well-connected get better connected ("preferential attachment"). The degree
+# distribution becomes a power law, p_k = 2m(m+1) / k(k+1)(k+2), so
+# P(K >= k) = m(m+1) / k(k+1) and alpha = 3. Choose the targets uniformly
+# instead and the distribution is exponential, P(K >= k) = (m/(m+1))^(k-m):
+# no hubs.
+#
+# The whole network is grown first and laid out once; then it is revealed
+# node by node with revealUpTo(step) (the `born` field), so every node appears
+# where it will stay.
+
+import math
+import random
+
+MODELS = ["Preferential (in proportion to degree)", "Uniform (any node equally)"]
+st = {"model": MODELS[0], "n": 200, "m": 2, "seed": 3, "born": [], "edges": [], "k": 0, "last": None,
+      "timer": None, "big": None, "sweep": [], "stimer": None, "axes": "log–log"}
+mode = ["Grow it"]
+play_btn = None
+Node.born = 0
+Edge.born = 0
+
+
+def grow(n, m, pref, seed):
+    """Grow a network: a clique of m + 1 nodes (step 0), then one node per step, each linking to m
+    distinct earlier nodes, chosen in proportion to degree (pref) or uniformly. Returns the arrival
+    step of every node and the edges as (new, old, step)."""
+    rnd = random.Random(seed)
+    born = [0] * (m + 1)
+    edges = [(i, j, 0) for i in range(m + 1) for j in range(i + 1, m + 1)]
+    pool = [v for e in edges for v in e[:2]]             # each node once per edge end: degree-weighted
+    for new in range(m + 1, n):
+        step = new - m
+        chosen = set()
+        while len(chosen) < m:
+            chosen.add(rnd.choice(pool) if pref else rnd.randrange(new))
+        born.append(step)
+        for t in sorted(chosen):
+            edges.append((new, t, step))
+            pool += [new, t]
+    return born, edges
+
+
+def degrees_of(n, edges):
+    deg = [0] * n
+    for a, b, _s in edges:
+        deg[a] += 1
+        deg[b] += 1
+    return deg
+
+
+def ccdf(degs):
+    """[(k, share of nodes with degree >= k)]"""
+    n = len(degs)
+    count = {}
+    for k in degs:
+        count[k] = count.get(k, 0) + 1
+    out, left = [], n
+    for k in sorted(count):
+        out.append((k, left / n))
+        left -= count[k]
+    return out
+
+
+def theory_pref(m, ks):
+    return [(k, m * (m + 1) / (k * (k + 1))) for k in ks if k >= m]
+
+
+def theory_unif(m, ks):
+    return [(k, (m / (m + 1)) ** (k - m)) for k in ks if k >= m]
+
+
+# ---- the drawing -------------------------------------------------------------------------------------
+def build(v=None):
+    stop_timers()
+    n, m = st["n"], st["m"]
+    st["born"], st["edges"] = grow(n, m, st["model"] == MODELS[0], st["seed"])
+    st["k"], st["last"] = 0, None
+    remove(list(g.nodes))
+    nodes = []
+    for i in range(n):
+        nd = addNode(f"p{i}", label=str(i))
+        nd.born = st["born"][i]
+        nodes.append(nd)
+    for a, b, s_ in st["edges"]:
+        e = addEdge(nodes[a], nodes[b])
+        e.born = s_
+    frLayout()
+    noverlapLayout(margin=6)
+    look()
+    center(g.nodes)                       # frame the grown network, then hide all but the start
+    revealUpTo(0)
+    look()
+
+
+def shown_degrees():
+    deg = [0] * st["n"]
+    for a, b, s_ in st["edges"]:
+        if s_ <= st["k"]:
+            deg[a] += 1
+            deg[b] += 1
+    return deg
+
+
+def look():
+    deg = shown_degrees()
+    top = max(max(deg), 1)
+    order = sorted(range(st["n"]), key=lambda i: -deg[i])[:5]
+    for nd in g.nodes:
+        i = int(nd.name[1:])
+        t = math.sqrt(deg[i] / top)
+        nd.width = nd.height = 8 + 30 * t
+        nd.color = f"{int(140 + 110 * t)},{int(185 - 95 * t)},{int(240 - 190 * t)}"   # light blue to orange-red
+        nd.strokecolor, nd.strokewidth = "40,40,50", 0.8
+        nd.labelvisible = i in order and deg[i] > 0
+        nd.label = f"k={deg[i]}"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,130", 1.1, "solid"
+
+
+def total_steps():
+    return st["n"] - st["m"] - 1
+
+
+def add_one():
+    if st["k"] >= total_steps():
+        return False
+    before = shown_degrees()
+    st["k"] += 1
+    look()
+    new = None
+    targets = []
+    for x in revealUpTo(st["k"]):
+        if hasattr(x, "node1"):
+            x.color, x.width, x.linestyle = "245,150,40", 3.2, "flow"
+            other = x.node2 if x.node1.born == st["k"] else x.node1
+            other.strokecolor, other.strokewidth = "150,40,20", 3
+            targets.append(other)
+        else:
+            new = x
+    if new is not None:
+        new.color, new.strokecolor, new.strokewidth = "255,220,60", "30,30,30", 3
+        new.width = new.height = max(new.width, 26)
+        known = [nd for nd in g.nodes if nd.visible and nd is not new]
+        mean = sum(before[int(nd.name[1:])] for nd in known) / max(1, len(known))
+        st["last"] = (new.name, [(t.name, before[int(t.name[1:])]) for t in targets], mean)
+    return total_steps() - st["k"]
+
+
+def play():
+    if st["timer"] is not None and st["timer"].running:
+        stop_timers()
+        return
+    if st["k"] >= total_steps():
+        st["k"] = 0
+        revealUpTo(0)
+        look()
+    st["timer"] = everyPaced(add_one, steps=total_steps() - st["k"] + 1, slow=0.8, fast=0.06, ramp=5)
+    play_btn.text = "Pause"
+
+
+def show_whole():
+    stop_timers()
+    st["k"] = total_steps()
+    revealUpTo(st["k"])
+    st["last"] = None
+    look()
+
+
+def stop_timers():
+    for key in ("timer", "stimer"):
+        if st[key] is not None:
+            st[key].stop()
+            st[key] = None
+    if play_btn is not None:
+        play_btn.text = "Grow node by node"
+
+
+def pick_model(v):
+    st["model"] = v
+    st["big"] = None
+    build()
+
+
+def pick_m(v):
+    st["m"] = int(v.split()[0])
+    st["big"] = None
+    build()
+
+
+def new_network():
+    st["seed"] += 1
+    build()
+
+
+def grow_text():
+    m = st["m"]
+    shown = st["k"] + m + 1
+    deg = shown_degrees()
+    rule = ("chosen **in proportion to their degree**" if st["model"] == MODELS[0]
+            else "chosen **uniformly**, whatever their degree")
+    out = (f"Step **{st['k']}** of {total_steps()}: **{shown}** nodes. Each newcomer (yellow) brings **m = {m}** "
+           f"edges (orange) and joins them to existing nodes {rule}. Size and colour show degree; the five "
+           "biggest are labelled.")
+    if st["last"]:
+        name, tg, mean = st["last"]
+        chips = ", ".join(f"{linkTo(g.getNodeByName(t), t + ' (k=' + str(k) + ')')}" for t, k in tg)
+        avg = sum(k for _t, k in tg) / len(tg)
+        out += (f"\n\n{linkTo(g.getNodeByName(name))} linked to {chips}: their mean degree was **{avg:.1f}**, "
+                f"against **{mean:.1f}** for all nodes.")
+    out += (f"\n\nLargest degree so far: **{max(deg)}**; mean degree {2 * len([1 for e in st['edges'] if e[2] <= st['k']]) / shown:.2f} "
+            f"(it tends to 2m = {2 * m}).")
+    if st["model"] == MODELS[0]:
+        out += " The rich get richer: an early hub gets more chances with every newcomer."
+    else:
+        out += " With no preference, the oldest nodes still lead (they have had more chances), but nobody runs away."
+    return out
+
+
+def grow_chart():
+    if mode[0] != "Grow it":
+        return None
+    deg = [k for k in shown_degrees() if k > 0]
+    if len(deg) < 5:
+        return None
+    pts = ccdf(deg)
+    ks = sorted({k for k, _p in pts})
+    th = theory_pref(st["m"], ks) if st["model"] == MODELS[0] else theory_unif(st["m"], ks)
+    return plotLine({"this network": pts, "theory for large n": th}, title="Degrees so far (cumulative)",
+                    xlabel="degree k", ylabel="share with degree ≥ k", log=true, dots=true,
+                    dashed=["theory for large n"])
+
+
+# ---- two big networks, side by side --------------------------------------------------------------------
+BIG = 3000
+
+
+def big_pair():
+    if st["big"] is None:
+        m = st["m"]
+        out = {}
+        for name, pref in (("pref", True), ("unif", False)):
+            born, edges = grow(BIG, m, pref, 100 + st["seed"])
+            out[name] = degrees_of(BIG, edges)
+        out["fit"] = fitPowerLaw(out["pref"])
+        out["fit_tail"] = fitPowerLaw(out["pref"], kmin=5 * m)
+        st["big"] = out
+    return st["big"]
+
+
+def pick_axes(v):
+    st["axes"] = v
+
+
+def dist_text():
+    if mode[0] != "Degree distributions":
+        return ""
+    b = big_pair()
+    f = b["fit"]
+    m = st["m"]
+    return (f"Two networks of **{BIG:,}** nodes grown with m = {m}: one by preferential attachment, one uniformly. "
+            f"Largest degree: **{max(b['pref'])}** against **{max(b['unif'])}**.\n\n"
+            f"On log–log axes the preferential network's distribution is a straight line: a power law. Fitted "
+            f"by maximum likelihood from the best k_min ({f['kmin']}): **α = {f['alpha']:.2f} ± {f['sigma']:.2f}**; "
+            f"from k ≥ {5 * m}: **α = {b['fit_tail']['alpha']:.2f} ± {b['fit_tail']['sigma']:.2f}**. Theory says 3, "
+            "but only for large k: the exact formula 2m(m+1)/k(k+1)(k+2) bends at small degrees, so fits that start "
+            "low come out below 3, and they creep up as k_min (and n) grow.\n\n"
+            "The uniform network's falls off a cliff on log–log axes; switch to **log-linear** and it is the "
+            "straight line, an exponential: each extra edge is (m/(m+1)) times as likely.\n\n"
+            "Dashed lines are the formulas for large n: m(m+1)/k(k+1) and (m/(m+1))^(k−m).")
+
+
+def dist_chart():
+    if mode[0] != "Degree distributions":
+        return None
+    b = big_pair()
+    m = st["m"]
+    pp, pu = ccdf(b["pref"]), ccdf(b["unif"])
+    ks_p = sorted({k for k, _p in pp})
+    ks_u = sorted({k for k, _p in pu})
+    loglog = st["axes"] == "log–log"
+    return plotLine({"preferential": pp, "uniform": pu, "theory, preferential": theory_pref(m, ks_p),
+                     "theory, uniform": theory_unif(m, ks_u)},
+                    title=f"Degree distributions, {BIG:,} nodes (cumulative)", xlabel="degree k",
+                    ylabel="share with degree ≥ k", logX=loglog, logY=true, dots=true,
+                    dashed=["theory, preferential", "theory, uniform"])
+
+
+# ---- hubs as the network grows ----------------------------------------------------------------------------
+SIZES = [250, 500, 1000, 2000, 4000, 8000, 16000]
+
+
+def run_sweep():
+    stop_timers()
+    st["sweep"] = []
+    st["stimer"] = everyPaced(sweep_step, steps=len(SIZES) + 1, slow=0.8, fast=0.3, ramp=2)
+
+
+def sweep_step():
+    i = len(st["sweep"])
+    if i >= len(SIZES):
+        return False
+    n = SIZES[i]
+    m = st["m"]
+    kp, ku, al = [], [], []
+    for rep in range(3):
+        _b, ep = grow(n, m, True, 1000 * rep + n)
+        _b, eu = grow(n, m, False, 1000 * rep + n)
+        dp = degrees_of(n, ep)
+        kp.append(max(dp))
+        ku.append(max(degrees_of(n, eu)))
+        al.append(fitPowerLaw(dp, kmin=5 * m)["alpha"])
+    st["sweep"].append((n, sum(kp) / 3, sum(ku) / 3, sum(al) / 3))
+    return len(SIZES) - len(st["sweep"])
+
+
+def hubs_text():
+    if mode[0] != "Hubs":
+        return ""
+    head = ("How big is the biggest hub? With preferential attachment the largest degree grows like **√n** "
+            "(the power law with α = 3 predicts k_max ∼ n^(1/(α−1))); with uniform attachment only like **ln n**. "
+            "*Simulate* grows networks from 250 to 16,000 nodes (3 of each).")
+    if not st["sweep"]:
+        return head
+    rows = ["| n | largest degree, preferential | uniform | fitted α (k ≥ 5m) |", "|---|---|---|---|"]
+    for n, kp, ku, al in st["sweep"]:
+        rows.append(f"| {n:,} | {kp:.0f} | {ku:.0f} | {al:.2f} |")
+    out = head + "\n\n" + "\n".join(rows)
+    if len(st["sweep"]) >= 2:
+        (n0, p0, u0, _a), (n1, p1, u1, _b) = st["sweep"][0], st["sweep"][-1]
+        out += (f"\n\nFrom n = {n0:,} to {n1:,} ({n1 / n0:.0f}× bigger) the biggest preferential hub grew "
+                f"**{p1 / p0:.1f}×** (√{n1 // n0} = {math.sqrt(n1 / n0):.1f}); the uniform one **{u1 / u0:.1f}×**.")
+    return out
+
+
+def hubs_chart():
+    if mode[0] != "Hubs" or len(st["sweep"]) < 2:
+        return None
+    sw = st["sweep"]
+    n0, p0, u0 = sw[0][0], sw[0][1], sw[0][2]
+    return plotLine({"preferential": [(n, kp) for n, kp, _u, _a in sw], "uniform": [(n, ku) for n, _p, ku, _a in sw],
+                     "∝ √n": [(n, p0 * math.sqrt(n / n0)) for n, *_r in sw],
+                     "∝ ln n": [(n, u0 * math.log(n) / math.log(n0)) for n, *_r in sw]},
+                    title="Largest degree as the network grows", xlabel="n", ylabel="largest degree", log=true,
+                    dots=true, dashed=["∝ √n", "∝ ln n"])
+
+
+# ---- wiring ---------------------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    stop_timers()
+
+
+play_btn = Button("Grow node by node", onClick=lambda: play())
+build()
+constantLabelSize(size=14)
+ui.title("The Barabási–Albert model", "Networks, Section 13.2")
+ui.layout(
+    right=Column(
+        Markdown("""### The rich get richer
+Nodes arrive one at a time and link to existing ones. Does it matter
+*which* ones?"""),
+        Row(Dropdown(MODELS, label="Attach", onChange=pick_model),
+            Dropdown(["2 edges per newcomer", "1 edge per newcomer", "3 edges per newcomer"], label="m",
+                     onChange=pick_m)),
+        Tabs(
+            Tab("Grow it",
+                Row(play_btn, Button("Show the whole network", onClick=lambda: show_whole()),
+                    Button("New network", onClick=lambda: new_network())),
+                Markdown(grow_text), Chart(grow_chart)),
+            Tab("Degree distributions",
+                Dropdown(["log–log", "log-linear"], label="Axes", onChange=pick_axes),
+                Markdown(dist_text), Chart(dist_chart)),
+            Tab("Hubs",
+                Button("Simulate: networks of 250 to 16,000 nodes", onClick=lambda: run_sweep()),
+                Markdown(hubs_text), Chart(hubs_chart)),
+            onChange=switch)),
+    sizes={"right": 430},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{st['k'] + st['m'] + 1} of {st['n']} nodes shown · step {st['k']} · {st['model'].split(' (')[0]}"))

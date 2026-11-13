@@ -1,0 +1,453 @@
+# Price's model of citations  (Newman, Networks, Section 13.1)
+# Papers arrive one at a time. Each new paper cites c earlier ones, chosen with
+# probability proportional to (in-degree + a): papers already cited a lot get
+# cited more ("cumulative advantage"), and the constant a gives uncited papers
+# a chance. The in-degree distribution grows a power-law tail,
+# p_k ~ k^-alpha with alpha = 2 + a/c, and its exact form is
+# P(K >= k) = B(k + a, 1 + a/c) / B(a, 1 + a/c).
+# Simulating it fast: with probability c/(c + a) copy a citation made by a
+# random earlier paper (that picks papers in proportion to in-degree),
+# otherwise pick a paper uniformly (the "+ a").
+#
+# The network is grown once by makePriceModel, laid out once, and then revealed
+# paper by paper with revealUpTo(step): nodes appear where they will stay.
+
+import math
+import random
+
+N_DRAWN = 250
+st = {"c": 3.0, "a": 1.0, "seed": 1, "k": 0, "timer": None, "cites": [], "indeg": [], "final": [],
+      "top": [], "series": {}}
+sim = {"timer": None, "targets": [], "cited": [], "indeg": [], "n": 0, "goal": 20000}
+sweep = {"timer": None, "rows": [], "todo": []}
+mode = ["Grow it"]
+grow_btn = None
+A_VALUES = [0.25, 0.5, 1, 2, 3, 4, 6]
+
+
+# ---- the drawn network -----------------------------------------------------------------------------
+def build(v=None):
+    stop_timers()
+    st["c"], st["a"] = float(cslider.value), float(aslider.value)
+    makePriceModel(N_DRAWN, c=st["c"], a=st["a"], seed=st["seed"])
+    noverlapLayout(margin=4)
+    n = len(g.nodes)
+    cites = [[] for _ in range(n)]
+    for e in g.edges:
+        cites[e.node1.born].append(e.node2.born)
+    st["cites"] = [sorted(x) for x in cites]
+    final = [0] * n
+    for x in st["cites"]:
+        for t in x:
+            final[t] += 1
+    st["final"] = final
+    st["top"] = sorted(range(n), key=lambda i: (-final[i], i))[:5]
+    for v_ in g.nodes:
+        v_.label = f"paper {v_.born}"
+    st["k"] = 0
+    st["indeg"] = [0] * n
+    st["series"] = {i: [(0, 0)] for i in st["top"]}
+    center(g.nodes)                        # frame the finished network before hiding it
+    revealUpTo(0)
+    look()
+    if mode[0] != "Grow it":
+        all_papers()                       # the other tabs show the finished network
+    sim.update(indeg=[], n=0)              # simulations belong to the old c and a
+    sweep.update(rows=[])
+
+
+def paper(i):
+    return g.getNodeByName(f"nd{i}")
+
+
+def look():
+    n = len(st["final"])
+    top = max(1, max(st["final"]))
+    for v_ in g.nodes:
+        i = v_.born
+        t = i / max(1, n - 1)              # arrival time: old = warm red, new = pale blue
+        v_.color = f"{int(225 - 95 * t)},{int(90 + 105 * t)},{int(80 + 160 * t)}"
+        v_.width = v_.height = 8 + 30 * math.sqrt(st["indeg"][i] / top)
+        v_.strokecolor, v_.strokewidth = "40,40,40", 0.75
+        v_.labelvisible = i in st["top"] and st["indeg"][i] > 0
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,90", 1, "solid"
+
+
+def add_paper():
+    n = len(st["final"])
+    if st["k"] >= n - 1:
+        return False
+    st["k"] += 1
+    k = st["k"]
+    for t in st["cites"][k]:
+        st["indeg"][t] += 1
+    for i in st["top"]:
+        st["series"][i].append((k, st["indeg"][i]))
+    look()
+    for x in revealUpTo(k):                # the new paper and its citations, highlighted
+        if hasattr(x, "node1"):
+            x.color, x.width, x.linestyle = "245,150,40", 2.5, "flow"
+            x.node2.strokecolor, x.node2.strokewidth = "200,90,0", 3
+        else:
+            x.color, x.strokecolor, x.strokewidth = "255,215,80", "90,50,0", 3
+            x.width = x.height = max(x.width, 18)
+            x.labelvisible = true
+    return n - 1 - k
+
+
+def grow():
+    if st["timer"] is not None and st["timer"].running:
+        stop_timers()
+        return
+    if st["k"] >= len(st["final"]) - 1:
+        restart()
+    st["timer"] = everyPaced(add_paper, steps=len(st["final"]) - st["k"], slow=0.9, fast=0.06, ramp=4)
+    grow_btn.text = "Pause"
+
+
+def all_papers():
+    stop_timers()
+    n = len(st["final"])
+    st["k"] = n - 1
+    st["indeg"] = list(st["final"])
+    st["series"] = {i: series_of(i) for i in st["top"]}
+    revealUpTo(n)
+    look()
+
+
+def series_of(i):
+    pts, k_ = [(0, 0)], 0
+    for step, cited in enumerate(st["cites"]):
+        if i in cited:
+            k_ += 1
+            pts.append((step, k_))
+    pts.append((len(st["cites"]) - 1, k_))
+    return pts
+
+
+def restart():
+    stop_timers()
+    st["k"] = 0
+    st["indeg"] = [0] * len(st["final"])
+    st["series"] = {i: [(0, 0)] for i in st["top"]}
+    revealUpTo(0)
+    look()
+
+
+def stop_timers():
+    for holder in (st, sim, sweep):
+        if holder["timer"] is not None:
+            holder["timer"].stop()
+            holder["timer"] = None
+    if grow_btn is not None:
+        grow_btn.text = "Grow it, paper by paper"
+
+
+def new_seed():
+    st["seed"] += 1
+    build()
+
+
+def grow_text():
+    k, n = st["k"], len(st["final"])
+    c, a = st["c"], st["a"]
+    total = sum(st["indeg"][:k]) + a * k          # sum of (in-degree + a) over the k papers it could cite
+    lead = max(range(k), key=lambda i: st["indeg"][i]) if k else 0
+    out = (f"**Paper {k}** of {n} has arrived" + (" and cites " + " ".join(
+        linkTo(paper(t), f"paper {t} (now {st['indeg'][t]})") for t in st["cites"][k]) if k else "") + ".")
+    if k:
+        share = (st["indeg"][lead] + a) / total
+        out += (f"\n\nThe next paper picks each earlier one with probability ∝ in-degree + a = in-degree + {a:g}. "
+                f"The most-cited so far, {linkTo(paper(lead), f'paper {lead}')} with {st['indeg'][lead]} citations, "
+                f"gets **{100 * share:.1f}%** of each choice, an uncited paper {100 * a / total:.2f}%. "
+                "The rich get richer.")
+    out += (f"\n\n*Simulated by:* with probability c/(c + a) = {c / (c + a):.2f} copy a random earlier citation "
+            "(that lands in proportion to in-degree), else pick uniformly. Red: old papers, blue: new; size: "
+            "citations so far.")
+    return out
+
+
+def growth_chart():
+    if mode[0] != "Grow it" or not st["series"]:
+        return None
+    data = {f"paper {i}": pts for i, pts in st["series"].items()}
+    return plotLine(data, title="Citations of the five eventual leaders", xlabel="papers arrived",
+                    ylabel="in-degree")
+
+
+# ---- theory --------------------------------------------------------------------------------------------
+def alpha_theory(c=None, a=None):
+    c = st["c"] if c is None else c
+    a = st["a"] if a is None else a
+    return 2 + a / c
+
+
+def exact_ccdf(k, c, a):
+    """P(K >= k) for Price's model at large n: B(k + a, 1 + a/c) / B(a, 1 + a/c)."""
+    b = 1 + a / c
+    return math.exp(math.lgamma(k + a) + math.lgamma(a + b) - math.lgamma(k + a + b) - math.lgamma(a))
+
+
+def price_indegrees(n, c, a, rnd):
+    """In-degrees of a Price-model network of n papers (pure Python, nothing drawn)."""
+    indeg, targets = [0], []
+    for new in range(1, n):
+        want = min(new, int(c) + (1 if rnd.random() < c - int(c) else 0))
+        cited = set()
+        while len(cited) < want:
+            if targets and rnd.random() < c / (c + a):
+                cited.add(rnd.choice(targets))
+            else:
+                cited.add(rnd.randrange(new))
+        for t in cited:
+            indeg[t] += 1
+            targets.append(t)
+        indeg.append(0)
+    return indeg
+
+
+def fit_shifted(vals, a):
+    """Fit the power law in k + a, the variable Price's distribution is a power law in
+    ((k + a)^-alpha, not k^-alpha). fitPowerLaw takes whole numbers and subtracts 1/2,
+    so 1/2 is added back. Returns (alpha, sigma, the k where the fitted tail starts)."""
+    r = fitPowerLaw([v + a + 0.5 for v in vals if v > 0])
+    return r["alpha"], r["sigma"], max(1, int(round(r["kmin"] - a - 0.5)))
+
+
+def ccdf_points(vals):
+    vals = sorted(v for v in vals if v > 0)
+    n = len(vals)
+    out, last = [], None
+    for i, v in enumerate(vals):
+        if v != last:
+            out.append((v, (n - i) / n))
+            last = v
+    return out
+
+
+# ---- degree distribution tab ---------------------------------------------------------------------------
+def dist_text():
+    if mode[0] != "Distribution":
+        return ""
+    a = st["a"]
+    vals = st["final"]
+    try:
+        al, sg, k0 = fit_shifted(vals, a)
+    except Exception:
+        return "Too few cited papers to fit."
+    out = (f"The finished network: {len(vals)} papers, of which {sum(1 for v in vals if v > 0)} are cited. "
+           f"Fitted from k ≥ {k0}: **α = {al:.2f} ± {sg:.2f}**; theory says **2 + a/c = {alpha_theory():.2f}**. "
+           "With this few papers the estimate is rough. The dashed line is the exact distribution, "
+           "B(k + a, 1 + a/c) / B(a, 1 + a/c).")
+    if sim["indeg"]:
+        al, sg, k0 = fit_shifted(sim["indeg"], a)
+        r = fitPowerLaw(sim["indeg"])
+        out += (f"\n\n**{sim['n']:,} papers** simulated off screen: α = **{al:.2f} ± {sg:.2f}** from k ≥ {k0}. "
+                "The simulated papers sit on the exact line, and the tail gets longer as the network grows.")
+        out += (f"\n\n*Fitting k + a, not k:* Price's distribution is a power law in k + a, so the fits here use "
+                f"k + a. Fitting k itself reads low: α = {r['alpha']:.2f} here, because at small k the +a still "
+                "bends the curve.")
+    return out
+
+
+def dist_chart():
+    if mode[0] != "Distribution":
+        return None
+    c, a = st["c"], st["a"]
+    if sim["indeg"]:
+        pts, label = ccdf_points(sim["indeg"]), f"simulated ({sim['n']:,} papers)"
+    else:
+        pts, label = ccdf_points(st["final"]), f"this network ({len(st['final'])} papers)"
+    # the exact formula, renormalised to cited papers (k >= 1) to match the plotted points
+    p1 = exact_ccdf(1, c, a)
+    ks = sorted({int(round(10 ** (i / 20))) for i in range(0, 20 * int(math.log10(pts[-1][0]) + 1) + 1)})
+    theory = [(k, exact_ccdf(k, c, a) / p1) for k in ks if k <= pts[-1][0] * 1.2]
+    return plotLine({label: pts, "exact formula": theory}, log=true,
+                    title="Cumulative in-degree distribution", xlabel="in-degree k", ylabel="P(K ≥ k), cited papers",
+                    dashed=["exact formula"])
+
+
+def sim_step():
+    if sim["n"] >= sim["goal"]:
+        return False
+    # grow the same simulated network in chunks, so the tail can be watched lengthening
+    chunk = 5000
+    rnd = sim["rnd"]
+    c, a = st["c"], st["a"]
+    indeg, targets = sim["indeg"], sim["targets"]
+    start = sim["n"]
+    if start == 0:
+        indeg.append(0)
+        start = 1
+    for new in range(start, min(sim["goal"], sim["n"] + chunk)):
+        want = min(new, int(c) + (1 if rnd.random() < c - int(c) else 0))
+        cited = set()
+        while len(cited) < want:
+            if targets and rnd.random() < c / (c + a):
+                cited.add(rnd.choice(targets))
+            else:
+                cited.add(rnd.randrange(new))
+        for t in cited:
+            indeg[t] += 1
+            targets.append(t)
+        indeg.append(0)
+    sim["n"] = len(indeg)
+    return sim["goal"] - sim["n"]
+
+
+def simulate_big():
+    stop_timers()
+    sim.update(targets=[], indeg=[], n=0, rnd=random.Random(st["seed"] + 100))
+    sim["timer"] = everyPaced(sim_step, steps=5, slow=0.8, fast=0.4, ramp=1)
+
+
+# ---- sweep a ---------------------------------------------------------------------------------------------
+def sweep_step():
+    if not sweep["todo"]:
+        return False
+    a = sweep["todo"].pop(0)
+    c = st["c"]
+    vals = price_indegrees(8000, c, a, random.Random(7))
+    al, sg, k0 = fit_shifted(vals, a)
+    sweep["rows"].append((a, al, sg, k0))
+    return len(sweep["todo"])
+
+
+def simulate_sweep():
+    stop_timers()
+    sweep.update(rows=[], todo=list(A_VALUES))
+    sweep["timer"] = everyPaced(sweep_step, steps=len(A_VALUES) + 1, slow=0.8, fast=0.3, ramp=1)
+
+
+def sweep_chart():
+    if mode[0] != "Vary a":
+        return None
+    c = st["c"]
+    theory = [(x / 10, 2 + x / 10 / c) for x in range(1, 66)]
+    data = {"2 + a/c": theory}
+    if sweep["rows"]:
+        data["measured α (8,000 papers)"] = [(a, al) for a, al, _s, _k in sweep["rows"]]
+    return plotLine(data, title=f"Exponent against a (c = {c:g})", xlabel="a", ylabel="α", dashed=["2 + a/c"],
+                    highlight=["measured α (8,000 papers)"], dots=true, yrange=(1.5, math.ceil(2 + 6.5 / c + 0.3)))
+
+
+def sweep_text():
+    if mode[0] != "Vary a":
+        return ""
+    c = st["c"]
+    out = (f"a is what a paper is 'worth' before anyone cites it. Small a: the rich take almost everything, "
+           f"α → 2. Large a: choices are nearer uniform, a thinner tail. Theory: α = 2 + a/{c:g}.")
+    if sweep["rows"]:
+        rows = ["| a | measured α | 2 + a/c | k_min |", "|---|---|---|---|"]
+        for a, al, sg, km in sweep["rows"]:
+            rows.append(f"| {a:g} | {al:.2f} ± {sg:.2f} | {2 + a / c:.2f} | {km} |")
+        out += "\n\n" + "\n".join(rows)
+        if len(sweep["rows"]) == len(A_VALUES):
+            out += ("\n\nMeasured (fitted in k + a) against theory: close, a little short for large a, where the "
+                    "thinner tail is harder to reach with 8,000 papers.")
+    else:
+        out += "\n\n*Press Simulate* to grow 8,000-paper networks for several values of a and fit each."
+    return out
+
+
+# ---- real citations ----------------------------------------------------------------------------------------
+real = {"indeg": None, "n": 0, "m": 0, "price": None}
+
+
+def load_real():
+    if real["indeg"] is not None:
+        return
+    count, names, part = {}, [], None
+    with open("vis-papers.gdf", encoding="utf-8") as fh:
+        for line in fh:
+            if line.startswith("nodedef>"):
+                part = "n"
+                continue
+            if line.startswith("edgedef>"):
+                part = "e"
+                continue
+            if not line.strip():
+                continue
+            if part == "n":
+                names.append(line.split(",", 1)[0])
+            elif part == "e":
+                cols = line.split(",")
+                if cols[0] != cols[1]:
+                    count[cols[1]] = count.get(cols[1], 0) + 1      # node2 is the cited paper
+                    real["m"] += 1
+    real["n"] = len(names)
+    real["indeg"] = [count.get(x, 0) for x in names]
+    c = real["m"] / real["n"]
+    real["price"] = price_indegrees(real["n"], c, 1.0, random.Random(3))
+
+
+def real_text():
+    if mode[0] != "Real citations":
+        return ""
+    load_real()
+    n, m = real["n"], real["m"]
+    c = m / n
+    r = fitPowerLaw(real["indeg"])
+    alp, sgp, _k = fit_shifted(real["price"], 1.0)
+    zero = sum(1 for x in real["indeg"] if x == 0)
+    return (f"**{n:,}** papers on graph drawing and network visualisation, with **{m:,}** citations among them "
+            f"(c = {c:.2f} per paper); {zero} are never cited from inside the set. Their in-degrees fit "
+            f"**α = {r['alpha']:.2f} ± {r['sigma']:.2f}** from k ≥ {r['kmin']}. A Price network with the same n and c, "
+            f"and a = 1, gives α = {alp:.2f} ± {sgp:.2f} (theory {2 + 1 / c:.2f}).\n\n"
+            "The shapes are close, but this is one field's papers: citations from outside the set are missing, "
+            "the set was collected by topic, and real citing favours recent work, which pure cumulative advantage "
+            "ignores (Section 13.3 and later sections add ageing). Price measured α ≈ 3 for whole citation databases.")
+
+
+def real_chart():
+    if mode[0] != "Real citations":
+        return None
+    load_real()
+    return plotLine({"vis papers": ccdf_points(real["indeg"]), "Price model, same n and c, a = 1":
+                     ccdf_points(real["price"])}, log=true, title="Cited papers: P(K ≥ k)", xlabel="in-degree k",
+                    ylabel="P(K ≥ k)", dashed=["Price model, same n and c, a = 1"], dots=true)
+
+
+# ---- tabs ----------------------------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    stop_timers()
+    if title != "Grow it":
+        all_papers()                       # the other tabs talk about the finished network
+
+
+cslider = Slider(1, 6, 3, 0.5, label="c, citations per paper")
+aslider = Slider(0.25, 6, 1, 0.25, label="a, the head start")
+cslider.onChange = build
+aslider.onChange = build
+grow_btn = Button("Grow it, paper by paper", onClick=lambda: grow())
+
+build()
+constantLabelSize(size=14)
+ui.title("Price's model of citations", "Networks, Section 13.1")
+ui.layout(
+    right=Column(
+        Markdown("""### Cumulative advantage
+New papers cite c earlier ones, in proportion to **citations so far + a**."""),
+        Row(cslider, aslider),
+        Markdown(lambda: f"Theory: in-degrees follow a power law with **α = 2 + a/c = {alpha_theory():.2f}**."),
+        Tabs(
+            Tab("Grow it",
+                Row(grow_btn, Button("All papers at once", onClick=lambda: all_papers()),
+                    Button("Start again", onClick=lambda: restart()), Button("New network", onClick=lambda: new_seed())),
+                Markdown(grow_text), Chart(growth_chart)),
+            Tab("Distribution",
+                Button("Simulate: 20,000 papers", onClick=lambda: simulate_big()),
+                Markdown(dist_text), Chart(dist_chart)),
+            Tab("Vary a",
+                Button("Simulate: sweep a", onClick=lambda: simulate_sweep()),
+                Markdown(sweep_text), Chart(sweep_chart)),
+            Tab("Real citations", Markdown(real_text), Chart(real_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len([v for v in g.nodes if v.visible])} of {len(g.nodes)} papers shown · "
+                           f"{len([e for e in g.edges if e.visible])} citations"))
+center(g.nodes)

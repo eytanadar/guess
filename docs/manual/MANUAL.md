@@ -1293,6 +1293,25 @@ makeExpectedDegree([5, 4, 3, 2, 2, 1, 1, 1, 1])
 makeFromGDF("sample.gdf")
 ```
 
+Growth models record when each node and edge arrived in the field `born`,
+so `revealUpTo(step)` can replay the growth with every node already in its
+final place. `makePriceModel(n, c, a)` grows a citation network in which
+papers cite in proportion to in-degree + a (Price's cumulative advantage;
+the in-degrees follow a power law of exponent 2 + a/c), and
+`makeBarabasiAlbertRandom` and `makeBarabasiAlbertAging` set `born` too.
+`makeBlockModel(sizes, p_in, p_out)` makes a network with community
+structure, the node field `block` holding each node's group:
+
+```python
+makePriceModel(500, c=3, a=1)
+fitPowerLaw(indegree)                     # alpha near 2 + 1/3
+revealUpTo(50)                            # the first 50 papers; a timer can step on
+showAll()
+makeBlockModel([30, 30, 30], 0.3, 0.02)
+colorize(block)
+makeFromGDF("sample.gdf")
+```
+
 ## 7.7 Structure, mixing and comparing partitions
 
 These commands return sets you can colour, hide or show, or a single number:

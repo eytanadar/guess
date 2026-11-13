@@ -83,6 +83,15 @@ class App:
                 self.s.dispatch(tid, "tick")
         assert not self.errors(), self.errors()
 
+    def tab(self, title):
+        """Select the tab with this title (in whichever Tabs holds it), as a click would."""
+        for w in self.s.gui.widgets.values():
+            if w.kind == "tabs" and any(getattr(c, "_state", {}).get("title") == title
+                                        for c in w.__dict__.get("_children", ())):
+                self.s.dispatch(w._id, "change", title)
+                return
+        raise AssertionError(f"no tab {title!r}")
+
     def markdown(self):
         """Every Markdown widget's text, live ones evaluated now (the app only
         refreshes the tab that is showing; tests read them all)."""

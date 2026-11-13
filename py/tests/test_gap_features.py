@@ -360,3 +360,31 @@ def test_from_networkx_falls_back_to_guess_layout(monkeypatch):
     assert s.run("fromNetworkX(__G)"), s.rec.of("error")
     pts = ev(s, "[(n.x, n.y) for n in g.nodes]")
     assert len(set(pts)) > 55 and all(p[0] == round(p[0]) for p in pts)   # frLayout's positions, not random ones
+
+
+def test_growth_generators_record_arrival_and_block_model():
+    s = _s()
+    assert s.run("makePriceModel(3000, c=3, a=1, seed=2, layout=false)"), s.rec.of("error")
+    assert ev(s, "len(g.nodes)") == 3000 and ev(s, "all(e.directed for e in g.edges)")
+    assert ev(s, "all(e.node1.born > e.node2.born and e.born == e.node1.born for e in g.edges)")  # cite older papers
+    alpha = ev(s, "fitPowerLaw(indegree)")["alpha"]
+    assert 2.0 < alpha < 2.8                                         # theory: 2 + a/c = 2.33
+    assert s.run("revealUpTo(10)") and ev(s, "len([v for v in g.nodes if v.visible])") == 11
+    assert s.run("makeBarabasiAlbertRandom(3, 2, 30)") and ev(s, "max(n.born for n in g.nodes)") == 30
+    assert s.run("makeBlockModel([20, 20], 0.5, 0.01, seed=1, layout=false)"), s.rec.of("error")
+    inside = ev(s, "len([e for e in g.edges if e.node1.block == e.node2.block])")
+    assert inside > 5 * ev(s, "len([e for e in g.edges if e.node1.block != e.node2.block])")
+    assert s.run("makeBlockModel([5, 5], [[1, 0], [0, 1]])") and ev(s, "len(g.edges)") == 20
+    assert not s.run("makeBlockModel([5, 5], 0.5)")
+
+
+def test_fit_power_law_shift():
+    s = _s()
+    assert s.run("makePriceModel(6000, c=3, a=3, seed=1, layout=false)"), s.rec.of("error")
+    # theory: 2 + a/c = 3, a power law in k + a; fitting k itself reads low, especially from small k
+    for k in (2, 5):
+        plain = ev(s, f"fitPowerLaw(indegree, kmin={k})")["alpha"]
+        shifted = ev(s, f"fitPowerLaw(indegree, kmin={k}, shift=3)")
+        assert abs(shifted["alpha"] - 3.0) < 0.35 < abs(plain - 3.0) and shifted["kmin"] == k
+    assert s.run("plotFrequency(indegree, cumulative=true, log=true, fit=true, shift=3)"), s.rec.of("error")
+    assert "k + 3" in _charts(s)[-1]["series"][1]["name"]

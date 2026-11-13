@@ -1,7 +1,7 @@
 """Graph algorithms backed by networkx (available in Pyodide via loadPackage)."""
 import random
 
-from .model import GSet, GuessError
+from .model import INT, GSet, GuessError
 
 
 def _nx():
@@ -91,10 +91,13 @@ def install(session):
     def make_from(G, label):
         directed = G.is_directed()
         g.clear()
+        add_born(G)
         index = {}
         for i, v in enumerate(G.nodes):
             n = g.addNode(f"nd{i}")
             n.label = f"nd{i}"
+            if "born" in G.nodes[v]:
+                n.born = G.nodes[v]["born"]
             pos = G.nodes[v].get("pos")
             if pos is not None:
                 n.x, n.y = 50 + 900 * pos[0], 50 + 900 * pos[1]
@@ -102,9 +105,17 @@ def install(session):
                 n.x, n.y = random.random() * 500, random.random() * 500
             index[v] = n
         for a, b in G.edges():
-            g.addEdge(index[a], index[b], directed)
+            e = g.addEdge(index[a], index[b], directed)
+            if "born" in G.edges[a, b]:
+                e.born = G.edges[a, b]["born"]
         session.scene()
         print(f"generated {label}: {len(g._nodes)} nodes, {len(g._edges)} edges")
+
+    def add_born(G):
+        """Growth models record when each node (and edge) arrived: a `born` field, for revealUpTo."""
+        if any("born" in d for _v, d in G.nodes(data=True)):
+            g.addNodeField("born", INT, 0)
+            g.addEdgeField("born", INT, 0)
 
     def gen(name, doc, build):
         def fn(*args):
@@ -123,7 +134,8 @@ def install(session):
         lambda nx, n, p: nx.gnp_random_graph(int(n), float(p)))
     gen("makeBarabasiAlbertRandom",
         "makeBarabasiAlbertRandom(vert, edges, evolve): preferential attachment; starts from "
-        "`vert` nodes and adds `evolve` nodes with `edges` edges each.",
+        "`vert` nodes and adds `evolve` nodes with `edges` edges each. The field `born` records the "
+        "step each node and edge arrived (0 for the seeds), so revealUpTo(step) can replay the growth.",
         lambda nx, v, m, ev: _barabasi(nx, int(v), int(m), int(ev)))
     gen("makeKleinbergRandom",
         "makeKleinbergRandom(size, clust): Kleinberg small world on a size x size torus with "
@@ -147,17 +159,18 @@ def _barabasi(nx, v, m, evolve):
     with probability proportional to (degree + 1), so isolated seeds can be hit.
     `pool` holds every node once plus once per incident edge end (linear time)."""
     G = nx.empty_graph(max(v, 1))
+    nx.set_node_attributes(G, 0, "born")        # the seed nodes arrive at step 0
     pool = list(G.nodes)
-    for _ in range(evolve):
+    for step in range(1, evolve + 1):
         new = G.number_of_nodes()
         k = min(m, new)
         chosen = set()
         while len(chosen) < k:
             chosen.add(random.choice(pool))
-        G.add_node(new)
+        G.add_node(new, born=step)
         pool.append(new)
         for t in chosen:
-            G.add_edge(new, t)
+            G.add_edge(new, t, born=step)
             pool += [new, t]
     return G
 

@@ -108,7 +108,7 @@ def install(session):
                 out[key] = [lo, hi]
         return out
 
-    def plotFrequency(field, log=False, cumulative=False, fit=False, kmin=None):
+    def plotFrequency(field, log=False, cumulative=False, fit=False, kmin=None, shift=0):
         """plotFrequency(degree) plots, for each value of a numeric field, the
         fraction of nodes (or edges) with that value: the degree distribution
         p(k). log=true draws both axes on log scales (a power law is then a
@@ -116,7 +116,8 @@ def install(session):
         with that value or more (the complementary cumulative distribution,
         smoother for heavy tails). Pointing at the chart highlights the
         elements with that value. fit=true adds a power law fitted by maximum
-        likelihood (fitPowerLaw; kmin= fixes where it starts) as a dashed line."""
+        likelihood (fitPowerLaw; kmin= fixes where it starts, shift= fits k + shift)
+        as a dashed line."""
         f = need_field(field)
         elems = _numeric(f)
         from collections import Counter
@@ -134,15 +135,18 @@ def install(session):
             pts = [p for p in pts if p[0] > 0 and p[1] > 0]
         series = [{"name": f.name, "color": 0x4E79A7, "points": pts}]
         if fit:
-            r = session.ns["fitPowerLaw"](f, kmin=kmin)
+            r = session.ns["fitPowerLaw"](f, kmin=kmin, shift=shift)
             a, k0, share = r["alpha"], r["kmin"], r["n"] / n
+            sh = float(shift)
             top = max(xs)
-            ks_ = [k0 * (top / k0) ** (i / 40) for i in range(41)] if top > k0 else [k0]
+            lo = k0 if k0 > 0 else min([x for x in xs if x > 0] or [1])   # a shifted fit can start at k = 0
+            ks_ = [lo * (top / lo) ** (i / 40) for i in range(41)] if top > lo else [lo]
             if cumulative:
-                curve = [[k, share * ((k - 0.5) / (k0 - 0.5)) ** (1 - a)] for k in ks_]
+                curve = [[k, share * ((k + sh - 0.5) / (k0 + sh - 0.5)) ** (1 - a)] for k in ks_]
             else:
-                curve = [[k, share * (a - 1) / (k0 - 0.5) * ((k - 0.5) / (k0 - 0.5)) ** (-a)] for k in ks_]
-            series.append({"name": f"fit: α = {a:.2f} ± {r['sigma']:.2f}, k ≥ {k0}", "color": 0xE15759,
+                curve = [[k, share * (a - 1) / (k0 + sh - 0.5) * ((k + sh - 0.5) / (k0 + sh - 0.5)) ** (-a)]
+                         for k in ks_]
+            series.append({"name": f"fit: α = {a:.2f} ± {r['sigma']:.2f}, k ≥ {k0}" + (f", in k + {sh:g}" if sh else ""), "color": 0xE15759,
                            "points": [p for p in curve if not log or p[1] > 0], "dash": True})
         op = ">=" if cumulative else "=="
         ylabel = f"fraction with {f.name} ≥ x" if cumulative else "fraction"

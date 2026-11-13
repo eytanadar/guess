@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The first-mover advantage",
+  "description": "In growing networks the oldest nodes end up with the most links: degree against arrival time in the model, one node's degree followed as the network grows, and real citations by year.",
+  "console": "toggle",
+  "script": "main.gy"
+}

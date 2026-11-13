@@ -1016,7 +1016,7 @@ Price's model of citations and the Barabási–Albert model. The growth models
 follow the "growing networks" convention: build the final network, lay it out
 once, then reveal it in arrival order.
 
-**`ch12-generating-functions`: Generating functions (§§12.10.1–12.10.7)** · planned
+**`ch12-generating-functions`: Generating functions (§§12.10.1–12.10.7)** · built
 - *Idea:*
   - a degree distribution can be packed into a function g₀(z) = Σ p_k z^k;
   - moments come from its derivatives at z = 1;
@@ -1030,7 +1030,7 @@ once, then reveal it in arrival order.
   - a sampling check: draw a node's neighbours' excess degrees in a real network and compare with g₁.
 - *GUESS:* numpy, `plotLine(dashed=)`, `Chart`.
 
-**`ch12-small-component-sizes`: Small components from generating functions (§§12.10.8–12.10.9)** · planned
+**`ch12-small-component-sizes`: Small components from generating functions (§§12.10.8–12.10.9)** · built
 - *Idea:*
   - the size of the small component reached along an edge satisfies h₁(z) = z g₁(h₁(z)), and h₀(z) = z g₀(h₁(z));
   - iterating gives the whole size distribution π_s;
@@ -1041,7 +1041,7 @@ once, then reveal it in arrival order.
   - a slider for the mean degree, showing the divergence near the transition.
 - *GUESS:* numpy, `makeConfigurationModel`, `binPackLayout` + `noverlapLayout`, `plotLine`.
 
-**`ch12-other-models`: Directed, bipartite and community random graphs (§§12.11.1–12.11.6)** · planned
+**`ch12-other-models`: Directed, bipartite and community random graphs (§§12.11.1–12.11.6)** · built
 - *Idea:*
   - the configuration model generalises:
     - directed: in- and out-stubs paired;
@@ -1057,7 +1057,7 @@ once, then reveal it in arrival order.
   - **Communities:** sliders for p_in and p_out, with the block structure visible in `showMatrix(order=block)` and found again by `louvainClusters`.
 - *GUESS:* networkx generators, `showMatrix`, `bowTie`, a stochastic block model generator (see gaps).
 
-**`ch12-small-world-model`: The small-world model (§§12.11.7–12.11.8)** · planned
+**`ch12-small-world-model`: The small-world model (§§12.11.7–12.11.8)** · built
 - *Idea:*
   - a ring lattice has high clustering and long paths;
   - rewiring a small fraction p of edges as random shortcuts collapses the path lengths while the clustering stays high;
@@ -1069,7 +1069,7 @@ once, then reveal it in arrival order.
   - a note on dynamic networks (§12.11.7).
 - *GUESS:* `makeWattsStrogatz`, `everyPaced`, `plotLine(logX=)`.
 
-**`ch13-price-model`: Price's model of citations (§13.1)** · planned
+**`ch13-price-model`: Price's model of citations (§13.1)** · built
 - *Idea:*
   - new papers cite c earlier papers, chosen in proportion to (in-degree + a);
   - the in-degree distribution becomes a power law with α = 2 + a/c;
@@ -1081,7 +1081,7 @@ once, then reveal it in arrival order.
   - "Simulate" sweeps a.
 - *GUESS:* `revealUpTo`, `fitPowerLaw`, `plotFrequency(fit=true)`, a Price-model generator that records the step each node arrives (see gaps).
 
-**`ch13-barabasi-albert`: The Barabási–Albert model (§13.2)** · planned
+**`ch13-barabasi-albert`: The Barabási–Albert model (§13.2)** · built
 - *Idea:*
   - undirected growth with each new node attaching to m existing nodes in proportion to degree: α = 3;
   - without the preference (uniform attachment) the distribution is exponential.
@@ -1091,7 +1091,7 @@ once, then reveal it in arrival order.
   - the fitted α.
 - *GUESS:* `makeBarabasiAlbertRandom` (with a `born` field), `revealUpTo`, `fitPowerLaw`.
 
-**`ch13-first-mover`: Time evolution and the first-mover advantage (§13.3)** · planned
+**`ch13-first-mover`: Time evolution and the first-mover advantage (§13.3)** · built
 - *Idea:*
   - in these models the oldest nodes end up with the highest degrees: the expected degree falls with arrival time, and a node's degree grows like a power of time;
   - early arrival matters more than anything else.
@@ -1102,13 +1102,120 @@ once, then reveal it in arrival order.
   - real data: citations by year in `vis-papers.gdf` against the model.
 - *GUESS:* `plotScatter(line=)`, `revealUpTo`.
 
-### Gaps expected in batch 8
+### Gaps in batch 8 (added before building: `makePriceModel(n, c, a)` with Newman's copying method; a `born` field (arrival step on nodes and edges) from `makePriceModel`, `makeBarabasiAlbertRandom` and `makeBarabasiAlbertAging`; `makeBlockModel(sizes, p_in, p_out or matrix)` with a `block` field)
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|
 | Growth generators that record when each node arrived | ch13-price-model, ch13-barabasi-albert, ch13-first-mover | `makeBarabasiAlbertRandom` doesn't record arrival order; there is no Price model | `makePriceModel(n, c, a=1, seed=0)` (directed) and a `born` field from `makeBarabasiAlbertRandom` (and the aging variant) |
 | Stochastic block model | ch12-other-models | none (networkx `stochastic_block_model` works from code) | `makeBlockModel(sizes, p_in, p_out, seed=0)` with a node field `block` |
 | Clustered random graphs (triangle stubs) | ch12-other-models | none | build it in the explainer (or `makeClusteredRandom`) |
+
+Notes from building batch 8:
+- **Price's model is a power law in k + a, not k:** fitting k directly reads low (2.19 against 2.33 at a = 1). Added `fitPowerLaw(shift=a)` and `plotFrequency(fit=true, shift=a)`.
+- **Barabási–Albert fits:** fits from the smallest k_min come out under 3, because the exact m(m+1)/k(k+1) form bends at small k. `ch13-barabasi-albert` explains this.
+- **First-mover data:** `vis-papers.gdf`'s global `cites` count shows no first-mover pattern (the set is chosen by citations within each search phrase). Citations from inside the set do show it, and `ch13-first-mover` uses them.
+- **Community detection:** Louvain loses planted groups somewhat above the theoretical detectability limit, which is what belief propagation reaches. `ch12-other-models` says so.
+- **Fixed in GUESS:**
+  - slider readouts round to the slider's step;
+  - test helper `App.tab(title)`.
+- **Tooling:** temporary Playwright configs can live in the scratchpad if `web/node_modules` is symlinked beside them.
+
+## Batch 9: book pages 459–514 (Chapter 13.4–13.6 and Part IV, Chapter 14.1–14.2)
+
+The end of Part III (variations on growth models, and networks designed by
+optimisation), then Part IV, *Applications*, opening with community
+detection by modularity. The growth models replay their growth in place
+(`born` + `revealUpTo`).
+
+**`ch13-growth-variations`: Extra edges and edge removal (§§13.4.1–13.4.2)** · planned
+- *Idea:*
+  - real networks also gain edges between old nodes and lose edges;
+  - adding edges between existing nodes (also chosen by degree) and removing random edges changes the exponent, but the tail stays a power law while growth dominates.
+- *Reader:*
+  - sliders for the extra edges per step and the edge-removal rate;
+  - the growth is replayed node by node; new edges between old nodes flash blue, and removed edges fade red and vanish;
+  - a live cumulative degree chart with its fitted α against the formula;
+  - "Simulate" sweeps the removal rate.
+- *GUESS:* a general growth generator (see gaps), `revealUpTo`, `fitPowerLaw`.
+
+**`ch13-nonlinear-attachment`: Non-linear preferential attachment (§13.4.3)** · planned
+- *Idea:*
+  - attachment ∝ k^γ;
+  - γ < 1 gives a stretched exponential: no power law;
+  - γ = 1 gives the power law;
+  - γ > 1 gives condensation: one node ends up attached to nearly everything.
+- *Reader:*
+  - a γ slider (0.5 to 1.5);
+  - the growth is replayed with the biggest hub outlined;
+  - the share of edges held by the largest node is charted against n;
+  - degree distributions for three γ values side by side.
+- *GUESS:* the general growth generator, `revealUpTo`, `plotFrequency`.
+
+**`ch13-node-copying`: Node copying models (§13.5)** · planned
+- *Idea:*
+  - a new node copies the links of a random existing node (each with some probability), plus a few links of its own;
+  - this gives a power law without any explicit preference;
+  - it is a plausible model for gene duplication in protein networks and for copying links on the web.
+- *Reader:*
+  - each step picks a node to copy, outlines it, and draws the copied links (purple) and the new random ones (orange), replayed in place;
+  - sliders for the copy probability;
+  - degree distribution with its fit;
+  - a comparison with Price's model at a matching exponent.
+- *GUESS:* a copying-model generator (see gaps), `revealUpTo`, `fitPowerLaw`.
+
+**`ch13-optimization-models`: Networks designed for a purpose (§13.6)** · planned
+- *Idea:*
+  - a transport network trades the cost of building edges against travel time;
+  - cheap networks are trees, fast ones are meshes, and in between hub-and-spoke designs appear (as in airline networks).
+- *Reader:*
+  - towns scattered on a map;
+  - a slider for the weight on travel time against length;
+  - "Optimise" runs simulated annealing (paced): proposed edge additions and removals flash, and accepted ones stay;
+  - the cost and travel time are charted live;
+  - presets show the tree, hub-and-spoke and mesh regimes.
+- *GUESS:* `everyPaced`, `drawLine`, `plotLine`, Dijkstra from networkx.
+
+**`ch14-modularity`: Dividing networks and modularity (§§14.1–14.2.2)** · planned
+- *Idea:*
+  - graph partitioning fixes the number and size of groups; community detection doesn't;
+  - modularity Q measures how many more edges fall within groups than chance would give;
+  - a simple algorithm moves single nodes between two groups to raise Q (Kernighan–Lin style), keeping the best state.
+- *Reader:*
+  - the karate club and a planted-partition network;
+  - click nodes to move them between groups and watch Q change;
+  - "Optimise" moves one node per step (paced), highlighting the moved node and its edges, with Q charted live;
+  - the edges between groups are dashed, and the result is compared with the known split.
+- *GUESS:* `modularity`, `makeBlockModel`, `everyPaced`, `graphevents.clickNode`.
+
+**`ch14-spectral-modularity`: Spectral modularity maximisation (§§14.2.3–14.2.4)** · planned
+- *Idea:*
+  - modularity is a quadratic form in the modularity matrix B = A − kkᵀ/2m;
+  - the signs of its leading eigenvector give a good split;
+  - repeating the split on each group gives more groups, while each split raises Q.
+- *Reader:*
+  - nodes coloured by their value in the leading eigenvector (a diverging scale), and a sorted bar chart of the entries;
+  - "Split" divides by sign and "Split again" recurses (paced), stopping when no split raises Q;
+  - `showMatrix(order=group)` shows the block structure.
+- *GUESS:* numpy, `showMatrix`, `plotLine`.
+
+**`ch14-louvain-resolution`: The Louvain algorithm and the resolution limit (§§14.2.5–14.2.6)** · planned
+- *Idea:*
+  - Louvain moves nodes locally and then merges each community into a single node, repeating; it is fast and good;
+  - but modularity has a resolution limit: in a ring of small cliques, maximising Q can merge neighbouring cliques even though each is clearly a community.
+- *Reader:*
+  - **Louvain tab:** step through it (paced). Phase 1 moves nodes, highlighted with their community colour; phase 2 collapses communities into super-nodes, shown in a second graph. Q is charted at each level.
+  - **Resolution tab:**
+    - a ring of n cliques (slider) shows what Louvain finds and Q for the "one clique per community" partition against the merged one;
+    - a resolution slider (`louvainClusters(resolution=)`) shows communities split as it rises.
+- *GUESS:* `louvainClusters(resolution=)`, `modularity`, networkx's Louvain levels (`louvain_partitions`), `subgraph`/`use()` for the collapsed graph.
+
+### Gaps expected in batch 9
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| A general growth generator: m edges per new node, attachment ∝ (k + a)^γ, extra edges between old nodes, edge removal | ch13-growth-variations, ch13-nonlinear-attachment | `makeBarabasiAlbertRandom` (γ = 1, no extras), `makePriceModel` | `makeGrowingNetwork(n, m=2, gamma=1, a=1, extra=0, remove=0, seed=0)` with `born` on nodes and edges and a `died` step on removed edges (kept hidden, so the replay can show removals) |
+| Node copying model | ch13-node-copying | none | `makeCopyingModel(n, copy=0.5, links=2, seed=0)` with `born` and a `copied` field (the node copied from) |
+| `modularity(field, resolution=)` to match Louvain's | ch14-louvain-resolution | `modularity(field)` only | add `resolution=` |
 
 ## To do (requests not yet done)
 

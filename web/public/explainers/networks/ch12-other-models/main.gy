@@ -1,0 +1,608 @@
+# Other random graph models  (Newman, Networks, Sections 12.11.1-12.11.6)
+# The configuration model pairs up stubs at random. Change what the stubs
+# are and you get random versions of other kinds of network:
+#   directed    - out-stubs pair with in-stubs; a bow tie appears
+#   bipartite   - stubs of two kinds (people, groups) pair across; projecting
+#                 onto one kind gives a network made of cliques
+#   acyclic     - nodes in a fixed order, edges only pointing to earlier ones
+#   clustered   - besides single stubs, nodes have triangle "corners" that are
+#                 grouped in threes, so clustering survives as n grows
+#   communities - the stochastic block model: pairs in the same group join
+#                 with probability p_in, pairs in different groups with p_out
+# Each tab builds one of them, shows the property it adds, and compares it
+# with plain random wiring.
+
+import math
+import random
+import networkx as nx
+
+mode = ["Directed"]
+st = {"seed": 1, "timer": None, "sim": [], "simkey": None, "bip_proj": False, "found": None}
+ORANGE, GREEN, PURPLE, GREY, BLUE = "250,150,40", "70,200,110", "170,120,240", "150,155,165", "90,170,250"
+BLOCK_COLS = ["250,120,90", "90,190,250", "130,220,110", "240,200,70", "200,130,240"]
+
+
+def stop_timer():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+
+
+def load(G, label_nodes=False):
+    """Replace the drawing with networkx graph G (positions in its `pos` attribute)."""
+    fromNetworkX(G)
+    for v in g.nodes:
+        v.labelvisible = label_nodes
+        v.strokewidth = 0
+        v.strokecolor = "50,50,50"
+
+
+def poisson(rnd, mean):
+    L, k, p = math.exp(-mean), 0, 1.0
+    while True:
+        p *= rnd.random()
+        if p <= L:
+            return k
+        k += 1
+
+
+def pack():
+    binPackLayout(false)
+    noverlapLayout(margin=6)
+    center(g.nodes)
+
+
+# ---- directed ------------------------------------------------------------------------------------------
+DN = 150
+
+
+def directed_graph(n, c, seed):
+    """Directed configuration model: independent Poisson(c) in- and out-degrees, out-stubs paired with in-stubs.
+    Self-loops and repeated edges are dropped."""
+    rnd = random.Random(seed)
+    kout = [poisson(rnd, c) for _ in range(n)]
+    kin = [poisson(rnd, c) for _ in range(n)]
+    while sum(kout) != sum(kin):                 # the totals must match: every edge has one tail, one head
+        if sum(kout) < sum(kin):
+            kout[rnd.randrange(n)] += 1
+        else:
+            kin[rnd.randrange(n)] += 1
+    outs = [i for i, k in enumerate(kout) for _ in range(k)]
+    ins = [i for i, k in enumerate(kin) for _ in range(k)]
+    rnd.shuffle(ins)
+    G = nx.DiGraph()
+    G.add_nodes_from(range(n))
+    for a, b in zip(outs, ins):
+        if a != b:
+            G.add_edge(a, b)
+    return G
+
+
+def bowtie_parts(G):
+    core = max(nx.strongly_connected_components(G), key=len)
+    s0 = next(iter(core))
+    out_ = nx.descendants(G, s0) - core
+    in_ = nx.ancestors(G, s0) - core
+    weak = next(c for c in nx.weakly_connected_components(G) if s0 in c)
+    part = {}
+    for v in G:
+        part[v] = ("core" if v in core else "in" if v in in_ else "out" if v in out_
+                   else "tendril" if v in weak else "other")
+    return part
+
+
+def grid(items, x0, y0, cols, gap=26, right_to_left=False):
+    pos = {}
+    for k, v in enumerate(items):
+        col, row = k % cols, k // cols
+        pos[v] = (x0 - col * gap if right_to_left else x0 + col * gap, y0 + row * gap)
+    return pos
+
+
+def directed_build(v=None):
+    stop_timer()
+    c = float(dslider.value)
+    G = directed_graph(DN, c, st["seed"])
+    part = bowtie_parts(G)
+    groups = {k: sorted(v_ for v_ in G if part[v_] == k) for k in ("core", "in", "out", "tendril", "other")}
+    pos = {}
+    nc = len(groups["core"])
+    core_sorted = sorted(groups["core"], key=lambda v_: -G.degree(v_))
+    for k, v_ in enumerate(core_sorted):           # a sunflower, hubs in the middle
+        r, a = 24 * math.sqrt(k + 0.5), k * 2.39996
+        pos[v_] = (r * math.cos(a), r * math.sin(a))
+    rc = 24 * math.sqrt(max(nc, 1)) + 60
+    pos.update(grid(groups["in"], -rc, -100, 6, right_to_left=True))
+    pos.update(grid(groups["out"], rc, -100, 6))
+    pos.update(grid(groups["tendril"], -150, -rc - 80, 12))
+    pos.update(grid(groups["other"], -rc - 140, rc + 60, 16))
+    H = nx.DiGraph()
+    for v_ in G:
+        H.add_node(f"d{v_}", pos=pos[v_], label=str(v_))
+    for a, b in G.edges():
+        H.add_edge(f"d{a}", f"d{b}")
+    load(H)
+    st["parts"] = bowTie()
+    for v_ in g.nodes:
+        v_.width = v_.height = 10 + 1.5 * min(v_.degree, 12)
+        v_.color = {"core": PURPLE, "in": ORANGE, "out": GREEN, "tendril": "240,220,90"}.get(v_.bowtie, GREY)
+    for e in g.edges:
+        a, b = e.node1.bowtie, e.node2.bowtie
+        if a == "in" and b == "core":
+            e.color, e.width = "250,150,40,170", 1.4
+        elif a == "core" and b == "out":
+            e.color, e.width = "70,200,110,170", 1.4
+        elif a == "core" and b == "core":
+            e.color, e.width = "170,120,240,80", 1
+        else:
+            e.color, e.width = "160,160,160,110", 1
+    center(g.nodes)
+
+
+def directed_text():
+    if mode[0] != "Directed":
+        return ""
+    sz = st.get("parts") or {}
+    n = DN
+    rows = ["| part | nodes | share |", "|---|---|---|"]
+    for k, name in (("core", "core (strongly connected, purple)"), ("in", "in: reach the core (orange)"),
+                    ("out", "out: reached from it (green)"), ("tendril", "tendrils and tubes (yellow)"),
+                    ("other", "outside (grey)")):
+        cnt = sz.get(k, 0) + (sz.get("tube", 0) if k == "tendril" else 0)
+        rows.append(f"| {name} | {cnt} | {100 * cnt / n:.0f}% |")
+    c = float(dslider.value)
+    return (f"{n} nodes, each with a random number of out-stubs and in-stubs (both Poisson, mean **c = {c:.1f}**); "
+            "out-stubs are paired with in-stubs at random. Edges are tapered from tail to head.\n\n"
+            + "\n".join(rows) +
+            "\n\nAs in the Web (Chapter 10), a strongly connected **core** appears, with an in-component feeding "
+            "it and an out-component fed by it: the **bow tie** is what random directed wiring gives you. "
+            "With independent in- and out-degrees it appears once c passes 1.")
+
+
+def directed_sim_step():
+    k = len(st["sim"])
+    cs = [0.6 + 0.2 * i for i in range(13)]
+    if k >= len(cs):
+        stop_timer()
+        return False
+    G = directed_graph(1000, cs[k], 50 + k)
+    part = bowtie_parts(G)
+    st["sim"].append((cs[k], *(sum(1 for v in part.values() if v == p) / 1000 for p in ("core", "in", "out"))))
+    return len(cs) - len(st["sim"])
+
+
+def directed_sim():
+    stop_timer()
+    st["sim"], st["simkey"] = [], "Directed"
+    st["timer"] = everyPaced(directed_sim_step, slow=0.6, fast=0.15)
+
+
+def directed_chart():
+    if mode[0] != "Directed" or st["simkey"] != "Directed" or len(st["sim"]) < 2:
+        return None
+    rows = st["sim"]
+    return plotLine({"core": [(r[0], r[1]) for r in rows], "in": [(r[0], r[2]) for r in rows],
+                     "out": [(r[0], r[3]) for r in rows]},
+                    title="Bow tie of 1,000-node random directed networks", xlabel="mean degree c",
+                    ylabel="share of nodes", dots=true, yrange=(0, 1))
+
+
+# ---- bipartite -----------------------------------------------------------------------------------------
+NP, NG = 60, 14
+
+
+def bip_graph(seed):
+    """People with 1-3 memberships each; the membership stubs are dealt out to groups at random."""
+    rnd = random.Random(seed)
+    pk = [rnd.choice((1, 1, 2, 2, 3)) for _ in range(NP)]
+    pstubs = [i for i, k in enumerate(pk) for _ in range(k)]
+    weights = [rnd.random() + 0.3 for _ in range(NG)]
+    gstubs = [rnd.choices(range(NG), weights=weights)[0] for _ in pstubs]
+    rnd.shuffle(pstubs)
+    B = nx.Graph()
+    B.add_nodes_from((f"pe{i}" for i in range(NP)), side="person")
+    B.add_nodes_from((f"gr{j}" for j in range(NG)), side="group")
+    for i, j in zip(pstubs, gstubs):
+        B.add_edge(f"pe{i}", f"gr{j}")
+    return B
+
+
+def bip_build(v=None):
+    stop_timer()
+    B = bip_graph(st["seed"])
+    st["B"] = B
+    if st["bip_proj"]:
+        bip_projection(B)
+        return
+    groups = [f"gr{j}" for j in range(NG)]
+    gx = {gname: -420 + 840 * k / (NG - 1) for k, gname in enumerate(groups)}
+    people = [v_ for v_ in B if v_.startswith("pe")]
+    bary = {p: sum(gx[q] for q in B[p]) / max(1, B.degree(p)) for p in people}
+    order = sorted(people, key=lambda p: bary[p])
+    for k, p in enumerate(order):
+        B.nodes[p]["pos"] = (-430 + 860 * k / (len(order) - 1), 180 + 34 * (k % 2))   # two staggered rows
+    for gname in groups:
+        B.nodes[gname]["pos"] = (gx[gname], -180)
+    load(B)
+    for v_ in g.nodes:
+        if v_.side == "group":
+            v_.color, v_.width, v_.height, v_.style = "250,190,70", 26, 26, 1
+            v_.strokecolor, v_.strokewidth = "120,80,0", 2
+            v_.label, v_.labelvisible = "G" + v_.name[2:], true
+        else:
+            v_.color, v_.width, v_.height = BLUE, 14, 14
+    g.edges.color = "160,160,170,140"
+    center(g.nodes)
+
+
+def bip_projection(B):
+    people = [v_ for v_ in B if v_.startswith("pe")]
+    P = nx.Graph()
+    P.add_nodes_from(people)
+    via = {}
+    for gname in (v_ for v_ in B if v_.startswith("gr")):
+        mem = sorted(B[gname])
+        for i in range(len(mem)):
+            for j in range(i + 1, len(mem)):
+                P.add_edge(mem[i], mem[j])
+                via.setdefault(frozenset((mem[i], mem[j])), int(gname[2:]))
+    for (a, b) in P.edges():
+        P.edges[a, b]["via"] = via[frozenset((a, b))]
+    st["P"] = P
+    load(P)
+    frLayout()
+    pack()
+    for v_ in g.nodes:
+        v_.color, v_.width, v_.height = BLUE, 14, 14
+    for e in g.edges:
+        e.color = BLOCK_COLS[e.via % len(BLOCK_COLS)] + ",170"
+        e.width = 1.4
+
+
+def bip_toggle():
+    st["bip_proj"] = not st["bip_proj"]
+    proj_btn.text = "Back to people and groups" if st["bip_proj"] else "Project onto the people"
+    bip_build()
+
+
+def config_C(degs, reps=4):
+    out = []
+    for r in range(reps):
+        H = nx.Graph(nx.configuration_model(degs, seed=r))
+        H.remove_edges_from(nx.selfloop_edges(H))
+        out.append(nx.transitivity(H))
+    return sum(out) / len(out)
+
+
+def bip_text():
+    if mode[0] != "Bipartite":
+        return ""
+    B = st.get("B")
+    if B is None:
+        return ""
+    head = (f"{NP} people (blue) and {NG} groups (orange squares). Each person has 1–3 membership stubs, dealt "
+            "out to groups at random: a **bipartite configuration model**. Edges only ever join a person to a "
+            "group.")
+    if not st["bip_proj"]:
+        return head + "\n\n*Project onto the people* to join every two people who share a group."
+    P = st["P"]
+    C = nx.transitivity(P)
+    Cr = config_C([d for _v, d in P.degree()])
+    return (head + f"\n\nThe **projection**: {P.number_of_nodes()} people, {P.number_of_edges()} ties (coloured by "
+            f"the group that made them). Every group becomes a **clique**, so triangles are everywhere: "
+            f"C = **{C:.2f}**, against **{Cr:.2f}** for random wiring with the same degrees. Projected networks "
+            "(coauthors, actors, board members) are clustered for this reason alone.")
+
+
+# ---- acyclic ---------------------------------------------------------------------------------------------
+AN = 40
+
+
+def acyc_build(v=None):
+    stop_timer()
+    rnd = random.Random(st["seed"])
+    G = nx.DiGraph()
+    for i in range(AN):
+        G.add_node(f"a{i}", label=str(i), pos=(rnd.uniform(-260, 260), -300 + 600 * i / (AN - 1)))
+    for i in range(1, AN):
+        k = min(i, 1 + poisson(rnd, 1.2))
+        for j in rnd.sample(range(i), k):
+            G.add_edge(f"a{i}", f"a{j}")            # only ever to an earlier node
+    st["A"] = G
+    load(G, label_nodes=True)
+    for v_ in g.nodes:
+        t = int(v_.name[1:]) / (AN - 1)
+        v_.color = f"{int(250 - 130 * t)},{int(210 - 60 * t)},{int(90 + 150 * t)}"
+        v_.width = v_.height = 18
+        v_.labelpos = "inside"
+    g.edges.color = "170,170,180,170"
+    center(g.nodes)
+
+
+def acyc_text():
+    if mode[0] != "Acyclic":
+        return ""
+    G = st.get("A")
+    if G is None:
+        return ""
+    return (f"{AN} nodes in a fixed order (0 at the top, oldest), and edges only from a node to **earlier** ones, "
+            "like citations to older papers. Every edge points up the page, so no path can come back down: "
+            f"**{'no cycles' if nx.is_directed_acyclic_graph(G) else 'a cycle!'}** "
+            f"(longest path {nx.dag_longest_path_length(G)} steps). Random acyclic networks are built this way: "
+            "number the nodes first, then wire only in one direction.\n\n"
+            "Other variants of the configuration model fix more than the degrees: the **degree correlations** "
+            "(how often a node of degree j meets one of degree k, §12.11.4), so a random network can be "
+            "assortative or disassortative on purpose.")
+
+
+# ---- clustered ----------------------------------------------------------------------------------------
+CN = 120
+
+
+def clustered_graph(n, t_mean, s_mean, seed):
+    """Single stubs pair up; triangle corners are grouped in threes. Returns the graph and its triangle edges."""
+    rnd = random.Random(seed)
+    singles = [i for i in range(n) for _ in range(poisson(rnd, s_mean))]
+    corners = [i for i in range(n) for _ in range(poisson(rnd, t_mean))]
+    if len(singles) % 2:
+        singles.pop()
+    corners = corners[:len(corners) - len(corners) % 3]
+    rnd.shuffle(singles)
+    rnd.shuffle(corners)
+    G = nx.Graph()
+    G.add_nodes_from(range(n))
+    tri = set()
+    for k in range(0, len(corners), 3):
+        a, b, c = corners[k:k + 3]
+        for u, w in ((a, b), (b, c), (a, c)):
+            if u != w:
+                G.add_edge(u, w)
+                tri.add(frozenset((u, w)))
+    for k in range(0, len(singles), 2):
+        u, w = singles[k], singles[k + 1]
+        if u != w:
+            G.add_edge(u, w)
+    return G, tri
+
+
+def clust_build(v=None):
+    stop_timer()
+    t = float(tslider.value)
+    G, tri = clustered_graph(CN, t, max(0.0, 3.0 - 2 * t), st["seed"])
+    st["G"] = G
+    H = nx.Graph()
+    for v_ in G:
+        H.add_node(f"c{v_}")
+    for a, b in G.edges():
+        H.add_edge(f"c{a}", f"c{b}", tri=1 if frozenset((a, b)) in tri else 0)
+    load(H)
+    frLayout()
+    pack()
+    for v_ in g.nodes:
+        v_.color, v_.width, v_.height = BLUE, 13, 13
+    for e in g.edges:
+        e.color, e.width = (GREEN, 2.0) if e.tri else ("160,160,170,150", 1.2)
+
+
+def clust_text():
+    if mode[0] != "Clustered" or st.get("G") is None:
+        return ""
+    G = st["G"]
+    C = nx.transitivity(G)
+    Cr = config_C([d for _v, d in G.degree()])
+    t = float(tslider.value)
+    return (f"{CN} nodes. Each has on average **{t:.1f}** triangle corners (grouped in threes at random: green "
+            "triangles) plus single stubs (paired at random, grey), so the mean degree stays near 3.\n\n"
+            f"Clustering **C = {C:.2f}**, against **{Cr:.2f}** for the configuration model with the same degrees. "
+            "In the configuration model C falls like 1/n; here the triangles are part of the recipe, so C stays "
+            "put however big the network gets (see *Simulate*).")
+
+
+def clust_sim_step():
+    sizes = [100, 200, 400, 800, 1600, 3200]
+    k = len(st["sim"])
+    if k >= len(sizes):
+        stop_timer()
+        return False
+    n = sizes[k]
+    G, _tri = clustered_graph(n, 1.0, 1.0, 70 + k)
+    st["sim"].append((n, nx.transitivity(G), config_C([d for _v, d in G.degree()], reps=2)))
+    return len(sizes) - len(st["sim"])
+
+
+def clust_sim():
+    stop_timer()
+    st["sim"], st["simkey"] = [], "Clustered"
+    st["timer"] = everyPaced(clust_sim_step, slow=0.6, fast=0.2)
+
+
+def clust_chart():
+    if mode[0] != "Clustered" or st["simkey"] != "Clustered" or len(st["sim"]) < 2:
+        return None
+    rows = st["sim"]
+    return plotLine({"with triangle corners": [(r[0], r[1]) for r in rows],
+                     "configuration model": [(r[0], r[2]) for r in rows]},
+                    title="Clustering as the network grows (1 corner + 1 stub per node)", xlabel="n",
+                    ylabel="C", dots=true, log=true)
+
+
+# ---- communities ---------------------------------------------------------------------------------------
+SIZES = [40, 40, 40]
+
+
+def comm_build(v=None):
+    stop_timer()
+    st["found"] = None
+    n = sum(SIZES)
+    a, b = float(inslider.value), float(outslider.value)
+    p_in = a / (SIZES[0] - 1)
+    p_out = b / (n - SIZES[0])
+    makeBlockModel(SIZES, p_in, p_out, seed=st["seed"])
+    pack()
+    comm_paint()
+
+
+def comm_paint():
+    for v_ in g.nodes:
+        v_.color = BLOCK_COLS[v_.block % len(BLOCK_COLS)]
+        v_.width = v_.height = 13
+        v_.strokewidth, v_.strokecolor = 0, "40,40,40"
+        v_.labelvisible = false
+        if st["found"] is not None and st["found"]["wrong"].get(v_.name):
+            v_.strokewidth, v_.width, v_.height = 3, 22, 22
+            v_.strokecolor = "255,255,255"                # put with the wrong group: white ring
+    for e in g.edges:
+        same = e.node1.block == e.node2.block
+        e.color = (BLOCK_COLS[e.node1.block % len(BLOCK_COLS)] + ",150") if same else "235,235,235,190"
+        e.width = 1.2 if same else 1.6
+
+
+def nmi(x, y):
+    n = len(x)
+    from collections import Counter
+    cx, cy, cxy = Counter(x), Counter(y), Counter(zip(x, y))
+    I = sum(c / n * math.log((c / n) / (cx[a] / n * cy[b] / n)) for (a, b), c in cxy.items())
+    hx = -sum(c / n * math.log(c / n) for c in cx.values())
+    hy = -sum(c / n * math.log(c / n) for c in cy.values())
+    return 2 * I / (hx + hy) if hx + hy > 0 else 1.0
+
+
+def comm_find():
+    louvainClusters(seed=1)
+    names = [v_.name for v_ in g.nodes]
+    truth = [v_.block for v_ in g.nodes]
+    found = [v_.louvain_class for v_ in g.nodes]
+    # each found community stands for the true group most of its members are in
+    best = {}
+    for f, t in zip(found, truth):
+        best.setdefault(f, []).append(t)
+    label = {f: max(set(ts), key=ts.count) for f, ts in best.items()}
+    wrong = {nm: label[f] != t for nm, f, t in zip(names, found, truth)}
+    st["found"] = {"nmi": nmi(truth, found), "k": len(set(found)), "wrong": wrong}
+    comm_paint()
+
+
+def comm_text():
+    if mode[0] != "Communities":
+        return ""
+    a, b = float(inslider.value), float(outslider.value)
+    c = a + b
+    out = (f"Three groups of 40 (colours). Each node has on average **{a:.1f}** neighbours in its own group and "
+           f"**{b:.1f}** in the other two (white edges): a **stochastic block model**. Mean degree {c:.1f}.")
+    if st["found"] is not None:
+        f = st["found"]
+        nw = sum(1 for x in f["wrong"].values() if x)
+        out += (f"\n\n**Louvain** found **{f['k']}** communities; agreement with the true groups (normalized "
+                f"mutual information) **{f['nmi']:.2f}**. {nw} nodes landed with the wrong group (big, white rings).")
+    else:
+        out += "\n\n*Find the communities* to see whether Louvain recovers the groups from the edges alone."
+    # threshold in the n p convention: a' = n p_in, b' = n p_out
+    n = sum(SIZES)
+    ap, bp = a * n / (SIZES[0] - 1), b * n / (n - SIZES[0])
+    cc = (ap + 2 * bp) / 3
+    thr = 3 * math.sqrt(cc)
+    out += (f"\n\nWhen the difference between inside and outside is too small, *no* method can find the groups: "
+            f"for three equal groups the limit is a′ − b′ > 3√c (with a′ = n p_in, b′ = n p_out). Here "
+            f"a′ − b′ = **{ap - bp:.1f}** against **{thr:.1f}**: "
+            + ("detectable." if ap - bp > thr else "**below the limit**: the structure is there but invisible."))
+    if st["simkey"] == "Communities" and len(st["sim"]) >= 4:
+        out += ("\n\nIn the simulation Louvain starts to lose the groups somewhat *above* the dashed limit: the limit "
+                "is what the best possible method (belief propagation) can reach, and quick heuristics like Louvain "
+                "fall short of it.")
+    return out
+
+
+def comm_sim_step():
+    a_tot = 8.0
+    steps = [i * 0.4 for i in range(11)]            # b from 0 to 4 within the same total degree
+    k = len(st["sim"])
+    if k >= len(steps):
+        stop_timer()
+        return False
+    b = steps[k]
+    a = a_tot - b
+    n = 300
+    sizes = [100, 100, 100]
+    G = nx.stochastic_block_model(sizes, [[a / 99 if i == j else b / 200 for j in range(3)] for i in range(3)],
+                                  seed=90 + k)
+    truth = [G.nodes[v_]["block"] for v_ in G]
+    comms = nx.community.louvain_communities(G, seed=1)
+    lab = {}
+    for ci, cset in enumerate(comms):
+        for v_ in cset:
+            lab[v_] = ci
+    ap, bp = a * n / 99, b * n / 200
+    st["sim"].append((ap - bp, nmi(truth, [lab[v_] for v_ in G]), 3 * math.sqrt((ap + 2 * bp) / 3)))
+    return len(steps) - len(st["sim"])
+
+
+def comm_sim():
+    stop_timer()
+    st["sim"], st["simkey"] = [], "Communities"
+    st["timer"] = everyPaced(comm_sim_step, slow=0.6, fast=0.2)
+
+
+def comm_chart():
+    if mode[0] != "Communities":
+        return None
+    if st["simkey"] == "Communities" and len(st["sim"]) >= 2:
+        rows = sorted(st["sim"])
+        thr = sum(r[2] for r in rows) / len(rows)
+        return plotLine({"Louvain against the truth (NMI)": [(r[0], r[1]) for r in rows],
+                         "detectability limit": [(thr, 0), (thr, 1)]},
+                        title="Finding the groups (300 nodes, mean degree 8)", xlabel="a′ − b′ (inside − outside)",
+                        ylabel="NMI", dots=true, dashed=["detectability limit"], yrange=(0, 1))
+    return showMatrix(order="block", title="Adjacency matrix, ordered by group")
+
+
+# ---- wiring -------------------------------------------------------------------------------------------
+BUILD = {"Directed": directed_build, "Bipartite": bip_build, "Acyclic": acyc_build, "Clustered": clust_build,
+         "Communities": comm_build}
+
+
+def switch(title):
+    mode[0] = title
+    stop_timer()
+    st["sim"], st["simkey"] = [], None
+    BUILD[title]()
+
+
+def new_draw():
+    st["seed"] += 1
+    BUILD[mode[0]]()
+
+
+dslider = Slider(0.4, 3, 1.6, 0.1, label="mean degree c")
+dslider.onChange = directed_build
+tslider = Slider(0, 1.5, 1.0, 0.1, label="triangle corners per node")
+tslider.onChange = clust_build
+inslider = Slider(1, 12, 6, 0.5, label="neighbours inside the group")
+inslider.onChange = comm_build
+outslider = Slider(0, 8, 1, 0.25, label="neighbours outside it")
+outslider.onChange = comm_build
+proj_btn = Button("Project onto the people", onClick=lambda: bip_toggle())
+directed_build()
+constantLabelSize(size=14)
+ui.title("Other random graph models", "Networks, Sections 12.11.1–12.11.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Change the stubs, change the model
+Each tab wires stubs at random in a different way."""),
+        Button("Another random draw", onClick=lambda: new_draw()),
+        Tabs(
+            Tab("Directed", dslider, Markdown(directed_text),
+                Button("Simulate: bow tie against c", onClick=lambda: directed_sim()), Chart(directed_chart)),
+            Tab("Bipartite", proj_btn, Markdown(bip_text)),
+            Tab("Acyclic", Markdown(acyc_text)),
+            Tab("Clustered", tslider, Markdown(clust_text),
+                Button("Simulate: C as n grows", onClick=lambda: clust_sim()), Chart(clust_chart)),
+            Tab("Communities", inslider, outslider,
+                Row(Button("Find the communities", onClick=lambda: comm_find()),
+                    Button("Simulate: when can they be found?", onClick=lambda: comm_sim())),
+                Markdown(comm_text), Chart(comm_chart)),
+            onChange=switch)),
+    sizes={"right": 430},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{mode[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center(g.nodes)

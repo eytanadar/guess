@@ -216,7 +216,7 @@ def install(session):
         alpha = 1 + n / sl
         return alpha, (alpha - 1) / math.sqrt(n), n
 
-    def fitPowerLaw(field="degree", kmin=None):
+    def fitPowerLaw(field="degree", kmin=None, shift=0):
         """fitPowerLaw(degree) fits a power law p(k) ~ k^-alpha to the values
         of a numeric node field (or a list of numbers) from kmin up, by maximum likelihood (Newman,
         Networks, eq. 10.9, with the -1/2 correction for whole numbers), not
@@ -224,7 +224,9 @@ def install(session):
         chosen as the value that makes the fitted distribution closest to the
         data (the smallest Kolmogorov-Smirnov distance; Clauset, Shalizi and
         Newman 2009). Returns {"alpha", "sigma" (its standard error), "kmin",
-        "n" (values in the tail), "ks"}. plotFrequency(degree, cumulative=true,
+        "n" (values in the tail), "ks"}. shift=a fits a power law in k + a
+        rather than k, as Price's model gives (p_k ~ (k + a)^-alpha); kmin and
+        the returned kmin stay in units of k. plotFrequency(degree, cumulative=true,
         log=true, fit=true) draws the fit."""
         from .model import as_field
         if isinstance(field, (list, tuple)):                 # plain numbers (a degree sequence)
@@ -234,7 +236,9 @@ def install(session):
             f = as_field(session.graph, field)
             fname = f.name
             raw = [f.get(e) for e in f.elements()]
-        vals = sorted(float(v) for v in raw if isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0)
+        shift = float(shift)
+        vals = sorted(float(v) + shift for v in raw
+                      if isinstance(v, (int, float)) and not isinstance(v, bool) and float(v) + shift > 0)
         if len(vals) < 5:
             raise GuessError(f"{fname}: too few values above 0 to fit")
 
@@ -265,7 +269,7 @@ def install(session):
                 raise GuessError(f"{fname}: not enough values to choose kmin")
             d, k, (alpha, sigma, n) = best
         else:
-            k = float(kmin)
+            k = float(kmin) + shift
             if k <= 0.5:
                 raise GuessError("kmin must be at least 1")
             r = _tail_fit(vals, k)
@@ -274,6 +278,9 @@ def install(session):
             alpha, sigma, n = r
             d = ks(k, alpha)
         k = int(k) if float(k).is_integer() else k
+        if shift:
+            k = k - shift
+            k = int(k) if float(k).is_integer() else round(k, 6)
         return {"alpha": round(alpha, 4), "sigma": round(sigma, 4), "kmin": k, "n": n, "ks": round(d, 4)}
 
     def _degrees_arg(degrees, what):
@@ -382,6 +389,92 @@ def install(session):
                     edges.append((i, j))
         return _replace_graph(len(w), edges, "expected", w, "makeExpectedDegree", layout)
 
+    def _build(n, edges, directed, node_fields, edge_fields, label, layout):
+        """Replace the graph: n nodes nd0.., edges (a, b), and fields {name: (type, values)}."""
+        import random as _r
+        gr = session.graph
+        gr.clear()
+        nfs = {name: gr.addNodeField(name, t, 0) for name, (t, _v) in node_fields.items()}
+        efs = {name: gr.addEdgeField(name, t, 0) for name, (t, _v) in edge_fields.items()}
+        nodes = []
+        for i in range(n):
+            v = gr.addNode(f"nd{i}")
+            v.label = f"nd{i}"
+            v.x, v.y = _r.random() * 500, _r.random() * 500
+            for name, (_t, vals) in node_fields.items():
+                nfs[name].set(v, vals[i])
+            nodes.append(v)
+        for k, (a, b) in enumerate(edges):
+            e = gr.addEdge(nodes[a], nodes[b], directed)
+            for name, (_t, vals) in edge_fields.items():
+                efs[name].set(e, vals[k])
+        session.scene()
+        if layout and 0 < n <= 3000:
+            session.ns["frLayout"]()
+        print(f"generated {label}: {n} nodes, {len(edges)} edges")
+
+    def makePriceModel(n, c=3, a=1.0, seed=0, layout=True):
+        """makePriceModel(n, c, a) grows a citation network by Price's model
+        (Newman, Networks, section 13.1): papers arrive one at a time, and each
+        cites c earlier papers (on average, when c isn't a whole number),
+        chosen with probability proportional to in-degree + a, so the
+        much-cited get cited more (cumulative advantage). The in-degrees end up
+        with a power-law tail of exponent 2 + a/c. Uses Newman's fast method:
+        with probability c/(c + a) copy a citation made by a random earlier
+        paper, otherwise pick a paper uniformly. Edges point from citing to
+        cited. The field `born` gives each node's and edge's arrival step (paper
+        k arrives at step k), so revealUpTo(step) replays the growth."""
+        import random as _r
+        n, c, a = int(n), float(c), float(a)
+        if n < 2:
+            raise GuessError("makePriceModel: n should be at least 2")
+        if c <= 0 or a <= 0:
+            raise GuessError("makePriceModel: c and a should be greater than 0")
+        rnd = _r.Random(seed)
+        edges, targets = [], []                      # targets: the cited end of every edge so far
+        for new in range(1, n):
+            want = int(c) + (1 if rnd.random() < c - int(c) else 0)
+            want = min(want, new)
+            cited = set()
+            while len(cited) < want:
+                if targets and rnd.random() < c / (c + a):
+                    cited.add(rnd.choice(targets))   # in proportion to in-degree
+                else:
+                    cited.add(rnd.randrange(new))    # uniformly: the "+ a"
+            for t in sorted(cited):
+                edges.append((new, t))
+                targets.append(t)
+        _build(n, edges, True, {"born": (INTEGER, list(range(n)))},
+               {"born": (INTEGER, [s_ for s_, _t in edges])}, "makePriceModel", layout)
+
+    def makeBlockModel(sizes, p_in, p_out=None, seed=0, layout=True):
+        """makeBlockModel([30, 30, 40], 0.3, 0.02) makes a stochastic block model:
+        nodes in groups of the given sizes, each pair inside a group joined with
+        probability p_in and each pair in different groups with p_out, so the
+        network has community structure (Newman, Networks, section 12.11.6).
+        p_in can instead be a matrix of probabilities between groups. The node
+        field `block` gives each node's group (0, 1, ...)."""
+        import random as _r
+        sizes = [int(x) for x in sizes]
+        if not sizes or min(sizes) < 1:
+            raise GuessError("makeBlockModel: sizes are group sizes, each at least 1")
+        k = len(sizes)
+        if isinstance(p_in, (list, tuple)):
+            P = [[float(x) for x in row] for row in p_in]
+            if len(P) != k or any(len(r) != k for r in P):
+                raise GuessError(f"makeBlockModel: the matrix should be {k} x {k}")
+        else:
+            if p_out is None:
+                raise GuessError("makeBlockModel(sizes, p_in, p_out): give p_out, or a matrix as p_in")
+            P = [[float(p_in) if i == j else float(p_out) for j in range(k)] for i in range(k)]
+        if any(not 0 <= x <= 1 for r in P for x in r):
+            raise GuessError("makeBlockModel: probabilities are between 0 and 1")
+        block = [b for b, sz in enumerate(sizes) for _ in range(sz)]
+        n = len(block)
+        rnd = _r.Random(seed)
+        edges = [(i, j) for i in range(n) for j in range(i + 1, n) if rnd.random() < P[block[i]][block[j]]]
+        _build(n, edges, False, {"block": (INTEGER, block)}, {}, "makeBlockModel", layout)
+
     for fn in (katzCentrality, structuralBalance, kComponents, bowTie, fitPowerLaw, makeConfigurationModel,
-               makeExpectedDegree):
+               makeExpectedDegree, makePriceModel, makeBlockModel):
         reg(fn.__name__, fn)

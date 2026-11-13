@@ -1,0 +1,349 @@
+# The small-world model  (Newman, Networks, Sections 12.11.7-12.11.8)
+# A ring lattice, each node joined to its k nearest neighbours, has high
+# clustering (neighbours of a node are neighbours of each other) but long
+# paths: about n / 2k steps to get across. A random graph has short paths
+# (about ln n / ln k) but almost no clustering. Watts and Strogatz's model
+# goes from one to the other: each lattice edge is rewired, with probability
+# p, into a shortcut to a random node. A handful of shortcuts is enough to
+# collapse the distances, while the clustering hardly changes, so a network
+# can be both clustered and small, as real social networks are.
+#
+# Here every lattice edge has its own random threshold u and its own shortcut
+# target, both fixed in advance: the edge is rewired when p passes u. So
+# raising p only ever adds shortcuts, and the nodes stay on their ring.
+
+import math
+import random
+import networkx as nx
+
+N, K = 60, 4                     # 60 nodes, each joined to its 2 + 2 nearest neighbours
+R = 300.0
+mode = ["Rewire"]
+Edge.kind = ""
+Edge.idx = 0
+st = {"p": 0.0, "edges": [], "order": [], "timer": None, "hist": {}, "focus": None,
+      "sim": [], "simtimer": None, "simrows": []}
+LATTICE_COL, SHORT_COL, FLASH = "150,160,175", "250,150,40", "255,215,0"
+
+
+def build():
+    """The lattice, every edge's threshold u and shortcut end, and both versions of each edge."""
+    rnd = random.Random(7)
+    lattice = [(i, (i + j) % N) for j in range(1, K // 2 + 1) for i in range(N)]
+    near = {i: {(i + d) % N for d in range(-K // 2, K // 2 + 1)} for i in range(N)}
+    used = set(frozenset(e) for e in lattice)
+    edges = []
+    for a, b in lattice:
+        u = rnd.random()
+        while True:
+            t = rnd.randrange(N)
+            if t not in near[a] and frozenset((a, t)) not in used:
+                break
+        used.add(frozenset((a, t)))
+        edges.append({"a": a, "b": b, "t": t, "u": u})
+    st["edges"] = edges
+    st["order"] = sorted(range(len(edges)), key=lambda k: edges[k]["u"])
+    remove(list(g.nodes))
+    nodes = []
+    for i in range(N):
+        ang = 2 * math.pi * i / N - math.pi / 2
+        v = addNode(f"r{i}", x=R * math.cos(ang), y=R * math.sin(ang), label=str(i))
+        nodes.append(v)
+    for k, d in enumerate(edges):
+        e = addEdge(nodes[d["a"]], nodes[d["b"]])
+        e.kind, e.idx = "lattice", k
+        s_ = addEdge(nodes[d["a"]], nodes[d["t"]])
+        s_.kind, s_.idx = "shortcut", k
+    center(g.nodes)
+
+
+def rewired(p=None):
+    p = st["p"] if p is None else p
+    return [k for k, d in enumerate(st["edges"]) if d["u"] < p]
+
+
+def current_graph(p=None):
+    G = nx.Graph()
+    G.add_nodes_from(range(N))
+    for d in st["edges"]:
+        if d["u"] < (st["p"] if p is None else p):
+            G.add_edge(d["a"], d["t"])
+        else:
+            G.add_edge(d["a"], d["b"])
+    return G
+
+
+def mean_distance(G):
+    comp = max(nx.connected_components(G), key=len)
+    return nx.average_shortest_path_length(G.subgraph(comp))
+
+
+cache = {}
+
+
+def measures(p=None):
+    key = tuple(rewired(p))
+    if key not in cache:
+        G = current_graph(p)
+        cache[key] = (nx.transitivity(G), mean_distance(G))
+    return cache[key]
+
+
+C0, L0 = None, None
+
+
+def distances_from(i):
+    return nx.single_source_shortest_path_length(current_graph(), i)
+
+
+def show(flash=None):
+    """Draw the ring for the current p. flash: an edge index just rewired."""
+    on = set(rewired())
+    dist = distances_from(st["focus"]) if st["focus"] is not None else None
+    far = max(dist.values()) if dist else 1
+    for v in g.nodes:
+        i = int(v.name[1:])
+        v.width = v.height = 16
+        v.strokewidth = 0
+        v.strokecolor = "60,60,60"
+        v.labelvisible = dist is not None
+        if dist is None:
+            v.color = "120,170,235"
+        else:
+            d = dist.get(i, far)
+            t = d / max(1, far)
+            v.color = f"{int(250 - 150 * t)},{int(220 - 120 * t)},{int(90 + 150 * t)}"
+            v.label = str(d)
+            if i == st["focus"]:
+                v.color, v.width, v.height = "255,230,60", 26, 26
+                v.strokecolor, v.strokewidth = "40,40,40", 3
+    for e in g.edges:
+        k = e.idx
+        if e.kind == "lattice":
+            e.visible = k not in on
+            e.color, e.width, e.linestyle = LATTICE_COL, 1.6, "solid"
+        else:
+            e.visible = k in on
+            e.color, e.width, e.linestyle = SHORT_COL, 2.2, "solid"
+            if k == flash:
+                e.color, e.width, e.linestyle = FLASH, 4.5, "flow"
+                for v in (e.node1, e.node2):
+                    v.width = v.height = 24
+                    v.strokecolor, v.strokewidth = "120,60,0", 3
+    record()
+
+
+def record():
+    """Remember C and L for this many shortcuts (for the chart)."""
+    C, L = measures()
+    st["hist"][len(rewired())] = (C / C0, L / L0)
+
+
+def set_p(v=None):
+    stop_rewiring()
+    st["p"] = 10 ** float(pslider.value)
+    show()
+
+
+def lattice_only():
+    stop_rewiring()
+    st["p"] = 0.0
+    show()
+
+
+def click(v):
+    i = int(v.name[1:])
+    st["focus"] = None if st["focus"] == i else i
+    show()
+
+
+# ---- one shortcut at a time -----------------------------------------------------------------------
+def rewire_step():
+    left = [k for k in st["order"] if st["edges"][k]["u"] >= st["p"]]
+    if not left or len(rewired()) >= 40:
+        stop_rewiring()
+        return False
+    k = left[0]
+    st["p"] = st["edges"][k]["u"] + 1e-9
+    pslider.value = round(max(-3, math.log10(st["p"])), 2)   # the slider follows
+    show(flash=k)
+    return 40 - len(rewired())
+
+
+def rewire_play():
+    if st["timer"] is not None:
+        stop_rewiring()
+        return
+    if len(rewired()) >= 40:
+        st["p"] = 0.0
+        st["hist"] = {}
+        show()
+    st["timer"] = everyPaced(rewire_step, slow=1.0, fast=0.35, ramp=3)
+    play_btn.text = "Pause"
+
+
+def stop_rewiring():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+    play_btn.text = "Rewire one by one"
+
+
+def rewire_text():
+    if mode[0] != "Rewire":
+        return ""
+    C, L = measures()
+    n_sc = len(rewired())
+    p = st["p"]
+    out = (f"**p = {p:.3g}**: **{n_sc}** of {len(st['edges'])} edges are shortcuts (orange).\n\n"
+           f"| | lattice (p = 0) | now | random (p = 1) |\n|---|---|---|---|\n"
+           f"| clustering C | {C0:.2f} | **{C:.2f}** | {RANDOM_C:.2f} |\n"
+           f"| mean distance ℓ | {L0:.2f} | **{L:.2f}** | {RANDOM_L:.2f} |\n\n")
+    if n_sc == 0:
+        out += ("A ring lattice: each node is joined to its 2 nearest neighbours on each side. Many of a node's "
+                "neighbours are neighbours of each other, so C is high; but crossing the ring takes "
+                f"about n/2k = {N / 2 / K:.1f} steps.")
+    elif L / L0 < 0.7 and C / C0 > 0.7:
+        out += (f"With only **{n_sc}** shortcuts the mean distance has fallen to **{100 * L / L0:.0f}%** of the "
+                f"lattice's, while the clustering is still **{100 * C / C0:.0f}%** of it. Each shortcut is a "
+                "short way across for every node near either end, but removes only a few triangles: "
+                "**a small world**.")
+    else:
+        out += (f"Mean distance {100 * L / L0:.0f}% and clustering {100 * C / C0:.0f}% of the lattice's.")
+    out += "\n\n*Click a node* to colour everyone by distance from it; click it again to stop."
+    return out
+
+
+def rewire_chart():
+    if mode[0] != "Rewire" or len(st["hist"]) < 2:
+        return None
+    pts = sorted(st["hist"].items())
+    return plotLine({"ℓ / ℓ(lattice)": [(k, v[1]) for k, v in pts], "C / C(lattice)": [(k, v[0]) for k, v in pts]},
+                    title="As shortcuts are added", xlabel="shortcuts", ylabel="share of the lattice's value",
+                    dots=true, yrange=(0, 1))
+
+
+# ---- the classic curves -------------------------------------------------------------------------------
+SIM_N, SIM_K = 200, 8
+SIM_P = [10 ** (-4 + 0.333 * i) for i in range(13)]
+REPS = 3
+
+
+def sim_step():
+    k = len(st["sim"])
+    if k >= len(SIM_P) * REPS:
+        stop_sim()
+        return False
+    p = SIM_P[k // REPS]
+    G = nx.watts_strogatz_graph(SIM_N, SIM_K, p, seed=100 + k)
+    st["sim"].append((p, nx.transitivity(G), mean_distance(G)))
+    pslider.value = round(max(-3, math.log10(p)), 2)
+    st["p"] = p                                   # the ring shows the same p as it goes
+    show()
+    return len(SIM_P) * REPS - len(st["sim"])
+
+
+def run_sim():
+    stop_sim()
+    st["sim"] = []
+    st["simtimer"] = everyPaced(sim_step, slow=0.8, fast=0.2, ramp=3)
+
+
+def stop_sim():
+    if st["simtimer"] is not None:
+        st["simtimer"].stop()
+        st["simtimer"] = None
+
+
+def sim_points():
+    if not st["sim"]:
+        return [], []
+    base = [r for r in st["sim"] if r[0] == SIM_P[0]]
+    c0 = sum(r[1] for r in base) / len(base)
+    l0 = sum(r[2] for r in base) / len(base)
+    by = {}
+    for p, C, L in st["sim"]:
+        by.setdefault(p, []).append((C, L))
+    cs = [(p, sum(c for c, _ in v) / len(v) / c0) for p, v in sorted(by.items())]
+    ls = [(p, sum(l for _, l in v) / len(v) / l0) for p, v in sorted(by.items())]
+    return cs, ls
+
+
+def sim_chart():
+    if mode[0] != "Simulate" or len(st["sim"]) < 4:
+        return None
+    cs, ls = sim_points()
+    return plotLine({"C(p) / C(0)": cs, "ℓ(p) / ℓ(0)": ls}, title="Watts and Strogatz's curves",
+                    xlabel="p (rewiring probability)", ylabel="share of the lattice's value", logX=true,
+                    dots=true, yrange=(0, 1))
+
+
+def sim_text():
+    if mode[0] != "Simulate":
+        return ""
+    head = (f"\"Simulate\" builds small-world networks of **{SIM_N}** nodes (k = {SIM_K}) for p from 0.0001 to 1, "
+            "three at each p, and plots their clustering and mean distance as shares of the lattice's (p on a log "
+            "scale). The ring on the left follows the same p.")
+    if len(st["sim"]) < 4:
+        return head
+    cs, ls = sim_points()
+    window = [(p, c, l) for (p, c), (_, l) in zip(cs, ls) if l < 0.5 and c > 0.75]
+    out = head + f"\n\n{len(st['sim'])} of {len(SIM_P) * REPS} networks done."
+    if window:
+        p, c, l = window[0]
+        out += (f" At p = **{p:.3g}** the mean distance is already down to **{100 * l:.0f}%** while the "
+                f"clustering is still **{100 * c:.0f}%**. Between about p = 0.001 and 0.1 the two curves part "
+                "company: that range is the small world.")
+    return out
+
+
+# ---- dynamic networks ------------------------------------------------------------------------------
+DYN = """### Networks that change
+Most models in these chapters describe a network at one moment. Real networks
+change: friendships form and fade, links between web pages appear and break,
+contacts happen at particular times. **Dynamic** (or temporal) network models
+let edges appear and disappear over time, for instance each edge switching on
+and off at random rates, so that measures like the mean distance become
+averages over time, and a path is only usable if its edges exist in the right
+order.
+
+The small-world model is often read this way too: start from a lattice of
+local contacts, and let occasional long-range contacts (a trip, a move, a
+chance meeting) appear. As the rewiring tab shows, it takes very few of them
+to make the whole network close."""
+
+
+def switch(title):
+    mode[0] = title
+    stop_rewiring()
+    stop_sim()
+    show()
+
+
+graphevents.clickNode = click
+play_btn = Button("Rewire one by one", onClick=lambda: rewire_play())
+pslider = Slider(-3, 0, -3, 0.05, label="log₁₀ p")
+pslider.onChange = set_p
+build()
+C0, L0 = measures(0.0)
+RANDOM_C, RANDOM_L = measures(1.0)
+show()
+constantLabelSize(size=14)
+ui.title("The small-world model", "Networks, Sections 12.11.7–12.11.8")
+ui.layout(
+    right=Column(
+        Markdown(f"""### A few shortcuts make a small world
+{N} nodes on a ring, each joined to its {K // 2} nearest neighbours on each side. Each edge is rewired
+into a random shortcut with probability p."""),
+        Tabs(
+            Tab("Rewire", pslider, Row(play_btn, Button("No shortcuts (p = 0)", onClick=lambda: lattice_only())),
+                Markdown(rewire_text), Chart(rewire_chart)),
+            Tab("Simulate", Button("Simulate: C(p) and ℓ(p)", onClick=lambda: run_sim()),
+                Markdown(sim_text), Chart(sim_chart)),
+            Tab("Dynamic networks", Markdown(DYN)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{N} nodes · p = {st['p']:.3g} · {len(rewired())} shortcuts"))
+center(g.nodes)

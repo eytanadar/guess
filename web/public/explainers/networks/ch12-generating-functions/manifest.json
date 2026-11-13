@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Generating functions",
+  "description": "Pack a degree distribution into g₀(z) = Σ pₖ zᵏ: its slope gives the mean, adding degrees multiplies functions, g₁ gives excess degrees and g₀(g₁(z)) the second neighbours, each checked against a network.",
+  "console": "toggle",
+  "script": "main.gy"
+}

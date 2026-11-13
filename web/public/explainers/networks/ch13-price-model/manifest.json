@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Price's model of citations",
+  "description": "Papers cite in proportion to citations already received plus a: watch cumulative advantage grow a power law with exponent 2 + a/c.",
+  "console": "toggle",
+  "script": "main.gy"
+}

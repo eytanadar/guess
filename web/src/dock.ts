@@ -266,7 +266,7 @@ export class Dock {
         input.type = "range";
         const out = document.createElement("output");
         input.oninput = () => {
-          out.textContent = input.value;
+          out.textContent = sliderText(Number(input.value), Number(input.step));
           send("slide", Number(input.value));
         };
         input.onchange = () => send("change", Number(input.value));
@@ -426,7 +426,7 @@ export class Dock {
         if (k === "label") el.querySelector("span")!.textContent = String(v);
         else if (k === "value") {
           r.value = String(v);
-          el.querySelector("output")!.textContent = String(v);
+          el.querySelector("output")!.textContent = sliderText(Number(v), Number(props.step ?? r.step));
         } else if (k === "min" || k === "max" || k === "step") r[k] = String(v);
       } else if (kind === "checkbox") {
         if (k === "text") el.querySelector("span")!.textContent = String(v);
@@ -1092,6 +1092,13 @@ function arc(cx: number, cy: number, r: number, a0: number, a1: number) {
   const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
   const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
   return `M${cx},${cy} L${x0},${y0} A${r},${r} 0 ${a1 - a0 > Math.PI ? 1 : 0},1 ${x1},${y1} Z`;
+}
+
+/** A slider's readout: as many decimals as its step has (0.05 -> 2), so values set from code don't show float noise. */
+function sliderText(v: number, step: number): string {
+  const d = step > 0 && isFinite(step) ? Math.min(6, Math.max(0, -Math.floor(Math.log10(step) + 1e-9))) : 3;
+  const dec = step > 0 && !Number.isInteger(+(step * 10 ** d).toFixed(6)) ? d + 1 : d;
+  return v.toFixed(dec);
 }
 
 function fmt(v: number) {
