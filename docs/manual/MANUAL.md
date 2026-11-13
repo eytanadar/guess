@@ -2103,6 +2103,10 @@ communities from `louvainClusters()`) shows as `21 groups (402 elements):
   `dept.distinct` to see the nodes in dept1. An edge prints as `v1–v2`
   (`v1→v2` when directed): hover either name for that node, or the dash or
   arrow between them for the edge.
+  What commands print is linked the same way. Hover the nodes in each pair
+  `predictLinks` lists, or "added 10 predicted edges" to see the edges
+  `predictLinks(10, add=true)` made. The same goes for cut edges, cliques,
+  routes, merged nodes and newly imported nodes.
 - **Executed code.** Hover a name or a query in code you've run to see what
   it means *now*: a variable's members, the matches of `degree > 5` (or of
   the whole of `3 < degree < 6`), a node, or a value. Hovering a field shows

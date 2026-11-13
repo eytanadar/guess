@@ -24,6 +24,16 @@ def _session(tmp_path):
     return s
 
 
+def _all_text(s):
+    """Printed text, plain or linked (linked lines' segments joined)."""
+    def seg_text(sg):
+        if isinstance(sg, str):
+            return sg
+        return sg.get("t") or "".join(seg_text(x) for x in sg.get("g", []))
+    return "".join(m.get("text", "") if m.get("type") == "text" else "".join(seg_text(x) for x in m.get("segs", []))
+                   for m in s.rec.msgs if m.get("type") in ("text", "out"))
+
+
 def test_read_sets_and_enrichment(tmp_path):
     s = _session(tmp_path)
     p = str(tmp_path / "sets.csv")
@@ -40,7 +50,7 @@ def test_read_sets_and_enrichment(tmp_path):
     assert abs(top["p"] - math.comb(4, 3) / math.comb(10, 3)) < 1e-12
     assert abs(top["fold"] - (3 / 3) / (4 / 10)) < 1e-12
     assert sorted(x.name for x in top["members"]) == ["a", "b", "c"]
-    assert "red" in "".join(m.get("text", "") for m in s.rec.msgs)
+    assert "red" in _all_text(s)
     # a smaller background raises K/N; nodes outside every set are ignored
     assert s.run("__r = enrichment((a, b), __p, background=(a, b, c, d, e))")
     assert s.ns["__r"][0]["N"] == 5
