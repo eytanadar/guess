@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "The SI model in time",
+  "description": "How an SI epidemic grows on a network: first-order, pair and degree-based approximations against simulation, early growth set by the leading eigenvalue, and who is infected first.",
+  "console": "toggle",
+  "script": "main.gy"
+}

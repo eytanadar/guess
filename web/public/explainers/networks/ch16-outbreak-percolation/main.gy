@@ -1,0 +1,532 @@
+# Outbreak sizes and percolation  (Newman, Networks, Sections 16.3.1-16.3.2)
+# In the SIR model with a fixed infectious period of k steps, an infected
+# person passes the disease to a given neighbour with probability
+# T = 1 - (1 - beta)^k over the whole illness, the transmissibility. Each
+# edge "transmits" at most once, independently of the others, so whether the
+# disease ever crosses an edge is a coin toss made in advance: the outbreak is
+# exactly the cluster of the first case in bond percolation with occupation
+# probability T. Large outbreaks are possible only above the percolation
+# threshold T_c = <k> / (<k^2> - <k>), and their size is the giant cluster's,
+# S = 1 - g0(u) with u = 1 - T + T g1(u) in the configuration model.
+#
+# Here every edge gets one coin (a number between 0 and 1) once and for all:
+# the edge is occupied when its coin is below T, so raising T only adds
+# edges. An occupied edge also gets the step (1 to k) at which it would
+# transmit, drawn from the same distribution as a real infection, so the
+# paced outbreak spreads exactly over the first case's cluster.
+
+import math
+import random
+
+K = 3                                     # the infectious period, in steps
+NETS = {"Poisson degrees (mean 4)": "poisson", "Heavy tail (power law)": "powerlaw"}
+S_COL, S_LINE = "90,150,235", "30,60,120"
+I_COL, I_LINE = "235,60,50", "90,0,0"
+R_COL = "175,178,185"
+CL_COL, CL_LINE = "250,190,60", "120,70,0"
+OCC_EDGE, OFF_EDGE, FLOW_EDGE = "60,60,75,230", "150,150,165,60", "255,110,40"
+N_DRAWN, N_BIG = 250, 3000
+
+net = {"kind": "poisson", "adj": {}, "coin": {}, "delay": {}, "edge": {}, "ks": []}
+cases = {"first": None, "state": {}, "when": {}, "t": 0, "timer": None, "curve": [], "cluster": set(),
+         "pending": {}, "flow": set()}
+hist = {"rows": [], "T": None, "large": None, "meanlarge": None, "timer": None}
+sweep = {"rows": {}, "timer": None, "i": 0}
+mode = ["Coins and clusters"]
+
+
+# ---- degree sequences, graphs and theory ---------------------------------------------------------
+def degrees(kind, n, seed):
+    r = random.Random(seed)
+    ks = []
+    if kind == "poisson":
+        for _ in range(n):
+            L, k, p = math.exp(-4.0), 0, 1.0
+            while True:
+                p *= r.random()
+                if p <= L:
+                    break
+                k += 1
+            ks.append(k)
+    else:
+        while len(ks) < n:                # p_k ~ k^-2.4 from k = 1, capped so the drawing stays readable
+            k = int((1 - r.random()) ** (-1 / 1.4))
+            if k <= 60:
+                ks.append(k)
+    if sum(ks) % 2:
+        ks[0] += 1
+    return ks
+
+
+def gen_funcs(ks):
+    """g0, g1 and their use: the share in the giant cluster S(T), and T_c."""
+    n = len(ks)
+    mean = sum(ks) / n
+    mean2 = sum(k * k for k in ks) / n
+    counts = {}
+    for k in ks:
+        counts[k] = counts.get(k, 0) + 1
+    pk = {k: c / n for k, c in counts.items()}
+
+    def g0(z):
+        return sum(p * z ** k for k, p in pk.items())
+
+    def g1(z):
+        return sum(k * p * z ** (k - 1) for k, p in pk.items() if k > 0) / mean
+    tc = mean / (mean2 - mean) if mean2 > mean else 1.0
+    return g0, g1, tc, mean, mean2
+
+
+def theory_S(ks, T):
+    g0, g1, _tc, _m, _m2 = gen_funcs(ks)
+    u = 0.0
+    for _ in range(2000):
+        nu = 1 - T + T * g1(u)
+        if abs(nu - u) < 1e-12:
+            break
+        u = nu
+    return max(0.0, 1 - g0(u))
+
+
+def beta_for(T):
+    return 1 - (1 - T) ** (1.0 / K) if T < 1 else 1.0
+
+
+def build(kind):
+    stop_all()
+    net["kind"] = kind
+    ks = degrees(kind, N_DRAWN, 11 if kind == "poisson" else 12)
+    net["ks"] = ks
+    makeConfigurationModel(ks, simple=true, seed=5, layout=false)
+    frLayout()
+    binPackLayout(false)
+    noverlapLayout(margin=3)
+    center(g.nodes)
+    a = {v.name: [] for v in g.nodes}
+    edge = {}
+    r = random.Random(21)
+    coin, delay = {}, {}
+    for e in g.edges:
+        u, w = e.node1.name, e.node2.name
+        a[u].append(w)
+        a[w].append(u)
+        key = frozenset((u, w))
+        edge[key] = e
+        coin[key] = r.random()             # occupied while coin < T
+        delay[key] = r.random()            # which of the k steps it transmits on, if it does
+    net.update(adj=a, edge=edge, coin=coin, delay=delay)
+    deg = {v: len(ns) for v, ns in a.items()}
+    hub = max(deg, key=lambda v: deg[v])
+    cases["first"] = hub if kind == "powerlaw" else sorted(a, key=lambda v: -deg[v])[len(a) // 3]
+    hist.update(rows=[], T=None, large=None, meanlarge=None)
+    reset_outbreak()
+
+
+def T_now():
+    return round(tslider.value, 2)
+
+
+def occupied(key):
+    return net["coin"][key] < T_now()
+
+
+def step_of(key):
+    """The step (1..K) on which an occupied edge transmits: a geometric delay conditioned on <= K."""
+    T = T_now()
+    b = beta_for(T)
+    v = net["delay"][key]
+    for x in range(1, K + 1):
+        if (1 - (1 - b) ** x) / T >= v - 1e-12:
+            return x
+    return K
+
+
+def cluster_of(start):
+    seen, todo = {start}, [start]
+    while todo:
+        u = todo.pop()
+        for w in net["adj"][u]:
+            if w not in seen and occupied(frozenset((u, w))):
+                seen.add(w)
+                todo.append(w)
+    return seen
+
+
+def clusters():
+    seen, out = set(), []
+    for v in net["adj"]:
+        if v not in seen:
+            c = cluster_of(v)
+            seen |= c
+            out.append(c)
+    return sorted(out, key=len, reverse=True)
+
+
+# ---- tab 1: coins, clusters and the outbreak --------------------------------------------------------
+def paint_coins():
+    cl = cluster_of(cases["first"])
+    cases["cluster"] = cl
+    for v in g.nodes:
+        inside = v.name in cl
+        v.color = CL_COL if inside else S_COL
+        v.strokecolor = CL_LINE if inside else S_LINE
+        v.strokewidth = 2 if inside else 0
+        v.width = v.height = 15 if inside else 12
+        v.labelvisible = false
+    first = g.getNodeByName(cases["first"])
+    first.color, first.strokecolor, first.strokewidth = I_COL, "20,20,20", 4
+    first.width = first.height = 22
+    first.label, first.labelvisible = "first case", true
+    for key, e in net["edge"].items():
+        if occupied(key):
+            e.color, e.width, e.linestyle = OCC_EDGE, 2.2, "solid"
+        else:
+            e.color, e.width, e.linestyle = OFF_EDGE, 0.8, "dashed"
+
+
+def reset_outbreak():
+    stop_outbreak()
+    cases.update(state={v: "S" for v in net["adj"]}, when={}, t=0, curve=[(0, 0, 0)], pending={}, flow=set())
+    paint_coins()
+
+
+def change_T(v=None):
+    reset_outbreak()
+
+
+def pick(node):
+    if mode[0] == "Coins and clusters":
+        cases["first"] = node.name
+        reset_outbreak()
+
+
+def start_outbreak():
+    reset_outbreak()
+    st = cases["state"]
+    st[cases["first"]] = "I"
+    cases["when"][cases["first"]] = 0
+    schedule(cases["first"], 0)
+    cases["curve"] = [(0, 1, 0)]
+    paint_outbreak()
+
+
+def schedule(u, t):
+    for w in net["adj"][u]:
+        key = frozenset((u, w))
+        if occupied(key):
+            at = t + step_of(key)
+            cases["pending"].setdefault(at, []).append((u, w))
+
+
+def outbreak_step():
+    st, t = cases["state"], cases["t"] + 1
+    cases["t"] = t
+    cases["flow"] = set()
+    for u, w in cases["pending"].pop(t, []):
+        if st[w] == "S" and st[u] == "I":
+            st[w] = "I"
+            cases["when"][w] = t
+            cases["flow"].add(frozenset((u, w)))
+            schedule(w, t)
+    for v, s0 in list(cases["when"].items()):
+        if st[v] == "I" and t - s0 >= K:
+            st[v] = "R"
+    n_i = sum(1 for x in st.values() if x == "I")
+    n_r = sum(1 for x in st.values() if x == "R")
+    cases["curve"].append((t, n_i, n_r))
+    paint_outbreak()
+    return n_i > 0 or bool(cases["pending"])
+
+
+def paint_outbreak():
+    st = cases["state"]
+    for v in g.nodes:
+        s_ = st.get(v.name, "S")
+        inside = v.name in cases["cluster"]
+        if s_ == "I":
+            v.color, v.strokecolor, v.strokewidth = I_COL, I_LINE, 3
+            v.width = v.height = 21 if cases["when"].get(v.name) == cases["t"] else 16
+        elif s_ == "R":
+            v.color, v.strokecolor, v.strokewidth = R_COL, "90,90,95", 1
+            v.width = v.height = 13
+        else:
+            v.color = S_COL
+            v.strokecolor, v.strokewidth = (CL_LINE, 2) if inside else (S_LINE, 0)
+            v.width = v.height = 12
+    for key, e in net["edge"].items():
+        if key in cases["flow"]:
+            e.color, e.width, e.linestyle = FLOW_EDGE, 4, "flow"
+        elif occupied(key):
+            e.color, e.width, e.linestyle = OCC_EDGE, 2.2, "solid"
+        else:
+            e.color, e.width, e.linestyle = OFF_EDGE, 0.8, "dashed"
+
+
+def play():
+    if cases["timer"] is not None and cases["timer"].running:
+        stop_outbreak()
+        return
+    if not cases["when"] or not (any(x == "I" for x in cases["state"].values()) or cases["pending"]):
+        start_outbreak()
+    cases["timer"] = everyPaced(outbreak_step, slow=0.8, fast=0.25, ramp=3)
+    run_btn.text = "Pause"
+
+
+def stop_outbreak():
+    if cases["timer"] is not None:
+        cases["timer"].stop()
+    cases["timer"] = None
+    run_btn.text = "Run the outbreak"
+
+
+def to_end():
+    stop_outbreak()
+    if not cases["when"]:
+        start_outbreak()
+    for _ in range(500):
+        if not outbreak_step():
+            break
+
+
+def coins_text():
+    T = T_now()
+    _g0, _g1, tc, mean, mean2 = gen_funcs(net["ks"])
+    cl = cases["cluster"]
+    cls = clusters()
+    giant = len(cls[0]) if cls else 0
+    first = g.getNodeByName(cases["first"])
+    side = "above" if T > tc else "below"
+    out = (f"Infectious for **k = {K}** steps, a contact passes it on with **β = {beta_for(T):.3f}** per step, so "
+           f"over a whole illness it crosses an edge with **T = 1 − (1 − β)^k = {T:.2f}**. Every edge's coin is "
+           f"flipped in advance: **solid** edges will transmit if the disease ever reaches them, *dashed* ones never.\n\n"
+           f"Starting from {linkTo(first, 'the first case')}, the disease can reach its **cluster** of solid edges "
+           f"(amber): **{len(cl)}** of {len(net['adj'])} people. The largest cluster has {giant}. "
+           f"T_c = ⟨k⟩/(⟨k²⟩ − ⟨k⟩) = {mean:.2f}/({mean2:.2f} − {mean:.2f}) = **{tc:.3f}**: T is {side} it, so "
+           + ("a large outbreak is possible." if T > tc else "every outbreak stays small.")
+           + " *Click a person* to start somewhere else.")
+    if cases["when"]:
+        st = cases["state"]
+        ever = {v for v in cases["when"]}
+        out += (f"\n\n**Step {cases['t']}**: {sum(1 for x in st.values() if x == 'I')} infectious, "
+                f"{sum(1 for x in st.values() if x == 'R')} recovered.")
+        done = not any(x == "I" for x in st.values()) and not cases["pending"]
+        if done:
+            same = "exactly the cluster" if ever == cl else "different from the cluster (it shouldn't be)"
+            out += f" Over: **{len(ever)}** people were infected, {same}: the outbreak *is* the percolation cluster."
+        new = [v for v, s0 in cases["when"].items() if s0 == cases["t"] and s0 > 0]
+        if new:
+            out += " New cases: " + " ".join(linkTo(g.getNodeByName(v)) for v in new[:8]) + (" …" if len(new) > 8 else "")
+    return out
+
+
+def outbreak_chart():
+    if mode[0] != "Coins and clusters" or len(cases["curve"]) < 2:
+        return None
+    h = max(len(cases["cluster"]), 1)
+    end = cases["curve"][-1][0]
+    data = {"infectious": [(t, i) for t, i, _r in cases["curve"]],
+            "recovered": [(t, r) for t, _i, r in cases["curve"]],
+            "cluster size": [(0, h), (max(end, 1), h)]}
+    return plotLine(data, title="The outbreak, step by step", xlabel="step", ylabel="people",
+                    dashed=["cluster size"], yrange=(0, h * 1.1 + 1),
+                    colors={"infectious": I_COL, "recovered": "130,130,140", "cluster size": CL_LINE})
+
+
+# ---- tab 2: outbreak sizes from GUESS's outbreaks() ---------------------------------------------------
+def simulate_sizes():
+    T = T_now()
+    sizes = outbreaks(300, model="SIR", beta=beta_for(T), duration=K, seed=3, show=false)
+    n = len(net["adj"])
+    hist["T"] = T
+    hist["large"] = sizes.large
+    hist["meanlarge"] = sizes.meanLarge
+    edges_ = [1, 2, 3, 5, 9, 17, 33, 65, 129, n + 1]
+    rows = []
+    for lo, hi in zip(edges_, edges_[1:]):
+        c = sum(1 for x in sizes if lo <= x < hi)
+        rows.append(((lo + hi - 1) / 2 if hi - lo > 1 else lo, c / len(sizes)))
+    hist["rows"] = rows
+
+
+def sizes_chart():
+    if mode[0] != "Outbreak sizes" or not hist["rows"]:
+        return None
+    return plotLine({f"T = {hist['T']:.2f}": hist["rows"]}, title="Sizes of 300 outbreaks (spread with duration=3)",
+                    xlabel="people infected (bins double in width)", ylabel="share of outbreaks", logX=true,
+                    dots=true, colors=[I_COL])
+
+
+def sizes_text():
+    T = T_now()
+    _g0, _g1, tc, _m, _m2 = gen_funcs(net["ks"])
+    head = (f"Each run starts from one random person and uses GUESS's `outbreaks(model=\"SIR\", duration={K})`, so "
+            f"every infection lasts exactly {K} steps and T = {T:.2f} (β = {beta_for(T):.3f}). Set T with the slider "
+            f"above and press *Simulate*. Try T below and above T_c = **{tc:.3f}**.")
+    if not hist["rows"]:
+        return head
+    S = theory_S(net["ks"], hist["T"])
+    n = len(net["adj"])
+    return (head + f"\n\nAt T = {hist['T']:.2f}: **{hist['large']:.0%}** of outbreaks were large (over 10% of "
+            f"people), with mean size **{hist['meanlarge']:.0f}** ({hist['meanlarge'] / n:.0%}). Theory for this "
+            f"degree sequence: a large outbreak happens with probability S and infects a share S, "
+            f"S = **{S:.0%}**. "
+            + ("Below the threshold every outbreak is small: the sizes pile up at the left."
+               if hist["T"] <= tc else
+               "Above it the sizes split in two: small outbreaks that die out early, and large ones "
+               "about S·n in size, with nothing in between."))
+
+
+# ---- tab 3: size against T (theory and fast simulation on big networks) ------------------------------
+T_VALUES = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+
+def big_network(kind):
+    """A configuration model on N_BIG nodes as adjacency lists, built with Python's own random (reproducible)."""
+    ks = degrees(kind, N_BIG, 31 if kind == "poisson" else 32)
+    r = random.Random(41)
+    stubs = [i for i, k in enumerate(ks) for _ in range(k)]
+    r.shuffle(stubs)
+    pairs = [(stubs[i], stubs[i + 1]) for i in range(0, len(stubs) - 1, 2) if stubs[i] != stubs[i + 1]]
+    return ks, pairs
+
+
+def giant_share(n, pairs, T, r):
+    par = list(range(n))
+
+    def find(x):
+        while par[x] != x:
+            par[x] = par[par[x]]
+            x = par[x]
+        return x
+    for a, b in pairs:
+        if r.random() < T:
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                par[rb] = ra
+    sizes = {}
+    for i in range(n):
+        root = find(i)
+        sizes[root] = sizes.get(root, 0) + 1
+    return max(sizes.values()) / n
+
+
+BIG = {}
+
+
+def sweep_step():
+    i = sweep["i"]
+    if i >= len(T_VALUES):
+        return False
+    T = T_VALUES[i]
+    for kind in ("poisson", "powerlaw"):
+        if kind not in BIG:
+            BIG[kind] = big_network(kind)
+        ks, pairs = BIG[kind]
+        r = random.Random(100 + i)
+        S = sum(giant_share(len(ks), pairs, T, r) for _ in range(2)) / 2
+        sweep["rows"].setdefault(kind, []).append((T, S))
+    sweep["i"] = i + 1
+    return sweep["i"] < len(T_VALUES)
+
+
+def start_sweep():
+    if sweep["timer"] is not None and sweep["timer"].running:
+        return
+    sweep.update(rows={}, i=0)
+    sweep["timer"] = everyPaced(sweep_step, steps=len(T_VALUES), slow=0.6, fast=0.15, ramp=2)
+
+
+def sweep_chart():
+    if mode[0] != "Size against T":
+        return None
+    data, cols = {}, {}
+    for kind, name, col in (("poisson", "Poisson", "70,120,220"), ("powerlaw", "heavy tail", "220,90,40")):
+        ks = BIG[kind][0] if kind in BIG else degrees(kind, N_BIG, 31 if kind == "poisson" else 32)
+        if kind not in BIG:
+            BIG[kind] = big_network(kind)
+            ks = BIG[kind][0]
+        data[f"{name}: theory"] = [(t / 100, theory_S(ks, t / 100)) for t in range(0, 101, 4)]
+        cols[f"{name}: theory"] = col
+        if sweep["rows"].get(kind):
+            data[f"{name}: simulated"] = sweep["rows"][kind]
+            cols[f"{name}: simulated"] = col
+    return plotLine(data, title=f"Large outbreak size against T ({N_BIG} people)", xlabel="transmissibility T",
+                    ylabel="share infected in a large outbreak", yrange=(0, 1), xrange=(0, 1),
+                    dashed=[k for k in data if k.endswith("theory")],
+                    highlight=[k for k in data if k.endswith("simulated")], colors=cols)
+
+
+def sweep_text():
+    lines = []
+    for kind, name in (("poisson", "Poisson degrees"), ("powerlaw", "heavy-tailed degrees")):
+        if kind not in BIG:
+            BIG[kind] = big_network(kind)
+        _g0, _g1, tc, mean, mean2 = gen_funcs(BIG[kind][0])
+        lines.append(f"| {name} | {mean:.2f} | {mean2:.1f} | **{tc:.3f}** |")
+    head = ("Dashed: the configuration-model theory, S = 1 − g₀(u) with u = 1 − T + T g₁(u), for each degree "
+            f"sequence. Dots: *Simulate* occupies each edge of a {N_BIG}-person network with probability T and "
+            "measures the giant cluster, which is the size of a large outbreak (and, for an undirected network, also "
+            "the chance one happens).\n\n| degrees | ⟨k⟩ | ⟨k²⟩ | T_c |\n|---|---|---|---|\n" + "\n".join(lines))
+    return head + ("\n\nWith heavy-tailed degrees ⟨k²⟩ is large and T_c small: hubs make even a weakly "
+                   "transmissible disease able to spread, though such outbreaks stay modest until T is larger.")
+
+
+# ---- plumbing ---------------------------------------------------------------------------------------
+def stop_all():
+    stop_outbreak()
+    if sweep["timer"] is not None:
+        sweep["timer"].stop()
+        sweep["timer"] = None
+
+
+def switch(title):
+    mode[0] = title
+    if title == "Coins and clusters":
+        paint_outbreak() if cases["when"] else paint_coins()
+        run_btn.text = "Pause" if cases["timer"] is not None and cases["timer"].running else "Run the outbreak"
+    else:
+        stop_outbreak()
+        paint_coins()
+
+
+def pick_net(choice):
+    build(NETS[choice])
+
+
+tslider = Slider(0.05, 1.0, 0.45, 0.01, label="transmissibility T")
+tslider.onChange = change_T
+run_btn = Button("Run the outbreak", onClick=lambda *a: play())
+graphevents.clickNode = pick
+build("poisson")
+constantLabelSize(size=14)
+ui.title("Outbreak sizes and percolation", "Networks, Sections 16.3.1–16.3.2")
+ui.layout(
+    right=Column(
+        Markdown("""### An outbreak is a percolation cluster
+With a fixed infectious period, each edge passes the disease on at most once,
+with probability T. Toss every edge's coin first, and the outbreak is the
+cluster of the first case."""),
+        Dropdown(list(NETS), label="Network", onChange=pick_net),
+        tslider,
+        Tabs(
+            Tab("Coins and clusters",
+                Row(run_btn, Button("Step", onClick=lambda *a: (start_outbreak() if not cases["when"] else None,
+                                                               outbreak_step())),
+                    Button("To the end", onClick=lambda *a: to_end()),
+                    Button("Reset", onClick=lambda *a: reset_outbreak())),
+                Chart(outbreak_chart),
+                Markdown(coins_text)),
+            Tab("Outbreak sizes",
+                Button("Simulate: 300 outbreaks at this T", onClick=lambda *a: simulate_sizes()),
+                Chart(sizes_chart),
+                Markdown(sizes_text)),
+            Tab("Size against T",
+                Button("Simulate: sweep T on big networks", onClick=lambda *a: start_sweep()),
+                Chart(sweep_chart),
+                Markdown(sweep_text)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(net['adj'])} people · T = {T_now():.2f} · first case's cluster: {len(cases['cluster'])}"))
+center(g.nodes)

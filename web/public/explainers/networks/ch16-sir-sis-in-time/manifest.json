@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "SIR and SIS in time",
+  "description": "Epidemics unfolding on networks against the degree-based approximation: endemic hubs, and thresholds that vanish for heavy-tailed degrees.",
+  "console": "toggle",
+  "script": "main.gy"
+}

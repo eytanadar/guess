@@ -1,0 +1,794 @@
+# The SI model in time  (Newman, Networks, Sections 16.4–16.5)
+# Susceptible people catch the disease from each infected neighbour at rate
+# beta and stay infected for good. On a network the epidemic can only travel
+# along edges, so how fast it grows depends on the network:
+#   - early on it grows like e^(beta kappa1 t), kappa1 the leading eigenvalue of
+#     the adjacency matrix (first-order theory, eq. 16.63), and the nodes with
+#     high eigenvector centrality are infected first;
+#   - the first-order equations (16.55) treat neighbours as independent and run
+#     ahead of the truth; the pair approximation (16.74-16.76) fixes that and is
+#     nearly exact on networks without short loops;
+#   - the degree-based approximation (16.84-16.85) needs only the degrees.
+#
+# Simulation: in continuous time each edge from an infected node transmits after
+# an exponentially distributed wait (rate beta), so a node's infection time is its
+# shortest-path distance from the first case with those waits as edge lengths.
+# One run is one Dijkstra search, fast enough to average many runs.
+
+import heapq
+import math
+import random
+import numpy as np
+
+NETS = {"Random (Poisson degrees)": "poisson",
+        "A few hubs (power-law degrees)": "hubs",
+        "Political blogs (sample)": "blogs",
+        "Les Misérables (many triangles)": "lesmis"}
+S_COL, S_LINE = "90,150,235", "30,60,120"
+I_COL, I_LINE = "235,60,50", "90,0,0"
+NEW_EDGE, OLD_EDGE, BASE_EDGE = "255,120,40", "235,110,80,130", "150,150,165,80"
+THEORY_COLS = {"this outbreak": I_COL, "simulated average": I_COL,
+               "fully mixed": "160,160,160", "first-order": "170,100,220",
+               "pair approximation": "60,170,90", "degree-based": "245,150,40"}
+TH_NAMES = ["fully mixed", "first-order", "pair approximation", "degree-based"]
+RUNS = 40
+
+net = {}            # key -> {"names", "idx", "nbrs", "A", "kappa", "v1", "deg"}
+sim = {"key": "poisson", "times": {}, "parent": {}, "t": 0.0, "dt": 0.1, "seed": None, "fresh": set(),
+       "timer": None, "avg": {}, "simtimer": None, "chosen": None, "rnd": random.Random(3)}
+mode = ["Outbreak"]
+_theory_cache = {}
+
+
+# ---- the networks: each kept to its largest component, built once in its own graph ---------------
+def poisson_degrees(n, mean, r):
+    ks = []
+    for _ in range(n):
+        L, k, p = math.exp(-mean), 0, 1.0
+        while True:
+            p *= r.random()
+            if p <= L:
+                break
+            k += 1
+        ks.append(k)
+    if sum(ks) % 2:
+        ks[0] += 1
+    return ks
+
+
+def power_degrees(n, r):
+    ks = []
+    while len(ks) < n:
+        k = int(2 * (1 - r.random()) ** (-1 / 1.5))          # exponent 2.5, at least 2
+        if k <= 50:
+            ks.append(k)
+    if sum(ks) % 2:
+        ks[0] += 1
+    return ks
+
+
+def keep_largest():
+    """Remove everything outside the largest connected piece (the epidemic can't reach it)."""
+    nb = {v.name: set() for v in g.nodes}
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        if a != b:
+            nb[a].add(b)
+            nb[b].add(a)
+    best = set()
+    seen = set()
+    for v in nb:
+        if v in seen:
+            continue
+        comp, todo = {v}, [v]
+        while todo:
+            x = todo.pop()
+            for y in nb[x]:
+                if y not in comp:
+                    comp.add(y)
+                    todo.append(y)
+        seen |= comp
+        if len(comp) > len(best):
+            best = comp
+    gone = [v for v in g.nodes if v.name not in best]
+    if gone:
+        remove(gone)
+
+
+def collect(key):
+    names = sorted(v.name for v in g.nodes)
+    idx = {v: i for i, v in enumerate(names)}
+    sets = [set() for _ in names]
+    for e in g.edges:
+        a, b = idx[e.node1.name], idx[e.node2.name]
+        if a != b:                                   # links are two-way for the disease
+            sets[a].add(b)
+            sets[b].add(a)
+    nbrs = [sorted(s_) for s_ in sets]
+    n = len(names)
+    A = np.zeros((n, n))
+    for i, ns in enumerate(nbrs):
+        A[i, ns] = 1.0
+    w, V = np.linalg.eigh(A)
+    v1 = np.abs(V[:, -1])
+    net[key] = {"names": names, "idx": idx, "nbrs": nbrs, "A": A, "kappa": float(w[-1]),
+                "v1": v1 / v1.max(), "deg": np.array([len(ns) for ns in nbrs], float)}
+
+
+def lay_out():
+    frLayout()
+    noverlapLayout(margin=3)
+    center(g.nodes)
+
+
+def build_all():
+    r = random.Random(11)
+    makeConfigurationModel(poisson_degrees(300, 4.0, r), simple=true, seed=2, layout=false)
+    keep_largest()
+    lay_out()
+    renameGraph("poisson")
+    collect("poisson")
+    newGraph("hubs")
+    makeConfigurationModel(power_degrees(300, r), simple=true, seed=4, layout=false)
+    keep_largest()
+    lay_out()
+    collect("hubs")
+    newGraph("blogs")
+    makeFromFile("polblogs-sample.gdf")
+    keep_largest()
+    noverlapLayout(margin=2)
+    center(g.nodes)
+    collect("blogs")
+    newGraph("lesmis")
+    makeFromFile("lesmis.gdf")
+    keep_largest()
+    noverlapLayout(margin=4)
+    center(g.nodes)
+    collect("lesmis")
+    use("poisson")
+
+
+def beta():
+    return beta_sl.value
+
+
+# ---- simulation: one outbreak = one shortest-path search with random exponential edge lengths ----------
+def outbreak(key, starts, rnd, b):
+    """Infection times and infectors for one SI outbreak in continuous time, from the first cases `starts`."""
+    d = net[key]
+    n = len(d["names"])
+    times = [math.inf] * n
+    parent = [-1] * n
+    for s0 in starts:
+        times[s0] = 0.0
+    wait = {}
+    heap = [(0.0, s0) for s0 in starts]
+    heapq.heapify(heap)
+    done = [False] * n
+    while heap:
+        t, i = heapq.heappop(heap)
+        if done[i]:
+            continue
+        done[i] = True
+        for j in d["nbrs"][i]:
+            if done[j]:
+                continue
+            key_ = (i, j) if i < j else (j, i)
+            w = wait.get(key_)
+            if w is None:
+                w = rnd.expovariate(b)       # the edge's transmission clock starts when its first end is infected
+                wait[key_] = w
+            if t + w < times[j]:
+                times[j], parent[j] = t + w, i
+                heapq.heappush(heap, (t + w, j))
+    return times, parent
+
+
+def first_cases():
+    return int(cases_sl.value)
+
+
+_horizon_cache = {}
+
+
+def horizon(key, b):
+    """A time by which (almost) everyone is infected in theory: the degree-based curve reaching 0.997 (cached)."""
+    ck = (key, round(b, 4), first_cases())
+    if ck not in _horizon_cache:
+        pts = degree_based(key, b, None, first_cases())
+        _horizon_cache[ck] = next((t * 1.15 for t, x in pts if x > 0.997), pts[-1][0])
+    return _horizon_cache[ck]
+
+
+# ---- theory -----------------------------------------------------------------------------------------------
+def grid(key, b):
+    T = horizon_raw(key, b)
+    return [T * k / 240 for k in range(241)]
+
+
+def horizon_raw(key, b):
+    d = net[key]
+    n = len(d["names"])
+    kbar = float(d["deg"].mean())
+    # the fully mixed curve reaches 0.999 at log(999 (n - 1)) / (beta <k>); the network is slower, so take twice that
+    return 2.2 * math.log(999 * max(2, n - 1)) / (b * kbar)
+
+
+def rk4(f, y, h, steps):
+    out = [y]
+    for _ in range(steps):
+        k1 = f(y)
+        k2 = f(y + 0.5 * h * k1)
+        k3 = f(y + 0.5 * h * k2)
+        k4 = f(y + h * k3)
+        y = y + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+        out.append(y)
+    return out
+
+
+def solve_all(key, b, c=None):
+    """All four theories on one time grid, cached: {name: [(t, x)]}. They start from x_i = c/n for every
+    node: c first cases, equally likely to be anyone (the book's initial condition)."""
+    c = first_cases() if c is None else int(c)
+    ck = (key, round(b, 4), c)
+    if ck in _theory_cache:
+        return _theory_cache[ck]
+    d = net[key]
+    n = len(d["names"])
+    x0 = c / n
+    ts = grid(key, b)
+    h_out = ts[1] - ts[0]
+    sub = 3                                          # integration steps per output step
+    h = h_out / sub
+    steps = sub * (len(ts) - 1)
+    kbar = float(d["deg"].mean())
+    out = {}
+    # fully mixed: dx/dt = beta <k> x (1 - x)
+    xs = rk4(lambda x: b * kbar * x * (1 - x), np.array([x0]), h, steps)
+    out["fully mixed"] = [(ts[k], float(xs[k * sub][0])) for k in range(len(ts))]
+    # edges as index arrays, both directions (sparse: A x is a sum over edges)
+    src, dst = [], []
+    for i, ns in enumerate(d["nbrs"]):
+        for j in ns:
+            src.append(i)
+            dst.append(j)
+    src, dst = np.array(src), np.array(dst)
+    # first order: dx_i/dt = beta (1 - x_i) sum_j A_ij x_j
+    xs = rk4(lambda x: b * (1 - x) * np.bincount(src, weights=x[dst], minlength=n), np.full(n, x0), h, steps)
+    out["first-order"] = [(ts[k], float(xs[k * sub].mean())) for k in range(len(ts))]
+    # pair approximation: p_ij = P(j infected | i susceptible), one per directed edge
+    pos = {(int(a), int(c)): e for e, (a, c) in enumerate(zip(src, dst))}
+    rev = np.array([pos[(int(c), int(a))] for a, c in zip(src, dst)])
+    m2 = len(src)
+
+    def pair(y):
+        s_, p = y[:n], y[n:]
+        tot = np.bincount(src, weights=p, minlength=n)       # sum_k A_jk p_jk, by j
+        inner = tot[dst] - p[rev]                            # ... except k = i
+        dp = b * (1 - p) * (-p + inner)
+        ds = -b * s_ * tot
+        return np.concatenate([ds, dp])
+    ys = rk4(pair, np.concatenate([np.full(n, 1 - x0), np.full(m2, x0)]), h, steps)
+    out["pair approximation"] = [(ts[k], float(1 - ys[k * sub][:n].mean())) for k in range(len(ts))]
+    out["degree-based"] = degree_based(key, b, ts, c)
+    _theory_cache[ck] = out
+    return out
+
+
+def gfuncs(key):
+    """g0 and g1 for the degree distribution of the network (the giant component)."""
+    ks = net[key]["deg"].astype(int)
+    kmax = int(ks.max())
+    pk = np.bincount(ks, minlength=kmax + 1) / len(ks)
+    kbar = float((np.arange(kmax + 1) * pk).sum())
+    qk = np.array([(k + 1) * pk[k + 1] / kbar for k in range(kmax)])
+    g0 = lambda u: float(np.polyval(pk[::-1], u))
+    g1 = lambda u: float(np.polyval(qk[::-1], u))
+    return pk, qk, kbar, g0, g1
+
+
+def degree_based(key, b, ts=None, c=1):
+    """du/dt = -beta u (1 - s0 g1(u)), x = 1 - s0 g0(u)  (eqs. 16.84, 16.85), with s0 = 1 - c/n."""
+    n = len(net[key]["names"])
+    s0 = 1 - c / n
+    _pk, _qk, _kb, g0, g1 = gfuncs(key)
+    if ts is None:
+        T = horizon_raw(key, b)
+        ts = [T * k / 240 for k in range(241)]
+    h_out = ts[1] - ts[0]
+    sub = 20
+    h = h_out / sub
+    u = 1.0
+    out = [(ts[0], 1 - s0 * g0(u))]
+    for k in range(1, len(ts)):
+        for _ in range(sub):
+            f = lambda u_: -b * u_ * (1 - s0 * g1(u_))
+            k1 = f(u)
+            k2 = f(u + 0.5 * h * k1)
+            k3 = f(u + 0.5 * h * k2)
+            k4 = f(u + h * k3)
+            u = u + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+        out.append((ts[k], 1 - s0 * g0(u)))
+    return out
+
+
+def rates(key, b):
+    """Early exponential growth rates: fully mixed beta <k>; first-order beta kappa1;
+    degree-based beta g1'(1) = beta (<k^2> - <k>) / <k>."""
+    d = net[key]
+    ks = d["deg"]
+    kbar = float(ks.mean())
+    g1p = float((ks * ks).mean() - kbar) / kbar
+    return {"fully mixed": b * kbar, "first-order": b * d["kappa"], "degree-based": b * g1p}
+
+
+# ---- one outbreak on screen -----------------------------------------------------------------------------------
+def node(name):
+    return g.getNodeByName(name)
+
+
+def reset_outbreak():
+    stop_all()
+    sim.update(times={}, parent={}, t=0.0, seed=None, seeds=[], fresh=set())
+    paint_net()
+
+
+def start_outbreak(name=None):
+    key = sim["key"]
+    d = net[key]
+    reset_outbreak()
+    name = name or sim["chosen"] or sim["rnd"].choice(d["names"])
+    others = [v for v in d["names"] if v != name]
+    seeds = [name] + sim["rnd"].sample(others, min(len(others), first_cases() - 1))
+    times, parent = outbreak(key, [d["idx"][v] for v in seeds], sim["rnd"], beta())
+    sim["times"] = {d["names"][i]: t for i, t in enumerate(times)}
+    sim["parent"] = {d["names"][i]: (d["names"][p] if p >= 0 else None) for i, p in enumerate(parent)}
+    sim["seed"] = name
+    sim["seeds"] = seeds
+    sim["dt"] = horizon(key, beta()) / 70
+    paint_net()
+
+
+def step_outbreak():
+    if not sim["times"]:
+        return False
+    t0 = sim["t"]
+    sim["t"] = t0 + sim["dt"]
+    sim["fresh"] = {v for v, t in sim["times"].items() if t0 < t <= sim["t"]}
+    paint_net()
+    left = sum(1 for t in sim["times"].values() if t > sim["t"])
+    if left == 0:
+        go_btn.text = "Start an outbreak"
+        return False
+    return True
+
+
+def paint_net():
+    key = sim["key"]
+    d = net[key]
+    times, t = sim["times"], sim["t"]
+    for v in g.nodes:
+        k = d["deg"][d["idx"][v.name]]
+        size = 5 + 2.2 * math.sqrt(k)
+        v.labelvisible = false
+        infected = v.name in times and times[v.name] <= t
+        if infected:
+            v.color, v.strokecolor, v.strokewidth = I_COL, I_LINE, 1.5
+            v.width = v.height = size + 5
+            if v.name in sim["fresh"]:
+                v.strokecolor, v.strokewidth = "20,20,20", 3.5
+                v.width = v.height = size + 9
+        else:
+            v.color, v.strokecolor, v.strokewidth = S_COL, S_LINE, 0.6
+            v.width = v.height = size
+        if v.name in sim.get("seeds", []) or (sim["seed"] is None and v.name == sim["chosen"]):
+            v.strokecolor, v.strokewidth = "255,220,60", 4
+    used = {frozenset((v, p)) for v, p in sim["parent"].items() if p is not None and sim["times"][v] <= t}
+    new = {frozenset((v, sim["parent"][v])) for v in sim["fresh"] if sim["parent"].get(v)}
+    for e in g.edges:
+        kk = frozenset((e.node1.name, e.node2.name))
+        if kk in new:
+            e.color, e.width, e.linestyle = NEW_EDGE, 3.2, "flow"
+        elif kk in used:
+            e.color, e.width, e.linestyle = OLD_EDGE, 1.4, "solid"
+        else:
+            e.color, e.width, e.linestyle = BASE_EDGE, 0.6, "solid"
+
+
+def go():
+    if sim["timer"] is not None and sim["timer"].running:
+        sim["timer"].stop()
+        sim["timer"] = None
+        go_btn.text = "Continue"
+        return
+    if go_btn.text != "Continue" or not sim["times"]:
+        start_outbreak()
+    sim["timer"] = everyPaced(step_outbreak, slow=0.8, fast=0.12, ramp=4)
+    go_btn.text = "Pause"
+
+
+def one_step():
+    if not sim["times"]:
+        start_outbreak()
+    step_outbreak()
+
+
+def to_end():
+    stop_all()
+    if not sim["times"]:
+        start_outbreak()
+    sim["t"] = max(sim["times"].values()) + 1e-9
+    sim["fresh"] = set()
+    paint_net()
+    go_btn.text = "Start an outbreak"
+
+
+def click_node(v):
+    sim["chosen"] = v.name
+    start_outbreak(v.name)
+
+
+def this_curve():
+    """This outbreak's infected share on the theory grid, up to now."""
+    ts = sorted(sim["times"].values())
+    n = len(ts)
+    out = []
+    for t in grid(sim["key"], beta()):
+        if t > sim["t"] + 1e-12:
+            break
+        out.append((t, sum(1 for x in ts if x <= t) / n))
+    return out
+
+
+def outbreak_text():
+    key = sim["key"]
+    d = net[key]
+    n = len(d["names"])
+    b = beta()
+    head = (f"**{n}** people (the network's largest connected piece), mean degree **{d['deg'].mean():.1f}**. "
+            f"Each infected person (red) passes the disease to each susceptible neighbour (blue) at rate "
+            f"β = {b:.2f} per unit time, and stays infected. The edge each new infection came along flashes "
+            "orange, and the newest cases are outlined. Bigger nodes have more neighbours. *Click a person* to "
+            "start there.")
+    if not sim["times"]:
+        return head
+    t = sim["t"]
+    inf = [v for v, x in sim["times"].items() if x <= t]
+    line = (f"\n\nTime **{t:.2f}**: **{len(inf)}** of {n} infected ({len(inf) / n:.0%}). First cases "
+            "(yellow rings): " + " ".join(linkTo(node(v)) for v in sim["seeds"]) + ".")
+    fresh = sorted(sim["fresh"], key=lambda v: sim["times"][v])
+    if fresh:
+        line += " New: " + " ".join(linkTo(node(v)) for v in fresh[:8]) + (" …" if len(fresh) > 8 else "")
+    line += ("\n\nOne outbreak wanders, especially from a single first case: how soon it takes off depends on luck "
+             "in the first moments. The theories (dashed) describe the *average* over many outbreaks; see *Theory "
+             "and simulation*.")
+    return head + line
+
+
+def outbreak_chart():
+    if mode[0] != "Outbreak" or not sim["times"]:
+        return None
+    th = solve_all(sim["key"], beta())
+    data = {"this outbreak": this_curve()}
+    for name in TH_NAMES:
+        data[name] = th[name]
+    return plotLine(data, title="Share infected", xlabel="time", ylabel="share infected", yrange=(0, 1),
+                    xrange=(0, horizon(sim["key"], beta())), dashed=TH_NAMES, colors=THEORY_COLS)
+
+
+# ---- many outbreaks, off screen -----------------------------------------------------------------------------------
+def sim_key():
+    return (sim["key"], round(beta(), 4), first_cases())
+
+
+def simulate_start():
+    stop_all()
+    sim["avg"][sim_key()] = {"runs": 0, "curve": None, "tsum": None}
+    sim["simtimer"] = everyPaced(simulate_step, steps=RUNS // 5, slow=0.5, fast=0.12, ramp=2)
+
+
+def simulate_step():
+    key, b = sim["key"], beta()
+    d = net[key]
+    n = len(d["names"])
+    rec = sim["avg"].setdefault(sim_key(), {"runs": 0, "curve": None, "tsum": None})
+    ts = np.array(grid(key, b))
+    rnd = random.Random(1000 + rec["runs"])
+    for _ in range(5):
+        times, _p = outbreak(key, rnd.sample(range(n), min(n, first_cases())), rnd, b)
+        arr = np.sort(np.array(times))
+        x = np.searchsorted(arr, ts, side="right") / n
+        rec["curve"] = x if rec["curve"] is None else rec["curve"] + x
+        tt = np.array(times)
+        rec["tsum"] = tt if rec["tsum"] is None else rec["tsum"] + tt
+        rec["runs"] += 1
+    if sim["key"] == key:
+        paint_mean_times()
+    return RUNS // 5 - rec["runs"] // 5
+
+
+def averaged():
+    rec = sim["avg"].get(sim_key())
+    if not rec or not rec["runs"]:
+        return None
+    ts = grid(sim["key"], beta())
+    return [(t, float(x)) for t, x in zip(ts, rec["curve"] / rec["runs"])], rec
+
+
+def error_of(curve, th):
+    return math.sqrt(sum((a[1] - b_[1]) ** 2 for a, b_ in zip(curve, th)) / len(curve))
+
+
+def theory_text():
+    key = sim["key"]
+    b = beta()
+    avg = averaged()
+    c = first_cases()
+    txt = ("Four ways to predict the average epidemic curve (dashed), against the average of "
+           f"{RUNS} simulated outbreaks, each starting from **{c}** first case{'s' if c != 1 else ''} chosen at "
+           f"random (so every node starts infected with chance c/n, as the equations assume):\n\n"
+           "- **fully mixed**: dx/dt = β⟨k⟩x(1 − x), as if anyone could meet anyone;\n"
+           "- **first-order**: dxᵢ/dt = β(1 − xᵢ) Σⱼ Aᵢⱼxⱼ, the network, but treating neighbours as independent;\n"
+           "- **pair approximation**: equations for pᵢⱼ, the chance j is infected given i isn't, which remember "
+           "that j can't have caught it from i;\n"
+           "- **degree-based**: all nodes of the same degree alike; only the degrees are needed.")
+    if not avg:
+        return txt + "\n\n*Press the button to simulate.*"
+    curve, rec = avg
+    th = solve_all(key, b)
+    rows = ["| prediction | typical error |", "|---|---|"]
+    errs = {name: error_of(curve, th[name]) for name in TH_NAMES}
+    for name in TH_NAMES:
+        rows.append(f"| {name} | {errs[name]:.3f} |")
+    best = min(errs, key=errs.get)
+    txt += f"\n\nAfter **{rec['runs']}** outbreaks, the root-mean-square gap between each prediction and the average:\n\n" + "\n".join(rows)
+    txt += f"\n\nClosest here: **{best}**."
+    if c == 1:
+        txt += (" With a **single** first case every theory runs ahead of the average: in each outbreak chance "
+                "decides how long it takes to get going, and averaging curves that start at different times "
+                "flattens them, while the equations start the infection spread evenly. In a small network that "
+                "delay is a big part of the whole epidemic. With a few first cases (try 6) the luck evens out and "
+                "the pair approximation lands on the simulation.")
+    if key == "lesmis":
+        txt += (" Les Misérables is full of triangles: a node's neighbours are often neighbours of each other, so "
+                "their infections are strongly linked and the first-order equations, which assume they aren't, "
+                "run well ahead. The pair approximation is exact only without short loops, but still does much "
+                "better.")
+    else:
+        txt += (" The first-order equations run ahead: they let a node be re-infected, in effect, by the "
+                "neighbour it infected. The pair approximation removes that and is nearly exact on networks "
+                "without short loops, like these random ones.")
+    return txt
+
+
+def theory_chart():
+    if mode[0] != "Theory and simulation":
+        return None
+    th = solve_all(sim["key"], beta())
+    data = {}
+    avg = averaged()
+    if avg:
+        data["simulated average"] = avg[0]
+    for name in TH_NAMES:
+        data[name] = th[name]
+    return plotLine(data, title="Average share infected", xlabel="time", ylabel="share infected",
+                    yrange=(0, 1), xrange=(0, horizon(sim["key"], beta())), dashed=TH_NAMES, colors=THEORY_COLS)
+
+
+# ---- early growth ---------------------------------------------------------------------------------------------------
+def early_end(key, b):
+    """Where the early phase ends: the pair approximation reaching 30%."""
+    for t, x in solve_all(key, b)["pair approximation"]:
+        if x > 0.3:
+            return t
+    return grid(key, b)[-1]
+
+
+def early_target(key):
+    """The share used to compare early growth: three times the starting share, but at least 10%."""
+    n = len(net[key]["names"])
+    return min(0.5, max(0.1, 3 * first_cases() / n))
+
+
+def gap_at_10(key, b):
+    """Time each curve takes to reach the early target share (interpolated between grid points):
+    a way to read the early growth off the log chart."""
+    target = early_target(key)
+    out = {}
+    curves = dict(solve_all(key, b))
+    avg = averaged()
+    if avg:
+        curves["simulated average"] = avg[0]
+    for name, pts in curves.items():
+        hit = None
+        for (t0, x0_), (t1, x1) in zip(pts, pts[1:]):
+            if x0_ < target <= x1:
+                hit = t0 + (t1 - t0) * (target - x0_) / (x1 - x0_)
+                break
+        out[name] = hit
+    return out
+
+
+def early_text():
+    key = sim["key"]
+    d = net[key]
+    b = beta()
+    r = rates(key, b)
+    txt = (f"At first, while few are infected, the epidemic grows exponentially, x ∝ e^(rt): a straight line on "
+           "this log scale. The rate r depends on the network:\n\n"
+           f"- fully mixed: r = β⟨k⟩ = **{r['fully mixed']:.2f}**;\n"
+           f"- first-order: r = βκ₁ = **{r['first-order']:.2f}**, with κ₁ = {d['kappa']:.2f} the leading eigenvalue "
+           "of the adjacency matrix (eq. 16.63);\n"
+           f"- degree-based: r = β(⟨k²⟩ − ⟨k⟩)/⟨k⟩ = **{r['degree-based']:.2f}**, the mean number of *new* "
+           "neighbours an infected node can pass it on to (eq. 16.91).")
+    times = gap_at_10(key, b)
+    if "simulated average" not in times:
+        return txt + "\n\n*Simulate to add the real average.*"
+    target = early_target(key)
+    rows = [f"| curve | time to reach {target:.0%} |", "|---|---|"]
+    for name in ["simulated average"] + TH_NAMES:
+        t = times.get(name)
+        rows.append(f"| {name} | {t:.2f} |" if t is not None else f"| {name} | – |")
+    txt += (f"\n\nWhen each curve reaches {target:.0%} infected:\n\n" + "\n".join(rows) +
+            "\n\nThe first-order curve is among the first to arrive: it lets a node pass the disease back to "
+            "the neighbour that gave it, so it overcounts. The simulation follows the pair approximation, which "
+            "forbids that. The more the degrees vary (the hubs, the blogs), the further the network rates are "
+            "above the fully mixed one, because the disease reaches the well-connected nodes early; with "
+            "Poisson degrees they are about the same.")
+    return txt
+
+
+def early_chart():
+    if mode[0] != "Early growth":
+        return None
+    key, b = sim["key"], beta()
+    end = early_end(key, b)
+    th = solve_all(key, b)
+    data = {}
+    avg = averaged()
+    if avg:
+        data["simulated average"] = [(t, x) for t, x in avg[0] if t <= end and x > 0]
+    for name in TH_NAMES:
+        data[name] = [(t, x) for t, x in th[name] if t <= end]
+    return plotLine(data, title="Early growth (log scale)", xlabel="time", ylabel="share infected", logY=true,
+                    dashed=TH_NAMES, colors=THEORY_COLS, highlight=["simulated average"])
+
+
+# ---- who is infected first --------------------------------------------------------------------------------------------
+def paint_mean_times():
+    if mode[0] != "Who is infected first":
+        return
+    rec = sim["avg"].get(sim_key())
+    key = sim["key"]
+    d = net[key]
+    if not rec or not rec["runs"]:
+        return
+    mt = rec["tsum"] / rec["runs"]
+    lo, hi = float(mt.min()), float(mt.max())
+    top = set(np.argsort(-d["v1"])[:5])
+    Node.mean_time = 0.0                             # fields of this graph (each network is its own graph)
+    Node.eigvec = 0.0
+    for v in g.nodes:
+        i = d["idx"][v.name]
+        f = (mt[i] - lo) / (hi - lo or 1)
+        v.color = f"{int(235 - 150 * f)},{int(60 + 110 * f)},{int(50 + 185 * f)}"
+        v.strokecolor, v.strokewidth = ("20,20,20", 3) if i in top else ("60,60,60", 0.6)
+        v.mean_time = float(mt[i])
+        v.eigvec = float(d["v1"][i])
+        v.label = v.name if i in top else ""
+        v.labelvisible = i in top
+    for e in g.edges:
+        e.color, e.width, e.linestyle = BASE_EDGE, 0.6, "solid"
+
+
+def spearman(a, b_):
+    ra = np.argsort(np.argsort(a))
+    rb = np.argsort(np.argsort(b_))
+    return float(np.corrcoef(ra, rb)[0, 1])
+
+
+def first_text():
+    key = sim["key"]
+    d = net[key]
+    txt = ("Early on, the first-order theory says node i's chance of being infected grows like its entry in the "
+           "leading eigenvector of A, its **eigenvector centrality** (eq. 16.63). So central nodes should be "
+           "infected first, on average. Colour: mean infection time over the simulated outbreaks (red early, blue "
+           "late); the five most central nodes are outlined and named.")
+    rec = sim["avg"].get(sim_key())
+    if not rec or not rec["runs"]:
+        return txt + "\n\n*Simulate to colour the nodes.*"
+    mt = rec["tsum"] / rec["runs"]
+    r_eig = spearman(-d["v1"], mt)
+    r_deg = spearman(-d["deg"], mt)
+    top = [d["names"][i] for i in np.argsort(-d["v1"])[:5]]
+    txt += (f"\n\nAfter {rec['runs']} outbreaks, the rank correlation between infection time and eigenvector "
+            f"centrality is **{-r_eig:+.2f}** (negative: more central, earlier), and with degree **{-r_deg:+.2f}**. "
+            "Most central: " + " ".join(linkTo(node(v)) for v in top) + ".")
+    return txt
+
+
+def first_chart():
+    if mode[0] != "Who is infected first":
+        return None
+    rec = sim["avg"].get(sim_key())
+    if not rec or not rec["runs"]:
+        return None
+    return plotScatter("eigvec", "mean_time", title="Infection time against eigenvector centrality",
+                       xlabel="eigenvector centrality (largest = 1)", ylabel="mean infection time")
+
+
+# ---- wiring ---------------------------------------------------------------------------------------------------------
+def stop_all():
+    for k in ("timer", "simtimer"):
+        if sim[k] is not None:
+            sim[k].stop()
+            sim[k] = None
+    if go_btn.text == "Pause":
+        go_btn.text = "Continue"
+
+
+def pick_net(label):
+    stop_all()
+    sim["key"] = NETS[label]
+    sim["chosen"] = None
+    use(sim["key"])
+    constantLabelSize(size=14)
+    reset_outbreak()
+    go_btn.text = "Start an outbreak"
+    if mode[0] == "Who is infected first":
+        paint_mean_times()
+
+
+def pick_beta(v=None):
+    stop_all()
+    reset_outbreak()
+    go_btn.text = "Start an outbreak"
+
+
+def switch(title):
+    mode[0] = title
+    if title != "Outbreak" and sim["timer"] is not None and sim["timer"].running:
+        go()
+    if title == "Who is infected first":
+        paint_mean_times()
+    else:
+        paint_net()
+
+
+go_btn = Button("Start an outbreak", onClick=lambda: go())
+beta_sl = Slider(0.2, 2, 1, 0.1, label="β, infection rate per contact")
+beta_sl.onChange = pick_beta
+cases_sl = Slider(1, 20, 6, 1, label="first cases, chosen at random")
+cases_sl.onChange = pick_beta
+build_all()
+closeGraph("main") if "main" in graphNames() else None
+reset_outbreak()
+graphevents.clickNode = click_node
+constantLabelSize(size=14)
+ui.title("The SI model in time", "Networks, Sections 16.4–16.5")
+ui.layout(
+    right=Column(
+        Markdown("""### How fast does it spread?
+SI on a network: once infected, always infected. Blue: susceptible. Red: infected."""),
+        Dropdown(list(NETS), label="Network", onChange=pick_net),
+        Row(beta_sl, cases_sl),
+        Tabs(
+            Tab("Outbreak",
+                Row(go_btn, Button("One step", onClick=lambda: one_step()),
+                    Button("To the end", onClick=lambda: to_end())),
+                Chart(outbreak_chart), Markdown(outbreak_text)),
+            Tab("Theory and simulation",
+                Button("Simulate: average 40 outbreaks", onClick=lambda: simulate_start()),
+                Chart(theory_chart), Markdown(theory_text)),
+            Tab("Early growth",
+                Button("Simulate the early growth", onClick=lambda: simulate_start()),
+                Chart(early_chart), Markdown(early_text)),
+            Tab("Who is infected first",
+                Button("Simulate who is infected first", onClick=lambda: simulate_start()),
+                Chart(first_chart), Markdown(first_text)),
+            onChange=switch)),
+    sizes={"right": 440},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{sim['key']}: {len(net[sim['key']]['names'])} people · κ₁ = {net[sim['key']]['kappa']:.2f}"))
+center()

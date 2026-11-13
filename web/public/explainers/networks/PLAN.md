@@ -1485,13 +1485,125 @@ transmissions on the edges, runs slow-fast-slow, and charts the theory dashed.
   - "Simulate" sweeps β to show the threshold for Poisson against power-law degrees.
 - *GUESS:* `spread(model="SIR"|"SIS")`, numpy ODEs, `plotScatter`, `plotLine(dashed=)`.
 
-### Gaps expected in batch 12
+### Gaps in batch 12 (added before building: `spread`/`outbreaks(duration=k)`, a fixed infectious period (SIR is then exactly bond percolation with T = 1 − (1 − β)^k); the node field `infected_steps`; the degree-based ODEs are left to the explainers)
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|
 | A fixed infectious period, so SIR maps exactly onto bond percolation | ch16-outbreak-percolation | `spread` recovers with probability gamma per step (a geometric infectious period) | `spread(..., duration=k)`: infected for exactly k steps; T = 1 − (1 − β)^k |
 | Time spent infected per node (for SIS prevalence by degree) | ch16-sir-sis-in-time | `spread` stores the first infection step and the final state | an `infected_steps` field (steps spent infected) |
 | Degree-based ODE solutions | ch16-si-in-time, ch16-sir-sis-in-time | none | the explainers integrate them with numpy; probably no command |
+
+## Batch 13: book pages 675–731 (Chapter 17, *Dynamical systems on networks*, and Chapter 18, *Network search*) — the last batch
+
+The book's final two chapters: how processes on nodes settle, grow or
+synchronise (and how the network's spectrum decides which), then how to
+find things in networks, from web search to Kleinberg's navigable
+small worlds.
+
+**`ch17-fixed-points`: Dynamical systems, fixed points and stability (§17.1)** · planned
+- *Idea:*
+  - a system dx/dt = f(x) heads for fixed points;
+  - a fixed point is stable if small perturbations shrink, which linearisation decides from the sign of f′(x*) (one variable) or the eigenvalues of the Jacobian (two).
+- *Reader:*
+  - one variable: f(x) plotted with its fixed points marked (filled when stable, hollow when not); click a start, and a dot slides along (paced) as its trajectory x(t) is charted;
+  - two variables: a phase plane with a few trajectories from clicked starts and the eigenvalues at each fixed point shown (sink, source, saddle, spiral);
+  - presets: logistic growth and a predator–prey model.
+- *GUESS:* `plotLine`, `plotScatter`, numpy, `everyPaced`. (No network here: the drawing is a phase portrait, built from nodes and edges as markers.)
+
+**`ch17-network-stability`: Dynamics on networks and linear stability (§§17.2–17.3)** · planned
+- *Idea:*
+  - with dx_i/dt = f(x_i) + Σ_j A_ij g(x_i, x_j), a symmetric fixed point is stable when every eigenvalue of the linearised system is negative;
+  - in special cases that becomes a condition on the largest eigenvalue κ₁ of A, or the Laplacian's spectrum, so the network's structure decides stability;
+  - the book's worked example, and more than one variable per node.
+- *Reader:*
+  - nodes coloured and sized by their deviation x_i − x* (a diverging scale) after a small kick;
+  - "Kick" perturbs a node and the deviations spread along edges (paced, edges flowing where the coupling acts), dying away or growing;
+  - a coupling slider crosses the threshold set by κ₁;
+  - a live chart of the deviation's size, with the predicted growth rate dashed;
+  - a table of κ₁ for several networks and their thresholds.
+- *GUESS:* numpy, `everyPaced`, `spectrum`.
+
+**`ch17-spectra`: Spectra of networks (§17.4)** · planned
+- *Idea:*
+  - the eigenvalues of A and L summarise a network;
+  - random graphs have Wigner's semicircle (with κ₁ ≈ ⟨k⟩ sitting outside it);
+  - heavy-tailed networks have large eigenvalues set by their hubs (≈ √k_max);
+  - the Laplacian's spectrum gives components (zero eigenvalues) and the spectral gap.
+- *Reader:*
+  - choose a network and a matrix (A, L, normalised L);
+  - a histogram of eigenvalues with the semicircle dashed where it applies;
+  - the leading eigenvector shown on the nodes;
+  - "Grow n" shows the bulk converging to the semicircle and κ₁ separating;
+  - power-law networks with κ₁ against √k_max.
+- *GUESS:* `spectrum`, `plotSpectrum`, a histogram of a list of numbers (see gaps).
+
+**`ch17-synchronization`: Synchronization (§17.5)** · planned
+- *Idea:*
+  - coupled oscillators on a network (the Kuramoto model) lock into step once the coupling passes a threshold;
+  - the order parameter r measures it;
+  - the master stability function says whether the synchronised state survives, from the Laplacian's eigenvalues.
+- *Reader:*
+  - every node an oscillator, coloured by its phase on a colour wheel, so synchrony shows as a single colour spreading;
+  - edges flow where neighbours pull each other;
+  - a coupling slider;
+  - a live chart of r(t);
+  - "Simulate" sweeps the coupling for a random network and a ring, showing the transition.
+- *GUESS:* numpy, `everyPaced`, node colours by hue, `plotLine`.
+
+**`ch18-web-search`: Web search (§18.1)** · planned
+- *Idea:*
+  - a search engine finds pages that match the words, then ranks them by importance in the link network (PageRank) as well as relevance;
+  - ranking by links alone or by text alone each fails in its own way.
+- *Reader:*
+  - a small invented web of pages with words;
+  - type a query to see matching pages outlined, ranked by text score, by PageRank and by a blend (slider);
+  - the top results as `linkTo` chips;
+  - a link-farm page shows why links alone can be gamed.
+- *GUESS:* `pagerank`, `Textfield`, `linkTo`. (Builds on `ch03-web-crawler` and `ch07-pagerank-hits`.)
+
+**`ch18-distributed-search`: Searching distributed databases (§18.2)** · planned
+- *Idea:*
+  - in peer-to-peer networks a query must find the item without a central index;
+  - flooding is fast but costly;
+  - random walks are cheap but slow;
+  - walks biased towards high-degree nodes find things in about √n steps on heavy-tailed networks, and copying each item's index to its neighbours helps more.
+- *Reader:*
+  - choose a strategy, then "Search" (paced), with the query's path flowing along edges and the visited nodes ringed;
+  - a live chart of messages against steps;
+  - "Simulate" plots steps to success against n for each strategy, on log–log axes.
+  - Builds on `ch03-p2p-search` with the analysis.
+- *GUESS:* `everyPaced`, `makeConfigurationModel`, `plotLine(logX=, logY=)`.
+
+**`ch18-kleinberg`: Navigable small worlds (§18.3.1)** · planned
+- *Idea:*
+  - in Kleinberg's model each person on a grid has one long-range contact chosen with probability ∝ r^{−α};
+  - greedy routing (always pass the message to the contact closest to the target) is fast only at α = 2 (the grid's dimension), where shortcuts are spread across every scale.
+- *Reader:*
+  - an α slider rebuilds the grid's long-range links (drawn faintly);
+  - "Send a message" from a random person to a random target (paced), each hop flowing along an edge, the current holder ringed, and the distance to the target shown;
+  - "Simulate": mean delivery time against α for two grid sizes, with the minimum at α = 2 sharpening as n grows.
+- *GUESS:* `makeKleinbergRandom` or the explainer's own generator, `everyPaced`, `plotLine`.
+
+**`ch18-hierarchical-search`: A hierarchical model for messages (§18.3.2)** · planned
+- *Idea:*
+  - people belong to groups nested in a hierarchy (and to several hierarchies: where they live, what they do);
+  - links are likelier between people close in the hierarchies;
+  - greedy routing by closeness in *any* hierarchy finds short chains, explaining the success of Milgram's experiment.
+- *Reader:*
+  - a tree of groups drawn beside the network;
+  - a homophily slider and a number of hierarchies;
+  - "Send a message" (paced), each hop choosing the contact closest to the target in some hierarchy, the hop and the hierarchy used highlighted;
+  - "Simulate": success rate and chain length against homophily.
+  - Links back to `ch04-milgram`.
+- *GUESS:* `everyPaced`, a hierarchical model generator in the explainer.
+
+### Gaps expected in batch 13
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| A histogram of a list of numbers (eigenvalues, delivery times) | ch17-spectra, ch18-kleinberg | `plotHistogram` takes a field | `plotHistogram([values], bins)`: lists too |
+| Colouring nodes by a cyclic value (an oscillator's phase) | ch17-synchronization | `colorBy` ramps between two colours | `colorBy(field, cyclic=true)` (a colour wheel), or set colours in the explainer |
+| Kleinberg grids with node coordinates and α | ch18-kleinberg | `makeKleinbergRandom(size, clust)` (on a torus) | check it records grid coordinates; otherwise give it `gx`/`gy` fields |
 
 ## To do (requests not yet done)
 

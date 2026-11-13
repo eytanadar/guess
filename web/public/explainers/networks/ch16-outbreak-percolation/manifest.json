@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Outbreak sizes and percolation",
+  "description": "An SIR outbreak is a bond-percolation cluster: flip every edge's coin first and you know where the disease will go. Thresholds, bimodal outbreak sizes, and theory against simulation.",
+  "console": "toggle",
+  "script": "main.gy"
+}

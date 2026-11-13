@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Two diseases: cross-immunity and coinfection",
+  "description": "A disease that immunises against another leaves a residual network behind; one that opens the door to another selects the network the second can use. Both turn into percolation problems.",
+  "console": "toggle",
+  "script": "main.gy"
+}

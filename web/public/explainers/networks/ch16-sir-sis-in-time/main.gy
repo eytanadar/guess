@@ -1,0 +1,553 @@
+# SIR and SIS in time  (Newman, Networks, Sections 16.6-16.7)
+# On a network, how an epidemic unfolds depends on degrees. The degree-based
+# approximation follows one group of nodes per degree k: x_k is the share of
+# degree-k nodes infected, and a node's neighbour is infected with
+# probability theta = sum_k k p_k x_k / <k> (a neighbour is reached in
+# proportion to its degree). For SIR it gives the epidemic curve; for SIS it
+# gives an endemic state in which each degree class has its own prevalence:
+# the hubs are infected almost all the time. The epidemic threshold is
+# beta/gamma = <k>/<k^2>, which goes to zero when <k^2> is huge, as in
+# networks with heavy-tailed degrees.
+#
+# The simulation's rules (the same as GUESS's spread()): in each step every
+# infected node infects each susceptible neighbour with probability beta,
+# then recovers with probability gamma (to R in SIR, back to S in SIS), then
+# the newly infected become infectious. The theory curves are the same rules
+# applied to degree classes, step by step.
+
+import math
+import random
+import numpy as np
+
+N = 250                       # people drawn
+SEED_SHARE = 0.03             # share infected at the start (several, so chance matters less)
+MAX_T = {"SIR": 120, "SIS": 150}
+NETS = {"Poisson degrees (mean 4)": "poisson", "Heavy-tailed degrees (power law)": "powerlaw"}
+S_COL, S_LINE = "90,150,235", "30,60,120"
+I_COL, I_LINE = "235,60,50", "80,0,0"
+R_COL = "170,172,180"
+NEW_EDGE, BASE_EDGE = "255,110,30", "150,150,165,80"
+CURVE_COL = {"infected": I_COL, "infected (degree-based theory)": I_COL,
+             "recovered": "120,120,130", "recovered (degree-based theory)": "120,120,130"}
+
+adjl = {}                     # network -> {node name: [neighbour names]}
+degs = {}                     # network -> {node name: degree}
+emap = {}                     # frozenset of two names -> edge, for the network shown
+run = {"net": "poisson", "model": "SIR", "st": {}, "t": 0, "curve": [], "theory": [], "lit": [], "newly": [],
+       "timer": None, "rnd": random.Random(2), "prev": None, "prevrun": None,
+       "sweep": [], "sweeptimer": None, "bigs": {}}
+
+
+# ---- the two networks, built once and kept in place -------------------------------------------------
+def poisson_degrees(n, mean, r):
+    out = []
+    for _ in range(n):
+        lim, k, p = math.exp(-mean), 0, 1.0
+        while True:
+            p *= r.random()
+            if p <= lim:
+                break
+            k += 1
+        out.append(k)
+    if sum(out) % 2:
+        out[0] += 1
+    return out
+
+
+def power_degrees(n, alpha, kmin, kmax, r):
+    out = []
+    while len(out) < n:
+        k = int(kmin * (1 - r.random()) ** (-1 / (alpha - 1)))
+        if k <= kmax:
+            out.append(k)
+    if sum(out) % 2:
+        out[0] += 1
+    return out
+
+
+def collect(net):
+    a = {v.name: [] for v in g.nodes}
+    for e in g.edges:
+        u, w = e.node1.name, e.node2.name
+        if u != w:
+            a[u].append(w)
+            a[w].append(u)
+    adjl[net] = a
+    degs[net] = {v: len(ns) for v, ns in a.items()}
+
+
+def lay_out():
+    frLayout()
+    binPackLayout(false)
+    noverlapLayout(margin=3)
+    center(g.nodes)
+
+
+def build_networks():
+    r = random.Random(11)
+    makeConfigurationModel(poisson_degrees(N, 4.0, r), simple=true, seed=4, layout=false)
+    lay_out()
+    renameGraph("poisson")
+    collect("poisson")
+    newGraph("powerlaw")
+    makeConfigurationModel(power_degrees(N, 2.4, 2, 60, r), simple=true, seed=6, layout=false)
+    lay_out()
+    collect("powerlaw")
+    use("poisson")
+
+
+def edge_map():
+    emap.clear()
+    for e in g.edges:
+        emap[frozenset((e.node1.name, e.node2.name))] = e
+
+
+def mean_deg(net):
+    ks = list(degs[net].values())
+    return sum(ks) / len(ks)
+
+
+def k2_over_k(net):
+    ks = list(degs[net].values())
+    return sum(k * k for k in ks) / max(1, sum(ks))
+
+
+def beta_c(net, gamma):
+    """The degree-based threshold: beta/gamma = <k>/<k^2> (small rates)."""
+    ks = list(degs[net].values())
+    return gamma * sum(ks) / max(1, sum(k * k for k in ks))
+
+
+# ---- the degree-based approximation, step by step --------------------------------------------------
+def classes(ks):
+    """Degree classes: the degrees present and the share of nodes with each."""
+    vals, counts = np.unique(np.array(ks), return_counts=True)
+    return vals.astype(float), counts / counts.sum()
+
+
+def theory_curve(net, model, beta, gamma, x0, steps):
+    """[(t, infected share, recovered share)] from the degree-based map with the simulation's rules."""
+    k, pk = classes(list(degs[net].values()))
+    mk = (k * pk).sum()
+    x = np.full(len(k), x0)
+    s = 1 - x
+    rr = np.zeros(len(k))
+    out = [(0, float((pk * x).sum()), 0.0)]
+    # SIR: an infected neighbour caught it along one of its edges, so only its other k - 1 can pass it on
+    w = (k - 1) if model == "SIR" else k
+    for t in range(1, steps + 1):
+        theta = (w * pk * x).sum() / mk
+        new = s * (1 - (1 - beta * theta) ** k)
+        rec = gamma * x
+        x = x - rec + new
+        s = s - new + (rec if model == "SIS" else 0)
+        if model == "SIR":
+            rr = rr + rec
+        out.append((t, float((pk * x).sum()), float((pk * rr).sum())))
+    return out
+
+
+def endemic_by_degree(ks, beta, gamma, iters=3000):
+    """The SIS endemic state of the degree-based map: (degrees, prevalence per degree, overall)."""
+    k, pk = classes(ks)
+    mk = (k * pk).sum()
+    x = np.full(len(k), 0.5)
+    for _ in range(iters):
+        theta = (k * pk * x).sum() / mk
+        x = x * (1 - gamma) + (1 - x) * (1 - (1 - beta * theta) ** k)
+    return k, x, float((pk * x).sum())
+
+
+# ---- one epidemic on the drawing, step by step --------------------------------------------------------
+def base_look():
+    net = run["net"]
+    for v in g.nodes:
+        v.width = v.height = 7 + 2.6 * math.sqrt(degs[net][v.name])
+        v.color, v.strokecolor, v.strokewidth = S_COL, S_LINE, 0.6
+        v.labelvisible = false
+    for e in g.edges:
+        e.color, e.width, e.linestyle = BASE_EDGE, 1, "solid"
+
+
+def repaint_states():
+    net = run["net"]
+    for v in g.nodes:
+        st = run["st"].get(v.name, "S")
+        size = 7 + 2.6 * math.sqrt(degs[net][v.name])
+        if st == "I":
+            v.color, v.strokecolor, v.strokewidth = I_COL, I_LINE, 2.5
+            v.width = v.height = size * 1.35
+        elif st == "R":
+            v.color, v.strokecolor, v.strokewidth = R_COL, "110,110,120", 0.6
+            v.width = v.height = size * 0.85
+        else:
+            v.color, v.strokecolor, v.strokewidth = S_COL, S_LINE, 0.6
+            v.width = v.height = size
+    for e in run["lit"]:
+        e.color, e.width, e.linestyle = BASE_EDGE, 1, "solid"
+    run["lit"] = []
+
+
+def stop_run():
+    if run["timer"] is not None:
+        run["timer"].stop()
+        run["timer"] = None
+    go_btn.text = "Run the epidemic"
+
+
+def start_over():
+    stop_run()
+    net, model = run["net"], run["model"]
+    names = sorted(adjl[net])
+    k0 = max(1, int(round(SEED_SHARE * len(names))))
+    first = run["rnd"].sample(names, k0)
+    run["st"] = {v: "S" for v in names}
+    for v in first:
+        run["st"][v] = "I"
+    run["t"] = 0
+    run["newly"] = list(first)
+    run["curve"] = [(0, k0 / len(names), 0.0)]
+    run["theory"] = theory_curve(net, model, beta_sl.value, gamma_sl.value, k0 / len(names), MAX_T[model])
+    repaint_states()
+
+
+def step_once():
+    """One step of the simulation; returns the number still infected."""
+    net, model = run["net"], run["model"]
+    a, st, rnd = adjl[net], run["st"], run["rnd"]
+    b, c = beta_sl.value, gamma_sl.value
+    infected = [v for v, s_ in st.items() if s_ == "I"]
+    new, used = [], []
+    seen = set()
+    for v in infected:
+        for w in a[v]:
+            if st[w] == "S" and w not in seen and rnd.random() < b:
+                seen.add(w)
+                new.append(w)
+                used.append((v, w))
+    for v in infected:
+        if rnd.random() < c:
+            st[v] = "R" if model == "SIR" else "S"
+    for w in new:
+        st[w] = "I"
+    run["t"] += 1
+    n = len(st)
+    i_ = sum(1 for s_ in st.values() if s_ == "I")
+    r_ = sum(1 for s_ in st.values() if s_ == "R")
+    run["curve"].append((run["t"], i_ / n, r_ / n))
+    run["newly"] = new
+    repaint_states()
+    for v, w in used:                              # this step's transmissions travel along their edges
+        e = emap.get(frozenset((v, w)))
+        if e is not None:
+            e.color, e.width, e.linestyle = NEW_EDGE, 2.6, "flow"
+            run["lit"].append(e)
+    return i_
+
+
+def tick_run():
+    left = step_once()
+    if left == 0 or run["t"] >= MAX_T[run["model"]]:
+        stop_run()
+        return False
+    return MAX_T[run["model"]] - run["t"]
+
+
+def toggle_run():
+    if run["timer"] is not None:
+        stop_run()
+        return
+    if run["t"] >= MAX_T[run["model"]] or not any(s_ == "I" for s_ in run["st"].values()):
+        start_over()
+    run["timer"] = everyPaced(tick_run, slow=0.8, fast=0.12)
+    go_btn.text = "Pause"
+
+
+def to_end():
+    stop_run()
+    while step_once() and run["t"] < MAX_T[run["model"]]:
+        pass
+
+
+def time_chart():
+    if not run["curve"]:
+        return None
+    data = {"infected": [(t, x) for t, x, _r in run["curve"]]}
+    if run["model"] == "SIR":
+        data["recovered"] = [(t, r) for t, _x, r in run["curve"]]
+    data["infected (degree-based theory)"] = [(t, x) for t, x, _r in run["theory"]]
+    dashed = ["infected (degree-based theory)"]
+    if run["model"] == "SIR":
+        data["recovered (degree-based theory)"] = [(t, r) for t, _x, r in run["theory"]]
+        dashed.append("recovered (degree-based theory)")
+    return plotLine(data, title=f"{run['model']} in time", xlabel="step", ylabel="share of nodes",
+                    yrange=(0, 1), xrange=(0, MAX_T[run["model"]]), dashed=dashed,
+                    colors={k: CURVE_COL[k] for k in data})
+
+
+def time_text():
+    net, model = run["net"], run["model"]
+    b, c = beta_sl.value, gamma_sl.value
+    t = run["t"]
+    i_now = run["curve"][-1][1] if run["curve"] else 0
+    th = run["theory"][min(t, len(run["theory"]) - 1)][1] if run["theory"] else 0
+    chips = " ".join(linkTo(g.getNodeByName(v), f"{v} (k={degs[net][v]})") for v in run["newly"][:8])
+    more = f" and {len(run['newly']) - 8} more" if len(run["newly"]) > 8 else ""
+    head = (f"Step **{t}**: **{i_now:.0%}** infected; the degree-based approximation says **{th:.0%}**. "
+            f"β = {b:.2f}, γ = {c:.2f}; threshold β/γ = ⟨k⟩/⟨k²⟩ gives β_c ≈ **{beta_c(net, c):.3f}** here.")
+    if model == "SIR":
+        body = ("\n\nIn **SIR** each node is infected at most once. The approximation tracks each degree class: "
+                "high-degree nodes are infected first and fastest, and the curve rises and falls. A neighbour who is "
+                "infected caught it along one of its own edges, so only its other k − 1 edges count. Even so the "
+                "approximation runs a little ahead of the simulation (on 30 runs here it predicts 74% recovered "
+                "against 68%): it ignores that neighbours of the same node share their luck.")
+    else:
+        k, xk, tot = endemic_by_degree(list(degs[net].values()), b, c)
+        j = next((i for i, kk in enumerate(k) if kk > 0), 0)        # the least connected (but connected) nodes
+        body = (f"\n\nIn **SIS** recovered nodes can catch it again, and the infection settles at an endemic level: "
+                f"**{tot:.0%}** in the approximation. Within that, nodes of degree {int(k[j])} are infected "
+                f"{xk[j]:.0%} of the time and the biggest hub (degree {int(k[-1])}) {xk[-1]:.0%}.")
+    newly = f"\n\nNewly infected: {chips}{more}" if chips else ""
+    return head + body + newly
+
+
+# ---- who is infected: SIS prevalence by degree ------------------------------------------------------
+def long_sis():
+    """A long SIS run on the drawn network with GUESS's spread(); infected_steps / steps is the share of
+    time each node spent infected."""
+    stop_run()
+    net = run["net"]
+    b, c = beta_sl.value, gamma_sl.value
+    names = sorted(adjl[net])
+    seeds = [g.getNodeByName(v) for v in random.Random(5).sample(names, max(1, int(0.1 * len(names))))]
+    steps = 400
+    spread(seeds, model="SIS", beta=b, gamma=c, steps=steps, show=false, seed=9)
+    Node.prevalence = 0.0
+    shares = {}
+    for v in g.nodes:
+        v.prevalence = v.infected_steps / steps
+        shares[v.name] = v.prevalence
+    run["prev"] = shares
+    run["prevrun"] = (net, b, c)
+    for v in g.nodes:                              # colour by the share of time infected
+        p = shares[v.name]
+        v.color = f"{int(90 + 145 * p)},{int(150 - 90 * p)},{int(235 - 185 * p)}"
+        v.strokecolor, v.strokewidth = (I_LINE, 2.5) if p > 0.6 else (S_LINE, 0.6)
+    for e in run["lit"]:
+        e.color, e.width, e.linestyle = BASE_EDGE, 1, "solid"
+    run["lit"] = []
+
+
+def prevalence_chart():
+    if run["prev"] is None or run["prevrun"][0] != run["net"]:
+        return None
+    net, b, c = run["prevrun"]
+    k, xk, _tot = endemic_by_degree(list(degs[net].values()), b, c)
+    return plotScatter(degree, prevalence, line=[(float(a), float(x)) for a, x in zip(k, xk)],
+                       title="Share of time infected, by degree", xlabel="degree k",
+                       ylabel="share of the time infected", yrange=(0, 1))
+
+
+def prevalence_text():
+    if run["prev"] is None or run["prevrun"][0] != run["net"]:
+        return ("*Run a long SIS epidemic* (400 steps, starting from 10% of the nodes) to see how much of the time "
+                "each node spends infected. The dashed line is the degree-based prediction for each degree.")
+    net, b, c = run["prevrun"]
+    d = degs[net]
+    order = sorted(d, key=lambda v: -d[v])
+    top = order[:5]
+    q = max(1, len(order) // 4)
+    hi = sum(run["prev"][v] for v in order[:q]) / q
+    lo = sum(run["prev"][v] for v in order[-q:]) / q
+    chips = " ".join(linkTo(g.getNodeByName(v), f"{v} k={d[v]}: {run['prev'][v]:.0%}") for v in top)
+    return (f"β = {b:.2f}, γ = {c:.2f}. The best-connected quarter of the nodes were infected **{hi:.0%}** of the "
+            f"time, the least connected quarter **{lo:.0%}**. A hub has so many neighbours that one of them is "
+            f"nearly always passing it on.\n\nThe five biggest hubs: {chips}")
+
+
+# ---- the threshold: bigger networks off screen ------------------------------------------------------
+BIG = 2000
+BETAS = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.1, 0.13, 0.16]
+SWEEP_GAMMA = 0.3
+
+
+def big_network(kind):
+    """A configuration model of BIG nodes as edge arrays (both directions), with the degree sequence."""
+    if kind in run["bigs"]:
+        return run["bigs"][kind]
+    r = random.Random(21 if kind == "poisson" else 23)
+    ks = poisson_degrees(BIG, 4.0, r) if kind == "poisson" else power_degrees(BIG, 2.4, 2, 300, r)
+    stubs = np.repeat(np.arange(BIG), np.array(ks, dtype=np.intp))
+    rng = np.random.default_rng(3)
+    rng.shuffle(stubs)
+    a, b = stubs[0::2], stubs[1::2]
+    keep = a != b
+    a, b = a[keep], b[keep]
+    src = np.concatenate([a, b])
+    dst = np.concatenate([b, a])
+    deg = np.bincount(src, minlength=BIG)
+    run["bigs"][kind] = (src, dst, deg)
+    return run["bigs"][kind]
+
+
+def big_sis(kind, beta, gamma, steps=300, keep=100, seed=0):
+    """The share infected, averaged over the last `keep` steps of an SIS run on the big network."""
+    src, dst, deg = big_network(kind)
+    rng = np.random.default_rng(seed)
+    x = np.zeros(BIG, bool)
+    x[rng.choice(BIG, size=BIG // 10, replace=False)] = True
+    total = 0.0
+    for t in range(steps):
+        hit = x[src] & ~x[dst] & (rng.random(len(src)) < beta)
+        new = np.zeros(BIG, bool)
+        new[dst[hit]] = True
+        rec = x & (rng.random(BIG) < gamma)
+        x = (x & ~rec) | new
+        if not x.any():
+            return 0.0
+        if t >= steps - keep:
+            total += x.mean()
+    return total / keep
+
+
+def sweep_step():
+    k = len(run["sweep"])
+    if k >= len(BETAS):
+        run["sweeptimer"] = None
+        return False
+    b = BETAS[k]
+    row = [b]
+    for kind in ("poisson", "powerlaw"):
+        _s, _d, deg = big_network(kind)
+        row.append(float(big_sis(kind, b, SWEEP_GAMMA, seed=k)))
+        row.append(float(endemic_by_degree(list(deg), b, SWEEP_GAMMA, iters=1500)[2]))
+    run["sweep"].append(tuple(row))
+    return len(BETAS) - k - 1
+
+
+def start_sweep():
+    if run["sweeptimer"] is not None:
+        return
+    run["sweep"] = []
+    run["sweeptimer"] = everyPaced(sweep_step, slow=0.6, fast=0.25, ramp=2)
+
+
+def sweep_chart():
+    rows = run["sweep"]
+    if len(rows) < 2:
+        return None
+    data = {"Poisson: simulated": [(b, p) for b, p, _pt, _h, _ht in rows],
+            "Poisson: degree-based theory": [(b, pt) for b, _p, pt, _h, _ht in rows],
+            "heavy tail: simulated": [(b, h) for b, _p, _pt, h, _ht in rows],
+            "heavy tail: degree-based theory": [(b, ht) for b, _p, _pt, _h, ht in rows]}
+    return plotLine(data, title="SIS endemic level against β (γ = 0.3, 2,000 nodes)", xlabel="β",
+                    ylabel="share infected (long run)", yrange=(0, 1),
+                    dashed=["Poisson: degree-based theory", "heavy tail: degree-based theory"],
+                    highlight=["Poisson: simulated", "heavy tail: simulated"],
+                    colors={"Poisson: simulated": S_COL, "Poisson: degree-based theory": S_COL,
+                            "heavy tail: simulated": "240,140,30", "heavy tail: degree-based theory": "240,140,30"})
+
+
+def internet_threshold():
+    """<k>/<k^2> for the whole Internet's degree sequence (bundled)."""
+    import csv
+    s1, s2 = 0.0, 0.0
+    with open("degree-sequences.csv", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            if row["network"].startswith("Internet"):
+                k, c = float(row["degree"]), float(row["count"])
+                s1 += k * c
+                s2 += k * k * c
+    return s1 / s2
+
+
+def sweep_text():
+    rows = run["sweep"]
+    out = []
+    for kind, label in (("poisson", "Poisson degrees"), ("powerlaw", "heavy-tailed degrees")):
+        _s, _d, deg = big_network(kind)
+        mk, mk2 = deg.mean(), (deg.astype(float) ** 2).mean()
+        out.append(f"| {label} | {mk:.2f} | {mk2 / mk:.1f} | {SWEEP_GAMMA * mk / mk2:.3f} |")
+    table = ("| network | ⟨k⟩ | ⟨k²⟩/⟨k⟩ | β_c = γ⟨k⟩/⟨k²⟩ |\n|---|---|---|---|\n" + "\n".join(out))
+    inet = internet_threshold()
+    text = ("Above the threshold the infection settles at an endemic level; below it, it dies out. The "
+            "degree-based threshold is β/γ = ⟨k⟩/⟨k²⟩, and heavy tails make ⟨k²⟩ large:\n\n" + table +
+            f"\n\nFor the whole Internet's degrees, ⟨k⟩/⟨k²⟩ = **{inet:.4f}**: a disease would need to be "
+            f"almost {1 / inet:.0f} times less contagious than it recovers to die out. In an infinite network with "
+            "α ≤ 3, ⟨k²⟩ diverges and the threshold vanishes altogether.")
+    if rows:
+        lows = [r_ for r_ in rows if r_[0] <= 0.04]
+        if lows:
+            p_low = max(r_[1] for r_ in lows)
+            h_low = max(r_[3] for r_ in lows)
+            text += (f"\n\nIn the runs: at β ≤ 0.04 the Poisson network's infection reaches at most **{p_low:.0%}**, "
+                     f"while the heavy-tailed one holds **{h_low:.0%}**, kept alive by its hubs.")
+    else:
+        text += "\n\n*Simulate* to run SIS at each β on networks of 2,000 nodes."
+    return text
+
+
+# ---- controls ---------------------------------------------------------------------------------------------
+def pick_net(choice):
+    stop_run()
+    run["net"] = NETS[choice]
+    use(run["net"])
+    constantLabelSize(size=14)
+    edge_map()
+    base_look()
+    start_over()
+    center(g.nodes)
+
+
+def pick_model(choice):
+    run["model"] = choice
+    start_over()
+
+
+def rates_changed(v=None):
+    if run["timer"] is None:
+        start_over()
+
+
+def switch(title):
+    if title != "Epidemic in time":
+        stop_run()
+
+
+beta_sl = Slider(0.02, 0.4, 0.12, 0.01, label="β (infection per contact per step)")
+gamma_sl = Slider(0.05, 0.5, 0.2, 0.01, label="γ (recovery per step)")
+beta_sl.onChange = rates_changed
+gamma_sl.onChange = rates_changed
+go_btn = Button("Run the epidemic", onClick=lambda: toggle_run())
+
+build_networks()
+edge_map()
+constantLabelSize(size=14)
+base_look()
+start_over()
+ui.title("SIR and SIS in time", "Networks, Sections 16.6–16.7")
+ui.layout(
+    right=Column(
+        Markdown("""### Degree-based approximations
+Infected nodes are red and larger; each transmission flashes along its edge.
+Node size is degree."""),
+        Dropdown(list(NETS), label="Network", onChange=pick_net),
+        Dropdown(["SIR", "SIS"], label="Model", onChange=pick_model),
+        beta_sl, gamma_sl,
+        Tabs(
+            Tab("Epidemic in time",
+                Row(go_btn, Button("One step", onClick=lambda: step_once()),
+                    Button("To the end", onClick=lambda: to_end()), Button("Start again", onClick=lambda: start_over())),
+                Chart(time_chart), Markdown(time_text)),
+            Tab("Who is infected (SIS)",
+                Button("Run a long SIS epidemic", onClick=lambda: long_sis()),
+                Chart(prevalence_chart), Markdown(prevalence_text)),
+            Tab("The threshold",
+                Button("Simulate: SIS at each β", onClick=lambda: start_sweep()),
+                Chart(sweep_chart), Markdown(sweep_text)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{run['net']}: {len(g.nodes)} nodes · {len(g.edges)} edges · {run['model']}"))
+center(g.nodes)

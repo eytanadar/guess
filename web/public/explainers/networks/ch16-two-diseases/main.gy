@@ -1,0 +1,585 @@
+# Two diseases: cross-immunity and coinfection  (Newman, Networks, Sections 16.3.3-16.3.4)
+# An SIR outbreak in which each infected person passes the disease along each
+# of their contacts with probability phi is bond percolation: occupy each edge
+# with probability phi, and the outbreak is the cluster around the first case.
+#
+# Cross-immunity: survivors of disease 1 are immune to disease 2. Disease 2
+# then spreads by percolation on the RESIDUAL network of people disease 1 never
+# reached. In a configuration model that network is again a configuration
+# model, but with fewer hubs (they caught disease 1). With Poisson degrees of
+# mean c it is Poisson with mean c(1 - S1), so disease 2 can spread only if
+# phi2 > 1/(c(1 - S1)); past phi1 = ln c / (c - 1) (the coexistence
+# threshold) nothing is left for it, whatever phi2 is.
+#
+# Coinfection: disease 2 can infect only people who have had disease 1, so
+# disease 1 selects the network disease 2 lives on. That network is a single
+# percolation cluster, not a configuration model, and the exact theory is
+# long (Newman's ref. 363); the simulations here show its shape.
+#
+# Each edge has two fixed random numbers u1, u2; it carries disease i when
+# ui < phi_i, so moving a slider adds or removes edges in a fixed order. The
+# network is built here with seeded random numbers, the same everywhere.
+
+import math
+import random
+
+D1, D2, BOTH, NONE = "235,70,60", "60,125,235", "155,70,205", "205,210,220"
+D1_PALE = "245,190,185"
+N, C_MEAN = 300, 3.0
+
+two = {"adj": {}, "u1": {}, "u2": {}, "edge": {}, "mode": "cross", "phase": "idle", "gens1": [], "gens2": [],
+       "shown1": 0, "shown2": 0, "inf1": set(), "inf2": set(), "fresh": set(), "fresh_edges": set(),
+       "curve": [], "timer": None, "start1": None, "start2": None, "chosen": None,
+       "sweep": [], "sweeptimer": None, "csweep": [], "csweeptimer": None}
+
+
+# ---- the network ------------------------------------------------------------------------------
+def poisson_network(n, c, rnd):
+    """A random network with Poisson(c) degrees, by pairing stubs: {i: set of neighbours}."""
+    stubs = []
+    for i in range(n):
+        lim, k, p = math.exp(-c), 0, 1.0
+        while True:
+            p *= rnd.random()
+            if p <= lim:
+                break
+            k += 1
+        stubs += [i] * k
+    rnd.shuffle(stubs)
+    adj = {i: set() for i in range(n)}
+    for j in range(0, len(stubs) - 1, 2):
+        a, b = stubs[j], stubs[j + 1]
+        if a != b:
+            adj[a].add(b)
+            adj[b].add(a)
+    return adj
+
+
+def build():
+    rnd = random.Random(16)
+    adj = poisson_network(N, C_MEAN, rnd)
+    two["adj"] = adj
+    nodes = [addNode(f"n{i}") for i in range(N)]
+    for i in range(N):
+        for j in sorted(adj[i]):
+            if i < j:
+                key = (i, j)
+                two["edge"][key] = addEdge(nodes[i], nodes[j])
+                two["u1"][key] = rnd.random()
+                two["u2"][key] = rnd.random()
+    frLayout()
+    binPackLayout(false)
+    noverlapLayout(margin=3)
+    center(g.nodes)
+
+
+def mean_degree():
+    return sum(len(s) for s in two["adj"].values()) / N
+
+
+def node_of(i):
+    return g.getNodeByName(f"n{i}")
+
+
+def pairs():
+    return two["edge"].keys()
+
+
+# ---- theory (Poisson degrees) ---------------------------------------------------------------------
+def giant(c, phi):
+    """Share of nodes in the giant cluster of bond percolation with occupation phi on a Poisson(c)
+    network: u = 1 - phi + phi e^{c(u - 1)}, S = 1 - e^{c(u - 1)}."""
+    if c * phi <= 1:
+        return 0.0
+    u = 0.0
+    for _ in range(3000):
+        u = 1 - phi + phi * math.exp(c * (u - 1))
+    return 1 - math.exp(c * (u - 1))
+
+
+def cross_theory(c, p1, p2):
+    """(S1, S2) as shares of everyone: disease 2 spreads on the residual network, Poisson with mean c(1 - S1)."""
+    s1 = giant(c, p1)
+    return s1, (1 - s1) * giant(c * (1 - s1), p2)
+
+
+def coexistence(c):
+    return math.log(c) / (c - 1)
+
+
+# ---- spreading as percolation, generation by generation ------------------------------------------------
+def generations(start, allowed, occupied):
+    """The outbreak from `start` along occupied edges, staying in `allowed` nodes:
+    [[(edge key, newly infected), ...] per generation]."""
+    if start is None or start not in allowed:
+        return []
+    seen = {start}
+    frontier = [start]
+    out = []
+    while frontier:
+        nxt = []
+        for a in frontier:
+            for b in sorted(two["adj"][a]):
+                key = (min(a, b), max(a, b))
+                if b in allowed and b not in seen and key in occupied:
+                    seen.add(b)
+                    nxt.append((key, b))
+        if nxt:
+            out.append(nxt)
+        frontier = [b for _k, b in nxt]
+    return out
+
+
+def occupied(which, phi):
+    u = two["u1"] if which == 1 else two["u2"]
+    return {key for key in pairs() if u[key] < phi}
+
+
+def largest_cluster(allowed, occ):
+    """The largest cluster of the occupied edges among `allowed` nodes (a set of node indices)."""
+    best, seen = set(), set()
+    for s in sorted(allowed):
+        if s in seen:
+            continue
+        comp, stack = {s}, [s]
+        seen.add(s)
+        while stack:
+            a = stack.pop()
+            for b in two["adj"][a]:
+                if b in allowed and b not in seen and (min(a, b), max(a, b)) in occ:
+                    seen.add(b)
+                    comp.add(b)
+                    stack.append(b)
+        if len(comp) > len(best):
+            best = comp
+    return best
+
+
+def plan():
+    """Work out both outbreaks for the current sliders (they are then revealed generation by generation)."""
+    everyone = set(range(N))
+    occ1 = occupied(1, phi1.value)
+    big1 = largest_cluster(everyone, occ1)
+    s1 = two["chosen"] if two["chosen"] is not None else min(big1)      # start in the largest cluster
+    two["start1"] = s1
+    two["gens1"] = generations(s1, everyone, occ1)
+    inf1 = {s1} | {b for gen in two["gens1"] for _k, b in gen}
+    occ2 = occupied(2, phi2.value)
+    room = (everyone - inf1) if two["mode"] == "cross" else inf1          # the network disease 2 may use
+    big2 = largest_cluster(room, occ2)
+    two["start2"] = min(big2) if big2 else None
+    two["gens2"] = generations(two["start2"], room, occ2)
+
+
+# ---- running it -------------------------------------------------------------------------------
+def reset():
+    stop()
+    plan()
+    two.update(phase="idle", shown1=0, shown2=0, inf1=set(), inf2=set(), fresh=set(), fresh_edges=set(), curve=[])
+    redraw()
+
+
+def stop():
+    if two["timer"] is not None:
+        two["timer"].stop()
+        two["timer"] = None
+    run_btn.text = "Run disease 1" if two["mode"] == "cross" else "Run coinfection"
+    co_btn.text = "Run coinfection"
+
+
+def step():
+    """Reveal the next generation: disease 1 first, then disease 2."""
+    if two["phase"] == "idle":
+        two["phase"] = "d1"
+        two["inf1"] = {two["start1"]}
+        two["fresh"], two["fresh_edges"] = {two["start1"]}, set()
+    elif two["phase"] == "d1":
+        if two["shown1"] < len(two["gens1"]):
+            gen = two["gens1"][two["shown1"]]
+            two["shown1"] += 1
+            two["fresh"] = {b for _k, b in gen}
+            two["fresh_edges"] = {k for k, _b in gen}
+            two["inf1"] |= two["fresh"]
+        else:
+            two["phase"] = "between"
+            two["fresh"], two["fresh_edges"] = set(), set()
+    elif two["phase"] == "between":
+        if two["start2"] is None:
+            two["phase"] = "done"
+        else:
+            two["phase"] = "d2"
+            two["inf2"] = {two["start2"]}
+            two["fresh"], two["fresh_edges"] = {two["start2"]}, set()
+    elif two["phase"] == "d2":
+        if two["shown2"] < len(two["gens2"]):
+            gen = two["gens2"][two["shown2"]]
+            two["shown2"] += 1
+            two["fresh"] = {b for _k, b in gen}
+            two["fresh_edges"] = {k for k, _b in gen}
+            two["inf2"] |= two["fresh"]
+        else:
+            two["phase"] = "done"
+            two["fresh"], two["fresh_edges"] = set(), set()
+    two["curve"].append((len(two["curve"]), len(two["inf1"]), len(two["inf2"])))
+    redraw()
+    if two["phase"] == "done":
+        stop()
+        return False
+    return True
+
+
+def go():
+    if two["timer"] is not None:
+        stop()
+        return
+    if two["phase"] == "done":
+        reset()
+    two["timer"] = everyPaced(step, slow=0.9, fast=0.25, ramp=2)
+    run_btn.text = "Pause"
+    co_btn.text = "Pause"
+
+
+def to_end():
+    stop()
+    if two["phase"] == "done":
+        reset()
+    while step():
+        pass
+
+
+def disease_one_only():
+    """Run disease 1 to the end, leaving disease 2 for later."""
+    stop()
+    if two["phase"] not in ("idle", "d1"):
+        reset()
+    while two["phase"] in ("idle", "d1"):
+        step()
+
+
+def redraw():
+    cross = two["mode"] == "cross"
+    later = two["phase"] in ("between", "d2", "done")
+    for i in range(N):
+        v = node_of(i)
+        v.width = v.height = 9
+        v.strokecolor = "90,90,90"
+        v.strokewidth = 0
+        v.labelvisible = false
+        if i in two["inf2"]:
+            v.color = D2 if cross else BOTH
+            v.width = v.height = 12
+        elif i in two["inf1"]:
+            # after disease 1, its survivors are out of the game for disease 2 (cross-immunity)
+            v.color = D1_PALE if (cross and later) else D1
+            v.width = v.height = 8 if (cross and later) else 11
+        else:
+            v.color = NONE
+        if i in two["fresh"]:
+            v.width = v.height = 17
+            v.strokecolor = "30,30,30"
+            v.strokewidth = 2.5
+    for key, e in two["edge"].items():
+        a, b = key
+        if key in two["fresh_edges"]:
+            e.color = D2 if two["phase"] == "d2" and cross else (BOTH if two["phase"] == "d2" else D1)
+            e.width, e.linestyle = 3.5, "flow"
+        elif cross and later and (a in two["inf1"] or b in two["inf1"]):
+            e.color, e.width, e.linestyle = "190,190,190,35", 0.6, "solid"     # not in the residual network
+        elif a in two["inf2"] and b in two["inf2"]:
+            e.color, e.width, e.linestyle = (D2 if cross else BOTH) + ",150", 1.4, "solid"
+        elif a in two["inf1"] and b in two["inf1"]:
+            e.color, e.width, e.linestyle = D1 + ",120", 1.2, "solid"
+        else:
+            e.color, e.width, e.linestyle = "160,160,160,110", 0.9, "solid"
+    for i, ring in ((two["start1"], "250,200,40"), (two["start2"], "250,200,40")):
+        if i is not None and ((i == two["start1"] and two["phase"] != "idle") or (i == two["start2"] and two["phase"] in ("d2", "done"))):
+            v = node_of(i)
+            v.strokecolor, v.strokewidth = ring, 3
+
+
+def click_node(v):
+    if mode_tab[0] == "Two thresholds":
+        return
+    two["chosen"] = int(v.name[1:])
+    reset()
+
+
+# ---- the words and the live chart -------------------------------------------------------------------------
+def phase_words():
+    return {"idle": "Ready.", "d1": "Disease 1 is spreading.", "between": "Disease 1 has finished.",
+            "d2": "Disease 2 is spreading.", "done": "Both have finished."}[two["phase"]]
+
+
+def cross_text():
+    c = mean_degree()
+    p1, p2 = phi1.value, phi2.value
+    t1, t2 = cross_theory(c, p1, p2)
+    s1 = len(two["inf1"]) / N
+    res = [i for i in range(N) if i not in two["inf1"]] if two["phase"] in ("between", "d2", "done") else []
+    out = [f"**{phase_words()}** Mean degree c = **{c:.2f}**. Disease 1 starts at "
+           f"{linkTo(node_of(two['start1']))} (yellow ring; click anyone to start there)."]
+    if two["phase"] in ("d1",) and two["fresh"]:
+        out.append("\n\nNewly infected: " + " ".join(linkTo(node_of(i)) for i in sorted(two["fresh"])[:10]))
+    out.append(f"\n\n**Disease 1** (red, φ₁ = {p1:.2f}): **{len(two['inf1'])}** people, "
+               f"{s1:.0%}; theory S₁ = **{t1:.0%}**" + (" (below the epidemic threshold φ₁ = 1/c = "
+                                                         f"{1 / c:.2f}, so no epidemic)" if p1 <= 1 / c else "") + ".")
+    if res:
+        k_res = sum(sum(1 for b in two["adj"][i] if b not in two["inf1"]) for i in res) / len(res)
+        k_out = sum(len(two["adj"][i]) for i in range(N) if i in two["inf1"]) / max(1, len(two["inf1"]))
+        out.append(f"\n\nIts survivors are immune to disease 2 (pale), so disease 2 has only the **residual network**: "
+                   f"{len(res)} people with mean degree **{k_res:.2f}** among themselves; theory c(1 − S₁) = "
+                   f"**{c * (1 - t1):.2f}**. Disease 1 took the hubs: the people it reached had mean degree "
+                   f"{k_out:.1f}.")
+    if two["phase"] in ("d2", "done") and two["start2"] is not None:
+        out.append(f"\n\n**Disease 2** (blue, φ₂ = {p2:.2f}) from {linkTo(node_of(two['start2']))}: **{len(two['inf2'])}** "
+                   f"people, {len(two['inf2']) / N:.0%} of everyone; theory **{t2:.0%}**.")
+    elif two["phase"] == "done" and two["start2"] is None:
+        out.append("\n\nDisease 2 has nobody left to infect.")
+    phic = coexistence(c)
+    if p1 > phic:
+        out.append(f"\n\nφ₁ is past the **coexistence threshold** ln c/(c − 1) = {phic:.2f}: disease 1 leaves no giant "
+                   "residual network, so disease 2 can't spread **whatever φ₂ is**.")
+    elif c * (1 - t1) * p2 <= 1:
+        out.append(f"\n\nDisease 2 needs φ₂ > 1/(c(1 − S₁)) = {1 / (c * (1 - t1)):.2f} on the residual network: here it "
+                   "can't take off.")
+    return "".join(out)
+
+
+def curve_chart():
+    if not two["curve"]:
+        return None
+    c = mean_degree()
+    t1, t2 = (cross_theory(c, phi1.value, phi2.value) if two["mode"] == "cross" else (giant(c, phi1.value), None))
+    end = max(len(two["curve"]) - 1, 1)
+    second = "disease 2" if two["mode"] == "cross" else "disease 2 (coinfection)"
+    data = {"disease 1": [(t, a) for t, a, _b in two["curve"]],
+            second: [(t, b) for t, _a, b in two["curve"]],
+            "disease 1, theory": [(0, t1 * N), (end, t1 * N)]}
+    cols = {"disease 1": D1, "disease 1, theory": D1, second: D2 if two["mode"] == "cross" else BOTH}
+    dashed = ["disease 1, theory"]
+    if t2 is not None:
+        data["disease 2, theory"] = [(0, t2 * N), (end, t2 * N)]
+        cols["disease 2, theory"] = D2
+        dashed.append("disease 2, theory")
+    return plotLine(data, title="People infected, generation by generation", xlabel="generation",
+                    ylabel="people infected", dashed=dashed, colors=cols, yrange=(0, N))
+
+
+# ---- simulate: the two thresholds (cross-immunity) and coinfection ------------------------------------------
+SIM_N, SIM_C = 2000, 3.0
+PHI1S = [round(0.05 * k, 2) for k in range(0, 21)]
+
+
+def sim_network(r):
+    rnd = random.Random(100 + r)
+    adj = poisson_network(SIM_N, SIM_C, rnd)
+    keys = [(a, b) for a in adj for b in adj[a] if a < b]
+    return adj, keys, {k: rnd.random() for k in keys}, {k: rnd.random() for k in keys}
+
+
+def clusters_largest(adj, allowed, keys, ok):
+    """Largest cluster (as a set) of edges `ok` among nodes `allowed`, by union-find."""
+    par = {i: i for i in allowed}
+
+    def find(x):
+        while par[x] != x:
+            par[x] = par[par[x]]
+            x = par[x]
+        return x
+    for a, b in keys:
+        if a in par and b in par and ok((a, b)):
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                par[ra] = rb
+    groups = {}
+    for i in allowed:
+        groups.setdefault(find(i), []).append(i)
+    return set(max(groups.values(), key=len)) if groups else set()
+
+
+def sweep_point(r, p1, p2, coinfection):
+    if (r, "net") not in sim_cache:
+        sim_cache[(r, "net")] = sim_network(r)
+    adj, keys, u1, u2 = sim_cache[(r, "net")]
+    everyone = set(range(SIM_N))
+    big1 = clusters_largest(adj, everyone, keys, lambda k: u1[k] < p1)
+    room = big1 if coinfection else everyone - big1
+    big2 = clusters_largest(adj, room, keys, lambda k: u2[k] < p2) if room else set()
+    s1 = len(big1) / SIM_N
+    s2 = len(big2) / SIM_N
+    # a "largest cluster" of a few nodes is not an epidemic
+    return (s1 if len(big1) > 0.02 * SIM_N else 0.0), (s2 if len(big2) > 0.02 * SIM_N else 0.0)
+
+
+sim_cache = {}
+
+
+def sweep_start(coinfection):
+    key = "csweep" if coinfection else "sweep"
+    tkey = "csweeptimer" if coinfection else "sweeptimer"
+    if two[tkey] is not None:
+        two[tkey].stop()
+    two[key] = []
+    jobs = [(r, p) for p in PHI1S for r in range(2)]
+    p2 = phi2.value
+    state = {"i": 0}
+
+    def tick():
+        if state["i"] >= len(jobs):
+            two[tkey] = None
+            return False
+        r, p = jobs[state["i"]]
+        state["i"] += 1
+        a, b = sweep_point(r, p, p2, coinfection)
+        two[key].append((p, a, b, p2))
+        return len(jobs) - state["i"] or False
+    two[tkey] = everyPaced(tick, steps=len(jobs) + 1, slow=0.4, fast=0.03, ramp=3)
+
+
+def averaged(rows):
+    by = {}
+    for p, a, b, _p2 in rows:
+        by.setdefault(p, []).append((a, b))
+    return [(p, sum(a for a, _b in v) / len(v), sum(b for _a, b in v) / len(v)) for p, v in sorted(by.items())]
+
+
+def sweep_chart():
+    c, p2 = SIM_C, phi2.value
+    xs = [k / 100 for k in range(0, 101)]
+    data = {"disease 1, theory": [(x, cross_theory(c, x, p2)[0]) for x in xs],
+            "disease 2, theory": [(x, cross_theory(c, x, p2)[1]) for x in xs],
+            "epidemic threshold 1/c": [(1 / c, 0), (1 / c, 1)],
+            "coexistence threshold": [(coexistence(c), 0), (coexistence(c), 1)]}
+    cols = {"disease 1, theory": D1, "disease 2, theory": D2, "epidemic threshold 1/c": "150,150,150",
+            "coexistence threshold": "120,120,120", "disease 1": D1, "disease 2": D2}
+    rows = averaged(two["sweep"])
+    if rows:
+        data["disease 1"] = [(p, a) for p, a, _b in rows]
+        data["disease 2"] = [(p, b) for p, _a, b in rows]
+    return plotLine(data, title=f"Cross-immunity: outbreak sizes against φ₁ (φ₂ = {p2:.2f}, c = 3)",
+                    xlabel="φ₁, transmission of disease 1", ylabel="share of everyone infected",
+                    dashed=["disease 1, theory", "disease 2, theory", "epidemic threshold 1/c", "coexistence threshold"],
+                    highlight=["disease 1", "disease 2"], colors=cols, yrange=(0, 1), xrange=(0, 1))
+
+
+def sweep_text():
+    c = SIM_C
+    rows = averaged(two["sweep"])
+    head = (f"Networks of {SIM_N} people with Poisson degrees, c = 3, two per value of φ₁; the dots are the "
+            "largest clusters, the dashed curves the theory (residual network Poisson with mean c(1 − S₁)). "
+            f"Three regions, as in the book's Fig. 16.7: below φ₁ = 1/c = {1 / c:.2f} only disease 2 spreads; between "
+            f"that and the coexistence threshold ln c/(c − 1) = {coexistence(c):.2f} both do, disease 2 shrinking as "
+            "disease 1 grows; beyond it only disease 1. A smaller φ₂ makes disease 2 die out earlier: the coexistence "
+            "threshold is where it dies out even at φ₂ = 1.")
+    if not rows:
+        return head + "\n\n*Press Simulate.*"
+    worst = max(abs(a - cross_theory(c, p, phi2.value)[0]) + abs(b - cross_theory(c, p, phi2.value)[1])
+                for p, a, b in rows)
+    return head + f"\n\n{len(rows)} values of φ₁ so far; the largest gap between simulation and theory is {worst:.2f}."
+
+
+def coinf_chart():
+    c, p2 = SIM_C, phi2.value
+    xs = [k / 100 for k in range(0, 101)]
+    data = {"disease 1, theory": [(x, giant(c, x)) for x in xs],
+            "epidemic threshold 1/c": [(1 / c, 0), (1 / c, 1)]}
+    cols = {"disease 1, theory": D1, "epidemic threshold 1/c": "150,150,150", "disease 1": D1,
+            "disease 2 (needs disease 1)": BOTH, "disease 2 alone (no disease 1 needed)": D2}
+    rows = averaged(two["csweep"])
+    if rows:
+        data["disease 1"] = [(p, a) for p, a, _b in rows]
+        data["disease 2 (needs disease 1)"] = [(p, b) for p, _a, b in rows]
+    data["disease 2 alone (no disease 1 needed)"] = [(0, giant(c, p2)), (1, giant(c, p2))]
+    return plotLine(data, title=f"Coinfection: outbreak sizes against φ₁ (φ₂ = {p2:.2f}, c = 3)",
+                    xlabel="φ₁, transmission of disease 1", ylabel="share of everyone infected",
+                    dashed=["disease 1, theory", "epidemic threshold 1/c", "disease 2 alone (no disease 1 needed)"],
+                    highlight=["disease 1", "disease 2 (needs disease 1)"], colors=cols, yrange=(0, 1), xrange=(0, 1))
+
+
+def coinf_text():
+    out = ["Now disease 2 can only infect people who have **had disease 1** (as with opportunistic infections). "
+           "Disease 1 picks out the network disease 2 lives on: the cluster of people it reached. That network is a "
+           "single connected percolation cluster, not a configuration model, which is why the exact theory is long "
+           "(the book cites it, ref. 363) and only disease 1's curve is dashed here."]
+    if two["mode"] == "coinfection" and two["phase"] != "idle":
+        out.append(f"\n\nThis run: disease 1 reached **{len(two['inf1'])}** people (red); disease 2 then infected "
+                   f"**{len(two['inf2'])}** of them (purple).")
+    rows = averaged(two["csweep"])
+    if rows:
+        on = [p for p, _a, b in rows if b > 0.05]
+        p2 = rows and two["csweep"][-1][3]
+        if on:
+            gap = min(on) - 1 / SIM_C
+            out.append(f"\n\nWith φ₂ = {p2:.2f}, disease 2 reaches 5% of everyone once φ₁ ≈ **{min(on):.2f}**, against "
+                       f"disease 1's own threshold 1/c = {1 / SIM_C:.2f}. ")
+            if gap < 0.06:
+                out.append("With φ₂ this high it spreads on almost any epidemic of disease 1. Lower φ₂ and simulate "
+                           "again: the gap opens, because disease 1 must first build a big enough network.")
+            else:
+                out.append("Disease 1 has to build a big enough network first: a second threshold, the mirror "
+                           "image of the coexistence threshold. Raise φ₂ and the two thresholds close up.")
+        else:
+            out.append("\n\nDisease 2 never reached 5% of everyone in this sweep: raise φ₂.")
+    out.append("\n\nWhen the diseases instead make each other *more* catchable, the jump in outbreak size can be "
+               "explosive: see the *Two diseases* tab of the explainer **Two diseases, and complex contagion** "
+               "(Sections 16.1.8–16.1.9).")
+    return "".join(out)
+
+
+# ---- tabs and layout ----------------------------------------------------------------------------
+mode_tab = ["Cross-immunity"]
+
+
+def switch(title):
+    mode_tab[0] = title
+    stop()
+    if title == "Coinfection" and two["mode"] != "coinfection":
+        two["mode"] = "coinfection"
+        reset()
+    elif title == "Cross-immunity" and two["mode"] != "cross":
+        two["mode"] = "cross"
+        reset()
+    constantLabelSize(size=14)
+
+
+def slider_moved(v):
+    reset()
+
+
+phi1 = Slider(0, 1, 0.45, 0.01, label="φ₁, disease 1 per contact")
+phi2 = Slider(0, 1, 0.8, 0.01, label="φ₂, disease 2 per contact")
+phi1.onChange = slider_moved
+phi2.onChange = slider_moved
+run_btn = Button("Run disease 1", onClick=lambda: go())
+co_btn = Button("Run coinfection", onClick=lambda: go())
+build()
+reset()
+graphevents.clickNode = click_node
+constantLabelSize(size=14)
+ui.title("Two diseases: cross-immunity and coinfection", "Networks, Sections 16.3.3–16.3.4")
+ui.layout(
+    right=Column(
+        Markdown("""### One disease shapes the network for the other
+Each infected person passes a disease along each contact with probability φ,
+so each outbreak is a percolation cluster (edges flash as it spreads)."""),
+        phi1, phi2,
+        Tabs(
+            Tab("Cross-immunity",
+                Row(run_btn, Button("Disease 1 only, to the end", onClick=lambda: disease_one_only()),
+                    Button("Both, to the end", onClick=lambda: to_end())),
+                Button("Start again", onClick=lambda: reset()),
+                Chart(curve_chart), Markdown(cross_text)),
+            Tab("Two thresholds",
+                Button("Simulate: sweep φ₁ (cross-immunity)", onClick=lambda: sweep_start(False)),
+                Chart(sweep_chart), Markdown(sweep_text)),
+            Tab("Coinfection",
+                Row(co_btn, Button("Coinfection to the end", onClick=lambda: to_end()),
+                    Button("Clear", onClick=lambda: reset())),
+                Button("Simulate: sweep φ₁ (coinfection)", onClick=lambda: sweep_start(True)),
+                Chart(coinf_chart), Markdown(coinf_text)),
+            onChange=switch)),
+    sizes={"right": 460},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{N} people · {len(g.edges)} contacts · mean degree {mean_degree():.2f}"))
+center()
