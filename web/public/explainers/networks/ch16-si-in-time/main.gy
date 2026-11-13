@@ -459,6 +459,10 @@ def outbreak_text():
     fresh = sorted(sim["fresh"], key=lambda v: sim["times"][v])
     if fresh:
         line += " New: " + " ".join(linkTo(node(v)) for v in fresh[:8]) + (" …" if len(fresh) > 8 else "")
+    late = [v for v, x in sim["times"].items() if x > horizon(key, beta())]
+    if late and t >= max(sim["times"].values()):
+        line += (f" The last {len(late)} to be reached were long after the rest: people with one or two contacts, "
+                 "who can only catch it from them.")
     line += ("\n\nOne outbreak wanders, especially from a single first case: how soon it takes off depends on luck "
              "in the first moments. The theories (dashed) describe the *average* over many outbreaks; see *Theory "
              "and simulation*.")
@@ -549,15 +553,16 @@ def theory_text():
                 "flattens them, while the equations start the infection spread evenly. In a small network that "
                 "delay is a big part of the whole epidemic. With a few first cases (try 6) the luck evens out and "
                 "the pair approximation lands on the simulation.")
+    ratio = errs["first-order"] / max(errs["pair approximation"], 1e-9)
+    txt += (f" The first-order equations are off by **{ratio:.0f}×** as much as the pair approximation here: they "
+            "let a node, in effect, be re-infected by the neighbour it infected, so they run ahead. The pair "
+            "approximation forbids that.")
     if key == "lesmis":
-        txt += (" Les Misérables is full of triangles: a node's neighbours are often neighbours of each other, so "
-                "their infections are strongly linked and the first-order equations, which assume they aren't, "
-                "run well ahead. The pair approximation is exact only without short loops, but still does much "
-                "better.")
-    else:
-        txt += (" The first-order equations run ahead: they let a node be re-infected, in effect, by the "
-                "neighbour it infected. The pair approximation removes that and is nearly exact on networks "
-                "without short loops, like these random ones.")
+        txt += (" It is exact only when there are no short loops, and Les Misérables is full of triangles (a "
+                "node's neighbours often know each other), so here it is good but no longer exact: compare its "
+                "error with the random network's.")
+    elif key in ("poisson", "hubs"):
+        txt += " On a random network like this one, with almost no short loops, it is nearly exact."
     return txt
 
 
@@ -651,7 +656,7 @@ def early_chart():
     for name in TH_NAMES:
         data[name] = [(t, x) for t, x in th[name] if t <= end]
     return plotLine(data, title="Early growth (log scale)", xlabel="time", ylabel="share infected", logY=true,
-                    dashed=TH_NAMES, colors=THEORY_COLS, highlight=["simulated average"])
+                    dashed=TH_NAMES, colors=THEORY_COLS)
 
 
 # ---- who is infected first --------------------------------------------------------------------------------------------

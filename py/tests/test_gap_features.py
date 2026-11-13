@@ -580,3 +580,20 @@ def test_fixed_infectious_period_and_steps_infected():
     assert s.run("o = outbreaks(20, model='SIR', beta=0.2, duration=3, show=false)"), s.rec.of("error")
     assert s.run("c = spread([g.nodes[0]], model='SIS', beta=0.1, gamma=0.2, steps=40, show=false)")
     assert ev(s, "max(n.infected_steps for n in g.nodes)") > 3
+
+
+def test_histogram_of_a_list_phase_colours_and_kleinberg_grid():
+    import math
+    import numpy as np
+    s = _s()
+    assert s.run("plotHistogram([1, 2, 2, 3, 3, 3, 10], 3, title='nums')"), s.rec.of("error")
+    m = _charts(s)[-1]
+    assert m["title"] == "nums" and sum(it["value"] for it in m["items"]) == 7
+    s.ns["__arr"] = np.array([0.5, 1.5, 2.5])
+    assert s.run("plotHistogram(__arr, 2)"), s.rec.of("error")
+    assert s.run("plotHistogram(degree, 5)") and _charts(s)[-1]["title"] == "Histogram of degree"
+    assert s.run("Node.phase = 0.0\nfor i, n in enumerate(g.nodes):\n    n.phase = i * 0.1\ncolorByPhase(phase)"), s.rec.of("error")
+    assert s.run(f"v1.phase = 0.3\nv2.phase = 0.3 + {2 * math.pi}\ncolorByPhase(phase)")
+    assert ev(s, "v1.color") == ev(s, "v2.color")                      # a whole period apart: same colour
+    assert s.run("makeKleinbergRandom(6, 2)"), s.rec.of("error")
+    assert ev(s, "sorted({(n.gx, n.gy) for n in g.nodes})") == [(i, j) for i in range(6) for j in range(6)]

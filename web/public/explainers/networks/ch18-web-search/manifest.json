@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Web search",
+  "description": "Match the words, rank by the links: text relevance blended with PageRank, and how a link farm games the ranking.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -1437,7 +1437,7 @@ diseases, and how epidemics unfold in time on networks, compared with the
 pair and degree-based approximations. Every simulation shows its
 transmissions on the edges, runs slow-fast-slow, and charts the theory dashed.
 
-**`ch16-outbreak-percolation`: Outbreak sizes and percolation (§§16.3.1–16.3.2)** · planned
+**`ch16-outbreak-percolation`: Outbreak sizes and percolation (§§16.3.1–16.3.2)** · built
 - *Idea:*
   - in the SIR model each edge transmits at most once, with probability T (the transmissibility), so the final outbreak is a cluster of bond percolation with occupation probability T;
   - large outbreaks happen only above T_c = ⟨k⟩/(⟨k²⟩ − ⟨k⟩), and their size is the giant cluster's;
@@ -1450,7 +1450,7 @@ transmissions on the edges, runs slow-fast-slow, and charts the theory dashed.
   - Poisson against heavy-tailed degrees (T_c near 0).
 - *GUESS:* `percolation(bond=true)`, `outbreaks`, `makeConfigurationModel`, a fixed infectious period (see gaps).
 
-**`ch16-two-diseases`: Coexisting diseases and coinfection (§§16.3.3–16.3.5)** · planned
+**`ch16-two-diseases`: Coexisting diseases and coinfection (§§16.3.3–16.3.5)** · built
 - *Idea:*
   - with cross-immunity, a second disease can spread only on the network the first one left (the residual network), so it may fail even with a high T;
   - with coinfection (one disease helps the other) the transition becomes discontinuous;
@@ -1461,7 +1461,7 @@ transmissions on the edges, runs slow-fast-slow, and charts the theory dashed.
   - Builds on `ch16-complex-contagion` from batch 11, without repeating it.
 - *GUESS:* `spread` with `immune=`, `outbreaks`, `plotLine(dashed=)`.
 
-**`ch16-si-in-time`: The SI model in time (§§16.4–16.5)** · planned
+**`ch16-si-in-time`: The SI model in time (§§16.4–16.5)** · built
 - *Idea:*
   - on a network the SI epidemic grows at first like e^{βκ₁t}, set by the leading eigenvalue of A, not like e^{β⟨k⟩t};
   - the order in which nodes are infected follows eigenvector centrality;
@@ -1473,7 +1473,7 @@ transmissions on the edges, runs slow-fast-slow, and charts the theory dashed.
   - networks: random, power-law and the political blogs.
 - *GUESS:* `spread(model="SI")`, numpy ODEs, eigenvector centrality.
 
-**`ch16-sir-sis-in-time`: SIR and SIS in time (§§16.6–16.7)** · planned
+**`ch16-sir-sis-in-time`: SIR and SIS in time (§§16.6–16.7)** · built
 - *Idea:*
   - the degree-based approximation for SIR gives the epidemic curve and the threshold;
   - for SIS it gives an endemic state where each degree class has its own prevalence (hubs are almost always infected), and on heavy-tailed networks the threshold vanishes.
@@ -1492,6 +1492,12 @@ transmissions on the edges, runs slow-fast-slow, and charts the theory dashed.
 | A fixed infectious period, so SIR maps exactly onto bond percolation | ch16-outbreak-percolation | `spread` recovers with probability gamma per step (a geometric infectious period) | `spread(..., duration=k)`: infected for exactly k steps; T = 1 − (1 − β)^k |
 | Time spent infected per node (for SIS prevalence by degree) | ch16-sir-sis-in-time | `spread` stores the first infection step and the final state | an `infected_steps` field (steps spent infected) |
 | Degree-based ODE solutions | ch16-si-in-time, ch16-sir-sis-in-time | none | the explainers integrate them with numpy; probably no command |
+
+Notes from building batch 12:
+- **Nothing new needed in GUESS:** `spread`/`outbreaks(duration=)` and `infected_steps` were enough. `plotLine(colors=)` keeps theory and simulation in matching colours.
+- **SIR degree-based approximation:** count k − 1 of an infected neighbour's edges, as the book's SIR version does; the plain form over-predicts (83% against 68% simulated).
+- **SI in time:** starting from one case, random take-off delays make every theory run ahead. With c first cases (x₀ = c/n, as the book starts) the pair approximation is within 0.01.
+- **Simulation method:** continuous-time SI is computed exactly as one Dijkstra search per outbreak (exponential waits per edge), which makes averaging cheap in the browser.
 
 ## Batch 13: book pages 675–731 (Chapter 17, *Dynamical systems on networks*, and Chapter 18, *Network search*) — the last batch
 
@@ -1597,7 +1603,7 @@ small worlds.
   - Links back to `ch04-milgram`.
 - *GUESS:* `everyPaced`, a hierarchical model generator in the explainer.
 
-### Gaps expected in batch 13
+### Gaps in batch 13 (added before building: `plotHistogram(list or array, bins, title=)`; `colorByPhase(field, period=)`, a colour wheel; `makeKleinbergRandom` now stores grid coordinates `gx`/`gy` (on a plain grid, not a torus; each long-range link is undirected); all random generators are seeded)
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|

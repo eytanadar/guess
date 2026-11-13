@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (121)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (122)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (21)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -114,6 +114,14 @@ unless given) and the ends are equally far from it, so equal changes
 up and down look equally strong, e.g. colorBy(lfc, blue, red,
 center=0) for fold changes. Compare colorize, which spaces distinct
 values evenly.
+
+### `colorByPhase(field, period=None, saturation=0.75, lightness=0.55)`
+
+colorByPhase(phase) colours elements around a colour wheel by a cyclic
+value such as an oscillator's phase or an angle, so values a whole
+period apart get the same colour and nearby values similar ones (unlike
+colorBy, whose ends differ). period= is the length of one cycle (default
+2*pi; 360 for degrees, 24 for hours).
 
 ### `colorGraph(strategy='DSATUR', show=True)`
 
@@ -1193,7 +1201,7 @@ makeErdosRenyiRandom(nodes, p): each edge present with probability p. seed= pick
 
 ### `makeKleinbergRandom(*args, seed=0)`
 
-makeKleinbergRandom(size, clust): Kleinberg small world on a size x size torus with one long-range edge per node, distance exponent clust. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
+makeKleinbergRandom(size, clust): Kleinberg small world on a size x size grid with one long-range edge per node, chosen with probability ~ distance^-clust; the fields gx and gy give each node's grid coordinates (for greedy routing by lattice distance). seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
 ### `makeLattice1DRandom(*args, seed=0)`
 
@@ -3147,11 +3155,13 @@ elements with that value. fit=true adds a power law fitted by maximum
 likelihood (fitPowerLaw; kmin= fixes where it starts, shift= fits k + shift)
 as a dashed line.
 
-### `plotHistogram(field, bins=10, log=False)`
+### `plotHistogram(field, bins=10, log=False, title=None)`
 
 Histogram of a numeric field's values in `bins` equal-width bins.
 log=true uses bins of equal width on a log scale (for heavy-tailed
 values such as degree; values <= 0 are left out) and a log count axis.
+A list of numbers works too (eigenvalues, delivery times):
+plotHistogram([...], 20, title="Eigenvalues").
 
 ### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False, xrange=None, yrange=None, dashed=None, highlight=None, colors=None)`
 

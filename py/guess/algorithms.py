@@ -98,6 +98,8 @@ def install(session):
             n.label = f"nd{i}"
             if "born" in G.nodes[v]:
                 n.born = G.nodes[v]["born"]
+            if "gx" in G.nodes[v]:
+                n.gx, n.gy = G.nodes[v]["gx"], G.nodes[v]["gy"]
             pos = G.nodes[v].get("pos")
             if pos is not None:
                 n.x, n.y = 50 + 900 * pos[0], 50 + 900 * pos[1]
@@ -112,10 +114,14 @@ def install(session):
         print(f"generated {label}: {len(g._nodes)} nodes, {len(g._edges)} edges")
 
     def add_born(G):
-        """Growth models record when each node (and edge) arrived: a `born` field, for revealUpTo."""
+        """Growth models record when each node (and edge) arrived: a `born` field, for revealUpTo;
+        grid models record each node's grid coordinates, gx and gy."""
         if any("born" in d for _v, d in G.nodes(data=True)):
             g.addNodeField("born", INT, 0)
             g.addEdgeField("born", INT, 0)
+        if any("gx" in d for _v, d in G.nodes(data=True)):
+            g.addNodeField("gx", INT, 0)
+            g.addNodeField("gy", INT, 0)
 
     def gen(name, doc, build):
         def fn(*args, seed=0):
@@ -147,8 +153,9 @@ def install(session):
         "step each node and edge arrived (0 for the seeds), so revealUpTo(step) can replay the growth.",
         lambda nx, v, m, ev: _barabasi(nx, int(v), int(m), int(ev)))
     gen("makeKleinbergRandom",
-        "makeKleinbergRandom(size, clust): Kleinberg small world on a size x size torus with "
-        "one long-range edge per node, distance exponent clust.",
+        "makeKleinbergRandom(size, clust): Kleinberg small world on a size x size grid with "
+        "one long-range edge per node, chosen with probability ~ distance^-clust; the fields gx and gy "
+        "give each node's grid coordinates (for greedy routing by lattice distance).",
         lambda nx, n, r: _kleinberg(nx, int(n), float(r)))
     gen("makeLattice1DRandom", "makeLattice1DRandom(nodes, toroidal): a path (or ring if toroidal).",
         lambda nx, n, tor: _with_ring_pos(nx.cycle_graph(int(n)) if tor else nx.path_graph(int(n))))
@@ -188,7 +195,7 @@ def _kleinberg(nx, size, r):
     G = nx.navigable_small_world_graph(size, p=1, q=1, r=r, dim=2)
     H = nx.Graph()
     for (i, j) in G.nodes:
-        H.add_node((i, j), pos=(i / max(size - 1, 1), j / max(size - 1, 1)))
+        H.add_node((i, j), pos=(i / max(size - 1, 1), j / max(size - 1, 1)), gx=i, gy=j)
     for a, b in G.edges:
         if a != b:
             H.add_edge(a, b)

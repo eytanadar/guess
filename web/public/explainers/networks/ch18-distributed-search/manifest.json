@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Searching distributed databases",
+  "description": "Flooding, random walks and walks that seek out hubs on a heavy-tailed peer-to-peer network, and how their costs grow.",
+  "console": "toggle",
+  "script": "main.gy"
+}

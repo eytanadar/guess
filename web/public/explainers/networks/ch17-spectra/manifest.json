@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Spectra of networks",
+  "description": "Eigenvalues of the adjacency matrix and the Laplacian: the semicircle, the leading eigenvalue sitting outside it, and the hubs that set it in heavy-tailed networks.",
+  "console": "toggle",
+  "script": "main.gy"
+}

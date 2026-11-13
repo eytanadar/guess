@@ -65,10 +65,39 @@ def install(session):
             raise GuessError(f"field '{f.name}' has no numeric values")
         return elems
 
-    def plotHistogram(field, bins=10, log=False):
+    def _list_histogram(values, bins, log, title):
+        import math
+        vals = [float(v) for v in values if isinstance(v, (int, float)) and not isinstance(v, bool)]
+        if log:
+            vals = [v for v in vals if v > 0]
+        if not vals:
+            raise GuessError("plotHistogram: no numbers to count")
+        lo, hi = min(vals), max(vals)
+        bins = max(1, int(bins))
+        if log:
+            llo, lhi = math.log10(lo), math.log10(hi)
+            step = (lhi - llo) / bins or 1.0
+            edges = [10 ** (llo + i * step) for i in range(bins + 1)]
+            pick = lambda v: min(bins - 1, int((math.log10(v) - llo) / step))
+        else:
+            width = (hi - lo) / bins or 1.0
+            edges = [lo + i * width for i in range(bins + 1)]
+            pick = lambda v: min(bins - 1, int((v - lo) / width))
+        counts = [0] * bins
+        for v in vals:
+            counts[pick(v)] += 1
+        items = [{"label": f"{_label(edges[i])}–{_label(edges[i + 1])}", "value": c, "color": 0x4E79A7, "ids": []}
+                 for i, c in enumerate(counts)]
+        return emit("bar", str(title or "Histogram"), "value", "count", items, logY=bool(log))
+
+    def plotHistogram(field, bins=10, log=False, title=None):
         """Histogram of a numeric field's values in `bins` equal-width bins.
         log=true uses bins of equal width on a log scale (for heavy-tailed
-        values such as degree; values <= 0 are left out) and a log count axis."""
+        values such as degree; values <= 0 are left out) and a log count axis.
+        A list of numbers works too (eigenvalues, delivery times):
+        plotHistogram([...], 20, title="Eigenvalues")."""
+        if isinstance(field, (list, tuple)) or (hasattr(field, "tolist") and not isinstance(field, Field)):
+            return _list_histogram(list(field.tolist() if hasattr(field, "tolist") else field), bins, log, title)
         f = need_field(field)
         elems = _numeric(f)
         if log:
@@ -97,7 +126,7 @@ def install(session):
             return f"({f.name} >= {a!r}) & ({f.name} {'<=' if i == bins - 1 else '<'} {b!r})"
         items = [{"label": f"{_label(edges[i])}–{_label(edges[i + 1])}",
                   "value": len(b), "color": _color(b), "ids": _ids(b), "q": q(i)} for i, b in enumerate(buckets)]
-        return emit("bar", f"Histogram of {f.name}", f.name, f"number of {what(f)}", items, logY=bool(log))
+        return emit("bar", str(title or f"Histogram of {f.name}"), f.name, f"number of {what(f)}", items, logY=bool(log))
 
     def _ranges(xrange, yrange):
         out = {}

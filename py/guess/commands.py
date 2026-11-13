@@ -628,6 +628,24 @@ def install(session):
             n.height = h + 2 * pad + (0.3 * h if n.style in (2, 5, 11, 12) else 0)
 
     @cmd
+    def colorByPhase(field, period=None, saturation=0.75, lightness=0.55):
+        """colorByPhase(phase) colours elements around a colour wheel by a cyclic
+        value such as an oscillator's phase or an angle, so values a whole
+        period apart get the same colour and nearby values similar ones (unlike
+        colorBy, whose ends differ). period= is the length of one cycle (default
+        2*pi; 360 for degrees, 24 for hours)."""
+        import colorsys
+        field = _field(field)
+        vals = _numeric(field)
+        per = float(period) if period is not None else 2 * math.pi
+        if per <= 0:
+            raise GuessError("period should be greater than 0")
+        for e, v in vals:
+            h = (float(v) / per) % 1.0
+            r, g_, b = colorsys.hls_to_rgb(h, float(lightness), float(saturation))
+            e.color = f"{int(r * 255)},{int(g_ * 255)},{int(b * 255)}"
+
+    @cmd
     def colorBy(field, start, end, scale="linear", middle=None, center=None):
         """colorBy(field, startColor, endColor) colours elements along a gradient in
         proportion to a numeric field's value; scale may be "linear", "log",

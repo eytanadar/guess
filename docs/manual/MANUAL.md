@@ -1218,6 +1218,21 @@ plotLine({"degree": [(n.degree, n.betweenness) for n in g.nodes if n.degree]},
          title="Betweenness by degree", log=true, dots=true)
 ```
 
+**Numbers that aren't a field.** `plotHistogram([...], bins, title=)`
+counts a plain list (eigenvalues, delivery times, simulation results) the
+same way it counts a field. For a cyclic value such as an oscillator's
+phase, `colorByPhase(phase)` colours nodes around a colour wheel (period
+2π by default, `period=360` for degrees), so values a whole cycle apart look
+the same:
+
+```python
+plotHistogram([n.degree / 2 for n in g.nodes], 8, title="Half degrees")
+Node.phase = 0.0
+for i, n in enumerate(g.nodes):
+    n.phase = i * 0.3
+colorByPhase(phase)
+```
+
 **Scatter plots.** `plotScatter(degree, betweenness)` puts a dot for each
 node at (x, y), in the node's colour. Point at a dot to highlight its node,
 and click to select it. Brokers, with few links but high betweenness, stand

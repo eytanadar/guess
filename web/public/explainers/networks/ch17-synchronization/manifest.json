@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Synchronization",
+  "description": "Kuramoto oscillators on a network lock into step as the coupling rises; colours show phases, and the Laplacian's eigenvalues say how easily a network synchronises.",
+  "console": "toggle",
+  "script": "main.gy"
+}
