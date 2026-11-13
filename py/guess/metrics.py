@@ -293,7 +293,7 @@ def install(session):
             raise GuessError(f"{what}: no values")
         return out
 
-    def _replace_graph(n, edges, field, values, label):
+    def _replace_graph(n, edges, field, values, label, layout=True):
         import random as _r
         gr = session.graph
         gr.clear()
@@ -310,7 +310,7 @@ def install(session):
         for v, x in zip(nodes, values):
             f.set(v, float(x) if floats else int(x))
         session.scene()
-        if 0 < n <= 3000:
+        if layout and 0 < n <= 3000:
             session.ns["frLayout"]()
         loops = sum(1 for a, b in edges if a == b)
         pairs = {}
@@ -322,7 +322,7 @@ def install(session):
         print(f"generated {label}: {n} nodes, {len(edges)} edges ({loops} self-loops, {multi} repeated edges)")
         return {"selfloops": loops, "multiedges": multi}
 
-    def makeConfigurationModel(degrees, simple=False, seed=0):
+    def makeConfigurationModel(degrees, simple=False, seed=0, layout=True):
         """makeConfigurationModel([3, 2, 2, 1, ...]) replaces the graph with a
         random network with exactly those degrees: each node gets that many
         "stubs" (half-edges) and the stubs are paired up uniformly at random
@@ -332,7 +332,8 @@ def install(session):
         graph, e.g. makeConfigurationModel(degree), which randomises a network
         keeping its degrees. The node field `stubs` keeps each node's intended
         degree. The degrees must add up to an even number. Returns the counts of
-        self-loops and repeated edges. (GUESS's degree field counts a self-loop
+        self-loops and repeated edges. layout=false skips the force-directed
+        layout (for when you lay it out yourself). (GUESS's degree field counts a self-loop
         once; in the book's convention it adds 2 to the degree, which is what
         `stubs` holds.)"""
         import random as _r
@@ -354,20 +355,20 @@ def install(session):
             counts = {"selfloops": sum(1 for a, b in edges if a == b),
                       "multiedges": len(edges) - len(kept) - sum(1 for a, b in edges if a == b)}
             edges = kept
-        made = _replace_graph(len(ks), edges, "stubs", ks, "makeConfigurationModel")
+        made = _replace_graph(len(ks), edges, "stubs", ks, "makeConfigurationModel", layout)
         if counts is not None:
             print(f"  simple=true removed {counts['selfloops']} self-loops and {counts['multiedges']} repeated edges")
             return {**counts, "removed": True}
         return made
 
-    def makeExpectedDegree(weights, seed=0):
+    def makeExpectedDegree(weights, seed=0, layout=True):
         """makeExpectedDegree([5.5, 3, 1.2, ...]) replaces the graph with a random
         network in which each pair i, j is joined independently with
         probability w_i w_j / sum(w) (at most 1), so node i's expected degree is
         about w_i: the Chung-Lu model, the configuration model's cousin with
         independent edges (Newman, Networks, section 12.1.2). weights can be a
         node field of the current graph. No self-loops or repeated edges. The
-        node field `expected` keeps w."""
+        node field `expected` keeps w. layout=false skips the layout."""
         import random as _r
         w = [float(x) for x in _degrees_arg(weights, "makeExpectedDegree")]
         total = sum(w)
@@ -379,7 +380,7 @@ def install(session):
             for j in range(i + 1, len(w)):
                 if rnd.random() < min(1.0, w[i] * w[j] / total):
                     edges.append((i, j))
-        return _replace_graph(len(w), edges, "expected", w, "makeExpectedDegree")
+        return _replace_graph(len(w), edges, "expected", w, "makeExpectedDegree", layout)
 
     for fn in (katzCentrality, structuralBalance, kComponents, bowTie, fitPowerLaw, makeConfigurationModel,
                makeExpectedDegree):

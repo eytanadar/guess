@@ -479,7 +479,7 @@ with one edge are always perfect (Chernobelskiy et al., GD 2011).
 lowest(degree, 5): the 5 with the smallest degree, smallest first
 (see highest).
 
-### `makeConfigurationModel(degrees, simple=False, seed=0)`
+### `makeConfigurationModel(degrees, simple=False, seed=0, layout=True)`
 
 makeConfigurationModel([3, 2, 2, 1, ...]) replaces the graph with a
 random network with exactly those degrees: each node gets that many
@@ -490,11 +490,12 @@ degrees come out lower). degrees can be a node field of the current
 graph, e.g. makeConfigurationModel(degree), which randomises a network
 keeping its degrees. The node field `stubs` keeps each node's intended
 degree. The degrees must add up to an even number. Returns the counts of
-self-loops and repeated edges. (GUESS's degree field counts a self-loop
+self-loops and repeated edges. layout=false skips the force-directed
+layout (for when you lay it out yourself). (GUESS's degree field counts a self-loop
 once; in the book's convention it adds 2 to the degree, which is what
 `stubs` holds.)
 
-### `makeExpectedDegree(weights, seed=0)`
+### `makeExpectedDegree(weights, seed=0, layout=True)`
 
 makeExpectedDegree([5.5, 3, 1.2, ...]) replaces the graph with a random
 network in which each pair i, j is joined independently with
@@ -502,7 +503,7 @@ probability w_i w_j / sum(w) (at most 1), so node i's expected degree is
 about w_i: the Chung-Lu model, the configuration model's cousin with
 independent edges (Newman, Networks, section 12.1.2). weights can be a
 node field of the current graph. No self-loops or repeated edges. The
-node field `expected` keeps w.
+node field `expected` keeps w. layout=false skips the layout.
 
 ### `makeFromCalls(target)`
 
@@ -3023,7 +3024,7 @@ Histogram of a numeric field's values in `bins` equal-width bins.
 log=true uses bins of equal width on a log scale (for heavy-tailed
 values such as degree; values <= 0 are left out) and a log count axis.
 
-### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False, xrange=None, yrange=None, dashed=None)`
+### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False, xrange=None, yrange=None, dashed=None, highlight=None)`
 
 plotLine(points) draws a line chart of [(x, y), ...] pairs;
 plotLine({"infected": pts1, "recovered": pts2}) draws one line per
@@ -3032,7 +3033,9 @@ them; points <= 0 are left out). dots=true marks each point. A chart
 with the same title replaces the last one, so calling it in a loop
 updates it. yrange=(lo, hi) fixes the y axis (e.g. (0.8, 1) for values
 near 1), xrange= the x axis. dashed=["fit", ...] draws those series
-dashed and without dots (for theory curves and fits).
+dashed and without dots (for theory curves and fits), and
+highlight=["this network"] draws those series' points large, so a single
+point stands out among simulated ones.
 
 ### `plotScatter(x, y=None, log=False, logX=None, logY=None, ends=False, title=None, xlabel=None, ylabel=None, line=None, xrange=None, yrange=None)`
 

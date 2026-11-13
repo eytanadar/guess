@@ -339,3 +339,24 @@ def test_configuration_model_and_expected_degree():
     assert s.run("makeExpectedDegree([4.0] * 200, seed=1)"), s.rec.of("error")
     mean = ev(s, "sum(n.degree for n in g.nodes) / len(g.nodes)")
     assert 3.3 < mean < 4.7 and ev(s, "g.nodes[0].expected") == 4.0
+
+
+def test_plot_line_highlight_series():
+    s = _s()
+    assert s.run("plotLine({'sim': [(1, 1), (2, 2)], 'this network': [(1.5, 1.2)]}, title='h', highlight='this network')")
+    se = _charts(s)[-1]["series"]
+    assert se[1]["big"] and "big" not in se[0]
+
+
+def test_from_networkx_falls_back_to_guess_layout(monkeypatch):
+    import networkx as nx
+    s = _s()
+    G = nx.gnm_random_graph(60, 120, seed=1)
+
+    def broken(*a, **k):
+        raise ImportError("scipy")
+    monkeypatch.setattr(nx, "spring_layout", broken)
+    s.ns["__G"] = G
+    assert s.run("fromNetworkX(__G)"), s.rec.of("error")
+    pts = ev(s, "[(n.x, n.y) for n in g.nodes]")
+    assert len(set(pts)) > 55 and all(p[0] == round(p[0]) for p in pts)   # frLayout's positions, not random ones

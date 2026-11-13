@@ -168,8 +168,9 @@ def _spread(graph, G, names):
     nx = _nx()
     try:
         pos = nx.spring_layout(G, seed=1)
-    except Exception:  # noqa: BLE001 - e.g. scipy missing for large graphs
+    except Exception:  # noqa: BLE001 - e.g. scipy missing for large graphs (always so in the browser)
         pos = {k: (random.random(), random.random()) for k in G}
+        graph.__dict__["_needs_layout"] = True      # fromNetworkX runs GUESS's own layout instead
     for key, (x, y) in pos.items():
         n = graph._nodes[names[key]]
         n.x, n.y = 500 + 450 * float(x), 500 + 450 * float(y)
@@ -242,6 +243,8 @@ def install(session):
             session.ns["newGraph"](str(name))
         nn, ne = nx_into(g(), G)
         session.scene()
+        if g().__dict__.pop("_needs_layout", False):
+            session.ns["frLayout"]()          # networkx's spring layout failed (no scipy): GUESS's own instead
         print(f"loaded {nn} nodes, {ne} edges from networkx")
 
     @cmd

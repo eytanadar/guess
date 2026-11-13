@@ -92,5 +92,8 @@ def test_path_lengths():
     assert all(n._name.startswith("r") for n in a.s.graph._nodes_list())
     a.set("dropdown", "Network", "Karate club")
     assert len(a.s.graph._nodes) == 34
+    # a twin with a component too big for networkx's spring layout (scipy) is laid out by frLayout
+    a.set("dropdown", "Network", "Political blogs (600-blog sample)")
+    assert len(a.s.graph._nodes) == 600 and a.ev("cmp_state['twin_big']")
     _tab(a, "Rings")
     assert len(a.s.graph._nodes) == 400

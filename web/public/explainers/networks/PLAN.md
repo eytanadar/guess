@@ -904,7 +904,7 @@ configuration model with any degrees. The generating-function sections
 (§12.10 on) are batch 8. Each explainer sets theory and simulation side by
 side: the formula's curve with a "Simulate" button that adds measured points.
 
-**`ch11-random-graph`: G(n, p) and G(n, m) (§§11.1–11.4)** · planned
+**`ch11-random-graph`: G(n, p) and G(n, m) (§§11.1–11.4)** · built
 - *Idea:*
   - every pair is joined independently with probability p;
   - the mean degree is c = (n − 1)p and the degree distribution is Poisson for large n;
@@ -916,7 +916,7 @@ side: the formula's curve with a "Simulate" button that adds measured points.
   - "Simulate" averages over many graphs.
 - *GUESS:* `makeErdosRenyiRandom` or networkx, `revealUpTo` (edges given a `born` step), `plotLine`.
 
-**`ch11-giant-component`: The giant component (§11.5)** · planned
+**`ch11-giant-component`: The giant component (§11.5)** · built
 - *Idea:*
   - below c = 1 all components are small; above it a giant component of size S = 1 − e^{−cS} appears;
   - S is found by solving that equation (graphically: where the curve meets the line).
@@ -927,7 +927,7 @@ side: the formula's curve with a "Simulate" button that adds measured points.
   - why there can't be two giant components (join them with probability ~1).
 - *GUESS:* networkx, `encircle`, `plotLine`, `everyPaced`.
 
-**`ch11-small-components`: Small components (§11.6)** · planned
+**`ch11-small-components`: Small components (§11.6)** · built
 - *Idea:*
   - the small components are trees (almost surely);
   - their size distribution π_s is known exactly;
@@ -939,7 +939,7 @@ side: the formula's curve with a "Simulate" button that adds measured points.
   - click a small component to see its size and that it has s − 1 edges.
 - *GUESS:* networkx components, `binPackLayout`, `noverlapLayout`, `plotLine`.
 
-**`ch11-path-lengths`: Path lengths, and what random graphs get wrong (§§11.7–11.8)** · planned
+**`ch11-path-lengths`: Path lengths, and what random graphs get wrong (§§11.7–11.8)** · built
 - *Idea:*
   - the number of nodes s steps away grows like c^s, so the diameter is about ln n / ln c (small world);
   - but random graphs lack the clustering, skewed degrees and community structure of real networks.
@@ -949,7 +949,7 @@ side: the formula's curve with a "Simulate" button that adds measured points.
   - a side-by-side table: a real network and G(n, p) with the same n and m (C, degree spread, r, mean distance), and their degree distributions overlaid.
 - *GUESS:* BFS, `heatMap`, `plotLine`, `plotScatter`.
 
-**`ch12-configuration-model`: The configuration model (§12.1)** · planned
+**`ch12-configuration-model`: The configuration model (§12.1)** · built
 - *Idea:*
   - give each node k_i "stubs" (half-edges) and pair stubs uniformly at random;
   - every matching is equally likely; there are some self-loops and multi-edges, but few in large sparse networks;
@@ -962,7 +962,7 @@ side: the formula's curve with a "Simulate" button that adds measured points.
   - self-loop and multi-edge counts against their expected values as n grows.
 - *GUESS:* stubs as `drawLine` spokes, `everyPaced`, a configuration-model generator (see gaps).
 
-**`ch12-excess-degree`: Excess degree and the friendship paradox (§§12.2–12.5)** · planned
+**`ch12-excess-degree`: Excess degree and the friendship paradox (§§12.2–12.5)** · built
 - *Idea:*
   - following an edge, you reach a node with probability proportional to its degree, so your friends have more friends than you do on average;
   - the excess degree distribution is q_k = (k + 1)p_{k+1}/⟨k⟩;
@@ -974,7 +974,7 @@ side: the formula's curve with a "Simulate" button that adds measured points.
   - second neighbours counted in the graph against the formula.
 - *GUESS:* `plotLine`, `linkTo`, `everyPaced`.
 
-**`ch12-giant-component`: The giant component in the configuration model (§§12.6–12.9)** · planned
+**`ch12-giant-component`: The giant component in the configuration model (§§12.6–12.9)** · built
 - *Idea:*
   - there is a giant component when ⟨k²⟩ − 2⟨k⟩ > 0 (Molloy–Reed);
   - its size comes from u = g₁(u) and S = 1 − g₀(u);
@@ -996,6 +996,17 @@ side: the formula's curve with a "Simulate" button that adds measured points.
 | Expected-degree (Chung–Lu) random graphs | ch12-configuration-model | none | `makeExpectedDegree(weights, seed=0)` |
 | Self-loops and multi-edges drawn visibly | ch12-configuration-model | self-loops are drawn; multi-edges curve apart | check how it looks with many |
 | Edge-by-edge growth on fixed nodes | ch11-random-graph | `revealUpTo` reveals nodes; edges with a `born` field are revealed too | none |
+
+Notes from building batch 7:
+- **Book check:** the expected number of pairs of parallel edges in the configuration model is ¼[(⟨k²⟩ − ⟨k⟩)/⟨k⟩]² for large n, half of eq. (12.3), whose sum counts each pair in both orders. Simulation agrees with the exact sum Σ_{i<j} k_i(k_i−1)k_j(k_j−1) / 2(2m−1)(2m−3). `ch12-configuration-model` explains the difference.
+- **Fixed in GUESS:**
+  - live Markdown and Labels in tabs that aren't showing are no longer recomputed after every command; they refresh when their tab is selected;
+  - `makeConfigurationModel` and `makeExpectedDegree` take `layout=False`;
+  - `fromNetworkX` without positions falls back to GUESS's `frLayout` when networkx's spring layout fails (it needs scipy for more than 500 nodes, and the browser has no scipy), instead of leaving random positions.
+- **Browser-only pitfalls:**
+  - `np.repeat` with 64-bit counts fails in Pyodide (cast to `np.intp`);
+  - `frLayout` differs between the browser and native runs, so screenshots aren't reproducible.
+- **Also fixed:** `plotLine(highlight=[names])` draws those series with large markers, so a one-point "this network" series stands out among simulated points.
 
 ## Batch 8: book pages 401–458 (Chapter 12.10–12.11 and Chapter 13.1–13.3)
 

@@ -132,6 +132,8 @@ export interface ChartMsg {
     colors?: number[]; ids?: ["n" | "e", number][][]; labels?: string[]; line?: boolean;
     /** drawn dashed and without dots (a fitted curve) */
     dash?: boolean;
+    /** large markers at its points (highlight=) */
+    big?: boolean;
   }[];
   /** fixed axis ranges (xrange=/yrange=), in data units */
   xRange?: [number, number]; yRange?: [number, number];

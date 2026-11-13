@@ -673,12 +673,13 @@ export class Dock {
         if (c.dots && !s.dash) line.setAttribute("stroke-opacity", "0.5");
         if (s.dash) line.setAttribute("stroke-dasharray", "5 3");
         svg.append(clipped(line));
-        if (c.dots && !s.dash) {
+        if ((c.dots || s.big) && !s.dash) {
           for (const [x, y] of pts) {
             const dot = document.createElementNS(SVG, "circle");
             dot.setAttribute("cx", X(x).toFixed(1));
             dot.setAttribute("cy", Y(y).toFixed(1));
-            dot.setAttribute("r", "2.2");
+            dot.setAttribute("r", s.big ? "5" : "2.2");
+            if (s.big) { dot.setAttribute("stroke", "rgba(0,0,0,.6)"); dot.setAttribute("stroke-width", "1"); }
             dot.setAttribute("fill", hex(s.color));
             svg.append(clipped(dot));
           }

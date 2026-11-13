@@ -151,7 +151,7 @@ def install(session):
                     xq=f"{f.name} {op} {{x}}", logX=bool(log), logY=bool(log), dots=True)
 
     def plotLine(data, title="Chart", xlabel="x", ylabel="y", log=False, logX=None, logY=None, dots=False,
-                 xrange=None, yrange=None, dashed=None):
+                 xrange=None, yrange=None, dashed=None, highlight=None):
         """plotLine(points) draws a line chart of [(x, y), ...] pairs;
         plotLine({"infected": pts1, "recovered": pts2}) draws one line per
         series. log=true makes both axes logarithmic (or logX=/logY= one of
@@ -159,7 +159,9 @@ def install(session):
         with the same title replaces the last one, so calling it in a loop
         updates it. yrange=(lo, hi) fixes the y axis (e.g. (0.8, 1) for values
         near 1), xrange= the x axis. dashed=["fit", ...] draws those series
-        dashed and without dots (for theory curves and fits)."""
+        dashed and without dots (for theory curves and fits), and
+        highlight=["this network"] draws those series' points large, so a single
+        point stands out among simulated ones."""
         palette = [0x4E79A7, 0xE15759, 0x59A14F, 0xF28E2B, 0x76B7B2, 0xB07AA1, 0xEDC948]
         if isinstance(data, dict):
             named = list(data.items())
@@ -178,6 +180,8 @@ def install(session):
             rec = {"name": str(name), "color": palette[i % len(palette)], "points": clean}
             if dashed is not None and str(name) in {str(d) for d in ([dashed] if isinstance(dashed, str) else dashed)}:
                 rec["dash"] = True
+            if highlight is not None and str(name) in {str(d) for d in ([highlight] if isinstance(highlight, str) else highlight)}:
+                rec["big"] = True
             series.append(rec)
         return emit("line", str(title), str(xlabel), str(ylabel), [], series=series, logX=lx, logY=ly,
                     dots=bool(dots), **_ranges(xrange, yrange))
