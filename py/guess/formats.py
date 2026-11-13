@@ -11,7 +11,7 @@ import shlex
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape, quoteattr
 
-from .model import BOOL, DOUBLE, INT, STRING, GuessError, coerce
+from .model import scatter_position, BOOL, DOUBLE, INT, STRING, GuessError, coerce
 
 # --------------------------------------------------------------------------
 # Pajek
@@ -267,8 +267,7 @@ def read_graphml(graph, text):
         edges += 1
     if not has_xy:
         for n in graph._nodes_list():
-            n.x = random.random() * 500
-            n.y = random.random() * 500
+            n.x, n.y = scatter_position(n._name)
     return nodes, edges
 
 
@@ -434,8 +433,7 @@ def read_gml(graph, text):
         count_e += 1
     if not has_xy:
         for n in graph._nodes_list():
-            n.x = random.random() * 500
-            n.y = random.random() * 500
+            n.x, n.y = scatter_position(n._name)
     return len(nodes), count_e
 
 
@@ -538,8 +536,7 @@ def read_dl(graph, text):
     for lab in labels[:n]:
         nd = graph.addNode(_ident(lab))
         nd.label = lab
-        nd.x = random.random() * 500
-        nd.y = random.random() * 500
+        nd.x, nd.y = scatter_position(nd._name)
         nodes.append(nd)
     by_label = dict(zip(labels, nodes))
 

@@ -7,7 +7,7 @@
 """
 import random
 
-from .model import BOOL, DOUBLE, INT, STRING, GuessError, coerce, normalize_type
+from .model import scatter_position, BOOL, DOUBLE, INT, STRING, GuessError, coerce, normalize_type
 
 
 def split_line(line):
@@ -135,8 +135,7 @@ def read(graph, text):
                     continue
                 _set(n, graph.node_schema[col], v, lineno)
             if not has_xy:
-                n.x = random.random() * 500
-                n.y = random.random() * 500
+                n.x, n.y = scatter_position(n._name)
             added_nodes.append(n)
         elif mode == "edge":
             row = dict(zip(edge_cols, vals))

@@ -1175,37 +1175,37 @@ Biconnected components (ignoring edge direction).
 
 Split the graph into `count` communities with Girvan-Newman.
 
-### `makeBarabasiAlbertRandom(*args)`
+### `makeBarabasiAlbertRandom(*args, seed=0)`
 
-makeBarabasiAlbertRandom(vert, edges, evolve): preferential attachment; starts from `vert` nodes and adds `evolve` nodes with `edges` edges each. The field `born` records the step each node and edge arrived (0 for the seeds), so revealUpTo(step) can replay the growth.
+makeBarabasiAlbertRandom(vert, edges, evolve): preferential attachment; starts from `vert` nodes and adds `evolve` nodes with `edges` edges each. The field `born` records the step each node and edge arrived (0 for the seeds), so revealUpTo(step) can replay the growth. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeEppsteinRandom(*args)`
+### `makeEppsteinRandom(*args, seed=0)`
 
-makeEppsteinRandom(nodes, edges, r): power-law graph by r rounds of degree-biased rewiring of a uniform random graph (Eppstein & Wang).
+makeEppsteinRandom(nodes, edges, r): power-law graph by r rounds of degree-biased rewiring of a uniform random graph (Eppstein & Wang). seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeErdosRenyiRandom(*args)`
+### `makeErdosRenyiRandom(*args, seed=0)`
 
-makeErdosRenyiRandom(nodes, p): each edge present with probability p.
+makeErdosRenyiRandom(nodes, p): each edge present with probability p. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeKleinbergRandom(*args)`
+### `makeKleinbergRandom(*args, seed=0)`
 
-makeKleinbergRandom(size, clust): Kleinberg small world on a size x size torus with one long-range edge per node, distance exponent clust.
+makeKleinbergRandom(size, clust): Kleinberg small world on a size x size torus with one long-range edge per node, distance exponent clust. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeLattice1DRandom(*args)`
+### `makeLattice1DRandom(*args, seed=0)`
 
-makeLattice1DRandom(nodes, toroidal): a path (or ring if toroidal).
+makeLattice1DRandom(nodes, toroidal): a path (or ring if toroidal). seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeLattice2DRandom(*args)`
+### `makeLattice2DRandom(*args, seed=0)`
 
-makeLattice2DRandom(size, toroidal): a size x size grid (torus if toroidal).
+makeLattice2DRandom(size, toroidal): a size x size grid (torus if toroidal). seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeSimpleDirectedRandom(*args)`
+### `makeSimpleDirectedRandom(*args, seed=0)`
 
-makeSimpleDirectedRandom(nodes, edges): uniform random directed graph.
+makeSimpleDirectedRandom(nodes, edges): uniform random directed graph. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeSimpleRandom(*args)`
+### `makeSimpleRandom(*args, seed=0)`
 
-makeSimpleRandom(nodes, edges): uniform random undirected graph.
+makeSimpleRandom(nodes, edges): uniform random undirected graph. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
 ### `weakComponentClusters()`
 
@@ -3149,7 +3149,7 @@ Histogram of a numeric field's values in `bins` equal-width bins.
 log=true uses bins of equal width on a log scale (for heavy-tailed
 values such as degree; values <= 0 are left out) and a log count axis.
 
-### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False, xrange=None, yrange=None, dashed=None, highlight=None)`
+### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False, xrange=None, yrange=None, dashed=None, highlight=None, colors=None)`
 
 plotLine(points) draws a line chart of [(x, y), ...] pairs;
 plotLine({"infected": pts1, "recovered": pts2}) draws one line per
@@ -3160,7 +3160,9 @@ updates it. yrange=(lo, hi) fixes the y axis (e.g. (0.8, 1) for values
 near 1), xrange= the x axis. dashed=["fit", ...] draws those series
 dashed and without dots (for theory curves and fits), and
 highlight=["this network"] draws those series' points large, so a single
-point stands out among simulated ones.
+point stands out among simulated ones. colors={"infected": red,
+"infected (theory)": red} sets series colours (a list goes in series
+order), e.g. to give a theory curve its data's colour.
 
 ### `plotScatter(x, y=None, log=False, logX=None, logY=None, ends=False, title=None, xlabel=None, ylabel=None, line=None, xrange=None, yrange=None)`
 

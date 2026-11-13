@@ -28,7 +28,7 @@ adj = {}            # graph name -> {node name: [neighbour names]}
 deg = {}            # graph name -> {node name: degree}
 sim = {"net": "random", "state": {}, "when": {}, "t": 0, "fresh": set(), "tree": set(), "curve": [],
        "newdeg": [], "timer": None, "seed": None, "rnd": random.Random(1), "chosen": None,
-       "sweep": [], "sweeptimer": None, "cmp": {}, "cmptimer": None}
+       "sweep": [], "sweeptimer": None, "cmp": {}, "cmptimer": None, "shown": set()}
 mode = ["Outbreak"]
 
 
@@ -83,6 +83,9 @@ def build_all():
     collect("hubs")
     newGraph("school")
     makeFromFile("school-contacts-SIMULATED.gdf")
+    for v in g.nodes:                              # the stored layout is compact: spread it out
+        v.x, v.y = v.x * 4, v.y * 4
+    noverlapLayout(margin=4)
     center(g.nodes)
     collect("school")
     use("random")
@@ -117,6 +120,9 @@ def reset_outbreak():
 def seed_outbreak(name=None):
     net = sim["net"]
     reset_outbreak()
+    if name is None and net not in sim["shown"]:
+        sim["rnd"] = random.Random(first_stream(net, beta_sl.value, gamma_sl.value))
+    sim["shown"].add(net)
     if name is None:
         name = sim["chosen"] or sim["rnd"].choice(sorted(adj[net]))
     sim["seed"] = name
@@ -126,6 +132,39 @@ def seed_outbreak(name=None):
     sim["curve"].append((0, (n - 1) / n, 1 / n, 0.0))
     sim["newdeg"].append((0, deg[net][name]))
     paint_net()
+
+
+def sir_core(a, st, rnd, b, c):
+    """One step, in place: this step's infectious people try each susceptible contact, then each
+    recovers with probability c, then the newly infected become infectious. Returns (new, edges used)."""
+    infected = [v for v, s_ in st.items() if s_ == "I"]
+    new, fresh, taken = [], set(), set()
+    for v in infected:
+        for u in a[v]:
+            if st[u] == "S" and u not in taken and rnd.random() < b:
+                taken.add(u)
+                new.append(u)
+                fresh.add(frozenset((u, v)))
+    for v in infected:
+        if rnd.random() < c:
+            st[v] = "R"
+    for u in new:
+        st[u] = "I"
+    return new, fresh
+
+
+def first_stream(net, b, c):
+    """A random stream whose outbreak (from the start it picks) takes off, so the first outbreak shown
+    isn't one that fizzles at once; later ones are left to chance."""
+    for k in range(1, 60):
+        rnd = random.Random(k)
+        st = {v: "S" for v in adj[net]}
+        st[rnd.choice(sorted(adj[net]))] = "I"
+        while any(x == "I" for x in st.values()):
+            sir_core(adj[net], st, rnd, b, c)
+        if sum(1 for x in st.values() if x == "R") > 0.3 * len(st):
+            return k
+    return 1
 
 
 def step_sir():
@@ -138,20 +177,9 @@ def step_sir():
         paint_net()
         go_btn.text = "Start an outbreak"
         return False
-    new, fresh = [], set()
-    taken = set()
-    for v in infected:
-        for u in adj[net][v]:
-            if st[u] == "S" and u not in taken and sim["rnd"].random() < b:
-                taken.add(u)
-                new.append(u)
-                fresh.add(frozenset((u, v)))
-    for v in infected:
-        if sim["rnd"].random() < c:
-            st[v] = "R"
+    new, fresh = sir_core(adj[net], st, sim["rnd"], b, c)
     sim["t"] += 1
     for u in new:
-        st[u] = "I"
         sim["when"][u] = sim["t"]
     sim["fresh"] = fresh
     sim["tree"] |= fresh
@@ -323,10 +351,11 @@ def outbreak_chart():
     net = sim["net"]
     steps = max(30, sim["curve"][-1][0] + 5)
     mix = mixed_curve(net, steps)
-    return plotLine({"infected": [(t, i) for t, s_, i, r in sim["curve"]],
-                     "recovered": [(t, r) for t, s_, i, r in sim["curve"]],
-                     "infected, fully mixed": [(t, i) for t, s_, i, r in mix],
-                     "recovered, fully mixed": [(t, r) for t, s_, i, r in mix]},
+    # in this order the palette makes "infected" red, as on the nodes
+    return plotLine({"recovered": [(t, r) for t, s_, i, r in sim["curve"]],
+                     "infected": [(t, i) for t, s_, i, r in sim["curve"]],
+                     "recovered, fully mixed": [(t, r) for t, s_, i, r in mix],
+                     "infected, fully mixed": [(t, i) for t, s_, i, r in mix]},
                     title="Share of people, step by step", xlabel="step", ylabel="share",
                     dashed=["infected, fully mixed", "recovered, fully mixed"], yrange=(0, 1))
 

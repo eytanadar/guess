@@ -233,8 +233,10 @@ def run_chart():
     if x_star is not None:
         data["endemic level"] = [(0, x_star), (MAX_T, x_star)]
         dashed.append("endemic level")
+    cols = {f"{NAMES[k]}{suffix}": COL[k] for k in show for suffix in ("", " (equations)")}
+    cols["endemic level"] = "150,150,150"
     return plotLine(data, title=f"{m}: shares over time", xlabel="step", ylabel="share of people", yrange=(0, 1),
-                    xrange=(0, end), dashed=dashed)
+                    xrange=(0, end), dashed=dashed, colors=cols)      # each theory curve in its compartment's colour
 
 
 def run_text():
@@ -249,7 +251,7 @@ def run_text():
     if m == "SIS":
         body = ("Recovering gives **no immunity**, so people go round and round: S → I → S. Above the threshold "
                 f"R₀ = 1 the infection never dies out (barring bad luck in a small population) but settles where "
-                f"new infections balance recoveries: the **endemic level** x* = 1 − 1/R₀ = "
+                f"new infections balance recoveries: the **endemic level** x∗ = 1 − 1/R₀ = "
                 f"**{max(0.0, 1 - 1 / r0):.0%}**.")
         if r0 <= 1:
             body = "R₀ ≤ 1: each case is replaced by fewer than one, so the infection dies out."
@@ -257,8 +259,8 @@ def run_text():
         body = (f"Immunity **wanes** (w = {w_():.3f} a step), so recovered people slowly return to the "
                 "susceptible pool. The infection comes back in **waves**: an outbreak burns through the "
                 "susceptible, dies down while immunity holds, and returns once enough have lost it. The waves "
-                f"shrink towards s* = 1/R₀ = {min(1.0, 1 / r0):.0%} susceptible and "
-                f"x* = **{steady():.1%}** infected; see the *Phase plane* tab for the spiral.")
+                f"shrink towards s∗ = 1/R₀ = {min(1.0, 1 / r0):.0%} susceptible and "
+                f"x∗ = **{steady():.1%}** infected; see the *Phase plane* tab for the spiral.")
     else:
         body = (f"A **latent stage**: the newly infected (amber) aren't infectious yet; each becomes so with "
                 f"probability σ = {sg_():.2f} a step, about {1 / sg_():.0f} steps on average. The outbreak "

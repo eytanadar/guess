@@ -1,7 +1,7 @@
 """Graph algorithms backed by networkx (available in Pyodide via loadPackage)."""
 import random
 
-from .model import INT, GSet, GuessError
+from .model import scatter_position, INT, GSet, GuessError
 
 
 def _nx():
@@ -102,7 +102,7 @@ def install(session):
             if pos is not None:
                 n.x, n.y = 50 + 900 * pos[0], 50 + 900 * pos[1]
             else:
-                n.x, n.y = random.random() * 500, random.random() * 500
+                n.x, n.y = scatter_position(n._name)
             index[v] = n
         for a, b in G.edges():
             e = g.addEdge(index[a], index[b], directed)
@@ -118,12 +118,21 @@ def install(session):
             g.addEdgeField("born", INT, 0)
 
     def gen(name, doc, build):
-        def fn(*args):
+        def fn(*args, seed=0):
+            # seeded by default (seed=None for a different graph each time): networkx's generators draw
+            # from Python's random module, so the same arguments give the same graph everywhere
             nx = _nx()
-            G = build(nx, *args)
+            state = random.getstate()
+            if seed is not None:
+                random.seed(seed)
+            try:
+                G = build(nx, *args)
+            finally:
+                if seed is not None:
+                    random.setstate(state)
             make_from(G, name)
         fn.__name__ = name
-        fn.__doc__ = doc
+        fn.__doc__ = doc + " seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time)."
         session.register_command(name, fn)
 
     gen("makeSimpleRandom", "makeSimpleRandom(nodes, edges): uniform random undirected graph.",

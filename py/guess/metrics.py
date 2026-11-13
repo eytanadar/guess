@@ -1,7 +1,7 @@
 """Measures from Newman, Networks, ch. 7 that GUESS's other modules lack:
 Katz centrality with a chosen alpha and beta, structural balance of signed
 networks, k-components, and regular-equivalence similarity."""
-from .model import INT as INTEGER, GSet, GuessError
+from .model import scatter_position, INT as INTEGER, GSet, GuessError
 
 
 def regular_similarity(graph, alpha=0.9):
@@ -308,7 +308,7 @@ def install(session):
         for i in range(n):
             v = gr.addNode(f"nd{i}")
             v.label = f"nd{i}"
-            v.x, v.y = _r.random() * 500, _r.random() * 500
+            v.x, v.y = scatter_position(v._name)
             nodes.append(v)
         for a, b in edges:
             gr.addEdge(nodes[a], nodes[b], False)
@@ -400,7 +400,7 @@ def install(session):
         for i in range(n):
             v = gr.addNode(f"nd{i}")
             v.label = f"nd{i}"
-            v.x, v.y = _r.random() * 500, _r.random() * 500
+            v.x, v.y = scatter_position(v._name)
             for name, (_t, vals) in node_fields.items():
                 nfs[name].set(v, vals[i])
             nodes.append(v)

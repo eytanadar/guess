@@ -26,7 +26,7 @@ import numpy as np
 
 from .algorithms import _betweenness_nodes, _nx, to_networkx
 from .analysis import _arrays, _weight
-from .model import BOOL, DOUBLE, EDGE, INT, NODE, STRING, Edge, Field, GSet, GuessError, Node, elements_of, normalize_type
+from .model import scatter_position, BOOL, DOUBLE, EDGE, INT, NODE, STRING, Edge, Field, GSet, GuessError, Node, elements_of, normalize_type
 
 KATZ_ALPHA = 0.1
 
@@ -650,7 +650,7 @@ def install(session):
                 x, y = positions[v]
                 n.x, n.y = 50 + 900 * x, 50 + 900 * y
             else:
-                n.x, n.y = random.random() * 500, random.random() * 500
+                n.x, n.y = scatter_position(n._name)
             index[v] = n
         for a, b in G.edges():
             e = g.addEdge(index[a], index[b], False)

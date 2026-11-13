@@ -18,8 +18,8 @@ import random
 A_COL, B_COL, AB_COL, NONE_COL = "235,70,60", "60,125,235", "155,70,205", "205,210,220"
 ADOPT, ADOPT_LINE, NOT_YET = "250,165,40", "120,60,0", "200,205,215"
 mode = ["Two diseases"]
-co = {"adj": {}, "A": {}, "B": {}, "freshA": set(), "freshB": set(), "edgesA": set(), "edgesB": set(),
-      "gen": 0, "curve": [], "timer": None, "sweep": [], "sweeptimer": None, "seed": None}
+co = {"shown": False, "adj": {}, "A": {}, "B": {}, "freshA": set(), "freshB": set(), "edgesA": set(), "edgesB": set(),
+      "gen": 0, "curve": [], "timer": None, "sweep": [], "sweeptimer": None, "seed": None, "start": None}
 cx = {"adj": {}, "adopted": {}, "fresh": set(), "edges": set(), "step": 0, "curve": [], "timer": None,
       "sweep": [], "sweeptimer": None, "start": 0}
 
@@ -75,7 +75,22 @@ def co_reset():
 
 def co_start(seed=None):
     co_reset()
+    if not co["shown"]:
+        co["shown"] = True
+        for k in range(1, 60):                   # a first run that takes off (later ones are left to chance)
+            r = random.Random(k)
+            A = {i: False for i in co["adj"]}
+            B = {i: False for i in co["adj"]}
+            s0 = co["seed"] if seed is None else seed
+            A[s0] = B[s0] = True
+            fA, fB = {s0}, {s0}
+            while fA or fB:
+                fA, fB, _ea, _eb = co_generation(r, co["adj"], A, B, fA, fB, p_sl.value)
+            if sum(1 for i in co["adj"] if A[i] and B[i]) > 0.3 * CO_N:   # both spread, together
+                co_rnd.seed(k)
+                break
     s_ = co["seed"] if seed is None else seed
+    co["start"] = s_
     co["A"][s_] = co["B"][s_] = True
     co["freshA"], co["freshB"] = {s_}, {s_}
     co["curve"].append((0, 1, 1, 1))
@@ -107,7 +122,7 @@ def co_generation(rnd, adj, A, B, freshA, freshB, p):
     return newA, newB, eA, eB
 
 
-co_rnd = random.Random(5)
+co_rnd = random.Random(1)
 
 
 def co_step():
@@ -152,6 +167,8 @@ def co_paint():
             v.width = v.height = 8
         if new and co["gen"] > 0:
             v.width = v.height = v.width + 6
+        if i == co["start"]:
+            v.strokecolor, v.strokewidth = "255,220,60", 3.5
         v.labelvisible = false
     for e in g.edges:
         key = frozenset((int(e.node1.name[1:]), int(e.node2.name[1:])))
@@ -216,8 +233,9 @@ def co_text():
 def co_chart():
     if mode[0] != "Two diseases" or not co["curve"]:
         return None
-    return plotLine({"red": [(g_, a_) for g_, a_, b_, bo in co["curve"]],
-                     "blue": [(g_, b_) for g_, a_, b_, bo in co["curve"]],
+    # in this order the palette draws each disease in its own colour
+    return plotLine({"blue": [(g_, b_) for g_, a_, b_, bo in co["curve"]],
+                     "red": [(g_, a_) for g_, a_, b_, bo in co["curve"]],
                      "both": [(g_, bo) for g_, a_, b_, bo in co["curve"]]},
                     title="People infected, generation by generation", xlabel="generation", ylabel="people",
                     dots=true)
@@ -251,9 +269,9 @@ def co_sweep_step():
     p = PS[len(co["sweep"])]
     rnd = random.Random(40 + len(co["sweep"]))
     big = poisson_network(1500, CO_C, random.Random(77))
-    alone = [co_final(big, p, False, rnd) for _ in range(12)]
-    helped = [co_final(big, p, True, rnd) for _ in range(12)]
-    co["sweep"].append((p, max(alone), max(helped), sum(alone) / 12, sum(helped) / 12))
+    alone = [co_final(big, p, False, rnd) for _ in range(24)]
+    helped = [co_final(big, p, True, rnd) for _ in range(24)]
+    co["sweep"].append((p, max(alone), max(helped), sum(alone) / 24, sum(helped) / 24))
     return len(PS) - len(co["sweep"])
 
 
@@ -278,8 +296,8 @@ def co_sweep_chart():
 
 
 def co_sweep_text():
-    txt = (f"On a random network of 1,500 people (mean degree {CO_C:g}), each p is tried 12 times with the "
-           f"diseases alone and 12 times helping each other (q = {q_sl.value:.2f}); the chart shows the largest "
+    txt = (f"On a random network of 1,500 people (mean degree {CO_C:g}), each p is tried 24 times with the "
+           f"diseases alone and 24 times helping each other (q = {q_sl.value:.2f}); the chart shows the largest "
            "outbreak of red. Alone, it grows smoothly from p = 1/c, as the dashed theory says. Helped, it "
            "takes off at a lower p and jumps.")
     if co["sweep"]:
@@ -331,7 +349,12 @@ def build_ring(label):
     for i, ns in adj.items():
         for j in ns:
             if i < j:
-                addEdge(nodes[i], nodes[j])
+                e = addEdge(nodes[i], nodes[j])
+                d = (j - i) % CX_N
+                if d <= CX_K // 2:                 # ring links: bow outward, more for longer reach
+                    e.arc = -28 * d
+                elif (i - j) % CX_N <= CX_K // 2:
+                    e.arc = 28 * ((i - j) % CX_N)
     center(g.nodes)
     cx_reset()
 
@@ -386,10 +409,10 @@ def cx_paint():
         i = int(v.name[1:])
         if cx["adopted"].get(i, False):
             v.color, v.strokecolor, v.strokewidth = ADOPT, ADOPT_LINE, 2 if i in cx["fresh"] else 1
-            v.width = v.height = 22 if i in cx["fresh"] and cx["step"] > 0 else 15
+            v.width = v.height = 20 if i in cx["fresh"] and cx["step"] > 0 else 12
         else:
             v.color, v.strokecolor, v.strokewidth = NOT_YET, "110,110,120", 0.5
-            v.width = v.height = 12
+            v.width = v.height = 9
         v.labelvisible = false
     for e in g.edges:
         key = frozenset((int(e.node1.name[1:]), int(e.node2.name[1:])))

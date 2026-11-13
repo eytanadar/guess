@@ -130,6 +130,8 @@ def show():
     picker = st["pairs"][-1][0] if acq and st["pairs"] and flash is not None else None
     for v in g.nodes:
         i = idx[v.name]
+        base = (5 + 2.6 * math.sqrt(st["deg"][i])) if st["net"] == NETS[0] else (5 + 2.2 * math.sqrt(st["deg"][i]))
+        v.width = v.height = base * 1.6 + 6 if i in (flash, picker) else base
         if i == flash:
             v.color, v.strokecolor, v.strokewidth = "235,45,45", "60,0,0", 3.5
         elif i == picker:
@@ -383,13 +385,12 @@ def compare_text():
         return ("**Compare** removes nodes from all three networks two ways: at random (10 orders) and hubs first. "
                 "It is the same union-find trick as `percolation`: add the nodes back in reverse order and merge "
                 "the pieces, so one pass gives the whole curve.")
-    rows = ["| network | nodes | mean degree | biggest hub | share removed to halve the giant: random | attack |",
-            "|---|---|---|---|---|---|"]
+    rows = ["| network | ⟨k⟩ | top hub | halved by: random | attack |", "|---|---|---|---|---|"]
     for net in NETS:
         if net in st["cmp"]:
             r = st["cmp"][net]
-            rows.append(f"| {net} | {r['n']} | {r['mean']:.1f} | {r['kmax']} | {half_point(r['random']):.0%} | "
-                        f"**{half_point(r['attack']):.0%}** |")
+            rows.append(f"| {net.split(' (')[0]} ({r['n']}) | {r['mean']:.1f} | {r['kmax']} | "
+                        f"{half_point(r['random']):.0%} | **{half_point(r['attack']):.0%}** |")
     done = [st["cmp"][net] for net in NETS if net in st["cmp"]]
     ratios = [half_point(r["random"]) / max(half_point(r["attack"]), 1e-9) for r in done]
     out = "\n".join(rows)
@@ -559,6 +560,12 @@ def switch(title):
     mode[0] = title
     st["flash"] = None
     show()
+    # re-send the shown tab's controls: changes made while a tab is hidden don't reach the page
+    if title == "Attack":
+        attack_btn.text = attack_btn.text
+        share.value = round(st["k"] / n_nodes(), 3)
+    elif title == "Acquaintance immunisation":
+        acq_btn.text = acq_btn.text
 
 
 def pick_net(v):
@@ -583,9 +590,9 @@ Nodes keep their places: removed ones fade, immunised ones turn green."""),
                                                                                               setattr(share, "value", 0)))),
                 Markdown(attack_text), Chart(attack_chart)),
             Tab("Random vs attack", Button("Compare the three networks", onClick=lambda: run_compare()),
-                Markdown(compare_text), Chart(compare_chart)),
+                Chart(compare_chart), Markdown(compare_text)),
             Tab("Acquaintance immunisation", Row(acq_btn, Button("Simulate: three strategies", onClick=lambda: run_strategies())),
-                Markdown(acq_text), Chart(acq_chart), Chart(strat_chart)),
+                Markdown(acq_text), Chart(strat_chart), Chart(acq_chart)),
             onChange=switch)),
     sizes={"right": 440},
 )

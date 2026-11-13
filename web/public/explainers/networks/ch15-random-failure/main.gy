@@ -139,6 +139,8 @@ def show(phi=None):
     idx = {nm: i for i, nm in enumerate(st["names"])}
     for v in g.nodes:
         i = idx[v.name]
+        base = 6 + 3.2 * math.sqrt(len(st["nbrs"][i]))
+        v.width = v.height = base * 1.9 + 6 if i == fail else base
         if i == fail:
             v.color, v.strokecolor, v.strokewidth = "235,45,45", "60,0,0", 3
         elif not pres[i]:
@@ -254,7 +256,8 @@ def fail_text():
            f"Threshold φ_c = ⟨k⟩ / (⟨k²⟩ − ⟨k⟩) = **{pc:.3f}**: below it no giant piece survives.")
     if st["failing"] is not None:
         nm = st["names"][st["failing"]]
-        out += f"\n\nJust failed: {linkTo(g.getNodeByName(nm))} (red), with its {len(st['nbrs'][st['failing']])} links."
+        k = len(st["nbrs"][st["failing"]])
+        out += f"\n\nJust failed: {linkTo(g.getNodeByName(nm))} (red, enlarged), with its {k} link{'' if k == 1 else 's'}."
     return out
 
 
@@ -465,6 +468,8 @@ def switch(title):
         stop_all()
         st["failing"] = None
         show()
+    if title == "Fail nodes":
+        fail_btn.text = fail_btn.text          # re-send: changes made while the tab was hidden don't reach the page
 
 
 def pick_model(v):
@@ -490,7 +495,7 @@ ui.layout(
                 Markdown(fail_text), Chart(fail_chart)),
             Tab("Theory and simulation", Button(f"Simulate: {SIM_N:,} nodes", onClick=lambda: run_sim()),
                 Markdown(sim_text), Chart(sim_chart)),
-            Tab("Heavy tails", Markdown(tails_text), Chart(tails_chart)),
+            Tab("Heavy tails", Chart(tails_chart), Markdown(tails_text)),
             onChange=switch)),
     sizes={"right": 430},
 )

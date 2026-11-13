@@ -531,3 +531,39 @@ def test_percolation_and_new_epidemic_models():
     assert s.run("c = spread([g.nodes[0]], model='SIRS', beta=0.3, gamma=0.2, waning=0.1, steps=80, show=false)")
     assert ev(s, "c[-1][2]") > 0
     assert not s.run("spread([g.nodes[0]], model='XYZ')")
+
+
+def test_plot_line_series_colours():
+    s = _s()
+    assert s.run("plotLine({'I': [(0, 1), (1, 2)], 'I theory': [(0, 1), (1, 2.2)]}, title='c', "
+                 "dashed=['I theory'], colors={'I': red, 'I theory': red})"), s.rec.of("error")
+    se = _charts(s)[-1]["series"]
+    assert se[0]["color"] == se[1]["color"] == 0xFF0000
+    assert s.run("plotLine({'a': [(0, 1)], 'b': [(0, 2)]}, title='d', colors=['0,128,0'])")
+    assert _charts(s)[-1]["series"][0]["color"] == 0x008000
+
+
+def test_hidden_tab_widgets_still_get_updates_but_live_text_waits():
+    s = _s()
+    calls = []
+    s.ns["__calls"] = calls
+    assert s.run("b = Button('Go')\nm = Markdown(lambda: (__calls.append(1), 'x')[1])\n"
+                 "ui.layout(right=Tabs(Tab('One', Label('first')), Tab('Two', b, m)))"), s.rec.of("error")
+    s.rec.clear()
+    n_before = len(calls)
+    assert s.run("b.text = 'Pause'"), s.rec.of("error")
+    ups = [m for m in s.rec.msgs if m.get("op") == "update" and m.get("props", {}).get("text") == "Pause"]
+    assert ups, "a hidden tab's button must still be updated"
+    assert len(calls) == n_before                      # its live Markdown wasn't recomputed while hidden
+
+
+def test_generators_and_starting_positions_are_reproducible():
+    s = _s()
+    def edges():
+        return ev(s, "sorted((e.node1.name, e.node2.name) for e in g.edges)")
+    assert s.run("makeErdosRenyiRandom(80, 0.05)")
+    a = edges()
+    assert s.run("makeErdosRenyiRandom(80, 0.05)") and edges() == a
+    assert s.run("makeErdosRenyiRandom(80, 0.05, seed=3)") and edges() != a
+    from guess.model import scatter_position
+    assert scatter_position("v1") == scatter_position("v1") != scatter_position("v2")

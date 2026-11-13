@@ -196,7 +196,8 @@ def outbreak_chart():
     if ep["model"] == "SIR":
         data["R (equations)"] = [(t, r) for t, _s, _x, r in th]
     return plotLine(data, title=f"{ep['model']}: shares over time", xlabel="step", ylabel="share of people",
-                    yrange=(0, 1), xrange=(0, h), dashed=["S (equations)", "I (equations)", "R (equations)"])
+                    yrange=(0, 1), xrange=(0, h), dashed=["S (equations)", "I (equations)", "R (equations)"],
+                    colors={name: COL[name[0]] for name in data})      # each theory curve in its compartment's colour
 
 
 def outbreak_text():

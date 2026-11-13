@@ -624,7 +624,7 @@ class Gui:
         return f"w{self._next}"
 
     def emit_update(self, w, props):
-        if self._shown(w):
+        if self._shown(w, tabs=False):           # on a hidden tab too: the page keeps it for when it shows
             self.session.emit({"type": "ui", "op": "update", "id": w._id, "props": props})
 
     def root_of(self, w):
@@ -635,13 +635,15 @@ class Gui:
             w = w.__dict__.get("_parent")
         return None
 
-    def _shown(self, w):
-        """Whether a widget is on screen: attached to the layout or a bar, and not
-        on a tab page that isn't selected."""
+    def _shown(self, w, tabs=True):
+        """Whether a widget is attached to the layout or a bar, and (tabs=True) not on
+        a tab page that isn't selected. Live widgets skip recomputing on hidden tabs;
+        plain updates (a button's text, a slider's value) are sent either way."""
         top = w
         while top.__dict__.get("_parent") is not None:
             parent = top.__dict__["_parent"]
-            if isinstance(top, Tab) and isinstance(parent, Tabs) and parent._state.get("selected") != top._state.get("title"):
+            if tabs and isinstance(top, Tab) and isinstance(parent, Tabs) \
+                    and parent._state.get("selected") != top._state.get("title"):
                 return False
             top = parent
         if self.root_of(w) is not None:

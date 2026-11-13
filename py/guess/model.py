@@ -1488,3 +1488,13 @@ def group_by(seq, field, sort=False):
     if sort:
         keys.sort(key=_sort_key)
     return GSet((GSet(groups[k], f"{name} == {k!r}") for k in keys), f"grouped by {name}")
+
+
+def scatter_position(name, size=500.0):
+    """A starting position for a node that has none: spread over a size x size
+    square, but fixed by the node's name (not random), so the same graph always
+    starts, and so lays out, the same way, in the browser and natively alike."""
+    import zlib
+    h = zlib.crc32(str(name).encode("utf-8"))
+    h2 = zlib.crc32(str(name).encode("utf-8") + b"#")
+    return (h % 100003) / 100003 * size, (h2 % 100003) / 100003 * size

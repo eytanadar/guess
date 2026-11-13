@@ -23,7 +23,7 @@ import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape, quoteattr
 
 from . import colors
-from .model import BOOL, DOUBLE, INT, STRING, GuessError, coerce
+from .model import scatter_position, BOOL, DOUBLE, INT, STRING, GuessError, coerce
 
 # --------------------------------------------------------------------------
 # GEXF
@@ -182,7 +182,7 @@ def read_gexf(graph, text):
         ne += 1
     if not has_pos:
         for n in graph._nodes_list():
-            n.x, n.y = random.random() * 500, random.random() * 500
+            n.x, n.y = scatter_position(n._name)
     return len(ids), ne
 
 
@@ -380,7 +380,7 @@ def _add_columns(graph, schema_add, schema, head, rows, skip):
 
 def _place(graph, nodes):
     for n in nodes:
-        n.x, n.y = random.random() * 500, random.random() * 500
+        n.x, n.y = scatter_position(n._name)
 
 
 def read_csv(graph, text, directed=False, rows=None):

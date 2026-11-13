@@ -1332,7 +1332,7 @@ standard models of epidemics, first fully mixed and then on networks. The
 spreading processes highlight the edges that carry each transmission, run
 slow-fast-slow, and chart the epidemic curve live.
 
-**`ch15-random-failure`: Percolation and random failure (§§15.1–15.2)** · planned
+**`ch15-random-failure`: Percolation and random failure (§§15.1–15.2)** · built
 - *Idea:*
   - keep each node with occupation probability φ;
   - the giant component survives above a threshold φ_c = 1/(g₁′(1)) and vanishes below it;
@@ -1345,7 +1345,7 @@ slow-fast-slow, and chart the epidemic curve live.
   - Poisson against power-law networks.
 - *GUESS:* `makeConfigurationModel`, `robustness`, `plotLine(dashed=)`.
 
-**`ch15-targeted-attack`: Removing the hubs (§15.3)** · planned
+**`ch15-targeted-attack`: Removing the hubs (§15.3)** · built
 - *Idea:*
   - remove the highest-degree nodes first and the giant component collapses after a few per cent: robust yet fragile;
   - the threshold comes from the same equations with a cut-off degree;
@@ -1356,7 +1356,7 @@ slow-fast-slow, and chart the epidemic curve live.
   - an acquaintance-immunisation tab where random people point to a friend and that friend is immunised, with the degree of those chosen against random choice.
 - *GUESS:* `robustness(orders=)`, `plotLine`, `everyPaced`.
 
-**`ch15-percolation-algorithms`: Percolation on real networks, computed fast (§§15.4–15.5)** · planned
+**`ch15-percolation-algorithms`: Percolation on real networks, computed fast (§§15.4–15.5)** · built
 - *Idea:*
   - the Newman–Ziff algorithm adds nodes back one at a time in random order, merging clusters with union-find, so one pass gives the whole curve S(φ) for every φ;
   - this gives curves for real networks without equations.
@@ -1367,7 +1367,7 @@ slow-fast-slow, and chart the epidemic curve live.
   - "Real networks" runs the algorithm on the bundled networks for random and degree-ordered removal and compares the curves.
 - *GUESS:* a Newman–Ziff command (see gaps), `revealUpTo` (each node's `born` = its turn), `encircle`.
 
-**`ch16-si-sir`: The SI and SIR models (§§16.1.1–16.1.4)** · planned
+**`ch16-si-sir`: The SI and SIR models (§§16.1.1–16.1.4)** · built
 - *Idea:*
   - in a fully mixed population, SI grows logistically;
   - SIR adds recovery;
@@ -1380,7 +1380,7 @@ slow-fast-slow, and chart the epidemic curve live.
   - "Simulate" sweeps R₀ and charts the final size against the theory.
 - *GUESS:* numpy ODE stepping, `everyPaced`, `drawLine` for contacts, `plotLine(dashed=)`.
 
-**`ch16-sis-sirs`: SIS, SIRS and other models (§§16.1.5–16.1.7)** · planned
+**`ch16-sis-sirs`: SIS, SIRS and other models (§§16.1.5–16.1.7)** · built
 - *Idea:*
   - without lasting immunity (SIS) the infection settles at an endemic level 1 − 1/R₀;
   - with waning immunity (SIRS) it can oscillate;
@@ -1392,7 +1392,7 @@ slow-fast-slow, and chart the epidemic curve live.
   - a phase-plane chart (S against I) for SIRS spiralling in.
 - *GUESS:* `plotLine`, `everyPaced`.
 
-**`ch16-complex-contagion`: Two diseases, and complex contagion (§§16.1.8–16.1.9)** · planned
+**`ch16-complex-contagion`: Two diseases, and complex contagion (§§16.1.8–16.1.9)** · built
 - *Idea:*
   - two diseases can help each other (co-infection), giving explosive outbreaks;
   - ideas and behaviours often need several contacts before they are adopted (complex contagion);
@@ -1402,7 +1402,7 @@ slow-fast-slow, and chart the epidemic curve live.
   - a complex-contagion tab on a clustered lattice against the same lattice rewired, with a threshold slider: adoption spreads (paced, the adopting node's infected neighbours' edges highlighted) on the lattice and stalls on the rewired network.
 - *GUESS:* `spread(model="threshold")`, `makeWattsStrogatz`, `everyPaced`.
 
-**`ch16-epidemics-on-networks`: Epidemic models on networks (§16.2)** · planned
+**`ch16-epidemics-on-networks`: Epidemic models on networks (§16.2)** · built
 - *Idea:*
   - on a network, infection travels only along edges;
   - hubs get infected early and spread widely;
@@ -1421,6 +1421,14 @@ slow-fast-slow, and chart the epidemic curve live.
 | Newman–Ziff percolation: the whole S(φ) curve in one pass, for site or bond percolation, random or ordered | ch15-percolation-algorithms, ch15-random-failure | `robustness` recomputes components at each removal share | `percolation(order="random", bond=False, trials=1, show=True)` → [(φ, S)], with union-find; `robustness` could use it |
 | SIS, SIRS and SEIR on networks | ch16-sis-sirs, ch16-epidemics-on-networks | `spread` has SI, SIR, cascade and threshold | add `model="SIS"`, `"SIRS"` (`waning=`) and `"SEIR"` (`sigma=`) to `spread` |
 | Fully mixed compartmental curves | ch16-si-sir, ch16-sis-sirs | none (numpy is enough) | probably none; the explainers integrate the equations |
+
+Notes from building batch 11:
+- **Fixed a bug from batch 7's hidden-tab change:** widgets on hidden tabs stopped getting plain updates (a button's text, a slider's value), so they came back stale. Now plain updates are always sent, and only live text and charts wait for their tab.
+- **Everything random is reproducible now:**
+  - the older generators (`makeErdosRenyiRandom`, `makeSimpleRandom`, `makeBarabasiAlbertRandom`, …) take `seed=` (default 0; `seed=None` for a new graph each time);
+  - nodes without positions start at a spot fixed by their name (`scatter_position`) instead of a random one, so file loads and generators lay out the same way in the browser and natively.
+- **`plotLine(colors=)`:** give a theory curve its data's colour (used in `ch16-si-sir` and `ch16-sis-sirs`).
+- **Simulation detail:** with one contact per step, a fully mixed SIS run sits about 10% below 1 − 1/R₀, because several infected people hit the same person. `ch16-sis-sirs` uses five sub-steps per step to match the differential equations.
 
 ## Batch 12: book pages 625–674 (the rest of Chapter 16, *Epidemics on networks*)
 

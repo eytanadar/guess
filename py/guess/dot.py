@@ -14,7 +14,7 @@ attributes become fields (numbers when every value is one).
 import random
 import re
 
-from .model import DOUBLE, INT, STRING, GuessError, coerce
+from .model import scatter_position, DOUBLE, INT, STRING, GuessError, coerce
 
 _TOKEN = re.compile(r"""
     (?P<ws>\s+|//[^\n]*|/\*.*?\*/)
@@ -375,8 +375,7 @@ def read_dot(graph, text):
         count += 1
     if not has_pos:
         for n in graph._nodes_list():
-            n.x = random.random() * 500
-            n.y = random.random() * 500
+            n.x, n.y = scatter_position(n._name)
     return len(p.nodes), count
 
 
