@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Louvain and the resolution limit",
+  "description": "Step through the Louvain algorithm (move nodes, merge communities, repeat), then see modularity merge a ring of cliques it should keep apart.",
+  "console": "toggle",
+  "script": "main.gy"
+}

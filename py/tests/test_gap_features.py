@@ -427,3 +427,42 @@ def test_linked_line_keeps_columns():
     line = linked((v1, ">6"), "|", ("2 nodes", [v1]), (v1, "<4"), "!")
     assert str(line) == "    v1|2 nodesv1  !"
     assert line.segs[0] == "    " and line.segs[1] == {"n": v1._id, "t": "v1"}
+
+
+def test_growing_network_copying_model_and_resolution():
+    s = _s()
+    assert s.run("makeGrowingNetwork(300, m=2, gamma=1.5, a=1, seed=1, layout=false)"), s.rec.of("error")
+    top = ev(s, "max(n.degree for n in g.nodes)")
+    assert top > 0.3 * ev(s, "len(g.nodes)")                       # condensation: one node links to a big share
+    assert s.run("makeGrowingNetwork(300, m=2, gamma=0, seed=1, layout=false)")
+    assert ev(s, "max(n.degree for n in g.nodes)") < 30               # uniform attachment: no big hubs
+    assert s.run("makeGrowingNetwork(200, m=2, remove=0.5, seed=2, layout=false)"), s.rec.of("error")
+    gone = ev(s, "[e for e in g.edges if e.died >= 0]")
+    assert gone and ev(s, "all(not e.visible for e in g.edges if e.died >= 0)")
+    assert ev(s, "all(e.died < 0 or e.died >= e.born for e in g.edges)")
+    d = ev(s, "min(e.died for e in g.edges if e.died >= 0)")
+    assert s.run(f"revealUpTo({d})") and ev(s, f"all(not e.visible for e in g.edges if 0 <= e.died <= {d})")
+    assert s.run("makeCopyingModel(4000, c=3, copy=0.5, seed=1, layout=false)"), s.rec.of("error")
+    assert ev(s, "all(n.outdegree == 3 for n in g.nodes)")
+    alpha = ev(s, "fitPowerLaw(indegree, kmin=5, shift=3)")["alpha"]   # theory 1 + 1/copy = 3, in k + a, a = 3
+    assert 2.5 < alpha < 3.5
+    assert s.run("makeSample('karate')\nlouvainClusters()")
+    assert ev(s, "modularity(louvain_class, resolution=2)") < ev(s, "modularity(louvain_class)")
+
+
+def test_layouts_are_reproducible():
+    s = _s()
+    got = []
+    for _ in range(2):
+        assert s.run("makeSample('karate')\nfor n in g.nodes:\n    n.x = 0\n    n.y = 0\nfrLayout()"), s.rec.of("error")
+        got.append(ev(s, "[(n.x, n.y) for n in g.nodes]"))
+    assert got[0] == got[1] and len(set(got[0])) > 20
+
+
+def test_growing_network_extra_edges_join_old_nodes():
+    s = _s()
+    assert s.run("makeGrowingNetwork(150, m=2, extra=2, seed=3, layout=false)"), s.rec.of("error")
+    # every edge born at a step either touches that step's newcomer (its own m edges) or joins two older nodes
+    own = ev(s, "[e for e in g.edges if e.born > 0 and (e.node1.born == e.born or e.node2.born == e.born)]")
+    extra = ev(s, "[e for e in g.edges if e.born > 0 and e.node1.born < e.born and e.node2.born < e.born]")
+    assert len(own) == 2 * (150 - 3) and len(extra) > 100           # the starting clique is m + 1 = 3 nodes

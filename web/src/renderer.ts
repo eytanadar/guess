@@ -656,6 +656,15 @@ export class Renderer {
       x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y);
       x1 = Math.max(x1, n.x + n.w); y1 = Math.max(y1, n.y + n.h);
     }
+    // self-loops are drawn as a circle above their node (see edgePrims): include them
+    const picked = new Set(pick.map((n) => n.i));
+    for (const e of this.edges.values()) {
+      if (e.s !== e.t || !e.v || !picked.has(e.s)) continue;
+      const n = this.nodes.get(e.s)!;
+      const r = Math.max(n.w, n.h) * 0.6, cx = n.x + n.w / 2;
+      x0 = Math.min(x0, cx - r); x1 = Math.max(x1, cx + r);
+      y0 = Math.min(y0, n.y - r * 0.6 - r);
+    }
     if (!ids.size) {
       // fitting everything: include hive plot axes and their labels
       for (const gd of this.guides) {

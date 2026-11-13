@@ -1,0 +1,427 @@
+# Node copying  (Newman, Networks, Section 13.5)
+# A new node picks an existing node at random and goes through its c out-links.
+# Each one is copied with probability gamma; otherwise it is replaced by a link to
+# a node chosen uniformly at random. Nobody prefers popular nodes, yet a node
+# with many in-links is in many lists, so it is copied often: the in-degrees
+# follow a power law with exponent alpha = 1 + 1/gamma. In fact the model is
+# Price's model with a = c(1 - gamma)/gamma, so p_k is a power law in k + a.
+# Copying with mutation is a model for gene duplication in protein networks
+# (and for people copying links or citations).
+#
+# The network is grown once by makeCopyingModel, laid out once, then revealed
+# node by node with revealUpTo(step): nodes appear where they will stay.
+
+import math
+import random
+
+N_DRAWN = 200
+st = {"c": 3, "copy": 0.5, "seed": 1, "k": 0, "timer": None, "outs": [], "copied": [], "final": [],
+      "indeg": [], "last": None}
+sim = {"timer": None, "indeg": [], "outs": [], "n": 0, "goal": 20000, "rnd": None}
+sweep = {"timer": None, "rows": [], "todo": []}
+mode = ["Copy links"]
+grow_btn = None
+COPY_VALUES = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+
+
+# ---- the drawn network -----------------------------------------------------------------------------
+def build(v=None):
+    stop_timers()
+    st["c"], st["copy"] = int(cslider.value), round(float(gslider.value), 2)
+    c = st["c"]
+    makeCopyingModel(N_DRAWN, c=c, copy=st["copy"], seed=st["seed"])
+    noverlapLayout(margin=4)
+    n = len(g.nodes)
+    outs = [[] for _ in range(n)]
+    for e in g.edges:
+        outs[idx(e.node1)].append(idx(e.node2))
+    st["outs"] = outs
+    st["copied"] = [0] * n
+    for v_ in g.nodes:
+        st["copied"][idx(v_)] = v_.copied
+    final = [0] * n
+    for x in outs:
+        for t in x:
+            final[t] += 1
+    st["final"] = final
+    st["k"] = 0
+    st["indeg"] = [0] * n
+    for i in range(c + 1):                 # the starting nodes link to each other
+        for t in outs[i]:
+            st["indeg"][t] += 1
+    st["last"] = None
+    for v_ in g.nodes:
+        v_.label = v_.name[2:]
+    center(g.nodes)                        # frame the finished network before hiding it
+    revealUpTo(0)
+    look()
+    if mode[0] != "Copy links":
+        all_nodes()
+    sim.update(indeg=[], n=0)
+    sweep.update(rows=[])
+
+
+def idx(v_):
+    return int(v_.name[2:])
+
+
+def node(i):
+    return g.getNodeByName(f"nd{i}")
+
+
+def look():
+    n = len(st["final"])
+    top = max(1, max(st["final"]))
+    for v_ in g.nodes:
+        i = idx(v_)
+        t = i / max(1, n - 1)              # arrival: old warm red, new pale blue
+        v_.color = f"{int(225 - 95 * t)},{int(90 + 105 * t)},{int(80 + 160 * t)}"
+        v_.width = v_.height = 8 + 30 * math.sqrt(st["indeg"][i] / top)
+        v_.strokecolor, v_.strokewidth = "40,40,40", 0.75
+        v_.labelvisible = false
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,80", 1, "solid"
+    biggest = sorted(range(n), key=lambda i: -st["indeg"][i])[:4]
+    for i in biggest:
+        if st["indeg"][i] > 2 and node(i).visible:
+            node(i).labelvisible = true
+
+
+def add_node():
+    n, c = len(st["final"]), st["c"]
+    if st["k"] >= n - c - 1:
+        return False
+    st["k"] += 1
+    k = st["k"]
+    new = k + c
+    src = st["copied"][new]
+    for t in st["outs"][new]:
+        st["indeg"][t] += 1
+    look()
+    template = set(st["outs"][src])
+    got = revealUpTo(k)
+    copied_n, random_n = [], []
+    for x in got:                          # the new node and its links: purple copied, orange random
+        if hasattr(x, "node1"):
+            t = idx(x.node2)
+            if t in template:
+                x.color, x.width, x.linestyle = "170,90,230", 2.8, "flow"
+                copied_n.append(t)
+            else:
+                x.color, x.width, x.linestyle = "245,150,40", 2.8, "flow"
+                random_n.append(t)
+        else:
+            x.color, x.strokecolor, x.strokewidth = "255,215,80", "90,50,0", 3
+            x.width = x.height = max(x.width, 18)
+            x.labelvisible = true
+    s_ = node(src)                         # the node being copied, and its list (the template)
+    s_.strokecolor, s_.strokewidth = "150,60,220", 4
+    s_.labelvisible = true
+    for e in g.edges:
+        if e.visible and e.node1 is s_:
+            e.color, e.width, e.linestyle = "170,90,230,150", 2, "dashed"
+    st["last"] = {"new": new, "src": src, "copied": copied_n, "random": random_n}
+    return n - c - 1 - k
+
+
+def grow():
+    if st["timer"] is not None and st["timer"].running:
+        stop_timers()
+        return
+    if st["k"] >= len(st["final"]) - st["c"] - 1:
+        restart()
+    st["timer"] = everyPaced(add_node, steps=len(st["final"]) - st["c"] - st["k"], slow=1.0, fast=0.06, ramp=4)
+    grow_btn.text = "Pause"
+
+
+def all_nodes():
+    stop_timers()
+    n = len(st["final"])
+    st["k"] = n - st["c"] - 1
+    st["indeg"] = list(st["final"])
+    st["last"] = None
+    revealUpTo(n)
+    look()
+
+
+def restart():
+    stop_timers()
+    c = st["c"]
+    st["k"] = 0
+    st["indeg"] = [0] * len(st["final"])
+    for i in range(c + 1):
+        for t in st["outs"][i]:
+            st["indeg"][t] += 1
+    st["last"] = None
+    revealUpTo(0)
+    look()
+
+
+def stop_timers():
+    for holder in (st, sim, sweep):
+        if holder["timer"] is not None:
+            holder["timer"].stop()
+            holder["timer"] = None
+    if grow_btn is not None:
+        grow_btn.text = "Grow it, node by node"
+
+
+def new_seed():
+    st["seed"] += 1
+    build()
+
+
+def shift_a(c=None, copy=None):
+    c = st["c"] if c is None else c
+    copy = st["copy"] if copy is None else copy
+    return c * (1 - copy) / copy
+
+
+def grow_text():
+    c, gm = st["c"], st["copy"]
+    last = st["last"]
+    shown = len([v_ for v_ in g.nodes if v_.visible])
+    out = f"**{shown}** of {len(st['final'])} nodes so far."
+    if last:
+        out += (f"\n\nNew node {linkTo(node(last['new']), last['new'])} copies the list of "
+                f"{linkTo(node(last['src']), last['src'])} (purple ring, its links dashed): "
+                f"**{len(last['copied'])}** of {c} links copied (purple)")
+        if last["copied"]:
+            out += " → " + " ".join(linkTo(node(t), t) for t in last["copied"])
+        out += f", **{len(last['random'])}** to random nodes (orange)"
+        if last["random"]:
+            out += " → " + " ".join(linkTo(node(t), t) for t in last["random"])
+        out += "."
+    biggest = sorted(range(len(st["indeg"])), key=lambda i: -st["indeg"][i])[:3]
+    out += ("\n\nMost linked so far: " + ", ".join(f"{linkTo(node(i), i)} ({st['indeg'][i]})" for i in biggest)
+            + ". Nobody chooses them for being popular: they are simply *in many lists*, so they get copied "
+            f"often. Each link is copied with probability γ = {gm:g}, so the expected copied share is "
+            f"{gm * c:.1f} of {c}.")
+    out += ("\n\nIn biology this is **gene duplication**: a copied gene keeps most of its partners, loses some "
+            "and gains new ones, which may be why protein interaction networks have hubs.")
+    return out
+
+
+def degree_series():
+    if mode[0] != "Copy links":
+        return None
+    vals = [x for x in st["indeg"] if x > 0]
+    if len(vals) < 5:
+        return None
+    pts = ccdf_points(vals)
+    return plotLine({"in-degrees so far": pts}, log=true, title="In-degrees as it grows", xlabel="in-degree k",
+                    ylabel="P(K ≥ k)", dots=true)
+
+
+# ---- theory and simulation ---------------------------------------------------------------------------
+def exact_ccdf(k, c, a):
+    """Price's model's P(K >= k) = B(k + a, 1 + a/c) / B(a, 1 + a/c), with a = c(1 - copy)/copy."""
+    b = 1 + a / c
+    return math.exp(math.lgamma(k + a) + math.lgamma(a + b) - math.lgamma(k + a + b) - math.lgamma(a))
+
+
+def ccdf_points(vals):
+    vals = sorted(v for v in vals if v > 0)
+    n = len(vals)
+    out, last = [], None
+    for i, v in enumerate(vals):
+        if v != last:
+            out.append((v, (n - i) / n))
+            last = v
+    return out
+
+
+def fit_shifted(vals, a):
+    r = fitPowerLaw([v for v in vals if v > 0], shift=a)
+    return r["alpha"], r["sigma"], r["kmin"]
+
+
+def copy_grow(state, upto, c, copy, rnd):
+    """Grow the copying model in pure Python (nothing drawn) up to `upto` nodes."""
+    outs, indeg = state["outs"], state["indeg"]
+    if not outs:
+        for u in range(c + 1):
+            outs.append([v for v in range(c + 1) if v != u])
+            indeg.append(c)
+    for new in range(len(outs), upto):
+        src = rnd.randrange(new)
+        mine = []
+        for t0 in outs[src]:
+            t = t0 if rnd.random() < copy else rnd.randrange(new)
+            tries = 0
+            while t in mine and tries < 20:
+                t, tries = rnd.randrange(new), tries + 1
+            if t not in mine:
+                mine.append(t)
+        outs.append(mine)
+        indeg.append(0)
+        for t in mine:
+            indeg[t] += 1
+
+
+def price_indegrees(n, c, a, rnd):
+    indeg, targets = [0], []
+    for new in range(1, n):
+        want = min(new, c)
+        cited = set()
+        while len(cited) < want:
+            if targets and rnd.random() < c / (c + a):
+                cited.add(rnd.choice(targets))
+            else:
+                cited.add(rnd.randrange(new))
+        for t in cited:
+            indeg[t] += 1
+            targets.append(t)
+        indeg.append(0)
+    return indeg
+
+
+def sim_step():
+    if sim["n"] >= sim["goal"]:
+        return False
+    copy_grow(sim, min(sim["goal"], sim["n"] + 5000), st["c"], st["copy"], sim["rnd"])
+    sim["n"] = len(sim["outs"])
+    return sim["goal"] - sim["n"]
+
+
+def simulate_big():
+    stop_timers()
+    sim.update(outs=[], indeg=[], n=0, rnd=random.Random(st["seed"] + 100))
+    sim["timer"] = everyPaced(sim_step, steps=5, slow=0.8, fast=0.4, ramp=1)
+
+
+def dist_text():
+    if mode[0] != "Distribution":
+        return ""
+    c, gm, a = st["c"], st["copy"], shift_a()
+    out = (f"Theory: **α = 1 + 1/γ = {1 + 1 / gm:.2f}**. The model is Price's model with "
+           f"a = c(1 − γ)/γ = **{a:.2f}**: picking a random node and copying one of its links lands on a node in "
+           f"proportion to its in-degree, and the uniform picks are the '+ a'. So the dashed line is Price's exact "
+           f"distribution, and fits use k + a (a power law in k + a, not k).")
+    vals = st["final"]
+    try:
+        al, sg, k0 = fit_shifted(vals, a)
+        out += f"\n\nThe drawn network ({len(vals)} nodes): α = {al:.2f} ± {sg:.2f} from k ≥ {k0}, rough with so few."
+    except Exception:
+        pass
+    if sim["indeg"]:
+        al, sg, k0 = fit_shifted(sim["indeg"], a)
+        out += (f"\n\n**{sim['n']:,} nodes** grown off screen: **α = {al:.2f} ± {sg:.2f}** from k ≥ {k0} "
+                f"(theory {1 + 1 / gm:.2f}). Fits of finite networks fall a little short of the limit, more so "
+                "for thin tails (large α), where the biggest degrees haven't had time to appear; the points follow "
+                "the dashed exact curve all the same.")
+    else:
+        out += "\n\n*Press Simulate* to grow a much bigger copy network and watch the tail lengthen."
+    return out
+
+
+def dist_chart():
+    if mode[0] != "Distribution":
+        return None
+    c, a = st["c"], shift_a()
+    if sim["indeg"]:
+        pts, label = ccdf_points(sim["indeg"]), f"simulated ({sim['n']:,} nodes)"
+    else:
+        pts, label = ccdf_points(st["final"]), f"this network ({len(st['final'])} nodes)"
+    p1 = exact_ccdf(1, c, a)
+    top = pts[-1][0]
+    ks = sorted({max(1, int(round(10 ** (i / 20)))) for i in range(0, 20 * int(math.log10(max(2, top)) + 1) + 1)})
+    theory = [(k, exact_ccdf(k, c, a) / p1) for k in ks if k <= top * 1.2]
+    return plotLine({label: pts, "theory (Price, a = c(1 − γ)/γ)": theory}, log=true,
+                    title="Cumulative in-degree distribution", xlabel="in-degree k", ylabel="P(K ≥ k)",
+                    dashed=["theory (Price, a = c(1 − γ)/γ)"], dots=true)
+
+
+# ---- vary copying ------------------------------------------------------------------------------------
+def sweep_step():
+    if not sweep["todo"]:
+        return False
+    gm = sweep["todo"].pop(0)
+    c = st["c"]
+    state = {"outs": [], "indeg": []}
+    copy_grow(state, 6000, c, gm, random.Random(11))
+    a = shift_a(c, gm)
+    al, sg, k0 = fit_shifted(state["indeg"], a)
+    pr = price_indegrees(6000, c, a, random.Random(12))
+    alp, sgp, _k = fit_shifted(pr, a)
+    sweep["rows"].append((gm, al, sg, alp, sgp, max(state["indeg"]), max(pr)))
+    return len(sweep["todo"])
+
+
+def simulate_sweep():
+    stop_timers()
+    sweep.update(rows=[], todo=list(COPY_VALUES))
+    sweep["timer"] = everyPaced(sweep_step, steps=len(COPY_VALUES) + 1, slow=0.8, fast=0.3, ramp=1)
+
+
+def sweep_text():
+    if mode[0] != "Vary copying":
+        return ""
+    out = ("More copying, more inequality: γ near 1 means links are almost always copied, the popular get "
+           "more popular, α → 2; γ small means mostly random links and a thin tail. For each γ the sweep grows "
+           "6,000 nodes by copying **and** 6,000 by Price's preferential attachment with the matching a: two "
+           "different stories, the same numbers.")
+    if sweep["rows"]:
+        rows = ["| γ | copying α | Price α | 1 + 1/γ | biggest (copy / Price) |", "|---|---|---|---|---|"]
+        for gm, al, sg, alp, sgp, mx, mxp in sweep["rows"]:
+            rows.append(f"| {gm:g} | {al:.2f} ± {sg:.2f} | {alp:.2f} ± {sgp:.2f} | {1 + 1 / gm:.2f} | {mx} / {mxp} |")
+        out += "\n\n" + "\n".join(rows)
+    else:
+        out += "\n\n*Press Simulate* to sweep γ."
+    return out
+
+
+def sweep_chart():
+    if mode[0] != "Vary copying":
+        return None
+    theory = [(x / 100, 1 + 100 / x) for x in range(25, 86)]
+    data = {"1 + 1/γ": theory}
+    if sweep["rows"]:
+        data["copying"] = [(r[0], r[1]) for r in sweep["rows"]]
+        data["Price, same a"] = [(r[0], r[3]) for r in sweep["rows"]]
+    return plotLine(data, title="Exponent against the copying probability", xlabel="γ (copy probability)",
+                    ylabel="α", dashed=["1 + 1/γ"], highlight=["copying", "Price, same a"], yrange=(2, 5))
+
+
+# ---- tabs --------------------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    stop_timers()
+    if title != "Copy links":
+        all_nodes()
+
+
+cslider = Slider(1, 5, 3, 1, label="c, links per node")
+gslider = Slider(0.2, 0.9, 0.5, 0.05, label="γ, copy probability")
+cslider.onChange = build
+gslider.onChange = build
+grow_btn = Button("Grow it, node by node", onClick=lambda: grow())
+
+build()
+constantLabelSize(size=14)
+ui.title("Node copying", "Networks, Section 13.5")
+ui.layout(
+    right=Column(
+        Markdown("""### Copy someone's links, imperfectly
+Each new node copies the c links of a random older node, keeping each with
+probability **γ** and replacing it with a random link otherwise."""),
+        Row(cslider, gslider),
+        Markdown(lambda: f"Theory: in-degrees follow a power law with **α = 1 + 1/γ = {1 + 1 / st['copy']:.2f}**."),
+        Tabs(
+            Tab("Copy links",
+                Row(grow_btn, Button("All nodes at once", onClick=lambda: all_nodes()),
+                    Button("Start again", onClick=lambda: restart()), Button("New network", onClick=lambda: new_seed())),
+                Markdown(grow_text), Chart(degree_series)),
+            Tab("Distribution",
+                Button("Simulate: 20,000 nodes", onClick=lambda: simulate_big()),
+                Markdown(dist_text), Chart(dist_chart)),
+            Tab("Vary copying",
+                Button("Simulate: sweep γ", onClick=lambda: simulate_sweep()),
+                Markdown(sweep_text), Chart(sweep_chart)),
+            onChange=switch)),
+    sizes={"right": 420},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len([v for v in g.nodes if v.visible])} of {len(g.nodes)} nodes shown · "
+                           f"{len([e for e in g.edges if e.visible])} links"))
+center(g.nodes)

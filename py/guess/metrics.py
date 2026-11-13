@@ -475,6 +475,112 @@ def install(session):
         edges = [(i, j) for i in range(n) for j in range(i + 1, n) if rnd.random() < P[block[i]][block[j]]]
         _build(n, edges, False, {"block": (INTEGER, block)}, {}, "makeBlockModel", layout)
 
+    def makeGrowingNetwork(n, m=2, gamma=1.0, a=1.0, extra=0.0, remove=0.0, seed=0, layout=True):
+        """makeGrowingNetwork(n, m, gamma, a) grows an undirected network one node
+        at a time (Newman, Networks, sections 13.2 and 13.4). Each new node links
+        to m existing nodes chosen with probability proportional to
+        (degree + a)^gamma: gamma = 1 is linear preferential attachment (a
+        power law), gamma < 1 gives a stretched exponential, gamma > 1
+        "condensation" where one node gets a finite share of all edges, and
+        gamma = 0 is uniform attachment. extra= adds that many edges per step
+        (on average) between existing nodes, both ends chosen the same way;
+        remove= deletes that many random edges per step. Every node and edge
+        has a `born` step; removed edges stay in the graph, hidden, with the
+        step they were removed in `died` (-1 for edges still there), so
+        revealUpTo(step) replays additions and removals."""
+        import numpy as np
+        n, m = int(n), int(m)
+        gamma, a, extra, remove = float(gamma), float(a), float(extra), float(remove)
+        if m < 1 or n <= m:
+            raise GuessError("makeGrowingNetwork: need m >= 1 and n > m")
+        if a <= 0 and gamma != 0:
+            raise GuessError("makeGrowingNetwork: a should be greater than 0, since new nodes have degree 0 "
+                             "(for the book's pure k^gamma kernel use a tiny a, e.g. 0.01)")
+        rng = np.random.default_rng(seed)
+        deg = np.zeros(n)
+        edges, born, died, alive, have = [], [], [], [], set()
+
+        def add_edge(u, v, step):
+            key = (min(u, v), max(u, v))
+            if u == v or key in have:
+                return False
+            have.add(key)
+            edges.append((u, v)); born.append(step); died.append(-1); alive.append(len(edges) - 1)
+            deg[u] += 1; deg[v] += 1
+            return True
+
+        def weights(k):
+            w = (deg[:k] + a) ** gamma if gamma != 0 else np.ones(k)
+            return w / w.sum()
+
+        for u in range(m + 1):                         # a small starting clique: step 0
+            for v in range(u + 1, m + 1):
+                add_edge(u, v, 0)
+        node_born = [0] * (m + 1)
+        for new in range(m + 1, n):
+            step = new - m
+            node_born.append(step)
+            for t in rng.choice(new, size=m, replace=False, p=weights(new)):
+                add_edge(new, int(t), step)
+            for _ in range(rng.poisson(extra) if extra > 0 else 0):
+                u, v = rng.choice(new, size=2, p=weights(new))     # between nodes already there, not the newcomer
+                add_edge(int(u), int(v), step)
+            for _ in range(rng.poisson(remove) if remove > 0 else 0):
+                if not alive:
+                    break
+                j = alive.pop(int(rng.integers(len(alive))))
+                died[j] = step
+                u, v = edges[j]
+                deg[u] -= 1; deg[v] -= 1
+                have.discard((min(u, v), max(u, v)))
+        _build(n, edges, False, {"born": (INTEGER, node_born)},
+               {"born": (INTEGER, born), "died": (INTEGER, died)}, "makeGrowingNetwork", layout)
+        for e in session.graph._edges_list():
+            if e.died >= 0:
+                e.visible = False
+        if remove > 0:
+            print(f"  {sum(1 for d in died if d >= 0)} edges were removed along the way (hidden; field died)")
+
+    def makeCopyingModel(n, c=3, copy=0.5, seed=0, layout=True):
+        """makeCopyingModel(n, c, copy) grows a directed network by node copying
+        (Newman, Networks, section 13.5, after Kleinberg et al.): each new node
+        picks an existing node at random and goes through its c out-links; each
+        one is copied with probability `copy`, otherwise replaced by a link to
+        a node chosen uniformly at random. Without any preference this gives a
+        power-law in-degree distribution with exponent 1 + 1/copy (it is Price's
+        model with a = c(1 - copy)/copy). Starts from c + 1 nodes each linking
+        to all the others. Fields: `born` (arrival step, on nodes and edges)
+        and `copied` (the index of the node copied, -1 for the first nodes)."""
+        import random as _r
+        n, c, copy = int(n), int(c), float(copy)
+        if c < 1 or n <= c + 1:
+            raise GuessError("makeCopyingModel: need c >= 1 and n > c + 1")
+        if not 0 <= copy <= 1:
+            raise GuessError("makeCopyingModel: copy is a probability between 0 and 1")
+        rnd = _r.Random(seed)
+        outs = [[v for v in range(c + 1) if v != u] for u in range(c + 1)]
+        node_born, copied = [0] * (c + 1), [-1] * (c + 1)
+        edges, born = [(u, v) for u in range(c + 1) for v in outs[u]], [0] * ((c + 1) * c)
+        for new in range(c + 1, n):
+            src = rnd.randrange(new)
+            mine = []
+            for target in outs[src]:
+                t = target if rnd.random() < copy else rnd.randrange(new)
+                tries = 0
+                while t in mine and tries < 20:          # keep the bibliography free of repeats
+                    t, tries = rnd.randrange(new), tries + 1
+                if t not in mine:
+                    mine.append(t)
+            outs.append(mine)
+            step = new - c
+            node_born.append(step)
+            copied.append(src)
+            for t in mine:
+                edges.append((new, t))
+                born.append(step)
+        _build(n, edges, True, {"born": (INTEGER, node_born), "copied": (INTEGER, copied)},
+               {"born": (INTEGER, born)}, "makeCopyingModel", layout)
+
     for fn in (katzCentrality, structuralBalance, kComponents, bowTie, fitPowerLaw, makeConfigurationModel,
-               makeExpectedDegree, makePriceModel, makeBlockModel):
+               makeExpectedDegree, makePriceModel, makeBlockModel, makeGrowingNetwork, makeCopyingModel):
         reg(fn.__name__, fn)

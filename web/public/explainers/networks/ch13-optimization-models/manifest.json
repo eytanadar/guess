@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Networks designed for a purpose",
+  "description": "Trade the number of routes against travel time: random trees, stars, road maps and airline hubs come out of one quality function.",
+  "console": "toggle",
+  "script": "main.gy"
+}

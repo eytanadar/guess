@@ -2350,7 +2350,9 @@ def install(session):
         return fn
 
     def rng(seed=None):
-        return np.random.default_rng(seed)
+        # seeded by default, so the same graph and starting positions always give the same
+        # layout (in the browser and natively alike); each call still starts where the nodes are
+        return np.random.default_rng(0 if seed is None else seed)
 
     @cmd
     def centerAfterLayout(state):

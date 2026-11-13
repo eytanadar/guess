@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (115)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (117)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (21)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -506,6 +506,18 @@ layout (for when you lay it out yourself). (GUESS's degree field counts a self-l
 once; in the book's convention it adds 2 to the degree, which is what
 `stubs` holds.)
 
+### `makeCopyingModel(n, c=3, copy=0.5, seed=0, layout=True)`
+
+makeCopyingModel(n, c, copy) grows a directed network by node copying
+(Newman, Networks, section 13.5, after Kleinberg et al.): each new node
+picks an existing node at random and goes through its c out-links; each
+one is copied with probability `copy`, otherwise replaced by a link to
+a node chosen uniformly at random. Without any preference this gives a
+power-law in-degree distribution with exponent 1 + 1/copy (it is Price's
+model with a = c(1 - copy)/copy). Starts from c + 1 nodes each linking
+to all the others. Fields: `born` (arrival step, on nodes and edges)
+and `copied` (the index of the node copied, -1 for the first nodes).
+
 ### `makeExpectedDegree(weights, seed=0, layout=True)`
 
 makeExpectedDegree([5.5, 3, 1.2, ...]) replaces the graph with a random
@@ -657,6 +669,21 @@ to the column's name, ready for bipartiteLayout(kind) or
 project(kind, "author"). a= and b= name the columns (default: the
 first two); weight= names a numeric column to use as edge weight.
 Repeated rows add to the weight.
+
+### `makeGrowingNetwork(n, m=2, gamma=1.0, a=1.0, extra=0.0, remove=0.0, seed=0, layout=True)`
+
+makeGrowingNetwork(n, m, gamma, a) grows an undirected network one node
+at a time (Newman, Networks, sections 13.2 and 13.4). Each new node links
+to m existing nodes chosen with probability proportional to
+(degree + a)^gamma: gamma = 1 is linear preferential attachment (a
+power law), gamma < 1 gives a stretched exponential, gamma > 1
+"condensation" where one node gets a finite share of all edges, and
+gamma = 0 is uniform attachment. extra= adds that many edges per step
+(on average) between existing nodes, both ends chosen the same way;
+remove= deletes that many random edges per step. Every node and edge
+has a `born` step; removed edges stay in the graph, hidden, with the
+step they were removed in `died` (-1 for edges still there), so
+revealUpTo(step) replays additions and removals.
 
 ### `makeNicheModel(species=30, connectance=0.15, seed=0)`
 
@@ -1024,10 +1051,12 @@ community in the louvain_class field (0 = largest) and returns the
 communities. Try colorize(louvain_class). resolution > 1 gives more,
 smaller communities; seed=None varies the result between runs.
 
-### `modularity(field)`
+### `modularity(field, resolution=1.0)`
 
 modularity(field): the modularity Q of the partition given by a node
-field (e.g. modularity(dept), modularity(louvain_class)).
+field (e.g. modularity(dept), modularity(louvain_class)). resolution=
+weighs the expected edges as in louvainClusters(resolution=): above 1
+favours smaller communities.
 
 ### `mutualEdges()`
 
@@ -1059,8 +1088,10 @@ once its own value is at most step). The way to animate a growing
 network: build the final network first, give every node (and edge) the
 step it arrives at, lay it out once, center(g.nodes) to fit the final
 picture, then call revealUpTo(0), revealUpTo(1), ... from a timer, so
-nodes appear where they will stay. Returns the nodes and edges that
-arrive at exactly this step (to highlight them).
+nodes appear where they will stay. Edges with a `died` field (as
+makeGrowingNetwork's removed edges have) disappear again from that
+step on. Returns the nodes and edges that arrive at exactly this step
+(to highlight them).
 
 ### `shortestPath(source, target, weighted=False)`
 

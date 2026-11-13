@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Extra edges and edge removal",
+  "description": "A preferential-attachment network that also gains links between old nodes and loses links at random: the degree distribution stays a power law, with an exponent that moves.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -1,0 +1,594 @@
+# The Louvain algorithm and the resolution limit  (Newman, Networks, Sections 14.2.5-14.2.6)
+# Louvain maximises modularity in two phases. Phase 1: every node starts in a
+# community of its own; take the nodes one at a time and move each to the
+# neighbouring community that raises Q the most (or leave it), and repeat
+# until no move helps. Phase 2: merge each community into a single
+# "super-node" (edges between communities add up; edges inside become a
+# self-loop) and run phase 1 again on that smaller network. Stop when a level
+# changes nothing. It is fast and usually very good.
+#
+# But modularity has a resolution limit. Its "expected edges" term grows with
+# the size of the whole network, so in a big enough network two small groups
+# joined by a single edge score higher merged than apart. A ring of n cliques
+# of k nodes, each joined to the next by one edge, shows it: once
+# n > k(k - 1) + 2, putting neighbouring cliques together raises Q, even though
+# every clique is plainly a community of its own. The resolution parameter
+# (louvainClusters(resolution=), modularity(field, resolution=)) scales the
+# expected-edges term: above 1 it favours smaller communities.
+
+import math
+import random
+import networkx as nx
+
+PALETTE = ["230,80,70", "70,140,235", "80,185,90", "245,170,40", "170,95,210", "40,195,200",
+           "240,120,190", "160,115,70", "235,225,80", "175,215,60"]          # distinct hues, bright on both themes
+LONE = "200,203,210"
+
+
+# ---- the network: four planted groups ---------------------------------------------------------
+def planted():
+    rnd = random.Random(3)
+    sizes = [10, 12, 14, 12]
+    G = nx.Graph()
+    block = []
+    for b, sz in enumerate(sizes):
+        block += [b] * sz
+    n = len(block)
+    for i in range(n):
+        G.add_node(f"v{i}", group=block[i])
+    for i in range(n):
+        for j in range(i + 1, n):
+            p = 0.35 if block[i] == block[j] else 0.025
+            if rnd.random() < p:
+                G.add_edge(f"v{i}", f"v{j}")
+    comps = sorted(nx.connected_components(G), key=len, reverse=True)
+    for c in comps[1:]:                                   # join stray pieces to the main one
+        G.add_edge(sorted(c)[0], sorted(comps[0])[0])
+    pos = nx.spring_layout(G, seed=4, iterations=200)
+    for v in G:
+        G.nodes[v]["pos"] = (pos[v][0] * 430, pos[v][1] * 430)
+    return G
+
+
+G0 = planted()
+POS = {v: G0.nodes[v]["pos"] for v in G0}
+ORDER = sorted(G0, key=lambda v: int(v[1:]))
+PLANTED_Q = nx.community.modularity(G0, [{v for v in G0 if G0.nodes[v]["group"] == b} for b in range(4)])
+fromNetworkX(G0, "louvain")
+closeGraph("main") if "main" in graphNames() else None
+
+lv = {}
+
+
+def lv_reset():
+    H = nx.Graph()
+    for v in ORDER:
+        H.add_node(v)
+    for a, b in G0.edges():
+        H.add_edge(a, b, weight=1.0)
+    lv.clear()
+    lv.update(H=H, members={v: [v] for v in ORDER}, comm={v: i for i, v in enumerate(ORDER)},
+              hnode={v: v for v in ORDER}, level=0, passno=1, order=list(ORDER), idx=0, moved=0, level_moves=0,
+              moves=0, visits=0, done=False, last=None, color={}, qhist=[(0, current_q())],
+              marks=[], timer=None, rnd=random.Random(1), note="")
+    lv["tot"] = {lv["comm"][v]: H.degree(v, weight="weight") for v in H}
+    lv["qhist"] = [(0, current_q())]
+
+
+def groups_now():
+    """Communities of the original nodes, as {label: [names]}."""
+    out = {}
+    for v in ORDER:
+        out.setdefault(lv["comm"][lv["hnode"][v]], []).append(v)
+    return out
+
+
+def current_q():
+    if "comm" not in lv:
+        return 0.0
+    return nx.community.modularity(G0, [set(m) for m in groups_now().values()])
+
+
+def m2():
+    return 2.0 * lv["H"].size(weight="weight")
+
+
+def colour_of(label, size):
+    """A community keeps its colour while it lives; single nodes are grey."""
+    if size < 2:
+        return LONE
+    col = lv["color"].get(label)
+    if col is None:
+        used = {lv["color"][c] for c in lv["color"]}
+        col = next((p for p in PALETTE if p not in used), PALETTE[len(lv["color"]) % len(PALETTE)])
+        lv["color"][label] = col
+    return col
+
+
+def tidy_colours():
+    """Drop the colours of communities that are gone, and give a free colour to any community sharing
+    one (early on there are more small communities than colours)."""
+    live = {c: len(m) for c, m in groups_now().items()}
+    for c in list(lv["color"]):
+        if live.get(c, 0) < 2:
+            del lv["color"][c]
+    seen = set()
+    for c in sorted(lv["color"], key=lambda c: -live.get(c, 0)):
+        col = lv["color"][c]
+        if col in seen:
+            free = [p for p in PALETTE if p not in set(lv["color"].values())]
+            if free:
+                lv["color"][c] = free[0]
+                col = free[0]
+        seen.add(col)
+
+
+def best_move(i):
+    """Take H-node i out of its community and find the community that gains most."""
+    H, comm, tot = lv["H"], lv["comm"], lv["tot"]
+    k = H.degree(i, weight="weight")
+    c0 = comm[i]
+    tot[c0] -= k
+    links = {}
+    for j, d in H[i].items():
+        if j != i:
+            links[comm[j]] = links.get(comm[j], 0.0) + d.get("weight", 1.0)
+    M = m2()
+    def gain(c):
+        return links.get(c, 0.0) - tot.get(c, 0.0) * k / M
+    best, bestgain = c0, gain(c0)
+    for c in sorted(links):
+        gn = gain(c)
+        if gn > bestgain + 1e-12:
+            best, bestgain = c, gn
+    return c0, best, (bestgain - gain(c0)) * 2 / M, k     # gain in Q units
+
+
+def aggregate():
+    """Phase 2: each community becomes one node; edge weights add up; inside edges become self-loops."""
+    H, comm = lv["H"], lv["comm"]
+    labels = sorted(set(comm.values()))
+    newid = {c: i for i, c in enumerate(labels)}
+    H2 = nx.Graph()
+    members = {}
+    for c in labels:
+        H2.add_node(newid[c])
+        members[newid[c]] = []
+    for v in H:
+        members[newid[comm[v]]] += lv["members"][v]
+    for a, b, d in H.edges(data=True):
+        u, w = newid[comm[a]], newid[comm[b]]
+        wt = d.get("weight", 1.0)
+        if H2.has_edge(u, w):
+            H2[u][w]["weight"] += wt
+        else:
+            H2.add_edge(u, w, weight=wt)
+    colors = {newid[c]: lv["color"][c] for c in lv["color"] if c in newid}
+    lv["hnode"] = {v: newid[comm[lv["hnode"][v]]] for v in ORDER}
+    lv["H"], lv["members"] = H2, members
+    lv["comm"] = {i: i for i in H2}
+    lv["color"] = colors
+    lv["tot"] = {i: H2.degree(i, weight="weight") for i in H2}
+    lv["level"] += 1
+    lv["order"] = list(H2)
+    lv["rnd"].shuffle(lv["order"])
+    lv["idx"], lv["moved"], lv["level_moves"], lv["passno"] = 0, 0, 0, 1
+    lv["marks"].append((lv["visits"], current_q()))
+    lv["last"] = None
+    tidy_colours()
+    lv["note"] = (f"**Phase 2:** merged the communities into **{H2.number_of_nodes()} super-nodes** "
+                  f"(level {lv['level']}). Each is now moved as a whole.")
+
+
+def lv_step():
+    """One step of phase 1 (a node considered), or the end of a pass or a level. False when finished."""
+    if lv["done"]:
+        return False
+    if lv["idx"] >= len(lv["order"]):
+        if lv["moved"]:
+            lv["passno"] += 1
+            lv["idx"], lv["moved"] = 0, 0
+            lv["rnd"].shuffle(lv["order"])
+            lv["note"] = f"Pass {lv['passno'] - 1} moved nodes, so another pass over all of them."
+            return True
+        if lv["level_moves"] and lv["H"].number_of_nodes() > 1:
+            aggregate()
+            repaint()
+            return True
+        lv["done"] = True
+        lv["last"] = None
+        run_btn.text = "Run Louvain again"
+        lv["marks"].append((lv["visits"], current_q()))
+        lv["note"] = ("**Done:** a whole level went by without a move, so no merge or move can raise Q "
+                      "any further (as far as Louvain can see).")
+        repaint()
+        return False
+    i = lv["order"][lv["idx"]]
+    lv["idx"] += 1
+    lv["visits"] += 1
+    c0, c1, dq, _k = best_move(i)
+    lv["comm"][i] = c1
+    lv["tot"][c1] = lv["tot"].get(c1, 0.0) + lv["H"].degree(i, weight="weight")
+    lv["last"] = {"node": i, "members": list(lv["members"][i]), "from": c0, "to": c1, "gain": dq}
+    if c1 != c0:
+        lv["moved"] += 1
+        lv["level_moves"] += 1
+        lv["moves"] += 1
+        tidy_colours()
+        lv["qhist"].append((lv["visits"], current_q()))
+    lv["note"] = ""
+    repaint()
+    return True
+
+
+def lv_play():
+    if lv["timer"] is not None and lv["timer"].running:
+        lv["timer"].stop()
+        lv["timer"] = None
+        run_btn.text = "Run Louvain"
+        return
+    if lv["done"] and graphNames()[0] != "louvain":     # just looking at the merged network: go back, don't restart
+        back_to_nodes()
+        run_btn.text = "Run Louvain again"
+        return
+    back_to_nodes()
+    if lv["done"]:
+        lv_reset()
+    lv["timer"] = everyPaced(lambda: lv_step() or False, slow=0.9, fast=0.1, ramp=4)
+    run_btn.text = "Pause"
+
+
+def lv_stop():
+    if lv["timer"] is not None:
+        lv["timer"].stop()
+        lv["timer"] = None
+    run_btn.text = "Run Louvain again" if lv.get("done") else "Run Louvain"
+
+
+def lv_one():
+    lv_stop()
+    back_to_nodes()
+    if lv["done"]:
+        lv_reset()
+    lv_step()
+
+
+def lv_level():
+    """Run phase 1 to the end of this level (and merge)."""
+    lv_stop()
+    back_to_nodes()
+    if lv["done"]:
+        lv_reset()
+    start = lv["level"]
+    for _ in range(5000):
+        if not lv_step() or lv["level"] != start:
+            break
+    repaint()
+
+
+def lv_restart():
+    lv_stop()
+    back_to_nodes()
+    lv_reset()
+    repaint()
+
+
+# ---- drawing ------------------------------------------------------------------------------------
+def repaint():
+    if graphNames()[0] != "louvain":
+        return
+    groups = groups_now()
+    col = {}
+    for c, mem in groups.items():
+        cc = colour_of(c, len(mem))
+        for v in mem:
+            col[v] = cc
+    last = lv.get("last")
+    hot = set(last["members"]) if last else set()
+    target = set()
+    if last and last["to"] != last["from"]:
+        target = {v for v in ORDER if lv["comm"][lv["hnode"][v]] == last["to"]} - hot
+    for v in ORDER:
+        nd = g.getNodeByName(v)
+        nd.color = col[v]
+        nd.width = nd.height = 30 if v in hot else 20
+        nd.strokecolor = "20,20,20" if v in hot else "70,70,70"
+        nd.strokewidth = 3 if v in hot else 0
+        nd.labelvisible = False
+    cm = {v: lv["comm"][lv["hnode"][v]] for v in ORDER}
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        if (a in hot and b in target) or (b in hot and a in target):
+            e.color, e.width, e.linestyle = "250,140,30", 3.5, "flow"
+        elif cm[a] == cm[b] and len(groups[cm[a]]) > 1:
+            e.color, e.width, e.linestyle = col[a], 1.8, "solid"
+        else:
+            e.color, e.width, e.linestyle = "150,150,150,90", 1, "solid"
+
+
+def show_collapsed():
+    """Draw the current level's network: one node per super-node, at the centre of its members."""
+    lv_stop()
+    H = lv["H"]
+    C = nx.Graph()
+    for i in H:
+        mem = lv["members"][i]
+        cx = sum(POS[v][0] for v in mem) / len(mem)
+        cy = sum(POS[v][1] for v in mem) / len(mem)
+        win = H[i][i]["weight"] if H.has_edge(i, i) else 0.0      # edges inside: the self-loop's weight
+        C.add_node(f"s{i}", pos=(cx, cy), members=len(mem), label=f"{len(mem)} · {win:g}")
+    for a, b, d in H.edges(data=True):
+        if a != b:                                       # inside edges are in the label, not drawn as loops
+            C.add_edge(f"s{a}", f"s{b}", weight=d.get("weight", 1.0))
+    if graphNames()[0] == "collapsed":
+        use("louvain")
+    if "collapsed" in graphNames():
+        closeGraph("collapsed")
+    fromNetworkX(C, "collapsed")
+    big = max(1, max(C.nodes[v]["members"] for v in C))
+    for i in H:
+        nd = g.getNodeByName(f"s{i}")
+        mem = len(lv["members"][i])
+        nd.width = nd.height = 18 + 46 * math.sqrt(mem / big)
+        nd.color = colour_of(lv["comm"][i], len([v for v in ORDER if lv["comm"][lv["hnode"][v]] == lv["comm"][i]]))
+        nd.strokecolor, nd.strokewidth = "40,40,40", 1.5
+        nd.labelvisible = True
+        nd.labelpos = "inside"
+    wmax = max([d["weight"] for _a, _b, d in C.edges(data=True)] or [1])
+    for e in g.edges:
+        w = e.weight
+        e.width = 1 + 7 * w / wmax
+        e.color = "150,150,150,160"
+        e.label = f"{w:g}"
+        e.labelvisible = len(C.edges()) <= 40                     # the summed weights, when there are few
+    center(g.nodes)
+
+
+def back_to_nodes():
+    if graphNames()[0] != "louvain":
+        use("louvain")
+        repaint()
+
+
+def lv_text():
+    groups = groups_now()
+    q = current_q()
+    big = sum(1 for m in groups.values() if len(m) > 1)
+    head = (f"**Level {lv['level']}**, pass {lv['passno']} · {lv['H'].number_of_nodes()} "
+            f"{'nodes' if lv['level'] == 0 else 'super-nodes'} · **{len(groups)}** communities "
+            f"({big} with more than one node) · **Q = {q:.3f}** (the planted groups: {PLANTED_Q:.3f})")
+    if lv["note"]:
+        return head + "\n\n" + lv["note"] + merged_note()
+    last = lv.get("last")
+    if not last:
+        return (head + "\n\nEvery node starts alone (grey). **Run Louvain** takes the nodes one at a time "
+                "and moves each to the neighbouring community that raises Q most; **One node** steps.")
+    mem = last["members"]
+    if graphNames()[0] == "louvain":
+        who = " ".join(linkTo(g.getNodeByName(v)) for v in mem[:6]) + (f" … ({len(mem)} nodes)" if len(mem) > 6 else "")
+    else:
+        who = f"{len(mem)} nodes"
+    if last["to"] == last["from"]:
+        what = f"stays put: no neighbouring community would raise Q."
+    else:
+        what = (f"moves to the community of {len([v for v in ORDER if lv['comm'][lv['hnode'][v]] == last['to']]) - len(mem)} "
+                f"others (orange links), raising Q by **{last['gain']:.4f}**.")
+    kind = "Node" if lv["level"] == 0 else "Super-node"
+    out = head + f"\n\n{kind} {who} {what}"
+    return out + merged_note()
+
+
+def merged_note():
+    if graphNames()[0] != "collapsed":
+        return ""
+    return ("\n\n**The merged network:** one node per community, at the centre of its members. Labels read "
+            "*nodes · edges inside* (Louvain keeps the inside edges as a self-loop of that weight); the numbers "
+            "on links count the edges between two communities. Phase 1 runs on this network next.")
+
+
+def lv_chart():
+    if mode[0] != "Louvain" or len(lv.get("qhist", [])) < 2:
+        return None
+    pts = list(lv["qhist"])
+    if pts[-1][0] < lv["visits"]:                       # Q holds steady through the steps that moved nothing
+        pts.append((lv["visits"], pts[-1][1]))
+    span = max(1, pts[-1][0])
+    data = {"Q": pts, "planted groups": [(0, PLANTED_Q), (span, PLANTED_Q)]}
+    if lv["marks"]:
+        data["end of a level"] = lv["marks"]
+    return plotLine(data, title="Modularity as Louvain runs", xlabel="nodes considered", ylabel="Q",
+                    dashed=["planted groups"], highlight=["end of a level"])
+
+
+# ---- the resolution limit: a ring of cliques ----------------------------------------------------------
+ring = {"G": None, "found": [], "rows": [], "timer": None}
+
+
+def ring_graph(nc, k):
+    G = nx.Graph()
+    rc = 14 + 5 * k                                       # each clique on a small circle; cliques around a big one
+    R = max(150.0, nc * (2 * rc + 40) / (2 * math.pi))
+    for c in range(nc):
+        ang = 2 * math.pi * c / nc - math.pi / 2
+        cx, cy = R * math.cos(ang), R * math.sin(ang)
+        for j in range(k):
+            a2 = ang + 2 * math.pi * j / k
+            G.add_node(f"q{c}_{j}", clique=c, pos=(cx + rc * math.cos(a2), cy + rc * math.sin(a2)))
+        for j in range(k):
+            for j2 in range(j + 1, k):
+                G.add_edge(f"q{c}_{j}", f"q{c}_{j2}")
+    for c in range(nc):
+        G.add_edge(f"q{c}_0", f"q{(c + 1) % nc}_{k // 2}")       # one link to the next clique
+    return G
+
+
+def ring_parts(G, nc, k, merged):
+    if not merged:
+        return [{f"q{c}_{j}" for j in range(k)} for c in range(nc)]
+    parts = []
+    for c in range(0, nc - 1, 2):
+        parts.append({f"q{c}_{j}" for j in range(k)} | {f"q{c + 1}_{j}" for j in range(k)})
+    if nc % 2:
+        parts.append({f"q{nc - 1}_{j}" for j in range(k)})
+    return parts
+
+
+def threshold(k, res):
+    return res * (k * (k - 1) + 2)
+
+
+def ring_build(v=None):
+    nc, k, res = int(ncl.value), int(ksl.value), float(rsl.value)
+    G = ring_graph(nc, k)
+    ring["G"] = G
+    found = nx.community.louvain_communities(G, resolution=res, seed=1)
+    ring["found"] = sorted(found, key=lambda s: min(G.nodes[v]["clique"] for v in s))
+    if graphNames()[0] == "ring":
+        use("louvain")
+    if "ring" in graphNames():
+        closeGraph("ring")
+    fromNetworkX(G, "ring")
+    ring_paint()
+    center(g.nodes)
+
+
+def ring_paint():
+    G = ring["G"]
+    which = {}
+    for i, s in enumerate(ring["found"]):
+        for v in s:
+            which[v] = i
+    for nd in g.nodes:
+        i = which[nd.name]
+        nd.color = PALETTE[i % len(PALETTE)] if len(ring["found"]) > 1 else PALETTE[0]
+        nd.width = nd.height = 18
+        nd.strokecolor, nd.strokewidth = "50,50,50", 0
+        nd.labelvisible = False
+    for e in g.edges:
+        a, b = e.node1.name, e.node2.name
+        if G.nodes[a]["clique"] != G.nodes[b]["clique"]:          # a link between two cliques
+            if which[a] == which[b]:
+                e.color, e.width, e.linestyle = "235,40,40", 4, "solid"   # inside one community: cliques merged
+                e.node1.strokewidth = e.node2.strokewidth = 3
+                e.node1.strokecolor = e.node2.strokecolor = "235,40,40"
+            else:
+                e.color, e.width, e.linestyle = "150,150,150", 1.5, "dashed"
+        else:
+            e.color, e.width, e.linestyle = "120,120,120,140", 1, "solid"
+
+
+def ring_text():
+    G = ring["G"]
+    if G is None:
+        return ""
+    nc, k, res = int(ncl.value), int(ksl.value), float(rsl.value)
+    m = G.number_of_edges()
+    q1 = nx.community.modularity(G, ring_parts(G, nc, k, False), resolution=res)
+    q2 = nx.community.modularity(G, ring_parts(G, nc, k, True), resolution=res)
+    qf = nx.community.modularity(G, ring["found"], resolution=res)
+    multi = sum(1 for s in ring["found"] if len({G.nodes[v]["clique"] for v in s}) > 1)
+    nstar = threshold(k, res)
+    verdict = ("**Pairing neighbouring cliques scores higher** than keeping them apart, so maximising Q has to "
+               "merge cliques that are plainly separate communities." if q2 > q1 else
+               "Keeping every clique on its own scores higher, as it should.")
+    return (f"**{nc} cliques of {k}**, each joined to the next by one link: m = {m} edges. Resolution = {res:g}.\n\n"
+            f"| partition | Q |\n|---|---|\n| one community per clique | {q1:.4f} |\n"
+            f"| neighbouring cliques in pairs | {q2:.4f} |\n| what Louvain finds ({len(ring['found'])} communities) | {qf:.4f} |\n\n"
+            f"{verdict} Louvain put **{multi}** of its communities across two or more cliques (merging links in red).\n\n"
+            f"Why: merging two cliques gains the one link between them (1/m) but costs the expected edges "
+            f"between them, d²/2m² with d = k(k−1) + 2 = {k * (k - 1) + 2} the cliques' total degree. "
+            f"As the ring grows, m grows and that cost shrinks, so merging wins once "
+            f"**n > resolution × (k(k−1) + 2) = {nstar:g}**. Raising the resolution moves the limit up.")
+
+
+def ring_sim_step():
+    k, res = int(ksl.value), float(rsl.value)
+    done = len(ring["rows"])
+    sizes = list(range(4, 50, 3))
+    if done >= len(sizes):
+        return False
+    nc = sizes[done]
+    G = ring_graph(nc, k)
+    found = nx.community.louvain_communities(G, resolution=res, seed=1)
+    ring["rows"].append((nc, nc / len(found)))
+    return len(sizes) - done - 1 or False
+
+
+def ring_sim():
+    if ring["timer"] is not None and ring["timer"].running:
+        ring["timer"].stop()
+    ring["rows"] = []
+    ring["timer"] = everyPaced(ring_sim_step, slow=0.5, fast=0.15, ramp=2)
+
+
+def ring_chart():
+    if mode[0] != "Resolution limit":
+        return None
+    k, res = int(ksl.value), float(rsl.value)
+    nstar = threshold(k, res)
+    top = 50
+    data = {}
+    if ring["rows"]:
+        data["found by Louvain"] = ring["rows"]
+    data["theory: 1 below the limit, 2 above"] = [(4, 1), (nstar, 1), (nstar, 2), (top, 2)]
+    if ring["G"] is not None:
+        nc = int(ncl.value)
+        data["this ring"] = [(nc, nc / max(1, len(ring["found"])))]
+    return plotLine(data, title="Cliques per community found", xlabel="number of cliques n",
+                    ylabel="cliques per community", dashed=["theory: 1 below the limit, 2 above"],
+                    highlight=["this ring"], dots=true, yrange=(0, 4))
+
+
+# ---- tabs ------------------------------------------------------------------------------------------
+mode = ["Louvain"]
+
+
+def switch(title):
+    mode[0] = title
+    if title == "Louvain":
+        if graphNames()[0] != "louvain":
+            use("louvain")
+        repaint()
+        center(g.nodes)
+    else:
+        lv_stop()
+        if ring["G"] is None:
+            ring_build()
+        elif graphNames()[0] != "ring":
+            use("ring")
+            ring_paint()
+            center(g.nodes)
+
+
+run_btn = Button("Run Louvain", onClick=lambda: lv_play())
+ncl = Slider(4, 40, 24, 1, label="cliques in the ring")
+ksl = Slider(3, 6, 5, 1, label="nodes per clique")
+rsl = Slider(0.25, 3, 1, 0.05, label="resolution")
+for sl in (ncl, ksl, rsl):
+    sl.onChange = lambda v: ring_build()
+lv_reset()
+repaint()
+constantLabelSize(size=14)
+ui.title("Louvain and the resolution limit", "Networks, Sections 14.2.5–14.2.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Move, merge, repeat
+Louvain maximises modularity Q: move single nodes between neighbouring communities while Q rises, then
+merge each community into one super-node and do it again on the smaller network."""),
+        Tabs(
+            Tab("Louvain",
+                Row(run_btn, Button("One node", onClick=lambda: lv_one()),
+                    Button("Finish this level", onClick=lambda: lv_level())),
+                Row(Button("Show the merged network", onClick=lambda: show_collapsed()),
+                    Button("Back to the nodes", onClick=lambda: back_to_nodes()),
+                    Button("Start over", onClick=lambda: lv_restart())),
+                Markdown(lv_text), Chart(lv_chart)),
+            Tab("Resolution limit", ncl, ksl, rsl,
+                Button("Simulate: rings of 4 to 49 cliques", onClick=lambda: ring_sim()),
+                Chart(ring_chart), Markdown(ring_text)),
+            onChange=switch)),
+    sizes={"right": 440},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{graphNames()[0]}: {len(g.nodes)} nodes · {len(g.edges)} edges"))
+center(g.nodes)

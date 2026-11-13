@@ -1,0 +1,408 @@
+# Non-linear preferential attachment  (Newman, Networks, Section 13.4.3)
+# Each new node brings c edges and attaches them to existing nodes with
+# probability proportional to k^gamma (the "attachment kernel").
+#   gamma = 1: the Barabási–Albert model, a power-law tail (alpha = 3).
+#   gamma < 1: the rich still get richer, but not fast enough: the tail is a
+#              stretched exponential, p_k ~ k^-gamma exp(-mu k^(1-gamma) / c(1-gamma))
+#              for 1/2 < gamma < 1 (Eq. 13.107). No power law.
+#   gamma > 1: "condensation": one early node becomes a leader holding a
+#              finite share of all edges, while everyone else stays small.
+# The exact distribution for gamma <= 1 is Eq. (13.97), with the constant mu
+# from Eq. (13.99); this explainer solves both numerically for the dashed
+# curves.
+#
+# The network is grown first and laid out once; revealUpTo(step) then replays
+# it (the `born` field), so nodes appear where they will stay.
+
+import math
+import numpy as np
+
+C = 2
+N_DRAWN = 200
+st = {"gamma": 1.0, "seed": 5, "k": 0, "E": [], "hist": [], "timer": None, "last": None,
+      "dist": None, "axes": "log–log", "sim": [], "stimer": None, "mu": {}}
+mode = ["Grow it"]
+play_btn = None
+
+
+# ---- theory: Eqs. (13.97) and (13.99) ----------------------------------------------------------------
+def solve_mu(gamma, c=C, K=100000):
+    """mu, the mean attachment kernel, from sum_{k>=c} prod_{r=c..k} (1 + mu / c r^gamma)^-1 = c."""
+    key = round(gamma, 3)
+    if key in st["mu"]:
+        return st["mu"][key]
+    r = np.arange(c, K + 1, dtype=float) ** gamma
+
+    def excess(mu):
+        terms = np.cumprod(1.0 / (1.0 + mu / (c * r)))
+        return terms.sum() - c
+
+    lo, hi = 1e-6, 50.0
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if excess(mid) > 0:
+            lo = mid
+        else:
+            hi = mid
+    st["mu"][key] = (lo + hi) / 2
+    return st["mu"][key]
+
+
+def exact_pk(gamma, c=C, K=3000):
+    mu = solve_mu(gamma, c)
+    ks = np.arange(c, K + 1, dtype=float)
+    a = ks ** gamma
+    prod = np.cumprod(1.0 / (1.0 + mu / (c * a)))
+    return ks, mu / (c * a) * prod
+
+
+def exact_ccdf(gamma, kmax):
+    ks, p = exact_pk(gamma)
+    tail = np.cumsum(p[::-1])[::-1]
+    out, i = [], 0
+    while i < len(ks) and ks[i] <= kmax:
+        if tail[i] > 1e-7:
+            out.append((int(ks[i]), float(tail[i])))
+        i = i + 1 if i < 20 else int(i * 1.15) + 1
+    return out
+
+
+def ccdf(degs):
+    n = len(degs)
+    count = {}
+    for k in degs:
+        count[k] = count.get(k, 0) + 1
+    out, left = [], n
+    for k in sorted(count):
+        out.append((k, left / n))
+        left -= count[k]
+    return out
+
+
+def regime(gamma):
+    if gamma < 0.999:
+        return "a **stretched exponential**: the biggest nodes stay modest, and there is no power law"
+    if gamma <= 1.001:
+        return "a **power law** (α = 3): linear preference is the special case"
+    return "**condensation**: one early node runs away with a fixed share of all the edges"
+
+
+# ---- the drawn network ---------------------------------------------------------------------------------
+def total_steps():
+    return N_DRAWN - C - 1
+
+
+def idx(nd):
+    return int(nd.name[2:])
+
+
+def degrees_at(k):
+    deg = [0] * N_DRAWN
+    for a, b, born in st["E"]:
+        if born <= k:
+            deg[a] += 1
+            deg[b] += 1
+    return deg
+
+
+def leader_history():
+    """For every step: (step, share of edges at the largest node, at the second largest)."""
+    deg = [0] * N_DRAWN
+    by_step = {}
+    for a, b, born in st["E"]:
+        by_step.setdefault(born, []).append((a, b))
+    out, m = [], 0
+    for s in range(total_steps() + 1):
+        for a, b in by_step.get(s, []):
+            deg[a] += 1
+            deg[b] += 1
+            m += 1
+        top = sorted(deg, reverse=True)[:2]
+        out.append((s, top[0] / m, top[1] / m))
+    return out
+
+
+def build(v=None):
+    stop_timers()
+    makeGrowingNetwork(N_DRAWN, m=C, gamma=st["gamma"], a=0.01, seed=st["seed"])
+    st["E"] = [(idx(e.node1), idx(e.node2), e.born) for e in g.edges]
+    st["hist"] = leader_history()
+    st["k"], st["last"] = total_steps(), None
+    look()
+    noverlapLayout(margin=6)
+    center(g.nodes)
+    st["k"] = 0
+    revealUpTo(0)
+    look()
+
+
+def look():
+    deg = degrees_at(st["k"])
+    top = max(max(deg), 1)
+    order = sorted(range(N_DRAWN), key=lambda i: -deg[i])
+    leader = order[0]
+    for nd in g.nodes:
+        i = idx(nd)
+        t = math.sqrt(deg[i] / top)
+        nd.width = nd.height = 8 + 34 * t
+        nd.color = f"{int(140 + 110 * t)},{int(185 - 95 * t)},{int(240 - 190 * t)}"
+        nd.strokecolor, nd.strokewidth = "40,40,50", 0.8
+        nd.labelvisible = i in order[:3] and deg[i] > 0
+        nd.label = f"k={deg[i]}"
+    lead = g.getNodeByName(f"nd{leader}")
+    if lead is not None and lead.visible:
+        lead.strokecolor, lead.strokewidth = "200,20,20", 4
+        lead.label = f"leader, k={deg[leader]}"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,120", 1.1, "solid"
+
+
+def add_one():
+    if st["k"] >= total_steps():
+        return False
+    st["k"] += 1
+    look()
+    new, targets = None, []
+    for x in revealUpTo(st["k"]):
+        if hasattr(x, "node1"):
+            x.color, x.width, x.linestyle = "245,150,40", 3.2, "flow"
+        else:
+            new = x
+    if new is not None:
+        for e in g.edges:
+            if e.visible and e.born == st["k"]:
+                targets.append(e.node2 if e.node1 is new else e.node1)
+        new.color, new.strokecolor, new.strokewidth = "255,220,60", "30,30,30", 3
+        new.width = new.height = max(new.width, 22)
+    st["last"] = (new, targets)
+    return total_steps() - st["k"]
+
+
+def play():
+    if st["timer"] is not None and st["timer"].running:
+        stop_timers()
+        return
+    if st["k"] >= total_steps():
+        st["k"] = 0
+        revealUpTo(0)
+        look()
+    st["timer"] = everyPaced(add_one, steps=total_steps() - st["k"] + 1, slow=0.8, fast=0.06, ramp=5)
+    play_btn.text = "Pause"
+
+
+def show_whole():
+    stop_timers()
+    st["k"] = total_steps()
+    revealUpTo(st["k"])
+    st["last"] = None
+    look()
+
+
+def stop_timers():
+    for key in ("timer", "stimer"):
+        if st[key] is not None:
+            st[key].stop()
+            st[key] = None
+    if play_btn is not None:
+        play_btn.text = "Grow it, node by node"
+
+
+def set_gamma(v):
+    st["gamma"] = round(float(v), 2)
+    build()
+
+
+def new_network():
+    st["seed"] += 1
+    build()
+
+
+def grow_text():
+    k = st["k"]
+    gm = st["gamma"]
+    deg = degrees_at(k)
+    m = sum(1 for _a, _b, born in st["E"] if born <= k)
+    order = sorted(range(N_DRAWN), key=lambda i: -deg[i])
+    lead = g.getNodeByName(f"nd{order[0]}")
+    out = (f"Step **{k}** of {total_steps()}, γ = **{gm:g}**: a new node (yellow) attaches its {C} edges (orange) "
+           f"with probability ∝ k^{gm:g}. The leader (red ring), {linkTo(lead)}, has **{deg[order[0]]}** of the "
+           f"{m} edges (**{100 * deg[order[0]] / max(1, m):.0f}%**); the runner-up {deg[order[1]]}.\n\n"
+           f"For large networks γ = {gm:g} gives {regime(gm)}.")
+    if st["last"] and st["last"][0] is not None:
+        new, targets = st["last"]
+        chips = ", ".join(linkTo(t, f"{t.name} (k={deg[idx(t)] - 1})") for t in targets)
+        out += f"\n\n{linkTo(new)} chose {chips}."
+    return out
+
+
+def grow_chart():
+    if mode[0] != "Grow it" or st["k"] < 3:
+        return None
+    h = st["hist"][:st["k"] + 1]
+    return plotLine({"largest node": [(s, a) for s, a, _b in h], "second largest": [(s, b) for s, _a, b in h]},
+                    title="Share of all edges held by the biggest nodes", xlabel="step",
+                    ylabel="share of edges", yrange=(0, 1))
+
+
+# ---- simulated networks ---------------------------------------------------------------------------------
+def grow_nl(n, gamma, seed, c=C):
+    """Grow n nodes with attachment exactly proportional to k^gamma; returns the degrees."""
+    rng = np.random.default_rng(seed)
+    deg = np.zeros(n)
+    deg[:c + 1] = c
+    w = np.zeros(n)
+    w[:c + 1] = float(c) ** gamma
+    total = w[:c + 1].sum()
+    for new in range(c + 1, n):
+        t = rng.choice(new, size=c, replace=False, p=w[:new] / total)
+        deg[t] += 1
+        deg[new] = c
+        total -= w[t].sum()
+        w[t] = deg[t] ** gamma
+        w[new] = float(c) ** gamma
+        total += w[t].sum() + w[new]
+        if new % 500 == 0:
+            total = w[:new + 1].sum()
+    return [int(x) for x in deg]
+
+
+DIST_N = 4000
+DIST_G = [0.8, 1.0, 1.2]
+
+
+def dist_data():
+    if st["dist"] is None:
+        st["dist"] = {gm: grow_nl(DIST_N, gm, 11) for gm in DIST_G}
+    return st["dist"]
+
+
+def pick_axes(v):
+    st["axes"] = v
+
+
+def dist_text():
+    if mode[0] != "Degree distributions":
+        return ""
+    d = dist_data()
+    mus = {gm: solve_mu(gm) for gm in DIST_G if gm <= 1}
+    return (f"Three networks of **{DIST_N:,}** nodes, c = {C}. Largest degree: "
+            + ", ".join(f"γ = {gm:g}: **{max(d[gm])}**" for gm in DIST_G) + ".\n\n"
+            "- **γ = 0.8**: on log–log axes the curve bends down: no power law. On **log-linear** axes it is "
+            "convex, falling more slowly than an exponential: a *stretched* exponential, "
+            f"k^−γ exp(−μ k^(1−γ) / c(1−γ)) with μ = {mus[0.8]:.3f}.\n"
+            f"- **γ = 1**: the straight line of a power law (μ = {mus[1.0]:.3f}, the mean degree 2c).\n"
+            "- **γ = 1.2**: one node holds a big share of the edges, a lone point far out to the right (on "
+            "log–log axes; the log-linear view stops at k = 150), while nearly everyone else keeps a small "
+            "degree. There is no stationary distribution to draw.\n\n"
+            "Dashed: the exact solution, Eq. (13.97), with μ solved from Eq. (13.99).")
+
+
+def dist_chart():
+    if mode[0] != "Degree distributions":
+        return None
+    d = dist_data()
+    series, dashed = {}, []
+    for gm in DIST_G:
+        series[f"γ = {gm:g}"] = ccdf(d[gm])
+    for gm in DIST_G:
+        if gm <= 1:
+            name = f"exact, γ = {gm:g}"
+            series[name] = exact_ccdf(gm, max(d[gm]))
+            dashed.append(name)
+    loglog = st["axes"] == "log–log"
+    # log-linear: the γ = 1.2 leader would squash everything into the left edge, so show k up to 150
+    return plotLine(series, title=f"Degree distributions, {DIST_N:,} nodes (cumulative)", xlabel="degree k",
+                    ylabel="share with degree ≥ k", logX=loglog, logY=true, dots=true, dashed=dashed,
+                    xrange=None if loglog else (0, 150))
+
+
+SIM_G = [0.8, 1.0, 1.2, 1.5]
+SIM_N = [250, 500, 1000, 2000, 4000]
+
+
+def run_sim():
+    stop_timers()
+    st["sim"] = []
+    st["stimer"] = everyPaced(sim_step, steps=len(SIM_N) + 1, slow=0.7, fast=0.3, ramp=2)
+
+
+def sim_step():
+    i = len(st["sim"])
+    if i >= len(SIM_N):
+        return False
+    n = SIM_N[i]
+    row = {"n": n}
+    for gm in SIM_G:
+        shares = []
+        for rep in range(2):
+            deg = grow_nl(n, gm, 100 * rep + i)
+            m = sum(deg) / 2
+            shares.append(max(deg) / m)
+        row[gm] = sum(shares) / len(shares)
+    st["sim"].append(row)
+    return len(SIM_N) - len(st["sim"])
+
+
+def sim_text():
+    if mode[0] != "Condensation":
+        return ""
+    out = ("Does the biggest node keep a share of all the edges as the network grows? *Simulate* grows networks of "
+           "250 to 4,000 nodes (two of each) for four values of γ and records the share of edges at the largest "
+           "node.")
+    if st["sim"]:
+        rows = ["| n | " + " | ".join(f"γ = {gm:g}" for gm in SIM_G) + " |", "|---" * (len(SIM_G) + 1) + "|"]
+        for r in st["sim"]:
+            rows.append(f"| {r['n']:,} | " + " | ".join(f"{100 * r[gm]:.1f}%" for gm in SIM_G) + " |")
+        out += "\n\n" + "\n".join(rows)
+    if len(st["sim"]) >= 2:
+        a, b = st["sim"][0], st["sim"][-1]
+        out += (f"\n\nFrom n = {a['n']:,} to {b['n']:,}: at γ = 0.8 the leader's share falls from "
+                f"{100 * a[0.8]:.1f}% to {100 * b[0.8]:.1f}%, and at γ = 1 from {100 * a[1.0]:.1f}% to "
+                f"{100 * b[1.0]:.1f}% (it falls like n^−1/2: hubs grow, but more slowly than the network). At "
+                f"γ = 1.5 it *rises*, from {100 * a[1.5]:.0f}% to **{100 * b[1.5]:.0f}%**, settling at a fixed "
+                "share: a condensate, one node that a large fraction of all newcomers link to. γ = 1.2 is in "
+                "between at these sizes; it condenses too, but slowly.")
+    return out
+
+
+def sim_chart():
+    if mode[0] != "Condensation" or len(st["sim"]) < 2:
+        return None
+    return plotLine({f"γ = {gm:g}": [(r["n"], r[gm]) for r in st["sim"]] for gm in SIM_G},
+                    title="Share of all edges at the largest node", xlabel="n", ylabel="share of edges",
+                    logX=true, dots=true, yrange=(0, 1))
+
+
+# ---- wiring ---------------------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    stop_timers()
+
+
+gamma_slider = Slider(0.5, 1.5, 1.0, 0.1, label="attachment ∝ kᵞ, γ", onChange=set_gamma)
+play_btn = Button("Grow it, node by node", onClick=lambda: play())
+build()
+constantLabelSize(size=14)
+ui.title("Non-linear preferential attachment", "Networks, Section 13.4.3")
+ui.layout(
+    right=Column(
+        Markdown("""### How strong is the preference?
+New nodes attach in proportion to degree to the power γ. Only γ = 1 gives a
+power law."""),
+        gamma_slider,
+        Tabs(
+            Tab("Grow it",
+                Row(play_btn, Button("Show the whole network", onClick=lambda: show_whole()),
+                    Button("New network", onClick=lambda: new_network())),
+                Markdown(grow_text), Chart(grow_chart)),
+            Tab("Degree distributions",
+                Dropdown(["log–log", "log-linear"], label="Axes", onChange=pick_axes),
+                Chart(dist_chart), Markdown(dist_text)),
+            Tab("Condensation",
+                Button("Simulate: 250 to 4,000 nodes", onClick=lambda: run_sim()),
+                Chart(sim_chart), Markdown(sim_text)),
+            onChange=switch)),
+    sizes={"right": 440},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"step {st['k']} of {total_steps()} · {st['k'] + C + 1} nodes · γ = {st['gamma']:g}"))

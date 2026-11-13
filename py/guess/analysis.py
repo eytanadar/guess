@@ -375,9 +375,11 @@ def install(session):
         return out
 
     @cmd
-    def modularity(field):
+    def modularity(field, resolution=1.0):
         """modularity(field): the modularity Q of the partition given by a node
-        field (e.g. modularity(dept), modularity(louvain_class))."""
+        field (e.g. modularity(dept), modularity(louvain_class)). resolution=
+        weighs the expected edges as in louvainClusters(resolution=): above 1
+        favours smaller communities."""
         nx = _nx()
         if not isinstance(field, Field) or field.kind != NODE:
             raise GuessError("modularity needs a node field, e.g. modularity(dept)")
@@ -388,7 +390,7 @@ def install(session):
             groups.setdefault(field.get(n), set()).add(n)
         if G.number_of_edges() == 0:
             return 0.0
-        return nx.community.modularity(G, list(groups.values()), weight="weight")
+        return nx.community.modularity(G, list(groups.values()), weight="weight", resolution=float(resolution))
 
     # ---- whole-graph statistics -------------------------------------------
     def dist():
@@ -565,8 +567,10 @@ def install(session):
         network: build the final network first, give every node (and edge) the
         step it arrives at, lay it out once, center(g.nodes) to fit the final
         picture, then call revealUpTo(0), revealUpTo(1), ... from a timer, so
-        nodes appear where they will stay. Returns the nodes and edges that
-        arrive at exactly this step (to highlight them)."""
+        nodes appear where they will stay. Edges with a `died` field (as
+        makeGrowingNetwork's removed edges have) disappear again from that
+        step on. Returns the nodes and edges that arrive at exactly this step
+        (to highlight them)."""
         fname = getattr(field, "name", field)
         has_e = fname in g.edge_schema
         if fname not in g.node_schema:
@@ -580,9 +584,14 @@ def install(session):
             n.visible = b is not None and b <= step
             if b == step:
                 new.append(n)
+        has_died = "died" in g.edge_schema
         for e in g._edges_list():
             b = born(e) if has_e else None
             ok = e._n1.visible and e._n2.visible and (not has_e or (b is not None and b <= step))
+            if ok and has_died:                      # removed by then (field died = the step it went; -1 never)
+                d = getattr(e, "died", None)
+                if isinstance(d, (int, float)) and not isinstance(d, bool) and 0 <= d <= step:
+                    ok = False
             e.visible = ok
             if ok and (b == step if has_e else (born(e._n1) == step or born(e._n2) == step)):
                 new.append(e)

@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Spectral modularity maximization",
+  "description": "The leading eigenvector of the modularity matrix splits a network; split again for more groups; compare with Louvain.",
+  "console": "toggle",
+  "script": "main.gy"
+}

@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Dividing networks and modularity",
+  "description": "Move nodes between groups and watch modularity change; a node-moving optimiser; partitioning against community detection.",
+  "console": "toggle",
+  "script": "main.gy"
+}

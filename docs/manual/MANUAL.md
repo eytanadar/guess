@@ -1299,16 +1299,26 @@ final place. `makePriceModel(n, c, a)` grows a citation network in which
 papers cite in proportion to in-degree + a (Price's cumulative advantage;
 the in-degrees follow a power law of exponent 2 + a/c), and
 `makeBarabasiAlbertRandom` and `makeBarabasiAlbertAging` set `born` too.
-`makeBlockModel(sizes, p_in, p_out)` makes a network with community
-structure, the node field `block` holding each node's group:
+`makeGrowingNetwork(n, m, gamma, a)` is the general version: each new node
+links to m nodes chosen in proportion to (degree + a)^gamma. gamma = 1 gives
+a power law, gamma < 1 a thinner tail, and gamma > 1 one dominant hub.
+`extra=` adds edges between old nodes and `remove=` deletes random edges as
+it grows; a removed edge keeps the step it went in `died`, and
+`revealUpTo` hides it from then on. `makeCopyingModel(n, c, copy)` grows a
+network by copying links from a random existing node (a power law without
+preferential attachment). `makeBlockModel(sizes, p_in, p_out)` makes a
+network with community structure, the node field `block` holding each
+node's group:
 
 ```python
 makePriceModel(500, c=3, a=1)
 fitPowerLaw(indegree)                     # alpha near 2 + 1/3
 revealUpTo(50)                            # the first 50 papers; a timer can step on
 showAll()
+makeGrowingNetwork(300, m=2, gamma=1.5)   # one hub gets a large share of every edge
 makeBlockModel([30, 30, 30], 0.3, 0.02)
 colorize(block)
+modularity(block, resolution=1.5)        # resolution as in louvainClusters
 makeFromGDF("sample.gdf")
 ```
 

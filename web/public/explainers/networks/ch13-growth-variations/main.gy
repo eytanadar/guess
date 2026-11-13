@@ -1,0 +1,446 @@
+# Extra edges and edge removal  (Newman, Networks, Sections 13.4.1-13.4.2)
+# Preferential attachment as in the Barabási–Albert model: each new node
+# brings c edges, attached to existing nodes in proportion to their degree.
+# Real networks also gain links between old nodes and lose links. Add w extra
+# edges per step (both ends chosen by degree) and delete v random edges per
+# step: the degree distribution keeps a power-law tail as long as v < c/2 + w,
+# with exponent
+#     alpha = 2 + c / (c + 2w - 2v)
+# (3 for the plain model; 2 + c/(c + 2w) with extra edges only, Eq. 13.70).
+# The book prints Eq. (13.85) as 2 + (v - w)/(c + 2w - 2v), which would give 2
+# for the plain model; solving the master equation (13.77) numerically, as
+# this explainer does for its dashed curves, gives the form above.
+#
+# The whole network is grown first and laid out once (makeGrowingNetwork
+# records when every node and edge arrived in `born`, and when a removed edge
+# went in `died`); then revealUpTo(step) replays it, so nodes appear where
+# they will stay, and a removed edge flashes red on the step it goes.
+
+import math
+import random
+import numpy as np
+
+C = 2                                  # edges brought by each new node
+N_DRAWN = 200
+st = {"w": 0.0, "v": 0.0, "seed": 4, "k": 0, "E": [], "last": None, "timer": None,
+      "sweep": [], "sweep_w": 0.0, "stimer": None, "exact": {}}
+mode = ["Grow it"]
+play_btn = None
+
+
+# ---- theory -----------------------------------------------------------------------------------------
+def alpha_theory(c, w, v):
+    """The tail exponent, or None when v >= c/2 + w (no power law)."""
+    den = c + 2 * w - 2 * v
+    return 2 + c / den if den > 0 else None
+
+
+def exact_pk(c, w, v, K=3000):
+    """Stationary degree distribution from the master equation (Newman Eq. 13.77), solved as a
+    tridiagonal linear system for k = 0..K (Thomas algorithm)."""
+    key = (c, round(w, 4), round(v, 4))
+    if key in st["exact"]:
+        return st["exact"][key]
+    D = 2 * (c + w - v)
+    if D <= 0:
+        return None
+    A, B, Cc = (c + 2 * w) / D, 2 * v / D, (c + 2 * w + 2 * v) / D
+    ks = np.arange(K + 1, dtype=float)
+    lower = -A * (ks[1:] - 1)
+    diag = 1 + Cc * ks
+    upper = -B * (ks[:-1] + 1)
+    rhs = np.zeros(K + 1)
+    rhs[c] = 1.0
+    cp = np.zeros(K)
+    dp = np.zeros(K + 1)
+    cp[0] = upper[0] / diag[0]
+    dp[0] = rhs[0] / diag[0]
+    for i in range(1, K + 1):
+        mm = diag[i] - lower[i - 1] * cp[i - 1]
+        if i < K:
+            cp[i] = upper[i] / mm
+        dp[i] = (rhs[i] - lower[i - 1] * dp[i - 1]) / mm
+    p = np.zeros(K + 1)
+    p[K] = dp[K]
+    for i in range(K - 1, -1, -1):
+        p[i] = dp[i] - cp[i] * p[i + 1]
+    st["exact"][key] = p
+    return p
+
+
+def exact_ccdf(c, w, v, kmax):
+    p = exact_pk(c, w, v)
+    if p is None:
+        return []
+    tail = np.cumsum(p[::-1])[::-1]               # P(K >= k)
+    out = []
+    k = 1
+    while k <= min(kmax, len(p) - 1):
+        if tail[k] > 1e-7:
+            out.append((k, float(tail[k])))
+        k = k + 1 if k < 20 else int(k * 1.15) + 1
+    return out
+
+
+def ccdf(degs):
+    """[(k, share of all nodes with degree >= k)] for k >= 1."""
+    n = len(degs)
+    count = {}
+    for k in degs:
+        count[k] = count.get(k, 0) + 1
+    out, left = [], n
+    for k in sorted(count):
+        if k >= 1:
+            out.append((k, left / n))
+        left -= count[k]
+    return out
+
+
+# ---- the drawn network --------------------------------------------------------------------------------
+def total_steps():
+    return N_DRAWN - C - 1
+
+
+def degrees_at(k):
+    deg = [0] * N_DRAWN
+    for a, b, born, died in st["E"]:
+        if born <= k and (died < 0 or died > k):
+            deg[a] += 1
+            deg[b] += 1
+    return deg
+
+
+def idx(nd):
+    return int(nd.name[2:])
+
+
+def build(v=None):
+    stop_timers()
+    makeGrowingNetwork(N_DRAWN, m=C, gamma=1, a=0.01, extra=st["w"], remove=st["v"], seed=st["seed"])
+    st["E"] = [(idx(e.node1), idx(e.node2), e.born, e.died) for e in g.edges]
+    st["k"], st["last"] = total_steps(), None
+    look()                                   # final sizes, so the overlap removal leaves room for them
+    binPackLayout(false)
+    noverlapLayout(margin=6)
+    center(g.nodes)                          # frame the grown network, then go back to the start
+    st["k"] = 0
+    revealUpTo(0)
+    look()
+
+
+def look():
+    deg = degrees_at(st["k"])
+    top = max(max(deg), 1)
+    leaders = sorted(range(N_DRAWN), key=lambda i: -deg[i])[:3]
+    for nd in g.nodes:
+        i = idx(nd)
+        t = math.sqrt(deg[i] / top)
+        nd.width = nd.height = 8 + 28 * t
+        nd.color = f"{int(140 + 110 * t)},{int(185 - 95 * t)},{int(240 - 190 * t)}"
+        nd.strokecolor, nd.strokewidth = "40,40,50", 0.8
+        nd.labelvisible = i in leaders and deg[i] > 0
+        nd.label = f"k={deg[i]}"
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,130", 1.1, "solid"
+
+
+def add_one():
+    if st["k"] >= total_steps():
+        return False
+    st["k"] += 1
+    k = st["k"]
+    look()
+    new, own, extra = None, [], []
+    arrivals = revealUpTo(k)
+    for x in arrivals:
+        if not hasattr(x, "node1"):
+            new = x
+    for x in arrivals:
+        if hasattr(x, "node1"):
+            if new is not None and new in (x.node1, x.node2):
+                x.color, x.width, x.linestyle = "245,150,40", 3.2, "flow"      # the newcomer's own edges
+                own.append(x)
+            else:
+                x.color, x.width, x.linestyle = "60,140,250", 3.2, "flow"      # an extra edge between old nodes
+                extra.append(x)
+                for end in (x.node1, x.node2):
+                    end.strokecolor, end.strokewidth = "20,70,170", 3
+    gone = []
+    for e in g.edges:
+        if e.died == k and e.born <= k and e.node1.visible and e.node2.visible:
+            e.visible = true                    # shown once more, red, on the step it is removed
+            e.color, e.width, e.linestyle = "230,40,40", 3.2, "dashed"
+            gone.append(e)
+    if new is not None:
+        new.color, new.strokecolor, new.strokewidth = "255,220,60", "30,30,30", 3
+        new.width = new.height = max(new.width, 24)
+    st["last"] = {"new": new, "own": own, "extra": extra, "gone": gone}
+    return total_steps() - k
+
+
+def play():
+    if st["timer"] is not None and st["timer"].running:
+        stop_timers()
+        return
+    if st["k"] >= total_steps():
+        st["k"] = 0
+        revealUpTo(0)
+        look()
+    st["timer"] = everyPaced(add_one, steps=total_steps() - st["k"] + 1, slow=0.9, fast=0.06, ramp=5)
+    play_btn.text = "Pause"
+
+
+def show_whole():
+    stop_timers()
+    st["k"] = total_steps()
+    revealUpTo(st["k"])
+    st["last"] = None
+    look()
+
+
+def stop_timers():
+    for key in ("timer", "stimer"):
+        if st[key] is not None:
+            st[key].stop()
+            st[key] = None
+    if play_btn is not None:
+        play_btn.text = "Grow it, node by node"
+
+
+def set_w(val):
+    st["w"] = round(float(val), 2)
+    build()
+
+
+def set_v(val):
+    st["v"] = round(float(val), 2)
+    build()
+
+
+def new_network():
+    st["seed"] += 1
+    build()
+
+
+def law_line():
+    a = alpha_theory(C, st["w"], st["v"])
+    net = C + st["w"] - st["v"]
+    if a is None:
+        return (f"With v = {st['v']:g} ≥ c/2 + w = {C / 2 + st['w']:g} removals win against the preference: "
+                "the tail is no longer a power law (it becomes a stretched exponential)"
+                + ("" if net > 0 else ", and with v ≥ c + w the network loses edges faster than it gains them")
+                + ".")
+    return (f"Theory: **α = 2 + c / (c + 2w − 2v) = {a:.2f}** (c = {C}, w = {st['w']:g}, v = {st['v']:g}); "
+            f"mean degree tends to 2(c + w − v) = {2 * net:g}.")
+
+
+def grow_text():
+    k = st["k"]
+    shown = k + C + 1
+    alive = sum(1 for _a, _b, born, died in st["E"] if born <= k and (died < 0 or died > k))
+    born_so_far = sum(1 for _a, _b, born, _d in st["E"] if born <= k)
+    clique = C * (C + 1) // 2
+    extra = born_so_far - clique - C * k
+    removed = sum(1 for _a, _b, born, died in st["E"] if 0 <= died <= k)
+    out = (f"Step **{k}** of {total_steps()}: **{shown}** nodes, **{alive}** edges. Each newcomer (yellow) brings "
+           f"c = {C} edges (orange) to nodes chosen by degree; **{extra}** extra edges between old nodes have been "
+           f"added (blue) and **{removed}** removed at random (red, then gone).\n\n" + law_line())
+    last = st["last"]
+    if last:
+        parts = []
+        if last["new"] is not None:
+            parts.append(f"{linkTo(last['new'])} arrived")
+        if last["extra"]:
+            parts.append("extra " + ", ".join(linkTo(e) for e in last["extra"]))
+        if last["gone"]:
+            parts.append("removed " + ", ".join(linkTo(e) for e in last["gone"]))
+        out += "\n\nThis step: " + "; ".join(parts) + "."
+    out += ("\n\nRemoval is preferential attachment in reverse: an edge picked at random is more likely to touch a "
+            "hub, so hubs lose edges faster, and the tail steepens. Extra edges do the opposite.")
+    return out
+
+
+def grow_chart():
+    if mode[0] != "Grow it":
+        return None
+    deg = degrees_at(st["k"])[:st["k"] + C + 1]
+    if max(deg) < 3:
+        return None
+    pts = ccdf(deg)
+    series = {"this network": pts}
+    ex = exact_ccdf(C, st["w"], st["v"], max(200, 3 * max(deg)))
+    if ex:
+        series["exact solution, large n"] = ex
+    return plotLine(series, title="Degrees so far (cumulative)", xlabel="degree k", ylabel="share with degree ≥ k",
+                    log=true, dots=true, dashed=["exact solution, large n"])
+
+
+# ---- big networks, off screen ---------------------------------------------------------------------------
+BIG = 20000
+VS = [0.0, 0.25, 0.5, 0.75]
+
+
+def poisson(rnd, lam):
+    L, k, p = math.exp(-lam), 0, 1.0
+    while True:
+        p *= rnd.random()
+        if p < L:
+            return k
+        k += 1
+
+
+def grow_fast(n, c, w, v, seed):
+    """The same process with attachment exactly proportional to degree (pick a random end of a random
+    edge), fast enough for tens of thousands of nodes. Returns the final degrees."""
+    rnd = random.Random(seed)
+    edges = [(i, j) for i in range(c + 1) for j in range(i + 1, c + 1)]
+    have = set(edges)
+    deg = [0] * n
+    for a, b in edges:
+        deg[a] += 1
+        deg[b] += 1
+
+    def end():
+        a, b = edges[rnd.randrange(len(edges))]
+        return a if rnd.random() < 0.5 else b
+
+    for new in range(c + 1, n):
+        chosen, tries = set(), 0
+        while len(chosen) < c and tries < 100 and edges:
+            chosen.add(end())
+            tries += 1
+        for t in chosen:
+            key = (t, new)
+            edges.append(key)
+            have.add(key)
+            deg[new] += 1
+            deg[t] += 1
+        for _ in range(poisson(rnd, w) if w else 0):
+            for _t in range(10):
+                a, b = end(), end()
+                key = (min(a, b), max(a, b))
+                if a != b and key not in have:
+                    edges.append(key)
+                    have.add(key)
+                    deg[a] += 1
+                    deg[b] += 1
+                    break
+        for _ in range(poisson(rnd, v) if v else 0):
+            if len(edges) < 2:
+                break
+            j = rnd.randrange(len(edges))
+            edges[j], edges[-1] = edges[-1], edges[j]
+            a, b = edges.pop()
+            have.discard((a, b))
+            deg[a] -= 1
+            deg[b] -= 1
+    return deg
+
+
+def run_sweep():
+    stop_timers()
+    st["sweep"], st["sweep_w"] = [], st["w"]
+    st["stimer"] = everyPaced(sweep_step, steps=len(VS) + 1, slow=0.7, fast=0.3, ramp=2)
+
+
+def sweep_step():
+    i = len(st["sweep"])
+    if i >= len(VS):
+        return False
+    v, w = VS[i], st["sweep_w"]
+    fits, last = [], None
+    for rep in range(2):
+        deg = grow_fast(BIG, C, w, v, 500 + 31 * rep + i)
+        fits.append(fitPowerLaw([k for k in deg if k > 0], kmin=8)["alpha"])
+        last = deg
+    st["sweep"].append({"v": v, "fit": sum(fits) / len(fits), "ccdf": ccdf(last), "kmax": max(last)})
+    return len(VS) - len(st["sweep"])
+
+
+def sweep_text():
+    if mode[0] != "Change the exponent":
+        return ""
+    w = st["w"] if not st["sweep"] else st["sweep_w"]
+    out = (f"*Simulate* grows networks of **{BIG:,}** nodes (two for each removal rate v, with w = {w:g} extra "
+           "edges per step and attachment exactly in proportion to degree) and fits the tail exponent by maximum "
+           "likelihood from k ≥ 8.")
+    if st["sweep"]:
+        rows = ["| v | edges gained per step, c + w − v | theory α | fitted α |", "|---|---|---|---|"]
+        for r in st["sweep"]:
+            a = alpha_theory(C, w, r["v"])
+            rows.append(f"| {r['v']:g} | {C + w - r['v']:g} | {('%.2f' % a) if a else '–'} | {r['fit']:.2f} |")
+        out += "\n\n" + "\n".join(rows)
+        out += ("\n\nThe fits come out below the formula, more so as the tail steepens: these tails are finite, and "
+                "a fit that starts at small k mixes in the bend of the distribution there (the plain model, theory "
+                "3, fits about 2.8 at this size). The cumulative distributions below sit on the exact solution "
+                "(dashed) all the same.")
+    out += ("\n\n**About the formula.** The book prints Eq. (13.85) as α = 2 + (v − w)/(c + 2w − 2v). That gives "
+            "α = 2 for the plain model, which should be 3, and disagrees with Eq. (13.70) when v = 0. Solving the "
+            "master equation (13.77) gives **α = 2 + c/(c + 2w − 2v)**, which agrees with both, with the "
+            "divergence at v = c/2 + w that the text describes, and with the exact solution drawn here.")
+    return out
+
+
+def sweep_alpha_chart():
+    if mode[0] != "Change the exponent" or not st["sweep"]:
+        return None
+    w = st["sweep_w"]
+    vmax = min(0.95 * (C / 2 + w), 1.5)
+    th = []
+    for j in range(41):
+        v = vmax * j / 40
+        a = alpha_theory(C, w, v)
+        if a is not None and a <= 8:
+            th.append((v, a))
+    return plotLine({"fitted, k ≥ 8": [(r["v"], r["fit"]) for r in st["sweep"]], "theory 2 + c/(c + 2w − 2v)": th},
+                    title="Tail exponent against the removal rate", xlabel="edges removed per step, v",
+                    ylabel="α", highlight=["fitted, k ≥ 8"], dashed=["theory 2 + c/(c + 2w − 2v)"])
+
+
+def sweep_ccdf_chart():
+    if mode[0] != "Change the exponent" or not st["sweep"]:
+        return None
+    w = st["sweep_w"]
+    series, dashed = {}, []
+    ends = [st["sweep"][0]] + ([st["sweep"][-1]] if len(st["sweep"]) > 1 else [])   # lowest and highest v
+    for r in ends:
+        series[f"v = {r['v']:g}"] = r["ccdf"]
+    for r in ends:
+        name = f"exact, v = {r['v']:g}"
+        series[name] = exact_ccdf(C, w, r["v"], r["kmax"])
+        dashed.append(name)
+    return plotLine(series, title=f"Degree distributions, {BIG:,} nodes (cumulative)", xlabel="degree k",
+                    ylabel="share with degree ≥ k", log=true, dots=true, dashed=dashed)
+
+
+# ---- wiring ---------------------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    stop_timers()
+
+
+w_slider = Slider(0, 2, 0, 0.25, label="extra edges per step, w", onChange=set_w)
+v_slider = Slider(0, 1.5, 0, 0.25, label="edges removed per step, v", onChange=set_v)
+play_btn = Button("Grow it, node by node", onClick=lambda: play())
+build()
+constantLabelSize(size=14)
+ui.title("Extra edges and edge removal", "Networks, Sections 13.4.1–13.4.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Networks that keep changing
+Preferential attachment, plus links added between old nodes and links that
+disappear. Does the power law survive?"""),
+        w_slider, v_slider,
+        Tabs(
+            Tab("Grow it",
+                Row(play_btn, Button("Show the whole network", onClick=lambda: show_whole()),
+                    Button("New network", onClick=lambda: new_network())),
+                Markdown(grow_text), Chart(grow_chart)),
+            Tab("Change the exponent",
+                Button("Simulate: sweep the removal rate", onClick=lambda: run_sweep()),
+                Chart(sweep_alpha_chart), Chart(sweep_ccdf_chart), Markdown(sweep_text)),
+            onChange=switch)),
+    sizes={"right": 440},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"step {st['k']} of {total_steps()} · {st['k'] + C + 1} nodes · w = {st['w']:g}, v = {st['v']:g}"))

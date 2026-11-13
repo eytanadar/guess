@@ -1,0 +1,413 @@
+# Dividing networks and modularity  (Newman, Networks, Sections 14.1-14.2.2)
+# Graph partitioning cuts a network into groups of sizes fixed in advance
+# with as few edges between them as possible; community detection lets the
+# network decide how many groups there are and how big. Modularity Q is the
+# share of edges inside groups minus the share expected if edges were placed
+# at random with the same degrees. A simple way to raise Q: move single nodes
+# between two groups, always the move that helps most (or hurts least), each
+# node once per round, then go back to the best state of the round
+# (Kernighan-Lin style), and repeat while rounds still improve Q.
+
+import random
+import networkx as nx
+
+NETS = ["Karate club (34 members)", "Planted groups: 24 + 12 (block model)"]
+COLS = ["240,140,60", "80,150,230", "120,190,90", "200,110,200", "230,200,70", "100,200,200",
+        "220,110,110", "160,160,230", "190,150,100", "150,210,160"]
+st = {"net": NETS[0], "side": {}, "truth": {}, "names": [], "edges": [], "deg": {}, "m": 1,
+      "moved": None, "timer": None, "run": None, "hist": [], "note": "", "starts": [], "sim": None}
+mode = ["By hand"]
+
+
+# ---- the network --------------------------------------------------------------------------------
+def spread_out():
+    """A seeded spring layout (networkx), so the planted groups sit apart the same way every time."""
+    pos = nx.spring_layout(toNetworkX(directed=False), seed=2, iterations=200)
+    for v in g.nodes:
+        v.x, v.y = float(pos[v.name][0]) * 420, float(pos[v.name][1]) * 420
+
+def load(choice):
+    stop_all()
+    st["net"] = choice
+    if choice.startswith("Karate"):
+        makeSample("karate")
+        g.edges.weight = 1                       # the book's karate club counts each friendship once
+        st["truth"] = {v.name: (0 if v.club == "Mr. Hi" else 1) for v in g.nodes}
+        st["truth_name"] = "the club's actual split"
+    else:
+        makeBlockModel([24, 12], 0.35, 0.03, seed=3, layout=false)
+        spread_out()
+        st["truth"] = {v.name: v.block for v in g.nodes}
+        st["truth_name"] = "the planted groups"
+    G = toNetworkX(directed=False)
+    if nx.number_connected_components(G) > 1:
+        binPackLayout(false)
+        noverlapLayout()
+    Node.grp = 0
+    st["names"] = sorted((v.name for v in g.nodes), key=lambda s_: int("".join(c for c in s_ if c.isdigit()) or 0))
+    st["edges"] = [(e.node1.name, e.node2.name) for e in g.edges if e.node1 is not e.node2]
+    st["m"] = max(1, len(st["edges"]))
+    st["deg"] = {nm: 0 for nm in st["names"]}
+    for a_, b_ in st["edges"]:
+        st["deg"][a_] += 1
+        st["deg"][b_] += 1
+    for v in g.nodes:
+        v.label = "".join(c for c in v.name if c.isdigit())
+        v.labelpos = "inside"
+        v.labelvisible = true
+    st["qtrue"] = q_of(st["truth"])
+    cmp_state["rows"] = []
+    st["run"], st["hist"], st["starts"] = None, [], []
+    random_split()
+    center()
+
+
+def q_of(side):
+    """Modularity of a partition {name: group}: the sum over groups of
+    (edges inside)/m - (total degree / 2m)^2."""
+    m = st["m"]
+    inside, degs = {}, {}
+    for a_, b_ in st["edges"]:
+        if side[a_] == side[b_]:
+            inside[side[a_]] = inside.get(side[a_], 0) + 1
+    for nm, k in st["deg"].items():
+        degs[side[nm]] = degs.get(side[nm], 0) + k
+    return sum(inside.get(r, 0) / m - (d / (2 * m)) ** 2 for r, d in degs.items())
+
+
+def repaint(moved=None, edge_glow=True):
+    side = st["side"]
+    for v in g.nodes:
+        r = side[v.name]
+        v.color = COLS[r % len(COLS)] if len(set(side.values())) <= len(COLS) else "170,170,180"
+        v.width = v.height = 30
+        v.strokecolor, v.strokewidth = "60,60,60", 0
+    for e in g.edges:
+        if side[e.node1.name] == side[e.node2.name]:
+            e.color, e.width, e.linestyle = "150,150,150,170", 1.4, "solid"
+        else:
+            e.color, e.width, e.linestyle = "230,70,60", 1.6, "dashed"
+    if moved is not None:
+        v = g.getNodeByName(moved)
+        v.width = v.height = 42
+        v.strokecolor, v.strokewidth = "20,20,20", 3.5
+        if edge_glow:
+            for e in g.edges:
+                if e.node1 is v or e.node2 is v:
+                    inside = side[e.node1.name] == side[e.node2.name]
+                    e.color = "250,200,40" if inside else "230,70,60"
+                    e.width = 3.5
+                    e.linestyle = "flow" if inside else "dashed"
+    for v in g.nodes:
+        v.grp = side[v.name]
+
+
+def set_side(side, moved=None):
+    st["side"] = dict(side)
+    st["moved"] = moved
+    repaint(moved)
+
+
+# ---- by hand --------------------------------------------------------------------------------------
+def random_split():
+    r = random.Random()
+    names = st["names"][:]
+    r.shuffle(names)
+    set_side({nm: (0 if i < len(names) // 2 else 1) for i, nm in enumerate(names)})
+
+
+def true_split():
+    set_side(st["truth"])
+
+
+def one_group():
+    set_side({nm: 0 for nm in st["names"]})
+
+
+def all_alone():
+    set_side({nm: i for i, nm in enumerate(st["names"])})
+
+
+def click(v):
+    if mode[0] == "Equal halves or free?":
+        return
+    stop_all()
+    side = dict(st["side"])
+    side[v.name] = 1 if side[v.name] == 0 else 0
+    before = q_of(st["side"])
+    set_side(side, moved=v.name)
+    st["note"] = (f"Moved node **{v.label}**: Q went from {before:.3f} to **{q_of(side):.3f}** "
+                  f"({q_of(side) - before:+.3f}).")
+
+
+def hand_text():
+    side = st["side"]
+    m = st["m"]
+    q = q_of(side)
+    groups = sorted(set(side.values()))
+    out = [f"**Q = {q:.3f}** for this division ({len(groups)} group{'s' if len(groups) != 1 else ''}). "
+           f"For comparison, {st['truth_name']} gives Q = {st['qtrue']:.3f}."]
+    if st["note"]:
+        out.append(st["note"])
+    if len(groups) <= 6:
+        rows = ["| group | nodes | edges inside ÷ m | (degrees ÷ 2m)² | adds to Q |", "|---|---|---|---|---|"]
+        for r in groups:
+            members = [nm for nm in st["names"] if side[nm] == r]
+            ein = sum(1 for a_, b_ in st["edges"] if side[a_] == r and side[b_] == r)
+            d = sum(st["deg"][nm] for nm in members)
+            rows.append(f"| {'orange blue green purple yellow teal'.split()[r % 6]} | {len(members)} | "
+                        f"{ein / m:.3f} | {(d / (2 * m)) ** 2:.3f} | {ein / m - (d / (2 * m)) ** 2:+.3f} |")
+        out.append("\n".join(rows))
+    else:
+        out.append(f"Every node on its own: no edge is inside a group, so Q = −Σ(kᵢ/2m)² = {q:.3f}, a little below 0.")
+    cut = sum(1 for a_, b_ in st["edges"] if side[a_] != side[b_])
+    out.append(f"Edges between groups (red, dashed): **{cut}** of {m}.")
+    return "\n\n".join(out)
+
+
+# ---- optimise ----------------------------------------------------------------------------------
+def opt_reset():
+    q = q_of(st["side"])
+    st["run"] = {"round": 1, "unmoved": set(st["names"]), "best": (q, dict(st["side"])),
+                 "start": q, "steps": 0, "done": False}
+    st["hist"] = [(0, q)]
+    st["note"] = ""
+
+
+def opt_step():
+    """One move of the node-moving algorithm; False when no round improves Q any more."""
+    if st["run"] is None:
+        opt_reset()
+    run = st["run"]
+    if run["done"]:
+        return False
+    if not run["unmoved"]:
+        bq, bside = run["best"]
+        set_side(bside)
+        if bq <= run["start"] + 1e-12:
+            run["done"] = True
+            st["note"] = (f"Round {run['round']} found nothing better than its start, so the algorithm stops at "
+                          f"**Q = {bq:.3f}**.")
+            return False
+        st["note"] = (f"Round {run['round']} over: every node has moved once. Back to the best state the round "
+                      f"passed through (Q = {bq:.3f}), and another round starts from there.")
+        run.update(round=run["round"] + 1, unmoved=set(st["names"]), start=bq, best=(bq, dict(bside)))
+        return len(st["names"]) + 1
+    side = dict(st["side"])
+    best_nm, best_q = None, None
+    for nm in sorted(run["unmoved"]):
+        side[nm] = 1 - side[nm] if side[nm] in (0, 1) else 0
+        q = q_of(side)
+        side[nm] = st["side"][nm]
+        if best_q is None or q > best_q + 1e-12:
+            best_nm, best_q = nm, q
+    before = q_of(st["side"])
+    side[best_nm] = 1 - side[best_nm] if side[best_nm] in (0, 1) else 0
+    run["unmoved"].discard(best_nm)
+    run["steps"] += 1
+    set_side(side, moved=best_nm)
+    st["hist"].append((run["steps"], best_q))
+    if best_q > run["best"][0] + 1e-12:
+        run["best"] = (best_q, dict(side))
+    lab = g.getNodeByName(best_nm).label
+    st["note"] = (f"Round {run['round']}, move {len(st['names']) - len(run['unmoved'])} of {len(st['names'])}: "
+                  f"node **{lab}** changes side ({best_q - before:+.3f}; the best move left"
+                  f"{'' if best_q >= before else ', even though it lowers Q'}).")
+    return len(run["unmoved"]) + 1
+
+
+def opt_play():
+    if st["timer"] is not None and st["timer"].running:
+        stop_all()
+        return
+    if st["run"] is None or st["run"]["done"]:
+        opt_reset()
+    st["timer"] = everyPaced(opt_step, slow=0.8, fast=0.06, ramp=4)
+
+
+def opt_all():
+    stop_all()
+    if st["run"] is None or st["run"]["done"]:
+        opt_reset()
+    for _ in range(5000):
+        if opt_step() is False:
+            break
+    repaint()
+
+
+def opt_restart():
+    stop_all()
+    random_split()
+    opt_reset()
+
+
+def opt_text():
+    side = st["side"]
+    q = q_of(side)
+    agree = sum(1 for nm in st["names"] if side[nm] == st["truth"][nm])
+    agree = max(agree, len(st["names"]) - agree)              # the group names are arbitrary
+    run = st["run"]
+    head = ("Start from a random split, then **Optimise**: each step moves the one node whose move raises Q most "
+            "(or lowers it least). Moving the best node even when Q falls lets a round escape a local peak; at "
+            "the end of the round it goes back to the best state it saw.")
+    if run is None:
+        return head
+    return (head + f"\n\n{st['note']}\n\nNow **Q = {q:.3f}**; best this round {run['best'][0]:.3f}. "
+            f"{agree} of {len(st['names'])} nodes are grouped as in {st['truth_name']} (Q = {st['qtrue']:.3f}).")
+
+
+def opt_chart():
+    if mode[0] != "Optimise" or len(st["hist"]) < 2:
+        return None
+    last = st["hist"][-1][0]
+    return plotLine({"Q as nodes move": st["hist"], st["truth_name"]: [(0, st["qtrue"]), (last, st["qtrue"])]},
+                    title="Modularity, move by move", xlabel="moves", ylabel="Q", dashed=[st["truth_name"]])
+
+
+def sim_starts():
+    """Run the algorithm from 20 random starts, one start per step (paced): does it always find the same Q?"""
+    stop_all()
+    st["starts"] = []
+    st["timer"] = everyPaced(one_start, steps=20, slow=0.5, fast=0.12, ramp=3)
+
+
+def one_start():
+    random_split()
+    opt_reset()
+    for _ in range(5000):
+        if opt_step() is False:
+            break
+    q = q_of(st["side"])
+    agree = sum(1 for nm in st["names"] if st["side"][nm] == st["truth"][nm])
+    st["starts"].append((len(st["starts"]) + 1, q, max(agree, len(st["names"]) - agree)))
+    repaint()
+    return 20 - len(st["starts"])
+
+
+def starts_chart():
+    if mode[0] != "Optimise" or not st["starts"]:
+        return None
+    n = len(st["starts"])
+    return plotLine({"final Q from each random start": [(i, q) for i, q, _a in st["starts"]],
+                     st["truth_name"]: [(1, st["qtrue"]), (max(2, n), st["qtrue"])]},
+                    title="20 random starts", xlabel="start", ylabel="final Q", dots=true,
+                    dashed=[st["truth_name"]], highlight=["final Q from each random start"])
+
+
+def starts_text():
+    if not st["starts"]:
+        return ""
+    qs = [q for _i, q, _a in st["starts"]]
+    best = max(qs)
+    hits = sum(1 for q in qs if abs(q - best) < 1e-9)
+    return (f"{len(qs)} starts: the best Q found is **{best:.3f}**, reached from {hits} of them; the worst is "
+            f"{min(qs):.3f}. A greedy method can stop on a lower peak, so in practice it is run several times "
+            f"(or started from a good guess).")
+
+
+# ---- partitioning versus community detection ----------------------------------------------------------------
+cmp_state = {"rows": []}
+
+
+def equal_halves():
+    stop_all()
+    G = toNetworkX(directed=False)
+    a_, b_ = nx.algorithms.community.kernighan_lin_bisection(G, seed=1, weight=None)
+    side = {nm: (0 if nm in a_ else 1) for nm in st["names"]}
+    set_side(side)
+    record("Equal halves, fewest edges cut (graph partitioning)")
+
+
+def free_split():
+    stop_all()
+    best = None
+    for k in range(6):
+        random_split()
+        opt_reset()
+        for _ in range(5000):
+            if opt_step() is False:
+                break
+        q = q_of(st["side"])
+        if best is None or q > best[0]:
+            best = (q, dict(st["side"]))
+    set_side(best[1])
+    record("Any sizes, highest modularity (community detection)")
+
+
+def record(what):
+    side = st["side"]
+    sizes = sorted((sum(1 for nm in st["names"] if side[nm] == r) for r in set(side.values())), reverse=True)
+    cut = sum(1 for a_, b_ in st["edges"] if side[a_] != side[b_])
+    agree = sum(1 for nm in st["names"] if side[nm] == st["truth"][nm])
+    agree = max(agree, len(st["names"]) - agree)
+    cmp_state["rows"] = [r for r in cmp_state["rows"] if r[0] != what] + [
+        (what, " + ".join(map(str, sizes)), cut, q_of(side), agree)]
+
+
+def cmp_text():
+    t = st["truth"]
+    sizes = sorted((sum(1 for nm in st["names"] if t[nm] == r) for r in set(t.values())), reverse=True)
+    cut = sum(1 for a_, b_ in st["edges"] if t[a_] != t[b_])
+    rows = ["| division | sizes | edges cut | Q | grouped as the truth |", "|---|---|---|---|---|",
+            f"| {st['truth_name']} | {' + '.join(map(str, sizes))} | {cut} | {st['qtrue']:.3f} | all |"]
+    for what, sz, c, q, ag in cmp_state["rows"]:
+        rows.append(f"| {what} | {sz} | {c} | {q:.3f} | {ag} of {len(st['names'])} |")
+    msg = ("**Graph partitioning** is told how many groups and how big (here two equal halves) and minimises "
+           "the edges cut: right for dividing work between processors. **Community detection** asks what "
+           "groups the network itself has, any number and any size.")
+    if st["net"].startswith("Planted"):
+        msg += (" Here the groups are 24 and 12, so equal halves must cut a group in two, while modularity is "
+                "free to find the unequal groups.")
+    else:
+        msg += " The club's two factions happen to be similar in size, so both do fairly well here."
+    return msg + "\n\n" + "\n".join(rows)
+
+
+# ---- plumbing ---------------------------------------------------------------------------------------
+def stop_all():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    st["note"] = ""
+    repaint(st["moved"]) if title == "By hand" else repaint()
+
+
+netpick = Dropdown(NETS, label="Network", onChange=load)
+graphevents.clickNode = click
+load(NETS[0])
+constantLabelSize(size=14)
+ui.title("Dividing networks and modularity", "Networks, Sections 14.1–14.2.2")
+ui.layout(
+    right=Column(
+        Markdown("""### Groups with more edges inside than chance
+Colours are groups; red dashed edges run between groups."""),
+        netpick,
+        Tabs(
+            Tab("By hand",
+                Markdown("*Click a node* to move it to the other group and watch Q change."),
+                Row(Button("Random split", onClick=lambda: random_split()),
+                    Button("The real groups", onClick=lambda: true_split())),
+                Row(Button("Everyone together", onClick=lambda: one_group()),
+                    Button("Everyone alone", onClick=lambda: all_alone())),
+                Markdown(hand_text)),
+            Tab("Optimise",
+                Row(Button("Optimise", onClick=lambda: opt_play()), Button("To the end", onClick=lambda: opt_all()),
+                    Button("New random start", onClick=lambda: opt_restart())),
+                Markdown(opt_text), Chart(opt_chart),
+                Button("Simulate: 20 random starts", onClick=lambda: sim_starts()),
+                Markdown(starts_text), Chart(starts_chart)),
+            Tab("Equal halves or free?",
+                Row(Button("Cut into equal halves", onClick=lambda: equal_halves()),
+                    Button("Best modularity", onClick=lambda: free_split())),
+                Markdown(cmp_text)),
+            onChange=switch)),
+    sizes={"right": 400},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · Q = {q_of(st['side']):.3f}"))
+center()

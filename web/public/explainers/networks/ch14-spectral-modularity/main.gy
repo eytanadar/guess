@@ -1,0 +1,485 @@
+# Spectral modularity maximization  (Newman, Networks, Sections 14.2.3-14.2.4)
+# Modularity is a quadratic form, Q = sᵀBs / 4m, in the modularity matrix
+# B = A - kkᵀ/2m (sᵢ = +1 or -1 says which of two groups node i is in). The
+# vector s that maximizes it, if the entries could be any real numbers, is the
+# leading eigenvector of B; rounding each entry to its sign gives a good
+# split. To get more groups, split each group again with the matrix B⁽ᵍ⁾ that
+# measures the change in Q, and stop when no split raises Q.
+
+import math
+import random
+import numpy as np
+import networkx as nx
+from collections import Counter
+
+NETS = ["Karate club (34 members)", "Planted groups: 3 × 15 (block model)", "Dolphins (62)"]
+COLS = ["240,140,60", "80,150,230", "120,190,90", "200,110,200", "230,200,70", "100,200,200",
+        "220,110,110", "160,160,230", "190,150,100", "150,210,160", "240,170,190", "170,170,110"]
+st = {"net": NETS[0], "names": [], "idx": {}, "A": None, "truth": None, "u": None, "beta": 0.0,
+      "parts": [], "final": set(), "looking": None, "hist": [], "timer": None, "note": "",
+      "lou": None, "sim": [], "simq": []}
+mode = ["Leading eigenvector"]
+
+
+# ---- the network ------------------------------------------------------------------------------
+def spread_out():
+    """A seeded spring layout (networkx), so the planted groups sit apart the same way every time."""
+    pos = nx.spring_layout(toNetworkX(directed=False), seed=2, iterations=200)
+    for v in g.nodes:
+        v.x, v.y = float(pos[v.name][0]) * 420, float(pos[v.name][1]) * 420
+
+def load(choice):
+    stop_all()
+    st["net"] = choice
+    if choice.startswith("Karate"):
+        makeSample("karate")
+        g.edges.weight = 1                      # the book's karate club counts each friendship once
+        truth = {v.name: (0 if v.club == "Mr. Hi" else 1) for v in g.nodes}
+    elif choice.startswith("Planted"):
+        makeBlockModel([15, 15, 15], 0.4, 0.03, seed=5, layout=false)
+        spread_out()
+        truth = {v.name: v.block for v in g.nodes}
+    else:
+        makeFromFile("dolphins.gdf")
+        truth = None
+    G = toNetworkX(directed=False)
+    if nx.number_connected_components(G) > 1:
+        binPackLayout(false)
+        noverlapLayout()
+    Node.grp = 0
+    Node.u1 = 0.0
+    Node.rank = 0
+    names = [v.name for v in g.nodes]
+    st["names"], st["idx"], st["truth"] = names, {nm: i for i, nm in enumerate(names)}, truth
+    A = np.zeros((len(names), len(names)))
+    for e in g.edges:
+        i, j = st["idx"][e.node1.name], st["idx"][e.node2.name]
+        if i != j:
+            A[i, j] = A[j, i] = 1.0
+    st["A"] = A
+    st["k"] = A.sum(axis=1)
+    st["m"] = A.sum() / 2
+    st["B"] = A - np.outer(st["k"], st["k"]) / (2 * st["m"])
+    w, V = np.linalg.eigh(st["B"])
+    st["beta"], st["u"] = float(w[-1]), V[:, -1] * (1 if V[:, -1].sum() >= 0 else -1)
+    st["lou"] = None
+    for v in g.nodes:
+        v.labelvisible = len(names) <= 40
+        v.labelpos = "inside"
+        v.label = "".join(c for c in v.name if c.isdigit()) if not choice.startswith("Dolphins") else v.name
+        v.labelvisible = not choice.startswith("Dolphins")
+    reset_parts()
+    show_vector()
+    center()
+
+
+def q_of(groups):
+    """Modularity of a list of groups (lists of node indices)."""
+    B, m = st["B"], st["m"]
+    return float(sum(B[np.ix_(gr, gr)].sum() for gr in groups) / (2 * m))
+
+
+def plain():
+    for v in g.nodes:
+        v.width = v.height = 28
+        v.strokecolor, v.strokewidth = "60,60,60", 0
+    for e in g.edges:
+        e.color, e.width, e.linestyle = "150,150,150,150", 1.3, "solid"
+
+
+# ---- the leading eigenvector -------------------------------------------------------------------------
+def show_vector():
+    plain()
+    u = st["u"]
+    top = float(np.abs(u).max()) or 1.0
+    order = np.argsort(u)
+    for r, i in enumerate(order):
+        v = g.getNodeByName(st["names"][i])
+        t = float(u[i]) / top
+        v.u1, v.rank = round(float(u[i]), 4), r + 1
+        # diverging: orange for positive entries, blue for negative, pale near 0
+        if t >= 0:
+            v.color = f"{int(250 - 10 * t)},{int(235 - 95 * t)},{int(215 - 155 * t)}"
+        else:
+            v.color = f"{int(215 + 135 * t)},{int(230 + 80 * t)},{int(250 + 20 * t)}"
+        v.width = v.height = 20 + 22 * abs(t)
+        v.strokecolor, v.strokewidth = "50,50,50", 1
+    st["shown"] = "vector"
+
+
+def split_by_sign():
+    stop_all()
+    show_vector()
+    u = st["u"]
+    side = {nm: (0 if u[i] >= 0 else 1) for i, nm in enumerate(st["names"])}
+    for v in g.nodes:
+        v.color = COLS[side[v.name]]
+        v.grp = side[v.name]
+    for e in g.edges:
+        if side[e.node1.name] != side[e.node2.name]:
+            e.color, e.width, e.linestyle = "230,70,60", 1.6, "dashed"
+    st["shown"] = "split"
+
+
+def agreement(labels):
+    """How many nodes are grouped as in the truth (the best match of group names), and the NMI."""
+    t = st["truth"]
+    if t is None:
+        return None, None
+    names = st["names"]
+    a_ = [labels[nm] for nm in names]
+    b_ = [t[nm] for nm in names]
+    pairs = Counter(zip(a_, b_))
+    best = {}
+    for (x, y), c in sorted(pairs.items(), key=lambda kv: -kv[1]):
+        best.setdefault(x, (y, c))
+    agree = sum(c for (_y, c) in best.values())
+    return agree, nmi(a_, b_)
+
+
+def nmi(a_, b_):
+    n = len(a_)
+    ca, cb, cab = Counter(a_), Counter(b_), Counter(zip(a_, b_))
+    info = sum(c / n * math.log(c * n / (ca[x] * cb[y])) for (x, y), c in cab.items())
+    ha = -sum(c / n * math.log(c / n) for c in ca.values())
+    hb = -sum(c / n * math.log(c / n) for c in cb.values())
+    return 1.0 if ha + hb == 0 else 2 * info / (ha + hb)
+
+
+def vector_text():
+    u = st["u"]
+    n = len(u)
+    pos = int((u >= 0).sum())
+    s = np.where(u >= 0, 1.0, -1.0)
+    q = float(s @ st["B"] @ s / (4 * st["m"]))
+    out = (f"The modularity matrix B has largest eigenvalue **β₁ = {st['beta']:.2f}**. Its eigenvector **u** gives each "
+           f"node a number: orange for positive, blue for negative, bigger for larger |uᵢ|. Nodes near 0 (pale, "
+           f"small) are the ones the split is least sure about.\n\nSplitting by sign gives groups of **{pos}** and "
+           f"**{n - pos}**, with **Q = sᵀBs/4m = {q:.3f}**.")
+    if st["truth"] is not None:
+        side = {nm: (0 if u[i] >= 0 else 1) for i, nm in enumerate(st["names"])}
+        agree, _ = agreement(side)
+        tq = q_of([[st["idx"][nm] for nm in st["names"] if st["truth"][nm] == r] for r in set(st["truth"].values())])
+        out += (f" {agree} of {n} nodes are grouped as in the real groups (Q = {tq:.3f})." +
+                (" The karate split famously comes out almost exactly right." if st["net"].startswith("Karate") else
+                 " With three planted groups, one split can only separate one group from the other two: see *More groups*."
+                 if st["net"].startswith("Planted") else ""))
+    return out
+
+
+def vector_chart():
+    if mode[0] != "Leading eigenvector":
+        return None
+    return plotScatter(rank, u1, title="Entries of the leading eigenvector, smallest first",
+                       xlabel="rank", ylabel="uᵢ", line=[(0, 0), (len(st["names"]) + 1, 0)])
+
+
+# ---- more groups: repeated bisection ---------------------------------------------------------------------
+def reset_parts():
+    st["parts"] = [list(range(len(st["names"])))]
+    st["final"] = set()
+    st["looking"] = None
+    st["hist"] = [(1, 0.0)]
+    st["note"] = ""
+
+
+def colour_parts(looking=None):
+    plain()
+    lab = {}
+    for gi, part in enumerate(st["parts"]):
+        for i in part:
+            lab[st["names"][i]] = gi
+    for v in g.nodes:
+        v.color = COLS[lab[v.name] % len(COLS)]
+        v.grp = lab[v.name]
+    for e in g.edges:
+        if lab[e.node1.name] != lab[e.node2.name]:
+            e.color, e.width, e.linestyle = "230,70,60", 1.5, "dashed"
+    if looking is not None:
+        inside = {st["names"][i] for i in st["parts"][looking]}
+        for v in g.nodes:
+            if v.name in inside:
+                v.width = v.height = 36
+                v.strokecolor, v.strokewidth = "20,20,20", 3
+        for e in g.edges:
+            if e.node1.name in inside and e.node2.name in inside:
+                e.color, e.width, e.linestyle = "250,200,40", 3, "flow"
+    return lab
+
+
+def try_split(gi):
+    """Split group gi by the leading eigenvector of B⁽ᵍ⁾; returns (left, right, gain) or None."""
+    part = st["parts"][gi]
+    if len(part) < 2:
+        return None
+    Bg = st["B"][np.ix_(part, part)].copy()
+    Bg -= np.diag(Bg.sum(axis=1))
+    w, V = np.linalg.eigh(Bg)
+    if w[-1] <= 1e-9:
+        return None
+    s = np.where(V[:, -1] >= 0, 1.0, -1.0)
+    gain = float(s @ Bg @ s / (4 * st["m"]))
+    if gain <= 1e-9:
+        return None
+    left = [part[k] for k in range(len(part)) if s[k] > 0]
+    right = [part[k] for k in range(len(part)) if s[k] < 0]
+    return left, right, gain
+
+
+def split_step():
+    """One step of repeated bisection: look at the next unfinished group and split it if that raises Q."""
+    todo = [gi for gi in range(len(st["parts"])) if gi not in st["final"]]
+    if not todo:
+        colour_parts()
+        st["note"] = (f"No group can be split with a gain in Q: **{len(st['parts'])} groups**, "
+                      f"Q = {q_of(st['parts']):.3f}.")
+        return False
+    gi = todo[0]
+    size = len(st["parts"][gi])
+    r = try_split(gi)
+    if r is None:
+        st["final"].add(gi)
+        colour_parts(looking=gi)
+        st["note"] = (f"The {size}-node group (outlined) can't be split: its matrix B⁽ᵍ⁾ has no split that raises Q, "
+                      "so it stays whole.")
+    else:
+        left, right, gain = r
+        st["parts"][gi] = left
+        st["parts"].append(right)
+        st["final"] = {f for f in st["final"]}
+        colour_parts(looking=gi)
+        for i in right:
+            v = g.getNodeByName(st["names"][i])
+            v.width = v.height = 36
+            v.strokecolor, v.strokewidth = "20,20,20", 3
+        st["hist"].append((len(st["parts"]), q_of(st["parts"])))
+        st["note"] = (f"Split a {size}-node group into **{len(left)}** and **{len(right)}** (both outlined): "
+                      f"Q rises by {gain:.3f} to **{q_of(st['parts']):.3f}**.")
+    return len(todo) + 1
+
+
+def play_splits():
+    if st["timer"] is not None and st["timer"].running:
+        stop_all()
+        return
+    if not [gi for gi in range(len(st["parts"])) if gi not in st["final"]]:
+        reset_parts()
+    st["timer"] = everyPaced(split_step, slow=1.1, fast=0.5, ramp=2)
+
+
+def all_splits():
+    stop_all()
+    for _ in range(500):
+        if split_step() is False:
+            break
+
+
+def start_over():
+    stop_all()
+    reset_parts()
+    colour_parts()
+
+
+def splits_text():
+    head = ("Each step takes a group and finds the best split of it with the matrix B⁽ᵍ⁾ (B restricted to the "
+            "group, with each row sum taken off the diagonal), which measures how much Q changes. A group whose "
+            "best split doesn't raise Q is left alone.")
+    lab = {st["names"][i]: gi for gi, p in enumerate(st["parts"]) for i in p}
+    out = head + (f"\n\n{st['note']}" if st["note"] else "") + \
+        f"\n\nNow **{len(st['parts'])} group{'s' if len(st['parts']) != 1 else ''}**, Q = {q_of(st['parts']):.3f}."
+    if st["truth"] is not None and len(st["parts"]) > 1:
+        agree, score = agreement(lab)
+        out += f" {agree} of {len(st['names'])} nodes grouped as the real groups (NMI {score:.2f})."
+    return out
+
+
+def splits_chart():
+    if mode[0] != "More groups" or len(st["hist"]) < 2:
+        return None
+    return plotLine({"Q": st["hist"]}, title="Modularity as groups are split", xlabel="groups", ylabel="Q",
+                    dots=true, highlight=["Q"])
+
+
+def matrix_chart():
+    if mode[0] != "More groups":
+        return None
+    return showMatrix(order="grp", title="Adjacency matrix, ordered by group")
+
+
+# ---- compare and simulate ------------------------------------------------------------------------------
+def louvain_q():
+    if st["lou"] is None:
+        louvainClusters(seed=1)
+        lab = {v.name: v.louvain_class for v in g.nodes}
+        groups = [[st["idx"][nm] for nm in st["names"] if lab[nm] == r] for r in set(lab.values())]
+        st["lou"] = (len(groups), q_of(groups), agreement(lab))
+    return st["lou"]
+
+
+def full_spectral():
+    """Repeated bisection to the end, on the side (doesn't change what is shown)."""
+    keep = (st["parts"], st["final"], st["hist"], st["note"])
+    reset_parts()
+    for _ in range(500):
+        todo = [gi for gi in range(len(st["parts"])) if gi not in st["final"]]
+        if not todo:
+            break
+        r = try_split(todo[0])
+        if r is None:
+            st["final"].add(todo[0])
+        else:
+            st["parts"][todo[0]] = r[0]
+            st["parts"].append(r[1])
+    parts = [list(p) for p in st["parts"]]
+    st["parts"], st["final"], st["hist"], st["note"] = keep
+    return parts
+
+
+def compare_text():
+    sp = full_spectral()
+    lab = {st["names"][i]: gi for gi, p in enumerate(sp) for i in p}
+    sa, sn = agreement(lab)
+    ln, lq, (la, lnm) = louvain_q()
+    rows = ["| method | groups | Q | nodes matching a real group |", "|---|---|---|---|",
+            f"| spectral, repeated bisection | {len(sp)} | {q_of(sp):.3f} | "
+            f"{'–' if sa is None else f'{sa} (NMI {sn:.2f})'} |",
+            f"| Louvain (`louvainClusters`) | {ln} | {lq:.3f} | {'–' if la is None else f'{la} (NMI {lnm:.2f})'} |"]
+    if st["truth"] is not None:
+        t = st["truth"]
+        tg = [[st["idx"][nm] for nm in st["names"] if t[nm] == r] for r in set(t.values())]
+        rows.append(f"| the real groups | {len(tg)} | {q_of(tg):.3f} | all |")
+    return ("Spectral bisection is fast and principled, but each split is final: a node put on the wrong side "
+            "early can't move back. Louvain moves single nodes and merges groups, and usually reaches a higher Q.\n\n"
+            + "\n".join(rows))
+
+
+def sim_start():
+    stop_all()
+    st["sim"] = []
+    st["simq"] = [8.0 - 0.5 * k for k in range(12)]           # mean neighbours inside the group (of 8)
+    st["timer"] = everyPaced(sim_step, steps=len(st["simq"]), slow=0.6, fast=0.25, ramp=2)
+
+
+def sim_step():
+    """Three planted groups of 20, mean degree 8; fewer and fewer of the 8 inside the group."""
+    cin = st["simq"][len(st["sim"])]
+    cout = 8.0 - cin
+    n_, k_ = 60, 3
+    pin, pout = cin / 19, cout / 40
+    res = {"spectral": [], "Louvain": []}
+    for rep in range(3):
+        rnd = random.Random(100 * len(st["sim"]) + rep)
+        block = [i // 20 for i in range(n_)]
+        A = np.zeros((n_, n_))
+        for i in range(n_):
+            for j in range(i + 1, n_):
+                if rnd.random() < (pin if block[i] == block[j] else pout):
+                    A[i, j] = A[j, i] = 1.0
+        k = A.sum(axis=1)
+        m = A.sum() / 2
+        if m == 0:
+            continue
+        B = A - np.outer(k, k) / (2 * m)
+        parts, final = [list(range(n_))], set()
+        for _ in range(60):
+            todo = [gi for gi in range(len(parts)) if gi not in final]
+            if not todo:
+                break
+            part = parts[todo[0]]
+            Bg = B[np.ix_(part, part)].copy()
+            Bg -= np.diag(Bg.sum(axis=1))
+            w, V = np.linalg.eigh(Bg)
+            s = np.where(V[:, -1] >= 0, 1.0, -1.0)
+            if w[-1] <= 1e-9 or s @ Bg @ s <= 1e-9 or abs(s.sum()) == len(s):
+                final.add(todo[0])
+                continue
+            parts[todo[0]] = [part[x] for x in range(len(part)) if s[x] > 0]
+            parts.append([part[x] for x in range(len(part)) if s[x] < 0])
+        lab = [0] * n_
+        for gi, p in enumerate(parts):
+            for i in p:
+                lab[i] = gi
+        res["spectral"].append(nmi(lab, block))
+        G = nx.from_numpy_array(A)
+        lou = nx.community.louvain_communities(G, seed=rep)
+        lab2 = [0] * n_
+        for gi, c in enumerate(lou):
+            for i in c:
+                lab2[i] = gi
+        res["Louvain"].append(nmi(lab2, block))
+    st["sim"].append((cin - cout, sum(res["spectral"]) / max(1, len(res["spectral"])),
+                      sum(res["Louvain"]) / max(1, len(res["Louvain"]))))
+    return len(st["simq"]) - len(st["sim"])
+
+
+def sim_chart():
+    if mode[0] != "Compare" or not st["sim"]:
+        return None
+    return plotLine({"spectral": [(d, s) for d, s, _l in st["sim"]], "Louvain": [(d, l) for d, _s, l in st["sim"]]},
+                    title="Finding 3 planted groups (60 nodes, mean degree 8)",
+                    xlabel="neighbours inside − outside the group", ylabel="NMI with the truth", dots=true,
+                    yrange=(0, 1))
+
+
+def sim_text():
+    if not st["sim"]:
+        return ("**Simulate** plants three groups of 20 and makes them harder and harder to see (fewer of each node's "
+                "8 neighbours inside its own group), then asks both methods to find them. NMI 1 is perfect, 0 "
+                "no better than chance.")
+    d, s, l = st["sim"][-1]
+    return (f"At a difference of {d:g} neighbours: spectral NMI {s:.2f}, Louvain {l:.2f}. Both fail as the "
+            "difference approaches zero, where the groups stop being detectable at all.")
+
+
+# ---- plumbing ----------------------------------------------------------------------------------------
+def stop_all():
+    if st["timer"] is not None:
+        st["timer"].stop()
+        st["timer"] = None
+
+
+def switch(title):
+    mode[0] = title
+    stop_all()
+    if title == "Leading eigenvector":
+        show_vector()
+    elif title == "More groups":
+        colour_parts()
+    else:
+        sp = full_spectral()
+        reset_parts()
+        st["parts"] = sp
+        st["final"] = set(range(len(sp)))
+        colour_parts()
+
+
+netpick = Dropdown(NETS, label="Network", onChange=load)
+load(NETS[0])
+constantLabelSize(size=14)
+ui.title("Spectral modularity maximization", "Networks, Sections 14.2.3–14.2.4")
+ui.layout(
+    right=Column(
+        Markdown("""### Splitting with an eigenvector
+Modularity is Q = sᵀBs / 4m with B = A − kkᵀ/2m. Let s be any real vector
+and the best one is B's leading eigenvector; its signs give a split."""),
+        netpick,
+        Tabs(
+            Tab("Leading eigenvector",
+                Row(Button("Split by the signs", onClick=lambda: split_by_sign()),
+                    Button("Show the vector", onClick=lambda: show_vector())),
+                Markdown(vector_text), Chart(vector_chart)),
+            Tab("More groups",
+                Row(Button("Split again", onClick=lambda: play_splits()),
+                    Button("All splits", onClick=lambda: all_splits()),
+                    Button("Start over", onClick=lambda: start_over())),
+                Markdown(splits_text), Chart(splits_chart), Chart(matrix_chart)),
+            Tab("Compare",
+                Markdown(compare_text),
+                Button("Simulate: harder and harder groups", onClick=lambda: sim_start()),
+                Markdown(sim_text), Chart(sim_chart)),
+            onChange=switch)),
+    sizes={"right": 410},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges · β₁ = {st['beta']:.2f}"))
+center()

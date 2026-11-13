@@ -1127,7 +1127,7 @@ optimisation), then Part IV, *Applications*, opening with community
 detection by modularity. The growth models replay their growth in place
 (`born` + `revealUpTo`).
 
-**`ch13-growth-variations`: Extra edges and edge removal (§§13.4.1–13.4.2)** · planned
+**`ch13-growth-variations`: Extra edges and edge removal (§§13.4.1–13.4.2)** · built
 - *Idea:*
   - real networks also gain edges between old nodes and lose edges;
   - adding edges between existing nodes (also chosen by degree) and removing random edges changes the exponent, but the tail stays a power law while growth dominates.
@@ -1138,7 +1138,7 @@ detection by modularity. The growth models replay their growth in place
   - "Simulate" sweeps the removal rate.
 - *GUESS:* a general growth generator (see gaps), `revealUpTo`, `fitPowerLaw`.
 
-**`ch13-nonlinear-attachment`: Non-linear preferential attachment (§13.4.3)** · planned
+**`ch13-nonlinear-attachment`: Non-linear preferential attachment (§13.4.3)** · built
 - *Idea:*
   - attachment ∝ k^γ;
   - γ < 1 gives a stretched exponential: no power law;
@@ -1151,7 +1151,7 @@ detection by modularity. The growth models replay their growth in place
   - degree distributions for three γ values side by side.
 - *GUESS:* the general growth generator, `revealUpTo`, `plotFrequency`.
 
-**`ch13-node-copying`: Node copying models (§13.5)** · planned
+**`ch13-node-copying`: Node copying models (§13.5)** · built
 - *Idea:*
   - a new node copies the links of a random existing node (each with some probability), plus a few links of its own;
   - this gives a power law without any explicit preference;
@@ -1163,7 +1163,7 @@ detection by modularity. The growth models replay their growth in place
   - a comparison with Price's model at a matching exponent.
 - *GUESS:* a copying-model generator (see gaps), `revealUpTo`, `fitPowerLaw`.
 
-**`ch13-optimization-models`: Networks designed for a purpose (§13.6)** · planned
+**`ch13-optimization-models`: Networks designed for a purpose (§13.6)** · built
 - *Idea:*
   - a transport network trades the cost of building edges against travel time;
   - cheap networks are trees, fast ones are meshes, and in between hub-and-spoke designs appear (as in airline networks).
@@ -1175,7 +1175,7 @@ detection by modularity. The growth models replay their growth in place
   - presets show the tree, hub-and-spoke and mesh regimes.
 - *GUESS:* `everyPaced`, `drawLine`, `plotLine`, Dijkstra from networkx.
 
-**`ch14-modularity`: Dividing networks and modularity (§§14.1–14.2.2)** · planned
+**`ch14-modularity`: Dividing networks and modularity (§§14.1–14.2.2)** · built
 - *Idea:*
   - graph partitioning fixes the number and size of groups; community detection doesn't;
   - modularity Q measures how many more edges fall within groups than chance would give;
@@ -1187,7 +1187,7 @@ detection by modularity. The growth models replay their growth in place
   - the edges between groups are dashed, and the result is compared with the known split.
 - *GUESS:* `modularity`, `makeBlockModel`, `everyPaced`, `graphevents.clickNode`.
 
-**`ch14-spectral-modularity`: Spectral modularity maximisation (§§14.2.3–14.2.4)** · planned
+**`ch14-spectral-modularity`: Spectral modularity maximisation (§§14.2.3–14.2.4)** · built
 - *Idea:*
   - modularity is a quadratic form in the modularity matrix B = A − kkᵀ/2m;
   - the signs of its leading eigenvector give a good split;
@@ -1198,7 +1198,7 @@ detection by modularity. The growth models replay their growth in place
   - `showMatrix(order=group)` shows the block structure.
 - *GUESS:* numpy, `showMatrix`, `plotLine`.
 
-**`ch14-louvain-resolution`: The Louvain algorithm and the resolution limit (§§14.2.5–14.2.6)** · planned
+**`ch14-louvain-resolution`: The Louvain algorithm and the resolution limit (§§14.2.5–14.2.6)** · built
 - *Idea:*
   - Louvain moves nodes locally and then merges each community into a single node, repeating; it is fast and good;
   - but modularity has a resolution limit: in a ring of small cliques, maximising Q can merge neighbouring cliques even though each is clearly a community.
@@ -1209,13 +1209,111 @@ detection by modularity. The growth models replay their growth in place
     - a resolution slider (`louvainClusters(resolution=)`) shows communities split as it rises.
 - *GUESS:* `louvainClusters(resolution=)`, `modularity`, networkx's Louvain levels (`louvain_partitions`), `subgraph`/`use()` for the collapsed graph.
 
-### Gaps expected in batch 9
+### Gaps in batch 9 (added before building: `makeGrowingNetwork(n, m, gamma, a, extra=, remove=)` with `born` and `died` (removed edges stay hidden, and `revealUpTo` replays removals); `makeCopyingModel(n, c, copy)` (the book's version; in-degree exponent 1 + 1/copy) with a `copied` field; `modularity(field, resolution=)`)
 
 | need | used by | status in GUESS | proposal |
 |---|---|---|---|
 | A general growth generator: m edges per new node, attachment ∝ (k + a)^γ, extra edges between old nodes, edge removal | ch13-growth-variations, ch13-nonlinear-attachment | `makeBarabasiAlbertRandom` (γ = 1, no extras), `makePriceModel` | `makeGrowingNetwork(n, m=2, gamma=1, a=1, extra=0, remove=0, seed=0)` with `born` on nodes and edges and a `died` step on removed edges (kept hidden, so the replay can show removals) |
 | Node copying model | ch13-node-copying | none | `makeCopyingModel(n, copy=0.5, links=2, seed=0)` with `born` and a `copied` field (the node copied from) |
 | `modularity(field, resolution=)` to match Louvain's | ch14-louvain-resolution | `modularity(field)` only | add `resolution=` |
+
+Notes from building batch 9:
+- **Book check (worth confirming against the errata):** eq. (13.85), the exponent with extra edges (w per step) and removals (v per step), is printed as α = 2 + (v − w)/(c + 2w − 2v). That gives 2 for plain Barabási–Albert and contradicts eq. (13.70).
+  - Solving the master equation (13.77) gives α = 2 + c/(c + 2w − 2v). That is 3 with no extras, reduces to (13.70), and diverges at v = c/2 + w as the text says.
+  - An exact numerical solution of (13.77) to k = 200,000 agrees to three decimals. `ch13-growth-variations` uses the corrected form and says why.
+- **Fixed in GUESS:**
+  - layouts are seeded by default, so `frLayout` and the others give the same result every run, in the browser and natively;
+  - `center()` includes self-loops;
+  - `makeGrowingNetwork`'s extra edges join only existing nodes.
+- **Explainers:** they should still use their own seeded layout where groups must be visibly apart.
+
+## Batch 10: book pages 515–567 (the rest of Chapter 14, *Community structure*)
+
+Community detection beyond modularity: description length, statistical
+inference, edge betweenness and hierarchical clustering. Then how to test
+the algorithms, and structures other than communities.
+
+**`ch14-infomap`: Communities as codes for random walks (§14.3)** · planned
+- *Idea:*
+  - a random walker stays inside communities for long stretches;
+  - naming communities and then nodes within them describes the walk in fewer bits;
+  - the map equation's description length is minimised by Infomap.
+- *Reader:*
+  - a walker moves (paced), its path coloured by community;
+  - a live "code" strip writes each step's codeword, with a community-change codeword when it leaves a group;
+  - a bar chart compares description lengths for one community, the planted groups, and Infomap's answer;
+  - drag nodes between groups to see the code length change.
+- *GUESS:* `infomapClusters`, `everyPaced`, a map-equation calculation in Python.
+
+**`ch14-sbm-inference`: Community detection by statistical inference (§14.4)** · planned
+- *Idea:*
+  - fit a stochastic block model by maximum likelihood;
+  - the plain SBM tends to split networks into hubs and periphery (the karate club!), so the degree-corrected SBM is needed;
+  - the likelihood says how well each partition explains the edges.
+- *Reader:*
+  - a karate-club tab with "Fit plain SBM" and "Fit degree-corrected SBM", each by paced Monte Carlo node moves (the moved node is highlighted);
+  - a live log-likelihood chart;
+  - the resulting groups against the real split, with NMI;
+  - block-model matrices for each fit.
+- *GUESS:* an SBM fitter (see gaps), `showMatrix(order=)`, `compareClusters`.
+
+**`ch14-girvan-newman`: Betweenness-based division (§14.5.1)** · planned
+- *Idea:*
+  - edges between communities carry many shortest paths;
+  - removing the highest-betweenness edge repeatedly (and recomputing) breaks the network into its communities;
+  - the order of the splits is a dendrogram.
+- *Reader:*
+  - "Remove the busiest edge" (paced), with each edge's width its betweenness and the removed edge flashing red;
+  - new components outlined as they appear;
+  - modularity at each level charted live, its peak marked;
+  - the dendrogram building up beside it.
+- *GUESS:* `edgeBetweennessClusters`, edge `betweenness`, a dendrogram chart (see gaps).
+
+**`ch14-hierarchical-clustering`: Hierarchical clustering (§14.5.2)** · planned
+- *Idea:*
+  - measure how similar each pair of nodes is (e.g. cosine similarity), then merge the most similar groups step by step;
+  - single, complete and average linkage give different trees;
+  - cutting the tree at a level gives communities.
+- *Reader:*
+  - a linkage dropdown;
+  - merges replayed (paced), with the merged groups' hulls joining;
+  - the dendrogram with a draggable cut height, and the graph coloured by the cut;
+  - single linkage's "chaining" shown on a network where it fails.
+- *GUESS:* `cutDendrogram`, `encircle`, numpy and SciPy-free linkage in Python, a dendrogram chart (see gaps).
+
+**`ch14-measuring-performance`: Testing community detection (§14.6)** · planned
+- *Idea:*
+  - test on real networks with known groups (the karate club), but mostly on artificial benchmarks with planted communities (planted partition, LFR);
+  - compare found and planted groups with normalized mutual information;
+  - every method fails when the groups are mixed enough.
+- *Reader:*
+  - a benchmark generator with a mixing slider μ; the planted groups are shown by colour and the found ones by hull;
+  - NMI and the method's name live;
+  - "Simulate" sweeps μ for Louvain, Infomap, label propagation and walktrap, with NMI curves on one chart (the classic benchmark plot);
+  - a table for the karate club.
+- *GUESS:* `makeBlockModel`, an LFR generator (see gaps), the clustering commands, `compareClusters`.
+
+**`ch14-other-structure`: Overlapping, hierarchical, core–periphery and ranked structure (§14.7)** · planned
+- *Idea:* communities aren't the only large-scale structure:
+  - groups overlap (link communities);
+  - groups nest (hierarchy);
+  - a dense core and a sparse periphery;
+  - nodes ranked so that edges mostly point one way (stratified networks), or placed in a latent space.
+- *Reader:* one tab per kind.
+  - **Overlapping:** `linkCommunities` shown with `showOverlaps`.
+  - **Hierarchical:** a nested block model, with zoomable hulls.
+  - **Core–periphery:** a core–periphery fit, with the block matrix and core nodes in the centre.
+  - **Ranking:** nodes placed by an inferred rank (SpringRank-style), with edges coloured by whether they point up or down; and a latent-space layout.
+- *GUESS:* `linkCommunities`, `showOverlaps`, `showMatrix`, `orderedLayout`, a core–periphery fit and a ranking (see gaps).
+
+### Gaps expected in batch 10
+
+| need | used by | status in GUESS | proposal |
+|---|---|---|---|
+| A dendrogram chart, linked to the graph | ch14-girvan-newman, ch14-hierarchical-clustering | `cutDendrogram` re-cuts walktrap and fast-greedy trees, but nothing draws them | `showDendrogram()` for the last hierarchical clustering (and from a merge list), with leaves linked to nodes, subtrees highlighting their members, and a click or drag to cut |
+| Fitting a stochastic block model (plain and degree-corrected) | ch14-sbm-inference, ch14-other-structure | `blockmodel` finds structural-equivalence positions, which is not SBM inference | `fitBlockModel(k, degreeCorrected=True, sweeps=, seed=)`: Monte Carlo maximum likelihood, field `sbm_class`, returning the log-likelihood |
+| LFR benchmark networks | ch14-measuring-performance | `makeBlockModel` (planted partition) only | `makeLFR(n, tau1, tau2, mu, ...)` via networkx, with a `community` field |
+| Core–periphery and ranking | ch14-other-structure | none | `corePeriphery()` (a two-block fit with a `core` field) and `rankNodes()` (SpringRank-style, field `rank`) |
 
 ## To do (requests not yet done)
 

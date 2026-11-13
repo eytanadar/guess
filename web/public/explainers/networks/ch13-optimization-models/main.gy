@@ -1,0 +1,560 @@
+# Networks designed for a purpose  (Newman, Networks, Section 13.6)
+# Some networks are designed rather than grown: airline routes, delivery
+# networks. A simple model trades the cost of running the network (its number
+# of edges m) against how long trips take (the mean distance l):
+#     E = lambda * m + (1 - lambda) * l.
+# * Ferrer i Cancho and Sole: l counts legs (hops). The best network for all but
+#   tiny lambda is a star (hub and spoke); below lambda = 2/(n^2 + 2) it is the
+#   complete graph. A random hill climber, which only accepts changes that don't
+#   make E worse, gets stuck in local minima: random-looking trees for large
+#   lambda, near-stars for smaller.
+# * Gastner and Newman: towns on a map, and a leg takes time mu + nu * distance.
+#   With most of the time spent in the air (mu = 0) the optimum looks like a road
+#   map; with most of it in airports (nu = 0), like an airline's hubs. Found by
+#   simulated annealing, which sometimes accepts worse changes to escape.
+# Nodes stay where they are: only the edges change.
+
+import math
+import random
+import numpy as np
+
+mode = ["Edges or hops"]
+
+
+# ---- shared: a network as an adjacency matrix, kept in step with the drawing ---------------------
+class Net:
+    pass
+
+
+net = Net()
+net.A = None            # adjacency (bool numpy matrix)
+net.W = None            # leg time between each pair (hops: all 1)
+net.P = []              # node centres (x, y)
+net.names = []
+net.edges = {}          # (i, j) with i < j -> GUESS edge
+net.tried = 0
+net.accepted = 0
+net.trace = []          # (proposals, E, m, l)
+net.last = None         # ("add" | "remove" | "rejected", i, j)
+net.lam = 0.03
+net.kind = "hops"
+net.timer = None
+net.temp = None
+net.rnd = random.Random(1)
+net.goal = 3000
+
+
+def quality(A, W, lam):
+    """(E, m, l) for adjacency A with leg times W, or None if A is disconnected."""
+    n = len(A)
+    D = np.where(A, W, np.inf)
+    np.fill_diagonal(D, 0.0)
+    for k in range(n):                                 # Floyd-Warshall, one row/column at a time
+        D = np.minimum(D, D[:, k:k + 1] + D[k:k + 1, :])
+    if np.isinf(D).any():
+        return None
+    m = float(A.sum()) / 2
+    ell = float(D.sum()) / (n * (n - 1))
+    return lam * m + (1 - lam) * ell, m, ell
+
+
+def hops_matrix(A):
+    """Number of legs on a fastest route (for the map, where routes minimise time, not legs)."""
+    n = len(A)
+    W = np.where(A, net.W, np.inf)
+    np.fill_diagonal(W, 0.0)
+    D = W.copy()
+    H = np.where(A, 1.0, np.inf)
+    np.fill_diagonal(H, 0.0)
+    for k in range(n):
+        via = D[:, k:k + 1] + D[k:k + 1, :]
+        better = via < D - 1e-12
+        H = np.where(better, H[:, k:k + 1] + H[k:k + 1, :], H)
+        D = np.minimum(D, via)
+    return H
+
+
+def place(prefix, P):
+    remove(list(g.nodes))
+    clearDrawings()
+    net.P = P
+    net.names = [f"{prefix}{i}" for i in range(len(P))]
+    net.edges = {}
+    for name_, (x, y) in zip(net.names, P):
+        addNode(name_, x=x - 6, y=y - 6)
+
+
+def sync():
+    """Make the drawn edges match A."""
+    n = len(net.A)
+    for i in range(n):
+        for j in range(i + 1, n):
+            on = bool(net.A[i, j])
+            e = net.edges.get((i, j))
+            if on and e is None:
+                net.edges[(i, j)] = addEdge(g.getNodeByName(net.names[i]), g.getNodeByName(net.names[j]))
+            elif not on and e is not None:
+                remove([e])
+                net.edges.pop((i, j))
+
+
+def look():
+    deg = net.A.sum(axis=1)
+    top = max(1, int(deg.max()))
+    hub = int(np.argmax(deg))
+    for i, name_ in enumerate(net.names):
+        v_ = g.getNodeByName(name_)
+        s_ = 10 + 26 * math.sqrt(deg[i] / top)
+        v_.width = v_.height = s_
+        v_.x, v_.y = net.P[i][0] - s_ / 2, net.P[i][1] - s_ / 2       # keep the centre fixed
+        v_.color = "120,170,230" if i != hub else "250,200,60"
+        v_.strokecolor, v_.strokewidth = ("120,70,0", 3) if i == hub else ("40,40,40", 0.75)
+        v_.label = str(int(deg[i]))
+        v_.labelvisible = deg[i] >= max(4, top // 2)
+    for e in g.edges:
+        e.color, e.width, e.linestyle = ("150,150,150,140", 1.2, "solid")
+    clearDrawings()
+    if net.last is None:
+        return
+    what, i, j = net.last
+    (x1, y1), (x2, y2) = net.P[i], net.P[j]
+    if what == "add":
+        e = net.edges.get((min(i, j), max(i, j)))
+        if e is not None:
+            e.color, e.width, e.linestyle = "60,200,90", 3.5, "flow"
+    elif what == "remove":
+        drawLine(x1, y1, x2, y2, color="230,60,50", width=3, style="dashed")
+    else:
+        drawLine(x1, y1, x2, y2, color="160,160,160", width=1.5, style="dotted")
+    for k in (i, j):
+        v_ = g.getNodeByName(net.names[k])
+        v_.strokecolor, v_.strokewidth = "20,20,20", 3
+
+
+def propose(rnd, temp):
+    """One change: toggle a random pair (the map also tries moving an edge's end).
+    Accepted if E doesn't rise (or, while annealing, sometimes even if it does)."""
+    n = len(net.A)
+    A = net.A
+    if net.kind == "map" and rnd.random() < 0.5:
+        es = np.argwhere(np.triu(A))
+        i, j = (int(x) for x in es[rnd.randrange(len(es))])
+        k = rnd.randrange(n)
+        if k in (i, j) or A[i, k]:
+            return
+        changes = [(i, j), (i, k)]
+        shown = ("add", i, k)
+    else:
+        i, j = rnd.sample(range(n), 2)
+        changes = [(i, j)]
+        shown = ("remove" if A[i, j] else "add", i, j)
+    for a, b in changes:
+        A[a, b] = A[b, a] = not A[a, b]
+    new = quality(A, net.W, net.lam)
+    cur = net.trace[-1][1] if net.trace else None
+    worse = new is None or (cur is not None and new[0] > cur + 1e-12)
+    if worse and new is not None and temp and rnd.random() < math.exp(-(new[0] - cur) / temp):
+        worse = False
+    net.tried += 1
+    if worse:
+        for a, b in changes:
+            A[a, b] = A[b, a] = not A[a, b]
+        net.last = ("rejected", shown[1], shown[2])
+        net.rejected_run += 1
+        return
+    net.accepted += 1
+    net.rejected_run = 0
+    net.last = shown
+    net.trace.append((net.tried, new[0], new[1], new[2]))
+
+
+def step_run():
+    if net.tried >= net.goal or (net.kind == "hops" and net.rejected_run > 600):
+        net.timer = None
+        run_btn_text()
+        return False
+    t = net.ticks
+    net.ticks += 1
+    batch = 1 if t < 10 else min(150, 2 ** (t - 8))   # single changes first, so each can be seen
+    for _ in range(batch):
+        if net.tried >= net.goal:
+            break
+        temp = None
+        if net.kind == "map":
+            frac = net.tried / net.goal
+            temp = 0.05 * (0.0005 / 0.05) ** frac         # annealing: cool from 0.05 to 0.0005
+            net.temp = temp
+        propose(net.rnd, temp)
+    sync()
+    look()
+    left = net.goal - net.tried
+    return max(1, left // 150) if left > 0 else False
+
+
+def run_btn_text():
+    if run_btn is not None:
+        run_btn.text = "Optimise: hill climb" if mode[0] == "Edges or hops" else "Optimise: anneal"
+
+
+def start_run():
+    if net.timer is not None and net.timer.running:
+        stop_run()
+        return
+    if net.tried >= net.goal or (net.kind == "hops" and net.rejected_run > 600):
+        reset()
+    net.ticks = 0
+    net.timer = everyPaced(step_run, slow=0.9, fast=0.1, ramp=4)
+    run_btn.text = "Pause"
+
+
+def stop_run():
+    if net.timer is not None:
+        net.timer.stop()
+        net.timer = None
+    for t in (sweep_h, sweep_m):
+        if t["timer"] is not None:
+            t["timer"].stop()
+            t["timer"] = None
+    run_btn_text()
+
+
+def finish_run():
+    stop_run()
+    while net.tried < net.goal and not (net.kind == "hops" and net.rejected_run > 600):
+        temp = 0.05 * (0.0005 / 0.05) ** (net.tried / net.goal) if net.kind == "map" else None
+        net.temp = temp
+        propose(net.rnd, temp)
+    net.last = None
+    sync()
+    look()
+
+
+# ---- tab 1: edges or hops (Ferrer i Cancho and Sole) ---------------------------------------------
+N_HOPS = 25
+
+
+def setup_hops(v=None):
+    stop_run()
+    net.kind = "hops"
+    net.lam = 10 ** float(lslider.value)
+    n = N_HOPS
+    P = [(300 + 240 * math.cos(2 * math.pi * i / n), 300 + 240 * math.sin(2 * math.pi * i / n)) for i in range(n)]
+    place("hn", P)
+    net.W = np.ones((n, n))
+    reset()
+    center(g.nodes)
+
+
+def random_start(n, rnd):
+    A = np.zeros((n, n), bool)
+    for i in range(n):
+        A[i, (i + 1) % n] = A[(i + 1) % n, i] = True
+    for i in range(n):
+        for j in range(i + 1, n):
+            if rnd.random() < 0.15:
+                A[i, j] = A[j, i] = True
+    return A
+
+
+def mst_start(P):
+    n = len(P)
+    A = np.zeros((n, n), bool)
+    inside = {0}
+    while len(inside) < n:
+        i, j = min(((i, j) for i in inside for j in range(n) if j not in inside),
+                   key=lambda e: math.dist(P[e[0]], P[e[1]]))
+        A[i, j] = A[j, i] = True
+        inside.add(j)
+    return A
+
+
+def reset():
+    net.rnd = random.Random(net.seed)
+    if net.kind == "hops":
+        net.A = random_start(len(net.P), net.rnd)
+        net.goal = 3000
+    else:
+        net.A = mst_start(net.P)
+        net.goal = 6000
+    net.tried = net.accepted = net.rejected_run = 0
+    net.temp = None
+    net.last = None
+    q = quality(net.A, net.W, net.lam)
+    net.trace = [(0, q[0], q[1], q[2])]
+    sync()
+    look()
+
+
+def new_start():
+    net.seed += 1
+    (setup_hops if net.kind == "hops" else setup_map)()
+
+
+def hops_text():
+    if mode[0] != "Edges or hops":
+        return ""
+    n = len(net.P)
+    lam = net.lam
+    _t, E, m, ell = net.trace[-1]
+    deg = net.A.sum(axis=1)
+    lam_c = 2 / (n * n + 2)
+    star_E = lam * (n - 1) + (1 - lam) * (2 - 2 / n)
+    full_E = lam * n * (n - 1) / 2 + (1 - lam) * 1.0
+    best = "the star" if lam > lam_c else "the complete graph"
+    out = (f"λ = **{lam:.4f}**: E = λm + (1 − λ)ℓ = **{E:.3f}**, with m = **{int(m)}** edges and mean distance "
+           f"ℓ = **{ell:.2f}** legs. Biggest hub: **{int(deg.max())}** of {n - 1} possible links.\n\n"
+           f"The best possible network here is **{best}** (E = {min(star_E, full_E):.3f}): a star wins whenever "
+           f"λ > 2/(n² + 2) = {lam_c:.4f}, because every trip is at most 2 legs on just n − 1 edges.")
+    if net.tried:
+        out += (f"\n\n**{net.tried}** changes tried, **{net.accepted}** kept. A hill climber keeps a change only if "
+                "E doesn't rise: green = edge added, red dashed = edge removed, dotted grey = tried and rejected.")
+        if net.rejected_run > 600 or net.tried >= net.goal:
+            out += (" It has stopped: no single change helps, a **local minimum**." +
+                    (" Not the star: for large λ it gets stuck in random-looking trees." if deg.max() < n - 1 and
+                     lam > lam_c else ""))
+    return out
+
+
+def hops_chart():
+    if mode[0] != "Edges or hops" or len(net.trace) < 2:
+        return None
+    return plotLine({"E": [(t, e) for t, e, _m, _l in net.trace],
+                     "ℓ (legs)": [(t, l) for t, _e, _m, l in net.trace]},
+                    title="Quality while climbing", xlabel="changes tried", ylabel="E, ℓ")
+
+
+sweep_h = {"timer": None, "rows": [], "todo": []}
+LAMS = [-3, -2.5, -2, -1.75, -1.5, -1.25, -1, -0.75, -0.5]
+
+
+def hill_off(n, lam, steps, seed):
+    rnd = random.Random(seed)
+    A = random_start(n, rnd)
+    W = np.ones((n, n))
+    cur = quality(A, W, lam)
+    run = 0
+    for _ in range(steps):
+        i, j = rnd.sample(range(n), 2)
+        A[i, j] = A[j, i] = not A[i, j]
+        new = quality(A, W, lam)
+        if new is None or new[0] > cur[0] + 1e-12:
+            A[i, j] = A[j, i] = not A[i, j]
+            run += 1
+            if run > 600:
+                break
+        else:
+            cur, run = new, 0
+    return cur, A.sum(axis=1)
+
+
+def sweep_h_step():
+    if not sweep_h["todo"]:
+        return False
+    x = sweep_h["todo"].pop(0)
+    (E, m, ell), deg = hill_off(N_HOPS, 10 ** x, 3000, 3)
+    sweep_h["rows"].append((10 ** x, int(m), ell, int(deg.max())))
+    return len(sweep_h["todo"])
+
+
+def simulate_hops():
+    stop_run()
+    sweep_h.update(rows=[], todo=list(LAMS))
+    sweep_h["timer"] = everyPaced(sweep_h_step, steps=len(LAMS) + 1, slow=0.7, fast=0.3, ramp=1)
+
+
+def sweep_h_text():
+    if mode[0] != "Edges or hops" or not sweep_h["rows"]:
+        return ""
+    n = N_HOPS
+    rows = ["| λ | edges m | ℓ | biggest hub |", "|---|---|---|---|"]
+    for lam, m, ell, hub in sweep_h["rows"]:
+        rows.append(f"| {lam:.4f} | {m} | {ell:.2f} | {hub} of {n - 1} |")
+    return ("Hill climbs from random starts, one per λ:\n\n" + "\n".join(rows) +
+            "\n\nTiny λ: everything joined to everything. Moderate λ: a hub-and-spoke star. Large λ: stuck in "
+            "random-looking trees (local minima), though the star would still be best.")
+
+
+def sweep_h_chart():
+    if mode[0] != "Edges or hops" or not sweep_h["rows"]:
+        return None
+    n = N_HOPS
+    return plotLine({"biggest hub / (n − 1)": [(lam, hub / (n - 1)) for lam, _m, _l, hub in sweep_h["rows"]],
+                     "edges / (n − 1)": [(lam, m / (n - 1)) for lam, m, _l, _h in sweep_h["rows"]]},
+                    logX=true, logY=true, title="What the climber finds", xlabel="λ", ylabel="share", dots=true)
+
+
+# ---- tab 2: roads or airlines (Gastner and Newman) -----------------------------------------------
+N_TOWNS = 30
+
+
+def setup_map(v=None):
+    stop_run()
+    net.kind = "map"
+    net.lam = float(mslider.value)
+    delta = float(dslider.value)
+    rnd = random.Random(100 + net.seed)
+    P = [(40 + 560 * rnd.random(), 40 + 560 * rnd.random()) for _ in range(N_TOWNS)]
+    place("town", P)
+    R = np.array([[math.dist(a, b) for b in P] for a in P]) / (0.52 * 560)   # typical trip ~ 1
+    net.R = R
+    net.W = delta + (1 - delta) * R                     # a leg: fixed time + time in the air
+    reset()
+    center(g.nodes)
+
+
+def preset(delta):
+    dslider.value = delta
+    setup_map()
+
+
+def map_text():
+    if mode[0] != "Roads or airlines":
+        return ""
+    delta, lam = float(dslider.value), net.lam
+    _t, E, m, ell = net.trace[-1]
+    deg = net.A.sum(axis=1)
+    H = hops_matrix(net.A)
+    n = len(net.P)
+    legs = float(H.sum()) / (n * (n - 1))
+    length = float((net.A * net.R).sum()) / 2
+    out = (f"A leg takes **{delta:.1f}** (airport time) + **{1 - delta:.1f}** × distance (time moving). "
+           f"Cost weight λ = {lam:.3f}.\n\n"
+           f"Now: **{int(m)}** routes, total length **{length:.1f}**, mean trip time ℓ = **{ell:.2f}**, "
+           f"**{legs:.2f}** legs per trip, biggest hub **{int(deg.max())}** routes. E = {E:.3f}.")
+    if net.tried:
+        temp_s = f"{net.temp:.4f}" if net.temp is not None else "–"
+        out += (f"\n\n**{net.tried}** of {net.goal} changes tried (temperature {temp_s}). Annealing sometimes "
+                "keeps a change that makes E worse, less often as it cools, so it can climb out of local minima.")
+    out += ("\n\nWith δ = 0 only distance matters: the result looks like a **road map**, short links between "
+            "neighbours. With δ = 1 each leg costs the same however long: a few **hubs** with spokes, like an "
+            "airline.")
+    return out
+
+
+def map_chart():
+    if mode[0] != "Roads or airlines" or len(net.trace) < 2:
+        return None
+    return plotLine({"E": [(t, e) for t, e, _m, _l in net.trace],
+                     "ℓ (trip time)": [(t, l) for t, _e, _m, l in net.trace]},
+                    title="Quality while annealing", xlabel="changes tried", ylabel="E, ℓ")
+
+
+sweep_m = {"timer": None, "rows": [], "todo": []}
+DELTAS = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+
+
+def anneal_off(P, delta, lam, steps, seed):
+    rnd = random.Random(seed)
+    n = len(P)
+    R = np.array([[math.dist(a, b) for b in P] for a in P]) / (0.52 * 560)
+    W = delta + (1 - delta) * R
+    A = mst_start(P)
+    cur = quality(A, W, lam)
+    for s in range(steps):
+        temp = 0.05 * (0.0005 / 0.05) ** (s / steps)
+        if rnd.random() < 0.5:
+            es = np.argwhere(np.triu(A))
+            i, j = (int(x) for x in es[rnd.randrange(len(es))])
+            k = rnd.randrange(n)
+            if k in (i, j) or A[i, k]:
+                continue
+            ch = [(i, j), (i, k)]
+        else:
+            ch = [tuple(rnd.sample(range(n), 2))]
+        for a, b in ch:
+            A[a, b] = A[b, a] = not A[a, b]
+        new = quality(A, W, lam)
+        if new is None or (new[0] > cur[0] and rnd.random() > math.exp(-(new[0] - cur[0]) / temp)):
+            for a, b in ch:
+                A[a, b] = A[b, a] = not A[a, b]
+        else:
+            cur = new
+    deg = A.sum(axis=1)
+    return cur, int(deg.max()), float((A * R).sum()) / 2
+
+
+def sweep_m_step():
+    if not sweep_m["todo"]:
+        return False
+    d = sweep_m["todo"].pop(0)
+    (E, m, ell), hub, length = anneal_off(net.P, d, net.lam, 6000, 5)
+    sweep_m["rows"].append((d, int(m), hub, length))
+    return len(sweep_m["todo"])
+
+
+def simulate_map():
+    stop_run()
+    sweep_m.update(rows=[], todo=list(DELTAS))
+    sweep_m["timer"] = everyPaced(sweep_m_step, steps=len(DELTAS) + 1, slow=0.7, fast=0.3, ramp=1)
+
+
+def sweep_m_text():
+    if mode[0] != "Roads or airlines" or not sweep_m["rows"]:
+        return ""
+    rows = ["| δ (airport time) | routes | biggest hub | total length |", "|---|---|---|---|"]
+    for d, m, hub, length in sweep_m["rows"]:
+        rows.append(f"| {d:.1f} | {m} | {hub} | {length:.1f} |")
+    return ("The same towns annealed for each δ (6,000 changes each, as long as the animated run):\n\n" + "\n".join(rows) +
+            "\n\nAs airport time takes over, the biggest hub grows and the network trades short roads for a few "
+            "long flights through hubs.")
+
+
+def sweep_m_chart():
+    if mode[0] != "Roads or airlines" or not sweep_m["rows"]:
+        return None
+    n = N_TOWNS
+    return plotLine({"biggest hub / (n − 1)": [(d, hub / (n - 1)) for d, _m, hub, _l in sweep_m["rows"]]},
+                    title="Hubs appear as airport time grows", xlabel="δ", ylabel="hub share", dots=true,
+                    yrange=(0, 1))
+
+
+# ---- layout ------------------------------------------------------------------------------------------
+def switch(title):
+    mode[0] = title
+    stop_run()
+    if title == "Edges or hops":
+        setup_hops()
+    else:
+        setup_map()
+    run_btn_text()
+
+
+net.seed = 1
+net.rejected_run = 0
+net.ticks = 0
+lslider = Slider(-3, -0.5, -1.5, 0.1, label="log₁₀ λ (cost of an edge)")
+lslider.onChange = setup_hops
+dslider = Slider(0, 1, 1, 0.1, label="δ, airport time per leg")
+dslider.onChange = setup_map
+mslider = Slider(0.005, 0.05, 0.02, 0.005, label="λ, cost of a route")
+mslider.onChange = setup_map
+run_btn = Button("Optimise: hill climb", onClick=lambda: start_run())
+
+setup_hops()
+constantLabelSize(size=14)
+ui.title("Networks designed for a purpose", "Networks, Section 13.6")
+ui.layout(
+    right=Column(
+        Markdown("""### Cost against convenience
+Minimise **E = λ·(number of edges) + (1 − λ)·(mean trip length)**. Only
+edges change; the nodes stay put."""),
+        Row(run_btn, Button("Finish now", onClick=lambda: finish_run()),
+            Button("New start", onClick=lambda: new_start())),
+        Tabs(
+            Tab("Edges or hops", lslider, Markdown(hops_text), Chart(hops_chart),
+                Button("Simulate: sweep λ", onClick=lambda: simulate_hops()),
+                Markdown(sweep_h_text), Chart(sweep_h_chart)),
+            Tab("Roads or airlines",
+                Row(dslider, mslider),
+                Row(Button("Roads (δ = 0)", onClick=lambda: preset(0)),
+                    Button("In between (δ = 0.5)", onClick=lambda: preset(0.5)),
+                    Button("Airlines (δ = 1)", onClick=lambda: preset(1))),
+                Markdown(map_text), Chart(map_chart),
+                Button("Simulate: sweep δ", onClick=lambda: simulate_map()),
+                Markdown(sweep_m_text), Chart(sweep_m_chart)),
+            onChange=switch)),
+    sizes={"right": 430},
+)
+ui.toolbar(Action("tool:select"), Action("fit"), Action("png"), "|", Action("source", "How this is built"))
+ui.statusbar(Label(lambda: f"{len(g.nodes)} nodes · {len(g.edges)} edges"))
+center(g.nodes)

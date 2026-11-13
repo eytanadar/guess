@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Node copying",
+  "description": "New nodes copy the links of a random older node, imperfectly: a power law with no preferential attachment at all.",
+  "console": "toggle",
+  "script": "main.gy"
+}

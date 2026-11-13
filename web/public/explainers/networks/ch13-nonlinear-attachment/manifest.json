@@ -1,0 +1,7 @@
+{
+  "guess-app": 1,
+  "name": "Non-linear preferential attachment",
+  "description": "Attachment in proportion to degree to the power γ: below 1 the tail is a stretched exponential, at 1 a power law, and above 1 one node grabs a finite share of every edge.",
+  "console": "toggle",
+  "script": "main.gy"
+}
