@@ -2195,8 +2195,9 @@ several things are selected, the function receives the selection.
 
 Long results print compactly: a set of many groups (`groupBy(dept)`, the
 communities from `louvainClusters()`) shows as a list of groups, each folded
-to its first member, `[[v1, … +27 more], [v2, … +42 more], …]`, each linked
-to its members (see *Folding lists* below).
+to its label and first member, `[[dept0: v1, … +27 more], [dept1: v2, … +42
+more], …]`, each linked to its members (see *Folding lists* and *Group
+labels* below).
 
 **Code and graph, linked.** The console and the graph point at each other:
 
@@ -2219,6 +2220,12 @@ to its members (see *Folding lists* below).
   many groups (`louvainClusters()` or `groupBy(dept)` on a big graph) print
   a list of the groups with each one folded; hover a group for its name and
   size, or open it to see its members.
+- **Group labels.** A group made by a grouping or clustering command shows
+  its label inside its brackets, folded or open: `[dept3: v4, … +8 more]`
+  from `groupBy(dept)`, `[community 0: v9, …]` from `louvainClusters()`,
+  `[degree=4: …]` from `groupBy(degree)`. Any set can have one:
+  `t = dept == 'dept3'; t.grouplabel = 'team three'` prints as
+  `[team three: v4, v5, …]`. (`t.label = …` would set every node's label.)
 - **Deleted elements.** A printed node or edge that has since been removed
   is struck through and no longer linked. Undo brings it back, and the line
   goes.
