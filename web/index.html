@@ -78,16 +78,16 @@
             <button role="menuitemcheckbox" id="btn-history" aria-pressed="false" title="Step back and forward through the undo history; hover a step to see what it changed">History…</button>
             <hr />
             <button role="menuitem" data-run="select(g.nodes)">Select all nodes</button>
-            <button role="menuitem" data-run="select(ninverse(sel))">Invert selection</button>
+            <button role="menuitem" data-run-sel="select(ninverse({sel}))">Invert selection</button>
             <button role="menuitem" id="delete-sel" title="Remove the selected nodes and their edges (undoable)">Delete selected nodes<kbd>⌫</kbd></button>
-            <button role="menuitem" data-run="select()">Clear selection<kbd>Esc</kbd></button>
+            <button role="menuitem" id="clear-sel">Clear selection<kbd>Esc</kbd></button>
             <hr />
-            <button role="menuitem" data-run="collapse(sel)">Collapse selection into a group</button>
+            <button role="menuitem" data-run-sel="collapse({sel})">Collapse selection into a group</button>
             <button role="menuitem" data-run="expandAll()">Expand all groups</button>
-            <button role="menuitem" data-run="subgraph(sel)">New graph from selection</button>
+            <button role="menuitem" data-run-sel="subgraph({sel})">New graph from selection</button>
             <hr />
-            <button role="menuitem" data-run="showOnly(sel)">Show only the selection</button>
-            <button role="menuitem" data-run="showAll()">Show everything</button>
+            <button role="menuitem" data-run-sel="showOnly({sel})">Show only the selection</button>
+            <button role="menuitem" data-run="showAll()">Show all</button>
           </div>
         </div>
 <div class="menu-root">
@@ -106,14 +106,14 @@
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Edges</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
-<button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges())">Curved edges</button>
+<button role="menuitemcheckbox" id="curved" aria-pressed="false" title="Gephi-style curved edges (curvedEdges(true))">Curved edges</button>
 <button role="menuitem" data-run="bundleEdges()" title="MINGLE: merge edges that run alike into bundles (good for large graphs)">Bundle edges (MINGLE)</button>
-<button role="menuitem" data-run="bundleEdges(method='fdeb')" title="Force-directed edge bundling: smooth, organic bundles">Bundle edges (force-directed)</button>
+<button role="menuitem" data-run='bundleEdges(method="fdeb")' title="Force-directed edge bundling: smooth, organic bundles">Bundle edges (force-directed)</button>
 <button role="menuitem" data-run="lombardiEdges()" title="lombardiEdges(): bend edges into circular arcs so each node's edges are evenly spread, without moving nodes">Round edges (Lombardi)</button>
 <button role="menuitem" data-run="removeBundles(); straightenEdges()">Straighten edges</button>
-<button role="menuitem" data-run="directedEdges('taper')" title="directedEdges('taper'): directed edges wide at the source, a point at the target, no arrowheads (the default; read best in Holten &amp; van Wijk's study)">Direction: tapered</button>
-<button role="menuitem" data-run="directedEdges('fade')" title="directedEdges('fade'): directed edges dark at the source, light at the target">Direction: dark to light</button>
-<button role="menuitem" data-run="directedEdges('arrow')" title="directedEdges('arrow'): directed edges with arrowheads">Direction: arrowheads</button>
+<button role="menuitem" data-run="directedEdges(&quot;taper&quot;)" title="directedEdges(&quot;taper&quot;): directed edges wide at the source, a point at the target, no arrowheads (the default; read best in Holten &amp; van Wijk's study)">Direction: tapered</button>
+<button role="menuitem" data-run="directedEdges(&quot;fade&quot;)" title="directedEdges(&quot;fade&quot;): directed edges dark at the source, light at the target">Direction: dark to light</button>
+<button role="menuitem" data-run="directedEdges(&quot;arrow&quot;)" title="directedEdges(&quot;arrow&quot;): directed edges with arrowheads">Direction: arrowheads</button>
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Labels and tooltips</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
@@ -128,7 +128,7 @@
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
 <button role="menuitem" id="find-output">Find in console output<kbd>⇧⌘F</kbd></button>
 <button role="menuitemcheckbox" id="vim-keys" aria-pressed="false">Vim keys in the code cell</button>
-<button role="menuitemcheckbox" id="show-moves" aria-pressed="false" title="Node drags are recorded as commands (undo, history, logs); show them in the console">Show node moves in the console</button>
+<button role="menuitemcheckbox" id="show-moves" aria-pressed="false" title="Show the cells the console hides: node moves and cluster lassos (they are recorded as commands for undo, history and logs either way)">Show hidden commands</button>
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Theme</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
@@ -165,8 +165,8 @@
 <button role="menuitem" data-run="circleLayout()">Circle</button>
 <button role="menuitem" data-run="sugiyamaLayout()">Hierarchy</button>
 <button role="menuitem" data-run="dotLayout()" title="Graphviz dot: layers, few crossings, edges routed around nodes">Layered, routed edges (dot)</button>
-<button role="menuitem" data-run="radialLayout(sel[0] if len(sel) else g.nodes[0])">Radial around selection</button>
-<button role="menuitem" data-run="treeLayout(sel[0] if len(sel) else None)">Tree (from selection)</button>
+<button role="menuitem" data-run-sel="radialLayout({first})" data-run-none="radialLayout(g.nodes[0])">Radial around selection</button>
+<button role="menuitem" data-run-sel="treeLayout({first})" data-run-none="treeLayout()">Tree (from selection)</button>
 <button role="menuitem" data-run="hiveLayout()" title="Nodes on radial axes by role, placed by degree (hiveLayout(field, position) for your own axes)">Hive plot</button>
 <button role="menuitem" data-run="concentricLayout(degree)" title="concentricLayout(degree): the best-connected nodes in the middle">Rings by degree</button>
 <button role="menuitem" data-run="lombardiLayout()" title="lombardiLayout(): circular-arc edges leaving each node at nearly equal angles (after the artist Mark Lombardi)">Lombardi-style (arcs, even angles)</button>
@@ -191,18 +191,18 @@
 <hr />
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Communities</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
-<button role="menuitem" data-run="cl = louvainClusters()&#10;colorize(louvain_class)&#10;legendFor(louvain_class)">Find communities</button>
-<button role="menuitem" data-run="cl = leidenClusters()&#10;colorize(leiden_class)&#10;legendFor(leiden_class)" title="igraph Leiden: every community internally connected">Find communities (Leiden)</button>
-<button role="menuitem" data-run="cl = infomapClusters()&#10;colorize(infomap_class)&#10;legendFor(infomap_class)" title="igraph Infomap: communities that trap a random walker; good for directed graphs">Find communities (Infomap)</button>
-<button role="menuitem" data-run="cl = labelPropagationClusters()&#10;colorize(lpa_class)&#10;legendFor(lpa_class)" title="Fast: each node takes the label most of its neighbours have">Find communities (label propagation)</button>
+<button role="menuitem" data-run="louvainClusters()&#10;colorize(louvain_class)&#10;legendFor(louvain_class)">Find communities</button>
+<button role="menuitem" data-run="leidenClusters()&#10;colorize(leiden_class)&#10;legendFor(leiden_class)" title="igraph Leiden: every community internally connected">Find communities (Leiden)</button>
+<button role="menuitem" data-run="infomapClusters()&#10;colorize(infomap_class)&#10;legendFor(infomap_class)" title="igraph Infomap: communities that trap a random walker; good for directed graphs">Find communities (Infomap)</button>
+<button role="menuitem" data-run="labelPropagationClusters()&#10;colorize(lpa_class)&#10;legendFor(lpa_class)" title="Fast: each node takes the label most of its neighbours have">Find communities (label propagation)</button>
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Centrality</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
 <button role="menuitem" data-run="sizeBy(degree, 5, 40, &quot;sqrt&quot;)">Size by degree</button>
-<button role="menuitem" data-run="sizeBy(pagerank, 5, 40, 'sqrt')">Size by PageRank</button>
-<button role="menuitem" data-run="sizeBy(betweenness, 5, 40, 'sqrt')">Size by betweenness</button>
+<button role="menuitem" data-run="sizeBy(pagerank, 5, 40, &quot;sqrt&quot;)">Size by PageRank</button>
+<button role="menuitem" data-run="sizeBy(betweenness, 5, 40, &quot;sqrt&quot;)">Size by betweenness</button>
 <button role="menuitem" data-run="sizeBy(eigenvector, 5, 40, &quot;sqrt&quot;)">Size by eigenvector centrality</button>
-<button role="menuitem" data-run="colorBy(closeness, '#fff3b0', '#d7263d')">Colour by closeness</button>
+<button role="menuitem" data-run="colorBy(closeness, &quot;#fff3b0&quot;, &quot;#d7263d&quot;)">Colour by closeness</button>
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Structure</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
@@ -247,12 +247,12 @@
 </nav>
       <input id="file" type="file" accept=".guess,.gdf,.gexf,.net,.paj,.graphml,.xml,.gml,.dot,.gv,.dl,.csv,.tsv,.txt,.tab,.json,.xlsx,.xlsm,.ttl,.nt,.n3,.rdf,.owl,.sif,.nnf,.cyjs,.cx,.cx2,.xgmml,.cys,.mitab,.psimitab,.mif,.psi,.sbml,.kgml,.gpml,.biopax,.py,.gy,image/*" multiple hidden />
       <span class="toolgroup" role="group" aria-label="Click tool">
-        <button data-tool="select" aria-pressed="true" title="Click a node to highlight its neighbourhood (again, or Esc, to clear); shift-drag box, alt-drag lasso">Select</button>
-        <button data-tool="lens" aria-pressed="false" title="Excentric lens (L switches between Select and Lens): lists the labels of the nodes under it; wheel resizes, click pins it to select or filter">◎ Lens</button>
-        <button data-tool="path" aria-pressed="false" title="Click two nodes to colour a shortest path between them">Path</button>
-        <button data-tool="heat" aria-pressed="false" title="Click a node to colour every node by its distance from it">Heat</button>
-        <button data-tool="paint" aria-pressed="false" title="Click nodes to paint them (shift-click paints the neighbours too)">Paint</button>
-        <button data-tool="cluster" aria-pressed="false" title="Label clusters by hand: each lasso puts the nodes it catches in the next cluster (asks for the field first)">Cluster</button>
+        <button data-tool="select" aria-pressed="true" title="Click a node to highlight its neighbourhood (again, or Esc, to clear); shift-drag box, alt-drag lasso (selecting writes no code; the selection is sel in the console)">Select</button>
+        <button data-tool="lens" aria-pressed="false" title="Excentric lens (L switches between Select and Lens): lists the labels of the nodes under it; wheel resizes, click pins it to select or filter (excentricLens)">◎ Lens</button>
+        <button data-tool="path" aria-pressed="false" title="Click two nodes to colour a shortest path between them (shortestPath)">Path</button>
+        <button data-tool="heat" aria-pressed="false" title="Click a node to colour every node by its distance from it (heatMap)">Heat</button>
+        <button data-tool="paint" aria-pressed="false" title="Click nodes to paint them; shift-click paints the neighbours too (paint)">Paint</button>
+        <button data-tool="cluster" aria-pressed="false" title="Label clusters by hand: each lasso puts the nodes it catches in the next cluster; asks for the field first (labelCluster)">Cluster</button>
         <input type="color" id="paint-color" value="#e8384f" title="Colour for Path and Paint" />
       </span>
       <button id="search" class="search-btn" title="Search commands, examples, nodes and values (Cmd/Ctrl+K)">Search<kbd>⌘K</kbd></button>

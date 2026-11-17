@@ -1,6 +1,7 @@
 """Measures from Newman, Networks, ch. 7 that GUESS's other modules lack:
 Katz centrality with a chosen alpha and beta, structural balance of signed
 networks, k-components, and regular-equivalence similarity."""
+from .algorithms import store_partition
 from .model import scatter_position, INT as INTEGER, GSet, GuessError
 
 
@@ -39,8 +40,8 @@ def install(session):
         sum to converge; small alpha ranks nodes almost by degree, alpha near
         1/kappa1 almost like eigenvector centrality. With alpha left out it is
         0.85/kappa1. Edges follow their direction (undirected ones both ways).
-        Stores the values in the field `name` (default "katz") and returns
-        (field, 1/kappa1)."""
+        Stores the values in the field katz (name= another) and returns it,
+        with .alpha (the alpha used) and .limit (1/kappa1)."""
         import numpy as np
         gr = g()
         nodes = gr._nodes_list()
@@ -62,7 +63,8 @@ def install(session):
             raise GuessError(f"alpha must be at least 0 and below 1/kappa1 = {limit:.4g}")
         x = np.linalg.solve(np.eye(n) - a * A, np.full(n, float(beta)))
         f = session.ns["setField"]({v: float(x[i]) for i, v in enumerate(nodes)}, str(name))
-        return f, limit
+        f.alpha, f.limit = a, limit
+        return f
 
     def _sign(e, field):
         v = getattr(e, field, None)
@@ -131,15 +133,16 @@ def install(session):
                         bad.append((u, v, w))
         return {"balanced": not frustrated, "unbalanced": bad, "frustrated": GSet(frustrated, "frustrated edges")}
 
-    def kComponents(k=2, name="kcomponent"):
+    def kComponents(k=2, name="kcomponent_class"):
         """kComponents(k) finds the k-components: the largest groups of nodes in
         which every pair is joined by at least k node-independent paths (k = 1:
         components; 2: bicomponents; 3: tricomponents). Unlike k-cores they need
-        the paths, not just the degrees. Returns them as sets, largest first, and
-        stores each node's (first) one in the field `name` (-1 for none); a node
-        can belong to more than one, e.g. a cut node shared by two bicomponents.
-        Direction is ignored. Exact for k <= 2; for k >= 3 uses networkx's
-        k_components (Moody and White), which can be slow on big graphs."""
+        the paths, not just the degrees. Returns them as groups, largest first,
+        and stores each node's in the field kcomponent_class (name= another;
+        -1 for none). A node can belong to more than one, e.g. a cut node
+        shared by two bicomponents: the field holds the largest. Direction is
+        ignored. Exact for k <= 2; for k >= 3 uses networkx's k_components
+        (Moody and White), which can be slow on big graphs."""
         import networkx as nx
         k = int(k)
         if k < 1:
@@ -152,20 +155,9 @@ def install(session):
             comps = [set(c) for c in nx.biconnected_components(G) if len(c) > 2]
         else:
             comps = [set(c) for c in nx.k_components(G).get(k, [])]
-        comps.sort(key=lambda c: (-len(c), min(map(str, c))))
         gr = g()
-        f = gr.addNodeField(str(name), INTEGER, -1)
-        for nd in gr._nodes_list():
-            f.set(nd, -1)
-        out = []
-        for i in reversed(range(len(comps))):
-            members = [gr._nodes[str(v)] for v in comps[i] if str(v) in gr._nodes]
-            for nd in members:
-                f.set(nd, i)
-        for i, c in enumerate(comps):
-            members = sorted((gr._nodes[str(v)] for v in c if str(v) in gr._nodes), key=lambda nd: nd._id)
-            out.append(GSet(members, f"{k}-component {i}"))
-        return out
+        groups = [[gr._nodes[str(v)] for v in c if str(v) in gr._nodes] for c in comps]
+        return store_partition(gr, groups, name, f"{k}-component")
 
     def bowTie(name="bowtie"):
         """bowTie() splits a directed network the way the Web was described in
@@ -174,7 +166,8 @@ def install(session):
         that can't reach back ("out"), "tube" nodes on paths from in to out that
         bypass the core, "tendril" nodes hanging off in or out, and "other"
         for nodes outside the core's weakly connected component. Sets the node
-        field `bowtie` and returns the sizes, e.g. {"core": 224, "in": 89, ...}.
+        field bowtie (name= another) and returns it, with the part sizes in
+        .sizes, e.g. {"core": 224, "in": 89, ...}.
         Undirected edges count both ways."""
         import networkx as nx
         G = session.ns["toNetworkX"](directed=True)
@@ -200,11 +193,12 @@ def install(session):
                 part[v] = "tube" if (v in from_in and v in to_out) else "tendril"
             else:
                 part[v] = "other"
-        session.ns["setField"](part, str(name))
+        f = session.ns["setField"](part, str(name))
         sizes = {k: 0 for k in ("core", "in", "out", "tube", "tendril", "other")}
         for k in part.values():
             sizes[k] += 1
-        return sizes
+        f.sizes = sizes
+        return f
 
     def _tail_fit(vals, kmin):
         import math
@@ -606,8 +600,8 @@ def install(session):
             t = np.where((M > 0) & (den > 0), M * np.log(M / np.where(den > 0, den, 1)), 0.0)
         return float(t.sum())
 
-    def fitBlockModel(k=2, degreeCorrected=True, restarts=5, seed=0, name="sbm_class"):
-        """fitBlockModel(k) divides the nodes into k groups by fitting a
+    def sbmClusters(count=2, degreeCorrected=True, restarts=5, seed=0, name="sbm_class"):
+        """sbmClusters(count) divides the nodes into count groups by fitting a
         stochastic block model by maximum likelihood (Newman, Networks,
         section 14.4; Karrer and Newman 2011): the groups that make the
         observed edges most probable. degreeCorrected=True (the default)
@@ -615,15 +609,16 @@ def install(session):
         (False) tends to put hubs in one group and everyone else in another,
         as on the karate club. Uses Kernighan-Lin passes of single-node moves
         from `restarts` random starts and keeps the best. Stores the groups in
-        the field `name` (0 = largest) and returns {"loglik": ..., "k": k}.
+        sbm_class (0 = largest; name= another field) and returns them, with
+        the fit's log-likelihood in .loglik.
         Edge direction and self-loops are ignored. Meant for networks of up to
         a few hundred nodes."""
         import numpy as np
         nodes, nbrs = _adjacency_lists()
         nbrs = [[j for j in ns if j != i] for i, ns in enumerate(nbrs)]
-        n, k = len(nodes), int(k)
+        n, k = len(nodes), int(count)
         if not 1 <= k <= n:
-            raise GuessError("fitBlockModel: k should be between 1 and the number of nodes")
+            raise GuessError("sbmClusters: count should be between 1 and the number of nodes")
         deg = np.array([len(x) for x in nbrs], float)
         dc = bool(degreeCorrected)
         rng = np.random.default_rng(seed)
@@ -670,10 +665,10 @@ def install(session):
             if best is None or L > best[0]:
                 best = (L, grp.copy())
         L, grp = best
-        order = sorted(range(k), key=lambda r: -int((grp == r).sum()))
-        relabel = {r: i for i, r in enumerate(order)}
-        session.ns["setField"]({nodes[i]: relabel[int(grp[i])] for i in range(n)}, str(name))
-        return {"loglik": round(L, 4), "k": k}
+        members = [[nodes[i] for i in range(n) if grp[i] == r] for r in range(k)]
+        out = store_partition(g(), members, name, "group")
+        object.__setattr__(out, "loglik", round(L, 4))
+        return out
 
     def _move(M, cnt, r, t):
         """Update the group-pair counts m (each edge counted from both ends) when a node with
@@ -740,8 +735,9 @@ def install(session):
         section 14.7.3; Borgatti and Everett's discrete model): the split that
         best matches the ideal pattern where every pair involving a core node
         is linked and no pair of peripheral nodes is. Sets the node field
-        `core` (1 in the core, 0 outside) and returns {"core": size, "fit": the
-        correlation with the ideal pattern}. Direction is ignored."""
+        core (1 in the core, 0 outside; name= another) and returns it, with
+        .size (the core's size) and .fit (the correlation with the ideal
+        pattern). Direction is ignored."""
         import numpy as np
         nodes, nbrs = _adjacency_lists()
         n = len(nodes)
@@ -779,8 +775,9 @@ def install(session):
                     best, improved = f, True
                 else:
                     core[i] = not core[i]
-        session.ns["setField"]({nodes[i]: int(core[i]) for i in range(n)}, str(name))
-        return {"core": int(core.sum()), "fit": round(best, 4)}
+        f = session.ns["setField"]({nodes[i]: int(core[i]) for i in range(n)}, str(name))
+        f.size, f.fit = int(core.sum()), round(best, 4)
+        return f
 
     def rankNodes(name="rank", alpha=0.0, endorsements=False):
         """rankNodes() places the nodes of a directed network on a ladder so that
@@ -790,9 +787,9 @@ def install(session):
         (i beat j) or who-hires-whose-graduates (j hired from i).
         endorsements=true reads each edge the other way, j above i, for links,
         citations or votes, where pointing to someone ranks them up. Sets the
-        node field `rank` (higher = above) and returns the share of edges that
-        agree with the ladder. alpha > 0 pulls ranks toward 0 (useful when the
-        network is in pieces)."""
+        node field rank (higher = above; name= another) and returns it, with
+        .agreement: the share of edges that agree with the ladder. alpha > 0
+        pulls ranks toward 0 (useful when the network is in pieces)."""
         import numpy as np
         gr = g()
         nodes = gr._nodes_list()
@@ -811,12 +808,13 @@ def install(session):
         b = dout - din
         rank = np.linalg.lstsq(L, b, rcond=None)[0]
         rank -= rank.min()
-        session.ns["setField"]({nodes[i]: float(rank[i]) for i in range(n)}, str(name))
+        f = session.ns["setField"]({nodes[i]: float(rank[i]) for i in range(n)}, str(name))
         down = sum(A[i, j] for i in range(n) for j in range(n) if A[i, j] and rank[i] > rank[j])
         total = A.sum()
-        return round(float(down / total), 4) if total else 1.0
+        f.agreement = round(float(down / total), 4) if total else 1.0
+        return f
 
     for fn in (katzCentrality, structuralBalance, kComponents, bowTie, fitPowerLaw, makeConfigurationModel,
                makeExpectedDegree, makePriceModel, makeBlockModel, makeGrowingNetwork, makeCopyingModel,
-               fitBlockModel, makeLFR, corePeriphery, rankNodes):
+               sbmClusters, makeLFR, corePeriphery, rankNodes):
         reg(fn.__name__, fn)

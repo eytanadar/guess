@@ -308,7 +308,7 @@ def install(session):
         session.register_command(fn.__name__, fn)
         return fn
 
-    def node(x, what="node"):
+    def _node(x, what="node"):
         if isinstance(x, Node):
             return x
         if isinstance(x, str) and x in g._nodes:
@@ -353,10 +353,10 @@ def install(session):
 
     # ---- communities ------------------------------------------------------
     @cmd
-    def louvainClusters(resolution=1.0, seed=0):
+    def louvainClusters(resolution=1.0, seed=0, name="louvain_class"):
         """louvainClusters() finds communities by Louvain modularity optimisation
         (Gephi's Modularity statistic) using edge weights, stores each node's
-        community in the louvain_class field (0 = largest) and returns the
+        community in the louvain_class field (0 = largest; name= another) and returns the
         communities. Try colorize(louvain_class). resolution > 1 gives more,
         smaller communities; seed=None varies the result between runs."""
         nx = _nx()
@@ -366,7 +366,7 @@ def install(session):
         _positive_weights(G)
         comms = nx.community.louvain_communities(G, weight="weight", resolution=float(resolution), seed=seed)
         out = partition(comms, "community")
-        f = g.addNodeField("louvain_class", INT, -1)
+        f = g.addNodeField(str(getattr(name, "name", name)), INT, -1)
         for i, c in enumerate(out):
             for n in c:
                 f.set(n, i)
@@ -468,10 +468,10 @@ def install(session):
         return GSet((n for n in g._nodes_list() if core.get(n, 0) >= int(k)), f"{int(k)}-core")
 
     @cmd
-    def egoNetwork(center, depth=1):
+    def egoNetwork(node, depth=1):
         """egoNetwork(node, depth=1): the node and everything within `depth` hops of
         it (ignoring direction)."""
-        c = node(center, "egoNetwork's centre")
+        c = _node(node, "egoNetwork's node")
         seen = {c}
         frontier = [c]
         for _ in range(int(depth)):
@@ -599,15 +599,29 @@ def install(session):
 
     # ---- paths -------------------------------------------------------------
     @cmd
-    def shortestPath(source, target, weighted=False):
-        """shortestPath(a, b): the nodes and edges of a shortest path from a to b
-        (following edge direction), or an empty set if there is none.
-        weighted=true uses edge weights as lengths. E.g. shortestPath(a, b).color = red"""
+    def shortestPath(source, target, weight=None):
+        """shortestPath(source, target): the nodes and edges of a shortest path
+        from source to target (following edge direction), or an empty set if
+        there is none. weight= an edge field read as each edge's length
+        (weight="weight", weight=km); None counts hops. E.g.
+        shortestPath(v1, v9).color = red"""
         nx = _nx()
-        a, b = node(source), node(target)
+        a, b = _node(source, "source"), _node(target, "target")
         G = to_networkx(g)
+        wf = None
+        if weight is not None:
+            wf = weight if isinstance(weight, Field) else g.edge_schema.get(str(weight))
+            if wf is None or wf.kind != EDGE:
+                raise GuessError(f"weight= should be an edge field, got {weight!r}")
+
+        def length(u, v, d):
+            try:
+                x = abs(float(wf.get(d["edge"])))
+            except (TypeError, ValueError):
+                x = 1.0
+            return x or 1e-9
         try:
-            path = nx.shortest_path(G, a, b, weight=(lambda u, v, d: abs(d["weight"]) or 1e-9) if weighted else None)
+            path = nx.shortest_path(G, a, b, weight=length if wf is not None else None)
         except nx.NetworkXNoPath:
             session.say("no path from ", a, " to ", b)
             return GSet(annotation="no path")
@@ -619,19 +633,21 @@ def install(session):
         return out
 
     @cmd
-    def heatMap(center, near="#d7191c", far="#2c7bb6", unreachable="#bdbdbd", middle="#8e5fbf", spread=True):
+    def heatMap(node, start="#d7191c", end="#2c7bb6", middle="#8e5fbf", unreachable="#bdbdbd",
+                spread=True, palette=None, name="hops"):
         """heatMap(node) colours every node by its distance (hops, ignoring
         direction) from node: red at the node, through violet, to blue for the
-        farthest, grey if unreachable; the distance is stored in the hops field
-        (-1 if unreachable). spread=True (default) spaces the colours by how
-        many nodes are at each distance, so every band is visible;
-        spread=False spaces them by distance alone. near, middle, far and
-        unreachable change the colours (middle=None: a straight blend); near
-        can instead be a colour scale, heatMap(v1, "magma_r") (see
-        colorScales). Gephi's heat map tool."""
+        farthest, grey if unreachable. The distance is stored in the hops
+        field (-1 if unreachable; name= another), which is returned.
+        spread=True (default) spaces the colours by how many nodes are at
+        each distance, so every band is visible; spread=False spaces them by
+        distance alone. start, middle, end and unreachable change the colours
+        (middle=None: a straight blend); palette= uses a colour scale
+        instead, heatMap(v1, palette="magma_r") (see colorScales). Gephi's
+        heat map tool."""
         from . import scales
-        scale = scales.find(near)
-        c = node(center, "heatMap's centre")
+        scale = None if palette is None else scales.get(palette)
+        c = _node(node, "heatMap's node")
         hops = {c: 0}
         frontier = [c]
         d = 0
@@ -645,15 +661,15 @@ def install(session):
                         hops[w] = d
                         nxt.append(w)
             frontier = nxt
-        f = g.addNodeField("hops", INT, -1)
+        f = g.addNodeField(str(getattr(name, "name", name)), INT, -1)
         top = max(hops.values()) or 1
         if scale is not None:
             stops = scale.stops
         else:
-            stops = [colors.parse(near, (215, 25, 28, 255))]
+            stops = [colors.parse(start, (215, 25, 28, 255))]
             if middle is not None:
                 stops.append(colors.parse(middle, (245, 184, 65, 255)))
-            stops.append(colors.parse(far, (44, 123, 182, 255)))
+            stops.append(colors.parse(end, (44, 123, 182, 255)))
         if spread:
             # each distance's position in the cumulative share of reachable nodes
             from collections import Counter
@@ -670,12 +686,13 @@ def install(session):
             h = hops.get(n, -1)
             f.set(n, h)
             n.color = colors.mix_stops(stops, t_of[h]) if h >= 0 else colors.normalize(unreachable)
+        return f
 
     @cmd
-    def paint(center, color, depth=0):
+    def paint(node, color, depth=0):
         """paint(node, color, depth=0) colours a node, and with depth=k everything
         within k hops of it (Gephi's brush)."""
-        for n in egoNetwork(center, depth):
+        for n in egoNetwork(node, depth):
             n.color = color
 
 

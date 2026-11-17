@@ -188,46 +188,80 @@ _WHAT = {
 }
 
 
-# names that are output formats after >> (x >> table)
+# names that are output formats after >> (x >> table); whether the value after
+# >> really is a format is decided when the code runs (count = 3 makes it a number)
 FORMAT_NAMES = {"table", "summary", "count", "plain", "folded", "list"}
 
 
 def _is_format(e):
-    if isinstance(e, ast.Constant) and isinstance(e.value, str):
-        return True
-    if isinstance(e, ast.Call):
-        e = e.func
-    return isinstance(e, ast.Name) and e.id in FORMAT_NAMES
+    """Whether e, after >>, could be an output format: anything but a literal
+    number (or None/True/False). Which it is is decided at run time."""
+    return not (isinstance(e, ast.Constant) and not isinstance(e.value, str))
+
+
+def _is_number(e):
+    if isinstance(e, ast.UnaryOp) and isinstance(e.op, (ast.USub, ast.UAdd, ast.Invert)):
+        e = e.operand
+    return isinstance(e, ast.Constant) and isinstance(e.value, (int, float, complex))
+
+
+def _is_lifted(e):
+    return (isinstance(e, ast.Call) and isinstance(e.func, ast.Name) and e.func.id == "__glift__"
+            and len(e.args) == 2)
 
 
 def _split_pipe(e):
+    """The tail of a query: ``Y >> F`` gives (Y, F); an inner query already
+    lifted (``__glift__(__gmark__(), inner)``) gives (inner, None)."""
     if isinstance(e, ast.BinOp) and isinstance(e.op, ast.RShift) and _is_format(e.right):
         return e.left, e.right
+    if _is_lifted(e):
+        return e.args[1], None
     return None
 
 
 class _LiftPipe(ast.NodeTransformer):
     """``dept == 'dept1' >> table`` means ``(dept == 'dept1') >> table``: a
     trailing ``>> format`` applies to the whole query, though Python's >> binds
-    tighter than ==, and, or, & and |."""
+    tighter than ==, and, or, not, & and |.
 
-    def _wrap(self, node, inner, fmt):
-        return ast.copy_location(ast.BinOp(left=inner, op=ast.RShift(), right=fmt), node)
+    Whether the value after >> is a format is only known at run time
+    (``count = 3; 1 | 16 >> count`` is a shift), so the query becomes
+    ``__glift__(__gmark__(), C[__ghole__(Y, F)])``: everything is evaluated in
+    Python's order; the hole gives Y >> F when F is not a format, or Y (and
+    notes F) when it is, and __glift__ then shows the whole value in F."""
+
+    def _lift(self, node, sp, others):
+        y, f = sp
+        if f is None:
+            hole = y                               # an inner query, already lifted
+        elif all(_is_number(o) for o in others + [y]):
+            return None                            # 1 | 16 >> 2: plain numbers, a shift
+        else:
+            hole = _call("__ghole__", y, f)
+        return hole
+
+    def _wrap(self, node):
+        return ast.copy_location(_call("__glift__", _call("__gmark__"), node), node)
 
     def visit_Compare(self, node):
         node = self.generic_visit(node)
         sp = _split_pipe(node.comparators[-1])
         if sp:
-            node.comparators[-1] = sp[0]
-            return self._wrap(node, node, sp[1])
+            hole = self._lift(node, sp, [node.left] + node.comparators[:-1])
+            if hole is not None:
+                node.comparators[-1] = hole
+                return self._wrap(node)
         return node
 
     def visit_BoolOp(self, node):
         node = self.generic_visit(node)
         sp = _split_pipe(node.values[-1])
         if sp:
-            node.values[-1] = sp[0]
-            return self._wrap(node, node, sp[1])
+            hole = self._lift(node, sp, node.values[:-1])
+            if hole is not None:
+                node.values[-1] = hole
+                return self._wrap(node)
         return node
 
     def visit_BinOp(self, node):
@@ -235,8 +269,21 @@ class _LiftPipe(ast.NodeTransformer):
         if isinstance(node.op, (ast.BitAnd, ast.BitOr, ast.BitXor)):
             sp = _split_pipe(node.right)
             if sp:
-                node.right = sp[0]
-                return self._wrap(node, node, sp[1])
+                hole = self._lift(node, sp, [node.left])
+                if hole is not None:
+                    node.right = hole
+                    return self._wrap(node)
+        return node
+
+    def visit_UnaryOp(self, node):
+        node = self.generic_visit(node)
+        if isinstance(node.op, ast.Not):
+            sp = _split_pipe(node.operand)
+            if sp:
+                hole = self._lift(node, sp, [])
+                if hole is not None:
+                    node.operand = hole
+                    return self._wrap(node)
         return node
 
 

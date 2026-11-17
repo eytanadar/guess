@@ -4,6 +4,28 @@ import random
 from .model import scatter_position, INT, GSet, GuessError
 
 
+def _plural(word):
+    return word[:-1] + "ies" if word.endswith("y") else word + "s"
+
+
+def store_partition(graph, groups, name, label, annotation=None):
+    """Store groups of nodes as an INT node field `name` (0 = the largest group,
+    -1 = in none; a node in several groups gets the largest one) and return them
+    as the usual clustering result: a GSet of GSets labelled "<label> i",
+    largest first. Shared by the *Clusters commands."""
+    ranked = sorted((sorted(c, key=lambda n: n._id) for c in groups if c),
+                    key=lambda c: (-len(c), c[0]._id))
+    f = graph.addNodeField(str(getattr(name, "name", name)), INT, -1)
+    which = {}
+    for i, c in enumerate(ranked):
+        for n in c:
+            which.setdefault(n, i)
+    for n in graph._nodes_list():
+        f.set(n, which.get(n, -1))
+    return GSet((GSet(c, f"{label} {i}") for i, c in enumerate(ranked)),
+                annotation or f"{len(ranked)} {_plural(label)}")
+
+
 def _nx():
     try:
         import networkx
@@ -56,8 +78,11 @@ def _betweenness_edges(graph):
 def install(session):
     g = session.graph   # computed fields (betweenness, pagerank, ...) live in analysis.py
 
-    def edgeBetweennessClusters(count):
-        """Split the graph into `count` communities with Girvan-Newman."""
+    def edgeBetweennessClusters(count, name="edgebetweenness_class"):
+        """edgeBetweennessClusters(count) splits the graph into `count`
+        communities with Girvan-Newman (removing the edges of highest
+        betweenness), stores each node's community in edgebetweenness_class
+        (0 = largest; name= another field) and returns the communities."""
         nx = _nx()
         G = to_networkx(g, directed=False)
         comps = None
@@ -66,24 +91,24 @@ def install(session):
             if len(level) >= count:
                 break
         comps = comps or [set(G.nodes)]
-        return GSet((GSet(sorted(c, key=lambda n: n._id), f"cluster {i}") for i, c in enumerate(comps)),
-                    f"{len(comps)} edge betweenness clusters")
+        return store_partition(g, comps, name, "community")
 
-    def weakComponentClusters():
-        """Connected components (ignoring edge direction)."""
+    def weakComponentClusters(name="weakcomponent_class"):
+        """weakComponentClusters(): the connected components (ignoring edge
+        direction), largest first; each node's component is stored in
+        weakcomponent_class (0 = largest; name= another field)."""
         nx = _nx()
         comps = nx.connected_components(to_networkx(g, directed=False))
-        return GSet((GSet(sorted(c, key=lambda n: n._id), f"component {i}")
-                     for i, c in enumerate(sorted(comps, key=len, reverse=True))),
-                    "weak components")
+        return store_partition(g, comps, name, "component")
 
-    def biComponentClusters():
-        """Biconnected components (ignoring edge direction)."""
+    def biComponentClusters(name="bicomponent_class"):
+        """biComponentClusters(): the biconnected components (ignoring edge
+        direction), largest first. A cut node belongs to several; the field
+        bicomponent_class (name= another) holds the largest one it is in, and
+        -1 for nodes in none (isolated nodes)."""
         nx = _nx()
         comps = nx.biconnected_components(to_networkx(g, directed=False))
-        return GSet((GSet(sorted(c, key=lambda n: n._id), f"bicomponent {i}")
-                     for i, c in enumerate(sorted(comps, key=len, reverse=True))),
-                    "bicomponents")
+        return store_partition(g, comps, name, "bicomponent")
 
     session.register_command("biComponentClusters", biComponentClusters)
 

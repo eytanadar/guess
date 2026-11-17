@@ -92,12 +92,12 @@ test("curved edges and edge colour modes", async ({ page }) => {
 
 test("gephi statistics, layouts, label options and click tools", async ({ page }) => {
   const errors = await boot(page);
-  await run(page, "cl = louvainClusters()\ncolorize(louvain_class)\nforceAtlas2Layout(iterations=80)");
+  await run(page, "louvainClusters()\ncolorize(louvain_class)\nforceAtlas2Layout(iterations=80)");
   expect(await lastError(page)).toBeNull();
   await expect(page.locator(".cell").last()).toContainText(/modularity 0\.\d+: \d+ communities/);
   await run(page, "graphStats()");
   await expect(page.locator(".cell").last()).toContainText("diameter");
-  await run(page, "labelOutlines(); hideOverlappingLabels(); g.nodes.labelvisible = true; sizeBy(pagerank, 6, 30, 'sqrt')");
+  await run(page, 'labelOutlines(); hideOverlappingLabels(); g.nodes.labelvisible = true; sizeBy(pagerank, 6, 30, "sqrt")');
   expect(await lastError(page)).toBeNull();
 
   // shortest path tool: two clicks write the command
@@ -439,7 +439,8 @@ test("gestures guide, one-time tips and modal dialogs", async ({ page }) => {
   await expect(page.locator("dialog.ask-dialog")).toBeVisible();
   await page.locator("dialog.ask-dialog input").fill("mine");
   await page.keyboard.press("Enter");
-  await expect(page.locator(".console-out .note").last()).toContainText("mine = 1 item");
+  await expect(page.locator(".cell").last()).toContainText("mine = v1");
+  await expect(page.locator(".cell").last()).not.toHaveClass(/failed/);
   expect(errors).toEqual([]);
 });
 
@@ -559,9 +560,13 @@ test("open GML and DOT files; delete selected nodes (key, menu, right-click)", a
   await page.locator("body").focus();
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.keyboard.press("Delete");
-  await expect(page.locator(".cell").last()).toContainText("remove(sel)");
+  await expect(page.locator(".cell").last()).toContainText("remove(p)");
   await run(page, "print(len(g.nodes), len(g.edges))");
   await expect(page.locator(".cell").last()).toContainText("3 2");
+  // menu items on the selection spell it out, so the cell can be replayed
+  await run(page, "select(q)");
+  await menu(page, "Edit", '[data-run-sel^="select(ninverse"]');
+  await expect(page.locator(".cell").last()).toContainText("select(ninverse(q))");
   // Edit → Delete selected nodes
   await run(page, "select(q)");
   await menu(page, "Edit", "#delete-sel");

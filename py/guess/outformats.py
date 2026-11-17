@@ -71,6 +71,37 @@ class Formatted:
     def __repr__(self):
         return plain_text(self.value)
 
+    def __str__(self):
+        """The value as text through its format (as print() shows it):
+        f"{s >> count} nodes" is "3 nodes"."""
+        if _session is None:
+            return plain_text(self.value)
+        return seg_text(render(_session, self.value, fmt=self.fmt))
+
+    def __format__(self, spec):
+        return format(str(self), spec)
+
+
+def seg_text(seg):
+    """The plain text of an output segment (what it shows, without links)."""
+    if seg is None:
+        return ""
+    if isinstance(seg, str):
+        return seg
+    if isinstance(seg, (list, tuple)):
+        return "".join(seg_text(x) for x in seg)
+    if isinstance(seg, dict):
+        if "tbl" in seg:
+            t = seg["tbl"]
+            lines = ["\t".join(map(str, t["cols"]))]
+            lines += ["\t".join(seg_text(c) for c in row) for row in t["rows"]]
+            return "\n".join(lines)
+        if "t" in seg:
+            return str(seg["t"])
+        if "g" in seg:
+            return seg_text(seg["g"])
+    return str(seg)
+
 
 class Ctx:
     """What a format gets: the value, its kind, the command it came from and,
@@ -343,10 +374,10 @@ def _query_fields(ann, schema):
     return out
 
 
-def _sorted_rows(rows, keys, sort, reverse):
+def _sorted_rows(rows, keys, sort, descending):
     if sort is None:
         return rows
-    return [r for _, r in sorted(zip(keys, rows), key=lambda kr: _sort_key(kr[0]), reverse=reverse)]
+    return [r for _, r in sorted(zip(keys, rows), key=lambda kr: _sort_key(kr[0]), reverse=descending)]
 
 
 def _table(cols, rows, ann=None, rest=()):
@@ -359,7 +390,7 @@ def _table(cols, rows, ann=None, rest=()):
     return out
 
 
-def table(ctx, fields=None, sort=None, reverse=None, rows=TABLE_ROWS, **_):
+def table(ctx, fields=None, sort=None, descending=None, rows=TABLE_ROWS, **_):
     v, kind = ctx.value, ctx.kind
     sort_name = _field_name(sort) if sort is not None else None
     if kind == "groups":
@@ -376,7 +407,7 @@ def table(ctx, fields=None, sort=None, reverse=None, rows=TABLE_ROWS, **_):
             key = lab if sort_name == "label" else len(grp)
             recs.append((key, [lab, str(len(grp)), members], grp))
         if sort_name:
-            recs.sort(key=lambda r: _sort_key(r[0]), reverse=True if reverse is None else reverse)
+            recs.sort(key=lambda r: _sort_key(r[0]), reverse=True if descending is None else bool(descending))
         rest = [y for _, _, grp in recs[rows:] for y in grp]
         return _table(["label", "size", "members"], [r[1] for r in recs[:rows]], ann=_ann(v), rest=rest)
     if kind == "values":
@@ -394,14 +425,14 @@ def table(ctx, fields=None, sort=None, reverse=None, rows=TABLE_ROWS, **_):
                 seg["q"] = q
             recs.append((len(members) if sort_name in ("count", "size") else val, [seg, str(len(members))]))
         recs = _sorted_rows([r for _, r in recs], [k for k, _ in recs], sort_name,
-                            True if reverse is None and sort_name in ("count", "size") else bool(reverse))
+                            True if descending is None and sort_name in ("count", "size") else bool(descending))
         return _table([v.name, "count"], recs[:rows], ann=f"{len(v)} values of {v.name}")
     if kind == "dict":
         items = list(v.items())
         rws = [[_cell(k), _cell(x)] for k, x in items]
         if sort_name in ("key", "value"):
             keys = [k if sort_name == "key" else x for k, x in items]
-            rws = _sorted_rows(rws, keys, sort_name, bool(reverse) if reverse is not None else sort_name == "value")
+            rws = _sorted_rows(rws, keys, sort_name, bool(descending) if descending is not None else sort_name == "value")
         return _table(["key", "value"], rws[:rows])
     if kind in ("node", "edge"):
         g = v._g
@@ -428,7 +459,7 @@ def table(ctx, fields=None, sort=None, reverse=None, rows=TABLE_ROWS, **_):
             rws.append([_cell(x)] + [_cell(_read(x, n)) for n in names])
             keys.append(_read(x, sort_name) if sort_name else None)
         if sort_name:
-            rws = _sorted_rows(rws, keys, sort_name, True if reverse is None else reverse)
+            rws = _sorted_rows(rws, keys, sort_name, True if descending is None else bool(descending))
         rest = items[rows:]
         return _table([first] + names, rws[:rows], ann=_ann(v), rest=rest)
     return None
@@ -438,7 +469,7 @@ BUILTIN = [
     ("list", default, "the linked output GUESS prints by default ([v1, v2, …])", None),
     ("folded", folded, "lists start folded ([v1, … +27 more]); one folded list per group", None),
     ("table", table, "a table: a row per element (fields as columns: table(degree, dept), "
-                     "sort=degree, reverse=False), a row per group (label, size, members), "
+                     "sort=degree, descending=False), a row per group (label, size, members), "
                      "a row per value (value, count) or a node's fields", None),
     ("summary", summary, "a one-line summary (12 nodes; 21 groups, sizes 3–28), linked to the elements", None),
     ("count", count, "just how many, linked to the elements", None),
@@ -448,16 +479,52 @@ BUILTIN = [
 
 # ---- commands --------------------------------------------------------------------
 
-def gpipe(session, a, b):
-    """``a >> b``: a value shown in a format (louvainClusters() >> table);
-    otherwise Python's >>."""
+def _pipe_format(session, b):
+    """The format b stands for after >>, or None (then >> is Python's shift)."""
     fmt = as_format(session, b)
     if fmt is None and callable(b) and not isinstance(b, type) and not hasattr(type(b), "__rrshift__"):
         fmt = custom(b)                    # x >> myFormat: a user function as a format
+    return fmt
+
+
+def gpipe(session, a, b):
+    """``a >> b``: a value shown in a format (louvainClusters() >> table);
+    otherwise Python's >>."""
+    fmt = _pipe_format(session, b)
     if fmt is None:
         return a >> b
     from .runtime import autocall
     return Formatted(autocall(a), fmt)
+
+
+# ``dept == 'x' >> table`` compiles to __glift__(__gmark__(), dept == __ghole__('x', table))
+# (see compiler._LiftPipe): a frame per query being lifted, holding its format once known
+_lift_frames = []
+
+
+def gmark():
+    _lift_frames.append(None)
+    return len(_lift_frames)
+
+
+def ghole(session, y, f):
+    """The tail ``y >> f`` of a query: y itself when f is a format (the whole
+    query is shown in it), otherwise Python's y >> f."""
+    fmt = _pipe_format(session, f)
+    if fmt is None:
+        return y >> f
+    if _lift_frames:
+        _lift_frames[-1] = fmt
+    return y
+
+
+def glift(token, value):
+    fmt = _lift_frames[token - 1] if 0 < token <= len(_lift_frames) else None
+    del _lift_frames[max(0, token - 1):]
+    if fmt is None:
+        return value
+    from .runtime import autocall
+    return Formatted(autocall(value), fmt)
 
 
 def install(session):
@@ -474,6 +541,9 @@ def install(session):
     for name in ("folded", "summary", "count", "plain"):
         session.ns[name] = session.out_formats[name]
     session.ns["__gpipe__"] = lambda a, b: gpipe(session, a, b)
+    session.ns["__gmark__"] = gmark
+    session.ns["__ghole__"] = lambda y, f: ghole(session, y, f)
+    session.ns["__glift__"] = glift
 
     def target_name(target):
         if isinstance(target, str):

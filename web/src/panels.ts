@@ -14,6 +14,14 @@ export interface FieldInfo {
   distinct?: number;
 }
 
+/** Display toggles the Style panel shows (from the overlay, as the View menu). */
+export interface DisplayState {
+  curved: boolean;
+  outline: boolean;
+  cull: boolean;
+  along: boolean;
+}
+
 export interface PanelHost {
   fields(kind: "n" | "e"): Promise<FieldInfo[]>;
   submit(code: string): Promise<boolean>;
@@ -24,6 +32,7 @@ export interface PanelHost {
 }
 
 import { ask } from "./dialog";
+import { colorExpr } from "./console";
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = "") => {
   const e = document.createElement(tag);
@@ -176,7 +185,7 @@ export class StylePanel {
         opts.append(labelled("mapping", mode), grad, labelled("legend", legendBox));
         getCode = () => {
           const lines = [mode.value === "grad"
-            ? `colorBy(${ref}, ${JSON.stringify(c1.value)}, ${JSON.stringify(c2.value)}, ${JSON.stringify(scale.value)}${mid.checked ? `, middle=${JSON.stringify(c3.value)}` : ""})`
+            ? `colorBy(${ref}, ${colorExpr(c1.value)}, ${colorExpr(c2.value)}, ${JSON.stringify(scale.value)}${mid.checked ? `, middle=${colorExpr(c3.value)}` : ""})`
             : `colorize(${ref})`];
           if (legendBox.checked) lines.push(`legendFor(${ref})`);
           return lines.join("\n");
@@ -301,21 +310,33 @@ export class StylePanel {
     }
   }
 
+  /** The Display section's controls, set from the display's state (setDisplay). */
+  private display: { mode?: HTMLSelectElement; boxes: Partial<Record<keyof DisplayState, HTMLInputElement>> } = { boxes: {} };
+
+  /** Show the display's current state (curved edges, label outlines, …) in
+   *  the Display section, as the View menu's toggles do. */
+  setDisplay(st: DisplayState & { edgeColor: string }) {
+    if (this.display.mode) this.display.mode.value = st.edgeColor;
+    for (const [k, b] of Object.entries(this.display.boxes)) b.checked = st[k as keyof DisplayState];
+  }
+
   private displaySection() {
     const box = el("div", "pf-form");
     const mode = select([["original", "own colour"], ["source", "source node"], ["target", "target node"], ["mixed", "mix of both"]]);
     mode.onchange = () => this.host.submit(`setEdgeColorMode(${JSON.stringify(mode.value)})`);
-    const toggle = (label: string, on: string, off: string) => {
+    this.display.mode = mode;
+    const toggle = (key: keyof DisplayState, label: string, cmd: string) => {
       const b = el("input") as HTMLInputElement;
       b.type = "checkbox";
-      b.onchange = () => this.host.submit(b.checked ? on : off);
+      b.onchange = () => this.host.submit(`${cmd}(${b.checked ? "true" : "false"})`);
+      this.display.boxes[key] = b;
       return labelled(label, b);
     };
     box.append(labelled("edge colours", mode),
-      toggle("curved edges", "curvedEdges()", "curvedEdges(false)"),
-      toggle("label outlines", "labelOutlines()", "labelOutlines(false)"),
-      toggle("hide overlapping labels", "hideOverlappingLabels()", "hideOverlappingLabels(false)"),
-      toggle("edge labels along edges", "edgeLabelsAlong()", "edgeLabelsAlong(false)"));
+      toggle("curved", "curved edges", "curvedEdges"),
+      toggle("outline", "label outlines", "labelOutlines"),
+      toggle("cull", "hide overlapping labels", "hideOverlappingLabels"),
+      toggle("along", "edge labels along edges", "edgeLabelsAlong"));
     return box;
   }
 }

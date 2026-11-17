@@ -43,7 +43,7 @@ export const GESTURE_SECTIONS: { title: string; items: Gesture[] }[] = [
     title: "Dragging with meaning",
     items: [
       { id: "move", title: "Move nodes", how: "Drag a node · drag any node of a selection to move them all",
-        what: "Moves it (or the whole selection). Each drag is one undo step, recorded as a command (v12.x = …; v12.y = …) that history() and saved logs include; View → Show node moves in the console shows them." },
+        what: "Moves it (or the whole selection). Each drag is one undo step, recorded as a command (v12.x = …; v12.y = …) that history() and saved logs include; View → Console → Show hidden commands shows them." },
       { id: "ring", title: "Reorder a circle", when: "after circleLayout()",
         how: "Drag a node around the circle",
         what: "The node stays on the ring and the others make room; dropping it runs ringMove(node, position).", img: "ring" },
@@ -87,7 +87,7 @@ export const GESTURE_SECTIONS: { title: string; items: Gesture[] }[] = [
     title: "Keyboard",
     items: [
       { id: "keys", title: "Shortcuts", how: "Shift+Enter run · Cmd/Ctrl+K search · F1 help · Cmd/Ctrl+Z undo (outside the code cell) · Shift+Cmd/Ctrl+Z redo · Esc interrupt or clear · Shift+Cmd/Ctrl+F find in output · ↑ on the first line: history",
-        what: "Every gesture above writes Gython into the console, so it can be read, undone and run again." },
+        what: "Every gesture above writes Gython into the console, so it can be read, undone and run again, except selecting (box, lasso, click), turning the Lens on and off, scrubbing the timeline (Keep records the moment) and moving the History slider." },
     ],
   },
 ];

@@ -245,6 +245,7 @@ def install(session):
     def store(I, membership, fieldname, label, show=True):
         """Write a membership list as an INT field (0 = largest community) and
         return the communities as sets; print modularity and count."""
+        fieldname = str(getattr(fieldname, "name", fieldname))
         groups = {}
         for v, c in enumerate(membership):
             groups.setdefault(c, []).append(I.nodes[v])
@@ -268,7 +269,7 @@ def install(session):
         return I
 
     @cmd
-    def leidenClusters(resolution=1.0, objective="modularity", iterations=-1, seed=0):
+    def leidenClusters(resolution=1.0, objective="modularity", iterations=-1, seed=0, name="leiden_class"):
         """leidenClusters() finds communities with the Leiden algorithm (better
         than Louvain: every community is internally connected) and stores them
         in leiden_class (0 = largest). resolution > 1 gives more, smaller
@@ -281,10 +282,10 @@ def install(session):
         with _Seeded(seed):
             cl = I.G.community_leiden(objective_function=obj, weights=I.positive_weights(),
                                       resolution=float(resolution), n_iterations=int(iterations))
-        return store(I, cl.membership, "leiden_class", "community")
+        return store(I, cl.membership, name, "community")
 
     @cmd
-    def infomapClusters(trials=10, seed=0):
+    def infomapClusters(trials=10, seed=0, name="infomap_class"):
         """infomapClusters() finds communities by Infomap (how a random walker's
         flow stays inside groups), following edge direction and weights; a good
         choice for directed networks such as citations or web links. Stored in
@@ -293,7 +294,7 @@ def install(session):
         I = IG(g(), directed=None)
         with _Seeded(seed):
             cl = I.G.community_infomap(edge_weights=I.positive_weights(), trials=int(trials))
-        return store(I, cl.membership, "infomap_class", "community")
+        return store(I, cl.membership, name, "community")
 
     def cut(dendrogram, I, count):
         """A clustering with `count` groups; a graph in pieces can't have fewer
@@ -308,13 +309,14 @@ def install(session):
         return dendrogram.as_clustering(count)
 
     def dendro(dendrogram, I, count, fieldname, label):
+        fieldname = str(getattr(fieldname, "name", fieldname))
         state["dendrogram"] = (dendrogram, I, fieldname, label)
         session.last_dendrogram = {"nodes": list(I.nodes), "merges": [tuple(m) for m in dendrogram.merges],
                                    "title": f"{fieldname.split('_')[0]} hierarchy"}
         return store(I, cut(dendrogram, I, count).membership, fieldname, label)
 
     @cmd
-    def walktrapClusters(count=None, steps=4):
+    def walktrapClusters(count=None, steps=4, name="walktrap_class"):
         """walktrapClusters() groups nodes that short random walks (steps long)
         tend to stay among, building a hierarchy; count=None cuts it where
         modularity is highest, walktrapClusters(8) gives 8 communities.
@@ -322,17 +324,17 @@ def install(session):
         need("walktrapClusters")
         I = undirected()
         return dendro(I.G.community_walktrap(weights=I.positive_weights(), steps=int(steps)),
-                      I, count, "walktrap_class", "community")
+                      I, count, name, "community")
 
     @cmd
-    def fastGreedyClusters(count=None):
+    def fastGreedyClusters(count=None, name="fastgreedy_class"):
         """fastGreedyClusters() merges communities greedily by modularity
         (Clauset-Newman-Moore), building a hierarchy; count as in
         walktrapClusters. Stored in fastgreedy_class; cutDendrogram(n) re-cuts."""
         need("fastGreedyClusters")
         I = undirected()
         return dendro(I.G.community_fastgreedy(weights=I.positive_weights()),
-                      I, count, "fastgreedy_class", "community")
+                      I, count, name, "community")
 
     @cmd
     def cutDendrogram(count):
@@ -347,7 +349,7 @@ def install(session):
         return store(I, cut(dendrogram, I, count).membership, fieldname, label)
 
     @cmd
-    def labelPropagationClusters(field=None, seed=0):
+    def labelPropagationClusters(field=None, seed=0, name="lpa_class"):
         """labelPropagationClusters() finds communities very fast (linear time) by
         letting each node adopt its neighbours' most common label; good for very
         large graphs, rougher than Leiden. labelPropagationClusters(field)
@@ -368,10 +370,10 @@ def install(session):
                 raise GuessError(f"no node has a value of {f.name}")
         with _Seeded(seed):
             cl = I.G.community_label_propagation(weights=I.positive_weights(), initial=initial, fixed=fixed)
-        return store(I, cl.membership, "lpa_class", "community")
+        return store(I, cl.membership, name, "community")
 
     @cmd
-    def eigenvectorClusters(count=None):
+    def eigenvectorClusters(count=None, name="eigen_class"):
         """eigenvectorClusters() splits the graph by the leading eigenvector of
         the modularity matrix (Newman), repeatedly; count limits the number of
         communities. Stored in eigen_class."""
@@ -388,10 +390,10 @@ def install(session):
                 last = ex
         else:
             raise GuessError(f"eigenvectorClusters: the eigenvector calculation didn't converge ({last})")
-        return store(I, cl.membership, "eigen_class", "community")
+        return store(I, cl.membership, name, "community")
 
     @cmd
-    def fluidClusters(count, seed=0):
+    def fluidClusters(count, seed=0, name="fluid_class"):
         """fluidClusters(count) splits a connected graph into exactly count communities
         (fluid communities). On a graph in pieces run it on one part, e.g. in
         subgraph(giantComponent()). Stored in fluid_class."""
@@ -403,24 +405,27 @@ def install(session):
         del G.es["weight"]                   # the algorithm takes no weights
         with _Seeded(seed):
             cl = G.community_fluid_communities(no_of_communities=int(count))
-        return store(I, cl.membership, "fluid_class", "community")
+        return store(I, cl.membership, name, "community")
 
     @cmd
-    def voronoiClusters():
+    def voronoiClusters(name="voronoi_class"):
         """voronoiClusters() picks central "generator" nodes automatically and
         gives every other node to its nearest one (by weighted distance); the
-        communities are stored in voronoi_class and the generators returned."""
+        communities are stored in voronoi_class (name= another field) and
+        returned, with the generator nodes in their .seeds."""
         need("voronoiClusters")
         I = undirected()
         w = I.positive_weights()
         lengths = [1.0 / x for x in w] if w else None
         cl = I.G.community_voronoi(lengths=lengths, weights=w)
-        store(I, cl.membership, "voronoi_class", "community")
+        out = store(I, cl.membership, name, "community")
         gens = getattr(cl, "generators", None) or []
-        return GSet(sorted((I.nodes[v] for v in gens), key=lambda n: n._id), "generator nodes")
+        object.__setattr__(out, "seeds", GSet(sorted((I.nodes[v] for v in gens), key=lambda n: n._id),
+                                              "generator nodes"))
+        return out
 
     @cmd
-    def spinglassClusters(spins=25, gamma=1.0, seed=0):
+    def spinglassClusters(spins=25, gamma=1.0, seed=0, name="spinglass_class"):
         """spinglassClusters() finds communities by simulated annealing of a spin
         model (Reichardt-Bornholdt); handles negative edge weights (signed
         networks). Slow: for graphs up to about 2,000 nodes. spins is the most
@@ -436,10 +441,10 @@ def install(session):
         with _Seeded(seed):
             cl = I.G.community_spinglass(weights=I.G.es["weight"], spins=int(spins), gamma=float(gamma),
                                          implementation="negative" if neg else "original")
-        return store(I, cl.membership, "spinglass_class", "community")
+        return store(I, cl.membership, name, "community")
 
     @cmd
-    def optimalClusters():
+    def optimalClusters(name="optimal_class"):
         """optimalClusters() finds the partition with the highest possible
         modularity (exact, by integer programming): only for small graphs (up
         to about 100 nodes), as a baseline for the other methods. Stored in
@@ -452,13 +457,14 @@ def install(session):
             cl = I.G.community_optimal_modularity(weights=I.positive_weights())
         except Exception as e:  # noqa: BLE001 - igraph built without GLPK
             raise GuessError(f"optimalClusters isn't available here: {e}") from None
-        return store(I, cl.membership, "optimal_class", "community")
+        return store(I, cl.membership, name, "community")
 
     @cmd
-    def cohesiveBlocks():
+    def cohesiveBlocks(name="cohesion"):
         """cohesiveBlocks() finds nested groups that stay connected after removing
         any k-1 nodes (Moody and White's cohesive blocking): a structural view
-        that k-cores miss. Each node's highest cohesion is stored in `cohesion`;
+        that k-cores miss. Each node's highest cohesion is stored in `cohesion`
+        (name= another field);
         the blocks are returned, most cohesive last. Slow beyond a few thousand
         nodes."""
         need("cohesiveBlocks")
@@ -466,7 +472,7 @@ def install(session):
         if len(I.nodes) > 5000:
             raise GuessError("cohesiveBlocks is too slow for more than 5,000 nodes")
         cb = I.G.cohesive_blocks()
-        f = g().addNodeField("cohesion", INT, 0)
+        f = g().addNodeField(str(name), INT, 0)
         best = [0] * len(I.nodes)
         blocks = []
         for i, members in enumerate(cb):

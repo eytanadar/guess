@@ -49,8 +49,8 @@ def _result(groups, label, annotation=None):
                 annotation or f"{len(groups)} {_plural(label)}")
 
 
-def _weight(e):
-    v = e._vals.get("weight", 1.0)
+def _weight(e, field="weight"):
+    v = e._vals.get(field, 1.0)
     try:
         v = float(v)
     except (TypeError, ValueError):
@@ -59,13 +59,15 @@ def _weight(e):
 
 
 def _adjacency(g, weighted=True):
-    """{node: {neighbour: weight}} ignoring direction and self loops."""
+    """{node: {neighbour: weight}} ignoring direction and self loops. weighted
+    is True (the `weight` field), False/None (every edge 1) or a field name."""
+    wf = "weight" if weighted is True else (str(getattr(weighted, "name", weighted)) if weighted else None)
     adj = {n: {} for n in g._nodes_list()}
     for e in g._edges_list():
         a, b = e._n1, e._n2
         if a is b:
             continue
-        w = _weight(e) if weighted else 1.0
+        w = _weight(e, wf) if wf else 1.0
         adj[a][b] = adj[a].get(b, 0.0) + w
         adj[b][a] = adj[b].get(a, 0.0) + w
     return adj
@@ -409,7 +411,7 @@ def install(session):
         """Rank groups, write `field` (0 = largest, -1 = none), return the GSet."""
         g = session.graph
         ranked = _ranked(groups)
-        f = g.addNodeField(field, INT, -1)
+        f = g.addNodeField(str(getattr(field, "name", field)), INT, -1)
         which = {}
         for i, c in enumerate(ranked):
             for n in c:
@@ -435,26 +437,28 @@ def install(session):
     # ---- single membership ---------------------------------------------------------
 
     @cmd
-    def chineseWhispersClusters(iterations=20, weighted=True, seed=0):
+    def chineseWhispersClusters(iterations=20, weight="weight", seed=0, name="cw_class"):
         """chineseWhispersClusters() finds communities by Chinese Whispers
         (Biemann 2006): every node starts in its own class and repeatedly takes
         the class with the most (weighted) ties among its neighbours. Fast and
         parameter-free; the number of communities isn't chosen in advance.
-        Stores cw_class (0 = largest) and returns the communities.
-        weighted=False ignores edge weights; seed=None varies the result."""
+        Stores cw_class (0 = largest; name= another field) and returns the
+        communities. weight= is the edge field read as tie strength (None:
+        every tie counts 1); seed=None varies the result."""
         g = session.graph
-        groups = chinese_whispers(_adjacency(g, bool(weighted)), iterations, seed)
-        ranked = store("cw_class", groups, "community")
-        print(f"Chinese Whispers: {len(ranked)} communities (cw_class)")
+        groups = chinese_whispers(_adjacency(g, weight), iterations, seed)
+        ranked = store(name, groups, "community")
+        print(f"Chinese Whispers: {len(ranked)} communities ({name})")
         return _result(ranked, "community")
 
     @cmd
-    def mclClusters(inflation=2.0, expansion=2, loops=True, iterations=100):
+    def mclClusters(inflation=2.0, expansion=2, loops=True, iterations=100, name="mcl_class"):
         """mclClusters() finds clusters by the Markov Cluster algorithm (MCL,
         van Dongen 2000): random walks are expanded and then "inflated" until
         flow stays inside clusters. inflation (1.2-5, default 2) sets the
         granularity: higher gives more, smaller clusters. Uses edge weights;
-        loops=True adds self loops (recommended). Stores mcl_class.
+        loops=True adds self loops (recommended). Stores mcl_class (name=
+        another field).
         Works on connected pieces of up to 3000 nodes."""
         if float(inflation) <= 1:
             raise GuessError("inflation should be more than 1 (try 1.5 to 4)")
@@ -462,12 +466,12 @@ def install(session):
             raise GuessError("expansion should be 2 or more")
         g = session.graph
         groups = mcl(_adjacency(g), float(inflation), int(expansion), bool(loops), int(iterations))
-        ranked = store("mcl_class", groups, "cluster")
-        print(f"MCL (inflation {float(inflation):g}): {len(ranked)} clusters (mcl_class)")
+        ranked = store(name, groups, "cluster")
+        print(f"MCL (inflation {float(inflation):g}): {len(ranked)} clusters ({name})")
         return _result(ranked, "cluster")
 
     @cmd
-    def dbscanClusters(fields=("x", "y"), eps=None, minPts=4):
+    def dbscanClusters(fields=("x", "y"), eps=None, minPts=4, name="dbscan_class"):
         """dbscanClusters() groups nodes that lie close together on screen with
         DBSCAN (Ester et al. 1996): a cluster is a dense region (at least
         minPts nodes within eps of each other), and nodes in sparse areas are
@@ -475,7 +479,8 @@ def install(session):
         distance in, by default the positions (x, y); e.g.
         dbscanClusters((degree, pagerank)). Fields aren't rescaled, so give
         them comparable ranges. eps=None picks it from the knee of the sorted
-        k-distance curve and prints it."""
+        k-distance curve and prints it. Stores dbscan_class (name= another
+        field)."""
         g = session.graph
         fs = [as_field(g, f, "dbscanClusters", (NODE,)) for f in
               (fields if isinstance(fields, (list, tuple)) else [fields])]
@@ -510,14 +515,14 @@ def install(session):
         for n, lab in zip(nodes, labels):
             if lab >= 0:
                 groups[int(lab)].append(n)
-        ranked = store("dbscan_class", groups.values(), "cluster")
+        ranked = store(name, groups.values(), "cluster")
         noise = len(g._nodes_list()) - sum(map(len, ranked))
-        print(f"DBSCAN: {len(ranked)} clusters, {noise} noise nodes (dbscan_class; -1 = noise)")
+        print(f"DBSCAN: {len(ranked)} clusters, {noise} noise nodes ({name}; -1 = noise)")
         return _result(ranked, "cluster", f"{len(ranked)} clusters, {noise} noise")
 
     @cmd
     def mcodeClusters(degreeCutoff=2, scoreCutoff=0.2, haircut=True, fluff=False, fluffDensity=0.1,
-                      kCore=2, maxDepth=100):
+                      kCore=2, maxDepth=100, name="mcode_class"):
         """mcodeClusters() finds densely connected regions with MCODE (Bader &
         Hogue 2003), made for protein complexes in interaction networks. Each
         node is weighted by the density of the highest k-core of its
@@ -525,14 +530,15 @@ def install(session):
         neighbours weighing at least (1 - scoreCutoff) of the seed's. Defaults
         are the paper's: degreeCutoff 2, scoreCutoff 0.2, haircut (keep only
         the 2-core) on, fluff (add dense neighbours, fluffDensity) off, kCore 2,
-        maxDepth 100. Stores mcode_class (0 = best scoring, -1 = in none) and
+        maxDepth 100. Stores mcode_class (0 = best scoring, -1 = in none;
+        name= another field) and
         mcode_score (the node weight); returns the complexes, best first, and
         prints their scores (density x size)."""
         g = session.graph
         adj = _adjacency(g, weighted=False)
         complexes, weight = mcode(adj, int(degreeCutoff), float(scoreCutoff), bool(haircut), bool(fluff),
                                   float(fluffDensity), int(kCore), int(maxDepth))
-        f = g.addNodeField("mcode_class", INT, -1)
+        f = g.addNodeField(str(getattr(name, "name", name)), INT, -1)
         fw = g.addNodeField("mcode_score", "DOUBLE", 0.0)
         which = {}
         for i, (_, members) in enumerate(complexes):
@@ -544,7 +550,7 @@ def install(session):
         out = GSet((GSet(sorted(m, key=lambda n: n._id), f"complex {i} (score {sc:.2f})")
                     for i, (sc, m) in enumerate(complexes)), f"{len(complexes)} complexes")
         top = ", ".join(f"{sc:.2f}" for sc, _ in complexes[:5])
-        print(f"MCODE: {len(complexes)} complexes (mcode_class)" + (f"; best scores {top}" if complexes else ""))
+        print(f"MCODE: {len(complexes)} complexes ({name})" + (f"; best scores {top}" if complexes else ""))
         return out
 
     # ---- overlapping -----------------------------------------------------------------

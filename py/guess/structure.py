@@ -645,24 +645,26 @@ def install(session):
         return float(nx.transitivity(_undirected(g())))
 
     @cmd
-    def blockmodel(count=4, show=True):
-        """blockmodel(count) groups the nodes into count positions of structurally
+    def blockModelClusters(count=4, show=True, name="blockmodel_class"):
+        """blockModelClusters(count) groups the nodes into count positions of structurally
         equivalent nodes: nodes tied to the same others (in the same
         directions), whether or not they're tied to each other, which is a
         role (teacher, broker, follower), not a community. Profiles are
         compared by correlation and merged by average-linkage clustering.
-        Stores each node's position in `position` (0 = largest), prints the
-        image matrix (the density of ties from each position to each other;
-        a dense diagonal means cohesive positions, dense off-diagonals mean
-        roles that serve each other) and returns the positions. Try
-        colorize(position), then collapseBy(position) for the reduced graph.
+        Stores each node's position in blockmodel_class (0 = largest; name=
+        another field), prints the image matrix (the density of ties from
+        each position to each other; a dense diagonal means cohesive
+        positions, dense off-diagonals mean roles that serve each other) and
+        returns the positions, with the matrix in .image. Try
+        colorize(blockmodel_class), then collapseBy(blockmodel_class) for the
+        reduced graph.
         Fine up to a couple of thousand nodes."""
         gr = g()
         nodes = gr._nodes_list()
         n = len(nodes)
         count = int(count)
         if n < 2 or not 1 <= count <= n:
-            raise GuessError(f"blockmodel needs 1 <= k <= the number of nodes ({n})")
+            raise GuessError(f"blockModelClusters needs 1 <= count <= the number of nodes ({n})")
         idx = {x._id: i for i, x in enumerate(nodes)}
         A = np.zeros((n, n))
         for e in gr._edges_list():
@@ -711,7 +713,7 @@ def install(session):
             members[a] += members.pop(b)
         clusters = members
         groups = sorted(clusters.values(), key=lambda c: (-len(c), min(c)))
-        f = gr.addNodeField("position", INT, -1)
+        f = gr.addNodeField(str(getattr(name, "name", name)), INT, -1)
         pos = np.empty(n, int)
         for p, members in enumerate(groups):
             for i in members:
@@ -730,8 +732,11 @@ def install(session):
             print(head)
             for p in range(count):
                 print(f"{p:>8}  {len(groups[p]):>4}  " + "  ".join(f"{image[p, q]:5.2f}" for q in range(count)))
-        return GSet([GSet([nodes[i] for i in grp], annotation=f"position {p}")
-                     for p, grp in enumerate(groups)], annotation=f"{count} positions")
+        out = GSet([GSet([nodes[i] for i in sorted(grp, key=lambda i: nodes[i]._id)], f"position {p}")
+                    for p, grp in enumerate(groups)], f"{count} positions")
+        object.__setattr__(out, "image", [[round(float(image[p, q]), 4) for q in range(count)]
+                                          for p in range(count)])
+        return out
 
     @cmd
     def compareClusters(field1, field2, method="nmi"):

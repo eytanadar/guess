@@ -1,5 +1,5 @@
 import "./style.css";
-import { Console, groupTip, type Item } from "./console";
+import { Console, colorExpr, groupTip, type Item } from "./console";
 import type { DragContext, FromWorker, Info, LegendEntry, LegendRec, PeekInfo, ToWorker } from "./protocol";
 import { Renderer, type DragBehaviour, type DragFrame, type Hit } from "./renderer";
 import { Dock } from "./dock";
@@ -82,7 +82,7 @@ const renderer = new Renderer($("#graph"), {
   },
   moved: (ident, x, y) => {
     // a group drag reports each node in turn; run them as one cell (one undo step).
-    // The cell is hidden unless View → Show node moves is on, but it is in
+    // The cell is hidden unless View → Show hidden commands is on, but it is in
     // history(), saveHistory(), log() and exports like any other command.
     if (!pendingMoves.length) queueMicrotask(() => {
       const moves = pendingMoves.splice(0);
@@ -260,7 +260,7 @@ function onGraphClick(hit: Hit, shift: boolean) {
   }
   if (tool !== "select") {
     if (hit?.kind !== "n") return;
-    const c = JSON.stringify(paintColor.value);
+    const c = colorExpr(paintColor.value);
     if (tool === "path") {
       if (pathStart === null || pathStart === hit.id) {
         pathStart = hit.id;
@@ -868,6 +868,8 @@ function handle(m: FromWorker) {
       dragCtx = m.drag ?? {};
       tipsForDragContext(dragCtx);
       stylePanel.refreshSaved();
+      stylePanel.setDisplay({ edgeColor: m.edgeColor ?? "original", curved: m.curvature > 0, outline: !!m.labels?.outline,
+                              cull: !!m.labels?.cull, along: !!m.labels?.along });
       break;
     case "export":
       void hold(async () => {
@@ -1112,33 +1114,36 @@ const SWATCHES = ["red", "orange", "yellow", "green", "blue", "purple", "gray", 
 
 let menuExpr: string | null = null;   // the open menu acts on this expression (legend rows), not on ids
 
-/** Gython that names these elements, for "insert as code": a node's name, an
- *  edge as (a - b), a short tuple of names, sel, or a fresh variable. */
+/** The elements spelled out as code: a node's name, an edge as (a - b), or a
+ *  tuple of them (v4, (v12, v40, v73), ((v1 - v2), v9)), so a cell means the
+ *  same thing when it is run again, saved in the history or read later. Long
+ *  tuples fold in the console. Null when none of them is left. */
+function spellItems(items: Item[]): string | null {
+  const one = (it: Item) => {
+    if (it[0] === "n") return nodeExpr(it[1]);
+    const e = renderer.edges.get(it[1]);
+    return e ? `(${nodeExpr(e.s)} ${e.d ? "->" : "-"} ${nodeExpr(e.t)})` : null;
+  };
+  const parts = items.map(one).filter((x): x is string => !!x);
+  if (!parts.length) return null;
+  return parts.length === 1 ? parts[0] : `(${parts.join(", ")})`;
+}
+
+/** The current selection spelled out (null when nothing is selected). */
+function selectionExpr(): string | null {
+  return spellItems([...renderer.selection].map((id) => ["n", id] as Item));
+}
+
+/** Gython that names these elements, for "insert as code": the elements
+ *  spelled out, or, when there are many, a fresh variable (picked1, picked2,
+ *  ...) bound by a console cell of its own. */
 let pickedCount = 0;
 async function itemsExpr(items: Item[], expr?: string | null): Promise<string | null> {
   if (expr) return expr;
-  if (!items.length) return null;
-  const edgeExpr = (id: number) => {
-    const e = renderer.edges.get(id);
-    return e ? `(${nodeExpr(e.s)} ${e.d ? "->" : "-"} ${nodeExpr(e.t)})` : null;
-  };
-  if (items.length === 1) return items[0][0] === "n" ? nodeExpr(items[0][1]) : edgeExpr(items[0][1]);
-  const selIds = renderer.selection;
-  if (items.length === selIds.size && items.every((i) => i[0] === "n" && selIds.has(i[1]))) return "sel";
-  if (items.length <= 12 && items.every((i) => i[0] === "n")) {
-    const names = items.map((i) => nodeExpr(i[1]));
-    if (names.every((n) => /^[A-Za-z_]\w*$/.test(n))) return `(${names.join(", ")})`;
-  }
-  // too many to spell out: bind a variable (picked1, picked2, ...) and name it
-  for (let tries = 0; tries < 50; tries++) {
-    const name = `picked${++pickedCount}`;
-    const res = await request<unknown>((id) => ({ type: "assign", id, name, items }));
-    if (typeof res === "number") {
-      term.note(`${name} = ${res === 1 ? "1 item" : `${res} items`}`);
-      return name;
-    }
-  }
-  return null;
+  const code = spellItems(items);
+  if (!code || items.length <= 12) return code;
+  const name = `picked${++pickedCount}`;
+  return (await term.submit(`${name} = ${code}`)) ? name : null;
 }
 
 async function insertItems(items: Item[], expr?: string | null) {
@@ -1147,19 +1152,9 @@ async function insertItems(items: Item[], expr?: string | null) {
 }
 
 /** The code a menu action acts on: the menu's query (a legend row, a chart
- *  bar) or the elements themselves, spelled out (v4, (v12, v40, v73),
- *  ((v1 - v2), v9)), so the cell means the same thing when it is run again,
- *  saved in the history or read later. Long lists fold in the console. */
+ *  bar) or the elements themselves, spelled out (see spellItems). */
 async function targetExpr(items: Item[]): Promise<string> {
-  if (menuExpr) return menuExpr;
-  const one = (it: Item) => {
-    if (it[0] === "n") return nodeExpr(it[1]);
-    const e = renderer.edges.get(it[1]);
-    return e ? `(${nodeExpr(e.s)} ${e.d ? "->" : "-"} ${nodeExpr(e.t)})` : null;
-  };
-  const parts = items.map(one).filter((x): x is string => !!x);
-  if (parts.length === 1) return parts[0];
-  return `(${parts.join(", ")})`;
+  return menuExpr ?? spellItems(items) ?? "()";
 }
 
 function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; title?: string } = {}) {
@@ -1197,7 +1192,7 @@ function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; ti
     b.style.background = c === "dandelion" ? "#fcd870" : c === "cornflowerblue" ? "#9ceefd" : c;
     b.onclick = async () => {
       closeMenu();
-      await runOn((t) => `${t}.color = ${c}`)();
+      await runOn((t) => `${t}.color = ${colorExpr(c)}`)();
     };
     sw.append(b);
   }
@@ -1211,8 +1206,8 @@ function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; ti
       const v = await ask({ title: "Node size", label: "Size", value: "15", type: "number" });
       if (v && !isNaN(Number(v))) await runOn((t) => `${t}.size = ${Number(v)}`)();
     });
-    act("Style: circle", runOn((t) => `${t}.style = 'circle'`));
-    act("Style: square", runOn((t) => `${t}.style = 'square'`));
+    act("Style: circle", runOn((t) => `${t}.style = "circle"`));
+    act("Style: square", runOn((t) => `${t}.style = "square"`));
   }
   if (edges && !nodes) {
     act("Width…", async () => {
@@ -1251,9 +1246,11 @@ function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; ti
   act("Assign to variable…", async () => {
     const name = await ask({ title: "Assign to a variable", note: `${items.length === 1 ? "This item" : `These ${items.length} items`} will be available in the console under this name.`, label: "Name", value: "foo", ok: "Assign" });
     if (!name) return;
-    const res = await request<unknown>((id) => ({ type: "assign", id, name, items }));
-    if (typeof res === "number") term.note(`${name} = ${res === 1 ? "1 item" : `${res} items`}`);
-    else term.error(String(res));
+    if (!/^[A-Za-z_]\w*$/.test(name.trim()) || PY_KEYWORDS.has(name.trim())) {
+      term.error(`invalid variable name: ${name}`);
+      return;
+    }
+    await runOn((t) => `${name.trim()} = ${t}`)();
   });
 
   menu.hidden = false;
@@ -1276,10 +1273,7 @@ document.addEventListener("keydown", (ev) => {
     if (tool === "lens" && lens.release()) return;
     if (tool !== "select") setTool("select");
     else if (renderer.focused !== null) renderer.setFocus(null);
-    else if (renderer.selection.size) {
-      renderer.setSelection([]);
-      syncSelection([]);
-    }
+    else if (renderer.selection.size) clearSelection();
   }
 });
 
@@ -1446,7 +1440,7 @@ function renderLegends(legends: LegendRec[]) {
         // "… N more": click to list every group (scrolls when long); again to collapse
         const toggle = document.createElement("button");
         toggle.className = "legend-more";
-        toggle.textContent = expanded ? "Show fewer" : "Show all";
+        toggle.textContent = expanded ? "Show fewer" : "List all";
         toggle.addEventListener("click", () => {
           if (expanded) expandedLegends.delete(lg.i);
           else expandedLegends.add(lg.i);
@@ -1483,7 +1477,7 @@ function renderLegends(legends: LegendRec[]) {
 $("#sample").addEventListener("click", () => term.submit(`makeFromGDF("sample.gdf")`));
 $("#save").addEventListener("click", () => term.submit(`saveSession("session.guess")`));
 $("#curved").addEventListener("click", () => term.submit(`curvedEdges(${renderer.curvature > 0 ? "false" : "true"})`));
-$("#center").addEventListener("click", () => renderer.center());
+$("#center").addEventListener("click", () => term.submit("center()"));
 // ---- light / dark theme: dark by default; Automatic follows the system (View menu) -----
 {
   type Theme = "auto" | "light" | "dark";
@@ -1648,6 +1642,21 @@ let wireMenuRoot: (r: HTMLElement) => void = () => {};
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-run]")) {
     b.addEventListener("click", () => void term.submit(b.dataset.run!));
   }
+  // data-run-sel: a command on the selection, which is spelled out ({sel}: every
+  // selected node, {first}: the first) so the cell can be replayed; data-run-none
+  // is the command when nothing is selected
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-run-sel]")) {
+    b.addEventListener("click", () => {
+      const all = selectionExpr();
+      if (!all) {
+        if (b.dataset.runNone) void term.submit(b.dataset.runNone);
+        else status.textContent = "Nothing selected: shift-drag a box or Alt-drag a lasso first";
+        return;
+      }
+      const first = nodeExpr([...renderer.selection][0]);
+      void term.submit(b.dataset.runSel!.replaceAll("{sel}", all).replaceAll("{first}", first));
+    });
+  }
 }
 $("#find-output").addEventListener("click", () => term.openFind());
 $("#vim-keys").setAttribute("aria-pressed", String(term.vim));
@@ -1707,12 +1716,18 @@ async function deleteSelection() {
     status.textContent = "Nothing selected: shift-drag a box or Alt-drag a lasso first";
     return;
   }
-  if (await term.submit("remove(sel)")) {
+  if (await term.submit(`remove(${selectionExpr()})`)) {
     renderer.setSelection([]);
     syncSelection([]);
   }
 }
 $("#delete-sel").addEventListener("click", () => void deleteSelection());
+// Edit → Clear selection, like Esc: selecting is not recorded, so neither is clearing
+function clearSelection() {
+  renderer.setSelection([]);
+  syncSelection([]);
+}
+$("#clear-sel").addEventListener("click", clearSelection);
 document.addEventListener("keydown", (ev) => {
   if ((ev.key !== "Delete" && ev.key !== "Backspace") || ev.metaKey || ev.ctrlKey || ev.altKey) return;
   const t = ev.target as HTMLElement | null;
@@ -2291,6 +2306,7 @@ const dataTable = new DataTable($("#table-body"), {
     if (v === "") lit = "None";
     else if (type === "BOOLEAN") lit = /^(true|1|yes|t)$/i.test(v) ? "true" : "false";
     else if ((type === "DOUBLE" || type === "INTEGER") && !isNaN(Number(v))) lit = String(Number(v));
+    else if (/color$/.test(field) && (/^#[0-9a-f]{6}$/i.test(v) || v.toLowerCase() in term.colors)) lit = colorExpr(v);
     else lit = pyLit(value);
     void term.submit(`${target}.${field} = ${lit}`);
   },
@@ -2363,7 +2379,7 @@ const palette = new Palette(async () => {
     const sub = b.closest(".menu-sub")?.querySelector(".menu-sub-title")?.textContent;
     const root = b.closest(".menu-root")?.querySelector(".menu-title")?.textContent;
     const menu = root && sub ? `${root} › ${sub}` : root;
-    items.push({ kind: "action", label: menu ? `${menu} › ${label}` : `Tool: ${label}`, detail: b.title || b.dataset.run || "", run: () => b.click() });
+    items.push({ kind: "action", label: menu ? `${menu} › ${label}` : `Tool: ${label}`, detail: b.title || b.dataset.run || b.dataset.runSel?.replace(/\{(sel|first)\}/g, "…") || "", run: () => b.click() });
   }
   for (const n of renderer.nodes.values()) {
     items.push({ kind: "node", label: n.name, detail: n.l && n.l !== n.name ? n.l : "", run: () => {
@@ -2433,7 +2449,7 @@ function showWelcome() {
     "v1 ? g.nodes",
     "gemLayout()",
     "plotSizesPie(dept)",
-    "for n in (dept == 'dept3'):\n    n.labelvisible = true",
+    'for n in (dept == "dept3"):\n    n.labelvisible = true',
     "help",
   ]);
 }

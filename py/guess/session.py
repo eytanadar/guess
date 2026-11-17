@@ -814,6 +814,9 @@ class Session:
 
     def _gnot(self, v):
         """``not s`` used as a value: on a set of nodes (or edges), the others."""
+        from .outformats import Formatted
+        if isinstance(v, Formatted):           # not (q >> summary): the others, in that format
+            return Formatted(self._gnot(v.value), v.fmt)
         if not isinstance(v, GSet):
             return not v
         items = list(v)
@@ -1898,9 +1901,24 @@ def fstring(*parts):
             continue
         v, conv, spec = p
         from .runtime import FieldRead
+        from .outformats import Formatted
         read = v if isinstance(v, FieldRead) else None
         if read is not None:
             v = read.value
+        if isinstance(v, Formatted) and conv == -1:
+            # {s >> count}: the text the format shows (linked as print() links it)
+            from . import outformats
+            seg = outformats.render(outformats._session, v.value, fmt=v.fmt) if outformats._session else None
+            t = outformats.seg_text(seg) if seg is not None else str(v)
+            t2 = format(t, spec) if spec else t
+            texts.append(t2)
+            if isinstance(seg, dict) and not spec and "tbl" not in seg:
+                segs.append(seg)
+            elif segs and isinstance(segs[-1], str):
+                segs[-1] += t2
+            else:
+                segs.append(t2)
+            continue
         if conv == 114:
             t = repr(v)
         elif conv == 115:

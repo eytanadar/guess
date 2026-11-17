@@ -441,7 +441,7 @@ export class Console {
     }
   }
 
-  /** Show the cells recorded for node drags (hidden by default; remembered). */
+  /** Show the hidden cells (node drags, cluster lassos; hidden by default; remembered). */
   setShowMoves(on: boolean) {
     this.out.classList.toggle("show-moves", on);
     this.scroll();
@@ -631,7 +631,7 @@ export class Console {
   private lastCellText = "";
 
   /** A hidden cell (a node drag) is a normal command — history(), undo, logs and
-   * exports include it — but stays out of sight unless "Show node moves" is on,
+   * exports include it — but stays out of sight unless "Show hidden commands" is on,
    * or it fails. */
   private async execute(code: string, hidden = false, badge?: string): Promise<boolean> {
     const cell = this.newCell(code, hidden);
@@ -751,7 +751,17 @@ export class Console {
   /** Syntax-highlighted source; documented command names become hoverable,
    *  and every token knows its offset (for hovering names and queries). */
   /** Colour names GUESS knows ("#rrggbb" by lower-case name), from the worker. */
-  colors: Record<string, string> = {};
+  get colors(): Record<string, string> {
+    return colorTable;
+  }
+  set colors(t: Record<string, string>) {
+    colorTable = t;
+    colorNames = new Map();
+    for (const [name, hex] of Object.entries(t)) {
+      // the first name for a colour wins (the 2006 names come before the CSS ones)
+      if (/^[a-z_]\w*$/.test(name) && !colorNames.has(hex.toLowerCase())) colorNames.set(hex.toLowerCase(), name);
+    }
+  }
 
   /** The CSS colour a code token stands for: a colour name (red, dandelion)
    *  or a string holding one ('#ff0000', '255,0,0', 'steelblue'); else null. */
@@ -1072,6 +1082,18 @@ export class Console {
  *  "(v1, v2, v3, …).color = red"): the stretch to fold, after the first item. */
 const ITEM = /^\s*(?:[A-Za-z_]\w*|g\.getNodeByName\("(?:[^"\\]|\\.)*"\)|\((?:[A-Za-z_]\w*|g\.getNodeByName\("(?:[^"\\]|\\.)*"\)) (?:-|->) (?:[A-Za-z_]\w*|g\.getNodeByName\("(?:[^"\\]|\\.)*"\))\))\s*$/;
 const FOLD_MIN = 6;
+let colorTable: Record<string, string> = {};
+let colorNames = new Map<string, string>();   // "#rrggbb" -> its first name
+
+/** A colour as generated code: its name (a bare identifier, as in red) when it
+ *  is exactly a named colour, else a quoted string ("#e8384f"). Takes a name
+ *  or "#rrggbb". */
+export function colorExpr(c: string): string {
+  const v = c.trim().toLowerCase();
+  if (/^[a-z_]\w*$/.test(v) && v in colorTable) return v;
+  return colorNames.get(v) ?? JSON.stringify(/^#[0-9a-f]{6}$/.test(v) ? v : c);
+}
+
 export function foldRanges(code: string): { from: number; to: number; count: number; open: number }[] {
   const out: { from: number; to: number; count: number; open: number }[] = [];
   const stack: number[] = [];

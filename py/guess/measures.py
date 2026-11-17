@@ -309,9 +309,10 @@ def install(session):
         """mds(dims=2) places the nodes in `dims` dimensions by classical
         multidimensional scaling of their shortest-path distances (hops; with
         weight=... an edge field read as a distance), storing the coordinates
-        in fields mds1, mds2, ... (or name=...). Unreachable pairs count as one
-        more than the longest distance. scatterLayout(mds1, mds2) draws them;
-        mdsLayout() does both in one go."""
+        in fields mds1, mds2, ... (or name=...) and returning them as a list.
+        Unreachable pairs count as one more than the longest distance.
+        scatterLayout(mds1, mds2) draws them; mdsLayout() does both in one
+        go."""
         g = gr()
         dims = int(dims)
         if dims < 1 or dims > 10:
@@ -352,13 +353,16 @@ def install(session):
         pos = np.clip(vals[:dims], 0, None)
         coords = vecs[:, :dims] * np.sqrt(pos)
         total = float(np.clip(vals, 0, None).sum()) or 1.0
+        out = []
         for k in range(dims):
             f = g.addNodeField(f"{name}{k + 1}", DOUBLE, 0.0)
             for v, i in idx.items():
                 f.set(v, float(coords[i, k]))
+            out.append(f)
         share = 100 * float(pos.sum()) / total
         fields = ", ".join(f"{name}{k + 1}" for k in range(dims))
         print(f"{fields}: {share:.0f}% of the distances' variance")
+        return out
 
     # ---- geography -----------------------------------------------------------------
     @cmd

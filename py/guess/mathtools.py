@@ -3,6 +3,7 @@ adjacency networks from maps, graph colouring, edge crossings, expanding a
 multiplex network into layers, and spectra."""
 import math
 
+from .algorithms import store_partition
 from .model import GuessError, Node
 
 
@@ -43,12 +44,13 @@ def install(session):
         else:
             session.ns["geoLayout"](projection="equirectangular", map="world")
 
-    def colorGraph(strategy="DSATUR", show=True):
-        """colorGraph() gives every node a colour class (`color_class`, 0, 1,
-        2, ...) so that no two neighbours share one, using as few as it can
-        find (greedy colouring; strategy "DSATUR" (default),
-        "largest_first", "smallest_last" or "random_sequential"); show=true
-        also colours the nodes by class. Returns the number of colours used.
+    def colorGraph(strategy="DSATUR", show=True, name="color_class"):
+        """colorGraph() gives every node a colour class (color_class, 0, 1,
+        2, ...; name= another field) so that no two neighbours share one,
+        using as few as it can find (greedy colouring; strategy "DSATUR"
+        (default), "largest_first", "smallest_last" or "random_sequential");
+        show=true also colours the nodes by class. Returns the classes (as
+        groups, largest first: len(colorGraph()) is the number of colours).
         Planar networks (maps) never need more than four, though greedy
         methods sometimes use five."""
         import networkx as nx
@@ -59,10 +61,15 @@ def install(session):
             raise GuessError('strategy is "DSATUR", "largest_first", "smallest_last" or "random_sequential"')
         G = session.ns["toNetworkX"](directed=False)
         col = nx.coloring.greedy_color(G, strategy=st)
-        session.ns["setField"]({k: int(v) for k, v in col.items()}, "color_class")
+        gr = g()
+        classes = {}
+        for k, v in col.items():
+            if str(k) in gr._nodes:
+                classes.setdefault(v, []).append(gr._nodes[str(k)])
+        out = store_partition(gr, classes.values(), name, "colour class")
         if show:
-            session.ns["colorize"](g().node_schema["color_class"])
-        return (max(col.values()) + 1) if col else 0
+            session.ns["colorize"](gr.node_schema[str(getattr(name, "name", name))])
+        return out
 
     def _centre(n):
         return n.x + n.width / 2, n.y + n.height / 2

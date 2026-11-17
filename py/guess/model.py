@@ -78,6 +78,44 @@ class GuessError(Exception):
 # Sets of graph elements
 # --------------------------------------------------------------------------
 
+def is_color_field(name):
+    """Fields holding colours (color, strokecolor, labelcolor, ...): as Field.set."""
+    return isinstance(name, str) and name.endswith("color")
+
+
+def value_key(name, v):
+    """The key a value groups under: colours by the colour they mean (red,
+    "#ff0000" and "255,0,0" are one), anything else as it is."""
+    if is_color_field(name) and isinstance(v, str):
+        c = colors.parse(v)
+        if c is not None:
+            return ("<color>", c)
+    return v
+
+
+def _distinct(name, values):
+    out, seen = [], set()
+    for v in values:
+        k = value_key(name, v)
+        try:
+            if k in seen:
+                continue
+            seen.add(k)
+        except TypeError:                 # unhashable: by identity
+            if any(x is v for x in out):
+                continue
+        out.append(v)
+    return out
+
+
+def _no_formatted(what, other):
+    """``degree > 3 >> myfmt`` that reached a query as degree > (3 >> myfmt)."""
+    from .outformats import Formatted
+    if isinstance(other, Formatted):
+        name = getattr(other.fmt, "name", "format")
+        raise GuessError(f"put the query in parentheses before >> {name}: ({what} ...) >> {name}")
+
+
 class DistinctValues(list):
     """``dept.distinct``: each value once, remembering which elements have it,
     so the printed values link to them (hover 'dept1': the nodes in dept1)."""
@@ -89,11 +127,20 @@ class DistinctValues(list):
         self.whole = whole        # all of the field's elements (so `name == value` is the query)
 
     def groups(self):
+        """value -> the elements with it (keyed by the values listed here, so a
+        colour spelt "#ff0000" on some elements joins the group of red)."""
+        rep = {}
+        for v in self:
+            try:
+                rep.setdefault(value_key(self.name, v), v)
+            except TypeError:
+                pass
         out = {}
         for e in self.source or ():
             v = getattr(e, self.name, None)
             try:
-                out.setdefault(v, []).append(e)
+                k = value_key(self.name, v)
+                out.setdefault(rep.get(k, v), []).append(e)
             except TypeError:       # unhashable value
                 pass
         return out
@@ -141,12 +188,7 @@ class Values(list):
 
     @property
     def distinct(self):
-        out, seen = [], set()
-        for v in self:
-            k = v if v.__hash__ is not None else id(v)
-            if k not in seen:
-                seen.add(k)
-                out.append(v)
+        out = _distinct(self.__dict__.get("_name"), self)
         src = self.__dict__.get("_src")
         return DistinctValues(out, self.__dict__.get("_name"), src) if src is not None else out
 
@@ -198,7 +240,50 @@ class GSet(list):
         return id(x) in cached[1]
 
     # set algebra -----------------------------------------------------
+    def __eq__(self, other):
+        """Two sets are equal when they hold the same members, in any order
+        (against a plain list, as lists: in order)."""
+        if isinstance(other, (GSet, set, frozenset)):
+            try:
+                return set(self) == set(other)
+            except TypeError:            # unhashable members (sets of groups)
+                return all(x in other for x in self) and all(x in self for x in other)
+        return list.__eq__(self, other)
+
+    def __ne__(self, other):
+        r = self.__eq__(other)
+        return r if r is NotImplemented else not r
+
+    __hash__ = None                       # as list: a set can change, so it isn't hashable
+
+    def __add__(self, other):
+        """``a + b`` on two sets: their union, as ``a | b`` (each member once,
+        in order). With a plain list: list concatenation."""
+        if isinstance(other, GSet):
+            seen, out = set(), GSet()
+            for x in list.__iter__(self):
+                if id(x) not in seen:
+                    seen.add(id(x))
+                    out.append(x)
+            for x in other:
+                if id(x) not in seen:
+                    seen.add(id(x))
+                    out.append(x)
+            return out
+        return list.__add__(self, other)
+
+    def __iadd__(self, other):
+        if isinstance(other, GSet):
+            seen = set(map(id, self))
+            for x in other:
+                if id(x) not in seen:
+                    seen.add(id(x))
+                    self.append(x)
+            return self
+        return list.__iadd__(self, other)
+
     def __and__(self, other):
+        _no_formatted("…", other)
         other = _as_seq(other)
         if other is None:
             return NotImplemented
@@ -206,12 +291,14 @@ class GSet(list):
         return GSet((x for x in _flatten(self) if id(x) in keep))
 
     def __rand__(self, other):
+        _no_formatted("…", other)
         other = _as_seq(other)
         if other is None:
             return NotImplemented
         return GSet(other) & self
 
     def __or__(self, other):
+        _no_formatted("…", other)
         other = _as_seq(other)
         if other is None:
             return NotImplemented
@@ -224,6 +311,7 @@ class GSet(list):
         return out
 
     def __ror__(self, other):
+        _no_formatted("…", other)
         other = _as_seq(other)
         if other is None:
             return NotImplemented
@@ -446,16 +534,12 @@ class Field:
 
     @property
     def distinct(self):
-        out = []
-        seen = set()
-        for v in self.values():
-            if v not in seen:
-                seen.add(v)
-                out.append(v)
+        out = _distinct(self.name, self.values())
         return DistinctValues(out, self.name, self.elements(), whole=True)
 
     # queries --------------------------------------------------------------
     def _query(self, sym, other):
+        _no_formatted(f"{self.name} {sym}", other)
         op = _OPS[sym]
         out = GSet(annotation=f"{self.name} {sym} {_fmt(other)}")
         if isinstance(other, Field):
@@ -530,6 +614,7 @@ class Field:
     def isin(self, values):
         """``dept in ("a", "b")`` in Gython: the elements whose value is one of
         values."""
+        _no_formatted(f"{self.name} in", values)
         if isinstance(values, (str, Field)) or not hasattr(values, "__iter__"):
             values = [values]
         want = [_query_value(self, v) for v in values]
@@ -543,6 +628,7 @@ class Field:
 
     def like(self, pattern):
         """SQL LIKE: ``%`` matches any run, ``_`` any single character."""
+        _no_formatted(f"{self.name} like", pattern)
         rx = _like_regex(str(pattern))
         out = GSet(annotation=f"{self.name} like {pattern!r}")
         for e in self.elements():
@@ -584,6 +670,9 @@ def _query_value(field, v):
         return v
     if field.name == "style" and field.kind == NODE and isinstance(v, str):
         return style_number(v)        # style == 'triangle'
+    if is_color_field(field.name) and isinstance(v, str) and not isinstance(v, colors.Color) \
+            and colors.parse(v) is not None:
+        return colors.Color(v)        # color == "#ff0000" matches red (Color compares by meaning)
 
     if isinstance(v, (int, float)) and not isinstance(v, bool) and str(field.type).upper() in (
             "INTEGER", "INT", "DOUBLE", "FLOAT", "REAL", "BIGINT", "SMALLINT", "TINYINT", "DECIMAL", "NUMERIC"):
@@ -1566,9 +1655,14 @@ def sort_by(seq, field, descending=False):
 
 def group_by(seq, field, sort=False):
     name = field.name if isinstance(field, Field) else str(field)
-    groups = {}
+    groups, rep = {}, {}
     for e in elements_of(seq):
         v = getattr(e, name)
+        k = value_key(name, v)
+        try:
+            v = rep.setdefault(k, v)        # colours: one group for red, "#ff0000", "#FF0000"
+        except TypeError:
+            pass
         groups.setdefault(v, []).append(e)
     keys = list(groups)
     if sort:
