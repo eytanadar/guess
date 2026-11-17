@@ -488,8 +488,9 @@ test("many groups print as a list of folded groups", async ({ page }) => {
   const groups = out.locator(".grp.foldable.collapsed");
   expect(await groups.count()).toBeGreaterThan(8);
   await expect(groups.first()).toContainText("more");
-  await groups.first().locator(".list-toggle").click();
-  await expect(groups.first().locator(".list-body")).toBeVisible();
+  const first = out.locator(".grp.foldable").nth(1);              // (0 is the outer list)
+  await first.locator(":scope > .list-toggle").click();
+  await expect(first.locator(":scope > .list-body")).toBeVisible();
 });
 
 test("legends and chart panels fold", async ({ page }) => {
