@@ -489,10 +489,12 @@ test("many groups print as a list of folded groups", async ({ page }) => {
   const out = page.locator(".result").last();
   const groups = out.locator(".grp.foldable.collapsed");
   expect(await groups.count()).toBeGreaterThan(8);
-  await expect(groups.first()).toContainText("more");
+  await expect(groups.first()).toContainText(/^▸\[\w+: v\d+, … \+\d+ more\]$/);    // [dept0: v1, … +27 more]
+  await expect(groups.first().locator(".grp-label")).toHaveText(/^dept\d+: $/);
   const first = out.locator(".grp.foldable").nth(1);              // (0 is the outer list)
   await first.locator(":scope > .list-toggle").click();
   await expect(first.locator(":scope > .list-body")).toBeVisible();
+  await expect(first.locator(":scope > .grp-label")).toBeVisible();          // the label stays when open
 });
 
 test("legends and chart panels fold", async ({ page }) => {

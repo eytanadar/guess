@@ -78,7 +78,7 @@ def test_many_groups_print_as_collapsed_lists_and_stay_linked():
     out = s.rec.of("out")[-1]["segs"][0]
     assert out["a"] == "grouped by dept (21 groups)" and out["g"][0] == "["
     first = out["g"][1]
-    assert first["c"] == 1 and first["a"] == "dept == 'dept0'"
+    assert first["c"] == 1 and first["a"] == "dept == 'dept0'" and first["l"] == "dept0"
     nodes = [x for x in first["g"] if isinstance(x, dict) and "n" in x]
     assert len(nodes) == 28
 
@@ -144,3 +144,19 @@ def test_exports_in_a_loop_show_each_step_and_collect_into_a_zip():
     assert "no images are being collected" in s.rec.of("error")[-1]["summary"]
     assert s.run("startImages()") and not s.run("startImages()")
     assert "already collecting" in s.rec.of("error")[-1]["summary"]
+
+
+def test_sets_carry_a_label():
+    s = _s()
+    s.rec.clear()
+    s.run("t = dept == 'dept1'\nt.grouplabel = 'team one'\nt")
+    seg = s.rec.of("out")[-1]["segs"][0]
+    assert seg["l"] == "team one" and seg["a"] == "dept == 'dept1'"
+    assert s.run("dept == 'dept1'")                        # a plain query: no label
+    assert "l" not in s.rec.of("out")[-1]["segs"][0]
+    s.run("louvainClusters()")
+    inner = s.rec.of("out")[-1]["segs"][0]["g"][1]
+    assert inner["l"] == "community 0"
+    s.run("groupBy(degree)")
+    labels = [x.get("l") for x in s.rec.of("out")[-1]["segs"][0]["g"] if isinstance(x, dict)]
+    assert all(l and l.startswith("degree=") for l in labels)

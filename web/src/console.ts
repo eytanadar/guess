@@ -1102,6 +1102,15 @@ export function renderSeg(s: Seg): Node {
     if (s.q) span.dataset.q = s.q;
     for (const c of s.g) span.append(renderSeg(c));
     collapsible(span, !!s.c);
+    if (s.l) {
+      // the set's label, just inside its opening bracket (folded or not)
+      const open = [...span.childNodes].find((k) => k instanceof Text && k.data in CLOSE);
+      if (open) {
+        const lab = el("span", "grp-label");
+        lab.textContent = `${s.l}: `;
+        open.after(lab);
+      }
+    }
     return span;
   }
   const span = el("span", "n" in s ? "obj node" : "obj edge");

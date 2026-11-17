@@ -225,6 +225,7 @@ body { display: flex; flex-direction: column; }
 .list-toggle:hover { color: var(--accent); }
 .grp.foldable.collapsed > .list-body, .grp.foldable:not(.collapsed) > .list-short { display: none; }
 .list-short { color: inherit; }
+.grp-label { color: var(--muted); font-style: italic; }
 /* printed nodes and edges since deleted */
 .obj.gone, .obj.gone .obj { text-decoration: line-through; text-decoration-thickness: 1.5px; opacity: 0.6; cursor: default; }
 .result.stale .obj, .result.stale .grp { color: var(--muted, #888); text-decoration: none; cursor: default; }

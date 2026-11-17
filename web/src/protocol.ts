@@ -42,8 +42,8 @@ export type Seg =
   | { n: number; t: string }
   /** ends: [id, name] of each end when t is "a-b" / "a->b" (each end links to its node) */
   | { e: number; t: string; ends?: [[number, string], [number, string]] }
-  /** c: a list that starts collapsed */
-  | { g: Seg[]; a?: string; x?: ["n" | "e", number][]; q?: string; c?: number };   // q: a query naming the members   // x: more members, linked but not shown
+  /** c: a list that starts collapsed; l: a label shown inside its brackets ([dept3: v1, …]) */
+  | { g: Seg[]; a?: string; x?: ["n" | "e", number][]; q?: string; c?: number; l?: string };   // q: a query naming the members   // x: more members, linked but not shown
 
 /** sh: the shape around the group (absent: convex hull); rot: turned to fit; pad: room around the nodes */
 export interface HullRec { i: number; nodes: number[]; c: number; a: number; sh?: "box" | "ellipse"; rot?: boolean; pad?: number }

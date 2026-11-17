@@ -1627,6 +1627,9 @@ def segment(value, depth=0, limit=MAX_ITEMS):
         ann = getattr(value, "annotation", None) if isinstance(value, GSet) else None
         if ann:
             out["a"] = ann
+        lab = _group_label(value, inner=depth > 0)
+        if lab:
+            out["l"] = lab
         return out
     if isinstance(value, GSet):
         out = {"g": ["[]"]}
@@ -1663,6 +1666,30 @@ def _value_seg(obj, name, value):
     return {"g": [_safe_repr(value)], "a": q, "q": q, "x": [[k, x._id] for x in members[:MAX_EXTRA]]}
 
 
+def _group_label(value, inner=False):
+    """The label printed inside a set's brackets: its grouplabel, or, for a
+    group within a set of groups (groupBy, louvainClusters), one made from its
+    annotation: 'dept3' from dept == 'dept3', 'louvain_class=2' from
+    louvain_class == 2, 'community 0' as it is."""
+    if not isinstance(value, GSet):
+        return None
+    lab = value.__dict__.get("grouplabel")
+    if lab:
+        return str(lab)
+    ann = value.__dict__.get("annotation")
+    if not inner or not ann or not isinstance(ann, str):
+        return None
+    import re
+    m = re.fullmatch(r"(?:Edge\.)?(\w+) == (.+)", ann)
+    if m:
+        v = m.group(2)
+        if len(v) >= 2 and v[0] == v[-1] and v[0] in "'\"":
+            return v[1:-1]
+        return f"{m.group(1)}={v}"
+    ann = re.sub(r" \(\d+\)$", "", ann)          # clique 3 (5) -> clique 3
+    return ann if len(ann) <= 32 else None
+
+
 def _many_groups(value):
     """A set of sets too big to print member by member (louvainClusters(), groupBy)."""
     if not value or not all(isinstance(x, (GSet, list, tuple)) and not isinstance(x, (Node, Edge)) for x in value):
@@ -1693,6 +1720,9 @@ def _compact_groups(value):
         ann = getattr(grp, "annotation", None) if isinstance(grp, GSet) else None
         if ann:
             sub_["a"] = ann
+        lab = _group_label(grp, inner=True)
+        if lab:
+            sub_["l"] = lab
         parts.append(sub_)
     parts.append("]")
     ann = getattr(value, "annotation", None) if isinstance(value, GSet) else None

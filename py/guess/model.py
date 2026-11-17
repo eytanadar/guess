@@ -158,22 +158,28 @@ class GSet(list):
     Attribute reads return a list of values: ``(freq > 10).freq``.
     ``&`` / ``|`` are order-preserving intersection / union; ``.difference(other)`` removes
     elements. (In Gython, ``a - b`` between nodes selects edges, as in the original.)
+
+    ``s.grouplabel = "core"`` gives the set a label, printed inside its brackets
+    (``[core: v1, v2, …]``); grouping commands label their groups themselves.
     """
 
-    def __init__(self, items=(), annotation=None):
+    def __init__(self, items=(), annotation=None, grouplabel=None):
         super().__init__(items)
         object.__setattr__(self, "annotation", annotation)
+        object.__setattr__(self, "grouplabel", grouplabel)
 
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
+        if name in ("grouplabel", "annotation"):     # (made without __init__)
+            return None
         vals = Values(getattr(x, name) for x in self)
         vals._src, vals._name = [x for x in self if isinstance(x, (Node, Edge))], name
         return vals
 
     def __setattr__(self, name, value):
-        if name == "annotation":
-            object.__setattr__(self, name, value)
+        if name in ("annotation", "grouplabel"):
+            object.__setattr__(self, name, None if value is None else str(value) if name == "grouplabel" else value)
             return
         for x in self:
             setattr(x, name, value)
