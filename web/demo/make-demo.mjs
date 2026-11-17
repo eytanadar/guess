@@ -56,22 +56,43 @@ const seconds = (file) => Number(execFileSync("ffprobe", ["-v", "error", "-show_
 const spoken = (text) => Object.entries(script.pronounce ?? {})
   .reduce((t, [word, say]) => t.replace(new RegExp(`\\b${word}\\b`, "g"), say), text);
 
+const hashOf = (s) => createHash("sha256").update(s).digest("hex").slice(0, 16);
+// narration is spoken and cached one sentence at a time, so editing a sentence
+// re-sends only that sentence; a scene's audio is its sentences joined with a short gap
+const sentences = (text) => text.split(/(?<=[.!?])\s+(?=["'A-Z0-9])/).filter((s) => s.trim());
+const GAP = 0.3;
+
+async function speak(text, prev, next, key) {
+  // the neighbours are sent as context for natural intonation, but left out of the
+  // cache key: a change next door doesn't make this sentence be spoken again
+  const file = join(cacheDir, `s-${hashOf(`${voice}|${ttsModel}|${text}`)}.mp3`);
+  if (existsSync(file)) return file;
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`, {
+    method: "POST",
+    headers: { "xi-api-key": key, "Content-Type": "application/json", Accept: "audio/mpeg" },
+    body: JSON.stringify({ text, model_id: ttsModel, previous_text: prev || undefined, next_text: next || undefined,
+      voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.15 } }),
+  });
+  if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`);
+  writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+  console.log(`  narrated: ${text.slice(0, 60)}…`);
+  return file;
+}
+
 async function narrate(written) {
   const text = spoken(written);
   if (dryRun) return { file: null, dur: Math.max(1.5, text.split(/\s+/).length / 2.6) };
   const key = process.env.ELEVENLABS_API || process.env.ELEVENLABS_API_KEY;
   if (!key) throw new Error("ELEVENLABS_API is not set (repo .env)");
-  const hash = createHash("sha256").update(`${voice}|${ttsModel}|${text}`).digest("hex").slice(0, 16);
-  const file = join(cacheDir, `${hash}.mp3`);
+  const parts = sentences(text);
+  const files = [];
+  for (let i = 0; i < parts.length; i++) files.push(await speak(parts[i], parts[i - 1], parts[i + 1], key));
+  // the joined scene audio is cached too, by the sentence clips it is made of
+  const file = join(cacheDir, `scene-${hashOf(files.join("|") + `|${GAP}`)}.wav`);
   if (!existsSync(file)) {
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`, {
-      method: "POST",
-      headers: { "xi-api-key": key, "Content-Type": "application/json", Accept: "audio/mpeg" },
-      body: JSON.stringify({ text, model_id: ttsModel, voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.15 } }),
-    });
-    if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`);
-    writeFileSync(file, Buffer.from(await res.arrayBuffer()));
-    console.log(`  narrated: ${text.slice(0, 60)}…`);
+    const pads = files.map((_, i) => `[${i}:a]aresample=44100,aformat=channel_layouts=mono${i < files.length - 1 ? `,apad=pad_dur=${GAP}` : ""}[a${i}]`);
+    const filter = `${pads.join(";")};${files.map((_, i) => `[a${i}]`).join("")}concat=n=${files.length}:v=0:a=1[out]`;
+    execFileSync("ffmpeg", ["-loglevel", "error", "-y", ...files.flatMap((f) => ["-i", f]), "-filter_complex", filter, "-map", "[out]", file]);
   }
   return { file, dur: seconds(file) };
 }

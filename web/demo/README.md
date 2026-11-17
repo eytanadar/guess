@@ -9,7 +9,7 @@ demo/write-script.mjs Claude turns PROMPT.md + docs + the CHI paper into script.
 demo/script.json      scenes: narration + the actions that drive the app
 demo/make-demo.mjs    narration (ElevenLabs) → recording (Playwright) → MP4 (ffmpeg)
 demo/out/             guess-demo.mp4, guess-demo.srt (captions), timing.json
-demo/.cache/          narration clips, cached by text and voice (unchanged scenes cost nothing)
+demo/.cache/          narration, one clip per sentence (s-*.mp3), joined per scene (scene-*.wav); editing a sentence re-sends only that sentence
 ```
 
 ## Requirements

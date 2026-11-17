@@ -1665,9 +1665,9 @@ export class Renderer {
       const n = this.nodes.get(id);
       if (n && !n.v && !this.hl.nodes.has(id)) ghostNode(n, 0);
       if (!n || !n.v) continue;
-      // at least 7 screen pixels, so tiny nodes are still easy to spot when zoomed out
-      const r = Math.max(Math.max(n.w, n.h) / 2 + 6 * px, 9 * px);
-      g.circle(n.x + n.w / 2, n.y + n.h / 2, r);
+      // the node's own shape, grown so tiny nodes (under 18 screen pixels) are still easy to spot
+      const grow = Math.max(6 * px, (18 * px - Math.min(n.w, n.h)) / 2);
+      shape(g, { ...n, x: n.x - grow, y: n.y - grow, w: n.w + 2 * grow, h: n.h + 2 * grow });
       g.fill({ color: HIGHLIGHT, alpha: 0.22 });
       g.stroke({ width: 3 * px, color: HIGHLIGHT, alpha: 1 });
     }

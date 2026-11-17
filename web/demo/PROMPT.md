@@ -92,6 +92,8 @@ modifiers shown):
 | `{"dragNode": ["v1", "v14"], "alt": true}` | drags a node onto another (`alt`: draws a new edge) |
 | `{"dragIntoGroup": "v128"}` | drags a node into the largest group of a different colour (after `colorize(field)`, this changes its field) |
 | `{"zoom": 1}` / `{"zoom": -1}` | zooms in / out at the centre |
+| `{"rightClickNode": "v128"}` / `{"rightClickOutput": "dept3"}` | opens the element menu on a node, or on linked output containing that text (then `click` an item: `#menu button:has-text("Show labels")`) |
+| `{"slide": ["css selector", 0.6], "ms": 1600}` | drags a range slider's thumb to that fraction of its track |
 
 Useful selectors and menu items:
 - Menus (title → items):

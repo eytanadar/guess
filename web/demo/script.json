@@ -8,7 +8,7 @@
     "Javert": "Zhahvair",
     "Cosette": "Kozett",
     "Marius": "Mahryooss",
-    "Misérables": "Meezayrahbl"
+    "Les Misérables": "Lay Meezayrahb"
   },
   "ttsModel": "eleven_multilingual_v2",
   "theme": "dark",
@@ -43,7 +43,7 @@
     },
     {
       "id": "gython",
-      "narration": "The heart of GUESS is Gython, Python extended with graph operators. Every node in the graph is already a variable. Here we zoom in on v4 and make it a larger square. Edges have operators of their own: v4, double arrow, v5, is the edge between them.",
+      "narration": "The heart of GUESS is Gython, Python extended with graph operators. Every node in the graph is already a variable. Here we zoom in on v4 and make it a larger square. Edges have operators of their own: v4 dash v5 is the edge between them.",
       "actions": [
         {
           "run": "center(v4)"
@@ -55,7 +55,7 @@
           "wait": 600
         },
         {
-          "run": "v4 <-> v5"
+          "run": "v4 - v5"
         },
         {
           "hoverOutput": "–"
@@ -70,7 +70,7 @@
     },
     {
       "id": "namespace",
-      "narration": "GUESS puts the whole graph into Python's namespace. Every node, every field and every command is a name you can use directly, and that holds for any network. Let's open a second graph: the characters of Les Misérables. Now Valjean and Javert are variables, and Valjean, double arrow, Javert, is the edge between them. Weight is a field, so the three strongest ties are one line: Valjean and Cosette, Cosette and Marius, Valjean and Marius. Switching back to the email network brings its own names back.",
+      "narration": "GUESS puts the whole graph into Python's namespace. Every node, every field and every command is a name you can use directly, and that holds for any network. Let's open a second graph: the characters of Les Misérables. Now Valjean and Javert are variables, and Valjean dash Javert is the edge between them. Weight is a field, so the three strongest ties are one line: Valjean and Cosette, Cosette and Marius, Valjean and Marius. Switching back to the email network brings its own names back.",
       "actions": [
         {
           "run": "newGraph(\"lesmis\")"
@@ -86,7 +86,7 @@
           "wait": 800
         },
         {
-          "run": "Valjean <-> Javert"
+          "run": "Valjean - Javert"
         },
         {
           "hoverOutput": "–"
@@ -289,9 +289,39 @@
       ]
     },
     {
-      "id": "states",
-      "narration": "States let us compare views. We save this one, try a circular layout, and then morph smoothly back.",
+      "id": "lens",
+      "narration": "Crowded areas are hard to read. The excentric lens lists the labels of every node under it, off to the side, so the names stay legible as it moves.",
       "actions": [
+        {
+          "click": "header button[data-tool=\"lens\"]"
+        },
+        {
+          "hoverNode": "v73"
+        },
+        {
+          "wait": 1800
+        },
+        {
+          "hoverNode": "v27"
+        },
+        {
+          "wait": 1800
+        },
+        {
+          "key": "Escape"
+        },
+        {
+          "wait": 300
+        }
+      ]
+    },
+    {
+      "id": "states",
+      "narration": "States let us compare views. We clear the hulls, save this view, try a circular layout, and then morph smoothly back.",
+      "actions": [
+        {
+          "run": "removeConvexHulls()"
+        },
         {
           "run": "saveState(\"before\")"
         },
@@ -306,6 +336,62 @@
         },
         {
           "wait": 2200
+        }
+      ]
+    },
+    {
+      "id": "edges",
+      "narration": "Edges can be styled too. One command curves them. Here is a directed network: political blogs linking to one another during the 2004 election, with liberal and conservative blogs in two clear camps. The arrow operator picks out just the links from liberal blogs to conservative ones. Direction can be drawn with arrows, or with tapers that narrow toward the target, which people read faster.",
+      "actions": [
+        {
+          "run": "curvedEdges(true)"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "run": "newGraph(\"blogs\")"
+        },
+        {
+          "run": "makeFromGDF(\"polblogs-sample.gdf\")"
+        },
+        {
+          "run": "g.edges.color = gray.alpha(90); g.edges.width = 1.5; showOnly(giantComponent()); center(giantComponent())",
+          "visible": false
+        },
+        {
+          "run": "colorize(leaning)"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "run": "showOnly((leaning == \"liberal\") -> (leaning == \"conservative\"))"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "run": "directedEdges(\"arrow\")"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "run": "directedEdges(\"taper\")"
+        },
+        {
+          "wait": 1800
+        },
+        {
+          "run": "use(\"main\")"
+        },
+        {
+          "run": "center(giantComponent())",
+          "visible": false
+        },
+        {
+          "wait": 600
         }
       ]
     },
