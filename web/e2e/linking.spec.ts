@@ -498,7 +498,6 @@ test("legends and chart panels fold", async ({ page }) => {
   await run(page, "colorBy(degree, yellow, red); GradientLegend(degree)");
   const lg = page.locator("#legends .legend").last();
   await expect(lg.locator(".ramp-title")).toHaveText("degree");
-  await lg.hover();
   await lg.locator(".legend-fold").click();
   await expect(page.locator("#legends .legend-folded")).toHaveText("Legend: degree");
   await expect(page.locator("#legends .ramp")).toHaveCount(0);
