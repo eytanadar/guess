@@ -962,7 +962,7 @@ export class Console {
     };
     const spans: HTMLElement[] = [];
     this.out.querySelectorAll<HTMLElement>(".result:not(.stale) [data-k]").forEach((x) => {
-      if (!range.intersectsNode(x) || x.classList.contains("gone")) return;
+      if (!range.intersectsNode(x) || x.classList.contains("gone") || !x.getClientRects().length) return;
       const k = x.dataset.k;
       if (k === "n" && x.classList.contains("end")) {
         // one end of an "a-b" edge: the node, unless the edge itself is selected
@@ -1101,6 +1101,7 @@ export function renderSeg(s: Seg): Node {
     if (s.x?.length) span.dataset.x = JSON.stringify(s.x);
     if (s.q) span.dataset.q = s.q;
     for (const c of s.g) span.append(renderSeg(c));
+    collapsible(span, !!s.c);
     return span;
   }
   const span = el("span", "n" in s ? "obj node" : "obj edge");
@@ -1126,24 +1127,72 @@ export function renderSeg(s: Seg): Node {
   return span;
 }
 
+const CLOSE: Record<string, string> = { "[": "]", "(": ")", "{": "}" };
+
+/** A printed list of more than one item gets a small arrow to fold it to its
+ *  first item and a count ("[v3, … +31 more]"). */
+function collapsible(span: HTMLElement, collapsed: boolean) {
+  const kids = [...span.childNodes];
+  const first = kids[0], last = kids[kids.length - 1];
+  if (kids.length < 3 || !(first instanceof Text) || !(last instanceof Text)) return;
+  const open = first.data;
+  if (!(open in CLOSE) || last.data !== CLOSE[open]) return;
+  // the items: runs of nodes between ", " separators
+  const inner = kids.slice(1, -1);
+  const items: Node[][] = [[]];
+  for (const k of inner) {
+    if (k instanceof Text && k.data === ", ") items.push([]);
+    else items[items.length - 1].push(k);
+  }
+  let count = items.length;
+  const tail = items[items.length - 1];
+  const more = tail.length === 1 && tail[0] instanceof Text ? /^\.\.\. (\d+) more$/.exec(tail[0].data) : null;
+  if (more) count += Number(more[1]) - 1;
+  if (count < 2 || !items[0].length) return;
+  const body = el("span", "list-body");
+  body.append(...inner);
+  const short = el("span", "list-short");
+  for (const k of items[0]) short.append(k.cloneNode(true));
+  short.append(`, … +${count - 1} more`);
+  const arrow = el("sup", "list-toggle");
+  arrow.setAttribute("role", "button");
+  const set = (c: boolean) => {
+    span.classList.toggle("collapsed", c);
+    arrow.textContent = c ? "▸" : "▾";
+    arrow.title = c ? `Show all ${count} items` : "Collapse";
+  };
+  arrow.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    set(!span.classList.contains("collapsed"));
+  });
+  arrow.addEventListener("contextmenu", (ev) => ev.stopPropagation());
+  span.replaceChildren(arrow, first, body, short, last);
+  span.classList.add("foldable");
+  set(collapsed);
+}
+
 /** All graph elements inside an output span (the span itself if it is one). */
 export function collect(t: HTMLElement): Item[] {
   if (t.dataset.k === "n" || t.dataset.k === "e") return [[t.dataset.k, Number(t.dataset.id)]];
   const out: Item[] = [];
+  // a folded list's first item is shown twice (folded and not): count it once
+  const own = t.closest(".list-short");
+  const mine = (x: HTMLElement) => x.closest(".list-short") === own;
   // (an edge's ends stand for the edge here, not for their nodes)
   t.querySelectorAll<HTMLElement>("[data-k=n]:not(.end),[data-k=e]").forEach((x) => {
-    out.push([x.dataset.k as "n" | "e", Number(x.dataset.id)]);
+    if (mine(x)) out.push([x.dataset.k as "n" | "e", Number(x.dataset.id)]);
   });
   // members past the display limit, and the elements behind a summary
   for (const g of [t, ...t.querySelectorAll<HTMLElement>("[data-x]")]) {
-    if (g.dataset.x) for (const it of JSON.parse(g.dataset.x) as Item[]) out.push(it);
+    if (g.dataset.x && (g === t || mine(g))) for (const it of JSON.parse(g.dataset.x) as Item[]) out.push(it);
   }
   return out;
 }
 
 /** Tooltip body for a group span: its annotation and the first few members. */
 export function groupTip(t: HTMLElement): { title: string; lines: string[] } {
-  const members = Array.from(t.children).filter((c) => (c as HTMLElement).dataset.k) as HTMLElement[];
+  const box = t.querySelector<HTMLElement>(":scope > .list-body") ?? t;
+  const members = Array.from(box.children).filter((c) => (c as HTMLElement).dataset.k) as HTMLElement[];
   const items = collect(t);
   const nodes = items.filter((i) => i[0] === "n").length;
   const edges = items.length - nodes;

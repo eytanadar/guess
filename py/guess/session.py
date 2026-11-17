@@ -1562,7 +1562,7 @@ def edge_seg(e, t=None):
     return seg
 
 
-def segment(value, depth=0):
+def segment(value, depth=0, limit=MAX_ITEMS):
     if isinstance(value, Node):
         return {"n": value._id, "t": value._name}
     if isinstance(value, Edge):
@@ -1612,9 +1612,9 @@ def segment(value, depth=0):
         for i, x in enumerate(entries):
             if i:
                 parts.append(", ")
-            if i >= MAX_ITEMS:
-                parts.append(f"... {len(entries) - MAX_ITEMS} more")
-                rest = entries[MAX_ITEMS:]
+            if i >= limit:
+                parts.append(f"... {len(entries) - limit} more")
+                rest = entries[limit:]
                 out["x"] = _all_items(rest)
                 break
             if isinstance(value, dict):
@@ -1670,25 +1670,34 @@ def _many_groups(value):
     return len(value) > 8 or sum(len(x) for x in value) > 150
 
 
+GROUP_SHOWN = 100   # members of each collapsed group sent to the page (the rest linked, not shown)
+
+
 def _compact_groups(value):
-    """'45 groups: [32] [28] [20] …', each [n] linked to its members."""
-    sizes = [len(x) for x in value]
-    ann = getattr(value, "annotation", None) if isinstance(value, GSet) else None
-    import re
-    parts = [f"{len(value)} group{'s' * (len(value) != 1)} ({sum(sizes)} elements): "]
+    """Many groups (louvainClusters() on a big graph): a list of the groups as
+    lists of their elements, each shown collapsed ([v3, … +31]) with its
+    annotation, which open one by one."""
+    out = {"g": ["["]}
+    parts = out["g"]
     for i, grp in enumerate(value):
-        if i >= MAX_ITEMS:
-            parts.append(f" … {len(value) - MAX_ITEMS} more")
-            break
         if i:
-            parts.append(" ")
-        sub_ann = getattr(grp, "annotation", None) if isinstance(grp, GSet) else None
-        m = re.fullmatch(r"\w+ == (.+)", sub_ann or "")
-        label = f"{m.group(1).strip(chr(39))}: {len(grp)}" if m else str(len(grp))
-        parts.append({"g": [f"[{label}]"], "a": sub_ann or f"group {i}", "x": _all_items(grp)})
-    out = {"g": parts}
-    if ann:
-        out["a"] = ann
+            parts.append(", ")
+        if i >= MAX_ITEMS:
+            parts.append(f"... {len(value) - MAX_ITEMS} more")
+            out["x"] = _all_items(value[MAX_ITEMS:])
+            break
+        sub_ = segment(list(grp), 1, GROUP_SHOWN)
+        if not isinstance(sub_, dict):
+            sub_ = {"g": [sub_]}
+        sub_["c"] = 1          # start collapsed
+        ann = getattr(grp, "annotation", None) if isinstance(grp, GSet) else None
+        if ann:
+            sub_["a"] = ann
+        parts.append(sub_)
+    parts.append("]")
+    ann = getattr(value, "annotation", None) if isinstance(value, GSet) else None
+    count = f"{len(value)} groups"
+    out["a"] = f"{ann} ({count})" if ann else count
     return out
 
 

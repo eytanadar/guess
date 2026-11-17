@@ -72,13 +72,15 @@ def test_semicolon_hides_the_echo():
     assert s.run("louvainClusters();") and len(s.rec.of("out")) == 1
 
 
-def test_many_groups_print_compactly_and_stay_linked():
+def test_many_groups_print_as_collapsed_lists_and_stay_linked():
     s = _s()
     s.run("groupBy(dept)")
-    g = s.rec.of("out")[-1]["segs"][0]["g"]
-    assert g[0].startswith("21 groups (402 elements)")
-    first = g[1]
-    assert first["g"] == ["[dept0: 28]"] and len(first["x"]) == 28 and first["a"] == "dept == 'dept0'"
+    out = s.rec.of("out")[-1]["segs"][0]
+    assert out["a"] == "grouped by dept (21 groups)" and out["g"][0] == "["
+    first = out["g"][1]
+    assert first["c"] == 1 and first["a"] == "dept == 'dept0'"
+    nodes = [x for x in first["g"] if isinstance(x, dict) and "n" in x]
+    assert len(nodes) == 28
 
 
 def test_where_returns_a_set():

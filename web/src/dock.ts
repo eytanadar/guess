@@ -192,7 +192,7 @@ export class Dock {
         const state = this.host.live ? await this.host.live(id, want) : false;
         this.setLive(id, state);
       };
-      head.querySelector(".panel-close")?.before(b);
+      head.querySelector(".panel-fold")?.before(b);
     }
     this.setLive(id, on);
   }
@@ -229,7 +229,20 @@ export class Dock {
       x.textContent = "×";
       x.title = "Close";
       x.onclick = () => this.close(id);
-      head.append(h, x);
+      // fold to its title bar (and back); double-clicking the title does the same
+      const f = document.createElement("button");
+      f.className = "panel-fold";
+      const sec = panel;
+      const setFold = (on: boolean) => {
+        sec.classList.toggle("folded", on);
+        f.textContent = on ? "▸" : "▾";
+        f.title = on ? "Expand" : "Collapse";
+        f.setAttribute("aria-expanded", String(!on));
+      };
+      setFold(false);
+      f.onclick = () => setFold(!sec.classList.contains("folded"));
+      h.ondblclick = () => f.click();
+      head.append(h, f, x);
       const body = document.createElement("div");
       body.className = "panel-body";
       panel.append(head, body);

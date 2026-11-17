@@ -416,7 +416,7 @@ test("commands print linked nodes and edges: predictLinks(add=true)", async ({ p
 test("a printed field value links every element with that value", async ({ page }) => {
   await boot(page);
   await run(page, "v4.dept");
-  const val = page.locator(".result").last().locator(".grp");
+  const val = page.locator(".result").nth((await page.locator(".result").count()) - 1).locator(".grp");
   await val.hover();
   const n = await page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size as number);
   await run(page, "len(dept == v4.dept)");
@@ -429,7 +429,7 @@ test("a printed field value links every element with that value", async ({ page 
 test("deleted nodes are struck through in the output; undo restores them", async ({ page }) => {
   await boot(page);
   await run(page, "v4");
-  const v4 = page.locator(".result").last().locator(".obj.node");
+  const v4 = page.locator(".result").nth((await page.locator(".result").count()) - 1).locator(".obj.node");
   await run(page, "removeNode(v4)");
   await expect(v4).toHaveClass(/gone/);
   await run(page, "undo()");
@@ -454,8 +454,59 @@ test("right-clicking selected output acts on just the selected nodes, whole name
   await objs.nth(1).click({ button: "right" });
   await expect(page.locator("#menu .menu-head")).toContainText("3 nodes");
   expect(await page.evaluate(() => window.getSelection()!.toString())).toBe(names.join(", "));
+  const cells = await page.locator(".cell").count();
   await page.locator("#menu button", { hasText: "Show labels" }).click();
-  const code = await page.locator(".cell-code").last().innerText();
-  for (const nm of names) expect(code).toContain(nm!);
-  expect(code).not.toContain("dept4");
+  await expect(page.locator(".cell")).toHaveCount(cells + 1);
+  await expect(page.locator(".cell-code").last()).toHaveText("_sel.labelvisible = true");
+  await run(page, "sorted(n.name for n in _sel)");
+  await expect(page.locator(".result").last()).toHaveText(JSON.stringify([...names].sort()).replace(/"/g, "'").replace(/,/g, ", "));
+});
+
+test("printed lists fold to their first item; one-item lists don't fold", async ({ page }) => {
+  await boot(page);
+  await run(page, "highest(degree, 5)");
+  const list = page.locator(".result").last().locator(".grp.foldable").first();
+  const arrow = list.locator(":scope > .list-toggle");
+  await expect(arrow).toHaveText("▾");
+  await arrow.click();
+  await expect(arrow).toHaveText("▸");
+  await expect(list).toContainText("… +4 more");
+  await expect(list.locator(".list-body")).toBeHidden();
+  // hovering the folded list still highlights all five
+  await list.hover({ position: { x: 3, y: 3 } });
+  await expect.poll(() => page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size)).toBe(5);
+  await arrow.click();
+  await expect(list.locator(".list-body")).toBeVisible();
+  await run(page, "highest(degree, 1)");
+  await expect(page.locator(".result").last().locator(".list-toggle")).toHaveCount(0);
+});
+
+test("many groups print as a list of folded groups", async ({ page }) => {
+  await boot(page);
+  await run(page, "groupBy(dept)");
+  const out = page.locator(".result").last();
+  const groups = out.locator(".grp.foldable.collapsed");
+  expect(await groups.count()).toBeGreaterThan(8);
+  await expect(groups.first()).toContainText("more");
+  await groups.first().locator(".list-toggle").click();
+  await expect(groups.first().locator(".list-body")).toBeVisible();
+});
+
+test("legends and chart panels fold", async ({ page }) => {
+  await boot(page);
+  await run(page, "colorBy(degree, yellow, red); GradientLegend(degree)");
+  const lg = page.locator("#legends .legend").last();
+  await expect(lg.locator(".ramp-title")).toHaveText("degree");
+  await lg.hover();
+  await lg.locator(".legend-fold").click();
+  await expect(page.locator("#legends .legend-folded")).toHaveText("Legend: degree");
+  await expect(page.locator("#legends .ramp")).toHaveCount(0);
+  await page.locator("#legends .legend-folded").click();
+  await expect(page.locator("#legends .ramp")).toHaveCount(1);
+  await run(page, "plotHistogram(degree, 4)");
+  const panel = page.locator(".panel").last();
+  await panel.locator(".panel-fold").click();
+  await expect(panel.locator(".panel-body")).toBeHidden();
+  await panel.locator(".panel-fold").click();
+  await expect(panel.locator(".panel-body")).toBeVisible();
 });

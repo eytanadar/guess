@@ -42,7 +42,8 @@ export type Seg =
   | { n: number; t: string }
   /** ends: [id, name] of each end when t is "a-b" / "a->b" (each end links to its node) */
   | { e: number; t: string; ends?: [[number, string], [number, string]] }
-  | { g: Seg[]; a?: string; x?: ["n" | "e", number][]; q?: string };   // q: a query naming the members   // x: more members, linked but not shown
+  /** c: a list that starts collapsed */
+  | { g: Seg[]; a?: string; x?: ["n" | "e", number][]; q?: string; c?: number };   // q: a query naming the members   // x: more members, linked but not shown
 
 /** sh: the shape around the group (absent: convex hull); rot: turned to fit; pad: room around the nodes */
 export interface HullRec { i: number; nodes: number[]; c: number; a: number; sh?: "box" | "ellipse"; rot?: boolean; pad?: number }
@@ -61,6 +62,8 @@ export interface LegendRec {
   i: number;
   entries: LegendEntry[];
   ramp?: { from: number; to: number; min: number; max: number; ticks?: number; stops?: [number, number][]; title?: string };
+  /** legendFor / Legend(field): the field it follows */
+  auto?: { field: string; kind: string; title?: string | null };
 }
 
 export interface Overlay {

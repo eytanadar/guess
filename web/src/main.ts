@@ -1330,6 +1330,8 @@ function legendItems(e: LegendEntry, lg: LegendRec): Item[] {
 
 // legends the user expanded ("… N more"), by id; kept across re-renders
 const expandedLegends = new Set<number>();
+// legends folded to one line, by id
+const foldedLegends = new Set<number>();
 let lastLegends: LegendRec[] = [];
 
 function renderLegends(legends: LegendRec[]) {
@@ -1340,6 +1342,7 @@ function renderLegends(legends: LegendRec[]) {
   const scrolls = new Map([...host.querySelectorAll<HTMLElement>(".legend")].map((b) => [Number(b.dataset.i), b.scrollTop]));
   host.replaceChildren();
   for (const id of [...expandedLegends]) if (!legends.some((lg) => lg.i === id)) expandedLegends.delete(id);
+  for (const id of [...foldedLegends]) if (!legends.some((lg) => lg.i === id)) foldedLegends.delete(id);
   for (const lg of legends) {
     if (!lg.entries.length && !lg.ramp) continue;
     const box = document.createElement("div");
@@ -1352,7 +1355,33 @@ function renderLegends(legends: LegendRec[]) {
     close.title = `Remove this legend (removeLegend(${lg.i}))`;
     close.setAttribute("aria-label", "Remove legend");
     close.addEventListener("click", () => void term.submit(`removeLegend(${lg.i})`));
-    box.append(close);
+    // fold to one line (and back), kept across re-renders
+    const folded = foldedLegends.has(lg.i);
+    const fold = document.createElement("button");
+    fold.className = "legend-fold";
+    fold.textContent = folded ? "▸" : "▾";
+    fold.title = folded ? "Expand this legend" : "Collapse this legend";
+    fold.setAttribute("aria-label", fold.title);
+    fold.setAttribute("aria-expanded", String(!folded));
+    fold.addEventListener("click", () => {
+      if (folded) foldedLegends.delete(lg.i);
+      else foldedLegends.add(lg.i);
+      renderLegends(lastLegends);
+    });
+    box.append(close, fold);
+    if (folded) {
+      box.classList.add("folded");
+      const name = lg.ramp?.title || lg.auto?.title || lg.auto?.field;
+      const rows = lg.entries.filter((e) => e.k !== "x").length;
+      const t = document.createElement("div");
+      t.className = "legend-folded";
+      t.textContent = name ? `Legend: ${name}` : `Legend (${rows} entr${rows === 1 ? "y" : "ies"})`;
+      t.title = "Expand";
+      t.addEventListener("click", () => fold.click());
+      box.append(t);
+      host.append(box);
+      continue;
+    }
     if (lg.ramp) {
       const bar = document.createElement("div");
       bar.className = "ramp";
@@ -2079,7 +2108,7 @@ async function exportReport() {
   const png = await renderer.exportImage("png");
   const esc = (t: string) => t.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[ch]!);
   const legendCopy = $("#legends").cloneNode(true) as HTMLElement;
-  for (const b of legendCopy.querySelectorAll(".legend-close")) b.remove();   // no buttons in the report
+  for (const b of legendCopy.querySelectorAll(".legend-close, .legend-fold")) b.remove();   // no buttons in the report
   const legends = legendCopy.innerHTML;
   const css = getComputedStyle(document.documentElement);
   const v = (n: string) => css.getPropertyValue(n).trim();
