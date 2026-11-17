@@ -3280,7 +3280,10 @@ the value the default way:</p>
 <span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> v[:<span class="dv">3</span>]</span>
 <span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a>setFormat(<span class="st">&quot;set&quot;</span>, firstThree)</span>
 <span id="cb87-4"><a href="#cb87-4" aria-hidden="true" tabindex="-1"></a>dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>                           <span class="co"># [v4, v5, v20]</span></span>
-<span id="cb87-5"><a href="#cb87-5" aria-hidden="true" tabindex="-1"></a>resetFormats()</span></code></pre></div>
+<span id="cb87-5"><a href="#cb87-5" aria-hidden="true" tabindex="-1"></a>resetFormats()</span>
+<span id="cb87-6"><a href="#cb87-6" aria-hidden="true" tabindex="-1"></a>(dept <span class="op">==</span> <span class="st">&#39;dept3&#39;</span>) <span class="op">&gt;&gt;</span> firstThree           <span class="co"># once</span></span></code></pre></div>
+<p>Your own format needs parentheses around a query before
+<code>&gt;&gt;</code>. The built-in names don’t.</p>
 <p><strong>Code and graph, linked.</strong> The console and the graph
 point at each other:</p>
 <ul>
@@ -3296,7 +3299,11 @@ act on <code>dept == &#39;dept4&#39;</code>. What commands print is linked the
 same way. Hover the nodes in each pair <code>predictLinks</code> lists,
 or “added 10 predicted edges” to see the edges
 <code>predictLinks(10, add=true)</code> made. The same goes for cut
-edges, cliques, routes, merged nodes and newly imported nodes.</li>
+edges, cliques, routes, merged nodes and newly imported nodes. Colours
+(<code>red</code>, <code>v4.color</code>, <code>color.distinct</code>,
+<code>generateColors(…)</code>) print as small squares of the colour.
+Hover one for its name and rgb value. Copying the output copies the
+colour’s text.</li>
 <li><strong>Folding lists.</strong> A printed list of two or more things
 has a small ▾ before it: click it to fold the list to its first item and
 a count, <code>[v73, … +5 more]</code>, and ▸ to open it again. A folded

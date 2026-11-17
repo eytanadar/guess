@@ -90,6 +90,7 @@ def test_custom_format_function():
     s = _s()
     assert s.run("def sizes(v):\n    return f'{len(v)} things'\nsetFormat('set', sizes)")
     assert out(s, "dept == 'dept3'") == "9 things"
+    assert out(s, "(dept == 'dept1') >> sizes") == "43 things"      # after >> too
     assert s.run("def firsts(v):\n    return v[:2]\nsetFormat('set', firsts)")
     seg = out(s, "dept == 'dept3'")
     assert [x for x in seg["g"] if isinstance(x, dict)] == [{"n": 3, "t": "v4"}, {"n": 4, "t": "v5"}]

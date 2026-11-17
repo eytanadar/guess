@@ -1095,6 +1095,7 @@ function connector(c: string): string {
 export function renderSeg(s: Seg): Node {
   if (typeof s === "string") return document.createTextNode(s);
   if ("tbl" in s) return renderTable(s);
+  if ("col" in s) return renderSwatch(s);
   if ("g" in s) {
     const span = el("span", "grp");
     span.dataset.k = "g";
@@ -1135,6 +1136,22 @@ export function renderSeg(s: Seg): Node {
     span.textContent = s.t;
   }
   return span;
+}
+
+/** A colour in the output: a small square of it; hovering gives its rgb
+ *  value and name. Its text stays in the page (hidden), so copying works. */
+function renderSwatch(s: Extract<Seg, { col: unknown }>): HTMLElement {
+  const [r, g, b, a] = s.col;
+  const sw = el("span", "swatch");
+  const fill = `rgba(${r}, ${g}, ${b}, ${+(a / 255).toFixed(2)})`;
+  sw.style.setProperty("--swatch", fill);
+  const rgb = a === 255 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${a})`;
+  const text = s.t.replace(/^'(.*)'$/, "$1");
+  sw.title = s.nm && s.nm !== text ? `${text} — ${s.nm}, ${rgb}` : s.nm ? `${s.nm} — ${rgb}` : `${text === rgb ? "" : text + " — "}${rgb}`;
+  const hidden = el("span", "swatch-text");
+  hidden.textContent = s.t;
+  sw.append(hidden);
+  return sw;
 }
 
 /** A table printed in the console (x >> table): linked cells, columns that

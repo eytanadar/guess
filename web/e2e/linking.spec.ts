@@ -543,3 +543,18 @@ test("output formats: x >> table prints a linked, sortable, foldable table", asy
   await expect(page.locator(".result").last()).toHaveText("43");
   expect(await lastError(page)).toBeNull();
 });
+
+test("colours print as swatches whose tooltip gives the rgb value and name", async ({ page }) => {
+  await boot(page);
+  await run(page, "[red, '10,20,30', v4.color]");
+  const sw = page.locator(".result").last().locator(".swatch");
+  await expect(sw).toHaveCount(3);
+  await expect(sw.nth(0)).toHaveAttribute("title", "red — rgb(255, 0, 0)");
+  await expect(sw.nth(1)).toHaveAttribute("title", "10,20,30 — rgb(10, 20, 30)");
+  expect(await sw.nth(0).evaluate((e) => getComputedStyle(e).backgroundImage)).toContain("rgb(255, 0, 0)");
+  // a field's colour stays linked to the nodes with it
+  await run(page, "v4.color");
+  await page.locator(".result").last().locator(".grp").hover();
+  await expect.poll(() => page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size)).toBeGreaterThan(1);
+  expect(await lastError(page)).toBeNull();
+});

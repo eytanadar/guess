@@ -44,6 +44,8 @@ export type Seg =
   | { e: number; t: string; ends?: [[number, string], [number, string]] }
   /** c: a list that starts collapsed; l: a label shown inside its brackets ([dept3: v1, …]) */
   | { g: Seg[]; a?: string; x?: ["n" | "e", number][]; q?: string; c?: number; l?: string }   // q: a query naming the members   // x: more members, linked but not shown
+  /** a colour, shown as a swatch: col is [r, g, b, a], t the text it stands for, nm its name */
+  | { col: [number, number, number, number]; t: string; nm?: string }
   /** a table (x >> table): each cell is output, so nodes in it stay linked; c: starts folded */
   | { tbl: { cols: string[]; rows: Seg[][] }; a?: string; x?: ["n" | "e", number][]; c?: number };
 

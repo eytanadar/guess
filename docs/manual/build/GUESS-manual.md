@@ -2256,7 +2256,11 @@ def firstThree(v):
 setFormat("set", firstThree)
 dept == 'dept3'                           # [v4, v5, v20]
 resetFormats()
+(dept == 'dept3') >> firstThree           # once
 ```
+
+Your own format needs parentheses around a query before `>>`. The
+built-in names don't.
 
 **Code and graph, linked.** The console and the graph point at each other:
 
@@ -2272,6 +2276,9 @@ resetFormats()
   `predictLinks` lists, or "added 10 predicted edges" to see the edges
   `predictLinks(10, add=true)` made. The same goes for cut edges, cliques,
   routes, merged nodes and newly imported nodes.
+  Colours (`red`, `v4.color`, `color.distinct`, `generateColors(…)`) print
+  as small squares of the colour. Hover one for its name and rgb value.
+  Copying the output copies the colour's text.
 - **Folding lists.** A printed list of two or more things has a small ▾
   before it: click it to fold the list to its first item and a count,
   `[v73, … +5 more]`, and ▸ to open it again. A folded list still stands for

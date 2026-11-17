@@ -312,7 +312,11 @@ def _cell(v):
     if isinstance(v, float):
         return f"{v:.4g}"
     if isinstance(v, str):
-        return v
+        from .session import _color_seg
+        cs = _color_seg(v)
+        if cs is not None:
+            cs["t"] = str(v)
+        return cs or v
     from .session import _contains_elements
     if isinstance(v, (list, tuple, set, frozenset, dict, GSet)) and _contains_elements(v):
         return _segment(v, 1)
@@ -448,6 +452,8 @@ def gpipe(session, a, b):
     """``a >> b``: a value shown in a format (louvainClusters() >> table);
     otherwise Python's >>."""
     fmt = as_format(session, b)
+    if fmt is None and callable(b) and not isinstance(b, type) and not hasattr(type(b), "__rrshift__"):
+        fmt = custom(b)                    # x >> myFormat: a user function as a format
     if fmt is None:
         return a >> b
     from .runtime import autocall

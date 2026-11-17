@@ -1573,7 +1573,61 @@ def edge_seg(e, t=None):
     return seg
 
 
+_RGB_TEXT = re.compile(r"\d{1,3},\s*\d{1,3},\s*\d{1,3}(,\s*\d{1,3})?|#[0-9a-fA-F]{6}")
+_COLOR_NAMES = {}
+
+
+def _color_name(rgba):
+    """The colour's name, if it has one (255,0,0 -> red)."""
+    if not _COLOR_NAMES:
+        from .colors import COLORS
+        from ._colortable import NAMED
+        for name, rgb in NAMED.items():
+            _COLOR_NAMES.setdefault(tuple(rgb) + (255,), name.lower())
+        for name, c in COLORS.items():
+            _COLOR_NAMES.setdefault(tuple(c), name)
+    return _COLOR_NAMES.get(tuple(rgba))
+
+
+def _color_seg(value, hint=False):
+    """A colour printed as a swatch: a Color (red, n.color), text like
+    "255,0,0" or "#ff0000", or (hint: a colour field's value) any colour."""
+    if not isinstance(value, str) or len(value) > 40:
+        return None
+    from .colors import Color, parse
+    if not (isinstance(value, Color) or hint or _RGB_TEXT.fullmatch(value)):
+        return None
+    c = parse(value)
+    if c is None:
+        return None
+    out = {"col": list(c), "t": repr(value)}
+    name = _color_name(c)
+    if name:
+        out["nm"] = name
+    return out
+
+
+def _contains_colors(seq, depth=0):
+    if depth > 3:
+        return False
+    if isinstance(seq, dict):
+        seq = [x for kv in seq.items() for x in kv]
+    for i, x in enumerate(seq):
+        if i > 200:
+            return False
+        if isinstance(x, str):
+            if _color_seg(x) is not None:
+                return True
+        elif isinstance(x, (list, tuple, set, frozenset, dict)) and _contains_colors(x, depth + 1):
+            return True
+    return False
+
+
 def segment(value, depth=0, limit=MAX_ITEMS):
+    if isinstance(value, str) and not isinstance(value, LinkedStr):
+        cs = _color_seg(value)
+        if cs is not None:
+            return cs
     if isinstance(value, Node):
         return {"n": value._id, "t": value._name}
     if isinstance(value, Edge):
@@ -1597,7 +1651,8 @@ def segment(value, depth=0, limit=MAX_ITEMS):
             except TypeError:
                 members = []
             q = f"{value.name} == {v!r}"
-            sub_ = {"g": [_safe_repr(v)], "a": q if value.whole else f"{q} (in the set)",
+            shown = _color_seg(v, hint=value.name.endswith("color")) or _safe_repr(v)
+            sub_ = {"g": [shown], "a": q if value.whole else f"{q} (in the set)",
                     "x": [["n" if isinstance(x, Node) else "e", x._id] for x in members[:MAX_EXTRA]]}
             if value.whole:
                 sub_["q"] = q
@@ -1605,7 +1660,8 @@ def segment(value, depth=0, limit=MAX_ITEMS):
         parts.append("]")
         return {"g": parts, "a": f"{len(value)} values of {value.name} ({kind})"}
     linkable = (isinstance(value, (GSet, list, tuple, dict, set, frozenset))
-                and depth < 20 and _contains_elements(value))
+                and depth < 20 and (_contains_elements(value)
+                                    or (not _custom_repr(value) and _contains_colors(value))))
     if linkable and depth == 0 and isinstance(value, (GSet, list)) and _many_groups(value):
         return _compact_groups(value)
     if linkable and _custom_repr(value):
@@ -1672,9 +1728,11 @@ def _value_seg(obj, name, value):
         return None
     # the name that reaches the field in a query (an edge field also on nodes: Edge.x)
     qname = name if kind == NODE or name not in g.node_schema else f"Edge.{name}"
-    q = f"{qname} == {value!r}"
+    from .colors import Color
+    q = f"{qname} == {str(value)!r}" if isinstance(value, Color) else f"{qname} == {value!r}"
     k = "n" if kind == NODE else "e"
-    return {"g": [_safe_repr(value)], "a": q, "q": q, "x": [[k, x._id] for x in members[:MAX_EXTRA]]}
+    shown = _color_seg(value, hint=name.endswith("color")) or _safe_repr(value)
+    return {"g": [shown], "a": q, "q": q, "x": [[k, x._id] for x in members[:MAX_EXTRA]]}
 
 
 def _group_label(value, inner=False):
@@ -1874,7 +1932,8 @@ def _contains_elements(seq, depth=0):
 
 
 def _linkable(a):
-    return (isinstance(a, (Node, Edge)) or (isinstance(a, LinkedStr) and a.linked)
+    from .colors import Color
+    return (isinstance(a, (Node, Edge, Color)) or (isinstance(a, LinkedStr) and a.linked)
             or (isinstance(a, (GSet, list, tuple, set, frozenset, dict)) and _contains_elements(a)))
 
 
