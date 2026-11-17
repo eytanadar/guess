@@ -132,6 +132,13 @@ async function moveTo(x, y, ms = 450) {
 }
 
 async function moveToEl(locator) {
+  // bring console history that has scrolled away back into view first
+  if (await locator.evaluate((el) => {
+    const r = el.getBoundingClientRect(), box = el.closest(".console-out")?.getBoundingClientRect();
+    if (!box || (r.top >= box.top && r.bottom <= box.bottom)) return false;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    return true;
+  }).catch(() => false)) await sleep(700);
   const b = await locator.boundingBox();
   if (!b) throw new Error("element not visible");
   await moveTo(b.x + b.width / 2, b.y + b.height / 2);

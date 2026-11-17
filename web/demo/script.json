@@ -116,10 +116,10 @@
     },
     {
       "id": "queries",
-      "narration": "This network shows who emails whom, and how often. Queries are part of the language. One line finds every edge with more than a hundred messages and turns it gold. Queries combine, so we can ask for everyone in department three or nine. And one command gives each department its own colour from a soft palette, with a legend to explain it.",
+      "narration": "This network shows who emails whom, and how often. Queries are part of the language. One line finds every edge with more than a hundred messages and picks it out in a warm tone. Queries combine, so we can ask for everyone in department three or nine. And one command gives each department its own colour from a soft palette, with a legend to explain it.",
       "actions": [
         {
-          "run": "(freq > 100).color = gold"
+          "run": "(freq > 100).color = wheat.alpha(160)"
         },
         {
           "wait": 900
@@ -137,7 +137,7 @@
           "wait": 1200
         },
         {
-          "run": "colorize(dept, palette=\"Set2\")"
+          "run": "colorize(dept, palette=\"lightmulti\")"
         },
         {
           "run": "legendFor(dept)"
@@ -193,51 +193,6 @@
       ]
     },
     {
-      "id": "both-ways",
-      "narration": "The connection runs both ways. Pointing at a node in the graph marks every line of output that mentions it. Earlier code stays live too: pointing at a query highlights what it matches today, and pointing at a field previews colouring by it, without changing anything. Pointing at a cell's number shows everything that cell changed. And dragging a node into another department's group moves it to that department, and writes the code that did it.",
-      "actions": [
-        {
-          "hoverNode": "v4"
-        },
-        {
-          "wait": 1500
-        },
-        {
-          "hoverText": [
-            ".cell-code [data-from]",
-            "freq"
-          ]
-        },
-        {
-          "wait": 1500
-        },
-        {
-          "hoverText": [
-            ".cell-code [data-from]",
-            "dept"
-          ]
-        },
-        {
-          "wait": 1800
-        },
-        {
-          "hoverText": [
-            ".cell:has(.cell-code:has-text(\"colorize(dept\")) .cell-num",
-            ""
-          ]
-        },
-        {
-          "wait": 1800
-        },
-        {
-          "dragIntoGroup": "v128"
-        },
-        {
-          "wait": 1500
-        }
-      ]
-    },
-    {
       "id": "menus",
       "narration": "Right-clicking anything, in the graph or in the output, opens a menu of actions. Each one writes Gython that names the nodes it changes, so the session can be replayed later.",
       "actions": [
@@ -269,7 +224,7 @@
           "run": "louvainClusters();"
         },
         {
-          "run": "colorize(louvain_class, palette=\"Set3\")"
+          "run": "colorize(louvain_class)"
         },
         {
           "run": "sizeBy(pagerank, 5, 40, transform=\"sqrt\")"
@@ -285,6 +240,51 @@
         },
         {
           "wait": 1200
+        }
+      ]
+    },
+    {
+      "id": "both-ways",
+      "narration": "The connection runs both ways. Pointing at a node in the graph marks every line of output that mentions it. Earlier code stays live too: pointing at an old query highlights what it matches today, and pointing at a field previews colouring by it, without changing anything. Pointing at a cell's number shows everything that cell changed. And dragging a node into another community moves it there, and writes the code that did it.",
+      "actions": [
+        {
+          "hoverNode": "v73"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "hoverText": [
+            ".cell-code [data-from]",
+            "freq"
+          ]
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "hoverText": [
+            ".cell:has(.cell-code:has-text(\"groupBy(dept)\")) .cell-code [data-from]",
+            "dept"
+          ]
+        },
+        {
+          "wait": 2000
+        },
+        {
+          "hoverText": [
+            ".cell:has(.cell-code:has-text(\"labelvisible = true\")) .cell-num",
+            ""
+          ]
+        },
+        {
+          "wait": 1800
+        },
+        {
+          "dragIntoGroup": "v27"
+        },
+        {
+          "wait": 1500
         }
       ]
     },
