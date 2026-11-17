@@ -1071,6 +1071,44 @@ own polygon.
 whichever the field belongs to). `colorize(freq, blue, red)` with two colours
 behaves like `colorBy`.
 
+**Colour scales.** Instead of choosing two colours, you can name one of
+about 70 built-in scales. They come from ColorBrewer, d3 and Vega:
+
+```python
+colorBy(betweenness, "viridis")         # a perceptually even scale
+colorBy(degree, "RdBu", center=3)       # diverging: the middle colour at 3
+colorize(dept, "Set2")                  # categorical: the largest group gets the first colour
+colorize(degree, "YlGnBu")              # sequential, over the sorted values
+generateColors("Blues", 5)              # ColorBrewer's own 5-class Blues
+heatMap(v1, "magma_r")                  # _r reverses a scale
+GradientLegend("viridis", 0, 1)         # a legend for a scale
+pieChart([indegree, outdegree], palette="Dark2")
+colorScales()                           # every scale, with a preview of each
+```
+
+| Kind | Scales |
+|---|---|
+| sequential | `Blues`, `Greens`, `Greys`, `Oranges`, `Purples`, `Reds`, `BuGn`, `BuPu`, `GnBu`, `OrRd`, `PuBu`, `PuBuGn`, `PuRd`, `RdPu`, `YlGn`, `YlGnBu`, `YlOrBr`, `YlOrRd`; `viridis`, `inferno`, `magma`, `plasma`, `cividis`, `turbo`, `warm`, `cool`, `cubehelix`; Vega's `tealblues`, `teals`, `browns`, `warmgreys`, `goldgreen`, `goldorange`, `goldred`, `lightgreyred`, `lightgreyteal`, `lightmulti`, `lightorange`, `lighttealblue`, `darkblue`, `darkgold`, `darkgreen`, `darkmulti`, `darkred` |
+| diverging | `BrBG`, `PRGn`, `PiYG`, `PuOr`, `RdBu`, `RdGy`, `RdYlBu`, `RdYlGn`, `Spectral`, `blueorange` |
+| cyclical | `rainbow`, `sinebow` |
+| categorical | `category10`, `tableau10`, `observable10`, `Accent`, `Dark2`, `Paired`, `Pastel1`, `Pastel2`, `Set1`, `Set2`, `Set3`, `category20`, `category20b`, `category20c`, `tableau20` |
+
+Names ignore case, so `"rdbu"` is `"RdBu"`. Vega's long names work too
+(`"redblue"`, `"yellowgreenblue"`), as do matplotlib's `"tab10"` and
+`"tab20"`. With a ColorBrewer scale, `colorize` and `generateColors` use
+ColorBrewer's own colours for that number of classes (3 to 9, or 11 for the
+diverging scales) when there is one.
+
+`colorScale("viridis")` is the scale itself:
+
+- `.at(0.3)` is the colour 30% of the way along;
+- `.colors(5)` gives five colours from it;
+- `.reversed()` runs it the other way.
+
+Printing a scale or a colour shows swatches of the colours. The viridis
+family is easy to read in greyscale and for colour-blind readers, which a
+red-to-green gradient isn't.
+
 ![The four scales of `colorBy`. The nodes are in PageRank order, lowest first. `linear` keeps most of the gradient for the few highest values, and `rank` spreads it evenly.](img/colorscales.png){width=85%}
 
 ![colorBy(betweenness, yellow, red); sizeBy(betweenness, 5, 40, 'log'); GradientLegend(...)](img/color-by.png){width=75%}
@@ -2880,10 +2918,12 @@ one meta-node (labelled with the kind and its size), which simplifies
 the drawing without losing anything: expand(node) or expandAll() bring
 the members back. Returns the meta-nodes.
 
-### `colorBy(field, start, end, scale='linear', middle=None, center=None)`
+### `colorBy(field, start, end=None, scale='linear', middle=None, center=None)`
 
 colorBy(field, startColor, endColor) colours elements along a gradient in
-proportion to a numeric field's value; scale may be "linear", "log",
+proportion to a numeric field's value; colorBy(field, "viridis") uses a
+colour scale instead (see colorScales; "RdBu" with center=0 for
+diverging data). scale may be "linear", "log",
 "sqrt" or "rank"; middle=color adds a midpoint colour. center=value
 makes a diverging gradient: that value gets the middle colour (white
 unless given) and the ends are equally far from it, so equal changes
@@ -2914,6 +2954,10 @@ methods sometimes use five.
 colorize(field) gives each value its own clearly different colour (the
 largest group first; see distinctColors); colorize(field, start, end) or
 colorize(field, start, middle, end) a gradient over the sorted values.
+colorize(field, scale) uses a colour scale (see colorScales): a
+categorical one ("Set2", "tableau10") gives the largest group its first
+colour; a sequential or diverging one ("Blues", "viridis", "RdBu") runs
+over the sorted values.
 
 ### `complement(seq)`
 
@@ -3870,8 +3914,9 @@ farthest, grey if unreachable; the distance is stored in the hops field
 (-1 if unreachable). spread=True (default) spaces the colours by how
 many nodes are at each distance, so every band is visible;
 spread=False spaces them by distance alone. near, middle, far and
-unreachable change the colours (middle=None: a straight blend). Gephi's
-heat map tool.
+unreachable change the colours (middle=None: a straight blend); near
+can instead be a colour scale, heatMap(v1, "magma_r") (see
+colorScales). Gephi's heat map tool.
 
 ### `interEdges(field)`
 
@@ -5103,7 +5148,8 @@ The drawings on the display.
 ### `GradientLegend(start, end=None, lo=0, hi=1, ticks=None)`
 
 A color ramp legend: GradientLegend(startColor, endColor, min, max[, tickEvery])
-shows the ramp from min to max, with a tick mark every tickEvery units.
+shows the ramp from min to max, with a tick mark every tickEvery units;
+GradientLegend("viridis", min, max) shows a colour scale (see colorScales).
 GradientLegend(field[, title]) shows a numeric field's current colours from
 its lowest to its highest value (after colorBy), and follows them.
 
@@ -5345,7 +5391,8 @@ pieChart([f1, f2, ...]) draws each node as a pie whose slices are the
 node's values of those numeric fields. pieChart(f) with one text field
 reads each node's own list of values from it: v1.f = [12, 21, 12] gives
 v1 three slices (slice k has the same colour on every node).
-palette=[colors] sets slice colours; labels=[...] names the slices in the legend.
+palette=[colors] sets slice colours, or a colour scale's name (palette="Set2",
+see colorScales); labels=[...] names the slices in the legend.
 
 ### `pieNeighbors(field)`
 
@@ -6218,11 +6265,31 @@ most different first — the categorical palette colorize(field) uses.
 
 ### `generateColors(*args)`
 
-generateColors(start, end, n) or generateColors(start, middle, end, n).
+generateColors(start, end, n) or generateColors(start, middle, end, n):
+n colours along a gradient. generateColors("viridis", n): n colours from a
+colour scale (see colorScales).
 
 ### `randomColor(alpha=None)`
 
 A random color "r,g,b"; randomColor(alpha) adds an alpha (0..255).
+
+## Colour scales: ColorBrewer, viridis, turbo, Tableau and more
+
+### `colorScale(name)`
+
+colorScale("viridis") is that colour scale: .at(0.3) is the colour 30%
+of the way along, .colors(5) five colours from it, .reversed() runs the
+other way. Anywhere a scale is taken, its name works too:
+colorBy(degree, "viridis"), colorize(dept, "Set2"),
+generateColors("RdBu", 7), GradientLegend("magma", 0, 10). Add "_r" to
+a name to reverse it ("viridis_r"). colorScales() lists them all.
+
+### `colorScales(kind=None)`
+
+colorScales() lists the built-in colour scales with a preview of each:
+sequential (Blues, viridis, magma, turbo, …), diverging (RdBu, Spectral,
+…), cyclical (rainbow, sinebow) and categorical (Set2, tableau10, …).
+colorScales("diverging") lists one kind. From ColorBrewer, d3 and Vega.
 
 ## Examples
 
