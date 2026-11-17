@@ -489,7 +489,7 @@ test("many groups print as a list of folded groups", async ({ page }) => {
   const out = page.locator(".result").last();
   const groups = out.locator(".grp.foldable.collapsed");
   expect(await groups.count()).toBeGreaterThan(8);
-  await expect(groups.first()).toContainText(/^▸\[\w+: v\d+, … \+\d+ more\]$/);    // [dept0: v1, … +27 more]
+  expect(await groups.first().innerText()).toMatch(/^▸\[dept\d+: v\d+, … \+\d+ more\]$/);    // [dept0: v1, … +27 more]
   await expect(groups.first().locator(".grp-label")).toHaveText(/^dept\d+: $/);
   const first = out.locator(".grp.foldable").nth(1);              // (0 is the outer list)
   await first.locator(":scope > .list-toggle").click();
