@@ -245,7 +245,7 @@
     },
     {
       "id": "both-ways",
-      "narration": "The connection runs both ways. Pointing at a node in the graph marks every line of output that mentions it. Earlier code stays live too: pointing at an old query highlights what it matches today, and pointing at a field previews colouring by it, without changing anything. Pointing at a cell's number shows everything that cell changed. And dragging a node into another community moves it there, and writes the code that did it.",
+      "narration": "The connection runs both ways. Pointing at a node in the graph marks every line of output that mentions it. Earlier code stays live too: pointing at an old query highlights what it matches today, and pointing at a field previews colouring by it, without changing anything. Pointing at a cell's number shows everything that cell changed. Groups can be drawn as shapes as well: one line outlines every large community with its own hull.",
       "actions": [
         {
           "hoverNode": "v73"
@@ -281,10 +281,10 @@
           "wait": 1800
         },
         {
-          "dragIntoGroup": "v27"
+          "run": "encircleBy(louvain_class, \"hull\", smallest=20);"
         },
         {
-          "wait": 1500
+          "wait": 2200
         }
       ]
     },
