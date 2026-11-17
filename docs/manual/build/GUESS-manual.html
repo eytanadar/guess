@@ -3188,9 +3188,10 @@ editor to vim bindings.</p>
 <p>Long results print compactly: a set of many groups
 (<code>groupBy(dept)</code>, the communities from
 <code>louvainClusters()</code>) shows as a list of groups, each folded
-to its first member,
-<code>[[v1, … +27 more], [v2, … +42 more], …]</code>, each linked to its
-members (see <em>Folding lists</em> below).</p>
+to its label and first member,
+<code>[[dept0: v1, … +27 more], [dept1: v2, … +42 more], …]</code>, each
+linked to its members (see <em>Folding lists</em> and <em>Group
+labels</em> below).</p>
 <p><strong>Code and graph, linked.</strong> The console and the graph
 point at each other:</p>
 <ul>
@@ -3215,6 +3216,15 @@ Commands that return many groups (<code>louvainClusters()</code> or
 <code>groupBy(dept)</code> on a big graph) print a list of the groups
 with each one folded; hover a group for its name and size, or open it to
 see its members.</li>
+<li><strong>Group labels.</strong> A group made by a grouping or
+clustering command shows its label inside its brackets, folded or open:
+<code>[dept3: v4, … +8 more]</code> from <code>groupBy(dept)</code>,
+<code>[community 0: v9, …]</code> from <code>louvainClusters()</code>,
+<code>[degree=4: …]</code> from <code>groupBy(degree)</code>. Any set
+can have one:
+<code>t = dept == &#39;dept3&#39;; t.grouplabel = &#39;team three&#39;</code> prints as
+<code>[team three: v4, v5, …]</code>. (<code>t.label = …</code> would
+set every node’s label.)</li>
 <li><strong>Deleted elements.</strong> A printed node or edge that has
 since been removed is struck through and no longer linked. Undo brings
 it back, and the line goes.</li>
