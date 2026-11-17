@@ -189,7 +189,7 @@ makeFromGDF("yeast-modules.gdf")
 leidenClusters()
 go = readSets("yeast-go-slim.csv", item="gene", set="term",
               where={"aspect": "process"})
-r = enrichment(leiden_class == 0, go, top=5)
+r = enrichment(leiden_class == 0, go, count=5)
 ```
 
 **How it works.** `leidenClusters()` finds communities (*Kitchen:
@@ -435,19 +435,19 @@ small map). List the shortest, and look at which edges they share:
 makeFromGDF("yeast-modules.gdf")
 makeFromCSV("pheromone-expression-SIMULATED.csv")
 forceAtlas2Layout()
-colorBy(lfc60, blue, red, center=0)
+colorBy(lfc60, blue, red, midpoint=0)
 legendFor(lfc60)
 ```
 
 ![Simulated expression at 60 minutes, blue = down, red = up](img/bio-expression.png)
 
 **How it works.** `colorBy(field, low, high)` maps numbers to a gradient.
-`center=0` makes it *diverging*: zero is white, and the two ends are equally
+`midpoint=0` makes it *diverging*: zero is white, and the two ends are equally
 far from zero, so a gene down 2 is as deep a blue as a gene up 2 is red.
 That's the right choice for fold changes, where zero means "no change" and
 both directions matter.
 
-**Pitfalls.** Without `center=`, a three-colour gradient puts its middle
+**Pitfalls.** Without `midpoint=`, a three-colour gradient puts its middle
 colour halfway between the lowest and highest values. Here the values run
 from −3.0 to 4.4, so "white" would fall at +0.7 and every unchanged gene
 would be tinted. Always pin the centre for signed data.
@@ -459,9 +459,9 @@ makeFromGDF("yeast-modules.gdf")
 makeFromCSV("pheromone-expression-SIMULATED.csv")
 forceAtlas2Layout()
 for t in (lfc15, lfc30, lfc60):
-    colorBy(t, blue, red, center=0)
-    ss(t.name)
-ls("lfc15")
+    colorBy(t, blue, red, midpoint=0)
+    saveState(t.name)
+loadState("lfc15")
 morph("lfc30", 1500)
 ```
 
@@ -657,7 +657,7 @@ state = {"t": 2}
 
 def recolour(i):
     state["t"] = int(i)
-    colorBy(times[state["t"]], blue, red, center=0)
+    colorBy(times[state["t"]], blue, red, midpoint=0)
     legendFor(times[state["t"]], title=f"log2 change at {[15, 30, 60][state['t']]} min")
 
 def pick_module(term):
@@ -696,7 +696,7 @@ center()
   drop-down lists biology ("signal transduction", "protein catabolic
   process"), not numbers.
 - **The slider.** It indexes the three expression fields. `colorBy(...,
-  center=0)` and `legendFor` redraw the diverging scale for each time point.
+  midpoint=0)` and `legendFor` redraw the diverging scale for each time point.
 - **The checkbox.** It toggles `showOnly(experiments > 0.5)`, the
   physical-evidence view from the second case study.
 - **The click.** It reads a gene's fields into the label.

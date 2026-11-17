@@ -203,11 +203,11 @@ def test_hive_layout(big):
     assert big.run("hiveLayout()")
     assert [g["label"].split(" (")[0] for g in big.view.guides] == ["sources", "hubs", "sinks"]
     assert big.run("gemLayout()") and big.view.guides == [] and not big.graph.bends
-    assert not big.run("hiveLayout(dept, scale='cubic')")
+    assert not big.run("hiveLayout(dept, transform='cubic')")
 
 
 def test_new_graph_drops_old_overlays(big, tmp_path):
-    assert big.run("hiveLayout(dept); colorize(dept); legendFor(dept); createConvexHull(dept == 'dept1'); pieNeighbors(dept)")
+    assert big.run("hiveLayout(dept); colorize(dept); legendFor(dept); encircle(dept == 'dept1', 'hull'); pieNeighbors(dept)")
     assert big.view.guides and big.view.legends and big.view.hulls and big.view.pie
     big.run("curvedEdges(); select(dept == 'dept1')")
     assert big.run(f"makeFromGDF({str(SAMPLE)!r})")

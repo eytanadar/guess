@@ -100,7 +100,7 @@ makeFromGDF("guess-imports.gdf")
 labelBy(label)
 g.nodes.labelpos = "inside"
 fitNodesToLabels()
-rankNodes()                               # 0.97: the share of imports that point down
+rankNodes().agreement                     # 0.97: the share of imports that point down
 frLayout()                                # spread the modules out sideways first...
 orderedLayout(rank, axis="y", inverted=True)   # ...then set each one's height by its rank
 noverlapLayout()

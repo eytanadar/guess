@@ -76,7 +76,7 @@ def scores(v, measure, live=False):
     similarTo (which stores the field `similarity`); the live text uses the same formulas in numpy."""
     if not live and (measure.startswith("Jaccard") or measure.endswith("(similarTo)")):
         method = "jaccard" if measure.startswith("Jaccard") else "regular"
-        similarTo(g.getNodeByName(v), method=method, top=len(NAMES), alpha=float(alpha.value))
+        similarTo(g.getNodeByName(v), method=method, count=len(NAMES), alpha=float(alpha.value))
         return {n.name: float(n.similarity) for n in g.nodes}
     S = matrix(measure)
     return {w: float(S[IDX[v], IDX[w]]) for w in NAMES}

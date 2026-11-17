@@ -53,7 +53,7 @@ def plan(n):
         e.width = 1.5
         e.color = "150,150,150"
     if len(trip) == 2:
-        path = shortestPath(trip[0], trip[1], weighted=true)
+        path = shortestPath(trip[0], trip[1], weight="weight")
         for x in path:
             if hasattr(x, "node1"):
                 x.color, x.width, x.linestyle = "230,80,40", 5, "flow"
@@ -62,7 +62,7 @@ def plan(n):
 def trip_text():
     if len(trip) < 2:
         return "*Click two stops* to plan the quickest trip. Dashed lines are changes between layers."
-    path = shortestPath(trip[0], trip[1], weighted=true)
+    path = shortestPath(trip[0], trip[1], weight="weight")
     edges = [x for x in path if hasattr(x, "node1")]
     mins = sum(e.minutes for e in edges)
     changes = sum(1 for e in edges if e.kind == "transfer")

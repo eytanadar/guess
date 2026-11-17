@@ -112,7 +112,7 @@ addresses.
 makeFromGDF("claims-SIMULATED.gdf")
 project(kind, "person")
 removeDisconnected()
-rows = groupStats(component, top=6)
+rows = groupStats(component, count=6)
 ```
 
 **How it works.** `project(kind, "person")` links two people when they
@@ -237,7 +237,7 @@ makeFromGDF("claims-SIMULATED.gdf")
 def phones(p): return set(x for x in p.getNeighbors() if x.kind == "phone")
 pairs = findDuplicates(label, among=(kind == "person"), threshold=0.7, show=False)
 mergeNodes([(a, b, sc) for a, b, sc in pairs if phones(a) & phones(b)])
-ss("resolved")
+saveState("resolved")
 addNodeField("claims", INTEGER, 0)
 for p in (kind == "person"): p.claims = sum(1 for c in p.getNeighbors() if c.kind == "claim")
 project(kind, "person")

@@ -2483,8 +2483,8 @@ def install(session):
     def springLayout(iterations=None):
         """springLayout() runs the GUESS spring layout from the current positions
         until it settles or for 1000 iterations (fewer on graphs over 1000
-        nodes: 1000 * 1000 / nodes, at least 100); springLayout(n) runs exactly
-        n iterations. Stop it early with the Stop button."""
+        nodes: 1000 * 1000 / nodes, at least 100); springLayout(iterations=n)
+        runs exactly n iterations. Stop it early with the Stop button."""
         s = lay.snap()
         n = _iters(iterations, _scaled(1000, s.n))
         lay.run(s, _spring_gen(s, n, rng(), tol=0.05 if iterations is None else -1))
@@ -2493,7 +2493,7 @@ def install(session):
     def jSpringLayout(iterations=None):
         """jSpringLayout() runs the JUNG spring layout from random positions until
         it settles or for 500 iterations (fewer on graphs over 1000 nodes);
-        jSpringLayout(n) runs exactly n iterations."""
+        jSpringLayout(iterations=n) runs exactly n iterations."""
         s = lay.snap()
         n = _iters(iterations, _scaled(500, s.n))
         lay.run(s, _jspring_gen(s, n, rng(), tol=0.05 if iterations is None else -1))
@@ -2524,7 +2524,7 @@ def install(session):
     @cmd
     def isomLayout(iterations=None):
         """isomLayout() runs the JUNG ISOM (self-organising map) layout for 2000
-        epochs; isomLayout(n) runs n epochs."""
+        epochs; isomLayout(iterations=n) runs n epochs."""
         s = lay.snap()
         lay.run(s, _isom_gen(s, rng(), _iters(iterations, 2000)))
 
@@ -2532,7 +2532,7 @@ def install(session):
     def physicsLayout(iterations=None):
         """physicsLayout() runs the graphopt physics layout (charged nodes, springs)
         for 500 steps from the current positions (fewer on graphs over 1000
-        nodes); physicsLayout(n) runs n steps."""
+        nodes); physicsLayout(iterations=n) runs n steps."""
         s = lay.snap()
         lay.run(s, _physics_gen(s, _iters(iterations, _scaled(500, s.n)), rng()))
 
@@ -2662,7 +2662,7 @@ def install(session):
 
     @cmd
     def ringMove(node, index):
-        """ringMove(node, k) moves a node to position k around the circle made by
+        """ringMove(node, index) moves a node to position index around the circle made by
         circleLayout() and re-spaces the ring (what dragging a node around the
         circle does)."""
         ring = session.view.drag.get("ring")

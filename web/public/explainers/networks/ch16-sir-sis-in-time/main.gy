@@ -282,7 +282,7 @@ def time_chart():
         dashed.append("recovered (degree-based theory)")
     return plotLine(data, title=f"{run['model']} in time", xlabel="step", ylabel="share of nodes",
                     yrange=(0, 1), xrange=(0, MAX_T[run["model"]]), dashed=dashed,
-                    colors={k: CURVE_COL[k] for k in data})
+                    palette={k: CURVE_COL[k] for k in data})
 
 
 def time_text():
@@ -444,7 +444,7 @@ def sweep_chart():
                     ylabel="share infected (long run)", yrange=(0, 1),
                     dashed=["Poisson: degree-based theory", "heavy tail: degree-based theory"],
                     highlight=["Poisson: simulated", "heavy tail: simulated"],
-                    colors={"Poisson: simulated": S_COL, "Poisson: degree-based theory": S_COL,
+                    palette={"Poisson: simulated": S_COL, "Poisson: degree-based theory": S_COL,
                             "heavy tail: simulated": "240,140,30", "heavy tail: degree-based theory": "240,140,30"})
 
 

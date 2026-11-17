@@ -7,7 +7,7 @@ def overlays(sess):
 
 def test_hulls_follow_membership(s):
     s.rec.clear()
-    s.run("h = createConvexHull(dept == 'IT', randomColor(120))")
+    s.run("h = encircle(dept == 'IT', 'hull', randomColor(120))")
     (ov,) = overlays(s)
     assert len(ov["hulls"]) == 1 and len(ov["hulls"][0]["nodes"]) == 2
     assert 0.4 < ov["hulls"][0]["a"] < 0.5
@@ -23,7 +23,7 @@ def test_hulls_follow_membership(s):
 
 def test_paper_cluster_hulls(s):
     s.rec.clear()
-    assert s.run("for clust in groupBy(dept):\n    createConvexHull(clust, randomColor(120))\n")
+    assert s.run("for clust in groupBy(dept):\n    encircle(clust, 'hull', randomColor(120))\n")
     assert len(overlays(s)[-1]["hulls"]) == 2
 
 

@@ -92,7 +92,7 @@ def test_remove_overlap_keeps_the_shape(s):
     run(s, "for n in g.nodes: n.x = n.x / 5; n.y = n.y / 5")         # squeeze: lots of overlaps
     assert overlaps(s) > 10
     squeezed = centres(s)
-    run(s, "removeOverlap()")
+    run(s, "prismLayout()")
     assert overlaps(s) == 0
     after = centres(s)
     # left-to-right order is mostly kept

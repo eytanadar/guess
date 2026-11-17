@@ -135,8 +135,8 @@ colorize(dept); resizeLinear(totaldegree, 5, 30)
 for grp in groupBy(dept): grp.color = randomColor()
 center(dept == 'dept3')
 gemLayout                          # commands work without parentheses
-ss(1); circleLayout; morph(1, 2000) # save a state, change, animate back
-for c in edgeBetweennessClusters(7): createConvexHull(c, randomColor(120))
+saveState(1); circleLayout; morph(1, 2000) # save a state, change, animate back
+for c in edgeBetweennessClusters(7): encircle(c, "hull", randomColor(120))
 ```
 
 Building interfaces:

@@ -188,7 +188,7 @@ that doesn't belong.
 
 ```python
 makeFromGDF("vis-papers.gdf")
-wordCloud(title, top=60)
+wordCloud(title, count=60)
 ```
 
 **How it works.** `wordCloud(field)` counts the words of a text field,
@@ -357,7 +357,7 @@ whether or not they cite each other.
 :::
 
 ```python
-makeFromSimilarity("vis-paper-keywords.csv", features="keyword", values="score", k=4)
+makeFromSimilarity("vis-paper-keywords.csv", features="keyword", values="score", count=4)
 makeFromCSV("vis-papers-nodes.csv")
 leidenClusters()
 kw = readSets("vis-paper-keywords.csv", item="paper", set="keyword")
@@ -429,7 +429,8 @@ another. An *in* set can reach the core but not be reached from it, and an
 *out* set is reached from the core but doesn't link back. *Tendrils* hang
 off in or out, *tubes* run from in to out past the core, and the rest
 isn't connected to the core at all. `bowTie()` sorts the nodes into those
-parts, stores the part in the field `bowtie`, and returns the sizes:
+parts, stores the part in the field `bowtie`, and returns it, with the
+sizes in `.sizes`:
 
 | part | blogs | share | the Web, 1999 |
 |---|---|---|---|

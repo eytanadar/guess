@@ -122,7 +122,7 @@ def directed_build(v=None):
     for a, b in G.edges():
         H.add_edge(f"d{a}", f"d{b}")
     load(H)
-    st["parts"] = bowTie()
+    st["parts"] = bowTie().sizes
     for v_ in g.nodes:
         v_.width = v_.height = 10 + 1.5 * min(v_.degree, 12)
         v_.color = {"core": PURPLE, "in": ORANGE, "out": GREEN, "tendril": "240,220,90"}.get(v_.bowtie, GREY)

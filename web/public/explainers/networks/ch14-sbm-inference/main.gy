@@ -11,7 +11,7 @@
 # likes to put hubs together; the degree-corrected model lets each node keep
 # its own degree. This script fits by moving one node at a time to wherever
 # raises L most (steepest ascent), which stops at a local maximum; GUESS's
-# fitBlockModel does the same with Kernighan-Lin passes from several starts.
+# sbmClusters does the same with Kernighan-Lin passes from several starts.
 
 import math
 import random
@@ -178,9 +178,9 @@ def fit_all():
 
 
 def fit_guess():
-    """GUESS's fitBlockModel: Kernighan-Lin passes from 10 random starts, the best kept."""
+    """GUESS's sbmClusters: Kernighan-Lin passes from 10 random starts, the best kept."""
     stop_all()
-    r = fitBlockModel(st["k"], degreeCorrected=st["model"].startswith("Degree"), restarts=10, seed=0, name="sbm_class")
+    r = sbmClusters(st["k"], degreeCorrected=st["model"].startswith("Degree"), restarts=10, seed=0, name="sbm_class")
     st["part"] = {v.name: v.sbm_class for v in g.nodes}
     st["moved"], st["done"] = None, True
     st["hist"].append((len(st["hist"]), loglik(st["part"])))
@@ -232,7 +232,7 @@ def fit_text():
         out += f"\n\nLast move: {chip(st['moved'])} to group {part[st['moved']]}."
     if st["done"]:
         out += ("\n\n**No single move raises L**: a local maximum. A new random start may end somewhere else; "
-                "*Best of 10 starts* uses GUESS's fitBlockModel.")
+                "*Best of 10 starts* uses GUESS's sbmClusters.")
     hs = hubs()
     out += ("\n\nThe five biggest hubs are in groups " + ", ".join(f"{chip(v)}→{part[v]}" for v in hs)
             + (". **All in one group**: the plain model's habit of sorting nodes by degree." if
@@ -279,13 +279,13 @@ def both_rows():
         rows = []
         for model in MODELS:
             dc = model.startswith("Degree")
-            r = fitBlockModel(st["k"], degreeCorrected=dc, restarts=10, seed=0, name="sbm_class")
+            r = sbmClusters(st["k"], degreeCorrected=dc, restarts=10, seed=0, name="sbm_class")
             part = {v.name: v.sbm_class for v in g.nodes}
             sizes = sorted((sum(1 for x in part.values() if x == t) for t in range(st["k"])), reverse=True)
             off = [v for v in st["names"] if part[v] != st["truth"][v]]
             if len(off) > len(st["names"]) / 2:              # group numbers are arbitrary: compare the other way round
                 off = [v for v in st["names"] if part[v] == st["truth"][v]] if st["k"] == 2 else off
-            rows.append((model, r["loglik"], loglik(st["truth"], dc=dc), nmi(part, st["truth"]), sizes,
+            rows.append((model, r.loglik, loglik(st["truth"], dc=dc), nmi(part, st["truth"]), sizes,
                          len({part[v] for v in hubs()}) == 1, off))
         st["both"] = rows
     return st["both"]
@@ -300,7 +300,7 @@ def both_text():
     for model, Lb, Lt, s_, sizes, together, _off in rows:
         lines.append(f"| {model} | {Lb:.1f} | {Lt:.1f} | {s_:.2f} | {' + '.join(map(str, sizes))} | "
                      f"{'yes' if together else 'no'} |")
-    out = "Both models fitted with fitBlockModel (10 random starts each):\n\n" + "\n".join(lines)
+    out = "Both models fitted with sbmClusters (10 random starts each):\n\n" + "\n".join(lines)
     if st["net"].startswith("Karate"):
         dcL, dcT, off = rows[0][1], rows[0][2], rows[0][6]
         who = " and ".join(chip(v) for v in off) if off else "no one"

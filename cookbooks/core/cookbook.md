@@ -498,7 +498,7 @@ averagePathLength(), diameter()
 ```
 
 **How it works.** `shortestPath(a, b)` returns the nodes and edges of one
-shortest path. `weighted=true` treats the edge weight as a length (so
+shortest path. `weight="weight"` treats the edge weight as a length (so
 heavier means farther; invert weights first if they measure strength).
 `heatMap(node)` colours by distance and stores it in `hops`.
 
@@ -565,7 +565,7 @@ makeFromGDF("karate.gdf")
 frLayout()
 leidenClusters()
 colorize(leiden_class)
-createConvexHull(leiden_class == 0, "255,200,200,90")
+encircle(leiden_class == 0, "hull", "255,200,200,90")
 legendFor(leiden_class)
 ```
 
@@ -700,7 +700,7 @@ forceAtlas2Layout()
 | attributes as coordinates | `scatterLayout(x, y)` |
 
 Layouts start from the current positions, so running one twice refines it.
-`removeOverlap()` (or `noverlapLayout()`) pushes overlapping nodes apart
+`prismLayout()` (or `noverlapLayout()`) pushes overlapping nodes apart
 afterwards. For a hand-drawn look, `lombardiLayout()` draws edges as
 circular arcs that leave each node at evenly spread angles (a "Lombardi
 drawing"), and `lombardiEdges()` rounds the edges of any layout without
@@ -743,7 +743,7 @@ legendFor(dept)
 
 **How it works.** `colorize` is for categories; `colorBy(field, low, high)`
 is a gradient for numbers. `sizeBy(field, min, max)` scales sizes
-(`scale="log"` or `"sqrt"` for skewed values). `resizeLinear` spaces
+(`transform="log"` or `"sqrt"` for skewed values). `resizeLinear` spaces
 sizes by rank. Legends follow the colours: re-run `colorize` and the legend
 updates.
 
@@ -789,11 +789,11 @@ more of them).
 makeFromGDF("lesmis.gdf")
 forceAtlas2Layout()
 louvainClusters(); colorize(louvain_class)
-for grp in groupBy(louvain_class): createConvexHull(grp)
+for grp in groupBy(louvain_class): encircle(grp, "hull")
 bundleEdges()
 ```
 
-**How it works.** `createConvexHull(set)` shades the area around a set of
+**How it works.** `encircle(set, "hull")` shades the convex hull around a set of
 nodes. `bundleEdges()` gathers edges that run in the same direction into
 bundles (MINGLE). `method="fdeb"` gives smoother curves, and passing a
 field (`bundleEdges(louvain_class)`) bundles within groups.
@@ -831,18 +831,18 @@ on from the console.
 ```python
 makeFromGDF("karate.gdf")
 frLayout()
-ss("before")
+saveState("before")
 remove(m1)                        # what if the instructor leaves?
 colorize(component)
-ss("after")
+saveState("after")
 morph("before", 1500)
 ```
 
-**How it works.** `ss(name)` saves the whole graph (membership, positions,
-every field) as a named state. `ls(name)` returns to it, and
+**How it works.** `saveState(name)` saves the whole graph (membership, positions,
+every field) as a named state. `loadState(name)` returns to it, and
 `morph(name, ms)` animates the change. Fields can be read in a state:
 `betweenness["before"]`, `m2["before"].color`. States can be named with
-numbers (`ss(1999)`), which suits snapshots over time.
+numbers (`saveState(1999)`), which suits snapshots over time.
 
 ## Show a network as of a date [Intermediate]{.level}
 
@@ -1025,7 +1025,7 @@ def chart():
     t = len(run["curve"])
     return plotLine({"infected": run["curve"], "everyone": [(0, len(g.nodes)), (t, len(g.nodes))]},
                     title="Infected so far", xlabel="step", ylabel="people", yrange=(0, len(g.nodes)),
-                    dashed=["everyone"], colors={"infected": "230,60,50", "everyone": "150,150,150"})
+                    dashed=["everyone"], palette={"infected": "230,60,50", "everyone": "150,150,150"})
 
 def story():
     names = " ".join(linkTo(n) for n in run["new"]) or "none"
@@ -1056,7 +1056,7 @@ for _ in range(3):
   functions, which run again after every step. `linkTo(n)` writes a chip
   that highlights its node when pointed at and selects it when clicked. A
   Markdown link to `?app=…/manifest.json` opens another app on the same
-  site. In `plotLine`, `dashed=` and `colors=` mark a reference or theory
+  site. In `plotLine`, `dashed=` and `palette=` mark a reference or theory
   curve and give it a matching colour.
 - **Growth.** For a network that grows, build the final network first, lay it
   out once, and give each node and edge the step it arrives in a `born`

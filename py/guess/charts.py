@@ -186,7 +186,7 @@ def install(session):
 
     def plotLine(data, title="Chart", xlabel="x", ylabel="y", log=False, logX=None, logY=None, dots=False,
                  xrange=None, yrange=None, dashed=None, highlight=None, palette=None):
-        """plotLine(points) draws a line chart of [(x, y), ...] pairs;
+        """plotLine(data) draws a line chart of [(x, y), ...] pairs;
         plotLine({"infected": pts1, "recovered": pts2}) draws one line per
         series. log=true makes both axes logarithmic (or logX=/logY= one of
         them; points <= 0 are left out). dots=true marks each point. A chart

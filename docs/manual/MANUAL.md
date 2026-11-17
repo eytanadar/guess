@@ -871,7 +871,7 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `hairballLayout()` | the Hairball Buster plot: nodes by degree rank, with a tick under each neighbour |
 | `motifLayout()` | structure-aware: rings for cycles, stars for hubs with leaves, grids for nodes with the same neighbours (below) |
 | `binPackLayout()` | packs the connected components side by side |
-| `removeOverlap()` | separate overlapping nodes while keeping the layout's shape (Graphviz PRISM); works after any layout |
+| `prismLayout()` | separate overlapping nodes while keeping the layout's shape (Graphviz PRISM); works after any layout |
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
 | `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(dx, dy)`, `moveLayout(x, y)` | transform the current layout; `rescaleLayout(nodes, 1.5)` spreads out just those nodes |
 
@@ -887,7 +887,7 @@ remove(feedbackEdges())                   # make it acyclic (section 7.7)
 dotLayout()                               # layers, arrows pointing down
 colorize(generation)
 neatoLayout()
-removeOverlap()
+prismLayout()
 makeFromGDF("sample.gdf")                 # back to the sample graph
 ```
 
@@ -961,8 +961,8 @@ Splitter 3D: each value of the field gets its own plane. Running it again
 with another field starts from the flat layout.
 
 **Old names.** The 2006 names still work. `random()` is the random layout,
-and `jfrLayout`, `jkkLayout1`, `jkkLayout2` and `jSpringLayout` are the
-JUNG versions of the force layouts. Every command is also a method of `g`,
+and `jfrLayout`, `jkkLayout` and `jSpringLayout` are the JUNG versions of
+the force layouts. Every command is also a method of `g`,
 so `g.gemLayout()` works.
 
 \newpage
@@ -978,27 +978,35 @@ makes sense, add a field so you can colour by it:
 louvainClusters()                  # communities; adds the field louvain_class
 colorize(louvain_class)
 modularity(louvain_class)       # how good the partition is
-edgeBetweennessClusters(5)         # remove the 5 most "between" edges; the pieces
-weakComponentClusters()            # connected components
-biComponentClusters()              # biconnected components
+edgeBetweennessClusters(5)         # Girvan-Newman: 5 communities, in edgebetweenness_class
+weakComponentClusters()            # connected components, in weakcomponent_class
+biComponentClusters()              # biconnected components, in bicomponent_class
 groupsOfSize(dept, 40)             # groups with at least 40 members
 ```
 
-Fitting a model instead of optimising modularity: `fitBlockModel(k)` finds
-the k groups of a stochastic block model that make the edges most probable.
+Every command that splits the nodes into groups works the same way: it
+stores each node's group in a field named `<method>_class` (0 is the
+largest group), returns the groups, and takes `name=` to use another field.
+
+Fitting a model instead of optimising modularity: `sbmClusters(count)` finds
+the `count` groups of a stochastic block model that make the edges most
+probable.
 It is degree-corrected by default; `degreeCorrected=false` gives the plain
 model, which tends to put the hubs in a group of their own.
-`corePeriphery()` splits a network into a dense core and a periphery
-(field `core`), and `rankNodes()` puts the nodes of a directed network on a
-ladder so that edges mostly point down (SpringRank; field `rank`).
+`blockModelClusters(count)` groups structurally equivalent nodes (the same
+ties) into positions, in `blockmodel_class`. `corePeriphery()` splits a
+network into a dense core and a periphery (field `core`), and `rankNodes()`
+puts the nodes of a directed network on a ladder so that edges mostly point
+down (SpringRank; field `rank`). Both return their field, with the extra
+results as attributes (`.fit`, `.agreement`).
 `makeLFR(n, mu=)` makes benchmark networks with planted communities (field
 `community`) to test the methods on. Hierarchical methods draw their tree
 with `showDendrogram()`; `cut=` colours that many groups and `field=`
 stores them:
 
 ```python
-fitBlockModel(2)                          # field sbm_class; returns the log-likelihood
-corePeriphery()
+sbmClusters(2).loglik                     # field sbm_class; the groups' log-likelihood
+corePeriphery().fit
 showDendrogram([(0, 1), (2, 3), (4, 5)], nodes=list(g.nodes)[:4] + [v1, v2], cut=2)
 makeLFR(250, mu=0.2)
 louvainClusters()
@@ -1045,7 +1053,7 @@ shape:
 ```python
 colorize(dept)                          # a distinct colour per value
 colorBy(betweenness, yellow, red)       # a gradient over a number
-colorBy(freq, yellow, red, 'log')       # scales: 'linear', 'log', 'sqrt', 'rank'
+colorBy(freq, yellow, red, transform='log')   # transforms: 'linear', 'log', 'sqrt', 'rank'
 sizeBy(pagerank, 5, 40)                 # node size (or edge width) from a number
 resizeLinear(totaldegree, 5, 30)        # the 2006 version
 labelBy(dept)                           # labels from a field
@@ -1080,11 +1088,11 @@ about 70 built-in scales. They come from ColorBrewer, d3 and Vega:
 
 ```python
 colorBy(betweenness, "viridis")         # a perceptually even scale
-colorBy(degree, "RdBu", center=3)       # diverging: the middle colour at 3
+colorBy(degree, "RdBu", midpoint=3)       # diverging: the middle colour at 3
 colorize(dept, "Set2")                  # categorical: the largest group gets the first colour
 colorize(degree, "YlGnBu")              # sequential, over the sorted values
 generateColors("Blues", 5)              # ColorBrewer's own 5-class Blues
-heatMap(v1, "magma_r")                  # _r reverses a scale
+heatMap(v1, palette="magma_r")          # _r reverses a scale
 GradientLegend("viridis", 0, 1)         # a legend for a scale
 pieChart([indegree, outdegree], palette="Dark2")
 colorScales()                           # every scale, with a preview of each
@@ -1450,14 +1458,15 @@ compareClusters(louvain_class, dept)   # do the communities match departments?
 Some measures from the textbook literature (Newman, *Networks*, ch. 7):
 
 ```python
-f, limit = katzCentrality(alpha=0.05)     # x = alpha A x + beta; alpha < limit = 1/kappa1
+f = katzCentrality(alpha=0.05)            # x = alpha A x + beta; alpha < f.limit = 1/kappa1
 kComponents(2)                            # bicomponents (k = 3: tricomponents), largest first
 similarTo(v1, method="regular")           # similar neighbours, not shared ones
 ```
 
-`katzCentrality` stores its result in `katz`. With a small `alpha` it ranks
-nodes almost by degree, and as `alpha` nears `limit` almost by eigenvector
-centrality. `kComponents(k)` sets the field `kcomponent`.
+`katzCentrality` stores its result in `katz` and returns that field. With a
+small `alpha` it ranks nodes almost by degree, and as `alpha` nears
+`f.limit` almost by eigenvector centrality. `kComponents(k)` sets the field
+`kcomponent_class` (a node in several k-components gets the largest).
 
 Resilience and spreading: `robustness()` and `percolation()` chart the
 largest connected piece as nodes fail or are attacked. `percolation` uses
@@ -1495,7 +1504,7 @@ r["frustrated"].color = red               # edges that disagree with the camps
 For a directed network, `bowTie()` sorts the nodes the way the Web was
 first described: a strongly connected core, the nodes that reach it (in),
 the nodes it reaches (out), tubes and tendrils, and the rest. It sets the
-field `bowtie` and returns the sizes. For a heavy-tailed field,
+field `bowtie` and returns it, with the sizes in `.sizes`. For a heavy-tailed field,
 `fitPowerLaw(degree)` estimates the exponent α of p(k) ∝ k^−α by maximum
 likelihood, with its standard error. It picks k_min by the
 Kolmogorov–Smirnov method unless you give `kmin=`, and it also takes a plain
@@ -1504,7 +1513,7 @@ line:
 
 ```python
 makeFromFile("polblogs-sample.gdf")
-bowTie()                                  # {'core': 224, 'in': 89, 'out': 69, ...}
+bowTie().sizes                            # {'core': 224, 'in': 89, 'out': 69, ...}
 colorize(bowtie)
 fitPowerLaw(degree)                       # {'alpha': ..., 'sigma': ..., 'kmin': ..., ...}
 plotFrequency(degree, cumulative=true, log=true, fit=true)
@@ -1562,9 +1571,9 @@ the modularity:
 |---|---|
 | `leidenClusters(resolution=1)` | Leiden: like Louvain, but every community is connected; `objective="CPM"` avoids modularity's resolution limit |
 | `infomapClusters()` | Infomap: random-walk flow, best for directed graphs |
-| `walktrapClusters(count)`, `fastGreedyClusters(count)` | hierarchies; `cutDendrogram(n)` re-cuts them into n groups |
+| `walktrapClusters(count)`, `fastGreedyClusters(count)` | hierarchies; `cutDendrogram(count)` re-cuts them into `count` groups |
 | `labelPropagationClusters(field)` | very fast; given a field, spreads its values to the nodes without one |
-| `eigenvectorClusters()`, `fluidClusters(count)`, `voronoiClusters()` | spectral; exactly `count` groups; around central nodes |
+| `eigenvectorClusters()`, `fluidClusters(count)`, `voronoiClusters()` | spectral; exactly `count` groups; around central nodes (the groups' `.seeds`) |
 | `spinglassClusters()`, `optimalClusters()`, `cohesiveBlocks()` | small graphs: signed networks; the exact optimum; nested cohesive groups |
 
 ```python
@@ -1581,7 +1590,7 @@ personalizedPagerank(v1)                   # relevance to v1, in the field ppr
 largestCliques()
 ```
 
-Also: `maxFlow(a, b)` (writes an edge field `flow`), `dominatorTree(root)`,
+Also: `maxFlow(source, target)` (writes an edge field `flow`), `dominatorTree(root)`,
 `maxMatching()`, the node field `knn` (average degree of the neighbours),
 and two commands that don't need igraph: `simplify()` merges parallel edges,
 and `rewire()` makes a degree-preserving random copy in a new tab, to check
@@ -1713,7 +1722,7 @@ exportHTML("organisation.html", title="Who works with whom")
 ```
 
 `history()` lists every command you've run this session. `log("work.py")`
-starts writing commands to a file as you go, and `stoplog()` stops.
+starts writing commands to a file as you go, and `stopLog()` stops.
 
 \newpage
 
@@ -1745,11 +1754,11 @@ field value. Save one with `ss`, change things, and load it again with `ls`
 or animate back to it with `morph`:
 
 ```python
-ss('before')
+saveState('before')
 colorize(dept)
 circleLayout()
 morph('before', 2000)       # animate back over 2 seconds
-ls('before')                # jump back
+loadState('before')                # jump back
 getStates()
 ```
 
@@ -1758,7 +1767,7 @@ in or out. `setNodeDisappearBy(.2)`, `setNodeAppearAfter(.8)`,
 `setEdgeDisappearBy(…)` and `setEdgeAppearAfter(…)` say when, as a fraction of
 the morph.
 
-States can be saved under numbers too (`ss(1999)`, `ss(2000)`), which
+States can be saved under numbers too (`saveState(1999)`, `saveState(2000)`), which
 suits a series of snapshots over time.
 
 To try something and put everything back, use `with scratch():`:
@@ -1778,7 +1787,7 @@ variables what you want to keep.
 A field subscripted with a state reads the values in that state:
 
 ```python
-ss('before')
+saveState('before')
 (freq > 100).color = red
 freq['before'] > 100              # the edges that had freq > 100 in 'before'
 v1['before'].color                # v1's colour then
@@ -1855,29 +1864,30 @@ bar, with the ▾ in their header or by double-clicking the title.
 
 ## 12.2 Convex hulls
 
-A convex hull shades the area around a group of nodes:
+`encircle` shades the area around a group of nodes. With `"hull"` it is the
+group's convex hull:
 
 ```python
-h = createConvexHull(dept == 'dept4', "200,200,255,90")
+h = encircle(dept == 'dept4', "hull", "200,200,255,90")
 for d in ('dept4', 'dept6', 'dept9'):
     grp = dept == d
-    createConvexHull(grp, averageColor(grp[0].color, white))
+    encircle(grp, "hull", averageColor(grp[0].color, white))
 removeConvexHull(h)
 removeConvexHulls()
 ```
 
 Hulls follow their nodes when you move them or run a layout.
 
-A group can also be marked by a box or an ellipse: `shape="box"` or
-`"ellipse"`, upright or, with `rotate=true`, turned to fit the group (the
-smallest box at any angle, and the ellipse around it). `encircle` does this
-with a turned ellipse and a colour of its own; `encircleBy` draws one shape
-per value of a field. The shape, rotation and padding can be changed later:
+A group can also be marked by a box or an ellipse (the default):
+`"box"` or `"ellipse"`, turned to fit the group (the smallest box at any
+angle, and the ellipse around it) or, with `rotate=false`, upright. Without
+a colour each shape gets one of its own; `encircleBy` draws one shape per
+value of a field. The shape, rotation and padding can be changed later:
 
 ```python
 e = encircle(dept == 'dept4')                 # a turned ellipse
 encircle(dept == 'dept6', "box")              # a turned box
-createConvexHull(dept == 'dept9', shape="box", rotate=false)   # an upright box
+encircle(dept == 'dept9', "box", rotate=false)   # an upright box
 e.shape = "box"
 e.padding = 20
 removeConvexHulls()

@@ -182,12 +182,12 @@ def test_blockmodel_finds_structural_equivalence():
         for st in ("s1", "s2", "s3", "s4"):
             s.run(f"addEdge(addNode({t!r}), addNode({st!r}))")
     rec.clear()
-    assert s.run("__r = blockmodel(2)"), rec.of("error")
+    assert s.run("__r = blockModelClusters(2)"), rec.of("error")
     groups = sorted(sorted(n.name for n in p) for p in s.ns["__r"])
     assert groups == [["s1", "s2", "s3", "s4"], ["t1", "t2"]]
-    assert s.graph.getNodeByName("s1").position == 0          # largest position first
+    assert s.graph.getNodeByName("s1").blockmodel_class == 0          # largest position first
     printed = "".join(m.get("text", "") for m in rec.msgs)
     assert "1.00" in printed and "0.00" in printed           # students -> teachers dense, within empty
     rec.clear()
-    assert not s.run("blockmodel(99)")
-    assert "1 <= k" in rec.of("error")[0]["text"]
+    assert not s.run("blockModelClusters(99)")
+    assert "1 <= count" in rec.of("error")[0]["text"]

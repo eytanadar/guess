@@ -264,13 +264,13 @@ def install(session):
         return GSet(sorted(uniq.values(), key=lambda e: e._id), "feedback edges")
 
     @cmd
-    def mainPath():
+    def mainPath(name="spc"):
         """mainPath() finds the main path of a citation (or other flow)
         network: the chain of directed edges that the most source-to-sink
         paths run through (Hummon and Doreian's main path analysis, key-route
-        variant). Each directed edge gets `spc`, its search path count as a
-        share of all source-to-sink paths (0..1). The path starts at the edge
-        with the highest spc and extends both ways, always along the
+        variant). Each directed edge gets `spc` (name= another field), its
+        search path count as a share of all source-to-sink paths (0..1).
+        The path starts at the edge with the highest spc and extends both ways, always along the
         highest-spc edge, to a source and a sink. Edges closing cycles
         (feedbackEdges()) are ignored. Returns the path's nodes and edges.
         In a citation network with edges citing -> cited, it runs from recent
@@ -304,7 +304,7 @@ def install(session):
         for n in reversed(order):
             after[n] = 1 if not out[n] else sum(after[e._n2] for e in out[n])
         total = sum(before[n] for n in nodes if not out[n]) or 1
-        f = gr.addEdgeField("spc", DOUBLE, 0.0)
+        f = gr.addEdgeField(str(getattr(name, "name", name)), DOUBLE, 0.0)
         spc = {}
         for e in edges:
             s = before[e._n1] * after[e._n2]
@@ -328,10 +328,10 @@ def install(session):
         return GSet(members + path, "main path")
 
     @cmd
-    def transitiveReduction():
+    def transitiveReduction(name="redundant"):
         """transitiveReduction(): in a directed acyclic graph, the edges implied
         by longer paths (a -> c when a -> b -> c exists, and repeated edges). They
-        are marked in the edge field `redundant` and returned, so
+        are marked in the edge field `redundant` (name= another) and returned, so
         transitiveReduction().visible = false shows the backbone of a citation or
         dependency graph. Only directed edges count; cycles are an error (see
         feedbackEdges)."""
@@ -345,7 +345,8 @@ def install(session):
             es = sorted(d["edges"], key=lambda e: e._id)
             redundant += es if (a, b) not in keep else es[1:]
         gr = g()
-        f = gr.edge_schema.get("redundant") or gr.addEdgeField("redundant", BOOL, False)
+        fname = str(getattr(name, "name", name))
+        f = gr.edge_schema.get(fname) or gr.addEdgeField(fname, BOOL, False)
         ids = {e._id for e in redundant}
         for e in gr._edges_list():
             f.set(e, e._id in ids if e._directed else False)

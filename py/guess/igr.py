@@ -5,7 +5,7 @@ start-up. When it is there, these existing statistics use it (same results,
 much faster on graphs of 10k+ nodes): betweenness (nodes and edges),
 closeness, harmonic, eccentricity, diameter, radius, averagePathLength,
 clustering, triangles, coreness, component, strongcomponent. Until then, or
-after useIgraph(false), the networkx / numpy versions run.
+after useIgraph(on=false), the networkx / numpy versions run.
 
 New commands (igraph only):
     leidenClusters, infomapClusters, walktrapClusters, fastGreedyClusters,
@@ -230,7 +230,7 @@ def install(session):
 
     @cmd
     def useIgraph(on=True):
-        """useIgraph(false) makes the statistics use networkx / numpy instead of
+        """useIgraph(on=false) makes the statistics use networkx / numpy instead of
         igraph (to compare results or work around a problem); useIgraph() turns
         igraph back on. Prints which engine is active."""
         ENABLED[0] = bool(on)
@@ -320,7 +320,7 @@ def install(session):
         """walktrapClusters() groups nodes that short random walks (steps long)
         tend to stay among, building a hierarchy; count=None cuts it where
         modularity is highest, walktrapClusters(8) gives 8 communities.
-        Stored in walktrap_class; cutDendrogram(n) re-cuts it."""
+        Stored in walktrap_class; cutDendrogram(count) re-cuts it."""
         need("walktrapClusters")
         I = undirected()
         return dendro(I.G.community_walktrap(weights=I.positive_weights(), steps=int(steps)),
@@ -330,7 +330,7 @@ def install(session):
     def fastGreedyClusters(count=None, name="fastgreedy_class"):
         """fastGreedyClusters() merges communities greedily by modularity
         (Clauset-Newman-Moore), building a hierarchy; count as in
-        walktrapClusters. Stored in fastgreedy_class; cutDendrogram(n) re-cuts."""
+        walktrapClusters. Stored in fastgreedy_class; cutDendrogram(count) re-cuts."""
         need("fastGreedyClusters")
         I = undirected()
         return dendro(I.G.community_fastgreedy(weights=I.positive_weights()),
@@ -338,8 +338,8 @@ def install(session):
 
     @cmd
     def cutDendrogram(count):
-        """cutDendrogram(n) re-cuts the hierarchy of the last walktrapClusters or
-        fastGreedyClusters into n communities (same field), e.g. driven by a
+        """cutDendrogram(count) re-cuts the hierarchy of the last walktrapClusters or
+        fastGreedyClusters into count communities (same field), e.g. driven by a
         Slider to explore coarser and finer groupings."""
         if state["dendrogram"] is None:
             raise GuessError("run walktrapClusters() or fastGreedyClusters() first")

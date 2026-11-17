@@ -192,7 +192,7 @@ def r_chart():
     if len(osc["rs"]) < 2:
         return None
     return plotLine({"order parameter r": osc["rs"]}, title="How much in step: r(t)", xlabel="time", ylabel="r",
-                    yrange=(0, 1), colors={"order parameter r": R_COL})
+                    yrange=(0, 1), palette={"order parameter r": R_COL})
 
 
 def wheel_chart():
@@ -301,7 +301,7 @@ def sweep_chart():
         cols[f"K_c, {lab}"] = palette[net]
         dashed.append(f"K_c, {lab}")
     return plotLine(data, title="Order parameter against coupling", xlabel="K", ylabel="r (long run)", dots=true,
-                    yrange=(0, 1), xrange=(0, max(SWEEP_K)), dashed=dashed, colors=cols)
+                    yrange=(0, 1), xrange=(0, max(SWEEP_K)), dashed=dashed, palette=cols)
 
 
 def sweep_text():

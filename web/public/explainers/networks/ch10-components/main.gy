@@ -161,7 +161,7 @@ def sizes_chart():
 makeFromFile("polblogs-sample.gdf")
 renameGraph("blogs")
 B = toNetworkX(directed=True)
-SIZES = bowTie()
+SIZES = bowTie().sizes
 PART = {n.name: n.bowtie for n in g.nodes}
 LEAN = {n.name: n.leaning for n in g.nodes}
 ADDR = {n.name: n.label for n in g.nodes}

@@ -359,7 +359,7 @@ def letter_chart():
         return None
     return plotLine({"social distance to the target": [(t, x) for t, x in enumerate(d)]},
                     title="How close the letter is", xlabel="hops", ylabel="social distance (0 = there)",
-                    colors={"social distance to the target": PATH_EDGE}, dots=True, yrange=(0, D_DRAWN + 1),
+                    palette={"social distance to the target": PATH_EDGE}, dots=True, yrange=(0, D_DRAWN + 1),
                     xrange=(0, max(4, len(d) - 1)))
 
 
@@ -428,14 +428,14 @@ def success_chart():
     if not sim["rows"]:
         return None
     return plotLine(sim["rows"], title="Letters delivered against homophily", xlabel="homophily α",
-                    ylabel="share delivered", colors=SIM_COL, dots=True, yrange=(0, 1))
+                    ylabel="share delivered", palette=SIM_COL, dots=True, yrange=(0, 1))
 
 
 def length_chart():
     if not sim["len"]:
         return None
     return plotLine(sim["len"], title="Length of the chains that arrived", xlabel="homophily α",
-                    ylabel="hops", colors=SIM_COL, dots=True)
+                    ylabel="hops", palette=SIM_COL, dots=True)
 
 
 def sim_text():

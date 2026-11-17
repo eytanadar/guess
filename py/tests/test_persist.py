@@ -15,15 +15,15 @@ def roundtrip(sess):
 
 def test_roundtrip_everything(s):
     s.run("addNodeField('score', DOUBLE, 1.5)\nbob.score = 9\nbob.color = red\n(bob<->alice).width = 4")
-    s.run("ss(1999)\nbob.jobfunc = 'CEO'\nremove(jane)\naddRange(alice, '1-5')")
-    s.run("h = createConvexHull((bob, alice), randomColor(100))\nl = Legend()\nl.add(bob, 'boss')")
+    s.run("saveState(1999)\nbob.jobfunc = 'CEO'\nremove(jane)\naddRange(alice, '1-5')")
+    s.run("h = encircle((bob, alice), 'hull', randomColor(100))\nl = Legend()\nl.add(bob, 'boss')")
     s.run("setDisplayBackground(lightyellow)")
     t = roundtrip(s)
     assert ev(t, "bob.score") == 9 and ev(t, "alice.score") == 1.5
     assert ev(t, "bob.color") == "red" and ev(t, "(bob<->alice).width") == 4
     assert "jane" not in t.ns and len(ev(t, "g.deleted")) == 4
     assert ev(t, "bob[1999].jobfunc") == "Manager" and ev(t, "bob.jobfunc") == "CEO"
-    t.run("ls(1999)")
+    t.run("loadState(1999)")
     assert "jane" in t.ns and len(t.graph.edges) == 4
     assert names(ev(t, "Node rcontains 3")) == ["alice"]
     ov = t.rec.of("overlay")[-1] if t.rec.of("overlay") else None

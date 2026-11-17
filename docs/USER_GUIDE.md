@@ -131,14 +131,14 @@ hides the rest and `showAll()` brings it back.
 - **Curved** toggles Gephi-style curved edges (`curvedEdges(0.6)` sets the
   curvature); `setEdgeColorMode("mixed")` colours edges by their endpoints.
 - `labelOutlines()` and `hideOverlappingLabels()` keep labels readable.
-- `createConvexHull(dept == 'dept1', "200,200,255,90")`, `Legend()`,
+- `encircle(dept == 'dept1', "hull", "200,200,255,90")`, `Legend()`,
   `GradientLegend(...)`, `setDisplayBackground(black)` (`None` follows the theme).
 - The theme button cycles **Auto** (follows the system), **Light** and **Dark**.
 - **PNG** / **SVG** export the view; `startMovie()` / `stopMovie()` record WebM.
 
 ## States, ranges, charts, apps
 
-`ss("before")`, change things, then `morph("before", 2000)` animates back.
+`saveState("before")`, change things, then `morph("before", 2000)` animates back.
 `addRange(v1, "1-5")` and `Node rcontains 3` query existence intervals.
 `plotSizesPie(dept)`, `plotSizes(dept)`, `plotHistogram(freq)` make charts linked to the graph.
 `ui.dock(Panel("Edges", Slider(...), Button(...)))` builds controls, and

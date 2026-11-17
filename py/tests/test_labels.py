@@ -108,7 +108,7 @@ def test_color_by_center_and_legend_stops():
     s.run("addNodeField('lfc', DOUBLE, 0)")
     for i, v in enumerate([-1.0, -0.5, 0.0, 0.5, 1.0, 2.0] + [0.1 * k for k in range(10)]):
         s.run(f"addNode('n{i}').lfc = {v}")
-    assert s.run("colorBy(lfc, blue, red, center=0)")
+    assert s.run("colorBy(lfc, blue, red, midpoint=0)")
     g = s.graph
     rgb = lambda n: colors.to_rgba_int(g.getNodeByName(n).color)[0]   # noqa: E731
     assert rgb("n2") == 0xFFFFFF                     # zero is white
@@ -119,4 +119,4 @@ def test_color_by_center_and_legend_stops():
     ramp = s.ns["__lg"]._ramp
     assert ramp["stops"][0][0] == 0 and ramp["stops"][-1][0] == 1
     assert any(c == 0xFFFFFF for _at, c in ramp["stops"])   # the white middle is in the legend
-    assert not s.run("colorBy(lfc, blue, red, scale='log', center=0)")
+    assert not s.run("colorBy(lfc, blue, red, transform='log', midpoint=0)")

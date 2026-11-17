@@ -73,7 +73,7 @@ def test_encircle_shapes_and_undo(s, tmp_path):
     assert s.run("undo()")
     assert h.shape == "ellipse" and h.rotate                       # undo restores the look
     assert not s.run("e.shape = 'triangle'")
-    assert s.run("createConvexHull(g.nodes, shape='box')")
+    assert s.run("encircle(g.nodes, 'box', rotate=false)")
     assert s.run("addNodeField('team', VARCHAR, '')\nbob.team = 'x'\nalice.team = 'x'")
     assert s.run("shapes = encircleBy(team)")
     f = tmp_path / "s.guess"

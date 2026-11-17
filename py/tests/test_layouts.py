@@ -15,7 +15,7 @@ SAMPLE_COMMANDS = [
     "randomLayout()", "randomLayout(400, 300)",
     "circleLayout()", "circleLayout(freq, v1)", "circleLayout(dept, v1, 100, 100)",
     "frLayout()", "frLayout(800, 600)", "jfrLayout()",
-    "kkLayout()", "kkLayout(800, 600)", "jkkLayout1()", "jkkLayout2()", "weightedKKLayout()",
+    "kkLayout()", "kkLayout(800, 600)", "jkkLayout()", "weightedKKLayout()",
     "springLayout()", "springLayout(30)", "jSpringLayout()", "jSpringLayout(30)",
     "weightedSpringLayout(10, 100)", "weightedSpringLayout(10, 100, 30)",
     "gemLayout()", "gemLayout(3)", "isomLayout()", "isomLayout(300)",
@@ -27,8 +27,8 @@ SAMPLE_COMMANDS = [
 ]
 
 ALL_NAMES = [
-    "randomLayout", "circleLayout", "frLayout", "jfrLayout", "kkLayout", "jkkLayout1",
-    "jkkLayout2", "weightedKKLayout", "springLayout", "jSpringLayout", "weightedSpringLayout",
+    "randomLayout", "circleLayout", "frLayout", "jfrLayout", "kkLayout", "jkkLayout",
+    "weightedKKLayout", "springLayout", "jSpringLayout", "weightedSpringLayout",
     "gemLayout", "isomLayout", "physicsLayout", "radialLayout", "mdsLayout", "sugiyamaLayout",
     "sugiyamaLayout2", "dagLayout", "binPackLayout", "rescaleLayout", "translateLayout",
     "moveLayout", "centerAfterLayout",
@@ -120,8 +120,8 @@ def test_all_commands_registered_with_help():
     sess.rec.msgs.clear()
     run(sess, "help(circleLayout)")
     text = "".join(m["text"] for m in sess.rec.of("text"))
-    assert "circleLayout(field=None, center=None, x=None, y=None)" in text
-    assert "centerNode" in text
+    assert "circleLayout(field=None, node=None, x=None, y=None)" in text
+    assert "circleLayout(field, node)" in text
 
 
 def test_wrong_argument_counts_are_errors():
@@ -167,7 +167,7 @@ EDGE_CASES = {
 
 EDGE_CASE_COMMANDS = [
     "randomLayout()", "circleLayout()", "frLayout()", "jfrLayout()", "kkLayout()",
-    "jkkLayout1()", "jkkLayout2()", "weightedKKLayout()", "springLayout(40)", "springLayout()",
+    "jkkLayout()", "weightedKKLayout()", "springLayout(40)", "springLayout()",
     "jSpringLayout(40)", "weightedSpringLayout(10, 50, 40)", "gemLayout(1)", "isomLayout(200)",
     "physicsLayout(40)", "mdsLayout()", "sugiyamaLayout()", "sugiyamaLayout(true)",
     "sugiyamaLayout2()", "dagLayout()", "binPackLayout()", "rescaleLayout(0.5)",
@@ -344,7 +344,7 @@ def test_gem_seed_is_repeatable(sample_text):
 
 def test_force_layouts_shorten_edges(sample_text):
     """After a force layout, connected nodes are closer than random pairs."""
-    for cmd in ("frLayout()", "jfrLayout()", "kkLayout()", "jkkLayout1()", "gemLayout(1)",
+    for cmd in ("frLayout()", "jfrLayout()", "kkLayout()", "jkkLayout()", "gemLayout(1)",
                 "springLayout()", "jSpringLayout()", "physicsLayout()", "isomLayout()"):
         sess = sample_session()
         run(sess, "randomLayout()")
@@ -427,7 +427,7 @@ def test_iterative_layout_ticks_every_iteration(sample_text):
 
 
 @pytest.mark.parametrize("cmd", ["springLayout()", "frLayout()", "gemLayout()", "kkLayout()",
-                                 "jkkLayout1()", "physicsLayout()", "isomLayout()",
+                                 "jkkLayout()", "physicsLayout()", "isomLayout()",
                                  "jfrLayout()", "dagLayout()"])
 def test_interrupt_leaves_valid_positions(sample_text, cmd):
     sess = sample_session()
@@ -466,7 +466,7 @@ def test_center_after_layout_can_be_disabled(sample_text):
 # Kamada-Kawai fast path (sampled stress majorization for large components)
 # ---------------------------------------------------------------------------
 
-KK_CMDS = ["kkLayout()", "jkkLayout1()", "jkkLayout2()", "weightedKKLayout()"]
+KK_CMDS = ["kkLayout()", "jkkLayout()", "weightedKKLayout()"]
 
 
 def _kk_energy(P, D):
@@ -544,7 +544,7 @@ def test_legend_for_tells_categories_from_gradients():
     assert sorted(i for r in allrows[12:-1] for i in r["ids"]) == sorted(rows[-1]["ids"])
     for scale, middle in (("linear", None), ("log", None), ("rank", "white")):
         extra = ", middle=white" if middle else ""
-        run(s, f"colorBy(totaldegree, yellow, red, '{scale}'{extra})\nlg = legendFor(totaldegree)")
+        run(s, f"colorBy(totaldegree, yellow, red, transform='{scale}'{extra})\nlg = legendFor(totaldegree)")
         assert s.ns["lg"]._ramp, scale
     run(s, "colorize(totaldegree)\nlg = legendFor(totaldegree)")
     assert s.ns["lg"]._ramp is None

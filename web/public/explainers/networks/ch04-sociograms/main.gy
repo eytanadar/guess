@@ -55,10 +55,10 @@ for n in g.nodes:
     n.color = "90,140,220" if n.gender == "boy" else "230,110,150"
     n.width = n.height = 18
     n.labelvisible = true
-ss("sociogram")
+saveState("sociogram")
 for k, n in NODE.items():
     n.x, n.y = seat[k][0] * 120, seat[k][1] * 110
-ss("classroom")
+saveState("classroom")
 morph("sociogram", 0)
 TIES = ["best friends", "seat neighbours", "recess playmates", "all three"]
 COLOUR = {"best friends": "60,60,60", "seat neighbours": "200,150,40", "recess playmates": "60,160,110"}

@@ -412,7 +412,7 @@ def chart1():
             data[name] = [(0, v), (tmax, v)]
             cols[name] = COL_STABLE if deriv(v) < 0 else COL_UNSTABLE
     return plotLine(data, title="The trajectory x(t)", xlabel="t", ylabel="x", xrange=(0, tmax),
-                    dashed=[k for k in data if k != "x(t)"], colors=cols)
+                    dashed=[k for k in data if k != "x(t)"], palette=cols)
 
 
 def text2():
@@ -464,7 +464,7 @@ def chart2():
         data[name] = [(t, d_end * math.exp(lam * (t - t_end))) for t in np.linspace(t0, t_end, 20)]
         cols[name] = COL_STABLE
     return plotLine(data, title=f"Distance to the {kind.split(' (')[0]} it approaches", xlabel="t",
-                    ylabel="distance", logY=true, dashed=[n for n in data if n.startswith("e^")], colors=cols)
+                    ylabel="distance", logY=true, dashed=[n for n in data if n.startswith("e^")], palette=cols)
 
 
 # ---- controls ---------------------------------------------------------------------------------------

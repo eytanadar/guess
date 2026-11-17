@@ -134,7 +134,7 @@ def test_shortest_path_heat_map_paint(s):
     assert ev(s, "bob.hops") == 0 and ev(s, "jane.hops") == 1 and ev(s, "al_x.hops") == -1
     assert ev(s, "bob.color") == "215,25,28,255"              # red at the centre
     assert ev(s, "al_x.color") == "#bdbdbd"                   # grey: unreachable
-    assert s.run("heatMap(bob, near=red, far=blue, middle=None)") and ev(s, "bob.color") == "255,0,0,255"
+    assert s.run("heatMap(bob, start=red, end=blue, middle=None)") and ev(s, "bob.color") == "255,0,0,255"
     assert s.run("paint(al_x, blue)") and ev(s, "al_x.color") == "blue"
     assert s.run("paint(bob, green, 1)") and ev(s, "jane.color") == "green"
 
@@ -165,7 +165,7 @@ def test_size_and_colour_by_value(s):
     assert s.run("sizeBy(freq, 1, 31, 'log')")
     mid = edge(s, "bob", "alice").width
     assert 1 + 30 * 8 / 28 < mid < 31   # log spreads the low end
-    assert s.run("colorBy(freq, white, black, 'rank')")
+    assert s.run("colorBy(freq, white, black, transform='rank')")
     assert edge(s, "jane", "bob").color == "255,255,255,255"
     assert not s.run("sizeBy(dept, 1, 2)")
     assert not s.run("sizeBy(freq, 1, 2, 'cubic')")

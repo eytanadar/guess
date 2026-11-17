@@ -1,7 +1,7 @@
-"""Saved graph states: ss / ls / morph, and state-indexed access.
+"""Saved graph states: saveState / loadState / morph, and state-indexed access.
 
-    ss(1999)                   save the current graph as state 1999
-    ls(1999)                   restore it (membership and every field value)
+    saveState(1999)            save the current graph as state 1999
+    loadState(1999)            restore it (membership and every field value)
     morph(2000, 2000)          animate to state 2000 over 2000 ms
     bob[1999].jobfunc          a field value in a saved state
     freq[2000] > freq[1999]    edges whose freq grew between the states
@@ -63,7 +63,7 @@ class ElementState:
         return self._vals.get(name, f.default)
 
     def __setattr__(self, name, value):
-        raise GuessError("saved states are read-only; ls() the state to edit it")
+        raise GuessError("saved states are read-only; loadState() the state to edit it")
 
     def __repr__(self):
         return f"{self._elem!r}[{self._state!r}]"
@@ -91,12 +91,15 @@ def install(session):
 
     g.state_lookup = lookup
 
-    def ss(state):
-        """Save the current graph (membership and all field values) as a named state."""
+    def saveState(state):
+        """saveState(state) saves the current graph (which nodes and edges exist,
+        and all field values) as a state named `state`, for loadState, morph and
+        field[name]."""
         states[state] = Snapshot(g)
 
-    def ls(state):
-        """Load a saved state: restores which nodes/edges exist and all their values."""
+    def loadState(state):
+        """loadState(state) loads a state saved with saveState: restores which
+        nodes and edges exist and all their values."""
         _restore(lookup(state))
 
     def _restore(snap):
@@ -172,7 +175,7 @@ def install(session):
         block are removed too; print or keep in variables what you want to keep."""
         return _Scratch()
 
-    for fn in (ss, ls, morph, getStates, scratch):
+    for fn in (saveState, loadState, morph, getStates, scratch):
         session.register_command(fn.__name__, fn)
     for key in timing:
         for fn in make_timing(key):

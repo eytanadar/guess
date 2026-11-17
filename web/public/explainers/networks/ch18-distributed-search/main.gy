@@ -308,7 +308,7 @@ def search_chart():
     cols = {name: COLOR[next(sname for sname in STRATS if name.startswith(sname))] for name in st["done"]}
     cols[label] = COLOR[st["strat"]]
     return plotLine(data, title="Messages sent as the search goes on", xlabel="steps", ylabel="messages",
-                    dots=true, colors=cols, logY=true, highlight=[label])
+                    dots=true, palette=cols, logY=true, highlight=[label])
 
 
 # ---- how the costs grow ---------------------------------------------------------------------------
@@ -354,7 +354,7 @@ def sim_chart():
             if alpha != SIM_ALPHAS[0]:
                 dashed.append(name)
     return plotLine(data, title="Median messages to find one file", xlabel="peers (n)", ylabel="messages",
-                    log=true, dots=true, colors=cols, dashed=dashed)
+                    log=true, dots=true, palette=cols, dashed=dashed)
 
 
 def slope(xs, ys):

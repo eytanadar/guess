@@ -262,7 +262,7 @@ def message_chart():
     walk = [(t, max(0, d[0] - t)) for t in range(d[0] + 1)]
     return plotLine({"greedy, with shortcuts": [(t, x) for t, x in enumerate(d)], "the grid alone": walk},
                     title="Distance to the target", xlabel="hops", ylabel="lattice distance",
-                    dashed=["the grid alone"], colors={"greedy, with shortcuts": PATH_EDGE, "the grid alone": "150,150,150"},
+                    dashed=["the grid alone"], palette={"greedy, with shortcuts": PATH_EDGE, "the grid alone": "150,150,150"},
                     dots=True, xrange=(0, max(len(d) - 1, d[0])), yrange=(0, d[0]))
 
 
@@ -318,7 +318,7 @@ def sweep_chart():
     top = max(y for pts in data.values() for _x, y in pts)
     data["α = 2"] = [(2, 0), (2, top)]
     return plotLine(data, title="Mean delivery time against α", xlabel="α", ylabel="hops", dashed=["α = 2"],
-                    colors={"α = 2": "150,150,150"}, dots=True, logY=True)
+                    palette={"α = 2": "150,150,150"}, dots=True, logY=True)
 
 
 def sweep_text():
@@ -406,7 +406,7 @@ def scale_chart():
         data[f"{label} (α = {a:g})"] = ref
         cols[f"{label} (α = {a:g})"] = pal[a]
     return plotLine(data, title="Delivery time as the grid grows", xlabel="n (people)", ylabel="hops",
-                    dashed=[k for k in data if "(" in k], colors=cols, dots=True, log=True)
+                    dashed=[k for k in data if "(" in k], palette=cols, dots=True, log=True)
 
 
 def scale_text():

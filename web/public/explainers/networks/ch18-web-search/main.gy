@@ -314,14 +314,14 @@ def farm_chart():
         return plotLine({"stuffed page on top, at this share of blends": st["sweep"]},
                         title="Who wins, as the farm grows", xlabel="farm pages",
                         ylabel="share of blends where spam is #1", yrange=(0, 1), dots=true,
-                        colors={"stuffed page on top, at this share of blends": "200,60,200"})
+                        palette={"stuffed page on top, at this share of blends": "200,60,200"})
     rows = st["farm_rows"]
     if not rows:
         return None
     return plotLine({"spam page": [(k, a) for k, a, _h in rows], "best honest page": [(k, h) for k, _a, h in rows]},
                     title="PageRank share as the farm grows", xlabel="farm pages", ylabel="PageRank share",
                     dots=true, dashed=["best honest page"],
-                    colors={"spam page": "200,60,200", "best honest page": "255,140,40"}, xrange=(0, FARM))
+                    palette={"spam page": "200,60,200", "best honest page": "255,140,40"}, xrange=(0, FARM))
 
 
 def sweep_one():

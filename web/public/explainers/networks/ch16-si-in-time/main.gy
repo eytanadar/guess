@@ -477,7 +477,7 @@ def outbreak_chart():
     for name in TH_NAMES:
         data[name] = th[name]
     return plotLine(data, title="Share infected", xlabel="time", ylabel="share infected", yrange=(0, 1),
-                    xrange=(0, horizon(sim["key"], beta())), dashed=TH_NAMES, colors=THEORY_COLS)
+                    xrange=(0, horizon(sim["key"], beta())), dashed=TH_NAMES, palette=THEORY_COLS)
 
 
 # ---- many outbreaks, off screen -----------------------------------------------------------------------------------
@@ -577,7 +577,7 @@ def theory_chart():
     for name in TH_NAMES:
         data[name] = th[name]
     return plotLine(data, title="Average share infected", xlabel="time", ylabel="share infected",
-                    yrange=(0, 1), xrange=(0, horizon(sim["key"], beta())), dashed=TH_NAMES, colors=THEORY_COLS)
+                    yrange=(0, 1), xrange=(0, horizon(sim["key"], beta())), dashed=TH_NAMES, palette=THEORY_COLS)
 
 
 # ---- early growth ---------------------------------------------------------------------------------------------------
@@ -656,7 +656,7 @@ def early_chart():
     for name in TH_NAMES:
         data[name] = [(t, x) for t, x in th[name] if t <= end]
     return plotLine(data, title="Early growth (log scale)", xlabel="time", ylabel="share infected", logY=true,
-                    dashed=TH_NAMES, colors=THEORY_COLS)
+                    dashed=TH_NAMES, palette=THEORY_COLS)
 
 
 # ---- who is infected first --------------------------------------------------------------------------------------------

@@ -2,26 +2,26 @@ from tests.test_gython import Recorder, ev, names, s  # noqa: F401
 
 
 def test_save_load_and_indexing(s):
-    s.run("j = jane; ss(1999)")
+    s.run("j = jane; saveState(1999)")
     s.run("bob.jobfunc = 'CEO'; (bob<->alice).freq = 50; remove(jane)")
-    s.run("ss(2000)")
+    s.run("saveState(2000)")
     assert ev(s, "bob[1999].jobfunc") == "Manager"
     assert ev(s, "bob[2000].jobfunc") == "CEO"
     assert names(ev(s, "freq[2000] > freq[1999]")) == ["bob-alice"]
     assert ev(s, "j[2000].jobfunc") is None
-    s.run("ls(1999)")
+    s.run("loadState(1999)")
     assert ev(s, "bob.jobfunc") == "Manager" and "jane" in s.ns
     assert len(s.graph.edges) == 4
-    s.run("ls(2000)")
+    s.run("loadState(2000)")
     assert "jane" not in s.ns and ev(s, "bob.jobfunc") == "CEO"
     assert ev(s, "getStates()") == [1999, 2000]
     s.rec.clear()
-    assert not s.run("ls('nope')")
+    assert not s.run("loadState('nope')")
     assert "no saved state" in s.rec.of("error")[0]["text"]
 
 
 def test_morph_marks_patch(s):
-    s.run("ss('a'); g.nodes.x = 0; ss('b'); ls('a')")
+    s.run("saveState('a'); g.nodes.x = 0; saveState('b'); loadState('a')")
     s.rec.clear()
     s.run("morph('b', 500)")
     patch = s.rec.of("patch")[-1]

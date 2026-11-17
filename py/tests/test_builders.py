@@ -62,7 +62,7 @@ def test_make_from_similarity(tmp_path):
     wide = tmp_path / "wide.csv"
     wide.write_text("Id,group,a,b,c\nx,one,1,0,0\ny,one,0.9,0.1,0\nz,two,0,0,1\nw,two,0,0.1,0.9\n")
     s = _s()
-    assert s.run(f"makeFromSimilarity({str(wide)!r}, k=1)"), s.rec.of("error")
+    assert s.run(f"makeFromSimilarity({str(wide)!r}, count=1)"), s.rec.of("error")
     g = s.graph
     pairs = sorted(tuple(sorted((e._n1.label, e._n2.label))) for e in g.edges)
     assert pairs == [("w", "z"), ("x", "y")]

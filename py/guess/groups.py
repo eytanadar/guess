@@ -103,27 +103,27 @@ def install(session):
         return made
 
     @cmd
-    def expand(meta):
-        """expand(metaNode) brings back the nodes a meta-node stands for (also:
+    def expand(node):
+        """expand(node) brings back the nodes a meta-node stands for (also:
         double-click it). Returns them."""
-        if isinstance(meta, str):
-            meta = g._nodes.get(meta)
-        info = groups.get(getattr(meta, "_id", None))
-        if info is None or not isinstance(meta, Node) or not alive(meta):
-            raise GuessError(f"{getattr(meta, '_name', meta)!r} is not a collapsed group")
-        dx = _num(meta.x) + _num(meta.width) / 2 - info["centre"][0]
-        dy = _num(meta.y) + _num(meta.height) / 2 - info["centre"][1]
-        g.remove(meta, keep=False)
+        if isinstance(node, str):
+            node = g._nodes.get(node)
+        info = groups.get(getattr(node, "_id", None))
+        if info is None or not isinstance(node, Node) or not alive(node):
+            raise GuessError(f"{getattr(node, '_name', node)!r} is not a collapsed group")
+        dx = _num(node.x) + _num(node.width) / 2 - info["centre"][0]
+        dy = _num(node.y) + _num(node.height) / 2 - info["centre"][1]
+        g.remove(node, keep=False)
         restored = g.add(info["members"])
         for n in info["members"]:
             if dx or dy:
                 n.x, n.y = _num(n.x) + dx, _num(n.y) + dy
         reconnect()
-        return GSet([x for x in restored if isinstance(x, Node)], f"members of {meta._name}")
+        return GSet([x for x in restored if isinstance(x, Node)], f"members of {node._name}")
 
     def reconnect():
         """Restore stored edges whose endpoints are visible again; an endpoint
-        still inside a collapsed group is represented by that group's meta-node."""
+        still inside a collapsed group is represented by that group's node-node."""
         owner_of = {}
         for mid, info in groups.items():
             for n in info["members"]:
@@ -136,7 +136,7 @@ def install(session):
             return n if alive(n) else None
 
         def _dead(mid):
-            # a meta-node that was itself collapsed into another group
+            # a node-node that was itself collapsed into another group
             for info in groups.values():
                 for m in info["members"]:
                     if m._id == mid:

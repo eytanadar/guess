@@ -116,8 +116,8 @@ to in a directed network, and to everyone they point to. *Katz centrality*
 gives every node a free amount β as well, so it works on any network:
 
 ```python
-f, limit = katzCentrality(alpha=0.1)
-limit                                     # alpha must stay below this: 1/κ₁
+f = katzCentrality(alpha=0.1)
+f.limit                                   # alpha must stay below this: 1/κ₁
 [n.label for n in sortBy(katz)[-3:]]
 ```
 
@@ -251,7 +251,7 @@ held together by many independent paths.
 
 **Variations.** `kComponents(k)` finds the *k-components*: groups in which
 every pair is joined by *k* independent paths (no shared members), largest
-first, in the field `kcomponent`. A k-core only counts ties, so two dense
+first, in the field `kcomponent_class`. A k-core only counts ties, so two dense
 groups joined through a single member can form one k-core; they can't form
 one k-component:
 
@@ -268,7 +268,7 @@ that everyone else hangs off, rather than around separate groups.
 ```python
 makeFromGDF("karate.gdf")
 frLayout()
-corePeriphery()                           # {'core': 5, 'fit': 0.43}
+corePeriphery().fit                       # 0.43; .size is 5
 colorize(core)
 sizeBy(degree, 10, 40)
 showMatrix(order=core)
@@ -279,8 +279,8 @@ showMatrix(order=core)
 **How it works.** `corePeriphery()` looks for the split that best matches
 an ideal pattern: every pair that includes a core member is tied, and no
 pair of peripheral members is (Borgatti and Everett). It stores 1 in `core`
-for core members and returns the core's size and the correlation with the
-ideal. In the matrix, ordered by `core`, the core's rows and columns are
+for core members and returns that field, with the core's size in `.size`
+and the correlation with the ideal in `.fit`. In the matrix, ordered by `core`, the core's rows and columns are
 dense and the periphery's corner is nearly empty. In the karate club the
 core is the instructor, the officer and three of their closest
 associates: `m1`, `m2`, `m3`, `m33`, `m34`.
@@ -289,7 +289,7 @@ associates: `m1`, `m2`, `m3`, `m33`, `m34`.
 same split here, because it groups nodes by how many ties they have:
 
 ```python
-fitBlockModel(2, degreeCorrected=false)
+sbmClusters(2, degreeCorrected=false)
 compareClusters(core, sbm_class)          # 1.0: the same five members
 ```
 
@@ -394,16 +394,16 @@ same followers, or followers who share the same leaders, are examples.
 ```python
 makeFromGDF("karate.gdf")
 frLayout()
-blockmodel(4)
-colorize(position)
-legendFor(position)
+blockModelClusters(4)
+colorize(blockmodel_class)
+legendFor(blockmodel_class)
 ```
 
 ![Four positions in the karate club](img/sna-positions.png)
 
-**How it works.** `blockmodel(k)` compares every pair of members' tie
+**How it works.** `blockModelClusters(count)` compares every pair of members' tie
 profiles (whom they're tied to) by correlation and groups the most
-similar into *k* positions, stored in `position`. The printed *image
+similar into `count` positions, stored in `blockmodel_class`. The printed *image
 matrix* gives the density of ties from each position to each other. A
 dense diagonal cell means a cohesive position. A dense off-diagonal cell
 with a sparse diagonal means a role that serves another, such as followers
@@ -413,8 +413,8 @@ two large positions follow the two sides. A third position, members 5, 6, 7,
 but to almost no one else. A fourth is the pair 25 and 26, who share the
 same few officer-side contacts.
 
-**Variations.** `collapseBy(position)` draws the reduced graph: one node per
-position. Try several *k*: there is no single right number, only
+**Variations.** `collapseBy(blockmodel_class)` draws the reduced graph: one node per
+position. Try several counts: there is no single right number, only
 more or less useful simplifications.
 
 Structural equivalence asks for the *same* contacts. Two
@@ -424,7 +424,7 @@ contacts are similar, counting paths of every length (Leicht, Holme and
 Newman):
 
 ```python
-top = similarTo(m34, method="regular", alpha=0.9, top=3)
+top = similarTo(m34, method="regular", alpha=0.9, count=3)
 [n.label for n in top]
 colorBy(similarity, white, red)
 ```
@@ -506,11 +506,11 @@ mostly point one way (SpringRank, De Bacco, Larremore and Moore). By default
 an edge a → b pulls a one step above b, which suits dominance (a beat b)
 and placement (b hired a's graduates). A link to a blog endorses the blog
 linked, so here the edges are read the other way with `endorsements=true`.
-It stores the position in `rank` and returns the share of ties that agree
-with the ladder:
+It stores the position in `rank` and returns that field, with the share of
+ties that agree with the ladder in `.agreement`:
 
 ```python
-rankNodes(endorsements=true)              # 0.65 of the links agree with the ladder
+rankNodes(endorsements=true).agreement    # 0.65 of the links agree with the ladder
 [n.name for n in sortBy(rank)[-3:]]       # the top: Wonkette, JuanCole, BlogJohnKerry
 ```
 
@@ -738,9 +738,9 @@ score.
 model: the two groups that make the observed friendships most probable.
 
 ```python
-fitBlockModel(2, degreeCorrected=false)   # the plain model
+sbmClusters(2, degreeCorrected=false)     # the plain model
 sorted(n.name for n in g.nodes if n.sbm_class == 1)
-fitBlockModel(2)                          # degree-corrected (the default)
+sbmClusters(2)                            # degree-corrected (the default)
 compareClusters(sbm_class, club)
 ```
 
@@ -768,7 +768,7 @@ each other only through them. Their constraint is the lowest of any family, beca
 in-laws weren't in-laws of each other. Now remove them and see what's left:
 
 ```python
-ss("with")
+saveState("with")
 remove(Medici)
 colorize(component)
 graphStats()
@@ -778,7 +778,7 @@ Computed fields such as `component` and `betweenness` follow the edit:
 they're recalculated the next time they're read. Without the Medici the network
 falls into three pieces: the Acciaiuoli alone, the Pazzi and Salviati
 together, and the other eleven. Their marriages were the glue of the
-elite, which is why marrying into them was worth so much. `ls("with")`
+elite, which is why marrying into them was worth so much. `loadState("with")`
 brings them back.
 
 ## Case study: the formal and the informal organisation [Advanced]{.level}

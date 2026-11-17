@@ -74,12 +74,13 @@ def install(session):
               f"{len(links) / kept ** 2:.3f}" + (f" ({S - kept} unlinked species dropped)" if kept < S else ""))
 
     @cmd
-    def trophicLevels():
+    def trophicLevels(name="trophic"):
         """trophicLevels() computes each species' prey-averaged trophic level
-        (`trophic`: 1 for species that eat nothing in the web, otherwise 1 + the
-        mean level of what it eats), `omnivory` (the spread of its food's
-        levels: 0 = eats on one level) and `role` (basal: eats nothing here;
-        top: nothing eats it; else intermediate). Prints a summary."""
+        (`trophic`, name= another field: 1 for species that eat nothing in the
+        web, otherwise 1 + the mean level of what it eats), `omnivory` (the
+        spread of its food's levels: 0 = eats on one level) and `role`
+        (basal: eats nothing here; top: nothing eats it; else intermediate).
+        Prints a summary and returns the trophic field."""
         gr = g()
         nodes = gr._nodes_list()
         if not nodes:
@@ -99,7 +100,7 @@ def install(session):
         except np.linalg.LinAlgError:
             tl = np.linalg.lstsq(A, b, rcond=None)[0]
         eaten = {f for food in prey.values() for f in food}
-        ftl = gr.addNodeField("trophic", DOUBLE, 1.0)
+        ftl = gr.addNodeField(str(getattr(name, "name", name)), DOUBLE, 1.0)
         fom = gr.addNodeField("omnivory", DOUBLE, 0.0)
         frole = gr.addNodeField("role", STRING, None)
         for sp in nodes:
@@ -111,6 +112,7 @@ def install(session):
         roles = [frole.get(sp) for sp in nodes]
         print(f"trophic levels 1 to {tl.max():.2f} (mean {tl.mean():.2f}); "
               f"basal {roles.count('basal')}, intermediate {roles.count('intermediate')}, top {roles.count('top')}")
+        return ftl
 
     @cmd
     def extinctions(orders=("random", "degree"), trials=10, seed=0, show=True):

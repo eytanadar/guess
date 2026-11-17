@@ -269,7 +269,7 @@ def kick_chart():
         line = [(t, pts[0][1] * math.exp(rate * (t - pts[0][0]))) for t in np.linspace(pts[0][0], t_cap, 25)]
     data = {"size of the disturbance": pts, name: line}
     return plotLine(data, title="How big the disturbance is", xlabel="t", ylabel="‖x‖", logY=true,
-                    dashed=[name], colors={"size of the disturbance": "240,140,30", name: "60,60,60"})
+                    dashed=[name], palette={"size of the disturbance": "240,140,30", name: "60,60,60"})
 
 
 def mode_chart():
@@ -281,7 +281,7 @@ def mode_chart():
     return plotLine({"growth rate of a mode": curve, "this network's eigenvalues": pts, "zero": zero},
                     title="Each eigenvalue is a mode", xlabel="eigenvalue κ of A", ylabel="growth rate",
                     dashed=["zero"], highlight=["this network's eigenvalues"],
-                    colors={"growth rate of a mode": "120,120,200", "this network's eigenvalues": "230,70,60",
+                    palette={"growth rate of a mode": "120,120,200", "this network's eigenvalues": "230,70,60",
                             "zero": "150,150,150"})
 
 
@@ -369,7 +369,7 @@ def sweep_chart():
     return plotLine({"measured rate": sw["pts"], "theory: the deciding mode": theory, "zero": [(bs[0], 0), (bs[-1], 0)]},
                     title="Growth rate of a small kick against coupling", xlabel="coupling b", ylabel="rate",
                     dashed=["theory: the deciding mode", "zero"], highlight=["measured rate"],
-                    colors={"measured rate": "240,140,30", "theory: the deciding mode": "60,60,60", "zero": "150,150,150"})
+                    palette={"measured rate": "240,140,30", "theory: the deciding mode": "60,60,60", "zero": "150,150,150"})
 
 
 def sweep_text():

@@ -616,8 +616,8 @@ def install(session):
                     continue
                 rgb = palette[k % len(palette)]
                 k += 1
-                session.ns["createConvexHull"]([s.nodes[v] for v in grp["nodes"]], f"{rgb},55",
-                                               shape=shapes[grp["kind"]], rotate=True, padding=8)
+                session.ns["encircle"]([s.nodes[v] for v in grp["nodes"]], shapes[grp["kind"]], f"{rgb},55",
+                                       rotate=True, padding=8)
             view.changed()
         summary = ", ".join(f"{v} {k}{'s' if v != 1 else ''}" for k, v in counts.items()) or "no shapes"
         print(f"motifLayout: {summary} (field motif)")

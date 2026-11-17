@@ -214,19 +214,22 @@ def install(session):
         return g.addNode(name, **attrs)
 
     @cmd
-    def addEdge(node1, node2, **attrs):
-        """Add an undirected edge."""
-        return g.addEdge(node1, node2, False, **attrs)
+    def addEdge(source, target, **attrs):
+        """addEdge(source, target) adds an undirected edge between two nodes (by
+        node or name); field values may follow, addEdge(v1, v2, weight=3)."""
+        return g.addEdge(source, target, False, **attrs)
 
     @cmd
-    def addUndirectedEdge(node1, node2, **attrs):
-        """Add an undirected edge between two nodes (by node or name)."""
-        return g.addEdge(node1, node2, False, **attrs)
+    def addUndirectedEdge(source, target, **attrs):
+        """addUndirectedEdge(source, target) adds an undirected edge between two
+        nodes (by node or name), as addEdge does."""
+        return g.addEdge(source, target, False, **attrs)
 
     @cmd
-    def addDirectedEdge(node1, node2, **attrs):
-        """Add a directed edge from node1 to node2."""
-        return g.addEdge(node1, node2, True, **attrs)
+    def addDirectedEdge(source, target, **attrs):
+        """addDirectedEdge(source, target) adds a directed edge from source to
+        target (by node or name)."""
+        return g.addEdge(source, target, True, **attrs)
 
     @cmd
     def remove(seq):

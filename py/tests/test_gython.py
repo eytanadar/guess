@@ -247,7 +247,7 @@ def test_session_log(s, tmp_path):
     s.run(f"log({str(log)!r})")
     s.run("bob.color = red")
     s.run("not valid python (")
-    s.run("stoplog()")
+    s.run("stopLog()")
     assert log.read_text() == "bob.color = red\n"
 
 

@@ -42,7 +42,7 @@ def install(session):
 
     @cmd
     def showSlide(index, duration=1200):
-        """showSlide(k) morphs the graph to slide k's state and moves the camera."""
+        """showSlide(index) morphs the graph to slide index's state and moves the camera."""
         k = int(index)
         if not 0 <= k < len(view.slides):
             raise GuessError(f"no slide {k} (there are {len(view.slides)})")
@@ -60,7 +60,7 @@ def install(session):
 
     @cmd
     def removeSlide(index):
-        """removeSlide(k) deletes slide k."""
+        """removeSlide(index) deletes slide index."""
         k = int(index)
         if not 0 <= k < len(view.slides):
             raise GuessError(f"no slide {k}")
@@ -71,7 +71,7 @@ def install(session):
 
     @cmd
     def moveSlide(index, to):
-        """moveSlide(k, j) moves slide k to position j."""
+        """moveSlide(index, to) moves slide index to position to."""
         s = view.slides.pop(int(index))
         view.slides.insert(int(to), s)
         view.changed()
@@ -79,7 +79,7 @@ def install(session):
 
     @cmd
     def noteSlide(index, note):
-        """noteSlide(k, text) changes slide k's note."""
+        """noteSlide(index, note) changes slide index's note."""
         view.slides[int(index)]["note"] = str(note)
         view.changed()
         announce(int(index))

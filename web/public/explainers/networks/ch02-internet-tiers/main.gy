@@ -99,7 +99,7 @@ dress()
 lg = Legend()
 for t in TIERS:
     lg.add(COLOURS[t], t)
-ss("full")
+saveState("full")
 
 LEVELS = {
     "Everything": None,

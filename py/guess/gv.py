@@ -4,7 +4,7 @@
     neatoLayout()                            stress majorization: distances follow the graph
     sfdpLayout()                             multilevel force layout for large graphs
     fdpLayout(clusters=dept); circoLayout(); twopiLayout(v1); osageLayout(dept)
-    removeOverlap()                          remove node overlaps, keeping the layout's shape
+    prismLayout()                            remove node overlaps, keeping the layout's shape
     graphvizLayout("neato", mode="sgd")      any engine with any Graphviz graph attributes
 
 The page loads Graphviz (about 1 MB) in the background after start-up, like
@@ -309,8 +309,8 @@ def install(session):
         run_layout("osage", {"pack": "8"}, clusters=cluster_arg(clusters))
 
     @cmd
-    def removeOverlap(method="prism", sep=4):
-        """removeOverlap() moves nodes apart until none overlap, keeping the shape
+    def prismLayout(method="prism", sep=4):
+        """prismLayout() moves nodes apart until none overlap, keeping the shape
         of the current layout (Graphviz's PRISM). Works after any layout. method:
         "prism" (default), "voronoi", "scale" (spread evenly), "compress";
         sep is the extra margin in points."""

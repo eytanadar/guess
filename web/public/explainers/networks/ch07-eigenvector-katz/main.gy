@@ -243,7 +243,7 @@ def katz_values(f):
 
 def show_katz(v=None):
     f = float(frac.value)
-    fld, limit = katzCentrality(alpha=(f / 100.0) * (1.0 / KAPPA), beta=1)
+    katzCentrality(alpha=(f / 100.0) * (1.0 / KAPPA), beta=1)
     vals = [nd(v).katz for v in KNAMES]
     plain()
     show_sizes(KNAMES, vals)

@@ -398,7 +398,7 @@ def install(session):
         or ellipse upright; padding= is the room left around the nodes.
         Without a color, each group gets its own (light) colour. Returns the
         shape: .color, .shape, .rotate and .padding change it;
-        removeConvexHull(shape) removes it and removeConvexHulls() removes
+        removeConvexHull(hull) removes it and removeConvexHulls() removes
         them all."""
         if color is None:
             pal = colors.distinctColors(12)
@@ -421,7 +421,7 @@ def install(session):
         return out
 
     def removeConvexHull(hull):
-        """removeConvexHull(shape) removes one shape drawn by encircle."""
+        """removeConvexHull(hull) removes one shape drawn by encircle."""
         view.hulls.pop(hull._id, None)
         view.changed()
 

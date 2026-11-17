@@ -518,8 +518,9 @@ def install(session):
 
     @cmd
     def groupsOfSize(field, smallest, largest=None):
-        """groupsOfSize(field, min[, max]): the nodes (or edges) whose value of
-        field is shared by at least min (and at most max) elements — e.g. drop
+        """groupsOfSize(field, smallest[, largest]): the nodes (or edges) whose
+        value of field is shared by at least smallest (and at most largest)
+        elements — e.g. drop
         tiny communities with showOnly(groupsOfSize(louvain_class, 5))."""
         if not isinstance(field, Field):
             raise GuessError("groupsOfSize needs a field")

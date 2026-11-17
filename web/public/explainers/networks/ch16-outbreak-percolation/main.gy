@@ -329,7 +329,7 @@ def outbreak_chart():
             "cluster size": [(0, h), (max(end, 1), h)]}
     return plotLine(data, title="The outbreak, step by step", xlabel="step", ylabel="people",
                     dashed=["cluster size"], yrange=(0, h * 1.1 + 1),
-                    colors={"infectious": I_COL, "recovered": "130,130,140", "cluster size": CL_LINE})
+                    palette={"infectious": I_COL, "recovered": "130,130,140", "cluster size": CL_LINE})
 
 
 # ---- tab 2: outbreak sizes from GUESS's outbreaks() ---------------------------------------------------
@@ -353,7 +353,7 @@ def sizes_chart():
         return None
     return plotLine({f"T = {hist['T']:.2f}": hist["rows"]}, title="Sizes of 300 outbreaks (spread with duration=3)",
                     xlabel="people infected (bins double in width)", ylabel="share of outbreaks", logX=true,
-                    dots=true, colors=[I_COL])
+                    dots=true, palette=[I_COL])
 
 
 def sizes_text():
@@ -453,7 +453,7 @@ def sweep_chart():
     return plotLine(data, title=f"Large outbreak size against T ({N_BIG} people)", xlabel="transmissibility T",
                     ylabel="share infected in a large outbreak", yrange=(0, 1), xrange=(0, 1),
                     dashed=[k for k in data if k.endswith("theory")],
-                    highlight=[k for k in data if k.endswith("simulated")], colors=cols)
+                    highlight=[k for k in data if k.endswith("simulated")], palette=cols)
 
 
 def sweep_text():

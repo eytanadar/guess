@@ -362,7 +362,7 @@ def curve_chart():
         cols["disease 2, theory"] = D2
         dashed.append("disease 2, theory")
     return plotLine(data, title="People infected, generation by generation", xlabel="generation",
-                    ylabel="people infected", dashed=dashed, colors=cols, yrange=(0, N))
+                    ylabel="people infected", dashed=dashed, palette=cols, yrange=(0, N))
 
 
 # ---- simulate: the two thresholds (cross-immunity) and coinfection ------------------------------------------
@@ -459,7 +459,7 @@ def sweep_chart():
     return plotLine(data, title=f"Cross-immunity: outbreak sizes against φ₁ (φ₂ = {p2:.2f}, c = 3)",
                     xlabel="φ₁, transmission of disease 1", ylabel="share of everyone infected",
                     dashed=["disease 1, theory", "disease 2, theory", "epidemic threshold 1/c", "coexistence threshold"],
-                    highlight=["disease 1", "disease 2"], colors=cols, yrange=(0, 1), xrange=(0, 1))
+                    highlight=["disease 1", "disease 2"], palette=cols, yrange=(0, 1), xrange=(0, 1))
 
 
 def sweep_text():
@@ -493,7 +493,7 @@ def coinf_chart():
     return plotLine(data, title=f"Coinfection: outbreak sizes against φ₁ (φ₂ = {p2:.2f}, c = 3)",
                     xlabel="φ₁, transmission of disease 1", ylabel="share of everyone infected",
                     dashed=["disease 1, theory", "epidemic threshold 1/c", "disease 2 alone (no disease 1 needed)"],
-                    highlight=["disease 1", "disease 2 (needs disease 1)"], colors=cols, yrange=(0, 1), xrange=(0, 1))
+                    highlight=["disease 1", "disease 2 (needs disease 1)"], palette=cols, yrange=(0, 1), xrange=(0, 1))
 
 
 def coinf_text():

@@ -69,7 +69,7 @@ def dress():
 
 
 dress()
-ss("index")
+saveState("index")
 
 # latent semantic analysis: rank-k SVD of the word x page matrix (log counts)
 A = np.array([[np.log1p(words_by_page[i][w]) for i in range(P)] for w in terms])
@@ -95,7 +95,7 @@ xs, ys = [p[0] for p in pts.values()], [p[1] for p in pts.values()]
 for k, (px, py) in pts.items():          # into the same area as the index drawing
     NODE[k].x = (px - min(xs)) / (max(xs) - min(xs)) * 1000
     NODE[k].y = 100 + (py - min(ys)) / (max(ys) - min(ys)) * 550
-ss("lsa")
+saveState("lsa")
 morph("index", 0)
 chosen = [None]
 

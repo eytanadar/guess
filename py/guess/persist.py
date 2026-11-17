@@ -6,7 +6,7 @@ startup script.
     makeFromSession("work.guess")      load one (also: Open… / drag and drop)
     exportApp("app.guess", "ui.py")    a session that runs ui.py when opened with ?app=1
 
-User variables are not saved (use log()/stoplog() to keep a script).
+User variables are not saved (use log()/stopLog() to keep a script).
 """
 import json
 import os

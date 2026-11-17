@@ -364,7 +364,7 @@ def radial():
 def plain_sbm():
     if cp["res"] is None:
         find_core()
-    cp["sbm"] = fitBlockModel(2, degreeCorrected=false)
+    cp["sbm"] = sbmClusters(2, degreeCorrected=false)
     agree = compareClusters(sbm_class, core)
     cp["sbm_nmi"] = agree
 
@@ -383,7 +383,7 @@ def core_text():
         ins["cc" if k == 2 else "cp" if k == 1 else "pp"] += 1
     dens = lambda m, pairs: m / pairs if pairs else 0
     out = (f"**{cn}** nodes in the core (orange, inside), **{pn}** in the periphery (blue, around it). Fit to the "
-           f"ideal pattern (every pair involving a core node linked, no periphery pair linked): **{cp['res']['fit']:.2f}**."
+           f"ideal pattern (every pair involving a core node linked, no periphery pair linked): **{cp['res'].fit:.2f}**."
            "\n\n| | edges | density |\n|---|---|---|\n"
            f"| core–core | {ins['cc']} | {dens(ins['cc'], cn * (cn - 1) / 2):.2f} |\n"
            f"| core–periphery | {ins['cp']} | {dens(ins['cp'], cn * pn):.2f} |\n"
@@ -446,7 +446,7 @@ def build_ranking():
 
 
 def rank_them():
-    RK["share"] = rankNodes()
+    RK["share"] = rankNodes().agreement
     RK["ranked"] = True
     top = max(v.rank for v in g.nodes) or 1
     for v in g.nodes:

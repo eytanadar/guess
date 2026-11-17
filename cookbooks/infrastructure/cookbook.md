@@ -83,7 +83,7 @@ again. Alaska gets the same treatment in the first case study.
 makeFromGDF("world-airports.gdf")
 geoLayout()
 sizeBy(degree, 2, 24)
-colorBy(betweenness, lightgray, red, scale="log")
+colorBy(betweenness, lightgray, red, transform="log")
 g.edges.visible = false
 ```
 
@@ -250,7 +250,7 @@ recipe) to tell them apart.
 ```python
 makeFromGDF("us-airports.gdf")
 geoLayout(projection="albers")
-ss("open")
+saveState("open")
 remove(ANC)
 colorize(component)
 g.edges.color = "150,150,150,60"
@@ -259,13 +259,13 @@ len(giantComponent()), len(component.distinct)
 
 ![Without Anchorage, Alaska falls into pieces](img/infra-anchorage.png)
 
-**How it works.** `ss("open")` saves the network and `remove(ANC)` closes
+**How it works.** `saveState("open")` saves the network and `remove(ANC)` closes
 Anchorage. Computed fields such as `component` follow the change on their
 own: they're recalculated the next time they're read. Colouring by
 component shows what's left. Eight airports were already off the main network (two small
 island systems), and closing Anchorage cuts off 87 more, in 12 new
 pieces, nearly all in Alaska. Closing Atlanta, the busiest hub, strands
-eleven. `ls("open")` reopens it, and `morph("open", 1500)` animates the
+eleven. `loadState("open")` reopens it, and `morph("open", 1500)` animates the
 difference.
 
 # Robustness
@@ -340,13 +340,13 @@ geoDistance()
 hops = shortestPath(BRW, MIA)
 [n.iata for n in hops if n in g.nodes], round(sum(e.km for e in hops if e in g.edges))
 for e in g.edges: e.weight = e.km
-short = shortestPath(BRW, MIA, weighted=true)
+short = shortestPath(BRW, MIA, weight="weight")
 [n.iata for n in short if n in g.nodes], round(sum(e.km for e in short if e in g.edges))
 ```
 
 **How it works.** `geoDistance()` stores each route's great-circle length
 in kilometres, as the edge field `km`. `shortestPath` counts hops by
-default. With `weighted=true` it uses each edge's `weight` as a length,
+default. With `weight="weight"` it uses each edge's `weight` as a length,
 so copying `km` into `weight` gives the shortest route by distance. From
 Utqiaġvik (Barrow), Alaska, to Miami, both answers take three flights
 through Anchorage, but by fewest hops the route goes via Los Angeles
@@ -490,7 +490,7 @@ geoLayout(projection="albers")
 sizeBy(degree, 2, 22)
 g.edges.color = "130,130,130,35"
 _ = robustness(["random", "degree", "betweenness"])
-ss("open")
+saveState("open")
 state = {"closed": []}
 
 def update():
@@ -507,7 +507,7 @@ def close(n):
     update()
 
 def reopen():
-    ls("open")
+    loadState("open")
     state["closed"] = []
     update()
 
@@ -532,7 +532,7 @@ center()
 
 **How it works.**
 
-- **Saving the network.** `ss("open")` saves the full network once.
+- **Saving the network.** `saveState("open")` saves the full network once.
   `reopen()` returns to it with `ls`.
 - **Closing airports.** A click removes that airport. The slider ranks
   airports by routes (`degree`) or `betweenness`, and removes the top *k*.

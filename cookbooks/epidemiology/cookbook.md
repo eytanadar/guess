@@ -605,7 +605,7 @@ This recipe builds a small control room:
 ```python
 makeFromGDF("school-contacts-SIMULATED.gdf")
 import random
-ss("school")
+saveState("school")
 plan = {"immune": [], "log": []}
 
 def choose(strategy, share):
@@ -623,7 +623,7 @@ def choose(strategy, share):
     return []
 
 def setup():
-    ls("school")
+    loadState("school")
     if bubbles.checked:
         remove([e for e in g.edges if e.node1.room != e.node2.room])
     plan["immune"] = choose(strategy.value, coverage.value / 100)

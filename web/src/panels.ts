@@ -185,7 +185,7 @@ export class StylePanel {
         opts.append(labelled("mapping", mode), grad, labelled("legend", legendBox));
         getCode = () => {
           const lines = [mode.value === "grad"
-            ? `colorBy(${ref}, ${colorExpr(c1.value)}, ${colorExpr(c2.value)}, ${JSON.stringify(scale.value)}${mid.checked ? `, middle=${colorExpr(c3.value)}` : ""})`
+            ? `colorBy(${ref}, ${colorExpr(c1.value)}, ${colorExpr(c2.value)}, transform=${JSON.stringify(scale.value)}${mid.checked ? `, middle=${colorExpr(c3.value)}` : ""})`
             : `colorize(${ref})`];
           if (legendBox.checked) lines.push(`legendFor(${ref})`);
           return lines.join("\n");
@@ -635,7 +635,7 @@ export class VarsPanel {
         const morph = el("button", "", "morph to");
         morph.onclick = () => this.host.submit(`morph(${lit}, 1500)`);
         const load = el("button", "", "load");
-        load.onclick = () => this.host.submit(`ls(${lit})`);
+        load.onclick = () => this.host.submit(`loadState(${lit})`);
         row.append(el("span", "ws-name-text", st), morph, load);
         this.root.append(row);
       }

@@ -270,7 +270,7 @@ def install(session):
         return res
 
     @cmd
-    def offspring(cases=None, show=True):
+    def offspring(cases=None, show=True, name="offspring"):
         """offspring() reads a transmission tree (directed edges from infector
         to infected) and counts how many each case infected (its outdegree).
         Returns them with R (the mean), the dispersion k of a negative
@@ -278,7 +278,8 @@ def install(session):
         most transmission), the share who infected no one, and the share of
         transmissions caused by the top 20% of cases. offspring(cases) uses
         only those cases, e.g. offspring(onset < 28); their infections count
-        wherever they lead. Stores the count in the field `offspring`."""
+        wherever they lead. Stores the count in the field `offspring` (name=
+        another)."""
         gr = g()
         if not any(e._directed for e in gr._edges_list()):
             raise GuessError("offspring() needs a directed transmission tree (infector -> infected)")
@@ -287,7 +288,7 @@ def install(session):
         for e in gr._edges_list():
             if e._directed and e._n1 is not e._n2:
                 kids[e._n1] += 1
-        f = gr.addNodeField("offspring", INT, 0)
+        f = gr.addNodeField(str(getattr(name, "name", name)), INT, 0)
         for n, c in kids.items():
             f.set(n, c)
         res = Offspring((n, kids[n]) for n in nodes)

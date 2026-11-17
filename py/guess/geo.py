@@ -170,8 +170,8 @@ def install(session):
         """geoDistance() stores each edge's great-circle length in kilometres
         (from its ends' latitude and longitude fields, as geoLayout finds them)
         in the edge field `km` (or name=...). Use it as a cost:
-        for e in g.edges: e.weight = e.km, then shortestPath(a, b,
-        weighted=true) is the shortest route by distance. Returns the field."""
+        shortestPath(source, target, weight=km) is the shortest route by
+        distance. Returns the field."""
         g = session.graph
         flat, flon = field(lat, LAT_NAMES, "latitude"), field(lon, LON_NAMES, "longitude")
         f = g.addEdgeField(str(name), "DOUBLE", None)

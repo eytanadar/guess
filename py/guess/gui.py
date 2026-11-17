@@ -798,11 +798,11 @@ def install(session):
         return gui.add_timer(fn, seconds, False)
 
     def everyPaced(fn, steps=None, slow=0.9, fast=0.15, ramp=3):
-        """everyPaced(step) calls step() again and again, slow-fast-slow, so a
+        """everyPaced(fn) calls fn() again and again, slow-fast-slow, so a
         process can be followed on screen: `slow` seconds apart for the first
         `ramp` calls, speeding up to `fast`, and slowing down again over the
         last `ramp` calls. Give steps= when the number of calls is known, or
-        let step() return how many calls are left (an int); returning False
+        let fn() return how many calls are left (an int); returning False
         stops. Returns a timer with .stop()."""
         if not callable(fn):
             raise GuessError("everyPaced needs a function to call")
@@ -824,7 +824,7 @@ def install(session):
     session._bind("everyPaced", everyPaced, kind="command")
 
     def linkTo(element, text=None):
-        """linkTo(node) is Markdown for a small chip naming a node (or edge):
+        """linkTo(element) is Markdown for a small chip naming a node (or edge):
         in a Markdown panel, pointing at the chip highlights the element in the
         graph and clicking selects it. Good for listing a queue, a path or
         search results beside the graph:

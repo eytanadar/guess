@@ -164,15 +164,15 @@ class Session:
         self._baseline = {k: id(v) for k, v in self.ns.items()}
 
         def log(filename="session.py"):
-            """Start recording every successful command (save with stoplog())."""
+            """Start recording every successful command (save with stopLog())."""
             self.log_lines = []
             self._log_file = filename
 
-        def stoplog():
+        def stopLog():
             """Stop recording and save the log (offered as a download); replay with execfile."""
             if self.log_lines is None:
                 raise GuessError("not logging; start with log('file.py')")
-            lines = [l for l in self.log_lines if not l.lstrip().startswith(("log(", "stoplog"))]
+            lines = [l for l in self.log_lines if not l.lstrip().startswith(("log(", "stopLog"))]
             text = "\n".join(lines) + "\n"
             self.log_lines = None
             with open(self._log_file, "w", encoding="utf-8") as fh:
@@ -181,7 +181,7 @@ class Session:
             self.emit({"type": "download", "name": os.path.basename(self._log_file), "text": text})
 
         self.register_command("log", log)
-        self.register_command("stoplog", stoplog)
+        self.register_command("stopLog", stopLog)
         self._images = {}         # image source -> key already sent to the front end
         for name in colors.COLORS:
             if name.isidentifier() and not keyword.iskeyword(name):

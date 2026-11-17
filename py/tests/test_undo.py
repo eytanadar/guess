@@ -43,7 +43,7 @@ def test_undo_layout_view_states_and_load(s, tmp_path):
     assert ev(s, "(bob.x, bob.y)") != before
     s.run("undo()")
     assert ev(s, "(bob.x, bob.y)") == before
-    s.run("curvedEdges(); createConvexHull(dept == 'IT'); ss('a')")
+    s.run("curvedEdges(); encircle(dept == 'IT', 'hull'); saveState('a')")
     assert s.view.curvature and s.view.hulls and "a" in s.graph.states
     s.run("undo()")
     assert not s.view.curvature and not s.view.hulls and "a" not in s.graph.states

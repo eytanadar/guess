@@ -61,7 +61,7 @@ for n in g.nodes:
         n.color = "250,250,250"
         n.strokecolor = "60,60,60"
         n.width = n.height = 14
-ss("map")
+saveState("map")
 
 # the bipartite drawing: lines in a row above the stations, in the order of their mean position
 order = sorted((n for n in g.nodes if n.kind == "station"), key=lambda n: (n.x, n.y))
@@ -70,7 +70,7 @@ for i, n in enumerate(order):
 for k, ln in enumerate(sorted(LINES, key=lambda l: sum(160 * c for _, c in LINES[l]) / len(LINES[l]))):
     nd = g.getNodeByName(ln + "_line")
     nd.x, nd.y = 120 + k * 760 / (len(LINES) - 1), 120
-ss("bipartite")
+saveState("bipartite")
 morph("map", 0)
 
 VIEWS = {"Stops in sequence": "stop", "One train between them": "train", "Stations and lines (bipartite)": "member"}

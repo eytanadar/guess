@@ -125,7 +125,7 @@ def test_layouts_place_every_node(s):
 def test_similarity_prediction_patterns(s):
     run(s, "makeSample('karate')")
     G = nx.karate_club_graph()
-    top = ev(s, "similarTo(n0, top=3)")
+    top = ev(s, "similarTo(n0, count=3)")
     jac = {v: len(set(G[0]) & set(G[v])) / len(set(G[0]) | set(G[v])) for v in G if v != 0}
     best = max(jac.values())
     assert ev(s, f"{top[0]._name}.similarity") == pytest.approx(best)

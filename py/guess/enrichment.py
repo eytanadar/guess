@@ -86,7 +86,7 @@ def install(session):
 
     @cmd
     def enrichment(seq, sets, background=None, count=10, smallest=2, show=True):
-        """enrichment(nodes, sets) tests which sets (from readSets, or any
+        """enrichment(seq, sets) tests which sets (from readSets, or any
         {name: [node names]}) are over-represented among the nodes, against
         the background (default: every node in the graph that is in at least
         one set). For each set it gives the overlap k of n nodes, the set's

@@ -158,7 +158,7 @@ def test_show_matrix_numbers_self_loops_and_rectangles():
 def test_map_colouring_crossings_layers_and_spectrum():
     s = _s()
     assert s.run("makeFromMap('usa')"), s.rec.of("error")
-    assert len(s.graph.nodes) == 48 and ev(s, "colorGraph()") <= 5
+    assert len(s.graph.nodes) == 48 and ev(s, "len(colorGraph())") <= 5
     assert all(e.node1.color_class != e.node2.color_class for e in s.graph.edges)
     assert s.run("makeSample('karate')\ncircleLayout()"), s.rec.of("error")
     assert ev(s, "edgeCrossings()") == ev(s, "len(edgeCrossings(pairs=true))") > 0
@@ -215,7 +215,7 @@ def test_scatter_katz_balance_kcomponents_regular():
     assert s.run("plotScatter({'a': [(1, 2), (2, 3)]}, log=true)"), s.rec.of("error")
     # Katz: alpha -> 0 ranks by degree; too big an alpha is refused
     assert s.run("newGraph('k')\nimport networkx as nx\nfromNetworkX(nx.karate_club_graph())"), s.rec.of("error")
-    f, lim = ev(s, "katzCentrality(alpha=0.001)")
+    lim = ev(s, "katzCentrality(alpha=0.001).limit")
     top = ev(s, "max(g.nodes, key=lambda n: n.katz).name")
     assert top == ev(s, "max(g.nodes, key=lambda n: n.degree).name")
     assert not s.run(f"katzCentrality(alpha={lim * 1.01})")
@@ -236,7 +236,7 @@ def test_scatter_katz_balance_kcomponents_regular():
     # regular equivalence: two leaves of the same star score high, though they share... the hub
     assert s.run("newGraph('r')\nfor u, v in [('m1','w1'),('m1','w2'),('m2','w3'),('m2','w4'),('m1','m2')]:\n"
                  "    addNode(u) if u not in [n.name for n in g.nodes] else None\n"
-                 "    addNode(v) if v not in [n.name for n in g.nodes] else None\n    addEdge(u, v)\ntop = similarTo(m1, method='regular', top=1)"), s.rec.of("error")
+                 "    addNode(v) if v not in [n.name for n in g.nodes] else None\n    addEdge(u, v)\ntop = similarTo(m1, method='regular', count=1)"), s.rec.of("error")
     assert ev(s, "list(top)[0].name") == "m2"
 
 
@@ -285,7 +285,7 @@ def test_bow_tie_and_power_law_fit():
     assert s.run("newGraph('bt')\nfor v in ['i', 'c1', 'c2', 'c3', 'o', 'tend', 'tube', 'lone']:\n    addNode(v)\n"
                  "for u, v in [('i','c1'),('c1','c2'),('c2','c3'),('c3','c1'),('c3','o'),('i','tend'),('i','tube'),('tube','o')]:\n"
                  "    addDirectedEdge(g.getNodeByName(u), g.getNodeByName(v))\nsz = bowTie()"), s.rec.of("error")
-    assert ev(s, "sz") == {"core": 3, "in": 1, "out": 1, "tube": 1, "tendril": 1, "other": 1}
+    assert ev(s, "sz.sizes") == {"core": 3, "in": 1, "out": 1, "tube": 1, "tendril": 1, "other": 1}
     assert ev(s, "lone.bowtie") == "other" and ev(s, "tube.bowtie") == "tube"
     # maximum likelihood recovers the exponent of a discrete power law (alpha 2.5 from k = 4)
     r = random.Random(1)
@@ -483,18 +483,18 @@ def test_dendrogram_chart_and_cut_field():
 def test_block_model_fit_lfr_core_periphery_and_ranks():
     s = _s()
     assert s.run("makeSample('karate')"), s.rec.of("error")
-    plain = ev(s, "fitBlockModel(2, degreeCorrected=false, restarts=5)")
+    plain = ev(s, "sbmClusters(2, degreeCorrected=false, restarts=5)")
     hubs = ev(s, "set(n.sbm_class for n in sorted(g.nodes, key=lambda n: -n.degree)[:5])")
     assert len(hubs) == 1                                   # the plain model groups the hubs together
-    assert ev(s, "fitBlockModel(2, restarts=5)")["loglik"] > -745
+    assert ev(s, "sbmClusters(2, restarts=5).loglik") > -745
     assert ev(s, "compareClusters(sbm_class, club)") > 0.5  # degree-corrected: close to the two clubs
     assert s.run("makeLFR(200, mu=0.1, seed=1, layout=false)\nlouvainClusters()"), s.rec.of("error")
     assert ev(s, "compareClusters(louvain_class, community)") > 0.9
     assert s.run("makeBlockModel([10, 40], [[0.9, 0.5], [0.5, 0.02]], seed=1, layout=false)")
-    assert ev(s, "corePeriphery()")["core"] == 10 and ev(s, "all(n.core == (n.block == 0) for n in g.nodes)")
+    assert ev(s, "corePeriphery().size") == 10 and ev(s, "all(n.core == (n.block == 0) for n in g.nodes)")
     assert s.run("newGraph('r')\nfor i in range(4):\n    addNode(f'p{i}')\n"
                  "for i in range(3):\n    addDirectedEdge(g.getNodeByName(f'p{i}'), g.getNodeByName(f'p{i+1}'))")
-    assert ev(s, "rankNodes()") == 1.0 and ev(s, "[n.rank for n in g.nodes] == sorted([n.rank for n in g.nodes], reverse=True)")
+    assert ev(s, "rankNodes().agreement") == 1.0 and ev(s, "[n.rank for n in g.nodes] == sorted([n.rank for n in g.nodes], reverse=True)")
 
 
 def test_dendrogram_paint_matches_groups():
@@ -536,10 +536,10 @@ def test_percolation_and_new_epidemic_models():
 def test_plot_line_series_colours():
     s = _s()
     assert s.run("plotLine({'I': [(0, 1), (1, 2)], 'I theory': [(0, 1), (1, 2.2)]}, title='c', "
-                 "dashed=['I theory'], colors={'I': red, 'I theory': red})"), s.rec.of("error")
+                 "dashed=['I theory'], palette={'I': red, 'I theory': red})"), s.rec.of("error")
     se = _charts(s)[-1]["series"]
     assert se[0]["color"] == se[1]["color"] == 0xFF0000
-    assert s.run("plotLine({'a': [(0, 1)], 'b': [(0, 2)]}, title='d', colors=['0,128,0'])")
+    assert s.run("plotLine({'a': [(0, 1)], 'b': [(0, 2)]}, title='d', palette=['0,128,0'])")
     assert _charts(s)[-1]["series"][0]["color"] == 0x008000
 
 

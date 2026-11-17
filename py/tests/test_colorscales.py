@@ -35,16 +35,16 @@ def test_commands_take_scales():
     assert s.run("colorBy(degree, 'viridis')")
     top = max(s.graph.nodes, key=lambda n: n.degree)
     assert top.color == "253,231,37"
-    assert s.run("colorBy(degree, 'RdBu', center=3)")
+    assert s.run("colorBy(degree, 'RdBu', midpoint=3)")
     assert s.run("colorize(dept, 'Set2')")
     big = max(ev(s, "groupBy(dept)"), key=len)
     assert big[0].color == "102,194,165"                    # the largest group gets the first colour
     assert s.run("colorize(dept, 'YlGnBu')")
     assert ev(s, "generateColors('Blues', 3)") == ["222,235,247", "158,202,225", "49,130,189"]
     assert ev(s, "colorScale('magma').colors(2)") == ["0,0,4", "252,253,191"]
-    lg = ev(s, "GradientLegend('magma', 0, 10)")
+    lg = ev(s, "GradientLegend(palette='magma', lo=0, hi=10)")
     assert lg._ramp["min"] == 0 and lg._ramp["max"] == 10 and len(lg._ramp["stops"]) == 17
-    assert s.run("heatMap(v1, 'turbo')")
+    assert s.run("heatMap(v1, palette='turbo')")
     assert s.run("pieChart([degree, x], palette='Dark2')")
     assert s.run("colorBy(degree, red, blue)")              # colours still work
 

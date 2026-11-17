@@ -152,7 +152,7 @@ def install(session):
 
     @cmd
     def removeLegend(legend):
-        """removeLegend(lg) or removeLegend(2) removes one legend (the number is the
+        """removeLegend(legend) or removeLegend(2) removes one legend (the number is the
         one shown as <legend 2: …>; the × on a legend runs this)."""
         lid = getattr(legend, "_id", legend)
         if lid not in view.legends:

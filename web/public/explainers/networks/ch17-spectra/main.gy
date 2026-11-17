@@ -208,7 +208,7 @@ def hist_chart():
     if th is not None and st["net"] == "random":
         lo, hi = min(lo, math.floor(th[0][0])), max(hi, math.ceil(th[-1][0]))
     return plotLine(data, title=title, xlabel="eigenvalue", ylabel="density", dots=true, dashed=dashed,
-                    highlight=hl, colors=cols, xrange=(lo, hi))      # round numbers at the ends of the axis
+                    highlight=hl, palette=cols, xrange=(lo, hi))      # round numbers at the ends of the axis
 
 
 def hist_text():
@@ -297,7 +297,7 @@ def grow_hist_chart():
             "κ₁": [(float(vals[-1]), 0.0)]}
     return plotLine(data, title="Random graph: eigenvalues of A", xlabel="eigenvalue", ylabel="density", dots=true,
                     dashed=["semicircle"], highlight=["κ₁"], xrange=(math.floor(-2.6 * math.sqrt(c)), math.ceil(c + 2)),
-                    colors={f"eigenvalues (n = {n})": HIST_COL, "semicircle": THEORY_COL, "κ₁": MARK_COL})
+                    palette={f"eigenvalues (n = {n})": HIST_COL, "semicircle": THEORY_COL, "κ₁": MARK_COL})
 
 
 def grow_chart():
@@ -311,7 +311,7 @@ def grow_chart():
             "2√c": [(lo, 2 * math.sqrt(GROW_C)), (hi, 2 * math.sqrt(GROW_C))]}
     return plotLine(data, title="As the network grows (mean degree 6)", xlabel="n", ylabel="eigenvalue", logX=true,
                     dots=true, dashed=["c + 1", "2√c"], yrange=(0, 9),
-                    colors={"κ₁ (largest)": MARK_COL, "c + 1": MARK_COL,
+                    palette={"κ₁ (largest)": MARK_COL, "c + 1": MARK_COL,
                             "next largest (bulk edge)": HIST_COL, "2√c": HIST_COL})
 
 
@@ -375,7 +375,7 @@ def hub_chart():
             "⟨k²⟩/⟨k⟩": [(km, r_) for km, _k1, r_ in pts]}
     return plotLine(data, title="κ₁ against the biggest hub", xlabel="k_max", ylabel="κ₁", logX=true, logY=true,
                     dots=true, highlight=["κ₁ (measured)"], dashed=["√k_max", "⟨k²⟩/⟨k⟩"],
-                    colors={"κ₁ (measured)": MARK_COL, "√k_max": THEORY_COL, "⟨k²⟩/⟨k⟩": HIST_COL})
+                    palette={"κ₁ (measured)": MARK_COL, "√k_max": THEORY_COL, "⟨k²⟩/⟨k⟩": HIST_COL})
 
 
 def hub_text():
