@@ -2809,7 +2809,7 @@ def install(session):
              "x2": cx + (inner + length + 25) * math.cos(a), "y2": cy + (inner + length + 25) * math.sin(a),
              "label": f"{name} ({int((ax == q).sum())})"}
             for q, (a, name) in enumerate(zip(ang, names))]
-        session.view.guides_note = f"position: {pname} ({scale})"
+        session.view.guides_note = f"position: {pname} ({transform})"
         session.view.changed()
         session.flush()
 

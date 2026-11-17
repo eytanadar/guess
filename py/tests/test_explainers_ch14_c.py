@@ -50,7 +50,7 @@ def test_sbm_fit_moves_models_and_starts():
     hist = [h[1] for h in a.ev("st['hist']")]
     assert all(b >= x - 1e-9 for x, b in zip(hist, hist[1:])) and a.ev("st['done']")
     assert a.ev("best_move(dict(st['part']))") is None
-    # the script's likelihood matches GUESS's fitBlockModel
+    # the script's likelihood matches GUESS's sbmClusters
     a.press("Best of 10 starts")
     assert abs(a.ev("loglik(st['part'])") - (-739.3884)) < 0.01
     assert a.ev("loglik(st['part'])") > a.ev("loglik(st['truth'])")       # the optimum beats the real split
