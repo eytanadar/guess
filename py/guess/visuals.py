@@ -91,6 +91,7 @@ class ConvexHull:
 
 class Legend:
     """A legend box on the display. ``l = Legend(); l.add(bob, "managers")``.
+    Legend(field[, title]) explains the current colours by a field, as legendFor does.
 
     Entries snapshot the look of the node, edge or hull at the time they are added.
     """
@@ -178,13 +179,15 @@ class Legend:
             return False
         from .styles import fill_legend
         before = (self._entries, self._ramp)
-        fill_legend(self, f, self._auto.get("title"))
+        fill_legend(self, f, self._auto.get("title"), self._auto.get("mode", "auto"))
         return (self._entries, self._ramp) != before
 
 
 class GradientLegend(Legend):
     """A color ramp legend: GradientLegend(startColor, endColor, min, max[, tickEvery])
-    shows the ramp from min to max, with a tick mark every tickEvery units."""
+    shows the ramp from min to max, with a tick mark every tickEvery units.
+    GradientLegend(field[, title]) shows a numeric field's current colours from
+    its lowest to its highest value (after colorBy), and follows them."""
 
     def __init__(self, view, lid, start, end, lo=0, hi=1, ticks=None):
         super().__init__(view, lid)
@@ -435,7 +438,17 @@ def install(session):
         """All hulls currently shown."""
         return list(view.hulls.values())
 
-    def make_legend():
+    def _is_field(x):
+        from .model import Field
+        if isinstance(x, Field):
+            return True
+        g = session.graph
+        return (isinstance(x, str) and g is not None and colors.parse(x) is None
+                and (x in g.node_schema or x in g.edge_schema or any(k[1] == x for k in getattr(g, "lazy_fields", {}))))
+
+    def make_legend(field=None, title=None):
+        if field is not None:
+            return session._field_legend(field, title, "auto", "Legend")
         lg = Legend(view, view.next_id())
         view.legends[lg._id] = lg
         view.changed()
@@ -443,7 +456,12 @@ def install(session):
     make_legend.__name__ = "Legend"
     make_legend.__doc__ = Legend.__doc__
 
-    def make_gradient(start, end, lo=0, hi=1, ticks=None):
+    def make_gradient(start, end=None, lo=0, hi=1, ticks=None):
+        if _is_field(start):
+            # GradientLegend(degree[, title]): the field's colours from its lowest to highest value
+            return session._field_legend(start, end, "gradient", "GradientLegend")
+        if end is None:
+            raise GuessError("GradientLegend(startColor, endColor, min, max) or GradientLegend(field)")
         lg = GradientLegend(view, view.next_id(), start, end, lo, hi, ticks)
         view.legends[lg._id] = lg
         view.changed()

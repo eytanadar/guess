@@ -2324,10 +2324,12 @@ The display background color, or None when it follows the light/dark theme.
 
 The drawings on the display.
 
-### `GradientLegend(start, end, lo=0, hi=1, ticks=None)`
+### `GradientLegend(start, end=None, lo=0, hi=1, ticks=None)`
 
 A color ramp legend: GradientLegend(startColor, endColor, min, max[, tickEvery])
 shows the ramp from min to max, with a tick mark every tickEvery units.
+GradientLegend(field[, title]) shows a numeric field's current colours from
+its lowest to its highest value (after colorBy), and follows them.
 
 ### `hideOverlappingLabels(on=True)`
 
@@ -2359,9 +2361,10 @@ node, biggest nodes first, then re-places labels that still collide;
 line to labels it places away from their node. Both avoid other labels,
 nodes and edges.
 
-### `Legend()`
+### `Legend(field=None, title=None)`
 
 A legend box on the display. ``l = Legend(); l.add(bob, "managers")``.
+Legend(field[, title]) explains the current colours by a field, as legendFor does.
 
 Entries snapshot the look of the node, edge or hull at the time they are added.
 

@@ -782,6 +782,22 @@ async function hold(task: () => Promise<unknown>) {
   }
 }
 
+/** Strike through printed nodes and edges that were deleted (once per frame). */
+let anyGone = false;
+let goneFrame = 0;
+function markGone() {
+  if (goneFrame) return;
+  goneFrame = requestAnimationFrame(() => {
+    goneFrame = 0;
+    anyGone = false;
+    term.markGone((k, id) => {
+      const ok = k === "n" ? renderer.nodes.has(id) : renderer.edges.has(id);
+      if (!ok) anyGone = true;
+      return ok;
+    });
+  });
+}
+
 function handle(m: FromWorker) {
   switch (m.type) {
     case "status":
@@ -798,9 +814,12 @@ function handle(m: FromWorker) {
       if (renderer.selection.size) syncSelection([]);
       renderer.setScene(m.nodes, m.edges);
       requestAnimationFrame(() => renderer.center([], [], false));
+      markGone();
       break;
     case "patch":
       renderer.applyPatch(m.nodes, m.edges, m.removedNodes, m.removedEdges, m.morph, m.pos);
+      // deleted elements are struck through in the output (and restored by undo)
+      if (m.removedNodes.length || m.removedEdges.length || (anyGone && (m.nodes.length || m.edges.length))) markGone();
       break;
     case "out":
       term.print(m.segs, m.gid);
@@ -1345,6 +1364,12 @@ function renderLegends(legends: LegendRec[]) {
       ends.innerHTML = "<span></span><span></span>";
       ends.children[0].textContent = legendNumber(lg.ramp.min);
       ends.children[1].textContent = legendNumber(lg.ramp.max);
+      if (lg.ramp.title) {
+        const t = document.createElement("div");
+        t.className = "ramp-title";
+        t.textContent = lg.ramp.title;
+        box.append(t);
+      }
       box.append(bar);
       // GradientLegend(…, min, max, tickEvery): tick marks along the ramp
       const span = lg.ramp.max - lg.ramp.min;

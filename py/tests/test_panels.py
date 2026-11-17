@@ -81,3 +81,36 @@ def test_table_command_and_help_message(s):
     s.rec.clear()
     s.run("help(colorize)")
     assert s.rec.of("help")[-1]["topic"] == "colorize"
+
+
+def test_field_value_output_links_elements_with_that_value(s):
+    s.rec.clear()
+    assert s.run("bob.dept")
+    (out,) = s.rec.of("out")
+    (seg,) = out["segs"]
+    assert seg["g"] == ["'IT'"] and seg["q"] == "dept == 'IT'"
+    assert {i for _k, i in seg["x"]} == set(ev(s, "[n._id for n in (dept == 'IT')]"))
+    assert s.ns["_"] == "IT"
+    s.rec.clear()
+    assert s.run("g.nodes.dept")                                     # many elements: plain display
+    assert "q" not in s.rec.of("out")[0]["segs"][0]
+    s.rec.clear()
+    assert s.run("bob.dept.lower()")                                 # a call: plain
+    assert s.rec.of("out")[0]["segs"] == ["'it'"]
+
+
+def test_legend_and_gradient_legend_take_a_field(s):
+    assert s.run("colorize(dept); lg = Legend(dept)")
+    lg = s.ns["lg"]
+    assert lg._auto["field"] == "dept" and [e["t"] for e in lg._entries] == ["IT", "Sales"]
+    assert s.run("colorBy(freq, white, red); gl = GradientLegend(freq)")
+    gl = s.ns["gl"]
+    assert gl._ramp and gl._ramp["title"] == "freq" and not gl._entries
+    vals = ev(s, "g.edges.freq")
+    assert (gl._ramp["min"], gl._ramp["max"]) == (min(vals), max(vals))
+    assert s.run("colorBy(freq, white, blue)")                      # follows the colours
+    assert s.ns["gl"]._ramp["to"] == 0x0000FF
+    assert s.run("GradientLegend(freq, 'Frequency')")
+    assert max(s.view.legends.values(), key=lambda x: x._id)._ramp["title"] == "Frequency"
+    assert not s.run("GradientLegend(dept)")                        # not numeric
+    assert s.run("GradientLegend(white, red, 0, 10)")               # the old form still works

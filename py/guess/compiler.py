@@ -18,7 +18,8 @@ Stage 2 (AST):
     (on query sets: intersection, union, complement). In the test of an if, while,
     conditional expression, assert or comprehension filter they stay plain Python.
   * bare-name statement     -> ``__autocall__(name)`` (``randomLayout`` without parens)
-  * top-level expressions   -> ``__display__(value)`` (interactive echo)
+  * top-level expressions   -> ``__display__(value)`` (interactive echo);
+                               ``x.field`` -> ``__display_attr__(x, "field")``
   * rebinding a protected name (``g = 5``) at module scope is a compile error
 """
 import ast
@@ -469,7 +470,13 @@ class _Transformer(ast.NodeTransformer):
             hush = stmt.end_lineno in quiet and last_on_row.get(stmt.end_lineno) == i
             new = self.visit(stmt)
             if self.interactive and isinstance(stmt, ast.Expr) and isinstance(new, ast.Expr) and not hush:
-                new.value = _call("__display__", new.value)
+                v = new.value
+                if (isinstance(v, ast.Call) and isinstance(v.func, ast.Name) and v.func.id == "__ggetattr__"
+                        and len(v.args) == 2 and not v.keywords):
+                    # v4.dept: shown linked to every element with the same value
+                    new.value = _call("__display_attr__", *v.args)
+                else:
+                    new.value = _call("__display__", v)
             body.extend(new if isinstance(new, list) else [new])
         node.body = body
         return node

@@ -220,6 +220,8 @@ body { display: flex; flex-direction: column; }
 .grp.hot, .obj.hot { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
 .obj.hot { background: rgba(255, 31, 107, 0.1); }
 /* output about a graph that's no longer shown: not linked */
+/* printed nodes and edges since deleted */
+.obj.gone, .obj.gone .obj { text-decoration: line-through; text-decoration-thickness: 1.5px; opacity: 0.6; cursor: default; }
 .result.stale .obj, .result.stale .grp { color: var(--muted, #888); text-decoration: none; cursor: default; }
 .result.stale { opacity: 0.75; }
 @keyframes cell-flash { from { background: rgba(255, 31, 107, 0.18); } to { background: transparent; } }
@@ -297,6 +299,7 @@ body { display: flex; flex-direction: column; }
 .legend-row:has(.sw-x) { color: var(--muted); font-style: italic; }
 .ramp { width: 160px; height: 10px; border-radius: 2px; border: 1px solid rgba(0, 0, 0, 0.2); }
 .ramp-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+.ramp-title { font-size: 12px; margin: 0 16px 3px 0; }
 .echo .fn { text-decoration: underline dotted var(--muted); text-underline-offset: 3px; cursor: help; }
 
 /* ---- dock: user panels and charts ---- */

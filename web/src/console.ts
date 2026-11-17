@@ -151,12 +151,19 @@ export class Console {
     });
     this.out.addEventListener("click", (ev) => {
       const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-k]");
-      if (!t || t.closest(".stale") || window.getSelection()?.toString()) return;
+      if (!t || t.closest(".stale") || t.classList.contains("gone") || window.getSelection()?.toString()) return;
       this.host.click(collect(t), ev, t.dataset.q);
     });
     this.out.addEventListener("contextmenu", (ev) => {
+      // right-click on selected output: act on the nodes and edges selected
+      const picked = this.selectedItems(ev.target as Node);
+      if (picked) {
+        ev.preventDefault();
+        if (picked.length) this.host.context(picked, ev);
+        return;
+      }
       const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-k]");
-      if (!t || t.closest(".stale")) return;
+      if (!t || t.closest(".stale") || t.classList.contains("gone")) return;
       ev.preventDefault();
       this.host.context(collect(t), ev, t.dataset.q);
     });
@@ -939,10 +946,69 @@ export class Console {
     });
   }
 
+  /** The nodes and edges in the text selected in the output, when `target`
+   *  (what was right-clicked) is part of it; null when there's no such selection.
+   *  A name cut off by the selection counts whole (selecting "25" of v25 means
+   *  v25), and the selection grows to show that. */
+  private selectedItems(target: Node): Item[] | null {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+    const range = sel.getRangeAt(0);
+    if (!this.out.contains(range.commonAncestorContainer) || !range.intersectsNode(target)) return null;
+    const out: Item[] = [];
+    const seen = new Set<string>();
+    const add = (it: Item) => {
+      if (!seen.has(it[0] + it[1])) (seen.add(it[0] + it[1]), out.push(it));
+    };
+    const spans: HTMLElement[] = [];
+    this.out.querySelectorAll<HTMLElement>(".result:not(.stale) [data-k]").forEach((x) => {
+      if (!range.intersectsNode(x) || x.classList.contains("gone")) return;
+      const k = x.dataset.k;
+      if (k === "n" && x.classList.contains("end")) {
+        // one end of an "a-b" edge: the node, unless the edge itself is selected
+        const conn = x.parentElement?.querySelector(".conn");
+        if (conn && range.intersectsNode(conn)) return;
+        add(["n", Number(x.dataset.id)]);
+      } else if (k === "n") {
+        add(["n", Number(x.dataset.id)]);
+      } else if (k === "e") {
+        const conn = x.querySelector(".conn");
+        if (conn && !range.intersectsNode(conn)) return;   // only its ends' names
+        add(["e", Number(x.dataset.id)]);
+      } else if (!x.querySelector("[data-k]")) {
+        // a summary standing for elements ("12 edges", a value of a field)
+        for (const it of collect(x)) add(it);
+      } else return;
+      spans.push(x);
+    });
+    if (spans.length) {
+      // show what counts: grow the selection to whole names
+      const r = range.cloneRange();
+      const first = spans[0], last = spans[spans.length - 1];
+      if (first.contains(r.startContainer) || first === r.startContainer) r.setStartBefore(first);
+      if (last.contains(r.endContainer) || last === r.endContainer) r.setEndAfter(last);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+    return out;
+  }
+
+  /** Strike through printed nodes and edges that no longer exist (deleted);
+   *  `exists` says whether an element is still in the graph. */
+  markGone(exists: (k: "n" | "e", id: number) => boolean) {
+    this.out.querySelectorAll<HTMLElement>(".result:not(.stale) [data-k=n], .result:not(.stale) [data-k=e]").forEach((x) => {
+      const gone = !exists(x.dataset.k as "n" | "e", Number(x.dataset.id));
+      if (gone !== x.classList.contains("gone")) {
+        x.classList.toggle("gone", gone);
+        x.title = gone ? "Deleted" : "";
+      }
+    });
+  }
+
   // ---- linked hovering ---------------------------------------------------------------
   private onOver(ev: MouseEvent) {
     const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-k]");
-    this.setHot(t && this.out.contains(t) && !t.closest(".stale") ? t : null, ev);
+    this.setHot(t && this.out.contains(t) && !t.closest(".stale") && !t.classList.contains("gone") ? t : null, ev);
   }
 
   private setHot(t: HTMLElement | null, ev: MouseEvent | null) {

@@ -65,6 +65,7 @@ class Session:
         self._refreshing = None   # the chart id being recomputed
         self.ns.update(runtime.HELPERS)
         self.ns["__display__"] = self.display
+        self.ns["__display_attr__"] = self.display_attr
         self.ns["__gnot__"] = self._gnot
         self.ns["__gfstr__"] = fstring
         self.ns["print"] = self._print
@@ -874,7 +875,7 @@ class Session:
         states and styles, for the Variables panel."""
         import types
         out = []
-        hidden = set(runtime.HELPERS) | {"__name__", "__builtins__", "__display__", "__gnot__", "__gfstr__", "_", "print", "__result__"}
+        hidden = set(runtime.HELPERS) | {"__name__", "__builtins__", "__display__", "__display_attr__", "__gnot__", "__gfstr__", "_", "print", "__result__"}
         for name, v in self.ns.items():
             if name in hidden or name.startswith("__") or name in self.system:
                 continue
@@ -1028,6 +1029,18 @@ class Session:
             self.system["showChart"][0](value)
             return
         self.emit({"type": "out", "segs": [segment(value)], "gid": self.graph_gen})
+
+    def display_attr(self, obj, name):
+        """Show obj.name; a node's or edge's field value (v4.dept) is linked to
+        every node (edge) with that value, so pointing at it shows them all and
+        right-clicking acts on the query dept == 'dept4'."""
+        from .runtime import ggetattr
+        value = ggetattr(obj, name)
+        seg = _value_seg(obj, name, value)
+        if seg is None:
+            return self.display(value)
+        self.ns["_"] = value
+        self.emit({"type": "out", "segs": [seg], "gid": self.graph_gen})
 
     # ---- render state ---------------------------------------------------------
     def node_record(self, n):
@@ -1621,6 +1634,33 @@ def segment(value, depth=0):
             out["a"] = value.annotation
         return out
     return _safe_repr(value)
+
+
+def _value_seg(obj, name, value):
+    """The segment for a field value read off one element: the value, linked to
+    all the elements of its kind sharing it (None if not a plain field value)."""
+    from .model import NODE, EDGE
+    if not isinstance(obj, (Node, Edge)) or name.startswith("_") or value is None:
+        return None
+    if not isinstance(value, (str, int, float, bool)):
+        return None
+    g = obj._g
+    kind = NODE if isinstance(obj, Node) else EDGE
+    schema = g.node_schema if kind == NODE else g.edge_schema
+    f = schema.get(name) or g._lazy_field(kind, name)
+    if f is None:
+        return None
+    try:
+        members = [x for x in f.elements() if f.get(x) == value]
+    except Exception:  # noqa: BLE001
+        return None
+    if not members:
+        return None
+    # the name that reaches the field in a query (an edge field also on nodes: Edge.x)
+    qname = name if kind == NODE or name not in g.node_schema else f"Edge.{name}"
+    q = f"{qname} == {value!r}"
+    k = "n" if kind == NODE else "e"
+    return {"g": [_safe_repr(value)], "a": q, "q": q, "x": [[k, x._id] for x in members[:MAX_EXTRA]]}
 
 
 def _many_groups(value):

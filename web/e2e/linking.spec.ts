@@ -412,3 +412,50 @@ test("commands print linked nodes and edges: predictLinks(add=true)", async ({ p
   await cell.locator(".obj.node").first().hover();
   expect(await lastError(page)).toBeNull();
 });
+
+test("a printed field value links every element with that value", async ({ page }) => {
+  await boot(page);
+  await run(page, "v4.dept");
+  const val = page.locator(".result").last().locator(".grp");
+  await val.hover();
+  const n = await page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size as number);
+  await run(page, "len(dept == v4.dept)");
+  await expect(page.locator(".result").last()).toHaveText(String(n));
+  expect(n).toBeGreaterThan(1);
+  await val.click({ button: "right" });
+  await expect(page.locator("#menu .menu-head")).toContainText("dept ==");
+});
+
+test("deleted nodes are struck through in the output; undo restores them", async ({ page }) => {
+  await boot(page);
+  await run(page, "v4");
+  const v4 = page.locator(".result").last().locator(".obj.node");
+  await run(page, "removeNode(v4)");
+  await expect(v4).toHaveClass(/gone/);
+  await run(page, "undo()");
+  await expect(v4).not.toHaveClass(/gone/);
+});
+
+test("right-clicking selected output acts on just the selected nodes, whole names", async ({ page }) => {
+  await boot(page);
+  await run(page, "dept == 'dept4'");
+  const objs = page.locator(".result").last().locator(".obj.node");
+  const names = await objs.evaluateAll((els) => els.slice(0, 3).map((e) => e.textContent));
+  // select from the middle of the first name to the middle of the third
+  await objs.first().evaluate((first) => {
+    const third = first.parentElement!.querySelectorAll(".obj.node")[2];
+    const r = document.createRange();
+    r.setStart(first.firstChild!, 1);
+    r.setEnd(third.firstChild!, 1);
+    const s = window.getSelection()!;
+    s.removeAllRanges();
+    s.addRange(r);
+  });
+  await objs.nth(1).click({ button: "right" });
+  await expect(page.locator("#menu .menu-head")).toContainText("3 nodes");
+  expect(await page.evaluate(() => window.getSelection()!.toString())).toBe(names.join(", "));
+  await page.locator("#menu button", { hasText: "Show labels" }).click();
+  const code = await page.locator(".cell-code").last().innerText();
+  for (const nm of names) expect(code).toContain(nm!);
+  expect(code).not.toContain("dept4");
+});

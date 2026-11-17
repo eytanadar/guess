@@ -60,7 +60,7 @@ export interface LegendEntry {
 export interface LegendRec {
   i: number;
   entries: LegendEntry[];
-  ramp?: { from: number; to: number; min: number; max: number; ticks?: number; stops?: [number, number][] };
+  ramp?: { from: number; to: number; min: number; max: number; ticks?: number; stops?: [number, number][]; title?: string };
 }
 
 export interface Overlay {

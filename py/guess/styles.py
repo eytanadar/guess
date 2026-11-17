@@ -127,19 +127,28 @@ def install(session):
         from the lowest to the highest value (for numbers, as after colorBy).
         The legend follows the colours: run colorize or colorBy again and it
         updates (until you add or remove entries yourself)."""
-        f = field_arg(field, "legendFor")
+        return field_legend(field, title, "auto", "legendFor")
+
+    def field_legend(field, title=None, mode="auto", what="legendFor"):
+        """legendFor, Legend(field) and GradientLegend(field)."""
+        f = field_arg(field, what)
         from .visuals import Legend
-        if not [x for x in f.elements() if f.get(x) is not None]:
+        vals = [f.get(x) for x in f.elements() if f.get(x) is not None]
+        if not vals:
             raise GuessError(f"field '{f.name}' has no values")
+        if mode == "gradient" and not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in vals):
+            raise GuessError(f"{what} needs a numeric field; '{f.name}' has values like {vals[0]!r} "
+                             f"(Legend({f.name}) lists the values)")
         # one live legend per field: asking again replaces the earlier one
         for prev in [x for x in view.legends.values() if x._auto and x._auto["field"] == f.name and x._auto["kind"] == f.kind]:
             view.legends.pop(prev._id, None)
         lg = Legend(view, view.next_id())
-        lg._auto = {"field": f.name, "kind": f.kind, "title": title}
-        fill_legend(lg, f, title)
+        lg._auto = {"field": f.name, "kind": f.kind, "title": title, **({"mode": mode} if mode != "auto" else {})}
+        fill_legend(lg, f, title, mode)
         view.legends[lg._id] = lg
         view.changed()
         return lg
+    session._field_legend = field_legend
 
     @cmd
     def removeLegend(legend):
@@ -219,10 +228,11 @@ def _is_all(seq, g, kind):
     return isinstance(seq, GSet) and getattr(seq, "annotation", None) == ("g.nodes" if kind == NODE else "g.edges")
 
 
-def fill_legend(lg, f, title=None):
+def fill_legend(lg, f, title=None, mode="auto"):
     """(Re)build a legend's entries from the current colours of field f: a ramp
     when the colours follow the values smoothly, otherwise one entry per value
-    (the 12 largest and "… N more" when there are many)."""
+    (the 12 largest and "… N more" when there are many). mode="gradient" always
+    makes the ramp (numbers only), mode="values" always lists the values."""
     elems = f.elements()
     vals = [(x, f.get(x)) for x in elems if f.get(x) is not None]
     lg._entries, lg._ramp = [], None
@@ -230,11 +240,13 @@ def fill_legend(lg, f, title=None):
         return
     numeric = all(isinstance(v, (int, float)) and not isinstance(v, bool) for _x, v in vals)
     groups = [grp for grp in group_by(elems, f) if f.get(grp[0]) is not None]
-    if numeric and len(groups) > 12 and _looks_like_gradient(groups, f):
+    if numeric and (mode == "gradient" or (mode == "auto" and len(groups) > 12 and _looks_like_gradient(groups, f))):
         lo = min(vals, key=lambda p: p[1])
         hi = max(vals, key=lambda p: p[1])
         lg._ramp = {"from": colors.to_rgba_int(lo[0].color)[0], "to": colors.to_rgba_int(hi[0].color)[0],
                     "min": _num(lo[1]), "max": _num(hi[1])}
+        if title or mode == "gradient":
+            lg._ramp["title"] = str(title or f.name)
         # the colours actually used, sampled at evenly spaced values, so a
         # midpoint colour or an uneven scale shows in the ramp as it does on the graph
         span = hi[1] - lo[1]
