@@ -89,6 +89,16 @@ const graphCentre = async () => {
   return [b.x + b.width / 2, b.y + b.height / 2];
 };
 
+// open a menu (and the submenu holding the item, if any), then click the item
+async function menuItem(title, sel) {
+  await page.locator(".menu-title", { hasText: title }).click();
+  const pop = page.locator(".menu-root", { has: page.locator(".menu-title", { hasText: title }) }).locator(".menu-pop").first();
+  const target = pop.locator(sel).first();
+  const sub = await target.evaluate((el) => el.closest(".menu-sub")?.querySelector(".menu-sub-title")?.textContent ?? null);
+  if (sub) await pop.locator(".menu-sub-title", { hasText: sub }).first().hover();
+  await target.click();
+}
+
 const SHOTS = {
   "hover-edge": async () => {
     await run("center(v128-v14)");
@@ -176,14 +186,12 @@ const SHOTS = {
   },
   table: async () => {
     await run("colorize(dept)\nselect(dept == 'dept3')");
-    await page.locator(".menu-title", { hasText: "View" }).click();
-    await page.locator("#btn-table").click();
+    await menuItem("View", "#btn-table");
     await sleep(800);
     await shotEl("table", "#table-pane");
   },
   filter: async () => {
-    await page.locator(".menu-title", { hasText: "View" }).click();
-    await page.locator("#btn-filter").click();
+    await menuItem("View", "#btn-filter");
     await sleep(500);
     await page.locator("#side-filter select").first().selectOption("e:freq");
     await page.locator("#side-filter .pf-form button").click();
@@ -196,8 +204,7 @@ const SHOTS = {
   },
   timeline: async () => {
     await run("addNodeField('year', INT, 0)\nfor n in g.nodes:\n    n.year = 1995 + n.totaldegree % 12");
-    await page.locator(".menu-title", { hasText: "View" }).click();
-    await page.locator("#btn-timeline").click();
+    await menuItem("View", "#btn-timeline");
     await sleep(500);
     await page.locator(".timeline select").first().selectOption("year");
     await sleep(500);

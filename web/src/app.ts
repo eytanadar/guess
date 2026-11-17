@@ -33,7 +33,7 @@ const $ = (sel: string) => document.querySelector<HTMLElement>(sel);
 
 /** The visible text of a button (without its shortcut). */
 function labelOf(el: HTMLElement): string {
-  return [...el.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").trim()
+  return el.getAttribute("aria-label") || [...el.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").trim()
     || el.textContent?.trim() || "";
 }
 
@@ -79,6 +79,11 @@ export class AppChrome {
       return b;
     }
     b.textContent = text ?? labelOf(src);
+    const ic = src.querySelector(".ticon");
+    if (ic) {
+      b.prepend(ic.cloneNode(true));
+      b.classList.add("with-icon");
+    }
     b.title = src.title;
     b.onclick = () => src.click();
     // mirror pressed and disabled states (tools, panel toggles, Stop)

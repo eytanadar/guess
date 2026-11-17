@@ -46,7 +46,12 @@ const isolation = {
   "Cross-Origin-Embedder-Policy": "require-corp",
 };
 
+// GUESS 2.<build date>: the date the page was built (or the dev server started)
+const now = new Date();
+const BUILD = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+
 export default defineConfig({
+  define: { __GUESS_BUILD__: JSON.stringify(BUILD) },
   // relative asset paths so the build works from any sub-path (e.g. GitHub Pages)
   base: "./",
   server: { headers: isolation, fs: { allow: [".."] } },

@@ -240,6 +240,8 @@
 </div></div>
 <hr />
 <button role="menuitem" id="btn-github" title="Source code, issues and releases (opens in a new tab)">GitHub</button>
+<hr />
+<button role="menuitem" id="btn-about" title="Version, author and credits">About GUESS</button>
 </div>
 </div>
 </nav>
@@ -314,6 +316,30 @@
       <p>An edge table (Source, Target, …), a node table (Id, Label, …), an adjacency matrix or an adjacency list — comma, tab or semicolon separated.</p>
       <textarea rows="12" spellcheck="false" placeholder="Source,Target,Weight&#10;a,b,2&#10;b,c,1"></textarea>
       <div class="paste-actions"><button id="paste-cancel">Cancel</button><button id="paste-load" class="primary">Load</button></div>
+    </dialog>
+    <dialog id="about-dialog" class="about-dialog" aria-labelledby="about-title">
+      <form method="dialog">
+        <div class="about-head">
+          <span class="about-logo" aria-hidden="true">GUESS</span>
+          <div>
+            <h3 id="about-title">GUESS: the Graph Exploration System</h3>
+            <p class="about-version">Version <span id="about-version"></span></p>
+          </div>
+        </div>
+        <p>A language and interface for exploring graphs. You query and change the
+          network in Gython, a Python dialect with graph operators, and the console,
+          the display, the tables and the charts all stay linked to each other.</p>
+        <dl class="about-facts">
+          <dt>Author</dt><dd>Eytan Adar</dd>
+          <dt>Version</dt><dd><span id="about-version-2"></span> (version 2, built <span id="about-date"></span>)</dd>
+          <dt>Original</dt><dd>GUESS 1 (Java, 2006). E. Adar, “GUESS: A Language and Interface for Graph Exploration,” CHI 2006.</dd>
+          <dt>Runs on</dt><dd>Pyodide (Python in the browser), PixiJS, CodeMirror, Vega-Lite and Graphviz (WebAssembly)</dd>
+        </dl>
+        <div class="about-actions">
+          <button type="button" id="about-copy" title="Copy the version, for a bug report">Copy version</button>
+          <button value="close" class="primary" autofocus>Close</button>
+        </div>
+      </form>
     </dialog>
     <div id="tip" class="tip" hidden></div>
     <div id="menu" class="menu" hidden></div>

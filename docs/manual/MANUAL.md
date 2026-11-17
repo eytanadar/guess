@@ -145,6 +145,10 @@ There are several ways in:
   **Help → Networks explainers** small interactive programs for each section
   of Mark Newman's textbook *Networks*. **Help → GitHub** opens the project's
   page, with the source code and issue tracker.
+- **Help → About GUESS** shows the version, the author (Eytan Adar) and what
+  GUESS is built on. The version is 2 followed by the date the page was
+  built, e.g. `2.20261117`. *Copy version* puts it on the clipboard, for a
+  bug report.
 
 ![The help panel, searching for "color". Commands come first, then examples.](img/help.png){width=85%}
 
@@ -2134,15 +2138,17 @@ copy it into a script.
 
 ## 13.4 The click tools
 
-The tools next to the menus turn clicks into commands:
+The tools next to the menus turn clicks into commands. Each is an icon
+drawn from nodes and edges; hover one for its name and what it does. The
+pressed tool is drawn in the accent colour.
 
-- **Select** (the default) is everything above.
-- **Path**: click two nodes to colour a shortest path between them.
-- **Heat**: click a node for a heat map of the distance from it: red near
+- **Select** (a node with its neighbourhood; the default) is everything above.
+- **Path** (a route through nodes): click two nodes to colour a shortest path between them.
+- **Heat** (rings of nodes): click a node for a heat map of the distance from it: red near
   it, through violet, to blue for the farthest (grey: unreachable).
-- **Paint**: click nodes to paint them with the colour next to the tools.
+- **Paint** (a drop of colour): click nodes to paint them with the colour next to the tools.
   Shift-click paints the neighbours too.
-- **◎ Lens** (or press **L**, which switches between Select and Lens): an
+- **Lens** (a circle with labels beside it; or press **L**, which switches between Select and Lens): an
   excentric labelling lens. A circle follows the pointer, and
   the labels of the nodes under it are listed beside it, each joined to its
   node by a line, in their nodes' colours (Fekete and Plaisant 1999, extended
@@ -2154,7 +2160,7 @@ The tools next to the menus turn clicks into commands:
   lens is on. `excentricLens(radius=80,
   autoSize=true)` turns it on from code; with `autoSize` it grows over sparse
   areas and shrinks over dense ones.
-- **Cluster**: label clusters by hand. It first asks which field to use:
+- **Cluster** (a hull around nodes): label clusters by hand. It first asks which field to use:
   `cluster`, or `cluster1`, `cluster2`, … when that is taken. The field is
   made if it doesn't exist. If you name one that already has values, it asks
   whether to clear it (`g.nodes.cluster = None`, undoable) or keep the values
@@ -2227,6 +2233,7 @@ several things are selected, the function receives the selection.
 | **Watch** on a cell | re-run it whenever the graph changes, or when you select nodes on the display (if the code uses `sel`) |
 | **Pin** on a watched cell | show its live output in a side panel, which stays in view as the console scrolls; close the panel to put it back |
 | `[n]` | fold or unfold a cell's output; hover it to highlight everything that cell changed |
+| **Hide** on a cell | shrink the cell to one muted line, without its output, to keep the console tidy; click the line (or **Show**) to bring it back |
 | `;` at the end of a line | don't print its value (`louvainClusters();`) |
 
 *View → Console → Vim keys in the code cell* switches the editor to vim bindings.

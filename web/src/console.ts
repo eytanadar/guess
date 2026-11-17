@@ -686,11 +686,20 @@ export class Console {
     num.title = "Collapse/expand output · hover: what this cell changed";
     num.onmouseenter = () => this.host.cellHover?.(n);
     num.onmouseleave = () => this.host.cellHover?.(null);
-    num.onclick = () => root.classList.toggle("collapsed");
+    num.onclick = () => {
+      if (root.classList.contains("minimized")) setHidden(false);
+      else root.classList.toggle("collapsed");
+    };
     const src = el("div", "cell-code echo");
     src.dataset.code = code;
     src.append(this.renderCode(code));
     src.title = "Double-click to edit";
+    src.addEventListener("click", (ev) => {
+      // a hidden cell: clicking its line shows it again
+      if (!root.classList.contains("minimized")) return;
+      ev.stopPropagation();
+      setHidden(false);
+    }, true);
     src.ondblclick = (ev) => {
       ev.preventDefault();
       window.getSelection()?.removeAllRanges();
@@ -712,7 +721,16 @@ export class Console {
     pin.textContent = "Pin";
     pin.title = "Show this watched cell's live output in a side panel";
     pin.onclick = () => this.togglePin(root);
-    actions.append(editBtn, rerun, watch, pin);
+    const hide = el("button", "cell-hide");
+    const setHidden = (h: boolean) => {
+      root.classList.toggle("minimized", h);
+      hide.textContent = h ? "Show" : "Hide";
+      hide.title = h ? "Show this cell again" : "Hide this cell: shrink it to one line (click the line to show it)";
+      src.title = h ? "Hidden: click to show" : "Double-click to edit";
+    };
+    hide.onclick = () => setHidden(!root.classList.contains("minimized"));
+    setHidden(false);
+    actions.append(editBtn, rerun, watch, pin, hide);
     head.append(num, src, actions);
     const out = el("div", "cell-out");
     root.append(head, out);

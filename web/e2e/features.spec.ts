@@ -63,7 +63,8 @@ test("work is autosaved and restored on reload", async ({ page }) => {
   await page.reload();
   await expect(page.locator(".console-out")).toContainText("Restored your previous session", { timeout: 90_000 });
   await run(page, "print(v1.color, getStates(), 'v2' in dir())");
-  await expect(page.locator(".console-out .stdout").last()).toHaveText("red ['x'] False\n");
+  // v1.color prints as a linked swatch, so the line is linked output (its text: red ['x'] False)
+  await expect(page.locator(".cell").last().locator(".result").last()).toHaveText(/red\s*\['x'\] False/);
 });
 
 test("app mode runs the bundled demo", async ({ page }) => {

@@ -220,7 +220,8 @@ test("the history panel steps back and forward and shows what each step changed"
   await expect(steps.last()).toHaveClass(/undone/);
   await expect(page.locator(".cell.undone")).toHaveCount(1);
   await run(page, "print('fresh' in [n.name for n in g.nodes], v1.size)");
-  await expect(page.locator(".stdout").last()).toHaveText("False 60.0");
+  // (v1.size printed is linked output, so it isn't plain stdout)
+  await expect(page.locator(".cell").last().locator(".result, .stdout").last()).toHaveText("False 60.0");
   // the slider goes forward again
   const slider = page.locator(".history-slider");
   await slider.focus();

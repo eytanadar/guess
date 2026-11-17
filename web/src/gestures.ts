@@ -66,7 +66,7 @@ export const GESTURE_SECTIONS: { title: string; items: Gesture[] }[] = [
         what: "Colours every node by its distance from that node, red (near) through violet to blue (far), grey if unreachable (heatMap(node)); the distance is stored in the hops field.", img: "heat" },
       { id: "paint", title: "Paint", how: "Choose Paint, then click nodes · shift-click paints the neighbours too",
         what: "paint(node, colour) or paint(node, colour, 1)." },
-      { id: "lens", title: "Excentric lens", how: "Choose ◎ Lens (or press L), then point at nodes · wheel resizes · Shift+wheel scrolls · click pins it",
+      { id: "lens", title: "Excentric lens", how: "Choose the Lens tool (or press L), then point at nodes · wheel resizes · Shift+wheel scrolls · click pins it",
         what: "Lists the labels of the nodes under the lens beside it, joined by lines, with a bar chart by colour. Pinned, click a label to select its node (Shift: add), click bars to filter, and Select N takes them all. Esc releases it." },
     ],
   },

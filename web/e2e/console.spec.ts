@@ -177,3 +177,47 @@ test("the code box suggests demo() on a first visit, then commands that fit the 
   }
   expect(karate.join(" ")).not.toContain("dept");
 });
+
+test("cells hide to one line and show again", async ({ page }) => {
+  await boot(page);
+  await run(page, "dept == 'dept1'");
+  const cell = page.locator(".cell").last();
+  await cell.hover();
+  await cell.locator(".cell-hide").click();
+  await expect(cell).toHaveClass(/minimized/);
+  await expect(cell.locator(".cell-out")).toBeHidden();
+  await expect(cell.locator(".cell-edit")).toBeHidden();
+  await expect(cell.locator(".cell-hide")).toHaveText("Show");
+  // clicking its line shows it again
+  await cell.locator(".cell-code").click();
+  await expect(cell).not.toHaveClass(/minimized/);
+  await expect(cell.locator(".cell-out")).toBeVisible();
+});
+
+test("Help → About GUESS shows the author and version 2.<build date>", async ({ page }) => {
+  await boot(page);
+  await menu(page, "Help", "#btn-about");
+  const dlg = page.locator("#about-dialog");
+  await expect(dlg).toBeVisible();
+  await expect(dlg).toContainText("Eytan Adar");
+  await expect(page.locator("#about-version")).toHaveText(/^2\.\d{8}$/);
+  await dlg.locator("button[value=close]").click();
+  await expect(dlg).toBeHidden();
+});
+
+test("the click tools are icon buttons with names for search and screen readers", async ({ page }) => {
+  await boot(page);
+  const tools = page.locator("header.toolbar [data-tool]");
+  await expect(tools).toHaveCount(6);
+  for (const name of ["Select", "Lens", "Path", "Heat", "Paint", "Cluster"]) {
+    const b = page.getByRole("button", { name, exact: true });
+    await expect(b.locator("svg.ticon")).toHaveCount(1);
+    await expect(b).toHaveAttribute("title", new RegExp(`^${name}: `));
+  }
+  await page.getByRole("button", { name: "Path", exact: true }).click();
+  await expect(page.locator("button[data-tool=path]")).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Escape");
+  await page.locator("#search").click();
+  await page.keyboard.type("Tool: Heat");
+  await expect(page.locator(".palette-item").first()).toContainText("Heat");
+});

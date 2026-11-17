@@ -9,6 +9,8 @@ import { Tour } from "./tour";
 import { AssistantLink } from "./assistant";
 import { AppChrome, type AppManifest } from "./app";
 import { ask, choose, pickFields } from "./dialog";
+import { BUILD, VERSION } from "./version";
+import { iconizeToolbar } from "./icons";
 import { toGIF, toPDF, toPS } from "./rasterexport";
 import { makeZip, uniqueName } from "./zip";
 import { HelpPanel, type HelpIndex } from "./help";
@@ -233,6 +235,7 @@ const lensLoop = () => {
 };
 requestAnimationFrame(lensLoop);
 
+iconizeToolbar();
 for (const b of document.querySelectorAll<HTMLButtonElement>("[data-tool]")) {
   // the active Lens button switches back to Select
   b.addEventListener("click", () => setTool(b.dataset.tool === "lens" && tool === "lens" ? "select" : b.dataset.tool as Tool));
@@ -1896,6 +1899,23 @@ $("#btn-gestures").addEventListener("click", () => void openSide("help", "gestur
 // the built manual is deployed next to the app (scripts/copy-manuals.mjs; the dev server serves it too)
 $("#btn-manual").addEventListener("click", () => window.open(new URL("manuals/", location.href).href, "_blank", "noopener"));
 $("#btn-explainers").addEventListener("click", () => window.open(new URL("explainers/networks/index.html", location.href).href, "_blank", "noopener"));
+// Help → About GUESS
+$("#btn-about").addEventListener("click", () => {
+  const dlg = $<HTMLDialogElement>("#about-dialog");
+  const d = BUILD;
+  const date = /^\d{8}$/.test(d) ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}` : d;
+  $("#about-version").textContent = VERSION;
+  $("#about-version-2").textContent = VERSION;
+  $("#about-date").textContent = date;
+  dlg.showModal();
+});
+$("#about-copy").addEventListener("click", (ev) => {
+  const b = ev.currentTarget as HTMLButtonElement;
+  void navigator.clipboard?.writeText(`GUESS ${VERSION}`).then(() => {
+    b.textContent = "Copied";
+    setTimeout(() => (b.textContent = "Copy version"), 1200);
+  });
+});
 $("#btn-cookbooks").addEventListener("click", () => window.open(new URL("manuals/cookbooks/", location.href).href, "_blank", "noopener"));
 $("#btn-github").addEventListener("click", () => window.open("https://github.com/eytanadar/guess", "_blank", "noopener"));
 const TIPS: Record<string, string> = {
@@ -2333,7 +2353,8 @@ const palette = new Palette(async () => {
   for (const code of term.recent()) items.push({ kind: "recent", label: code.split("\n")[0], detail: code.includes("\n") ? "…" : "", run: () => term.insert(code) });
   for (const b of document.querySelectorAll<HTMLButtonElement>(".menu-pop button, [data-tool], #stop")) {
     if (b.id === "btn-palette" || b.disabled || b.classList.contains("menu-sub-title")) continue;
-    const label = [...b.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").trim();
+    const label = b.getAttribute("aria-label")
+      || [...b.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").trim();
     if (!label) continue;
     const sub = b.closest(".menu-sub")?.querySelector(".menu-sub-title")?.textContent;
     const root = b.closest(".menu-root")?.querySelector(".menu-title")?.textContent;
