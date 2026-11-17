@@ -52,7 +52,7 @@ def test_other_structure_tabs():
     # core and periphery: the planted core is found, and the plain block model agrees
     a.tab("Core and periphery")
     a.press("Find core and periphery")
-    assert a.ev("cp['res']['core']") == 12 and a.ev("all((v.core == 1) == (v.block == 0) for v in g.nodes)")
+    assert a.ev("cp['res'].size") == 12 and a.ev("all((v.core == 1) == (v.block == 0) for v in g.nodes)")
     a.press("Plain block model, 2 groups")
     assert a.ev("cp['sbm_nmi']") > 0.9 and a.ev("core_matrix()") is not None
     # ranking: rank tracks hidden strength, scrambled contests don't

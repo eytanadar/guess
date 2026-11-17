@@ -960,7 +960,8 @@ Layout. `isometricLayout` stands in for 3D views such as Gephi's Network
 Splitter 3D: each value of the field gets its own plane. Running it again
 with another field starts from the flat layout.
 
-**Old names.** The 2006 names still work. `random()` is the random layout,
+**Old names.** The 2006 names still work, apart from the few renamed in
+Appendix C. `random()` is the random layout,
 and `jfrLayout`, `jkkLayout` and `jSpringLayout` are the JUNG versions of
 the force layouts. Every command is also a method of `g`,
 so `g.gemLayout()` works.
@@ -2741,16 +2742,39 @@ Gython is Python 3 with these additions:
 - **Fields.** An argument that takes a field also takes its name: `sizeBy(degree)` and
   `sizeBy("degree")` are the same. A command with one field argument calls
   it `field`; one with several names them by role (`scatterLayout(x, y)`).
+- **Nodes.** One node is `node` (`egoNetwork(node)`, `heatMap(node)`); a
+  pair is `source` and `target` (`shortestPath`, `maxFlow`, `minCut`,
+  `distance`, `addEdge`); `root` is for trees (`treeLayout`,
+  `dominatorTree`).
 - **Ranges.** Sizes run from `smallest` to `largest`, colours from `start` to
-  `end`.
-- **Counts.** A number of things to make or return is `count`, and a node
-  argument is `node`.
+  `end` (with an optional `middle`). `midpoint=` is the value that gets the
+  middle colour (`colorBy(lfc, blue, red, midpoint=0)`).
+- **Colour scales.** `palette=` takes a scale's name or a `colorScale(...)`
+  wherever colours can come from a scale (`colorBy`, `colorize`,
+  `generateColors`, `GradientLegend`, `heatMap`, `pieChart`, `plotLine`,
+  `showOverlaps`).
+- **Transforms.** `transform=` (`"linear"`, `"log"`, `"sqrt"`, `"rank"`)
+  says how values are spread before they become sizes, colours or positions
+  (`sizeBy`, `colorBy`, `labelSizeBy`, `hiveLayout`).
+- **Counts.** A number of things to make or return is `count`; a cap on a
+  search is `limit` (`cliques`, `findCycles`, `findPattern`); a smallest
+  group size is `smallest`.
+- **Weights.** `weight=` is an edge field read as each edge's weight or
+  length, or `None` to count every edge the same (`shortestPath`,
+  `spanningTree`, `chineseWhispersClusters`). Flows take `capacity=` the
+  same way; without it every edge carries 1. Random commands default to
+  `seed=0`, so they give the same result each time.
+- **Groups.** A command that splits the nodes into groups stores each
+  node's group in `<method>_class` (0 is the largest), returns the groups,
+  and takes `name=` for another field (`louvainClusters()`,
+  `blockModelClusters(count)`, `sbmClusters(count)`).
 - **Switching things off.** A display mode takes `on=`
   (`curvedEdges(false)`); something drawn on top is removed with a
   matching `remove…` command (`removePies()`, `removeBundles()`,
   `removeConvexHulls()`, `removeLegends()`, `removeMap()`).
 - **`name=`** always names what the command creates: a field, a graph or
-  a node.
+  a node. A command that creates a field returns it, with any other
+  results as attributes (`katzCentrality().limit`, `rankNodes().agreement`).
 
 **Names.** GUESS's own names (commands, colours, fields, node names, `g`)
 are protected, and assigning to one is an error that says what the name
@@ -2826,6 +2850,59 @@ unchanged except where Python 3 differs. The main differences:
   `resizeLinear(degree, start=5, end=30)`.
 - **Louvain's field** is `louvain_class`, like `leiden_class` and the other
   methods' (it was `modularity_class`, Gephi's name).
+- **More names made consistent (2026-11-17).**
+  - Commands renamed: `stoplog()` is now `stopLog()`; `ss(state)` and
+    `ls(state)` are `saveState(state)` and `loadState(state)`;
+    `removeOverlap()` is `prismLayout()`; `blockmodel(k)` is
+    `blockModelClusters(count)`; `fitBlockModel(k)` is `sbmClusters(count)`.
+    `jkkLayout1()` and `jkkLayout2()` (the same algorithm) are both
+    `jkkLayout()`. `createConvexHull(seq, color)` is gone: use
+    `encircle(seq, "hull", color)`.
+  - Groups: every command that splits the nodes stores a `<method>_class`
+    field, returns the groups and takes `name=`.
+    `weakComponentClusters()`, `biComponentClusters()` and
+    `edgeBetweennessClusters()` now store `weakcomponent_class`,
+    `bicomponent_class` and `edgebetweenness_class`; `kComponents()` stores
+    `kcomponent_class` (was `kcomponent`) and `blockModelClusters()`
+    `blockmodel_class` (was `position`). `voronoiClusters()` returns the
+    communities, with the generator nodes in `.seeds` (it returned the
+    generators); `sbmClusters()` returns the groups, with `.loglik` (it
+    returned a dict); `colorGraph()` returns the colour classes (it
+    returned how many there were).
+  - Commands that make a field return it, with the rest as attributes:
+    `katzCentrality()` (was `(field, limit)`: now `f.limit` and `f.alpha`),
+    `rankNodes()` (was the share of agreeing edges: `.agreement`),
+    `bowTie()` (was the sizes: `.sizes`), `corePeriphery()` (was a dict:
+    `.size`, `.fit`), `heatMap()` (`hops`), `trophicLevels()` (`trophic`)
+    and `mds()` (its fields). `name=` is new in `personalizedPagerank`,
+    `heatMap`, `similarTo`, `predictLinks`, `maxFlow`, `minCostFlow`,
+    `dominatorTree`, `cohesiveBlocks`, `mainPath`, `transitiveReduction`,
+    `offspring`, `trophicLevels` and the `*Clusters` commands.
+  - Node arguments: `egoNetwork(node)`, `heatMap(node)`, `paint(node, …)`,
+    `radialLayout(node)` and `circleLayout(field, node)` (were `center`);
+    `effectiveDistance(node)` (was `origin`); `expand(node)` (was `meta`);
+    `distance(source, target)` and `addEdge(source, target)` (were
+    `node1`, `node2`); `maxFlow(source, target)` and `minCut(source,
+    target)` (were `a`, `b`).
+  - Colours: `colorBy(…, midpoint=0)` (was `center=`); `transform=` (was
+    `scale=`) in `colorBy`, `sizeBy`, `labelSizeBy` and `hiveLayout`;
+    `heatMap(node, start, end, middle, unreachable)` (were `near`, `far`);
+    `plotLine(palette=)` (was `colors=`); `showOverlaps(unassigned=)` (was
+    `none=`). `palette=` is new in `colorBy`, `colorize`, `generateColors`,
+    `GradientLegend`, `heatMap` and `showOverlaps`. `colorBy`'s fourth
+    positional argument is now `middle`: give the transform by name,
+    `colorBy(freq, yellow, red, transform="log")`.
+  - Counts: `count=` (was `top=`) in `groupStats`, `enrichment`,
+    `findDuplicates`, `similarTo`, `predictLinks`, `report` and
+    `wordCloud`, and in `makeFromSimilarity` (was `k=`); `smallest=` (was
+    `minSize=`) in `cliques` and `enrichment`, and in `linkCommunities`
+    (was `minEdges=`).
+  - Weights: `shortestPath(source, target, weight="weight")` (was
+    `weighted=true`); `spanningTree(weight=None)` and
+    `chineseWhispersClusters(weight=None)` (were `weighted=false`); any edge
+    field can be the weight. `maxFlow` counts each edge as 1 unless
+    `capacity=` is given, as `minCut` does (it used `weight`). `gemLayout`
+    and `makeLFR` default to `seed=0`.
 - **Language.** `3 < degree < 6`, `field in (...)`, and `and`, `or` and
   `not` on sets now do what they say (Appendix B). A node or field named
   after a Python builtin (`len`, `type`) no longer hides it.
