@@ -365,6 +365,8 @@ class Field:
             value = str(value).lower()
             if value not in _EDGE_CHOICES[self.name]:
                 raise GuessError(f"{self.name} should be one of {', '.join(_EDGE_CHOICES[self.name])}, got {value!r}")
+        if self.name == "style" and self.kind == NODE and isinstance(value, str):
+            value = style_number(value)  # n.style = 'triangle'
         if self.name == "labelsize" and value is not None and float(value) <= 0:
             raise GuessError("labelsize should be a positive scale (1 = normal)")
         if self.name.endswith("color") and value is not None:
@@ -574,6 +576,9 @@ def _fmt(v):
 def _query_value(field, v):
     if isinstance(v, (Node, Edge)):
         return v
+    if field.name == "style" and field.kind == NODE and isinstance(v, str):
+        return style_number(v)        # style == 'triangle'
+
     if isinstance(v, (int, float)) and not isinstance(v, bool) and str(field.type).upper() in (
             "INTEGER", "INT", "DOUBLE", "FLOAT", "REAL", "BIGINT", "SMALLINT", "TINYINT", "DECIMAL", "NUMERIC"):
         return v                      # numbers compare as given: degree < 4.75 is not degree < 4
@@ -638,7 +643,82 @@ def _read(f, elem, name):
     if name in _COLOR_FIELDS and isinstance(v, str) and v:
         from .colors import Color
         return Color(v)            # so n.color == red and n.color.lighter(0.3) work
+    if name == "style" and f.kind == NODE and type(v) is int:
+        return Style(v)            # prints as 'triangle', still equal to 11
     return v
+
+
+# ---- node shapes by name ------------------------------------------------------
+# n.style = 'triangle' stores 11; the numbers still work. Several names may map to
+# one number; the first listed is the one a style prints as.
+STYLE_NAMES = {
+    "rectangle": 1, "rect": 1, "box": 1, "square": 1,
+    "circle": 2, "ellipse": 2, "oval": 2,
+    "rounded": 3, "roundrect": 3, "roundedrectangle": 3,
+    "image": 7,
+    "triangle": 11, "diamond": 12, "hexagon": 13, "octagon": 14,
+    "pentagon": 105, "heptagon": 107, "nonagon": 109, "decagon": 110,
+}
+_STYLE_PRINT = {}
+for _n, _v in STYLE_NAMES.items():
+    _STYLE_PRINT.setdefault(_v, _n)
+
+
+def style_number(v):
+    """A node style from its name ('triangle', 'polygon7') or number."""
+    if not isinstance(v, str):
+        return v
+    key = v.strip().lower().replace(" ", "").replace("-", "").replace("_", "")
+    if key.isdigit():
+        return int(key)
+    if key in STYLE_NAMES:
+        return STYLE_NAMES[key]
+    import re
+    m = re.fullmatch(r"polygon\(?(\d+)\)?", key)
+    if m and 3 <= int(m.group(1)) <= 64:
+        return 100 + int(m.group(1))
+    import difflib
+    close = difflib.get_close_matches(key, STYLE_NAMES, n=1, cutoff=0.7)
+    raise GuessError(f"no node style {v!r}" + (f" (did you mean {close[0]!r}?)" if close else "")
+                     + f"; styles: {', '.join(dict.fromkeys(_STYLE_PRINT.values()))}, polygon3 … polygon64, or a number")
+
+
+def style_name(n):
+    """The name a style number prints as ('triangle'), or None."""
+    if n in _STYLE_PRINT:
+        return _STYLE_PRINT[n]
+    if isinstance(n, int) and 103 <= n <= 164:
+        return f"polygon{n - 100}"
+    return None
+
+
+class Style(int):
+    """A node's style: a number that prints as its name and also equals it
+    (v1.style == 'triangle' and v1.style == 11 are both true)."""
+
+    def __repr__(self):
+        name = style_name(int(self))
+        return repr(name) if name else int.__repr__(self)
+
+    def __str__(self):
+        return style_name(int(self)) or int.__repr__(self)
+
+    def __format__(self, spec):
+        return format(str(self), spec) if spec == "" or not spec[-1:].isalpha() or spec[-1] == "s" else int.__format__(int(self), spec)
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            try:
+                return int(self) == style_number(other)
+            except GuessError:
+                return False
+        return int.__eq__(self, other)
+
+    def __ne__(self, other):
+        r = self.__eq__(other)
+        return r if r is NotImplemented else not r
+
+    __hash__ = int.__hash__
 
 
 def _default_for(value):

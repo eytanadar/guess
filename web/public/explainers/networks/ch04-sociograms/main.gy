@@ -51,7 +51,7 @@ for k in KIDS:
 fromNetworkX(G)
 NODE = {n.name: n for n in g.nodes}
 for n in g.nodes:
-    n.style = 11 if n.gender == "boy" else 2
+    n.style = "triangle" if n.gender == "boy" else "circle"
     n.color = "90,140,220" if n.gender == "boy" else "230,110,150"
     n.width = n.height = 18
     n.labelvisible = true

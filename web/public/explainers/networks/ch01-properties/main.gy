@@ -16,7 +16,7 @@ def plain():
     removeLegends()
     removeConvexHulls()
     g.nodes.color = BASE
-    g.nodes.style = 2
+    g.nodes.style = "circle"
     g.edges.color = "170,170,170,140"
     g.edges.width = 1.5
     g.nodes.width = 14
@@ -109,7 +109,7 @@ def show_real(on):
         shapeBy(club)
         legendFor(club, "the club after it split (shape)")
     else:
-        g.nodes.style = 2
+        g.nodes.style = "circle"
         removeLegends()
 
 

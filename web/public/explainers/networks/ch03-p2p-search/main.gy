@@ -68,7 +68,7 @@ def build(kind):
 def dress():
     for n in g.nodes:
         n.color = "190,190,190"
-        n.style = 1 if n.hasfile else 2
+        n.style = "square" if n.hasfile else "circle"
         n.width = n.height = 20 if n.tier == "supernode" else (18 if n.hasfile else 12)
         n.strokecolor = "30,30,30" if n.hasfile else "120,120,120"
         if n.tier == "supernode":

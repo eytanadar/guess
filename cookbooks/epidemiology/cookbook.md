@@ -50,7 +50,7 @@ person stays infectious for five days on average.
 makeFromGDF("school-contacts-SIMULATED.gdf")
 colorize(room)
 sizeBy(degree, 4, 20)
-(role == "teacher").style = 1
+(role == "teacher").style = "square"
 legendFor(room)
 [(grp[0].room, len(grp)) for grp in groupBy(room)][:3]
 ```

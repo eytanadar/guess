@@ -114,3 +114,16 @@ def test_legend_and_gradient_legend_take_a_field(s):
     assert max(s.view.legends.values(), key=lambda x: x._id)._ramp["title"] == "Frequency"
     assert not s.run("GradientLegend(dept)")                        # not numeric
     assert s.run("GradientLegend(white, red, 0, 10)")               # the old form still works
+
+
+def test_node_styles_by_name(s):
+    assert s.run("bob.style = 'triangle'")
+    assert ev(s, "bob.style") == 11 and ev(s, "bob.style == 'triangle'")
+    assert repr(ev(s, "bob.style")) == "'triangle'" and str(ev(s, "bob.style")) == "triangle"
+    assert s.run("g.nodes.style = 'Polygon 7'") and ev(s, "bob.style") == 107
+    assert repr(ev(s, "bob.style")) == "'heptagon'"
+    assert s.run("bob.style = 12") and ev(s, "len(style == 'diamond')") == 1
+    assert s.run("jane.style = 5") and repr(ev(s, "jane.style")) == "5"     # unnamed numbers print as numbers
+    s.rec.clear()
+    assert not s.run("bob.style = 'trianlge'")
+    assert "did you mean 'triangle'" in s.rec.of("error")[0]["summary"]

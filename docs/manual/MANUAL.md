@@ -377,11 +377,12 @@ behave, and you can set them in the file:
 
 | node field | meaning | default |
 |---|---|---|
+| `name` | the node's id (read-only once loaded; `v1` in code) | |
 | `x`, `y` | position (if missing, GUESS lays out the graph) | |
 | `color` | fill colour (a name or `"r,g,b"` / `"r,g,b,a"`) | cornflowerblue |
 | `strokecolor` | outline colour | darker fill |
 | `strokewidth` | outline width (0: the display's, 0.75) | 0 |
-| `style` | shape: 1 rectangle, 2 ellipse, 3 rounded rectangle, 4–6 the same with the label inside, 7 image, 11 triangle, 12 diamond, 13 hexagon, 14 octagon, `polygon(n)` (all pictured in §7.2) | 2 |
+| `style` | shape, by name or number: `'rectangle'` 1, `'circle'` 2, `'rounded'` 3, 4–6 the same with the label inside, `'image'` 7, `'triangle'` 11, `'diamond'` 12, `'hexagon'` 13, `'octagon'` 14, `'polygon5'` … `'polygon64'` or `polygon(n)` (all pictured in §7.2) | 2 (`'circle'`) |
 | `width`, `height` | size | 10 |
 | `label`, `labelvisible`, `labelcolor` | the label text, whether it's shown, its colour (inside a node: black or white for contrast, unless set) | name, false |
 | `labelpos` | where the label goes: `right`, `left`, `above`, `below`, `inside`, or `outside` (GUESS picks a free side; pictured in §12.4) | right |
@@ -389,12 +390,20 @@ behave, and you can set them in the file:
 | `image` | an image file or URL (with style 7) | |
 | `visible` | whether it's drawn | true |
 | `fixed` | layouts don't move it | false |
+| `indegree`, `outdegree`, `totaldegree` (`degree`) | the number of edges in, out and in total (read-only) | |
+
+Setting `size` sets `width` and `height` together.
 
 | edge field | meaning | default |
 |---|---|---|
 | `directed` | a directed edge (arrow) | false |
+| `node1`, `node2` | its two ends (read-only) | |
+| `source`, `destination` | for a directed edge, where it starts and ends (None when undirected; read-only) | |
 | `color`, `width` | colour and thickness | dandelion, 2 |
 | `weight` | used by weighted layouts and paths | 1 |
+| `linestyle` | how the line is drawn: `solid`, `dashed`, `dotted`, `taper`, `wave`, `double`, `fuzzy`, `gradient`, `flow`, `fade` (§12.3) | solid |
+| `arrowhead` | the head of a directed edge: `triangle`, `swept`, `open`, `diamond`, `circle`, `tee`, `none` (§12.3) | triangle |
+| `arc` | bends the edge into a circular arc leaving its ends at this angle in degrees (0: straight; Lombardi edges, §12.2) | 0 |
 | `label`, `labelvisible`, `labelcolor`, `labelsize` | as for nodes; edge labels sit on a small background pill at the middle of the edge | |
 | `visible` | whether it's drawn | true |
 
@@ -693,6 +702,17 @@ endpoints. `.edges` on a set of nodes gives the edges touching them:
 (dept == 'dept3').edges.color = gray       # every edge touching department 3
 v1.getNeighbors()                          # v1's neighbours
 ```
+
+Each node and edge also has the 2006 methods for walking the graph:
+
+| method | gives |
+|---|---|
+| `n.getNeighbors()` | the nodes it shares an edge with |
+| `n.getIncidentEdges()` | every edge touching it |
+| `n.getInEdges()`, `n.getOutEdges()` | the directed edges into it, and out of it |
+| `n.getPredecessors()`, `n.getSuccessors()` | the nodes with an edge into it, and the nodes it points to |
+| `e.getNode1()`, `e.getNode2()` | its two ends (as `e.node1`, `e.node2`) |
+| `e.opposite(n)` | the end that isn't `n` |
 
 (`findNodes(set)` and `findEdges(set)` pick out just the nodes, or just the
 edges, from a mixed set.)
@@ -1029,8 +1049,16 @@ shapeBy(dept)                           # a shape per value
 polygonBy(dept, 3, 8)                   # a regular polygon per value (3 to 8 sides)
 borderBy(dept)                          # a border colour per value
 legendFor(dept)                         # a legend for the current colours
-GradientLegend(yellow, red, betweenness.min, betweenness.max)
+GradientLegend(betweenness)             # the ramp betweenness is coloured with
 ```
+
+A node's `style` takes a name or a number: `v92.style = 'triangle'` and
+`v92.style = 11` do the same thing. Read back, a style prints as its name
+(`v92.style` shows `'triangle'`) but is still the number, so
+`v92.style == 11` and `style == 'triangle'` both work. The names are
+`rectangle` (also `box`, `square`), `circle` (`ellipse`, `oval`), `rounded`,
+`image`, `triangle`, `diamond`, `hexagon`, `octagon`, `pentagon`, `heptagon`,
+`nonagon`, `decagon` and `polygon3` … `polygon64`.
 
 `polygon(sides)` is the shape code for any regular polygon, as in
 `(dept == 'dept1').style = polygon(5)`; `polygonBy(field)` takes the number
@@ -1115,6 +1143,7 @@ other field:
 | `domain_prestige`, `proximity_prestige`, `rank_prestige` | prestige in directed networks: the share that can reach a node, also rewarding short distances, and being pointed at by prestigious nodes |
 | `bridging_coef`, `bridging` | Hwang's bridging coefficient, and betweenness × bridging coefficient (bridging centrality) |
 | `wclustering` | clustering weighted by edge weights |
+| `knn` | the average degree of a node's neighbours |
 
 ```python
 (pagerank > 0.01).labelvisible = true
@@ -1760,8 +1789,13 @@ them.
 
 ## 12.1 Legends
 
-`legendFor(field)` makes a legend for the current colours of a field.
-`GradientLegend(start, end, min, max)` makes a colour ramp, and a fifth
+`legendFor(field)` makes a legend for the current colours of a field;
+`Legend(field)` does the same. `GradientLegend(field)` always shows a ramp,
+from the field's lowest value to its highest, in the colours the field was
+given (after `colorBy`), titled with the field's name (`GradientLegend(freq,
+"Frequency")` for another title). These three follow the colours: run
+`colorBy` again and they change with it.
+`GradientLegend(start, end, min, max)` makes a fixed colour ramp, and a fifth
 argument adds tick marks. For full control, build one yourself:
 
 ```python
@@ -1772,7 +1806,10 @@ lg.add(red, "important")        # or just a colour
 ```
 
 Legends appear at the top right of the display, and they're included in
-exports and reports.
+exports and reports. The ▾ beside a legend's × folds it to one line
+("Legend: degree"); click that line, or ▸, to open it again. Panels in the
+dock (charts, pinned cells, the history) fold the same way, to their title
+bar, with the ▾ in their header or by double-clicking the title.
 
 ## 12.2 Convex hulls
 
@@ -2157,8 +2194,9 @@ several things are selected, the function receives the selection.
 *View → Console → Vim keys in the code cell* switches the editor to vim bindings.
 
 Long results print compactly: a set of many groups (`groupBy(dept)`, the
-communities from `louvainClusters()`) shows as `21 groups (402 elements):
-[dept0: 28] [dept1: 43] …`, each entry linked to its members.
+communities from `louvainClusters()`) shows as a list of groups, each folded
+to its first member, `[[v1, … +27 more], [v2, … +42 more], …]`, each linked
+to its members (see *Folding lists* below).
 
 **Code and graph, linked.** The console and the graph point at each other:
 
@@ -2167,10 +2205,27 @@ communities from `louvainClusters()`) shows as `21 groups (402 elements):
   `dept.distinct` to see the nodes in dept1. An edge prints as `v1–v2`
   (`v1→v2` when directed): hover either name for that node, or the dash or
   arrow between them for the edge.
+  A field's value read off one element, `v4.dept`, prints as `'dept4'`
+  linked to every node with that value: hover it to see them, right-click
+  it to act on `dept == 'dept4'`.
   What commands print is linked the same way. Hover the nodes in each pair
   `predictLinks` lists, or "added 10 predicted edges" to see the edges
   `predictLinks(10, add=true)` made. The same goes for cut edges, cliques,
   routes, merged nodes and newly imported nodes.
+- **Folding lists.** A printed list of two or more things has a small ▾
+  before it: click it to fold the list to its first item and a count,
+  `[v73, … +5 more]`, and ▸ to open it again. A folded list still stands for
+  all its members when you hover or right-click it. Commands that return
+  many groups (`louvainClusters()` or `groupBy(dept)` on a big graph) print
+  a list of the groups with each one folded; hover a group for its name and
+  size, or open it to see its members.
+- **Deleted elements.** A printed node or edge that has since been removed
+  is struck through and no longer linked. Undo brings it back, and the line
+  goes.
+- **Right-clicking a selection.** Select part of the output (drag across
+  it) and right-click the selection: the menu acts on just the nodes and
+  edges selected. A name the selection cuts off counts whole (selecting from
+  the "5" of `v25` includes `v25`), and the selection grows to show it.
 - **Executed code.** Hover a name or a query in code you've run to see what
   it means *now*: a variable's members, the matches of `degree > 5` (or of
   the whole of `3 < degree < 6`), a node, or a value. Hovering a field shows

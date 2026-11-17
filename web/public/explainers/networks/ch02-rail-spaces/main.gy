@@ -54,7 +54,7 @@ for n in g.nodes:
     n.labelvisible = true
     if n.kind == "line":
         n.color = COLOUR[n.name[:-5]]
-        n.style = 1
+        n.style = "square"
         n.width = n.height = 26
         n.label = n.name[:-5] + " line"
     else:

@@ -60,7 +60,7 @@ BIGGEST = {}          # side -> (label, number of members) of its largest node
 
 def dress():
     for n in g.nodes:
-        n.style = 2 if n.side == "people" else 1
+        n.style = "circle" if n.side == "people" else "square"
         n.color = "230,120,90" if n.side == "people" else "90,130,200"
         n.width = n.height = 12 if n.side == "people" else 9
         n.labelvisible = false             # crowded in two rows: hover for names

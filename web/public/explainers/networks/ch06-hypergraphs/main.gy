@@ -60,7 +60,7 @@ def draw(choice=None):
             e.width = 1.5 + 2 * (k - 1)
     for n in g.nodes:
         n.width = n.height = 30 if n.kind == "person" else 22
-        n.style = 2 if n.kind == "person" else 1
+        n.style = "circle" if n.kind == "person" else "square"
         n.color = "120,160,220" if n.kind == "person" else COLOUR.get(n.name, "150,150,150")
         n.labelvisible = true
         n.labelpos = "inside" if n.kind == "person" else "above"

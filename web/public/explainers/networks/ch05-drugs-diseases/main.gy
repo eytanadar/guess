@@ -45,7 +45,7 @@ def build_drugs():
 def look_drugs():
     for n in g.nodes:
         n.labelvisible = true
-        n.style = 2 if n.side == "drug" else 1
+        n.style = "circle" if n.side == "drug" else "square"
         n.width = n.height = 16 if n.side == "drug" else 12
     colorize(treats)
     for n in g.nodes:

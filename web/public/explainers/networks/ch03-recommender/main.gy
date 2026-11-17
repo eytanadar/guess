@@ -43,7 +43,7 @@ NODE = {n.name: n for n in g.nodes}
 for n in g.nodes:
     n.labelvisible = true
     n.labelpos = "left" if n.kind == "person" else "right"
-    n.style = 2 if n.kind == "person" else 1
+    n.style = "circle" if n.kind == "person" else "square"
 hidden = []          # ratings hidden for a test: (person, film, rating)
 tests = {"hit": 0, "miss": 0}
 chosen = [None]

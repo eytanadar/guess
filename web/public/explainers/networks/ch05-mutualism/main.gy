@@ -54,7 +54,7 @@ def rank_nodes():
 
 def look():
     for n in g.nodes:
-        n.style = 1 if n.side == "plant" else 2
+        n.style = "square" if n.side == "plant" else "circle"
         n.color = "90,170,90" if n.side == "plant" else "240,170,40"
         n.width = n.height = 8 + n.degree
         n.strokecolor = "60,60,60"
