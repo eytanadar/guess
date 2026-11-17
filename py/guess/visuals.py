@@ -185,7 +185,8 @@ class Legend:
 
 class GradientLegend(Legend):
     """A color ramp legend: GradientLegend(startColor, endColor, min, max[, tickEvery])
-    shows the ramp from min to max, with a tick mark every tickEvery units.
+    shows the ramp from min to max, with a tick mark every tickEvery units;
+    GradientLegend("viridis", min, max) shows a colour scale (see colorScales).
     GradientLegend(field[, title]) shows a numeric field's current colours from
     its lowest to its highest value (after colorBy), and follows them."""
 
@@ -460,8 +461,22 @@ def install(session):
         if _is_field(start):
             # GradientLegend(degree[, title]): the field's colours from its lowest to highest value
             return session._field_legend(start, end, "gradient", "GradientLegend")
+        from . import scales
+        sc = scales.find(start)
+        if sc is not None and not sc.categorical:
+            # GradientLegend("viridis", min, max[, tickEvery])
+            lo_, hi_ = (0 if end is None else end), (1 if end is None else lo)
+            ticks = hi if hi != 1 else ticks
+            stops = [sc.at(i / 16) for i in range(17)]
+            lg = GradientLegend(view, view.next_id(), stops[0], stops[-1], lo_, hi_, ticks)
+            lg._ramp["stops"] = [[round(i / 16, 4), colors.to_rgba_int(c)[0]] for i, c in enumerate(stops)]
+            lg._ramp["title"] = sc.label
+            view.legends[lg._id] = lg
+            view.changed()
+            return lg
         if end is None:
-            raise GuessError("GradientLegend(startColor, endColor, min, max) or GradientLegend(field)")
+            raise GuessError("GradientLegend(startColor, endColor, min, max), GradientLegend(scale, min, max) "
+                             "or GradientLegend(field)")
         lg = GradientLegend(view, view.next_id(), start, end, lo, hi, ticks)
         view.legends[lg._id] = lg
         view.changed()

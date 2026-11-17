@@ -513,15 +513,32 @@ def install(session):
     def colorize(field, *cs):
         """colorize(field) gives each value its own clearly different colour (the
         largest group first; see distinctColors); colorize(field, start, end) or
-        colorize(field, start, middle, end) a gradient over the sorted values."""
+        colorize(field, start, middle, end) a gradient over the sorted values.
+        colorize(field, scale) uses a colour scale (see colorScales): a
+        categorical one ("Set2", "tableau10") gives the largest group its first
+        colour; a sequential or diverging one ("Blues", "viridis", "RdBu") runs
+        over the sorted values."""
         field = _field(field)
+        if len(cs) == 1:
+            from . import scales
+            sc = scales.get(cs[0])
+            if sc.categorical:
+                groups = sorted(group_by(field.elements(), field), key=len, reverse=True)
+                if len(groups) > len(sc.stops):
+                    print(f"note: {len(groups)} values but {sc.name} has {len(sc.stops)} colours; "
+                          f"they repeat (colorize({field.name}) gives each its own)")
+            else:
+                groups = group_by(field.elements(), field, sort=True)
+            for grp, c in zip(groups, sc.colors(len(groups))):
+                grp.color = c
+            return
         if not cs:
             groups = sorted(group_by(field.elements(), field), key=len, reverse=True)
             for grp, c in zip(groups, colors.distinctColors(len(groups))):
                 grp.color = c
             return
         if len(cs) not in (2, 3):
-            raise TypeError("colorize(field[, start[, middle], end])")
+            raise TypeError("colorize(field[, start[, middle], end]) or colorize(field, scale)")
         groups = group_by(field.elements(), field, sort=True)
         if not groups:
             print("No groupings")
@@ -646,9 +663,11 @@ def install(session):
             e.color = f"{int(r * 255)},{int(g_ * 255)},{int(b * 255)}"
 
     @cmd
-    def colorBy(field, start, end, scale="linear", middle=None, center=None):
+    def colorBy(field, start, end=None, scale="linear", middle=None, center=None):
         """colorBy(field, startColor, endColor) colours elements along a gradient in
-        proportion to a numeric field's value; scale may be "linear", "log",
+        proportion to a numeric field's value; colorBy(field, "viridis") uses a
+        colour scale instead (see colorScales; "RdBu" with center=0 for
+        diverging data). scale may be "linear", "log",
         "sqrt" or "rank"; middle=color adds a midpoint colour. center=value
         makes a diverging gradient: that value gets the middle colour (white
         unless given) and the ends are equally far from it, so equal changes
@@ -656,22 +675,31 @@ def install(session):
         center=0) for fold changes. Compare colorize, which spaces distinct
         values evenly."""
         field = _field(field)
+        from . import scales
+        cscale = None
+        if end is None:
+            cscale = scales.get(start, "colour scale (or give colorBy(field, startColor, endColor))")
+            if middle is not None:
+                raise GuessError("colorBy with a colour scale takes no middle= colour")
         vals = _numeric(field)
         if center is not None:
             if scale != "linear":
                 raise GuessError("center= works with the linear scale only")
             c = float(center)
             dev = max((abs(v - c) for _e, v in vals), default=0.0) or 1.0
-            middle = "white" if middle is None else middle
+            middle = "white" if middle is None and cscale is None else middle
 
             def t(v):
                 return 0.5 + 0.5 * (v - c) / dev
         else:
             t = _scaler(vals, scale)
-        stops = [colors.parse(start, (255, 0, 0, 255))]
-        if middle is not None:
-            stops.append(colors.parse(middle, (0, 255, 0, 255)))
-        stops.append(colors.parse(end, (0, 0, 255, 255)))
+        if cscale is not None:
+            stops = cscale.stops
+        else:
+            stops = [colors.parse(start, (255, 0, 0, 255))]
+            if middle is not None:
+                stops.append(colors.parse(middle, (0, 255, 0, 255)))
+            stops.append(colors.parse(end, (0, 0, 255, 255)))
         for e, v in vals:
             e.color = colors.mix_stops(stops, t(v))
 

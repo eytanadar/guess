@@ -118,8 +118,9 @@ class Session:
         mathtools.install(self)
         metrics.install(self)
         compat.install(self)
-        from . import outformats
+        from . import outformats, scales
         outformats.install(self)
+        scales.install(self)
         states.install(self)
         ranges.install(self)
         self.pending_morph = None
@@ -1624,6 +1625,10 @@ def _contains_colors(seq, depth=0):
 
 
 def segment(value, depth=0, limit=MAX_ITEMS):
+    from .scales import ColorScale
+    if isinstance(value, ColorScale):
+        sw = [s for s in (_color_seg(c) for c in value.preview()) if s]
+        return {"g": [f"{value.label} ", *sw], "a": f"{value.label}: {value.kind} colour scale ({value.source})"}
     if isinstance(value, str) and not isinstance(value, LinkedStr):
         cs = _color_seg(value)
         if cs is not None:

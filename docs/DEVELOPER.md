@@ -142,6 +142,7 @@ installed (`npm install`) and, for the PDFs, pandoc 3 and XeLaTeX.
 
 | what | where | rebuild | check |
 |---|---|---|---|
+| Colour scales | `py/guess/_colorscales.py` | `node py/tools/gen_colorscales.mjs` (reads d3-scale-chromatic and vega-scale from `web/node_modules`) | `py/tests/test_colorscales.py` |
 | Command reference | `docs/API.md` | `cd py && .venv/bin/python tools/gen_api_docs.py` | a pytest test fails when it is stale |
 | Manual | `docs/manual/MANUAL.md` → `docs/manual/build/` | `py/.venv/bin/python docs/manual/build.py` (or `… build.py pdf html` for some formats) | `cd py && .venv/bin/python ../docs/manual/tools/check_examples.py` runs every example |
 | Manual figures | `docs/manual/img/` | `cd web && npm run manual-shots` (or `-- hive fa2` for some) | look at them |

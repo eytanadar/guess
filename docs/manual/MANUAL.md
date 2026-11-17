@@ -1071,6 +1071,44 @@ own polygon.
 whichever the field belongs to). `colorize(freq, blue, red)` with two colours
 behaves like `colorBy`.
 
+**Colour scales.** Instead of choosing two colours, you can name one of
+about 70 built-in scales. They come from ColorBrewer, d3 and Vega:
+
+```python
+colorBy(betweenness, "viridis")         # a perceptually even scale
+colorBy(degree, "RdBu", center=3)       # diverging: the middle colour at 3
+colorize(dept, "Set2")                  # categorical: the largest group gets the first colour
+colorize(degree, "YlGnBu")              # sequential, over the sorted values
+generateColors("Blues", 5)              # ColorBrewer's own 5-class Blues
+heatMap(v1, "magma_r")                  # _r reverses a scale
+GradientLegend("viridis", 0, 1)         # a legend for a scale
+pieChart([indegree, outdegree], palette="Dark2")
+colorScales()                           # every scale, with a preview of each
+```
+
+| Kind | Scales |
+|---|---|
+| sequential | `Blues`, `Greens`, `Greys`, `Oranges`, `Purples`, `Reds`, `BuGn`, `BuPu`, `GnBu`, `OrRd`, `PuBu`, `PuBuGn`, `PuRd`, `RdPu`, `YlGn`, `YlGnBu`, `YlOrBr`, `YlOrRd`; `viridis`, `inferno`, `magma`, `plasma`, `cividis`, `turbo`, `warm`, `cool`, `cubehelix`; Vega's `tealblues`, `teals`, `browns`, `warmgreys`, `goldgreen`, `goldorange`, `goldred`, `lightgreyred`, `lightgreyteal`, `lightmulti`, `lightorange`, `lighttealblue`, `darkblue`, `darkgold`, `darkgreen`, `darkmulti`, `darkred` |
+| diverging | `BrBG`, `PRGn`, `PiYG`, `PuOr`, `RdBu`, `RdGy`, `RdYlBu`, `RdYlGn`, `Spectral`, `blueorange` |
+| cyclical | `rainbow`, `sinebow` |
+| categorical | `category10`, `tableau10`, `observable10`, `Accent`, `Dark2`, `Paired`, `Pastel1`, `Pastel2`, `Set1`, `Set2`, `Set3`, `category20`, `category20b`, `category20c`, `tableau20` |
+
+Names ignore case, so `"rdbu"` is `"RdBu"`. Vega's long names work too
+(`"redblue"`, `"yellowgreenblue"`), as do matplotlib's `"tab10"` and
+`"tab20"`. With a ColorBrewer scale, `colorize` and `generateColors` use
+ColorBrewer's own colours for that number of classes (3 to 9, or 11 for the
+diverging scales) when there is one.
+
+`colorScale("viridis")` is the scale itself:
+
+- `.at(0.3)` is the colour 30% of the way along;
+- `.colors(5)` gives five colours from it;
+- `.reversed()` runs it the other way.
+
+Printing a scale or a colour shows swatches of the colours. The viridis
+family is easy to read in greyscale and for colour-blind readers, which a
+red-to-green gradient isn't.
+
 ![The four scales of `colorBy`. The nodes are in PageRank order, lowest first. `linear` keeps most of the gradient for the few highest values, and `rank` spreads it evenly.](img/colorscales.png){width=85%}
 
 ![colorBy(betweenness, yellow, red); sizeBy(betweenness, 5, 40, 'log'); GradientLegend(...)](img/color-by.png){width=75%}

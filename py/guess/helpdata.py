@@ -38,6 +38,7 @@ GROUPS = [
     ("sqlquery", "SQL"),
     ("outformats", "Output formats: tables, summaries and counts in the console"),
     ("colors", "Colors"),
+    ("scales", "Colour scales: ColorBrewer, viridis, turbo, Tableau and more"),
 ]
 
 

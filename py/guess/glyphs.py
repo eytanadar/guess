@@ -75,7 +75,12 @@ def install(session):
         node's values of those numeric fields. pieChart(f) with one text field
         reads each node's own list of values from it: v1.f = [12, 21, 12] gives
         v1 three slices (slice k has the same colour on every node).
-        palette=[colors] sets slice colours; labels=[...] names the slices in the legend."""
+        palette=[colors] sets slice colours, or a colour scale's name (palette="Set2",
+        see colorScales); labels=[...] names the slices in the legend."""
+        from . import scales
+        if isinstance(palette, (str, scales.ColorScale)):
+            k = len(fields) if isinstance(fields, (list, tuple)) else 12
+            palette = scales.get(palette).colors(max(k, 12))
         fs = [_field_arg(f, "pieChart") for f in (fields if isinstance(fields, (list, tuple)) else [fields])]
         if not fs:
             raise GuessError("pieChart needs at least one field")

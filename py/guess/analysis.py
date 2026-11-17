@@ -626,8 +626,11 @@ def install(session):
         (-1 if unreachable). spread=True (default) spaces the colours by how
         many nodes are at each distance, so every band is visible;
         spread=False spaces them by distance alone. near, middle, far and
-        unreachable change the colours (middle=None: a straight blend). Gephi's
-        heat map tool."""
+        unreachable change the colours (middle=None: a straight blend); near
+        can instead be a colour scale, heatMap(v1, "magma_r") (see
+        colorScales). Gephi's heat map tool."""
+        from . import scales
+        scale = scales.find(near)
         c = node(center, "heatMap's centre")
         hops = {c: 0}
         frontier = [c]
@@ -644,10 +647,13 @@ def install(session):
             frontier = nxt
         f = g.addNodeField("hops", INT, -1)
         top = max(hops.values()) or 1
-        stops = [colors.parse(near, (215, 25, 28, 255))]
-        if middle is not None:
-            stops.append(colors.parse(middle, (245, 184, 65, 255)))
-        stops.append(colors.parse(far, (44, 123, 182, 255)))
+        if scale is not None:
+            stops = scale.stops
+        else:
+            stops = [colors.parse(near, (215, 25, 28, 255))]
+            if middle is not None:
+                stops.append(colors.parse(middle, (245, 184, 65, 255)))
+            stops.append(colors.parse(far, (44, 123, 182, 255)))
         if spread:
             # each distance's position in the cumulative share of reachable nodes
             from collections import Counter

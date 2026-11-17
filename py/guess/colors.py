@@ -137,7 +137,12 @@ def averageColor(c1, c2):
 
 
 def generateColors(*args):
-    """generateColors(start, end, n) or generateColors(start, middle, end, n)."""
+    """generateColors(start, end, n) or generateColors(start, middle, end, n):
+    n colours along a gradient. generateColors("viridis", n): n colours from a
+    colour scale (see colorScales)."""
+    if len(args) == 2:
+        from . import scales
+        return scales.get(args[0]).colors(int(args[1]))
     if len(args) == 3:
         start, end, n = args
         return _gradient(parse(start, (255, 0, 0, 255)), parse(end, (0, 0, 255, 255)), int(n))
