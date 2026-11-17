@@ -101,7 +101,41 @@ def _label(a, b, sym):
     return None
 
 
+def _bare_value_hint(a, b, sym):
+    """``dept == "dept1" or "dept2"`` is (dept == "dept1") or "dept2": the
+    second value is never compared. Say so, rather than give just dept1."""
+    import re
+    for q, v in ((a, b), (b, a)):
+        if not isinstance(q, GSet) or isinstance(v, bool) or not isinstance(v, (str, int, float)):
+            continue
+        ann = q.__dict__.get("annotation") if isinstance(q.__dict__.get("annotation"), str) else None
+        if not ann:
+            continue            # a set that isn't a query (sel or "none") is left alone
+        m = re.match(r"^\(?([A-Za-z_]\w*) (==|!=|<=|>=|<|>|in|like) (.*?)\)?$", ann)
+        if m and m.group(2) == "==":
+            word = "or" if sym in ("or", "|") else "and"
+            first = m.group(3)
+            if word == "or":
+                hint = f"did you mean {m.group(1)} in ({first}, {v!r})?"
+            else:
+                hint = f"did you mean ({m.group(1)} == {first}) {sym} ({m.group(1)} == {v!r})?"
+        elif m:
+            hint = f"compare the field on both sides, e.g. ({ann}) {sym} ({m.group(1)} ... {v!r})"
+        else:
+            hint = f"compare a field with it, e.g. ({ann}) {sym} (field == {v!r})"
+        raise GuessError(f"'{sym}' between a query and the bare value {v!r} doesn't compare {v!r} "
+                         f"with anything: {hint}")
+
+
+def _no_formatted(a, b):
+    from .model import _no_formatted as check
+    check("…", a)
+    check("…", b)
+
+
 def gand(a, b):
+    _no_formatted(a, b)
+    _bare_value_hint(a, b, "&")
     if _graphish(a) and _graphish(b):
         return GSet(GSet(elements_of(a)) & GSet(elements_of(b)), annotation=_label(a, b, "&"))
     _precedence_hint(a, b, "&")
@@ -109,6 +143,8 @@ def gand(a, b):
 
 
 def gor(a, b):
+    _no_formatted(a, b)
+    _bare_value_hint(a, b, "|")
     if _graphish(a) and _graphish(b):
         return GSet(GSet(elements_of(a)) | GSet(elements_of(b)), annotation=_label(a, b, "|"))
     _precedence_hint(a, b, "|")
@@ -157,6 +193,7 @@ def gbool(op, first, *thunks):
     for t in thunks:
         if isinstance(v, GSet):
             w = t()
+            _bare_value_hint(v, w, op)
             if isinstance(w, GSet):
                 v = gand(v, w) if op == "and" else gor(v, w)
             elif op == "and":
