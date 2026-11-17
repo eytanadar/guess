@@ -214,7 +214,7 @@ const SHOTS = {
       "colorize(dept)",
       "for d in ('dept4', 'dept6', 'dept9'):",
       "    grp = dept == d",
-      "    createConvexHull(grp, averageColor(grp[0].color, white))",
+      "    encircle(grp, \"hull\", averageColor(grp[0].color, white))",
       "center()",
     ].join("\n"), 1200);
     await shotGraph("hulls");
@@ -325,7 +325,7 @@ const SHOTS = {
       "random.seed(4)",
       "for k, kind in enumerate(['hull', 'box', 'ellipse']):",
       "    ns = [addNode('%s%d' % (kind, i), x=k * 260 + random.uniform(0, 140), y=random.uniform(0, 110), width=14, height=14) for i in range(6)]",
-      "    createConvexHull(ns, shape=kind)",
+      "    encircle(ns, kind)",
       "    ns[0].label = 'shape=\"%s\"' % kind; ns[0].labelpos = 'outside'; ns[0].labelvisible = true",
       "center()"].join("\n"), 1000);
     await zoomOut(150);

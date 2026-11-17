@@ -110,7 +110,7 @@ const OVERLAY = `
     document.body.append(cap);
     const title = document.createElement("div");
     title.id = "demo-title";
-    title.style.cssText = "position:fixed;inset:0;z-index:99997;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(250,250,248,.94);color:#1f1f1d;font:700 54px system-ui,sans-serif;letter-spacing:.04em;opacity:0;transition:opacity .6s;pointer-events:none";
+    title.style.cssText = "position:fixed;inset:0;z-index:99997;display:flex;flex-direction:column;align-items:center;justify-content:center;"+(matchMedia("(prefers-color-scheme: dark)").matches?"background:rgba(24,24,26,.95);color:#ecebe6;":"background:rgba(250,250,248,.94);color:#1f1f1d;")+"font:700 54px system-ui,sans-serif;letter-spacing:.04em;opacity:0;transition:opacity .6s;pointer-events:none";
     document.body.append(title);
   };
   if (document.body) add(); else addEventListener("DOMContentLoaded", add);
@@ -200,7 +200,7 @@ async function act(a) {
   }, a.caption);
   if (a.title !== undefined) return page.evaluate(([t, sub]) => {
     const el = document.getElementById("demo-title");
-    el.innerHTML = t ? `<div>${t}</div>${sub ? `<div style="font:400 24px system-ui;margin-top:14px;color:#6d6c66">${sub}</div>` : ""}` : "";
+    el.innerHTML = t ? `<div>${t}</div>${sub ? `<div style="font:400 24px system-ui;margin-top:14px;opacity:.6">${sub}</div>` : ""}` : "";
     el.style.opacity = t ? "1" : "0";
   }, [a.title, a.subtitle ?? ""]);
   if (a.menu) {
@@ -212,11 +212,21 @@ async function act(a) {
       await titleEl.click();   // the click closed a menu that was still open: open it again
       await sleep(300);
     }
-    const pop = page.locator(".menu-root", { has: page.locator(".menu-title", { hasText: a.menu[0] }) }).locator(".menu-pop");
-    const item = a.menu[1].startsWith("#") || a.menu[1].startsWith("[") ? pop.locator(a.menu[1]) : pop.getByRole("menuitem", { name: a.menu[1] });
+    const pop = page.locator(".menu-root", { has: page.locator(".menu-title", { hasText: a.menu[0] }) }).locator(".menu-pop").first();
+    const item = (a.menu[1].startsWith("#") || a.menu[1].startsWith("[") ? pop.locator(a.menu[1]) : pop.getByRole("menuitem", { name: a.menu[1] })).first();
+    // an item inside a submenu (View → Panels → …): open the submenu first
+    const sub = await item.evaluate((el) => el.closest(".menu-sub")?.querySelector(".menu-sub-title")?.textContent ?? null);
+    if (sub) {
+      const st = pop.locator(".menu-sub-title", { hasText: sub }).first();
+      const sb = await st.boundingBox();
+      if (sb) await moveTo(mouse[0], sb.y + sb.height / 2, 250);
+      await moveToEl(st);
+      await sleep(400);
+    }
     // go straight down into the menu first: crossing other titles would switch menus
     const ib = await item.boundingBox();
-    if (ib) await moveTo(mouse[0], ib.y + ib.height / 2, 250);
+    // (in a submenu, go across into it instead: going down would open another submenu)
+    if (ib) await (sub ? moveTo(ib.x + 12, mouse[1], 250) : moveTo(mouse[0], ib.y + ib.height / 2, 250));
     if (a.close) {
       await moveToEl(item);
       await sleep(600);
@@ -238,6 +248,29 @@ async function act(a) {
     return moveTo(x, y, 600);
   }
   if (a.hoverOutput) return moveToEl(page.locator(".cell .obj, .cell .grp", { hasText: a.hoverOutput }).last());
+  if (a.rightClickOutput) {
+    await moveToEl(page.locator(".cell .obj, .cell .grp", { hasText: a.rightClickOutput }).last());
+    await sleep(300);
+    return page.mouse.click(mouse[0], mouse[1], { button: "right" });
+  }
+  if (a.rightClickNode) {
+    const [x, y] = await nodeXY(a.rightClickNode);
+    await moveTo(x, y, 600);
+    await sleep(300);
+    return page.mouse.click(x, y, { button: "right" });
+  }
+  if (a.slide) {
+    // drag a range input's thumb from its current value to a fraction of its track
+    const el = page.locator(a.slide[0]).first();
+    const b = await el.boundingBox();
+    const f0 = await el.evaluate((i) => (Number(i.value) - Number(i.min)) / (Number(i.max) - Number(i.min) || 1));
+    const y = b.y + b.height / 2, at = (f) => b.x + 8 + f * (b.width - 16);
+    await moveTo(at(f0), y);
+    await page.mouse.down();
+    await moveTo(at(a.slide[1]), y, a.ms ?? 1600);
+    await sleep(200);
+    return page.mouse.up();
+  }
   if (a.hoverText) return moveToEl(page.locator(a.hoverText[0], { hasText: a.hoverText[1] }).last());
   if (a.dragNode) return drag(await nodeXY(a.dragNode[0]), await nodeXY(a.dragNode[1]), { alt: !!a.alt });
   if (a.dragIntoGroup) return drag(await nodeXY(a.dragIntoGroup), await otherGroupXY(a.dragIntoGroup), { ms: 1600 });

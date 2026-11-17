@@ -13,7 +13,7 @@ test("layouts run without errors", async ({ page }) => {
 
 test("states, morph and ranges", async ({ page }) => {
   await boot(page);
-  await run(page, "ss(1); circleLayout(); remove(dept == 'dept1'); ss(2); ls(1)");
+  await run(page, "saveState(1); circleLayout(); remove(dept == 'dept1'); saveState(2); loadState(1)");
   await run(page, "morph(2, 500)");
   await run(page, "addRange(v1, '1-5'); print(Node rcontains 3)");
   await expect(page.locator(".console-out")).toContainText("[v1]");
@@ -58,7 +58,7 @@ test("exports download files", async ({ page }) => {
 
 test("work is autosaved and restored on reload", async ({ page }) => {
   await boot(page);
-  await run(page, "v1.color = red; ss('x'); remove(v2)");
+  await run(page, "v1.color = red; saveState('x'); remove(v2)");
   await page.waitForTimeout(3000); // autosave debounce
   await page.reload();
   await expect(page.locator(".console-out")).toContainText("Restored your previous session", { timeout: 90_000 });
@@ -640,7 +640,7 @@ test("Graphviz loads in the background and lays out graphs", async ({ page }) =>
   await expect(page.locator(".cell").last()).toContainText("True");
   const bent = await page.evaluate(() => [...(window as any).__guess.renderer.edges.values()].filter((e: any) => e.b && e.b.length).length);
   expect(bent).toBeGreaterThan(0);
-  await run(page, "makeSample('karate')\nneatoLayout()\nfor n in g.nodes: n.x = n.x / 5; n.y = n.y / 5\nremoveOverlap()\nprint('ok')");
+  await run(page, "makeSample('karate')\nneatoLayout()\nfor n in g.nodes: n.x = n.x / 5; n.y = n.y / 5\nprismLayout()\nprint('ok')");
   await expect(page.locator(".cell").last()).toContainText("ok");
   await menu(page, "Layout", "Large graph (sfdp)");
   await expect(page.locator(".cell").last()).toContainText("sfdpLayout()");
@@ -931,7 +931,7 @@ test("streamFrom applies Gephi streaming events to the graph", async ({ page }) 
 
 test("boxes and ellipses, upright or turned, enclose their groups", async ({ page }) => {
   await boot(page);
-  await run(page, "center()\na = encircle(dept == 'dept1')\nb = encircle(dept == 'dept4', 'box')\nc = createConvexHull(dept == 'dept6', shape='box', rotate=false)");
+  await run(page, "center()\na = encircle(dept == 'dept1')\nb = encircle(dept == 'dept4', 'box')\nc = encircle(dept == 'dept6', 'box', rotate=false)");
   const shapes = await page.evaluate(() => {
     const r = (window as any).__guess.renderer;
     return r.hulls.map((h: any) => {

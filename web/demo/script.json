@@ -2,107 +2,470 @@
   "title": "GUESS for the web",
   "output": "guess-demo.mp4",
   "voice": "iP95p4xoKVk53GoZ742B",
-  "pronounce": { "Gython": "Guython" },
+  "pronounce": {
+    "Gython": "Guython",
+    "Valjean": "Valzhahn",
+    "Javert": "Zhahvair",
+    "Cosette": "Kozett",
+    "Marius": "Mahryooss",
+    "Misérables": "Meezayrahbl"
+  },
   "ttsModel": "eleven_multilingual_v2",
-  "theme": "light",
+  "theme": "dark",
   "setup": [
-    { "title": "GUESS", "subtitle": "graph exploration, now in the browser" }
+    {
+      "title": "GUESS",
+      "subtitle": "graph exploration, now in the browser"
+    },
+    {
+      "run": "g.edges.color = gray.alpha(70); g.nodes.color = lightsteelblue",
+      "visible": false
+    }
   ],
   "scenes": [
     {
       "id": "intro",
       "narration": "Graphs are everywhere: social networks, biological pathways, computer networks. When we built GUESS in 2006, we had watched researchers struggle with tools that were either too general or tied to one domain. What they needed was a flexible way to work with graph data. This is GUESS rebuilt for the web. It runs entirely in the browser, with nothing to install.",
       "actions": [
-        { "wait": 6500 },
-        { "title": "" },
-        { "wait": 1500 },
-        { "hoverNode": "v128" }
+        {
+          "wait": 6500
+        },
+        {
+          "title": ""
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "hoverNode": "v128"
+        }
       ]
     },
     {
       "id": "gython",
-      "narration": "The heart of GUESS is Gython, Python extended with graph operators. This sample network shows who emails whom, and how often. In one line we can find every edge with a frequency over one hundred and colour it red. And one command gives each department its own colour.",
+      "narration": "The heart of GUESS is Gython, Python extended with graph operators. Every node in the graph is already a variable. Here we zoom in on v4 and make it a larger square. Edges have operators of their own: v4, double arrow, v5, is the edge between them.",
       "actions": [
-        { "run": "(freq > 100).color = red" },
-        { "wait": 1200 },
-        { "run": "colorize(dept)" },
-        { "wait": 800 }
+        {
+          "run": "center(v4)"
+        },
+        {
+          "run": "v4.style = \"square\"; v4.size = 30"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "run": "v4 <-> v5"
+        },
+        {
+          "hoverOutput": "–"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "run": "center()"
+        }
+      ]
+    },
+    {
+      "id": "namespace",
+      "narration": "GUESS puts the whole graph into Python's namespace. Every node, every field and every command is a name you can use directly, and that holds for any network. Let's open a second graph: the characters of Les Misérables. Now Valjean and Javert are variables, and Valjean, double arrow, Javert, is the edge between them. Weight is a field, so the three strongest ties are one line: Valjean and Cosette, Cosette and Marius, Valjean and Marius. Switching back to the email network brings its own names back.",
+      "actions": [
+        {
+          "run": "newGraph(\"lesmis\")"
+        },
+        {
+          "run": "makeSample(\"lesmis\")"
+        },
+        {
+          "run": "g.edges.color = gray.alpha(70); g.nodes.color = lightsteelblue; g.nodes.labelvisible = true; center()",
+          "visible": false
+        },
+        {
+          "wait": 800
+        },
+        {
+          "run": "Valjean <-> Javert"
+        },
+        {
+          "hoverOutput": "–"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "run": "highest(weight, 3)"
+        },
+        {
+          "hoverText": [
+            ".cell .grp",
+            "Cosette"
+          ]
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "run": "use(\"main\")"
+        },
+        {
+          "wait": 1000
+        }
+      ]
+    },
+    {
+      "id": "queries",
+      "narration": "This network shows who emails whom, and how often. Queries are part of the language. One line finds every edge with more than a hundred messages and turns it gold. Queries combine, so we can ask for everyone in department three or nine. And one command gives each department its own colour from a soft palette, with a legend to explain it.",
+      "actions": [
+        {
+          "run": "(freq > 100).color = gold"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "run": "(dept == \"dept3\") | (dept == \"dept9\")"
+        },
+        {
+          "hoverText": [
+            ".cell .grp",
+            "v"
+          ]
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "run": "colorize(dept, palette=\"Set2\")"
+        },
+        {
+          "run": "legendFor(dept)"
+        },
+        {
+          "wait": 900
+        }
       ]
     },
     {
       "id": "linked-output",
-      "narration": "The interpreter is tied to the visualization. Asking for the people in department three returns a set. Passing the mouse over that output highlights the matching nodes, and clicking selects them. Edges have their own operators, so we can ask which edges connect two departments.",
+      "narration": "The interpreter is tied to the visualization. Passing the mouse over a result highlights the matching nodes. Results can also be shown in different ways. Grouping by department and piping it into a table gives one row per group, and hovering a row highlights its people.",
       "actions": [
-        { "run": "dept == 'dept3'" },
-        { "hoverOutput": "v4" },
-        { "wait": 900 },
-        { "hoverText": [".cell .grp", "v"] },
-        { "wait": 1200 },
-        { "run": "(dept == 'dept1') <-> (dept == 'dept3')" },
-        { "hoverOutput": "-" },
-        { "wait": 900 }
+        {
+          "run": "dept == \"dept3\""
+        },
+        {
+          "hoverOutput": "v4"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "hoverText": [
+            ".cell .grp",
+            "v"
+          ]
+        },
+        {
+          "wait": 1000
+        },
+        {
+          "run": "groupBy(dept) >> table"
+        },
+        {
+          "hoverText": [
+            ".cell .out-tbl tr",
+            "dept2"
+          ]
+        },
+        {
+          "wait": 1000
+        },
+        {
+          "hoverText": [
+            ".cell .out-tbl tr",
+            "dept5"
+          ]
+        },
+        {
+          "wait": 1000
+        }
+      ]
+    },
+    {
+      "id": "both-ways",
+      "narration": "The connection runs both ways. Pointing at a node in the graph marks every line of output that mentions it. Earlier code stays live too: pointing at a query highlights what it matches today, and pointing at a field previews colouring by it, without changing anything. Pointing at a cell's number shows everything that cell changed. And dragging a node into another department's group moves it to that department, and writes the code that did it.",
+      "actions": [
+        {
+          "hoverNode": "v4"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "hoverText": [
+            ".cell-code [data-from]",
+            "freq"
+          ]
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "hoverText": [
+            ".cell-code [data-from]",
+            "dept"
+          ]
+        },
+        {
+          "wait": 1800
+        },
+        {
+          "hoverText": [
+            ".cell:has(.cell-code:has-text(\"colorize(dept\")) .cell-num",
+            ""
+          ]
+        },
+        {
+          "wait": 1800
+        },
+        {
+          "dragIntoGroup": "v128"
+        },
+        {
+          "wait": 1500
+        }
+      ]
+    },
+    {
+      "id": "menus",
+      "narration": "Right-clicking anything, in the graph or in the output, opens a menu of actions. Each one writes Gython that names the nodes it changes, so the session can be replayed later.",
+      "actions": [
+        {
+          "rightClickOutput": "dept3"
+        },
+        {
+          "wait": 700
+        },
+        {
+          "click": "#menu button:has-text(\"Show labels\")"
+        },
+        {
+          "wait": 1500
+        }
       ]
     },
     {
       "id": "layout-analysis",
-      "narration": "Layouts and network algorithms are a command away. ForceAtlas2 arranges the graph. Louvain finds communities, which we colour, and we size each person by PageRank. Every result is an ordinary field, so it works with everything else in the language.",
+      "narration": "Layouts and network algorithms are a command away. ForceAtlas2 arranges the graph. Louvain finds communities, which we colour, and we size each person by PageRank. Every result is an ordinary field, so the five most central people are one more line.",
       "actions": [
-        { "run": "forceAtlas2Layout()" },
-        { "run": "center(giantComponent())" },
-        { "run": "cl = louvainClusters()" },
-        { "run": "colorize(louvain_class)" },
-        { "run": "sizeBy(pagerank, 5, 40, 'sqrt')" },
-        { "wait": 600 }
+        {
+          "run": "forceAtlas2Layout()"
+        },
+        {
+          "run": "center(giantComponent())"
+        },
+        {
+          "run": "louvainClusters();"
+        },
+        {
+          "run": "colorize(louvain_class, palette=\"Set3\")"
+        },
+        {
+          "run": "sizeBy(pagerank, 5, 40, transform=\"sqrt\")"
+        },
+        {
+          "run": "highest(pagerank, 5) >> table(pagerank, dept)"
+        },
+        {
+          "hoverText": [
+            ".cell .out-tbl tr",
+            "v"
+          ]
+        },
+        {
+          "wait": 1200
+        }
+      ]
+    },
+    {
+      "id": "states",
+      "narration": "States let us compare views. We save this one, try a circular layout, and then morph smoothly back.",
+      "actions": [
+        {
+          "run": "saveState(\"before\")"
+        },
+        {
+          "run": "circleLayout()"
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "run": "morph(\"before\", 2000)"
+        },
+        {
+          "wait": 2200
+        }
       ]
     },
     {
       "id": "panels",
       "narration": "Not everyone wants to type. The filter panel hides what doesn't match, and the data table shows every field. But each change writes Gython into the console. The interface teaches the language, and the work stays reproducible.",
       "actions": [
-        { "menu": ["View", "#btn-filter"] },
-        { "select": ["#side-filter select", "s:kcore"] },
-        { "click": "#side-filter .pf-form button" },
-        { "wait": 1500 },
-        { "click": "#side-filter .pf-actions button" },
-        { "menu": ["View", "#btn-table"] },
-        { "wait": 1500 },
-        { "menu": ["View", "#btn-table"] },
-        { "menu": ["View", "#btn-filter"] }
+        {
+          "menu": [
+            "View",
+            "#btn-filter"
+          ]
+        },
+        {
+          "select": [
+            "#side-filter select",
+            "s:kcore"
+          ]
+        },
+        {
+          "click": "#side-filter .pf-form button"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "click": "#side-filter .pf-actions button"
+        },
+        {
+          "menu": [
+            "View",
+            "#btn-table"
+          ]
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "menu": [
+            "View",
+            "#btn-table"
+          ]
+        },
+        {
+          "menu": [
+            "View",
+            "#btn-filter"
+          ]
+        }
       ]
     },
     {
-      "id": "help",
-      "narration": "There are over two hundred commands. Search finds commands, examples, nodes and values. Here we look for communities and pick an example.",
+      "id": "widgets",
+      "narration": "A few lines of code build an interface of your own. This slider hides every edge with fewer messages than its value. Sliding it up leaves only the busiest connections.",
       "actions": [
-        { "key": "ControlOrMeta+k" },
-        { "typeKeys": "communit" },
-        { "wait": 1800 },
-        { "key": "Escape" },
-        { "key": "F1" },
-        { "wait": 1200 },
-        { "fill": [".help-search", "shortest path"] },
-        { "wait": 1500 },
-        { "key": "F1" }
+        {
+          "run": "def threshold(v):\n    (freq < v).visible = false\n    (freq >= v).visible = true\nui.dock(Panel(\"Edges\", Slider(0, 200, 0, label=\"fewest messages\", onSlide=threshold)))",
+          "visible": false
+        },
+        {
+          "wait": 800
+        },
+        {
+          "slide": [
+            ".w-slider input",
+            0.6
+          ]
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "slide": [
+            ".w-slider input",
+            0
+          ]
+        },
+        {
+          "wait": 600
+        }
       ]
     },
     {
       "id": "charts",
       "narration": "Charts are linked to the graph as well. Hovering over a slice of this chart highlights its department's people.",
       "actions": [
-        { "run": "plotSizesPie(dept)" },
-        { "wait": 600 },
-        { "hoverText": [".chart path.mark", ""] },
-        { "wait": 1400 }
+        {
+          "run": "plotSizesPie(dept)"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "hoverText": [
+            ".chart path.mark",
+            ""
+          ]
+        },
+        {
+          "wait": 1400
+        }
+      ]
+    },
+    {
+      "id": "help",
+      "narration": "There are hundreds of commands. Search finds commands, examples, nodes and values. Here we look for communities, and then open the help to find shortest paths.",
+      "actions": [
+        {
+          "key": "ControlOrMeta+k"
+        },
+        {
+          "typeKeys": "communit"
+        },
+        {
+          "wait": 1800
+        },
+        {
+          "key": "Escape"
+        },
+        {
+          "key": "F1"
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "fill": [
+            ".help-search",
+            "shortest path"
+          ]
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "key": "F1"
+        }
       ]
     },
     {
       "id": "share",
-      "narration": "When we're done, a session can be saved, exported for Gephi, turned into a notebook, or shared as a link that opens in anyone's browser. We hope GUESS makes graph exploration a little more flexible, and a lot more fun.",
+      "narration": "When we're done, a session can be saved, exported to many formats, turned into a notebook, or shared as a link that opens in anyone's browser. We hope GUESS makes graph exploration a little more flexible, and a lot more fun.",
       "actions": [
-        { "menu": ["File", "#share-link"], "close": true },
-        { "wait": 800 },
-        { "title": "GUESS", "subtitle": "graph exploration in the browser" },
-        { "wait": 2500 }
+        {
+          "menu": [
+            "File",
+            "#share-link"
+          ],
+          "close": true
+        },
+        {
+          "wait": 800
+        },
+        {
+          "title": "GUESS",
+          "subtitle": "graph exploration in the browser"
+        },
+        {
+          "wait": 2500
+        }
       ]
     }
   ]
