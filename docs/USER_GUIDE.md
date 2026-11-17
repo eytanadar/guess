@@ -28,11 +28,12 @@ Cmd/Ctrl+Enter) to run; Enter adds a line, so multi-line code is natural.
 | Shift+Enter, Cmd/Ctrl+Enter | run the cell |
 | Tab | complete (commands, fields, nodes, attributes) |
 | ↑ / ↓ on the first / last line | previous / next command from history |
-| Esc | interrupt running code (also the **Stop** button) |
+| Esc (in the console) | interrupt running code (also the **Stop** button) |
 | Ctrl+L | clear the output |
 | **Edit** (or double-click the code) on an executed cell | copy it back into the working cell |
 | **Run again** | run that cell's code again as a new cell at the bottom |
 | `[n]` | fold / unfold a cell's output |
+| **Hide** on an executed cell | collapse the cell to one line (click it to show it again) |
 
 Output that refers to nodes and edges is linked: **hover** to highlight them in
 the graph, **click** to select them (and zoom to them), **right-click** for a
@@ -74,13 +75,13 @@ gesture below, and a tip appears the first time a gesture becomes available
 |---|---|
 | drag background | pan; mouse wheel / pinch zooms; double-click fits |
 | Delete / Backspace | remove the selected nodes (Edit → Delete selected nodes; undoable) |
-| drag a node | move it (and the whole selection, if it is selected); recorded as a hidden command (View → Show node moves in the console) |
+| drag a node | move it (and the whole selection, if it is selected); recorded as a hidden command (View → Console → Show hidden commands) |
 | click a node (**Select** tool) | highlight it and its neighbours; click again or Esc to clear |
 | Shift-drag | box-select nodes |
 | Alt/Option-drag | lasso-select nodes |
 | add Cmd/Ctrl to a box or lasso | add to the selection |
 | Shift-click a node | add / remove it from the selection |
-| Esc, or click the background | clear the selection |
+| Esc (outside the console), or click the background | leave the current tool, then clear the focus, then the selection |
 | right-click | context menu (for the whole selection if you right-click a selected node) |
 
 **Dragging with meaning.**
@@ -91,16 +92,20 @@ gesture below, and a tip appears the first time a gesture becomes available
 Each drop is one command in the console, so it can be undone.
 
 The selection is the variable **`sel`** in the console (`sel.color = red`,
-`center(sel)`, `showOnly(sel)`), and `select(dept == 'dept2')` selects from code.
+`center(sel)`, `showOnly(sel)`), and `select(dept == "dept2")` selects from code.
+Selecting writes no code, so the menus that act on the selection name its
+nodes (`showOnly((v1, v2))`, `(v1, v2).color = red`), and a saved history
+replays without it.
 
-The **Path**, **Heat** and **Paint** tools turn clicks into commands (shown in
+The **Select**, **Lens**, **Path**, **Heat**, **Paint** and **Cluster** tools
+are the icons in the toolbar. Path, Heat, Paint and Cluster turn clicks into commands (shown in
 the console, so you can edit and re-run them): click two nodes to colour a
 shortest path; click a node for a distance heat map; click to paint nodes with
 the colour next to the tools (Shift-click paints neighbours too).
 
 ## Undo
 
-**Undo** / **Redo** in the toolbar, Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z (or Ctrl+Y)
+*Edit → Undo* / *Redo*, Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z (or Ctrl+Y)
 when the code cell isn't focused, or `undo()` / `redo()` in the console. Each
 command is one step (a layout, a file load, `colorize`, a node drag…), up to 50
 steps back. Undone cells are struck through in the console; redo restores them.
@@ -128,13 +133,13 @@ hides the rest and `showAll()` brings it back.
 
 ## Display
 
-- **Curved** toggles Gephi-style curved edges (`curvedEdges(0.6)` sets the
+- *View → Edges → Curved edges* toggles Gephi-style curved edges (`curvedEdges(0.6)` sets the
   curvature); `setEdgeColorMode("mixed")` colours edges by their endpoints.
 - `labelOutlines()` and `hideOverlappingLabels()` keep labels readable.
-- `encircle(dept == 'dept1', "hull", "200,200,255,90")`, `Legend()`,
+- `encircle(dept == 'dept1', "hull", lavender.alpha(90))`, `Legend()`,
   `GradientLegend(...)`, `setDisplayBackground(black)` (`None` follows the theme).
-- The theme button cycles **Auto** (follows the system), **Light** and **Dark**.
-- **PNG** / **SVG** export the view; `startMovie()` / `stopMovie()` record WebM.
+- *View → Theme* picks **Automatic** (follows the system), **Light** or **Dark**.
+- *File → Export image* saves the view as PNG or SVG; `startMovie()` / `stopMovie()` record WebM.
 
 ## States, ranges, charts, apps
 

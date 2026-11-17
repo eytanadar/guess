@@ -659,6 +659,16 @@ Put each comparison in parentheses when you use `&` or `|`:
 `dept == 'dept1' & totaldegree > 3` means something else, and GUESS says so.
 In the test of an `if` or `while`, `and`, `or` and `not` keep their usual
 meaning (`if s and t:` asks whether both are non-empty).
+`dept == 'dept1' or 'dept2'` is an error that suggests
+`dept in ('dept1', 'dept2')`.
+
+Two sets are equal when they hold the same members, in any order, and
+`a + b` is their union, like `a | b`. A query's set is a snapshot: change
+the data and run the query again to see the new members.
+
+Colour fields compare colours, not spellings: `color == red`,
+`color == 'red'` and `color == '#FF0000'` find the same nodes, and
+`groupBy(color)` puts every spelling of a colour in one group.
 
 A tuple or list of nodes also works as a set: `(v1, v2, v3).color = green`.
 
@@ -784,7 +794,9 @@ select()                       # clear it
 ## 5.5 The data table
 
 *View → Panels → Data table* (or `table()`) opens a spreadsheet of the nodes or edges
-below the graph. `table(dept == 'dept3')` shows just those. You can sort by a
+below the graph. `table(dept == 'dept3')` shows just those, and
+`table(dept == 'dept3', sort=degree)` sorts them (largest first; add
+`descending=false`). You can sort by a
 column, filter, and double-click a cell to edit it. An edit is an ordinary
 command and can be undone. Selecting rows selects the nodes, and vice versa;
 in the edge table, the edges between selected nodes are marked. Hovering a
@@ -1869,7 +1881,7 @@ bar, with the ▾ in their header or by double-clicking the title.
 group's convex hull:
 
 ```python
-h = encircle(dept == 'dept4', "hull", "200,200,255,90")
+h = encircle(dept == 'dept4', "hull", lavender.alpha(90))
 for d in ('dept4', 'dept6', 'dept9'):
     grp = dept == d
     encircle(grp, "hull", averageColor(grp[0].color, white))
@@ -1948,7 +1960,7 @@ alpha for a translucent one); `anchor=` places text by its `"start"`,
   The graph's background follows the theme, unless you set one with
   `setDisplayBackground(black)`. `setDisplayBackground(None)` follows the
   theme again.
-- **Edges**: *View → Edges → Curved edges* or `curvedEdges()`.
+- **Edges**: *View → Edges → Curved edges* or `curvedEdges(true)`.
   `setEdgeColorMode("mixed")` draws each edge in the colours of its two ends.
   Parallel edges between the same two nodes are always drawn as separate
   curves.
@@ -2009,7 +2021,7 @@ arrowheadBy(directed)
   edge field its own style. SVG export draws them all, and flow edges keep
   moving in the SVG. DOT files' `arrowhead` and `style` (dashed, dotted,
   tapered) are read and written.
-- Curved, weighted flows: `curvedEdges()`, `g.edges.arrowhead = 'swept'`,
+- Curved, weighted flows: `curvedEdges(true)`, `g.edges.arrowhead = "swept"`,
   `sizeBy(weight, 0.5, 7)` and `colorBy(weight, lightgray, '50,70,90')`.
 
 ![Line styles (left) and arrowheads (right).](img/edgestyles.png)
@@ -2127,9 +2139,18 @@ The pointer shows what a click or drag would do before you press:
 
 ![A lasso selection (Alt/Option-drag).](../../web/public/help/lasso.png){width=60%}
 
-The selection is `sel` in the console (section 5.4). The right-click menu
-colours, sizes, labels, hides and removes, and *Assign to variable…* gives
-the selection a name you can use in code.
+The selection is `sel` in the console (section 5.4). Selecting writes no
+code, so the commands that act on the selection name its nodes instead: the
+right-click menu writes `(v1, v2, v3).color = red`, and the Edit and Layout
+menus write `showOnly((v1, v2))`, `collapse(…)`, `subgraph(…)`,
+`select(ninverse(…))`, `radialLayout(v3)` and `treeLayout(v3)`. Delete writes
+`remove(v1, …)`. Your history then replays without the selection. *Clear
+selection* (Esc) writes no code, and *View → Fit graph* runs `center()`.
+*Assign to variable…* runs a cell such as `mine = (v1, v2, v3)`.
+
+A few things write no code at all: selecting (box, lasso, click), turning
+the Lens on and off, scrubbing the timeline (*Keep* records the moment) and
+moving the History slider.
 
 ## 13.3 Dragging with meaning
 
@@ -2138,8 +2159,8 @@ selected. Each drag is recorded as an ordinary command, such as
 `v12.x = 310.5; v12.y = -42`. It is one undo step, and `history()`,
 `saveHistory()`, `log()` and notebook export include it, so a saved
 script puts the nodes back where you left them. To keep the console readable,
-these commands are hidden. *View → Console → Show node moves in the console* shows
-them.
+these commands are hidden. *View → Console → Show hidden commands* shows
+them (node moves and cluster lassos).
 
 After some commands, a drag also *means* something. GUESS knows
 what the arrangement on the screen stands for, so it can turn your drag into
@@ -2198,8 +2219,11 @@ pressed tool is drawn in the accent colour.
   Cmd/Ctrl-drag, or clicking a node, adds to the last cluster. *Colour by
   it* runs `colorize(cluster)`; *Done* or Esc ends the tool.
 
-Each click runs a command in the console (`shortestPath(v1, v14)`,
-`heatMap(v3)`, `paint(v5, red)`), so you can edit it and run it again. The
+Each click runs a command in the console
+(`shortestPath(v1, v14).color = "#e8384f"`, `heatMap(v3)`,
+`paint(v5, "#e8384f")`, or `paint(v5, "#e8384f", 1)` with Shift), so you can
+edit it and run it again. A colour is written as its name when it has one
+(`red`), otherwise as `"#rrggbb"`. The
 Cluster tool's lassos run `labelCluster(["v1", "v7", …], 3, "cluster")`
 as hidden cells, like node drags: they can be undone, and `history()` and
 `saveHistory()` include them.
@@ -2284,7 +2308,7 @@ parentheses. Between numbers, `>>` is still Python's shift.
 |---|---|
 | `list` | the default: linked lists, `[v1, v2, …]` |
 | `folded` | lists start folded, `[v1, … +27 more]`; one folded list per group |
-| `table` | a table. For a set: a row per node or edge, with columns for the fields its query used (or `table(degree, dept)`). For groups: a row per group (label, size, members). For `dept.distinct`: a row per value, with its count. For a dict: a row per key. For one node: a row per field. `sort=` sorts by a field (or by `'size'`, `'count'` or `'label'`), largest first; add `reverse=false` for smallest first |
+| `table` | a table. For a set: a row per node or edge, with columns for the fields its query used (or `table(degree, dept)`). For groups: a row per group (label, size, members). For `dept.distinct`: a row per value, with its count. For a dict: a row per key. For one node: a row per field. `sort=` sorts by a field (or by `'size'`, `'count'` or `'label'`), largest first; add `descending=false` for smallest first |
 | `summary` | one line: `12 nodes`, `21 groups, sizes 1–52` |
 | `count` | just how many |
 | `plain` | unlinked text, a line per group |
@@ -2325,8 +2349,11 @@ resetFormats()
 (dept == 'dept3') >> firstThree           # once
 ```
 
-Your own format needs parentheses around a query before `>>`. The
-built-in names don't.
+A query before `>> format` is shown whole in that format, for your own
+functions too. GUESS decides when the line runs: if the value after `>>`
+isn't a format (after `count = 3`, say), `>>` is Python's shift as usual.
+In an f-string a formatted value shows as that format's text:
+`f"{highest(degree, 3) >> count} nodes"` is `3 nodes`.
 
 **Code and graph, linked.** The console and the graph point at each other:
 
@@ -2391,8 +2418,9 @@ built-in names don't.
   the code that changed it*.
 - **Into your code.** Alt-click a node in the graph, a table row, a legend
   row, a chart bar or anything in the output to insert it at the cursor:
-  its name, a query, `sel`, or a short tuple. A larger set is bound to a new
-  variable, `picked1`. The right-click menu has *Insert as code*.
+  its name, a query, or a tuple of up to 12. A larger set is bound to a new
+  variable by a visible cell, `picked1 = (v1, v2, …)`, and `picked1` is
+  inserted. The right-click menu has *Insert as code*.
 - **Earlier graphs.** Output from an earlier graph (before a new file was
   opened, or another graph tab) is greyed out and no longer linked, since
   its elements are gone.
@@ -2735,6 +2763,14 @@ Gython is Python 3 with these additions:
 | `Node rcontains x`, `roverlaps`, `rcontained` | range queries |
 | `field['state']` | values in a saved state |
 | `true`, `false` | the same as `True`, `False` |
+| `x >> table` (`summary`, `count`, `plain`, `folded`, `list`, or your own function) | shows `x` in that format; after a query it applies to the whole query (`dept == 'd1' >> table`). Otherwise `>>` is Python's shift |
+| a trailing `;` | hides the echo of the line's value (`louvainClusters();`) |
+| `sel` | the nodes selected in the graph |
+| `highest(field, k)`, `lowest(field, k)`, `set.where(fn)` | the top or bottom `k` elements; the members passing your test, as a set |
+| `with scratch():` | runs the block, then puts the graph back as it was |
+| `red.alpha(90)`, `.lighter()`, `.darker()` | colour variants; colours compare by meaning (`color == "#ff0000"` matches `red`) |
+| `a == b`, `a + b` on sets | equal when they hold the same members in any order; `+` is a union, like `\|` |
+| `print(n.dept)`, `f"{n.dept}"` | field values printed stay linked to the element |
 | a command name on its own (`center`) | calls it |
 | node names, field names, commands, colours | predefined, protected variables |
 

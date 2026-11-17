@@ -659,6 +659,16 @@ Put each comparison in parentheses when you use `&` or `|`:
 `dept == 'dept1' & totaldegree > 3` means something else, and GUESS says so.
 In the test of an `if` or `while`, `and`, `or` and `not` keep their usual
 meaning (`if s and t:` asks whether both are non-empty).
+`dept == 'dept1' or 'dept2'` is an error that suggests
+`dept in ('dept1', 'dept2')`.
+
+Two sets are equal when they hold the same members, in any order, and
+`a + b` is their union, like `a | b`. A query's set is a snapshot: change
+the data and run the query again to see the new members.
+
+Colour fields compare colours, not spellings: `color == red`,
+`color == 'red'` and `color == '#FF0000'` find the same nodes, and
+`groupBy(color)` puts every spelling of a colour in one group.
 
 A tuple or list of nodes also works as a set: `(v1, v2, v3).color = green`.
 
@@ -784,7 +794,9 @@ select()                       # clear it
 ## 5.5 The data table
 
 *View → Panels → Data table* (or `table()`) opens a spreadsheet of the nodes or edges
-below the graph. `table(dept == 'dept3')` shows just those. You can sort by a
+below the graph. `table(dept == 'dept3')` shows just those, and
+`table(dept == 'dept3', sort=degree)` sorts them (largest first; add
+`descending=false`). You can sort by a
 column, filter, and double-click a cell to edit it. An edit is an ordinary
 command and can be undone. Selecting rows selects the nodes, and vice versa;
 in the edge table, the edges between selected nodes are marked. Hovering a
@@ -871,7 +883,7 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `hairballLayout()` | the Hairball Buster plot: nodes by degree rank, with a tick under each neighbour |
 | `motifLayout()` | structure-aware: rings for cycles, stars for hubs with leaves, grids for nodes with the same neighbours (below) |
 | `binPackLayout()` | packs the connected components side by side |
-| `removeOverlap()` | separate overlapping nodes while keeping the layout's shape (Graphviz PRISM); works after any layout |
+| `prismLayout()` | separate overlapping nodes while keeping the layout's shape (Graphviz PRISM); works after any layout |
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
 | `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(dx, dy)`, `moveLayout(x, y)` | transform the current layout; `rescaleLayout(nodes, 1.5)` spreads out just those nodes |
 
@@ -887,7 +899,7 @@ remove(feedbackEdges())                   # make it acyclic (section 7.7)
 dotLayout()                               # layers, arrows pointing down
 colorize(generation)
 neatoLayout()
-removeOverlap()
+prismLayout()
 makeFromGDF("sample.gdf")                 # back to the sample graph
 ```
 
@@ -960,9 +972,10 @@ Layout. `isometricLayout` stands in for 3D views such as Gephi's Network
 Splitter 3D: each value of the field gets its own plane. Running it again
 with another field starts from the flat layout.
 
-**Old names.** The 2006 names still work. `random()` is the random layout,
-and `jfrLayout`, `jkkLayout1`, `jkkLayout2` and `jSpringLayout` are the
-JUNG versions of the force layouts. Every command is also a method of `g`,
+**Old names.** The 2006 names still work, apart from the few renamed in
+Appendix C. `random()` is the random layout,
+and `jfrLayout`, `jkkLayout` and `jSpringLayout` are the JUNG versions of
+the force layouts. Every command is also a method of `g`,
 so `g.gemLayout()` works.
 
 \newpage
@@ -978,27 +991,35 @@ makes sense, add a field so you can colour by it:
 louvainClusters()                  # communities; adds the field louvain_class
 colorize(louvain_class)
 modularity(louvain_class)       # how good the partition is
-edgeBetweennessClusters(5)         # remove the 5 most "between" edges; the pieces
-weakComponentClusters()            # connected components
-biComponentClusters()              # biconnected components
+edgeBetweennessClusters(5)         # Girvan-Newman: 5 communities, in edgebetweenness_class
+weakComponentClusters()            # connected components, in weakcomponent_class
+biComponentClusters()              # biconnected components, in bicomponent_class
 groupsOfSize(dept, 40)             # groups with at least 40 members
 ```
 
-Fitting a model instead of optimising modularity: `fitBlockModel(k)` finds
-the k groups of a stochastic block model that make the edges most probable.
+Every command that splits the nodes into groups works the same way: it
+stores each node's group in a field named `<method>_class` (0 is the
+largest group), returns the groups, and takes `name=` to use another field.
+
+Fitting a model instead of optimising modularity: `sbmClusters(count)` finds
+the `count` groups of a stochastic block model that make the edges most
+probable.
 It is degree-corrected by default; `degreeCorrected=false` gives the plain
 model, which tends to put the hubs in a group of their own.
-`corePeriphery()` splits a network into a dense core and a periphery
-(field `core`), and `rankNodes()` puts the nodes of a directed network on a
-ladder so that edges mostly point down (SpringRank; field `rank`).
+`blockModelClusters(count)` groups structurally equivalent nodes (the same
+ties) into positions, in `blockmodel_class`. `corePeriphery()` splits a
+network into a dense core and a periphery (field `core`), and `rankNodes()`
+puts the nodes of a directed network on a ladder so that edges mostly point
+down (SpringRank; field `rank`). Both return their field, with the extra
+results as attributes (`.fit`, `.agreement`).
 `makeLFR(n, mu=)` makes benchmark networks with planted communities (field
 `community`) to test the methods on. Hierarchical methods draw their tree
 with `showDendrogram()`; `cut=` colours that many groups and `field=`
 stores them:
 
 ```python
-fitBlockModel(2)                          # field sbm_class; returns the log-likelihood
-corePeriphery()
+sbmClusters(2).loglik                     # field sbm_class; the groups' log-likelihood
+corePeriphery().fit
 showDendrogram([(0, 1), (2, 3), (4, 5)], nodes=list(g.nodes)[:4] + [v1, v2], cut=2)
 makeLFR(250, mu=0.2)
 louvainClusters()
@@ -1045,7 +1066,7 @@ shape:
 ```python
 colorize(dept)                          # a distinct colour per value
 colorBy(betweenness, yellow, red)       # a gradient over a number
-colorBy(freq, yellow, red, 'log')       # scales: 'linear', 'log', 'sqrt', 'rank'
+colorBy(freq, yellow, red, transform='log')   # transforms: 'linear', 'log', 'sqrt', 'rank'
 sizeBy(pagerank, 5, 40)                 # node size (or edge width) from a number
 resizeLinear(totaldegree, 5, 30)        # the 2006 version
 labelBy(dept)                           # labels from a field
@@ -1080,11 +1101,11 @@ about 70 built-in scales. They come from ColorBrewer, d3 and Vega:
 
 ```python
 colorBy(betweenness, "viridis")         # a perceptually even scale
-colorBy(degree, "RdBu", center=3)       # diverging: the middle colour at 3
+colorBy(degree, "RdBu", midpoint=3)       # diverging: the middle colour at 3
 colorize(dept, "Set2")                  # categorical: the largest group gets the first colour
 colorize(degree, "YlGnBu")              # sequential, over the sorted values
 generateColors("Blues", 5)              # ColorBrewer's own 5-class Blues
-heatMap(v1, "magma_r")                  # _r reverses a scale
+heatMap(v1, palette="magma_r")          # _r reverses a scale
 GradientLegend("viridis", 0, 1)         # a legend for a scale
 pieChart([indegree, outdegree], palette="Dark2")
 colorScales()                           # every scale, with a preview of each
@@ -1450,14 +1471,15 @@ compareClusters(louvain_class, dept)   # do the communities match departments?
 Some measures from the textbook literature (Newman, *Networks*, ch. 7):
 
 ```python
-f, limit = katzCentrality(alpha=0.05)     # x = alpha A x + beta; alpha < limit = 1/kappa1
+f = katzCentrality(alpha=0.05)            # x = alpha A x + beta; alpha < f.limit = 1/kappa1
 kComponents(2)                            # bicomponents (k = 3: tricomponents), largest first
 similarTo(v1, method="regular")           # similar neighbours, not shared ones
 ```
 
-`katzCentrality` stores its result in `katz`. With a small `alpha` it ranks
-nodes almost by degree, and as `alpha` nears `limit` almost by eigenvector
-centrality. `kComponents(k)` sets the field `kcomponent`.
+`katzCentrality` stores its result in `katz` and returns that field. With a
+small `alpha` it ranks nodes almost by degree, and as `alpha` nears
+`f.limit` almost by eigenvector centrality. `kComponents(k)` sets the field
+`kcomponent_class` (a node in several k-components gets the largest).
 
 Resilience and spreading: `robustness()` and `percolation()` chart the
 largest connected piece as nodes fail or are attacked. `percolation` uses
@@ -1495,7 +1517,7 @@ r["frustrated"].color = red               # edges that disagree with the camps
 For a directed network, `bowTie()` sorts the nodes the way the Web was
 first described: a strongly connected core, the nodes that reach it (in),
 the nodes it reaches (out), tubes and tendrils, and the rest. It sets the
-field `bowtie` and returns the sizes. For a heavy-tailed field,
+field `bowtie` and returns it, with the sizes in `.sizes`. For a heavy-tailed field,
 `fitPowerLaw(degree)` estimates the exponent α of p(k) ∝ k^−α by maximum
 likelihood, with its standard error. It picks k_min by the
 Kolmogorov–Smirnov method unless you give `kmin=`, and it also takes a plain
@@ -1504,7 +1526,7 @@ line:
 
 ```python
 makeFromFile("polblogs-sample.gdf")
-bowTie()                                  # {'core': 224, 'in': 89, 'out': 69, ...}
+bowTie().sizes                            # {'core': 224, 'in': 89, 'out': 69, ...}
 colorize(bowtie)
 fitPowerLaw(degree)                       # {'alpha': ..., 'sigma': ..., 'kmin': ..., ...}
 plotFrequency(degree, cumulative=true, log=true, fit=true)
@@ -1562,9 +1584,9 @@ the modularity:
 |---|---|
 | `leidenClusters(resolution=1)` | Leiden: like Louvain, but every community is connected; `objective="CPM"` avoids modularity's resolution limit |
 | `infomapClusters()` | Infomap: random-walk flow, best for directed graphs |
-| `walktrapClusters(count)`, `fastGreedyClusters(count)` | hierarchies; `cutDendrogram(n)` re-cuts them into n groups |
+| `walktrapClusters(count)`, `fastGreedyClusters(count)` | hierarchies; `cutDendrogram(count)` re-cuts them into `count` groups |
 | `labelPropagationClusters(field)` | very fast; given a field, spreads its values to the nodes without one |
-| `eigenvectorClusters()`, `fluidClusters(count)`, `voronoiClusters()` | spectral; exactly `count` groups; around central nodes |
+| `eigenvectorClusters()`, `fluidClusters(count)`, `voronoiClusters()` | spectral; exactly `count` groups; around central nodes (the groups' `.seeds`) |
 | `spinglassClusters()`, `optimalClusters()`, `cohesiveBlocks()` | small graphs: signed networks; the exact optimum; nested cohesive groups |
 
 ```python
@@ -1581,7 +1603,7 @@ personalizedPagerank(v1)                   # relevance to v1, in the field ppr
 largestCliques()
 ```
 
-Also: `maxFlow(a, b)` (writes an edge field `flow`), `dominatorTree(root)`,
+Also: `maxFlow(source, target)` (writes an edge field `flow`), `dominatorTree(root)`,
 `maxMatching()`, the node field `knn` (average degree of the neighbours),
 and two commands that don't need igraph: `simplify()` merges parallel edges,
 and `rewire()` makes a degree-preserving random copy in a new tab, to check
@@ -1713,7 +1735,7 @@ exportHTML("organisation.html", title="Who works with whom")
 ```
 
 `history()` lists every command you've run this session. `log("work.py")`
-starts writing commands to a file as you go, and `stoplog()` stops.
+starts writing commands to a file as you go, and `stopLog()` stops.
 
 \newpage
 
@@ -1745,11 +1767,11 @@ field value. Save one with `ss`, change things, and load it again with `ls`
 or animate back to it with `morph`:
 
 ```python
-ss('before')
+saveState('before')
 colorize(dept)
 circleLayout()
 morph('before', 2000)       # animate back over 2 seconds
-ls('before')                # jump back
+loadState('before')                # jump back
 getStates()
 ```
 
@@ -1758,7 +1780,7 @@ in or out. `setNodeDisappearBy(.2)`, `setNodeAppearAfter(.8)`,
 `setEdgeDisappearBy(…)` and `setEdgeAppearAfter(…)` say when, as a fraction of
 the morph.
 
-States can be saved under numbers too (`ss(1999)`, `ss(2000)`), which
+States can be saved under numbers too (`saveState(1999)`, `saveState(2000)`), which
 suits a series of snapshots over time.
 
 To try something and put everything back, use `with scratch():`:
@@ -1778,7 +1800,7 @@ variables what you want to keep.
 A field subscripted with a state reads the values in that state:
 
 ```python
-ss('before')
+saveState('before')
 (freq > 100).color = red
 freq['before'] > 100              # the edges that had freq > 100 in 'before'
 v1['before'].color                # v1's colour then
@@ -1855,29 +1877,30 @@ bar, with the ▾ in their header or by double-clicking the title.
 
 ## 12.2 Convex hulls
 
-A convex hull shades the area around a group of nodes:
+`encircle` shades the area around a group of nodes. With `"hull"` it is the
+group's convex hull:
 
 ```python
-h = createConvexHull(dept == 'dept4', "200,200,255,90")
+h = encircle(dept == 'dept4', "hull", lavender.alpha(90))
 for d in ('dept4', 'dept6', 'dept9'):
     grp = dept == d
-    createConvexHull(grp, averageColor(grp[0].color, white))
+    encircle(grp, "hull", averageColor(grp[0].color, white))
 removeConvexHull(h)
 removeConvexHulls()
 ```
 
 Hulls follow their nodes when you move them or run a layout.
 
-A group can also be marked by a box or an ellipse: `shape="box"` or
-`"ellipse"`, upright or, with `rotate=true`, turned to fit the group (the
-smallest box at any angle, and the ellipse around it). `encircle` does this
-with a turned ellipse and a colour of its own; `encircleBy` draws one shape
-per value of a field. The shape, rotation and padding can be changed later:
+A group can also be marked by a box or an ellipse (the default):
+`"box"` or `"ellipse"`, turned to fit the group (the smallest box at any
+angle, and the ellipse around it) or, with `rotate=false`, upright. Without
+a colour each shape gets one of its own; `encircleBy` draws one shape per
+value of a field. The shape, rotation and padding can be changed later:
 
 ```python
 e = encircle(dept == 'dept4')                 # a turned ellipse
 encircle(dept == 'dept6', "box")              # a turned box
-createConvexHull(dept == 'dept9', shape="box", rotate=false)   # an upright box
+encircle(dept == 'dept9', "box", rotate=false)   # an upright box
 e.shape = "box"
 e.padding = 20
 removeConvexHulls()
@@ -1937,7 +1960,7 @@ alpha for a translucent one); `anchor=` places text by its `"start"`,
   The graph's background follows the theme, unless you set one with
   `setDisplayBackground(black)`. `setDisplayBackground(None)` follows the
   theme again.
-- **Edges**: *View → Edges → Curved edges* or `curvedEdges()`.
+- **Edges**: *View → Edges → Curved edges* or `curvedEdges(true)`.
   `setEdgeColorMode("mixed")` draws each edge in the colours of its two ends.
   Parallel edges between the same two nodes are always drawn as separate
   curves.
@@ -1998,7 +2021,7 @@ arrowheadBy(directed)
   edge field its own style. SVG export draws them all, and flow edges keep
   moving in the SVG. DOT files' `arrowhead` and `style` (dashed, dotted,
   tapered) are read and written.
-- Curved, weighted flows: `curvedEdges()`, `g.edges.arrowhead = 'swept'`,
+- Curved, weighted flows: `curvedEdges(true)`, `g.edges.arrowhead = "swept"`,
   `sizeBy(weight, 0.5, 7)` and `colorBy(weight, lightgray, '50,70,90')`.
 
 ![Line styles (left) and arrowheads (right).](img/edgestyles.png)
@@ -2116,9 +2139,18 @@ The pointer shows what a click or drag would do before you press:
 
 ![A lasso selection (Alt/Option-drag).](../../web/public/help/lasso.png){width=60%}
 
-The selection is `sel` in the console (section 5.4). The right-click menu
-colours, sizes, labels, hides and removes, and *Assign to variable…* gives
-the selection a name you can use in code.
+The selection is `sel` in the console (section 5.4). Selecting writes no
+code, so the commands that act on the selection name its nodes instead: the
+right-click menu writes `(v1, v2, v3).color = red`, and the Edit and Layout
+menus write `showOnly((v1, v2))`, `collapse(…)`, `subgraph(…)`,
+`select(ninverse(…))`, `radialLayout(v3)` and `treeLayout(v3)`. Delete writes
+`remove(v1, …)`. Your history then replays without the selection. *Clear
+selection* (Esc) writes no code, and *View → Fit graph* runs `center()`.
+*Assign to variable…* runs a cell such as `mine = (v1, v2, v3)`.
+
+A few things write no code at all: selecting (box, lasso, click), turning
+the Lens on and off, scrubbing the timeline (*Keep* records the moment) and
+moving the History slider.
 
 ## 13.3 Dragging with meaning
 
@@ -2127,8 +2159,8 @@ selected. Each drag is recorded as an ordinary command, such as
 `v12.x = 310.5; v12.y = -42`. It is one undo step, and `history()`,
 `saveHistory()`, `log()` and notebook export include it, so a saved
 script puts the nodes back where you left them. To keep the console readable,
-these commands are hidden. *View → Console → Show node moves in the console* shows
-them.
+these commands are hidden. *View → Console → Show hidden commands* shows
+them (node moves and cluster lassos).
 
 After some commands, a drag also *means* something. GUESS knows
 what the arrangement on the screen stands for, so it can turn your drag into
@@ -2187,8 +2219,11 @@ pressed tool is drawn in the accent colour.
   Cmd/Ctrl-drag, or clicking a node, adds to the last cluster. *Colour by
   it* runs `colorize(cluster)`; *Done* or Esc ends the tool.
 
-Each click runs a command in the console (`shortestPath(v1, v14)`,
-`heatMap(v3)`, `paint(v5, red)`), so you can edit it and run it again. The
+Each click runs a command in the console
+(`shortestPath(v1, v14).color = "#e8384f"`, `heatMap(v3)`,
+`paint(v5, "#e8384f")`, or `paint(v5, "#e8384f", 1)` with Shift), so you can
+edit it and run it again. A colour is written as its name when it has one
+(`red`), otherwise as `"#rrggbb"`. The
 Cluster tool's lassos run `labelCluster(["v1", "v7", …], 3, "cluster")`
 as hidden cells, like node drags: they can be undone, and `history()` and
 `saveHistory()` include them.
@@ -2273,7 +2308,7 @@ parentheses. Between numbers, `>>` is still Python's shift.
 |---|---|
 | `list` | the default: linked lists, `[v1, v2, …]` |
 | `folded` | lists start folded, `[v1, … +27 more]`; one folded list per group |
-| `table` | a table. For a set: a row per node or edge, with columns for the fields its query used (or `table(degree, dept)`). For groups: a row per group (label, size, members). For `dept.distinct`: a row per value, with its count. For a dict: a row per key. For one node: a row per field. `sort=` sorts by a field (or by `'size'`, `'count'` or `'label'`), largest first; add `reverse=false` for smallest first |
+| `table` | a table. For a set: a row per node or edge, with columns for the fields its query used (or `table(degree, dept)`). For groups: a row per group (label, size, members). For `dept.distinct`: a row per value, with its count. For a dict: a row per key. For one node: a row per field. `sort=` sorts by a field (or by `'size'`, `'count'` or `'label'`), largest first; add `descending=false` for smallest first |
 | `summary` | one line: `12 nodes`, `21 groups, sizes 1–52` |
 | `count` | just how many |
 | `plain` | unlinked text, a line per group |
@@ -2314,8 +2349,11 @@ resetFormats()
 (dept == 'dept3') >> firstThree           # once
 ```
 
-Your own format needs parentheses around a query before `>>`. The
-built-in names don't.
+A query before `>> format` is shown whole in that format, for your own
+functions too. GUESS decides when the line runs: if the value after `>>`
+isn't a format (after `count = 3`, say), `>>` is Python's shift as usual.
+In an f-string a formatted value shows as that format's text:
+`f"{highest(degree, 3) >> count} nodes"` is `3 nodes`.
 
 **Code and graph, linked.** The console and the graph point at each other:
 
@@ -2380,8 +2418,9 @@ built-in names don't.
   the code that changed it*.
 - **Into your code.** Alt-click a node in the graph, a table row, a legend
   row, a chart bar or anything in the output to insert it at the cursor:
-  its name, a query, `sel`, or a short tuple. A larger set is bound to a new
-  variable, `picked1`. The right-click menu has *Insert as code*.
+  its name, a query, or a tuple of up to 12. A larger set is bound to a new
+  variable by a visible cell, `picked1 = (v1, v2, …)`, and `picked1` is
+  inserted. The right-click menu has *Insert as code*.
 - **Earlier graphs.** Output from an earlier graph (before a new file was
   opened, or another graph tab) is greyed out and no longer linked, since
   its elements are gone.
@@ -2788,6 +2827,14 @@ Gython is Python 3 with these additions:
 | `Node rcontains x`, `roverlaps`, `rcontained` | range queries |
 | `field['state']` | values in a saved state |
 | `true`, `false` | the same as `True`, `False` |
+| `x >> table` (`summary`, `count`, `plain`, `folded`, `list`, or your own function) | shows `x` in that format; after a query it applies to the whole query (`dept == 'd1' >> table`). Otherwise `>>` is Python's shift |
+| a trailing `;` | hides the echo of the line's value (`louvainClusters();`) |
+| `sel` | the nodes selected in the graph |
+| `highest(field, k)`, `lowest(field, k)`, `set.where(fn)` | the top or bottom `k` elements; the members passing your test, as a set |
+| `with scratch():` | runs the block, then puts the graph back as it was |
+| `red.alpha(90)`, `.lighter()`, `.darker()` | colour variants; colours compare by meaning (`color == "#ff0000"` matches `red`) |
+| `a == b`, `a + b` on sets | equal when they hold the same members in any order; `+` is a union, like `\|` |
+| `print(n.dept)`, `f"{n.dept}"` | field values printed stay linked to the element |
 | a command name on its own (`center`) | calls it |
 | node names, field names, commands, colours | predefined, protected variables |
 
@@ -2795,16 +2842,39 @@ Gython is Python 3 with these additions:
 - **Fields.** An argument that takes a field also takes its name: `sizeBy(degree)` and
   `sizeBy("degree")` are the same. A command with one field argument calls
   it `field`; one with several names them by role (`scatterLayout(x, y)`).
+- **Nodes.** One node is `node` (`egoNetwork(node)`, `heatMap(node)`); a
+  pair is `source` and `target` (`shortestPath`, `maxFlow`, `minCut`,
+  `distance`, `addEdge`); `root` is for trees (`treeLayout`,
+  `dominatorTree`).
 - **Ranges.** Sizes run from `smallest` to `largest`, colours from `start` to
-  `end`.
-- **Counts.** A number of things to make or return is `count`, and a node
-  argument is `node`.
+  `end` (with an optional `middle`). `midpoint=` is the value that gets the
+  middle colour (`colorBy(lfc, blue, red, midpoint=0)`).
+- **Colour scales.** `palette=` takes a scale's name or a `colorScale(...)`
+  wherever colours can come from a scale (`colorBy`, `colorize`,
+  `generateColors`, `GradientLegend`, `heatMap`, `pieChart`, `plotLine`,
+  `showOverlaps`).
+- **Transforms.** `transform=` (`"linear"`, `"log"`, `"sqrt"`, `"rank"`)
+  says how values are spread before they become sizes, colours or positions
+  (`sizeBy`, `colorBy`, `labelSizeBy`, `hiveLayout`).
+- **Counts.** A number of things to make or return is `count`; a cap on a
+  search is `limit` (`cliques`, `findCycles`, `findPattern`); a smallest
+  group size is `smallest`.
+- **Weights.** `weight=` is an edge field read as each edge's weight or
+  length, or `None` to count every edge the same (`shortestPath`,
+  `spanningTree`, `chineseWhispersClusters`). Flows take `capacity=` the
+  same way; without it every edge carries 1. Random commands default to
+  `seed=0`, so they give the same result each time.
+- **Groups.** A command that splits the nodes into groups stores each
+  node's group in `<method>_class` (0 is the largest), returns the groups,
+  and takes `name=` for another field (`louvainClusters()`,
+  `blockModelClusters(count)`, `sbmClusters(count)`).
 - **Switching things off.** A display mode takes `on=`
   (`curvedEdges(false)`); something drawn on top is removed with a
   matching `remove…` command (`removePies()`, `removeBundles()`,
   `removeConvexHulls()`, `removeLegends()`, `removeMap()`).
 - **`name=`** always names what the command creates: a field, a graph or
-  a node.
+  a node. A command that creates a field returns it, with any other
+  results as attributes (`katzCentrality().limit`, `rankNodes().agreement`).
 
 **Names.** GUESS's own names (commands, colours, fields, node names, `g`)
 are protected, and assigning to one is an error that says what the name
@@ -2880,6 +2950,60 @@ unchanged except where Python 3 differs. The main differences:
   `resizeLinear(degree, start=5, end=30)`.
 - **Louvain's field** is `louvain_class`, like `leiden_class` and the other
   methods' (it was `modularity_class`, Gephi's name).
+- **More names made consistent (2026-11-17).**
+  - Commands renamed: `stoplog()` is now `stopLog()`; `ss(state)` and
+    `ls(state)` are `saveState(state)` and `loadState(state)`;
+    `removeOverlap()` is `prismLayout()`; `blockmodel(k)` is
+    `blockModelClusters(count)`; `fitBlockModel(k)` is `sbmClusters(count)`.
+    `jkkLayout1()` and `jkkLayout2()` (the same algorithm) are both
+    `jkkLayout()`. `createConvexHull(seq, color)` is gone: use
+    `encircle(seq, "hull", color)`.
+  - Groups: every command that splits the nodes stores a `<method>_class`
+    field, returns the groups and takes `name=`.
+    `weakComponentClusters()`, `biComponentClusters()` and
+    `edgeBetweennessClusters()` now store `weakcomponent_class`,
+    `bicomponent_class` and `edgebetweenness_class`; `kComponents()` stores
+    `kcomponent_class` (was `kcomponent`) and `blockModelClusters()`
+    `blockmodel_class` (was `position`). `voronoiClusters()` returns the
+    communities, with the generator nodes in `.seeds` (it returned the
+    generators); `sbmClusters()` returns the groups, with `.loglik` (it
+    returned a dict); `colorGraph()` returns the colour classes (it
+    returned how many there were).
+  - Commands that make a field return it, with the rest as attributes:
+    `katzCentrality()` (was `(field, limit)`: now `f.limit` and `f.alpha`),
+    `rankNodes()` (was the share of agreeing edges: `.agreement`),
+    `bowTie()` (was the sizes: `.sizes`), `corePeriphery()` (was a dict:
+    `.size`, `.fit`), `heatMap()` (`hops`), `trophicLevels()` (`trophic`)
+    and `mds()` (its fields). `name=` is new in `personalizedPagerank`,
+    `heatMap`, `similarTo`, `predictLinks`, `maxFlow`, `minCostFlow`,
+    `dominatorTree`, `cohesiveBlocks`, `mainPath`, `transitiveReduction`,
+    `offspring`, `trophicLevels` and the `*Clusters` commands.
+  - Node arguments: `egoNetwork(node)`, `heatMap(node)`, `paint(node, …)`,
+    `radialLayout(node)` and `circleLayout(field, node)` (were `center`);
+    `effectiveDistance(node)` (was `origin`); `expand(node)` (was `meta`);
+    `distance(source, target)` and `addEdge(source, target)` (were
+    `node1`, `node2`); `maxFlow(source, target)` and `minCut(source,
+    target)` (were `a`, `b`).
+  - Colours: `colorBy(…, midpoint=0)` (was `center=`); `transform=` (was
+    `scale=`) in `colorBy`, `sizeBy`, `labelSizeBy` and `hiveLayout`;
+    `heatMap(node, start, end, middle, unreachable)` (were `near`, `far`);
+    `plotLine(palette=)` (was `colors=`); `showOverlaps(unassigned=)` (was
+    `none=`). `palette=` is new in `colorBy`, `colorize`, `generateColors`,
+    `GradientLegend`, `heatMap` and `showOverlaps`. `colorBy`'s fourth
+    positional argument is now `middle`: give the transform by name,
+    `colorBy(freq, yellow, red, transform="log")`.
+  - Counts: `count=` (was `top=`) in `groupStats`, `enrichment`,
+    `findDuplicates`, `similarTo`, `predictLinks`, `report` and
+    `wordCloud`, and in `makeFromSimilarity` (was `k=`); `smallest=` (was
+    `minSize=`) in `cliques` and `enrichment`, and in `linkCommunities`
+    (was `minEdges=`). `limit=` is kept for caps on a search, so
+    `lombardiEdges(maxAngle=)` (was `limit=`) names its largest bend.
+  - Weights: `shortestPath(source, target, weight="weight")` (was
+    `weighted=true`); `spanningTree(weight=None)` and
+    `chineseWhispersClusters(weight=None)` (were `weighted=false`); any edge
+    field can be the weight. `maxFlow` counts each edge as 1 unless
+    `capacity=` is given, as `minCut` does (it used `weight`). `gemLayout`
+    and `makeLFR` default to `seed=0`.
 - **Language.** `3 < degree < 6`, `field in (...)`, and `and`, `or` and
   `not` on sets now do what they say (Appendix B). A node or field named
   after a Python builtin (`len`, `type`) no longer hides it.
@@ -2898,13 +3022,15 @@ Every command, generated from the code's own documentation (the same text as `he
 
 Re-add removed nodes/edges, e.g. add(g.deleted).
 
-### `addDirectedEdge(node1, node2, **attrs)`
+### `addDirectedEdge(source, target, **attrs)`
 
-Add a directed edge from node1 to node2.
+addDirectedEdge(source, target) adds a directed edge from source to
+target (by node or name).
 
-### `addEdge(node1, node2, **attrs)`
+### `addEdge(source, target, **attrs)`
 
-Add an undirected edge.
+addEdge(source, target) adds an undirected edge between two nodes (by
+node or name); field values may follow, addEdge(v1, v2, weight=3).
 
 ### `addEdgeField(name, type='VARCHAR', default=None)`
 
@@ -2919,9 +3045,10 @@ with a removed node puts it back, with its field values.
 
 Create a node field, e.g. addNodeField("score", DOUBLE, 0).
 
-### `addUndirectedEdge(node1, node2, **attrs)`
+### `addUndirectedEdge(source, target, **attrs)`
 
-Add an undirected edge between two nodes (by node or name).
+addUndirectedEdge(source, target) adds an undirected edge between two
+nodes (by node or name), as addEdge does.
 
 ### `averageEdgeColor(edges=None)`
 
@@ -2935,7 +3062,8 @@ can reach it but not be reached from it ("in"), those reached from it
 that can't reach back ("out"), "tube" nodes on paths from in to out that
 bypass the core, "tendril" nodes hanging off in or out, and "other"
 for nodes outside the core's weakly connected component. Sets the node
-field `bowtie` and returns the sizes, e.g. {"core": 224, "in": 89, ...}.
+field bowtie (name= another) and returns it, with the part sizes in
+.sizes, e.g. {"core": 224, "in": 89, ...}.
 Undirected edges count both ways.
 
 ### `center(*d)`
@@ -2949,18 +3077,18 @@ one meta-node (labelled with the kind and its size), which simplifies
 the drawing without losing anything: expand(node) or expandAll() bring
 the members back. Returns the meta-nodes.
 
-### `colorBy(field, start, end=None, scale='linear', middle=None, center=None)`
+### `colorBy(field, start=None, end=None, middle=None, palette=None, transform='linear', midpoint=None)`
 
-colorBy(field, startColor, endColor) colours elements along a gradient in
-proportion to a numeric field's value; colorBy(field, "viridis") uses a
-colour scale instead (see colorScales; "RdBu" with center=0 for
-diverging data). scale may be "linear", "log",
-"sqrt" or "rank"; middle=color adds a midpoint colour. center=value
-makes a diverging gradient: that value gets the middle colour (white
-unless given) and the ends are equally far from it, so equal changes
-up and down look equally strong, e.g. colorBy(lfc, blue, red,
-center=0) for fold changes. Compare colorize, which spaces distinct
-values evenly.
+colorBy(field, start, end) colours elements along a gradient in
+proportion to a numeric field's value; colorBy(field, palette="viridis")
+uses a colour scale instead (see colorScales; colorBy(field, "viridis")
+is the same; "RdBu" with midpoint=0 for diverging data). transform may
+be "linear", "log", "sqrt" or "rank"; middle=color adds a midpoint
+colour. midpoint=value makes a diverging gradient: that value gets the
+middle colour (white unless given) and the ends are equally far from
+it, so equal changes up and down look equally strong, e.g.
+colorBy(lfc, blue, red, midpoint=0) for fold changes. Compare
+colorize, which spaces distinct values evenly.
 
 ### `colorByPhase(field, period=None, saturation=0.75, lightness=0.55)`
 
@@ -2970,25 +3098,27 @@ period apart get the same colour and nearby values similar ones (unlike
 colorBy, whose ends differ). period= is the length of one cycle (default
 2*pi; 360 for degrees, 24 for hours).
 
-### `colorGraph(strategy='DSATUR', show=True)`
+### `colorGraph(strategy='DSATUR', show=True, name='color_class')`
 
-colorGraph() gives every node a colour class (`color_class`, 0, 1,
-2, ...) so that no two neighbours share one, using as few as it can
-find (greedy colouring; strategy "DSATUR" (default),
-"largest_first", "smallest_last" or "random_sequential"); show=true
-also colours the nodes by class. Returns the number of colours used.
+colorGraph() gives every node a colour class (color_class, 0, 1,
+2, ...; name= another field) so that no two neighbours share one,
+using as few as it can find (greedy colouring; strategy "DSATUR"
+(default), "largest_first", "smallest_last" or "random_sequential");
+show=true also colours the nodes by class. Returns the classes (as
+groups, largest first: len(colorGraph()) is the number of colours).
 Planar networks (maps) never need more than four, though greedy
 methods sometimes use five.
 
-### `colorize(field, *cs)`
+### `colorize(field, *cs, palette=None)`
 
 colorize(field) gives each value its own clearly different colour (the
 largest group first; see distinctColors); colorize(field, start, end) or
 colorize(field, start, middle, end) a gradient over the sorted values.
-colorize(field, scale) uses a colour scale (see colorScales): a
-categorical one ("Set2", "tableau10") gives the largest group its first
-colour; a sequential or diverging one ("Blues", "viridis", "RdBu") runs
-over the sorted values.
+colorize(field, palette="Set2") uses a colour scale (see colorScales;
+colorize(field, "Set2") is the same): a categorical one ("Set2",
+"tableau10") gives the largest group its first colour; a sequential or
+diverging one ("Blues", "viridis", "RdBu") runs over the sorted
+values.
 
 ### `complement(seq)`
 
@@ -3010,8 +3140,9 @@ periphery that links to the core but hardly to itself (Newman, Networks,
 section 14.7.3; Borgatti and Everett's discrete model): the split that
 best matches the ideal pattern where every pair involving a core node
 is linked and no pair of peripheral nodes is. Sets the node field
-`core` (1 in the core, 0 outside) and returns {"core": size, "fit": the
-correlation with the ideal pattern}. Direction is ignored.
+core (1 in the core, 0 outside; name= another) and returns it, with
+.size (the core's size) and .fit (the correlation with the ideal
+pattern). Direction is ignored.
 
 ### `demo(step=1)`
 
@@ -3025,9 +3156,10 @@ first step of that level (basic, intermediate, advanced).
 
 Edges divided by the number of possible undirected node pairs.
 
-### `distance(node1, node2)`
+### `distance(source, target)`
 
-Euclidean distance between two nodes' positions.
+distance(source, target): the straight-line distance between two
+nodes' positions on screen.
 
 ### `edgeCrossings(pairs=False)`
 
@@ -3043,10 +3175,10 @@ another matter.
 edgeData(field, ...) or edgeData(edges, field, ...): one row per edge
 (`name` is "a-b"), with `_edge`, the edge's id, for linking.
 
-### `effectiveDistance(origin, weight='weight', name='eff_distance')`
+### `effectiveDistance(node, weight='weight', name='eff_distance')`
 
-effectiveDistance(origin) measures how 'close' every node is to the
-origin through a travel network, as an epidemic would see it
+effectiveDistance(node) measures how 'close' every node is to
+node through a travel network, as an epidemic would see it
 (Brockmann and Helbing, Science 2013). From node m, the share of m's
 traffic (weight) that goes to n is P; the step m -> n costs
 1 - ln P, so busy routes are short and a route among many is long.
@@ -3070,16 +3202,16 @@ coordinates are stored in fields emb0, emb1, ... (name=...), ready for
 scatterLayout(emb0, emb1), similarity searches or a classifier
 (toNetworkX(), or export the table). Fine up to a few thousand nodes.
 
-### `enrichment(seq, sets, background=None, top=10, minSize=2, show=True)`
+### `enrichment(seq, sets, background=None, count=10, smallest=2, show=True)`
 
-enrichment(nodes, sets) tests which sets (from readSets, or any
+enrichment(seq, sets) tests which sets (from readSets, or any
 {name: [node names]}) are over-represented among the nodes, against
 the background (default: every node in the graph that is in at least
 one set). For each set it gives the overlap k of n nodes, the set's
 size K among the N background nodes, the fold enrichment
 (k/n)/(K/N), the hypergeometric p-value and the Benjamini-Hochberg
 q-value (the false discovery rate over all sets tested). Sets with
-fewer than minSize background members are skipped. Prints the `top`
+fewer than smallest background members are skipped. Prints the `count`
 rows by p-value and returns all rows as dicts, best first.
 
 ### `execfile(filename)`
@@ -3151,15 +3283,16 @@ back to where it started. among=nodes restricts the search. Each
 cycle is a set of its nodes and edges (shortest first); at most
 `limit` are returned. Undirected edges count both ways.
 
-### `findDuplicates(field=None, threshold=0.85, among=None, top=50, show=True)`
+### `findDuplicates(field=None, threshold=0.85, among=None, count=50, show=True)`
 
 findDuplicates(name) lists pairs of nodes whose values of a text
 field look like the same entity: compared after normalising (case,
 accents, punctuation, word order, company suffixes and titles like
 Ltd, Inc, Mr), scored 0..1 by string similarity, best first, at least
 `threshold`. among=nodes restricts the search (e.g. one kind of
-entity). Default field: label. Returns (node, node, score) for review
-and mergeNodes; it never merges anything itself.
+entity). Default field: label. Prints the first `count` pairs and
+returns them all as (node, node, score) for review and mergeNodes; it
+never merges anything itself.
 
 ### `findEdges(seq)`
 
@@ -3180,20 +3313,6 @@ collapseMotifs(kind) replaces each with one meta-node.
 ### `findNodes(seq)`
 
 The nodes among the members of a (possibly mixed) set.
-
-### `fitBlockModel(k=2, degreeCorrected=True, restarts=5, seed=0, name='sbm_class')`
-
-fitBlockModel(k) divides the nodes into k groups by fitting a
-stochastic block model by maximum likelihood (Newman, Networks,
-section 14.4; Karrer and Newman 2011): the groups that make the
-observed edges most probable. degreeCorrected=True (the default)
-allows hubs and small nodes in the same group; the plain model
-(False) tends to put hubs in one group and everyone else in another,
-as on the karate club. Uses Kernighan-Lin passes of single-node moves
-from `restarts` random starts and keeps the best. Stores the groups in
-the field `name` (0 = largest) and returns {"loglik": ..., "k": k}.
-Edge direction and self-loops are ignored. Meant for networks of up to
-a few hundred nodes.
 
 ### `fitNodesToLabels(seq=None, padding=4)`
 
@@ -3226,8 +3345,8 @@ Like range() but for floats.
 geoDistance() stores each edge's great-circle length in kilometres
 (from its ends' latitude and longitude fields, as geoLayout finds them)
 in the edge field `km` (or name=...). Use it as a cost:
-for e in g.edges: e.weight = e.km, then shortestPath(a, b,
-weighted=true) is the shortest route by distance. Returns the field.
+shortestPath(source, target, weight=km) is the shortest route by
+distance. Returns the field.
 
 ### `geoLayout(lat=None, lon=None, projection='mercator', map='auto', width=1000, land=None, borders=None, parallels=(29.5, 45.5), center=(-96.0, 37.5))`
 
@@ -3260,13 +3379,13 @@ Like groupBy, with the groups ordered by value.
 
 groupBy(field) or groupBy(seq, field): groups of elements sharing a value.
 
-### `groupStats(field, top=12, show=True)`
+### `groupStats(field, count=12, show=True)`
 
 groupStats(louvain_class) profiles each group of nodes sharing a
 value of a field: size, internal edges, density (internal edges /
 possible pairs), boundary edges (to the rest), conductance (boundary
 / all edges touching the group: low = well separated), and the
-group's most connected member. Prints the largest `top` groups and
+group's most connected member. Prints the largest `count` groups and
 returns a row per group, largest first; a dense, isolated group of
 entities that should be unrelated is a classic red flag.
 
@@ -3295,19 +3414,20 @@ beta, so even nodes no one points to count. alpha must be below 1/kappa1
 sum to converge; small alpha ranks nodes almost by degree, alpha near
 1/kappa1 almost like eigenvector centrality. With alpha left out it is
 0.85/kappa1. Edges follow their direction (undirected ones both ways).
-Stores the values in the field `name` (default "katz") and returns
-(field, 1/kappa1).
+Stores the values in the field katz (name= another) and returns it,
+with .alpha (the alpha used) and .limit (1/kappa1).
 
-### `kComponents(k=2, name='kcomponent')`
+### `kComponents(k=2, name='kcomponent_class')`
 
 kComponents(k) finds the k-components: the largest groups of nodes in
 which every pair is joined by at least k node-independent paths (k = 1:
 components; 2: bicomponents; 3: tricomponents). Unlike k-cores they need
-the paths, not just the degrees. Returns them as sets, largest first, and
-stores each node's (first) one in the field `name` (-1 for none); a node
-can belong to more than one, e.g. a cut node shared by two bicomponents.
-Direction is ignored. Exact for k <= 2; for k >= 3 uses networkx's
-k_components (Moody and White), which can be slow on big graphs.
+the paths, not just the degrees. Returns them as groups, largest first,
+and stores each node's in the field kcomponent_class (name= another;
+-1 for none). A node can belong to more than one, e.g. a cut node
+shared by two bicomponents: the field holds the largest. Direction is
+ignored. Exact for k <= 2; for k >= 3 uses networkx's k_components
+(Moody and White), which can be slow on big graphs.
 
 ### `labelCluster(nodes, value, field='cluster', relabel=True)`
 
@@ -3317,25 +3437,25 @@ needed: INTEGER for a number, VARCHAR for text; nodes not labelled hold
 None. relabel=False leaves nodes that already have a value alone. The
 Cluster tool writes one of these per selection. Returns the nodes labelled.
 
-### `labelSizeBy(field, smallest=0.8, largest=2.0, scale='linear')`
+### `labelSizeBy(field, smallest=0.8, largest=2.0, transform='linear')`
 
 labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
 edge field) in proportion to a numeric field: 1 is the normal size. Sets
-the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank").
+the labelsize field; transform as in sizeBy ("linear", "log", "sqrt", "rank").
 
 ### `lastClick()`
 
 lastClick() is where the display was last clicked, as (x, y) in graph
 coordinates, or None before the first click.
 
-### `lombardiEdges(iterations=300, limit=70)`
+### `lombardiEdges(iterations=300, maxAngle=70)`
 
 lombardiEdges() turns the edges into circular arcs, without moving
 any node, so that each node's edges leave it as evenly spread as
 possible (a "near-Lombardi" drawing, after the artist Mark Lombardi;
 Chernobelskiy et al., GD 2011). Each edge's bend is the angle, in
 degrees, at which it leaves its ends, stored in its `arc` field (0 =
-straight; at most `limit`). Returns lombardiness() before and after.
+straight; at most `maxAngle`). Returns lombardiness() before and after.
 straightenEdges() undoes it.
 
 ### `lombardiLayout(iterations=400, seed=0)`
@@ -3429,8 +3549,9 @@ Gephi reads it: an edge table (Source, Target[, Type, Weight, Label, ...]),
 an adjacency matrix or an adjacency list. makeFromCSV("edges.csv",
 "nodes.csv") also reads a node table (Id[, Label, ...]). Opening just a node
 table adds its columns to the current graph's nodes (matched by Id).
-Other columns become fields; directed=true makes edges without a Type
-directed.
+Other columns become fields. Edges are undirected by default (directed=false)
+unless a Type column says otherwise; directed=true makes edges without a
+Type directed.
 
 As in Cytoscape, any columns can hold the edges: source= and target=
 name them (by header, or number from 0), interaction= the type of
@@ -3512,10 +3633,10 @@ suffice to colour a map. Data: Natural Earth 1:50m, public domain.
 
 Replace the current graph with a Pajek .net file (nodes are named pajek<id>).
 
-### `makeFromSimilarity(filename, k=5, threshold=None, method='cosine', id=None, columns=None, features=None, values=None, mutual=False)`
+### `makeFromSimilarity(filename, count=5, threshold=None, method='cosine', id=None, columns=None, features=None, values=None, mutual=False)`
 
 makeFromSimilarity("profiles.csv") links each row of a feature table
-to the k rows most similar to it (k=5), or, with threshold=t, every
+to the `count` rows most similar to it (count=5), or, with threshold=t, every
 pair at least t similar. The table is wide (an id column, here the
 first or id=..., then numeric columns; columns=[...] picks them, and
 text columns become node fields) or long, one row per (id, feature,
@@ -3523,7 +3644,7 @@ value): features="keyword", values="score" (values default to 1).
 method: "cosine" (default; profiles pointing the same way),
 "correlation" (same ups and downs), "jaccard" (shared nonzero
 features) or "euclidean" (close values; 1/(1+distance)). mutual=true
-keeps only pairs that are in each other's top k. Edges get `weight`
+keeps only pairs that are in each other's top count. Edges get `weight`
 = similarity. Typical uses: co-expression networks, documents by
 term profile, people by votes or answers.
 
@@ -3568,7 +3689,7 @@ has a `born` step; removed edges stay in the graph, hidden, with the
 step they were removed in `died` (-1 for edges still there), so
 revealUpTo(step) replays additions and removals.
 
-### `makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=None, layout=True)`
+### `makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=0, layout=True)`
 
 makeLFR(n, tau1, tau2, mu) makes a Lancichinetti-Fortunato-Radicchi
 benchmark network: power-law degrees (exponent tau1) and community sizes
@@ -3614,14 +3735,15 @@ from the others, `aliases` records the other names and labels, and
 `merged` counts the nodes it stands for. One undo step. Also takes a
 set or a list of pairs from findDuplicates (each pair merged).
 
-### `minCostFlow(source, target, amount, capacity='capacity', cost='weight')`
+### `minCostFlow(source, target, amount, capacity='capacity', cost='weight', name='flow')`
 
-minCostFlow(a, b, 100) finds the cheapest way to send `amount` units
-from a to b: each edge can carry up to its `capacity` field (missing
-or empty = unlimited) at its `cost` field per unit (default: weight;
-missing = 1). Direction is followed for directed edges; an undirected
-edge can carry flow either way. Stores each edge's flow in `flow` and
-returns the total cost (an error if the amount can't get through).
+minCostFlow(source, target, 100) finds the cheapest way to send
+`amount` units from source to target: each edge can carry up to its
+`capacity` field (missing or empty = unlimited) at its `cost` field
+per unit (default: weight; missing = 1). Direction is followed for
+directed edges; an undirected edge can carry flow either way. Stores
+each edge's flow in flow (name= another field) and returns the total
+cost (an error if the amount can't get through).
 
 ### `nestedness(field, rows=None)`
 
@@ -3645,7 +3767,7 @@ for an Altair chart, with `name`, the fields given (all data fields when
 none are) and `_node`, the node's id, which links each mark to its node.
 alt.Chart(nodeData("degree", "dept")).mark_point().encode(x="degree", y="dept")
 
-### `offspring(cases=None, show=True)`
+### `offspring(cases=None, show=True, name='offspring')`
 
 offspring() reads a transmission tree (directed edges from infector
 to infected) and counts how many each case infected (its outdegree).
@@ -3654,7 +3776,8 @@ binomial fitted to them (small k, below 1: a few superspreaders cause
 most transmission), the share who infected no one, and the share of
 transmissions caused by the top 20% of cases. offspring(cases) uses
 only those cases, e.g. offspring(onset < 28); their infections count
-wherever they lead. Stores the count in the field `offspring`.
+wherever they lead. Stores the count in the field `offspring` (name=
+another).
 
 ### `outbreaks(runs=200, seeds=1, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, immune=None, weight=None, steps=1000, large=0.1, seed=0, name='risk', show=True, waning=0.05, sigma=0.5, duration=None)`
 
@@ -3684,9 +3807,9 @@ i -> j is a spring pulling i one unit above j, as in dominance networks
 (i beat j) or who-hires-whose-graduates (j hired from i).
 endorsements=true reads each edge the other way, j above i, for links,
 citations or votes, where pointing to someone ranks them up. Sets the
-node field `rank` (higher = above) and returns the share of edges that
-agree with the ladder. alpha > 0 pulls ranks toward 0 (useful when the
-network is in pieces).
+node field rank (higher = above; name= another) and returns it, with
+.agreement: the share of edges that agree with the ladder. alpha > 0
+pulls ranks toward 0 (useful when the network is in pieces).
 
 ### `readSets(filename, item=None, set=None, where=None)`
 
@@ -3731,11 +3854,11 @@ Its name still refers to it, so addNode(n) puts it back.
 
 Remove (and return) all edges whose endpoints are the same node.
 
-### `report(filename=None, top=5)`
+### `report(filename=None, count=5)`
 
 report() writes a one-page summary of the graph: size, density,
 components, degree distribution, path lengths, clustering,
-assortativity, the `top` nodes by degree, betweenness and PageRank,
+assortativity, the `count` nodes by degree, betweenness and PageRank,
 and the communities if any have been found (louvain_class,
 leiden_class, infomap_class). report("summary.html") saves it as a web
 page (offered as a download in the browser) and report("summary.md")
@@ -3759,6 +3882,21 @@ networks (averaged over `trials`): above 1 = a rich club (hubs prefer
 each other, as in airline or scientific elites), below 1 = hubs avoid
 each other. Prints a table and returns {k: value}.
 
+### `sbmClusters(count=2, degreeCorrected=True, restarts=5, seed=0, name='sbm_class')`
+
+sbmClusters(count) divides the nodes into count groups by fitting a
+stochastic block model by maximum likelihood (Newman, Networks,
+section 14.4; Karrer and Newman 2011): the groups that make the
+observed edges most probable. degreeCorrected=True (the default)
+allows hubs and small nodes in the same group; the plain model
+(False) tends to put hubs in one group and everyone else in another,
+as on the karate club. Uses Kernighan-Lin passes of single-node moves
+from `restarts` random starts and keeps the best. Stores the groups in
+sbm_class (0 = largest; name= another field) and returns them, with
+the fit's log-likelihood in .loglik.
+Edge direction and self-loops are ignored. Meant for networks of up to
+a few hundred nodes.
+
 ### `shortcutNodes()`
 
 Repeatedly replace degree-2 nodes by an edge between their neighbours.
@@ -3771,10 +3909,10 @@ whose value is a chart does this by itself). Hovering a mark highlights
 its nodes, clicking selects them, right-click opens the element menu;
 interval selections (brushes) select what they cover.
 
-### `sizeBy(field, smallest, largest, scale='linear')`
+### `sizeBy(field, smallest, largest, transform='linear')`
 
 sizeBy(field, smallest, largest) sizes nodes (or edge widths, for an edge field) in
-proportion to a numeric field's value, from smallest to largest. scale may be
+proportion to a numeric field's value, from smallest to largest. transform may be
 "linear", "log", "sqrt" or "rank" (as in Gephi's ranking). Compare
 resizeLinear, which spaces distinct values evenly.
 
@@ -3854,21 +3992,22 @@ a greedy method otherwise), fine for planning, not a proof of
 optimality. Returns the route's nodes and edges in order; .length
 holds its total length.
 
-### `trophicLevels()`
+### `trophicLevels(name='trophic')`
 
 trophicLevels() computes each species' prey-averaged trophic level
-(`trophic`: 1 for species that eat nothing in the web, otherwise 1 + the
-mean level of what it eats), `omnivory` (the spread of its food's
-levels: 0 = eats on one level) and `role` (basal: eats nothing here;
-top: nothing eats it; else intermediate). Prints a summary.
+(`trophic`, name= another field: 1 for species that eat nothing in the
+web, otherwise 1 + the mean level of what it eats), `omnivory` (the
+spread of its food's levels: 0 = eats on one level) and `role`
+(basal: eats nothing here; top: nothing eats it; else intermediate).
+Prints a summary and returns the trophic field.
 
-### `wordCloud(field, top=80, stopwords=None, minLength=3)`
+### `wordCloud(field, count=80, stopwords=None, minLength=3)`
 
 wordCloud(field) shows the most frequent words in a text field as a
 word cloud in the dock (as Gephi's Word Cloud plugin), sized by how
 many times each occurs. Hovering a word lights up the nodes (or edges)
 whose text contains it; clicking selects them. Common English words
-are left out; stopwords=[...] adds more, top= sets how many words,
+are left out; stopwords=[...] adds more, count= sets how many words,
 minLength= the shortest word kept.
 
 ## Undo, redo, history and logging
@@ -3879,7 +4018,7 @@ history() lists every command run this session, in order.
 
 ### `log(filename='session.py')`
 
-Start recording every successful command (save with stoplog()).
+Start recording every successful command (save with stopLog()).
 
 ### `redo()`
 
@@ -3890,7 +4029,7 @@ redo() re-applies the last command undone with undo().
 saveHistory("work.py") downloads every command run this session as a
 script (run it again with execfile).
 
-### `stoplog()`
+### `stopLog()`
 
 Stop recording and save the log (offered as a download); replay with execfile.
 
@@ -3916,7 +4055,7 @@ Mean shortest-path length (hops, ignoring direction) over all connected pairs.
 The longest shortest path (in hops, ignoring direction) between any two
 connected nodes.
 
-### `egoNetwork(center, depth=1)`
+### `egoNetwork(node, depth=1)`
 
 egoNetwork(node, depth=1): the node and everything within `depth` hops of
 it (ignoring direction).
@@ -3933,21 +4072,23 @@ path length, clustering, transitivity, degree assortativity, reciprocity
 
 ### `groupsOfSize(field, smallest, largest=None)`
 
-groupsOfSize(field, min[, max]): the nodes (or edges) whose value of
-field is shared by at least min (and at most max) elements — e.g. drop
+groupsOfSize(field, smallest[, largest]): the nodes (or edges) whose
+value of field is shared by at least smallest (and at most largest)
+elements — e.g. drop
 tiny communities with showOnly(groupsOfSize(louvain_class, 5)).
 
-### `heatMap(center, near='#d7191c', far='#2c7bb6', unreachable='#bdbdbd', middle='#8e5fbf', spread=True)`
+### `heatMap(node, start='#d7191c', end='#2c7bb6', middle='#8e5fbf', unreachable='#bdbdbd', spread=True, palette=None, name='hops')`
 
 heatMap(node) colours every node by its distance (hops, ignoring
 direction) from node: red at the node, through violet, to blue for the
-farthest, grey if unreachable; the distance is stored in the hops field
-(-1 if unreachable). spread=True (default) spaces the colours by how
-many nodes are at each distance, so every band is visible;
-spread=False spaces them by distance alone. near, middle, far and
-unreachable change the colours (middle=None: a straight blend); near
-can instead be a colour scale, heatMap(v1, "magma_r") (see
-colorScales). Gephi's heat map tool.
+farthest, grey if unreachable. The distance is stored in the hops
+field (-1 if unreachable; name= another), which is returned.
+spread=True (default) spaces the colours by how many nodes are at
+each distance, so every band is visible; spread=False spaces them by
+distance alone. start, middle, end and unreachable change the colours
+(middle=None: a straight blend); palette= uses a colour scale
+instead, heatMap(v1, palette="magma_r") (see colorScales). Gephi's
+heat map tool.
 
 ### `interEdges(field)`
 
@@ -3963,11 +4104,11 @@ intraEdges(field): edges whose two endpoints share the field's value
 kCore(k): the nodes of the k-core — the largest subgraph in which every
 node has at least k neighbours. E.g. showOnly(kCore(3)).
 
-### `louvainClusters(resolution=1.0, seed=0)`
+### `louvainClusters(resolution=1.0, seed=0, name='louvain_class')`
 
 louvainClusters() finds communities by Louvain modularity optimisation
 (Gephi's Modularity statistic) using edge weights, stores each node's
-community in the louvain_class field (0 = largest) and returns the
+community in the louvain_class field (0 = largest; name= another) and returns the
 communities. Try colorize(louvain_class). resolution > 1 gives more,
 smaller communities; seed=None varies the result between runs.
 
@@ -3982,7 +4123,7 @@ favours smaller communities.
 
 Directed edges whose reverse edge also exists.
 
-### `paint(center, color, depth=0)`
+### `paint(node, color, depth=0)`
 
 paint(node, color, depth=0) colours a node, and with depth=k everything
 within k hops of it (Gephi's brush).
@@ -4013,11 +4154,13 @@ makeGrowingNetwork's removed edges have) disappear again from that
 step on. Returns the nodes and edges that arrive at exactly this step
 (to highlight them).
 
-### `shortestPath(source, target, weighted=False)`
+### `shortestPath(source, target, weight=None)`
 
-shortestPath(a, b): the nodes and edges of a shortest path from a to b
-(following edge direction), or an empty set if there is none.
-weighted=true uses edge weights as lengths. E.g. shortestPath(a, b).color = red
+shortestPath(source, target): the nodes and edges of a shortest path
+from source to target (following edge direction), or an empty set if
+there is none. weight= an edge field read as each edge's length
+(weight="weight", weight=km); None counts hops. E.g.
+shortestPath(v1, v9).color = red
 
 ### `showAll()`
 
@@ -4033,13 +4176,19 @@ the shown nodes instead. Undo with showAll(). As subgraph does.
 
 ## Clustering and generators
 
-### `biComponentClusters()`
+### `biComponentClusters(name='bicomponent_class')`
 
-Biconnected components (ignoring edge direction).
+biComponentClusters(): the biconnected components (ignoring edge
+direction), largest first. A cut node belongs to several; the field
+bicomponent_class (name= another) holds the largest one it is in, and
+-1 for nodes in none (isolated nodes).
 
-### `edgeBetweennessClusters(count)`
+### `edgeBetweennessClusters(count, name='edgebetweenness_class')`
 
-Split the graph into `count` communities with Girvan-Newman.
+edgeBetweennessClusters(count) splits the graph into `count`
+communities with Girvan-Newman (removing the edges of highest
+betweenness), stores each node's community in edgebetweenness_class
+(0 = largest; name= another field) and returns the communities.
 
 ### `makeBarabasiAlbertRandom(*args, seed=0)`
 
@@ -4073,9 +4222,11 @@ makeSimpleDirectedRandom(nodes, edges): uniform random directed graph. seed= pic
 
 makeSimpleRandom(nodes, edges): uniform random undirected graph. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `weakComponentClusters()`
+### `weakComponentClusters(name='weakcomponent_class')`
 
-Connected components (ignoring edge direction).
+weakComponentClusters(): the connected components (ignoring edge
+direction), largest first; each node's component is stored in
+weakcomponent_class (0 = largest; name= another field).
 
 ## More measures: Katz, prestige, bridging, cliques, MDS, k-brace; field tools and generators
 
@@ -4086,11 +4237,11 @@ BOOLEAN or VARCHAR) and converts its values: "12" becomes 12, 3.7
 becomes 3, "yes" becomes true. Values that can't be converted are
 counted and left empty. One undo step.
 
-### `cliques(minSize=3, limit=1000)`
+### `cliques(smallest=3, limit=1000)`
 
-cliques(minSize=3) finds every maximal clique (a group where everyone
+cliques(smallest=3) finds every maximal clique (a group where everyone
 is linked to everyone, that no other node could join) with at least
-minSize nodes, ignoring edge direction; largest first, up to `limit`.
+smallest nodes, ignoring edge direction; largest first, up to `limit`.
 largestCliques() gives just the biggest ones.
 
 ### `copyColors(fromGraph, field='name')`
@@ -4161,9 +4312,10 @@ ring lattice; 1 is close to random). Nodes are drawn on the ring.
 mds(dims=2) places the nodes in `dims` dimensions by classical
 multidimensional scaling of their shortest-path distances (hops; with
 weight=... an edge field read as a distance), storing the coordinates
-in fields mds1, mds2, ... (or name=...). Unreachable pairs count as one
-more than the longest distance. scatterLayout(mds1, mds2) draws them;
-mdsLayout() does both in one go.
+in fields mds1, mds2, ... (or name=...) and returning them as a list.
+Unreachable pairs count as one more than the longest distance.
+scatterLayout(mds1, mds2) draws them; mdsLayout() does both in one
+go.
 
 ### `readNames(filename, field='name')`
 
@@ -4182,14 +4334,15 @@ shortest paths prefer strong ties. Stores the weighted betweenness in
 
 ## More clustering: Chinese Whispers, MCL, DBSCAN, MCODE, overlapping communities
 
-### `chineseWhispersClusters(iterations=20, weighted=True, seed=0)`
+### `chineseWhispersClusters(iterations=20, weight='weight', seed=0, name='cw_class')`
 
 chineseWhispersClusters() finds communities by Chinese Whispers
 (Biemann 2006): every node starts in its own class and repeatedly takes
 the class with the most (weighted) ties among its neighbours. Fast and
 parameter-free; the number of communities isn't chosen in advance.
-Stores cw_class (0 = largest) and returns the communities.
-weighted=False ignores edge weights; seed=None varies the result.
+Stores cw_class (0 = largest; name= another field) and returns the
+communities. weight= is the edge field read as tie strength (None:
+every tie counts 1); seed=None varies the result.
 
 ### `cliquePercolationClusters(k=3)`
 
@@ -4200,7 +4353,7 @@ nodes are in none). Stores cpm_classes (e.g. "0;2"; "" for none) and
 cpm_count; returns the communities, largest first. showOverlaps(...)
 draws them.
 
-### `dbscanClusters(fields=('x', 'y'), eps=None, minPts=4)`
+### `dbscanClusters(fields=('x', 'y'), eps=None, minPts=4, name='dbscan_class')`
 
 dbscanClusters() groups nodes that lie close together on screen with
 DBSCAN (Ester et al. 1996): a cluster is a dense region (at least
@@ -4209,9 +4362,10 @@ noise (dbscan_class -1). fields: numeric node fields to measure
 distance in, by default the positions (x, y); e.g.
 dbscanClusters((degree, pagerank)). Fields aren't rescaled, so give
 them comparable ranges. eps=None picks it from the knee of the sorted
-k-distance curve and prints it.
+k-distance curve and prints it. Stores dbscan_class (name= another
+field).
 
-### `linkCommunities(threshold=None, minEdges=2)`
+### `linkCommunities(threshold=None, smallest=2)`
 
 linkCommunities() finds overlapping communities by clustering edges
 (Ahn, Bagrow & Lehmann 2010): two edges sharing a node are similar when
@@ -4219,19 +4373,20 @@ their other ends have similar neighbourhoods; edges are merged by
 single linkage and the dendrogram is cut where partition density is
 highest (or at similarity `threshold`, 0-1). Each edge gets link_class;
 a node belongs to the communities of its edges (link_classes "0;3",
-link_count). Communities of fewer than minEdges edges are dropped
+link_count). Communities of fewer than `smallest` edges are dropped
 (link_class -1). Returns node communities, largest first.
 
-### `mclClusters(inflation=2.0, expansion=2, loops=True, iterations=100)`
+### `mclClusters(inflation=2.0, expansion=2, loops=True, iterations=100, name='mcl_class')`
 
 mclClusters() finds clusters by the Markov Cluster algorithm (MCL,
 van Dongen 2000): random walks are expanded and then "inflated" until
 flow stays inside clusters. inflation (1.2-5, default 2) sets the
 granularity: higher gives more, smaller clusters. Uses edge weights;
-loops=True adds self loops (recommended). Stores mcl_class.
+loops=True adds self loops (recommended). Stores mcl_class (name=
+another field).
 Works on connected pieces of up to 3000 nodes.
 
-### `mcodeClusters(degreeCutoff=2, scoreCutoff=0.2, haircut=True, fluff=False, fluffDensity=0.1, kCore=2, maxDepth=100)`
+### `mcodeClusters(degreeCutoff=2, scoreCutoff=0.2, haircut=True, fluff=False, fluffDensity=0.1, kCore=2, maxDepth=100, name='mcode_class')`
 
 mcodeClusters() finds densely connected regions with MCODE (Bader &
 Hogue 2003), made for protein complexes in interaction networks. Each
@@ -4240,16 +4395,18 @@ neighbourhood; complexes grow from the heaviest seeds through
 neighbours weighing at least (1 - scoreCutoff) of the seed's. Defaults
 are the paper's: degreeCutoff 2, scoreCutoff 0.2, haircut (keep only
 the 2-core) on, fluff (add dense neighbours, fluffDensity) off, kCore 2,
-maxDepth 100. Stores mcode_class (0 = best scoring, -1 = in none) and
+maxDepth 100. Stores mcode_class (0 = best scoring, -1 = in none;
+name= another field) and
 mcode_score (the node weight); returns the complexes, best first, and
 prints their scores (density x size).
 
-### `showOverlaps(communities, hulls=False, none='lightgray')`
+### `showOverlaps(communities, hulls=False, unassigned='lightgray', palette=None)`
 
 showOverlaps(communities) shows overlapping communities: each gets
-its own colour, a node in one takes that colour, a node in several is
-drawn as a pie with a slice per community, and nodes in none are
-lightgray (none=...). communities: the result of
+its own colour (palette= a colour scale or a list of colours to use
+instead), a node in one takes that colour, a node in several is drawn
+as a pie with a slice per community, and nodes in none are lightgray
+(unassigned= another colour). communities: the result of
 cliquePercolationClusters()/linkCommunities(), any set of sets, or a
 field listing them (cpm_classes, link_classes, or a class field).
 hulls=True also shades each community. removePies() goes back to
@@ -4273,18 +4430,20 @@ categorical=true treats a numeric field (a grade, a class number) as
 categories instead, and categorical=false treats a text field's values
 as numbers.
 
-### `blockmodel(count=4, show=True)`
+### `blockModelClusters(count=4, show=True, name='blockmodel_class')`
 
-blockmodel(count) groups the nodes into count positions of structurally
+blockModelClusters(count) groups the nodes into count positions of structurally
 equivalent nodes: nodes tied to the same others (in the same
 directions), whether or not they're tied to each other, which is a
 role (teacher, broker, follower), not a community. Profiles are
 compared by correlation and merged by average-linkage clustering.
-Stores each node's position in `position` (0 = largest), prints the
-image matrix (the density of ties from each position to each other;
-a dense diagonal means cohesive positions, dense off-diagonals mean
-roles that serve each other) and returns the positions. Try
-colorize(position), then collapseBy(position) for the reduced graph.
+Stores each node's position in blockmodel_class (0 = largest; name=
+another field), prints the image matrix (the density of ties from
+each position to each other; a dense diagonal means cohesive
+positions, dense off-diagonals mean roles that serve each other) and
+returns the positions, with the matrix in .image. Try
+colorize(blockmodel_class), then collapseBy(blockmodel_class) for the
+reduced graph.
 Fine up to a couple of thousand nodes.
 
 ### `bridges()`
@@ -4317,14 +4476,14 @@ feedbackEdges(): directed edges that close cycles (back edges of a
 depth-first search, plus self-loops); removing or reversing them leaves
 the directed part acyclic. A small set, not necessarily the smallest.
 
-### `mainPath()`
+### `mainPath(name='spc')`
 
 mainPath() finds the main path of a citation (or other flow)
 network: the chain of directed edges that the most source-to-sink
 paths run through (Hummon and Doreian's main path analysis, key-route
-variant). Each directed edge gets `spc`, its search path count as a
-share of all source-to-sink paths (0..1). The path starts at the edge
-with the highest spc and extends both ways, always along the
+variant). Each directed edge gets `spc` (name= another field), its
+search path count as a share of all source-to-sink paths (0..1).
+The path starts at the edge with the highest spc and extends both ways, always along the
 highest-spc edge, to a source and a sink. Edges closing cycles
 (feedbackEdges()) are ignored. Returns the path's nodes and edges.
 In a citation network with edges citing -> cited, it runs from recent
@@ -4370,19 +4529,20 @@ largest-piece share), ...]} and prints the share removed at which the
 largest piece drops below half. Many real networks shrug off random
 failures but break quickly under attack.
 
-### `spanningTree(maximum=False, weighted=True)`
+### `spanningTree(maximum=False, weight='weight')`
 
 spanningTree() returns the edges of a minimum spanning tree (a forest if
 the graph is in pieces) by edge weight: the cheapest backbone that keeps
 everything connected. spanningTree(maximum=True) keeps the strongest ties
 instead, a good backbone when weight means strength:
-showOnly(spanningTree(maximum=True)). weighted=False ignores weights.
+showOnly(spanningTree(maximum=True)). weight= another edge field to
+use (weight=km); weight=None counts every edge the same.
 
-### `transitiveReduction()`
+### `transitiveReduction(name='redundant')`
 
 transitiveReduction(): in a directed acyclic graph, the edges implied
 by longer paths (a -> c when a -> b -> c exists, and repeated edges). They
-are marked in the edge field `redundant` and returned, so
+are marked in the edge field `redundant` (name= another) and returned, so
 transitiveReduction().visible = false shows the backbone of a citation or
 dependency graph. Only directed edges count; cycles are an error (see
 feedbackEdges).
@@ -4447,18 +4607,19 @@ with two values, e.g. bipartite in makeSample("davis")), ordering each
 row to reduce edge crossings. Without igraph (still loading, or
 turned off) the rows are ordered by the barycenter heuristic instead.
 
-### `cohesiveBlocks()`
+### `cohesiveBlocks(name='cohesion')`
 
 cohesiveBlocks() finds nested groups that stay connected after removing
 any k-1 nodes (Moody and White's cohesive blocking): a structural view
-that k-cores miss. Each node's highest cohesion is stored in `cohesion`;
+that k-cores miss. Each node's highest cohesion is stored in `cohesion`
+(name= another field);
 the blocks are returned, most cohesive last. Slow beyond a few thousand
 nodes.
 
 ### `cutDendrogram(count)`
 
-cutDendrogram(n) re-cuts the hierarchy of the last walktrapClusters or
-fastGreedyClusters into n communities (same field), e.g. driven by a
+cutDendrogram(count) re-cuts the hierarchy of the last walktrapClusters or
+fastGreedyClusters into count communities (same field), e.g. driven by a
 Slider to explore coarser and finer groupings.
 
 ### `dhLayout(seed=0)`
@@ -4467,12 +4628,13 @@ dhLayout() is the Davidson-Harel layout: simulated annealing that
 spreads nodes evenly and avoids edge crossings and nodes on edges. Slow
 but tidy: for figures of up to a few hundred nodes.
 
-### `dominatorTree(root)`
+### `dominatorTree(root, name='idom')`
 
 dominatorTree(root) follows directed edges from root and finds, for
 every node it reaches, its immediate dominator: the last node every path
 from root must pass through (who controls access to whom). Stored in
-`idom` (a node name); returns the nodes root reaches.
+idom (a node name; name= another field); returns the nodes root
+reaches.
 
 ### `drlLayout(preset='default', seed=0)`
 
@@ -4481,17 +4643,17 @@ OpenOrd): tens of thousands of nodes in seconds, with clusters pulled
 well apart. preset: "default", "coarsen" (more separated clusters),
 "coarsest", "refine" (polish an existing layout) or "final".
 
-### `eigenvectorClusters(count=None)`
+### `eigenvectorClusters(count=None, name='eigen_class')`
 
 eigenvectorClusters() splits the graph by the leading eigenvector of
 the modularity matrix (Newman), repeatedly; count limits the number of
 communities. Stored in eigen_class.
 
-### `fastGreedyClusters(count=None)`
+### `fastGreedyClusters(count=None, name='fastgreedy_class')`
 
 fastGreedyClusters() merges communities greedily by modularity
 (Clauset-Newman-Moore), building a hierarchy; count as in
-walktrapClusters. Stored in fastgreedy_class; cutDendrogram(n) re-cuts.
+walktrapClusters. Stored in fastgreedy_class; cutDendrogram(count) re-cuts.
 
 ### `findPattern(pattern, induced=False, limit=100)`
 
@@ -4503,20 +4665,20 @@ induced=True requires no extra edges among the matched nodes. Returns
 up to `limit` matches, each a set of nodes; the same nodes matched in
 another order count once.
 
-### `fluidClusters(count, seed=0)`
+### `fluidClusters(count, seed=0, name='fluid_class')`
 
 fluidClusters(count) splits a connected graph into exactly count communities
 (fluid communities). On a graph in pieces run it on one part, e.g. in
 subgraph(giantComponent()). Stored in fluid_class.
 
-### `infomapClusters(trials=10, seed=0)`
+### `infomapClusters(trials=10, seed=0, name='infomap_class')`
 
 infomapClusters() finds communities by Infomap (how a random walker's
 flow stays inside groups), following edge direction and weights; a good
 choice for directed networks such as citations or web links. Stored in
 infomap_class.
 
-### `labelPropagationClusters(field=None, seed=0)`
+### `labelPropagationClusters(field=None, seed=0, name='lpa_class')`
 
 labelPropagationClusters() finds communities very fast (linear time) by
 letting each node adopt its neighbours' most common label; good for very
@@ -4530,7 +4692,7 @@ largestCliques() returns the largest cliques (groups where everyone is
 linked to everyone), each a set of nodes. Exponential in the worst
 case, fast on sparse graphs.
 
-### `leidenClusters(resolution=1.0, objective='modularity', iterations=-1, seed=0)`
+### `leidenClusters(resolution=1.0, objective='modularity', iterations=-1, seed=0, name='leiden_class')`
 
 leidenClusters() finds communities with the Leiden algorithm (better
 than Louvain: every community is internally connected) and stores them
@@ -4545,12 +4707,14 @@ lglLayout() is the Large Graph Layout: grows the drawing outward from
 a root node (default: a random one, or lglLayout(v1)), suited to big,
 tree-like networks.
 
-### `maxFlow(a, b, capacity='weight')`
+### `maxFlow(source, target, capacity=None, name='flow')`
 
-maxFlow(a, b) computes the maximum flow from a to b with edge weights
-as capacities (capacity=None: 1 per edge), following edge direction when
-the graph has directed edges. Each edge's flow is stored in the edge
-field `flow`; returns the total.
+maxFlow(source, target) computes the maximum flow from source to
+target, following edge direction when the graph has directed edges.
+Every edge carries 1 (so the flow counts edge-disjoint routes);
+capacity= an edge field gives each edge's capacity, e.g.
+maxFlow(v1, v9, capacity=weight). Each edge's flow is stored in the
+edge field flow (name= another); returns the total.
 
 ### `maxMatching(field=None)`
 
@@ -4558,35 +4722,37 @@ maxMatching() returns a largest set of edges with no node in two of
 them (pairs everyone it can); maxMatching(field) matches across the two
 values of a field in a two-mode network, using weights.
 
-### `minCut(a, b, capacity=None)`
+### `minCut(source, target, capacity=None)`
 
-minCut(a, b) returns the fewest edges whose removal separates a from b
-(direction ignored); minCut(a, b, weight) the cut of least total
-weight. Prints the cut's size.
+minCut(source, target) returns the fewest edges whose removal
+separates source from target (direction ignored); capacity= an edge
+field, minCut(v1, v9, capacity=weight), gives the cut of least total
+capacity. Prints the cut's size.
 
-### `optimalClusters()`
+### `optimalClusters(name='optimal_class')`
 
 optimalClusters() finds the partition with the highest possible
 modularity (exact, by integer programming): only for small graphs (up
 to about 100 nodes), as a baseline for the other methods. Stored in
 optimal_class.
 
-### `personalizedPagerank(seq, damping=0.85)`
+### `personalizedPagerank(seq, damping=0.85, name='ppr')`
 
 personalizedPagerank(seq) ranks every node by how easily a random walk
 restarting at the given nodes reaches it: relevance to a chosen set
 (e.g. personalizedPagerank(sel) or personalizedPagerank(v1)). Stored in
-the field `ppr`.
+the field ppr (name= another), which is returned.
 
-### `predictLinks(top=20, method='adamic_adar', show=True, add=False)`
+### `predictLinks(count=20, method='adamic_adar', show=True, add=False, name='predicted')`
 
 predictLinks() lists likely missing edges: pairs of nodes that aren't
 linked but share neighbours, scored by "adamic_adar" (shared neighbours,
 rare ones counting more), "jaccard", "common" (count of shared
-neighbours) or "resource" (resource allocation). Returns the `top`
+neighbours) or "resource" (resource allocation). Returns the `count`
 pairs as (node, node, score), best first. add=true also adds them as
-edges, marked with the method's name in the edge field `predicted`
-(showOnly(predicted != None) shows them; undo() takes them away).
+edges, marked with the method's name in the edge field predicted
+(name= another; showOnly(predicted != None) shows them; undo() takes
+them away).
 evaluateLinks() tests how well a method would have predicted.
 
 ### `rewire(times=None, name=None, seed=0, keep=None)`
@@ -4600,11 +4766,11 @@ that field's value, so the edges between each pair of values stay
 the same in number: rewire(keep=kind) keeps a two-mode network
 two-mode (plants still only link to pollinators).
 
-### `similarTo(node, method='jaccard', top=10, alpha=0.9)`
+### `similarTo(node, method='jaccard', count=10, alpha=0.9, name='similarity')`
 
 similarTo(v1) scores every node by how much its neighbourhood overlaps
-v1's, stores the score in the field `similarity` and returns the `top`
-most similar nodes. method: "jaccard" (shared neighbours / all
+v1's, stores the score in the field similarity (name= another) and
+returns the `count` most similar nodes. method: "jaccard" (shared neighbours / all
 neighbours of either), "dice" (2 x shared / sum of degrees), or
 "adamic_adar" (shared neighbours, rare ones counting more), or
 "regular": regular equivalence (Leicht, Holme and Newman), where nodes
@@ -4619,7 +4785,7 @@ same direction) into one, whose weight combines theirs: combine="sum"
 (default), "max", "min", "mean" or "first"; loops=True also removes
 self-loops. One undo step.
 
-### `spinglassClusters(spins=25, gamma=1.0, seed=0)`
+### `spinglassClusters(spins=25, gamma=1.0, seed=0, name='spinglass_class')`
 
 spinglassClusters() finds communities by simulated annealing of a spin
 model (Reichardt-Bornholdt); handles negative edge weights (signed
@@ -4636,22 +4802,23 @@ polish.
 
 ### `useIgraph(on=True)`
 
-useIgraph(false) makes the statistics use networkx / numpy instead of
+useIgraph(on=false) makes the statistics use networkx / numpy instead of
 igraph (to compare results or work around a problem); useIgraph() turns
 igraph back on. Prints which engine is active.
 
-### `voronoiClusters()`
+### `voronoiClusters(name='voronoi_class')`
 
 voronoiClusters() picks central "generator" nodes automatically and
 gives every other node to its nearest one (by weighted distance); the
-communities are stored in voronoi_class and the generators returned.
+communities are stored in voronoi_class (name= another field) and
+returned, with the generator nodes in their .seeds.
 
-### `walktrapClusters(count=None, steps=4)`
+### `walktrapClusters(count=None, steps=4, name='walktrap_class')`
 
 walktrapClusters() groups nodes that short random walks (steps long)
 tend to stay among, building a hierarchy; count=None cuts it where
 modularity is highest, walktrapClusters(8) gives 8 communities.
-Stored in walktrap_class; cutDendrogram(n) re-cuts it.
+Stored in walktrap_class; cutDendrogram(count) re-cuts it.
 
 ## Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal
 
@@ -4698,9 +4865,9 @@ leaves them).
 osageLayout(dept) packs each value's nodes into a rectangle and packs
 the rectangles together: a compact overview of the groups.
 
-### `removeOverlap(method='prism', sep=4)`
+### `prismLayout(method='prism', sep=4)`
 
-removeOverlap() moves nodes apart until none overlap, keeping the shape
+prismLayout() moves nodes apart until none overlap, keeping the shape
 of the current layout (Graphviz's PRISM). Works after any layout. method:
 "prism" (default), "voronoi", "scale" (spread evenly), "compress";
 sep is the extra margin in points.
@@ -4729,18 +4896,18 @@ them without rescaling.
 centerAfterLayout(state): whether the view re-centres after each layout
 (default true). Disable it to control the view yourself.
 
-### `circleLayout(field=None, center=None, x=None, y=None)`
+### `circleLayout(field=None, node=None, x=None, y=None)`
 
 circleLayout() places all nodes evenly on a circle (radius 450 around 500,500).
 
 circleLayout(field) makes one circle per value of a node field (bigger
 groups get bigger circles, the biggest first), packed in rows.
 
-circleLayout(field, centerNode) puts centerNode at (500, 500) and its
+circleLayout(field, node) puts node at (500, 500) and its
 neighbours on a circle around it, ordered by `field`, at a radius
 proportional to `field` (a node field of the neighbours, or an edge
 field of the connecting edges). Other nodes are left alone.
-circleLayout(field, centerNode, x, y) uses (x, y) as the centre.
+circleLayout(field, node, x, y) puts it at (x, y) instead.
 
 ### `dagLayout()`
 
@@ -4773,18 +4940,18 @@ frLayout() runs Fruchterman-Rheingold (as in Pajek) starting from the
 current positions and fits the result into a 1000 x 1000 grid with cells
 the size of the largest node; frLayout(width, height) uses that area.
 
-### `gemLayout(seed=None)`
+### `gemLayout(seed=0)`
 
 gemLayout() runs the GEM force-directed layout (Frick et al.);
-gemLayout(seed) seeds the random generator for a repeatable layout.
+seed= picks another starting sequence for the random generator.
 
-### `hiveLayout(axis=None, position=None, scale='rank', axes=None, inner=60, length=440, curved=True)`
+### `hiveLayout(axis=None, position=None, transform='rank', axes=None, inner=60, length=440, curved=True)`
 
 hiveLayout(axis, position) draws a hive plot (Krzywinski et al.): one
 radial axis per value of the node field `axis` (the most common values,
 at most `axes` of them, the rest merged into "other"), each node placed
 along its axis by the numeric field `position` (default totaldegree),
-and edges drawn as curves between axes. scale is "rank" (default; evenly
+and edges drawn as curves between axes. transform is "rank" (default; evenly
 spread), "linear" or "log". Without `axis`: for directed graphs the
 classic source / hub / sink axes (only outgoing, both, only incoming
 edges), otherwise leaves / connectors / hubs by degree. The axes are drawn
@@ -4794,29 +4961,25 @@ E.g. hiveLayout(dept, pagerank) or hiveLayout(louvain_class, axes=5)
 ### `isomLayout(iterations=None)`
 
 isomLayout() runs the JUNG ISOM (self-organising map) layout for 2000
-epochs; isomLayout(n) runs n epochs.
+epochs; isomLayout(iterations=n) runs n epochs.
 
 ### `jfrLayout()`
 
 jfrLayout() runs the JUNG Fruchterman-Rheingold layout (random start in
 a 1000 x 1000 area, up to 700 cooling iterations).
 
-### `jkkLayout1()`
+### `jkkLayout()`
 
-jkkLayout1() runs the JUNG Kamada-Kawai layout: unweighted graph
+jkkLayout() runs the JUNG Kamada-Kawai layout: unweighted graph
 distances, random start, 2000 iterations each moving the worst-placed
-node.
-
-### `jkkLayout2()`
-
-jkkLayout2() runs the JUNG Kamada-Kawai layout with integer distances
-(same algorithm as jkkLayout1).
+node. (kkLayout is GUESS's own Kamada-Kawai: a circle start, each
+component separately, fitted to a box.)
 
 ### `jSpringLayout(iterations=None)`
 
 jSpringLayout() runs the JUNG spring layout from random positions until
 it settles or for 500 iterations (fewer on graphs over 1000 nodes);
-jSpringLayout(n) runs exactly n iterations.
+jSpringLayout(iterations=n) runs exactly n iterations.
 
 ### `kkLayout(width=None, height=None)`
 
@@ -4853,14 +5016,14 @@ each node is treated as a disc of ratio x its size plus margin.
 
 physicsLayout() runs the graphopt physics layout (charged nodes, springs)
 for 500 steps from the current positions (fewer on graphs over 1000
-nodes); physicsLayout(n) runs n steps.
+nodes); physicsLayout(iterations=n) runs n steps.
 
-### `radialLayout(center, edges=None)`
+### `radialLayout(node, edges=None)`
 
-radialLayout(centerNode) lays the graph out as a radial tree around
-centerNode (placed at 0,0), following a breadth-first spanning tree
-(Eades' radial drawing). Nodes not reachable from the centre stay put.
-radialLayout(centerNode, edges) restricts the tree to the given edges.
+radialLayout(node) lays the graph out as a radial tree around node
+(placed at 0,0), following a breadth-first spanning tree (Eades'
+radial drawing). Nodes not reachable from it stay put.
+radialLayout(node, edges) restricts the tree to the given edges.
 
 ### `randomLayout(width=None, height=None)`
 
@@ -4879,7 +5042,7 @@ where they are (Gephi's Scale layout).
 
 ### `ringMove(node, index)`
 
-ringMove(node, k) moves a node to position k around the circle made by
+ringMove(node, index) moves a node to position index around the circle made by
 circleLayout() and re-spaces the ring (what dragging a node around the
 circle does).
 
@@ -4897,8 +5060,8 @@ those two values.
 
 springLayout() runs the GUESS spring layout from the current positions
 until it settles or for 1000 iterations (fewer on graphs over 1000
-nodes: 1000 * 1000 / nodes, at least 100); springLayout(n) runs exactly
-n iterations. Stop it early with the Stop button.
+nodes: 1000 * 1000 / nodes, at least 100); springLayout(iterations=n)
+runs exactly n iterations. Stop it early with the Stop button.
 
 ### `sugiyamaLayout(bends=False)`
 
@@ -5047,15 +5210,6 @@ labels. size= sets that size in pixels (default 10; a node's labelsize
 still scales its own label). Labels inside nodes keep fitting their
 nodes. constantLabelSize(false) turns it off.
 
-### `createConvexHull(seq, color='200,200,255,90', shape='hull', rotate=False, padding=6)`
-
-createConvexHull(seq) shades the convex hull around the nodes in seq
-(edges contribute their endpoints). shape="box" or "ellipse" draws a
-box or an ellipse around them instead; rotate=true turns the box or
-ellipse to fit the group (the smallest box at any angle) rather than
-keeping it upright; padding= is the room left around the nodes.
-encircle(seq) is the same with an ellipse.
-
 ### `curvedEdges(on=True)`
 
 curvedEdges() draws every edge as a circular arc running clockwise from
@@ -5111,18 +5265,21 @@ horizontal (the default).
 
 ### `encircle(seq, shape='ellipse', color=None, rotate=True, padding=10)`
 
-encircle(seq) draws a shaded ellipse around a group of nodes, turned
-to fit it; encircle(seq, "box") a box, encircle(seq, "hull") the
-convex hull. rotate=false keeps the shape upright. Without a color,
-each group gets its own (light) colour. Returns the shape: .color,
-.shape, .rotate and .padding change it; removeConvexHull removes it.
+encircle(seq) draws a shaded ellipse around a group of nodes (edges
+contribute their endpoints), turned to fit it; encircle(seq, "box") a
+box, encircle(seq, "hull") the convex hull. rotate=false keeps a box
+or ellipse upright; padding= is the room left around the nodes.
+Without a color, each group gets its own (light) colour. Returns the
+shape: .color, .shape, .rotate and .padding change it;
+removeConvexHull(hull) removes it and removeConvexHulls() removes
+them all.
 
 ### `encircleBy(field, shape='ellipse', rotate=True, padding=10, smallest=2)`
 
 encircleBy(field) draws one shape around each group of nodes that
 share a value of a node field (with at least `smallest` members), each
 in its own colour: encircleBy(louvain_class), encircleBy(dept, "box").
-Returns the shapes.
+Returns the shapes; removeConvexHulls() removes them.
 
 ### `excentricLens(on=True, radius=None, autoSize=None, maxLabels=None)`
 
@@ -5166,7 +5323,8 @@ Save the display as SVG (downloaded by the browser, or added to the zip after st
 
 ### `getConvexHulls()`
 
-All hulls currently shown.
+getConvexHulls(): every shape drawn by encircle and encircleBy that
+is currently shown.
 
 ### `getDisplayBackground()`
 
@@ -5176,13 +5334,15 @@ The display background color, or None when it follows the light/dark theme.
 
 The drawings on the display.
 
-### `GradientLegend(start, end=None, lo=0, hi=1, ticks=None)`
+### `GradientLegend(start=None, end=None, lo=0, hi=1, ticks=None, palette=None)`
 
-A color ramp legend: GradientLegend(startColor, endColor, min, max[, tickEvery])
-shows the ramp from min to max, with a tick mark every tickEvery units;
-GradientLegend("viridis", min, max) shows a colour scale (see colorScales).
-GradientLegend(field[, title]) shows a numeric field's current colours from
-its lowest to its highest value (after colorBy), and follows them.
+A color ramp legend: GradientLegend(start, end, lo, hi[, ticks]) shows
+the ramp from colour start at value lo to colour end at value hi, with a
+tick mark every `ticks` units; GradientLegend(palette="viridis", lo=0,
+hi=10) shows a colour scale (see colorScales; GradientLegend("viridis",
+0, 10) is the same). GradientLegend(field[, title]) shows a numeric
+field's current colours from its lowest to its highest value (after
+colorBy), and follows them.
 
 ### `hideOverlappingLabels(on=True)`
 
@@ -5250,11 +5410,12 @@ Remove the background image set with setBackgroundImage.
 
 ### `removeConvexHull(hull)`
 
-Remove one hull.
+removeConvexHull(hull) removes one shape drawn by encircle.
 
 ### `removeConvexHulls(seq=None)`
 
-Remove the given hulls, or all hulls.
+removeConvexHulls() removes every shape drawn by encircle and
+encircleBy; removeConvexHulls(shapes) removes the given ones.
 
 ### `removeDrawing(d)`
 
@@ -5369,7 +5530,7 @@ most common value first.
 
 ### `removeLegend(legend)`
 
-removeLegend(lg) or removeLegend(2) removes one legend (the number is the
+removeLegend(legend) or removeLegend(2) removes one legend (the number is the
 one shown as <legend 2: …>; the × on a legend runs this).
 
 ### `removeLegends()`
@@ -5386,12 +5547,14 @@ shapeBy(field) gives each value of a node field its own shape (circle,
 square, rounded square, triangle, diamond, hexagon, octagon, then
 repeating), the most common value first.
 
-### `table(seq=None, *more, sort=None, reverse=None)`
+### `table(seq=None, *more, sort=None, descending=None)`
 
 table() opens the data table of all nodes; table(seq) shows just those
-nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)).
-After >> it is an output format: x >> table prints x as a table in the
-console, x >> table(degree, dept, sort=degree) with those columns.
+nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)), and
+table(seq, sort=degree) in that order (largest first; descending=False
+for smallest first). After >> it is an output format: x >> table prints
+x as a table in the console, x >> table(degree, dept, sort=degree) with
+those columns.
 
 ## Pie nodes, borders and edge bundling
 
@@ -5450,9 +5613,9 @@ collapse(seq, "name") names it. Returns the meta-node.
 collapseBy(field) collapses each group of nodes sharing a value of field
 (with at least `smallest` members) into a meta-node named after the value.
 
-### `expand(meta)`
+### `expand(node)`
 
-expand(metaNode) brings back the nodes a meta-node stands for (also:
+expand(node) brings back the nodes a meta-node stands for (also:
 double-click it). Returns them.
 
 ### `expandAll()`
@@ -5530,19 +5693,19 @@ camera=[x, y, zoom] is filled in by the page; at=k inserts it at k.
 
 ### `moveSlide(index, to)`
 
-moveSlide(k, j) moves slide k to position j.
+moveSlide(index, to) moves slide index to position to.
 
 ### `noteSlide(index, note)`
 
-noteSlide(k, text) changes slide k's note.
+noteSlide(index, note) changes slide index's note.
 
 ### `removeSlide(index)`
 
-removeSlide(k) deletes slide k.
+removeSlide(index) deletes slide index.
 
 ### `showSlide(index, duration=1200)`
 
-showSlide(k) morphs the graph to slide k's state and moves the camera.
+showSlide(index) morphs the graph to slide index's state and moves the camera.
 
 ### `slides()`
 
@@ -5592,7 +5755,8 @@ the Text cookbook's recipes.
 makeFromSPARQL(query) builds a graph from a SPARQL query whose rows bind
 ?source and ?target (optionally ?sourceLabel / ?targetLabel, used as
 labels; any other variables become edge fields). E.g. a Wikidata query
-for "influenced by" links.
+for "influenced by" links. Edges run from ?source to ?target
+(directed=true, the default); directed=false makes them undirected.
 
 ### `makeFromSTRING(genes, species=9606, score=0.7, add=0, server='https://string-db.org')`
 
@@ -5693,7 +5857,8 @@ or CX (version 1), the formats of NDEx and Cytoscape's exchange
 format: attributes (typed as declared), node positions, and the
 default and per-node colours, sizes and shapes. Nodes are named by
 their `name` (a name two nodes share gets the id added). CX edges have
-a direction, as in Cytoscape; directed=false loads them undirected.
+a direction, as in Cytoscape, so they load directed by default
+(directed=true); directed=false loads them undirected.
 
 ### `makeFromCYJS(filename)`
 
@@ -5733,8 +5898,9 @@ file (simple interaction format): each line is `source type target
 [target …]`, or a lone node name. If the file has tabs, fields are
 tab-separated and names may contain spaces; otherwise names are
 separated by spaces. The type goes in the edge field `interaction`
-(colorize(interaction) shows it). directed=true makes every edge run
-from source to target.
+(colorize(interaction) shows it). Edges are undirected by default
+(directed=false); directed=true makes every edge run from source to
+target.
 
 ### `makeFromXGMML(filename)`
 
@@ -5891,8 +6057,9 @@ read as makeFromCSV reads tables: an edge sheet (Source, Target[, Type,
 Weight, Label, ...]), an adjacency matrix or list; with a node sheet
 (Id[, Label, ...]) too when the workbook has one. sheet= picks the edge
 sheet by name or number (0 = first); nodes= names the node sheet, or
-another file (.xlsx or .csv). Other columns become fields; directed=true
-makes edges without a Type directed. makeFromCSV("data.xlsx") does the same.
+another file (.xlsx or .csv). Other columns become fields; edges are
+undirected by default (directed=false) unless a Type column says
+otherwise, and directed=true makes edges without a Type directed. makeFromCSV("data.xlsx") does the same.
 source=, target=, interaction=, weight= and header= choose the edge
 sheet's columns as in makeFromCSV.
 
@@ -5929,13 +6096,20 @@ The current nodeDisappearBy fraction (see setNodeDisappearBy).
 
 Names of the saved states.
 
-### `ls(state)`
+### `loadState(state)`
 
-Load a saved state: restores which nodes/edges exist and all their values.
+loadState(state) loads a state saved with saveState: restores which
+nodes and edges exist and all their values.
 
 ### `morph(state, duration=1000)`
 
 Animate from the current display to a saved state over `duration` ms.
+
+### `saveState(state)`
+
+saveState(state) saves the current graph (which nodes and edges exist,
+and all field values) as a state named `state`, for loadState, morph and
+field[name].
 
 ### `scratch()`
 
@@ -5959,10 +6133,6 @@ Fraction (0..1) of a morph by which nodeAppearAfter takes effect.
 ### `setNodeDisappearBy(v)`
 
 Fraction (0..1) of a morph by which nodeDisappearBy takes effect.
-
-### `ss(state)`
-
-Save the current graph (membership and all field values) as a named state.
 
 ## Ranges (existence intervals)
 
@@ -6024,9 +6194,9 @@ values such as degree; values <= 0 are left out) and a log count axis.
 A list of numbers works too (eigenvalues, delivery times):
 plotHistogram([...], 20, title="Eigenvalues").
 
-### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False, xrange=None, yrange=None, dashed=None, highlight=None, colors=None)`
+### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False, xrange=None, yrange=None, dashed=None, highlight=None, palette=None)`
 
-plotLine(points) draws a line chart of [(x, y), ...] pairs;
+plotLine(data) draws a line chart of [(x, y), ...] pairs;
 plotLine({"infected": pts1, "recovered": pts2}) draws one line per
 series. log=true makes both axes logarithmic (or logX=/logY= one of
 them; points <= 0 are left out). dots=true marks each point. A chart
@@ -6035,9 +6205,10 @@ updates it. yrange=(lo, hi) fixes the y axis (e.g. (0.8, 1) for values
 near 1), xrange= the x axis. dashed=["fit", ...] draws those series
 dashed and without dots (for theory curves and fits), and
 highlight=["this network"] draws those series' points large, so a single
-point stands out among simulated ones. colors={"infected": red,
-"infected (theory)": red} sets series colours (a list goes in series
-order), e.g. to give a theory curve its data's colour.
+point stands out among simulated ones. palette={"infected": red,
+"infected (theory)": red} sets series colours, e.g. to give a theory
+curve its data's colour; a list goes in series order, and a colour
+scale's name (palette="Set2") takes its colours in turn.
 
 ### `plotScatter(x, y=None, log=False, logX=None, logY=None, ends=False, title=None, xlabel=None, ylabel=None, line=None, xrange=None, yrange=None)`
 
@@ -6133,11 +6304,11 @@ Call fn() every `seconds` seconds; returns a timer with .stop().
 
 ### `everyPaced(fn, steps=None, slow=0.9, fast=0.15, ramp=3)`
 
-everyPaced(step) calls step() again and again, slow-fast-slow, so a
+everyPaced(fn) calls fn() again and again, slow-fast-slow, so a
 process can be followed on screen: `slow` seconds apart for the first
 `ramp` calls, speeding up to `fast`, and slowing down again over the
 last `ramp` calls. Give steps= when the number of calls is known, or
-let step() return how many calls are left (an int); returning False
+let fn() return how many calls are left (an int); returning False
 stops. Returns a timer with .stop().
 
 ### `Group(*a, **k)`
@@ -6152,7 +6323,7 @@ after every command and the label follows.
 
 ### `linkTo(element, text=None)`
 
-linkTo(node) is Markdown for a small chip naming a node (or edge):
+linkTo(element) is Markdown for a small chip naming a node (or edge):
 in a Markdown panel, pointing at the chip highlights the element in the
 graph and clicking selects it. Good for listing a queue, a path or
 search results beside the graph:
@@ -6294,11 +6465,12 @@ The color halfway between two colors.
 distinctColors(count): count clearly different colours (as "r,g,b" strings), the
 most different first — the categorical palette colorize(field) uses.
 
-### `generateColors(*args)`
+### `generateColors(*args, palette=None, count=None)`
 
-generateColors(start, end, n) or generateColors(start, middle, end, n):
-n colours along a gradient. generateColors("viridis", n): n colours from a
-colour scale (see colorScales).
+generateColors(start, end, count) or generateColors(start, middle, end,
+count): count colours along a gradient. generateColors(palette="viridis",
+count=8) (or generateColors("viridis", 8)): count colours from a colour
+scale (see colorScales).
 
 ### `randomColor(alpha=None)`
 
@@ -6403,6 +6575,54 @@ add(g.deleted)
 undo()
 ```
 
+**Show a result as a table**
+
+```python
+(dept == 'dept1') >> table
+louvainClusters() >> table
+```
+
+**Hide a result**
+
+```python
+louvainClusters();
+```
+
+**Act on the selection**
+
+```python
+sel.color = red
+showOnly(sel)
+```
+
+**The top nodes by a field**
+
+```python
+highest(degree, 5)
+lowest(pagerank, 3)
+```
+
+**Filter with your own test**
+
+```python
+g.edges.where(lambda e: e.node1.dept != e.node2.dept)
+```
+
+**Try something, then put it back**
+
+```python
+with scratch():
+    remove(highest(betweenness, 5))
+    print(len(giantComponent()))
+```
+
+**Lighter, darker, transparent colours**
+
+```python
+(dept == 'dept1').color = red.lighter()
+(dept == 'dept2').color = blue.alpha(120)
+```
+
 ### Appearance
 
 **A colour per category**
@@ -6414,7 +6634,7 @@ colorize(dept)
 **Gradient by value**
 
 ```python
-colorBy(freq, yellow, red, 'log')
+colorBy(freq, yellow, red, transform='log')
 ```
 
 **Size by importance**
@@ -6457,7 +6677,7 @@ sizeBy(freq, 1, 8)
 **Curved, mixed-colour edges**
 
 ```python
-curvedEdges()
+curvedEdges(true)
 setEdgeColorMode('mixed')
 ```
 
@@ -6485,7 +6705,7 @@ hideOverlappingLabels()
 **Shade a group**
 
 ```python
-createConvexHull(dept == 'dept1', '200,200,255,90')
+encircle(dept == 'dept1', 'hull', lavender.alpha(90))
 ```
 
 **Ellipse or box around a group**
@@ -6809,7 +7029,7 @@ neatoLayout()
 **Remove overlaps, keep shape**
 
 ```python
-removeOverlap()
+prismLayout()
 ```
 
 **Labels inside nodes**
@@ -7056,7 +7276,7 @@ saveHistory('work.py')
 **Snapshot and morph**
 
 ```python
-ss('before')
+saveState('before')
 circleLayout()
 morph('before', 2000)
 ```

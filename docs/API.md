@@ -3608,6 +3608,54 @@ add(g.deleted)
 undo()
 ```
 
+**Show a result as a table**
+
+```python
+(dept == 'dept1') >> table
+louvainClusters() >> table
+```
+
+**Hide a result**
+
+```python
+louvainClusters();
+```
+
+**Act on the selection**
+
+```python
+sel.color = red
+showOnly(sel)
+```
+
+**The top nodes by a field**
+
+```python
+highest(degree, 5)
+lowest(pagerank, 3)
+```
+
+**Filter with your own test**
+
+```python
+g.edges.where(lambda e: e.node1.dept != e.node2.dept)
+```
+
+**Try something, then put it back**
+
+```python
+with scratch():
+    remove(highest(betweenness, 5))
+    print(len(giantComponent()))
+```
+
+**Lighter, darker, transparent colours**
+
+```python
+(dept == 'dept1').color = red.lighter()
+(dept == 'dept2').color = blue.alpha(120)
+```
+
 ### Appearance
 
 **A colour per category**
@@ -3662,7 +3710,7 @@ sizeBy(freq, 1, 8)
 **Curved, mixed-colour edges**
 
 ```python
-curvedEdges()
+curvedEdges(true)
 setEdgeColorMode('mixed')
 ```
 
@@ -3690,7 +3738,7 @@ hideOverlappingLabels()
 **Shade a group**
 
 ```python
-encircle(dept == 'dept1', 'hull', '200,200,255,90')
+encircle(dept == 'dept1', 'hull', lavender.alpha(90))
 ```
 
 **Ellipse or box around a group**
