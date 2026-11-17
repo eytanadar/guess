@@ -692,7 +692,7 @@ def install(session):
                 raise GuessError("colorBy takes start and end colours or palette=, not both")
             start = palette
         if start is None:
-            raise TypeError("colorBy(field, start, end) or colorBy(field, palette=...)")
+            raise GuessError("colorBy(field, start, end) or colorBy(field, palette=...)")
         if end is None:
             cscale = scales.get(start, "colour scale (or give colorBy(field, start, end))")
             if middle is not None:

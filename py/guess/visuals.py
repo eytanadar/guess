@@ -468,7 +468,7 @@ def install(session):
             sc = scales.get(palette)
             return _scale_legend(sc, lo, hi, ticks)
         if start is None:
-            raise TypeError("GradientLegend(start, end, lo, hi), GradientLegend(palette=..., lo=, hi=) "
+            raise GuessError("GradientLegend(start, end, lo, hi), GradientLegend(palette=..., lo=, hi=) "
                             "or GradientLegend(field)")
         if _is_field(start):
             # GradientLegend(degree[, title]): the field's colours from its lowest to highest value

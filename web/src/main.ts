@@ -1404,7 +1404,7 @@ function renderLegends(legends: LegendRec[]) {
         box.append(t);
       }
       box.append(bar);
-      // GradientLegend(…, min, max, tickEvery): tick marks along the ramp
+      // GradientLegend(…, lo, hi, ticks): tick marks along the ramp
       const span = lg.ramp.max - lg.ramp.min;
       if (lg.ramp.ticks && span > 0 && span / lg.ramp.ticks <= 50) {
         const ticks = document.createElement("div");

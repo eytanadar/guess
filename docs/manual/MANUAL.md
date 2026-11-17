@@ -2896,7 +2896,8 @@ unchanged except where Python 3 differs. The main differences:
     `findDuplicates`, `similarTo`, `predictLinks`, `report` and
     `wordCloud`, and in `makeFromSimilarity` (was `k=`); `smallest=` (was
     `minSize=`) in `cliques` and `enrichment`, and in `linkCommunities`
-    (was `minEdges=`).
+    (was `minEdges=`). `limit=` is kept for caps on a search, so
+    `lombardiEdges(maxAngle=)` (was `limit=`) names its largest bend.
   - Weights: `shortestPath(source, target, weight="weight")` (was
     `weighted=true`); `spanningTree(weight=None)` and
     `chineseWhispersClusters(weight=None)` (were `weighted=false`); any edge

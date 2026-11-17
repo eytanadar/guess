@@ -243,20 +243,20 @@ def install(session):
                 count += 1
         return 100.0 if not count else 100 - 100 * (total / count) / math.pi
 
-    def lombardiEdges(iterations=300, limit=70):
+    def lombardiEdges(iterations=300, maxAngle=70):
         """lombardiEdges() turns the edges into circular arcs, without moving
         any node, so that each node's edges leave it as evenly spread as
         possible (a "near-Lombardi" drawing, after the artist Mark Lombardi;
         Chernobelskiy et al., GD 2011). Each edge's bend is the angle, in
         degrees, at which it leaves its ends, stored in its `arc` field (0 =
-        straight; at most `limit`). Returns lombardiness() before and after.
+        straight; at most `maxAngle`). Returns lombardiness() before and after.
         straightenEdges() undoes it."""
         edges, ends = _arc_setup()
         if not edges:
             return (100.0, 100.0)
         before = lombardiness()
         theta = {e._id: math.radians(e.arc or 0.0) for e in edges}
-        cap = math.radians(float(limit))
+        cap = math.radians(float(maxAngle))
         for it in range(int(iterations)):
             push = {e._id: 0.0 for e in edges}
             for v, tang in _tangents(ends, theta).items():
