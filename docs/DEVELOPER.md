@@ -133,6 +133,40 @@ recorder enforces it.
 - `?load=<url>` opens a graph or session at startup; `&app=1` hides the console.
 - Clear autosave: DevTools → Application → IndexedDB → `guess`.
 
+## Rebuilding the documentation
+
+After changing commands, docstrings or the UI, bring every document up to
+date. All paths are from the repository root. The Python steps use the
+package's virtualenv (`py/.venv`), and the screenshot steps need `web/`
+installed (`npm install`) and, for the PDFs, pandoc 3 and XeLaTeX.
+
+| what | where | rebuild | check |
+|---|---|---|---|
+| Command reference | `docs/API.md` | `cd py && .venv/bin/python tools/gen_api_docs.py` | a pytest test fails when it is stale |
+| Manual | `docs/manual/MANUAL.md` → `docs/manual/build/` | `py/.venv/bin/python docs/manual/build.py` (or `… build.py pdf html` for some formats) | `cd py && .venv/bin/python ../docs/manual/tools/check_examples.py` runs every example |
+| Manual figures | `docs/manual/img/` | `cd web && npm run manual-shots` (or `-- hive fa2` for some) | look at them |
+| Cookbooks | `cookbooks/<book>/cookbook.md` → `cookbooks/build/` | `py/.venv/bin/python cookbooks/tools/build.py` | `cd py && .venv/bin/python ../cookbooks/tools/check_recipes.py [book]` runs every recipe |
+| Cookbook figures | `cookbooks/<book>/img/` | `cd web && npm run cookbook-shots` (or `-- book[:figure]`) | look at them; figures named `app-…` capture the whole window, the others the graph |
+| Explainers | `web/public/explainers/networks/<id>/` (`manifest.json` + `main.gy`), listed in `index.html` there | nothing to build: they are served as they are and opened with `?app=explainers/networks/<id>/manifest.json` | `cd py && .venv/bin/python -m pytest -q tests/test_explainers*.py` drives each one's controls; `cd web && npx playwright test e2e/explainers.spec.ts` opens each one in the browser |
+| Gestures guide | `web/public/help/` | `cd web && npm run help-shots` | look at them |
+
+Details are in [docs/manual/README.md](manual/README.md),
+[cookbooks/README.md](../cookbooks/README.md) and, for the explainers,
+[web/public/explainers/networks/PLAN.md](../web/public/explainers/networks/PLAN.md).
+
+The built manual and cookbooks are committed, so the links in the top-level
+README work. `npm run build` copies them into the site (`manuals/`, which
+*Help → Manual* and *Help → Cookbooks* open), and the explainers come along
+with the rest of `web/public/`. A usual pass after a change:
+
+```sh
+cd py && .venv/bin/python tools/gen_api_docs.py && .venv/bin/python -m pytest -q
+.venv/bin/python ../docs/manual/tools/check_examples.py
+.venv/bin/python ../cookbooks/tools/check_recipes.py
+cd .. && py/.venv/bin/python docs/manual/build.py && py/.venv/bin/python cookbooks/tools/build.py
+cd web && npx playwright test             # includes the explainers
+```
+
 ## Gestures guide screenshots
 
 The in-app "Mouse and gestures" guide (`web/src/gestures.ts`) uses screenshots

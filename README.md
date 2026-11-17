@@ -43,6 +43,19 @@ visual-analytics app built with GUESS's panels, sliders and menus. In the app:
 | Ecology | [web page](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-ecology.html) · [PDF](https://raw.githubusercontent.com/eytanadar/guess/main/cookbooks/build/GUESS-for-ecology.pdf) |
 
 Sources and build instructions: [cookbooks/README.md](cookbooks/README.md).
+
+## Explainers
+
+108 small interactive apps, one for each section of Newman's *Networks*
+(2nd ed.), each built with GUESS: a graph, controls, live charts and an
+explanation in its own words. Run the app and open
+`/explainers/networks/index.html` for the list. Sources, conventions and
+how to test them: [web/public/explainers/networks/PLAN.md](web/public/explainers/networks/PLAN.md).
+
+How to rebuild every document (the command reference, manual, cookbooks,
+figures) and check the explainers: *Rebuilding the documentation* in
+[docs/DEVELOPER.md](docs/DEVELOPER.md).
+
 ## Run
 
 ```sh

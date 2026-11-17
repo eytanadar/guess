@@ -7,6 +7,17 @@ their own or bundled data; they don't reproduce the book's text or figures.
 
 Page numbers are the book's (PDF page = book page + 13).
 
+**Building and testing.** There is no build step: the files here are served
+as they are (`npm run dev`, then open `/?app=explainers/networks/<id>/manifest.json`,
+or the list at `/explainers/networks/index.html`), and `npm run build` copies
+them into the site with the rest of `web/public/`. To add one, make
+`<id>/manifest.json` and `<id>/main.gy`, add it to `index.html`, and add tests:
+- `py/tests/test_explainers*.py` runs each script under CPython and drives its
+  controls (`cd py && .venv/bin/python -m pytest -q tests/test_explainers*.py`);
+- `web/e2e/explainers.spec.ts` opens each one in the browser
+  (`cd web && npx playwright test e2e/explainers.spec.ts`).
+See also *Rebuilding the documentation* in `docs/DEVELOPER.md`.
+
 Status: **planned** → **built** → **checked**.
 
 Conventions for every explainer (from review feedback):
