@@ -61,7 +61,9 @@ test("alt-click and the menu insert elements as code", async ({ page }) => {
   await expect(page.locator(input)).toHaveText("v73");
   await page.locator(input).press("End");
   await page.keyboard.type(".color = ");
-  await page.locator(".result .grp").last().click({ button: "right" });
+  const grp = page.locator(".result .grp").last();
+  const box = (await grp.boundingBox())!;
+  await grp.click({ button: "right", position: { x: box.width - 3, y: box.height / 2 } });   // on the "]"
   await page.locator("#menu button", { hasText: "Insert as code" }).click();
   await expect(page.locator(input)).toHaveText("v73.color = (v73, v335, v171)");
 });

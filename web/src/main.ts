@@ -1368,7 +1368,10 @@ function renderLegends(legends: LegendRec[]) {
       else foldedLegends.add(lg.i);
       renderLegends(lastLegends);
     });
-    box.append(close, fold);
+    const tools = document.createElement("div");
+    tools.className = "legend-tools";
+    tools.append(fold, close);
+    box.append(tools);
     if (folded) {
       box.classList.add("folded");
       const name = lg.ramp?.title || lg.auto?.title || lg.auto?.field;

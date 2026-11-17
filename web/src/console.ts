@@ -1151,13 +1151,16 @@ function collapsible(span: HTMLElement, collapsed: boolean) {
   if (count < 2 || !items[0].length) return;
   const body = el("span", "list-body");
   body.append(...inner);
+  // the folded form (built only while folded, so elements aren't shown twice)
   const short = el("span", "list-short");
-  for (const k of items[0]) short.append(k.cloneNode(true));
-  short.append(`, … +${count - 1} more`);
+  const firstItem = items[0];
   const arrow = el("sup", "list-toggle");
   arrow.setAttribute("role", "button");
   const set = (c: boolean) => {
     span.classList.toggle("collapsed", c);
+    if (c) {
+      short.replaceChildren(...firstItem.map((k) => k.cloneNode(true)), `, … +${count - 1} more`);
+    } else short.replaceChildren();
     arrow.textContent = c ? "▸" : "▾";
     arrow.title = c ? `Show all ${count} items` : "Collapse";
   };

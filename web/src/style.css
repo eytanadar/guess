@@ -285,18 +285,17 @@ body { display: flex; flex-direction: column; }
   padding: 6px 9px; font-size: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .legend { position: relative; }
+.legend-tools {
+  position: sticky; float: right; display: flex; gap: 1px; margin: -4px -38px 0 0; top: 1px; pointer-events: auto;
+}
 .legend-close, .legend-fold {
-  position: sticky; float: right; margin: -4px -18px 0 0; top: 1px; right: 2px; pointer-events: auto;
   border: 0; background: none; color: var(--muted); font-size: 14px; line-height: 1;
   padding: 2px 4px; cursor: pointer; border-radius: 4px; opacity: 0.55;
 }
+.legend-fold { font-size: 11px; }
 .legend:hover .legend-close, .legend:hover .legend-fold { opacity: 1; }
 .legend-close:hover, .legend-fold:hover { color: var(--text); background: rgba(127, 127, 127, 0.18); }
-.legend:has(.legend-close) { padding-right: 22px; }
-.legend-fold { clear: right; margin-top: 2px; }
-.legend.folded { padding-right: 40px; }
-.legend.folded .legend-fold { position: absolute; top: 5px; right: 22px; margin: 0; }
-.legend.folded .legend-close { position: absolute; top: 5px; right: 2px; margin: 0; }
+.legend:has(.legend-close) { padding-right: 40px; }
 .legend-folded { pointer-events: auto; cursor: pointer; color: var(--muted); }
 .legend-row { display: flex; align-items: center; gap: 7px; line-height: 1.6; }
 .sw { flex: none; display: inline-block; width: 12px; height: 12px; background: var(--c); border: 1px solid rgba(0, 0, 0, 0.35); }
