@@ -99,7 +99,10 @@ The window has three parts:
   You can drag the divider between the graph and the console. On a narrow
   screen the console moves below the graph.
 - **The menu bar** (top): *File*, *Edit*, *View*, *Layout*, *Analyze* and
-  *Help*, then the click tools (*Select*, *Lens*, *Path*, *Heat*, *Paint*,
+  *Help*. Longer menus group their items in submenus (▸): hover over one, or
+  use the arrow keys. Some items, such as *File → Open from the web →
+  Wikipedia links…*, put a command in the code cell for you to edit and run.
+  Then come the click tools (*Select*, *Lens*, *Path*, *Heat*, *Paint*,
   *Cluster* and a paint colour), a *Search* box, *Stop*, and a status line.
 
 ![The menus collect the commands you'd otherwise type. Every menu item runs a command, and the command shows up in the console, so you can learn the language by using the menus.](img/menus.png){width=70%}
@@ -138,8 +141,10 @@ There are several ways in:
   names, the name you probably meant. Click *details* for the full Python
   traceback.
 - **Help → Manual** opens this manual in a new tab, as a web page, PDF, EPUB
-  or Word file. **Help → GitHub** opens the project's page, with the source
-  code and issue tracker.
+  or Word file. **Help → Cookbooks** has runnable recipes by field, and
+  **Help → Networks explainers** small interactive programs for each section
+  of Mark Newman's textbook *Networks*. **Help → GitHub** opens the project's
+  page, with the source code and issue tracker.
 
 ![The help panel, searching for "color". Commands come first, then examples.](img/help.png){width=85%}
 
@@ -372,23 +377,33 @@ behave, and you can set them in the file:
 
 | node field | meaning | default |
 |---|---|---|
+| `name` | the node's id (read-only once loaded; `v1` in code) | |
 | `x`, `y` | position (if missing, GUESS lays out the graph) | |
 | `color` | fill colour (a name or `"r,g,b"` / `"r,g,b,a"`) | cornflowerblue |
 | `strokecolor` | outline colour | darker fill |
-| `style` | shape: 1 rectangle, 2 ellipse, 3 rounded rectangle, 4–6 the same with the label inside, 7 image, 11 triangle, 12 diamond, 13 hexagon, 14 octagon | 2 |
+| `strokewidth` | outline width (0: the display's, 0.75) | 0 |
+| `style` | shape, by name or number: `'rectangle'` 1, `'circle'` 2, `'rounded'` 3, 4–6 the same with the label inside, `'image'` 7, `'triangle'` 11, `'diamond'` 12, `'hexagon'` 13, `'octagon'` 14, `'polygon5'` … `'polygon64'` or `polygon(n)` (all pictured in §7.2) | 2 (`'circle'`) |
 | `width`, `height` | size | 10 |
 | `label`, `labelvisible`, `labelcolor` | the label text, whether it's shown, its colour (inside a node: black or white for contrast, unless set) | name, false |
-| `labelpos` | where the label goes: `right`, `left`, `above`, `below`, `inside`, or `outside` (GUESS picks a free side) | right |
+| `labelpos` | where the label goes: `right`, `left`, `above`, `below`, `inside`, or `outside` (GUESS picks a free side; pictured in §12.4) | right |
 | `labelsize` | label size as a scale (1 = normal) | 1 |
 | `image` | an image file or URL (with style 7) | |
 | `visible` | whether it's drawn | true |
 | `fixed` | layouts don't move it | false |
+| `indegree`, `outdegree`, `totaldegree` (`degree`) | the number of edges in, out and in total (read-only) | |
+
+Setting `size` sets `width` and `height` together.
 
 | edge field | meaning | default |
 |---|---|---|
 | `directed` | a directed edge (arrow) | false |
+| `node1`, `node2` | its two ends (read-only) | |
+| `source`, `destination` | for a directed edge, where it starts and ends (None when undirected; read-only) | |
 | `color`, `width` | colour and thickness | dandelion, 2 |
 | `weight` | used by weighted layouts and paths | 1 |
+| `linestyle` | how the line is drawn: `solid`, `dashed`, `dotted`, `taper`, `wave`, `double`, `fuzzy`, `gradient`, `flow`, `fade` (§12.3) | solid |
+| `arrowhead` | the head of a directed edge: `triangle`, `swept`, `open`, `diamond`, `circle`, `tee`, `none` (§12.3) | triangle |
+| `arc` | bends the edge into a circular arc leaving its ends at this angle in degrees (0: straight; Lombardi edges, §12.2) | 0 |
 | `label`, `labelvisible`, `labelcolor`, `labelsize` | as for nodes; edge labels sit on a small background pill at the middle of the edge | |
 | `visible` | whether it's drawn | true |
 
@@ -462,11 +477,26 @@ node's id added, and the original stays as the label.
 | SBML (systems biology models) | `makeFromSBML`: species, and reactions as small grey nodes (`reactions="edges"` for edges instead) |
 | BioPAX level 3 (Reactome, Pathway Commons) | `makeFromBioPAX`: a simple network of molecules, after Pathway Commons' rules (`mode="reactions"` keeps the reactions) |
 | KEGG KGML, WikiPathways GPML | `makeFromKGML`, `makeFromGPML`: the map as drawn |
+| Protein structures (PDB, mmCIF) | `makeFromPDB`: a residue contact network, from a file or a PDB id downloaded from RCSB |
 
 Interaction files name proteins by gene name, with `ident`, `taxid` and
 `species`; repeated evidence for a pair becomes one edge with an `evidence`
 count, the methods and publications, and IntAct's `miscore`
 (`merge=false` keeps every record).
+
+A protein's folded chain is a network too. `makeFromPDB("1ubq.pdb")` (or
+`makeFromPDB("1ubq")`, downloaded from RCSB) makes a node per amino acid
+and joins residues next to each other along the chain (`kind` "chain")
+and residues whose alpha carbons are closer than `cutoff` angstroms (8 by
+default; `kind` "contact", with `distance`). Nodes carry `aa`, `seq`,
+`chain` and `structure` (helix, strand or coil), and are placed by the
+structure's two widest directions.
+
+```python
+makeFromPDB("1ubq.pdb")
+colorize(structure)
+(kind == "chain").width = 3
+```
 
 **Any file.** `makeFromFile(name)` picks the reader by extension, or by
 content when the extension doesn't say (`.xml`, `.txt`, `.json`), which is
@@ -570,7 +600,7 @@ is v1's department. Fields come from the file you loaded, from the built-in
 set (section 4.2), from commands that add them (`louvainClusters()` adds
 `louvain_class`), and from `addNodeField`/`addEdgeField`. The node and
 edge fields are listed by `getNodeSchema()` and `getEdgeSchema()`. The
-*View → Data table* shows them all.
+*View → Panels → Data table* shows them all.
 
 Fields know a little about themselves:
 
@@ -673,6 +703,17 @@ endpoints. `.edges` on a set of nodes gives the edges touching them:
 v1.getNeighbors()                          # v1's neighbours
 ```
 
+Each node and edge also has the 2006 methods for walking the graph:
+
+| method | gives |
+|---|---|
+| `n.getNeighbors()` | the nodes it shares an edge with |
+| `n.getIncidentEdges()` | every edge touching it |
+| `n.getInEdges()`, `n.getOutEdges()` | the directed edges into it, and out of it |
+| `n.getPredecessors()`, `n.getSuccessors()` | the nodes with an edge into it, and the nodes it points to |
+| `e.getNode1()`, `e.getNode2()` | its two ends (as `e.node1`, `e.node2`) |
+| `e.opposite(n)` | the end that isn't `n` |
+
 (`findNodes(set)` and `findEdges(set)` pick out just the nodes, or just the
 edges, from a mixed set.)
 
@@ -705,6 +746,25 @@ the heavy ties and `showOnly(shortestPath(v1, v2))` only the path.
 `showOnly(set, induced=true)` keeps every edge among the shown nodes. To take nodes out of the graph rather than
 hide them, see section 8.
 
+**Playing back a growing network.** To animate a network that grows, build the
+final network first and lay it out once. Then reveal it step by step, so each
+node appears where it will stay. Give each node the step at which it arrives
+in a field such as `born`, and edges too if they arrive separately.
+`revealUpTo(step)` shows the nodes with `born <= step` and the edges between
+them, hides the rest, and returns what arrives at exactly that step, so you can
+highlight it:
+
+```python
+makeSample("karate")
+Node.born = 0
+for n in g.nodes:
+    n.born = int(n.name[1:]) if n.name[1:].isdigit() else 0
+center(g.nodes)                    # frame the final picture
+revealUpTo(5).color = orange       # the first steps; call it from a timer to animate
+showAll()
+makeFromGDF("sample.gdf")
+```
+
 ## 5.4 The selection
 
 What you select with the mouse (section 13) is the variable `sel` in the
@@ -719,7 +779,7 @@ select()                       # clear it
 
 ## 5.5 The data table
 
-*View → Data table* (or `table()`) opens a spreadsheet of the nodes or edges
+*View → Panels → Data table* (or `table()`) opens a spreadsheet of the nodes or edges
 below the graph. `table(dept == 'dept3')` shows just those. You can sort by a
 column, filter, and double-click a cell to edit it. An edit is an ordinary
 command and can be undone. Selecting rows selects the nodes, and vice versa;
@@ -814,6 +874,8 @@ A layout command moves the nodes. Layouts animate while they run, and the
 The Graphviz and igraph layouts are loaded in the background a few seconds
 after GUESS starts (about 2 MB together). If you run one sooner, GUESS says
 so; run it again a moment later.
+
+![Nine layouts of the sample graph's largest component, coloured by department.](img/layouts.png)
 
 ```python
 makeSimpleDirectedRandom(30, 45)
@@ -918,6 +980,28 @@ biComponentClusters()              # biconnected components
 groupsOfSize(dept, 40)             # groups with at least 40 members
 ```
 
+Fitting a model instead of optimising modularity: `fitBlockModel(k)` finds
+the k groups of a stochastic block model that make the edges most probable.
+It is degree-corrected by default; `degreeCorrected=false` gives the plain
+model, which tends to put the hubs in a group of their own.
+`corePeriphery()` splits a network into a dense core and a periphery
+(field `core`), and `rankNodes()` puts the nodes of a directed network on a
+ladder so that edges mostly point down (SpringRank; field `rank`).
+`makeLFR(n, mu=)` makes benchmark networks with planted communities (field
+`community`) to test the methods on. Hierarchical methods draw their tree
+with `showDendrogram()`; `cut=` colours that many groups and `field=`
+stores them:
+
+```python
+fitBlockModel(2)                          # field sbm_class; returns the log-likelihood
+corePeriphery()
+showDendrogram([(0, 1), (2, 3), (4, 5)], nodes=list(g.nodes)[:4] + [v1, v2], cut=2)
+makeLFR(250, mu=0.2)
+louvainClusters()
+compareClusters(louvain_class, community) # 1: the planted groups found exactly
+makeFromGDF("sample.gdf")
+```
+
 More algorithms, each storing its result in a field named after it:
 
 | command | finds |
@@ -965,21 +1049,33 @@ shapeBy(dept)                           # a shape per value
 polygonBy(dept, 3, 8)                   # a regular polygon per value (3 to 8 sides)
 borderBy(dept)                          # a border colour per value
 legendFor(dept)                         # a legend for the current colours
-GradientLegend(yellow, red, betweenness.min, betweenness.max)
+GradientLegend(betweenness)             # the ramp betweenness is coloured with
 ```
+
+A node's `style` takes a name or a number: `v92.style = 'triangle'` and
+`v92.style = 11` do the same thing. Read back, a style prints as its name
+(`v92.style` shows `'triangle'`) but is still the number, so
+`v92.style == 11` and `style == 'triangle'` both work. The names are
+`rectangle` (also `box`, `square`), `circle` (`ellipse`, `oval`), `rounded`,
+`image`, `triangle`, `diamond`, `hexagon`, `octagon`, `pentagon`, `heptagon`,
+`nonagon`, `decagon` and `polygon3` … `polygon64`.
 
 `polygon(sides)` is the shape code for any regular polygon, as in
 `(dept == 'dept1').style = polygon(5)`; `polygonBy(field)` takes the number
 of sides from a whole-number field, or gives each value of another field its
 own polygon.
 
+![The node shapes (the `style` field). Style 7 shows the node's `image`.](img/nodeshapes.png){width=90%}
+
 `colorize` and `colorBy` work on node fields and on edge fields (they colour
 whichever the field belongs to). `colorize(freq, blue, red)` with two colours
 behaves like `colorBy`.
 
+![The four scales of `colorBy`. The nodes are in PageRank order, lowest first. `linear` keeps most of the gradient for the few highest values, and `rank` spreads it evenly.](img/colorscales.png){width=85%}
+
 ![colorBy(betweenness, yellow, red); sizeBy(betweenness, 5, 40, 'log'); GradientLegend(...)](img/color-by.png){width=75%}
 
-If you'd rather click than type, the **Style panel** (*View → Style panel*)
+If you'd rather click than type, the **Style panel** (*View → Panels → Style panel*)
 does the same mappings with menus: pick nodes or edges, a property, a field
 and a mapping. It shows the command it runs. You can save a set of mappings as
 a named style, and `defineStyle`/`applyStyle` do the same from code:
@@ -995,6 +1091,9 @@ A few more ways to show values on nodes:
 
 ```python
 pieChart([indegree, outdegree])     # each node becomes a pie of several fields
+Node.shares = ''                    # or give each node its own list of values
+v1.shares = [12, 21, 12]
+pieChart(shares, labels=['A', 'B', 'C'])
 pieNeighbors(dept)                  # a pie of the neighbours' departments
 removePies()
 bundleEdges(dept)                   # bundle edges that run between the same groups
@@ -1015,6 +1114,8 @@ bundleEdges()                       # MINGLE
 bundleEdges(method="fdeb", strength=0.7)
 removeBundles()
 ```
+
+![The three kinds of edge bundling. Edges take their source node's colour.](img/bundling.png){width=85%}
 
 ## 7.3 Field, graph, node and edge statistics
 
@@ -1042,6 +1143,7 @@ other field:
 | `domain_prestige`, `proximity_prestige`, `rank_prestige` | prestige in directed networks: the share that can reach a node, also rewarding short distances, and being pointed at by prestigious nodes |
 | `bridging_coef`, `bridging` | Hwang's bridging coefficient, and betweenness × bridging coefficient (bridging centrality) |
 | `wclustering` | clustering weighted by edge weights |
+| `knn` | the average degree of a node's neighbours |
 
 ```python
 (pagerank > 0.01).labelvisible = true
@@ -1088,7 +1190,7 @@ showAll()
 ```
 
 The filters return sets, so they combine with queries:
-`showOnly(kCore(3) & (dept == 'dept1'))`. The **Filter panel** (*View →
+`showOnly(kCore(3) & (dept == 'dept1'))`. The **Filter panel** (*View → Panels →
 Filter panel*) stacks filters with sliders and checkboxes, if you'd rather
 build them by hand.
 
@@ -1112,6 +1214,65 @@ plotSizesPie(dept)           # how many in each department
 plotSizes(dept)              # the same, as bars
 plotHistogram(pagerank)      # distribution of a number
 plotDistrib(totaldegree)     # each value in rank order
+plotFrequency(degree)        # the fraction of nodes with each degree, p(k)
+```
+
+**Log scales.** Heavy-tailed values such as degree are easier to read on
+log axes. `plotFrequency(degree, log=true)` draws p(k) on log–log axes,
+where a power law is a straight line; `cumulative=true` plots the fraction
+with that value or more, which is smoother in the tail. Pointing at a point
+lights up the nodes with that value. `plotHistogram(degree, 10, log=true)`
+uses bins of equal width on a log scale and a log count axis, and
+`plotDistrib(degree, log=true)` a log value axis.
+
+**Adjacency matrix.** `showMatrix()` draws the network as a matrix, a row
+and a column per node with a dark cell for each edge. `order=` a field
+sorts the rows by it with lines between the groups, so communities show as
+blocks on the diagonal: `showMatrix(order=louvain_class)`. `weight=` shades
+cells by an edge field, and `nodes=` draws part of the graph. Cells are
+linked like any chart: hover one to highlight its edge and nodes.
+
+**Your own numbers.** `plotLine(points)` draws a line through a list of
+`(x, y)` pairs; a dictionary of lists draws one line per series. `log=true`
+(or `logX=`/`logY=`) makes the axes logarithmic and `dots=true` marks each
+point. `yrange=(lo, hi)` and `xrange=` fix the axes (useful for values near
+1), and `dashed=["theory"]` draws the named series dashed, for theory
+curves beside data. A chart with the same `title` replaces the last one, so a loop can
+update it:
+
+```python
+sizes = [(k, len(kCore(k))) for k in range(1, 6)]
+plotLine(sizes, title="k-cores", xlabel="k", ylabel="nodes", dots=true)
+plotLine({"degree": [(n.degree, n.betweenness) for n in g.nodes if n.degree]},
+         title="Betweenness by degree", log=true, dots=true)
+```
+
+**Numbers that aren't a field.** `plotHistogram([...], bins, title=)`
+counts a plain list (eigenvalues, delivery times, simulation results) the
+same way it counts a field. For a cyclic value such as an oscillator's
+phase, `colorByPhase(phase)` colours nodes around a colour wheel (period
+2π by default, `period=360` for degrees), so values a whole cycle apart look
+the same:
+
+```python
+plotHistogram([n.degree / 2 for n in g.nodes], 8, title="Half degrees")
+Node.phase = 0.0
+for i, n in enumerate(g.nodes):
+    n.phase = i * 0.3
+colorByPhase(phase)
+```
+
+**Scatter plots.** `plotScatter(degree, betweenness)` puts a dot for each
+node at (x, y), in the node's colour. Point at a dot to highlight its node,
+and click to select it. Brokers, with few links but high betweenness, stand
+out. `plotScatter(age, ends=true)` plots a node field at one end of every
+edge against the other end; for an undirected edge both ways round. That is
+the picture behind assortativity. Lists and dictionaries of points work too,
+and `line=` adds a dashed reference line:
+
+```python
+plotScatter(degree, betweenness)
+plotScatter(degree, ends=true, line=[(0, 0), (10, 10)])
 ```
 
 ![plotSizesPie(dept)](img/chart.png)
@@ -1183,6 +1344,50 @@ makeErdosRenyiRandom(400, 0.009)
 averageClustering()
 ```
 
+To compare with a random network that has *the same degrees*, use the
+configuration model: each node gets as many stubs (half-edges) as its
+degree, and the stubs are paired at random. It keeps self-loops and repeated
+edges unless `simple=true`. `makeExpectedDegree` joins each pair
+independently with probability w_i w_j / Σw (the Chung–Lu model):
+
+```python
+makeSample("karate")
+makeConfigurationModel(degree)            # the karate club's degrees, wired at random
+averageClustering()                       # far below the real club's
+makeConfigurationModel([3, 3, 2, 2, 1, 1], seed=2)
+makeExpectedDegree([5, 4, 3, 2, 2, 1, 1, 1, 1])
+makeFromGDF("sample.gdf")
+```
+
+Growth models record when each node and edge arrived in the field `born`,
+so `revealUpTo(step)` can replay the growth with every node already in its
+final place. `makePriceModel(n, c, a)` grows a citation network in which
+papers cite in proportion to in-degree + a (Price's cumulative advantage;
+the in-degrees follow a power law of exponent 2 + a/c), and
+`makeBarabasiAlbertRandom` and `makeBarabasiAlbertAging` set `born` too.
+`makeGrowingNetwork(n, m, gamma, a)` is the general version: each new node
+links to m nodes chosen in proportion to (degree + a)^gamma. gamma = 1 gives
+a power law, gamma < 1 a thinner tail, and gamma > 1 one dominant hub.
+`extra=` adds edges between old nodes and `remove=` deletes random edges as
+it grows; a removed edge keeps the step it went in `died`, and
+`revealUpTo` hides it from then on. `makeCopyingModel(n, c, copy)` grows a
+network by copying links from a random existing node (a power law without
+preferential attachment). `makeBlockModel(sizes, p_in, p_out)` makes a
+network with community structure, the node field `block` holding each
+node's group:
+
+```python
+makePriceModel(500, c=3, a=1)
+fitPowerLaw(indegree)                     # alpha near 2 + 1/3
+revealUpTo(50)                            # the first 50 papers; a timer can step on
+showAll()
+makeGrowingNetwork(300, m=2, gamma=1.5)   # one hub gets a large share of every edge
+makeBlockModel([30, 30, 30], 0.3, 0.02)
+colorize(block)
+modularity(block, resolution=1.5)        # resolution as in louvainClusters
+makeFromGDF("sample.gdf")
+```
+
 ## 7.7 Structure, mixing and comparing partitions
 
 These commands return sets you can colour, hide or show, or a single number:
@@ -1198,6 +1403,70 @@ assortativity(dept)                       # 1: ties stay in a department; 0: ran
 mixingMatrix(dept)                        # edges between each pair of departments
 louvainClusters()
 compareClusters(louvain_class, dept)   # do the communities match departments?
+```
+
+Some measures from the textbook literature (Newman, *Networks*, ch. 7):
+
+```python
+f, limit = katzCentrality(alpha=0.05)     # x = alpha A x + beta; alpha < limit = 1/kappa1
+kComponents(2)                            # bicomponents (k = 3: tricomponents), largest first
+similarTo(v1, method="regular")           # similar neighbours, not shared ones
+```
+
+`katzCentrality` stores its result in `katz`. With a small `alpha` it ranks
+nodes almost by degree, and as `alpha` nears `limit` almost by eigenvector
+centrality. `kComponents(k)` sets the field `kcomponent`.
+
+Resilience and spreading: `robustness()` and `percolation()` chart the
+largest connected piece as nodes fail or are attacked. `percolation` uses
+the fast Newman–Ziff method, so it gives the whole curve in one pass, for
+nodes or (with `bond=true`) edges. `spread(seeds, model=)` simulates an
+outbreak with the models SI, SIR, SIS (no immunity), SIRS (immunity wanes
+at rate `waning=`), SEIR (a latent stage, leaving at rate `sigma=`), cascade
+or threshold. `duration=k` makes each infection last exactly k steps,
+which makes SIR exactly bond percolation; each node's steps spent infected
+end up in `infected_steps`. `outbreaks()` repeats it many times:
+
+```python
+percolation()                             # random failure: share present against largest piece
+percolation("degree")                     # attack: hubs removed first
+spread([v1], model="SIS", beta=0.3, gamma=0.2, steps=50)
+spread([v1], model="SEIR", sigma=0.3)
+```
+
+For a signed network (an edge field of +1 and -1, or "+" and "-"),
+`structuralBalance(sign)` tests whether every cycle has an even number of
+negative edges. It returns `{"balanced": ..., "unbalanced": [triangles],
+"frustrated": edges}` and puts the two camps of Harary's theorem in the node
+field `camp`:
+
+```python
+Edge.sign = 1                             # friends within a department, rivals across
+for e in g.edges:
+    if e.node1.dept != e.node2.dept:
+        e.sign = -1
+r = structuralBalance(sign)
+colorize(camp)
+r["frustrated"].color = red               # edges that disagree with the camps
+```
+
+For a directed network, `bowTie()` sorts the nodes the way the Web was
+first described: a strongly connected core, the nodes that reach it (in),
+the nodes it reaches (out), tubes and tendrils, and the rest. It sets the
+field `bowtie` and returns the sizes. For a heavy-tailed field,
+`fitPowerLaw(degree)` estimates the exponent α of p(k) ∝ k^−α by maximum
+likelihood, with its standard error. It picks k_min by the
+Kolmogorov–Smirnov method unless you give `kmin=`, and it also takes a plain
+list of numbers. `plotFrequency(..., fit=true)` draws the fit as a dashed
+line:
+
+```python
+makeFromFile("polblogs-sample.gdf")
+bowTie()                                  # {'core': 224, 'in': 89, 'out': 69, ...}
+colorize(bowtie)
+fitPowerLaw(degree)                       # {'alpha': ..., 'sigma': ..., 'kmin': ..., ...}
+plotFrequency(degree, cumulative=true, log=true, fit=true)
+makeFromGDF("sample.gdf")
 ```
 
 `compareClusters` gives normalized mutual information by default (0 to 1);
@@ -1355,9 +1624,11 @@ expands it.
 | `saveSession("s.guess")` | everything: graph, fields, states, styles, legends, hulls, view, slides |
 | `saveHistory("work.py")` | every command you ran, as a script |
 | `startMovie(30, "m.webm")` … `stopMovie()` | a movie of the display |
+| `startImages("frames.zip")` … `stopImages()` | every image exported in between, in one zip file (below) |
 
 In a browser, "saving a file" means downloading it, so these files go to your
-downloads folder. The *File* menu has the common ones, plus:
+downloads folder. *File → Export image*, *Export data* and *Export page or
+notebook* have the common ones, plus:
 
 - **Export notebook** writes the session as a Jupyter notebook (one cell per
   command).
@@ -1366,6 +1637,26 @@ downloads folder. The *File* menu has the common ones, plus:
 - **Share link** makes a URL that contains the whole session. Anyone who opens
   it sees your graph as you left it. **Share as viewer** does the same, but
   hides the console.
+
+**Many images from a script.** Each export shows the display at that point
+in the script: GUESS waits until the display has caught up, including any
+camera move or animation, before taking the picture. So a loop can save one
+image per step. Between `startImages` and `stopImages` the images are
+collected and download as one zip file, not one download each:
+
+```python
+addNodeField('year', INTEGER, 0)
+for n in g.nodes: n.year = 1990 + int(n.name[1:]) % 20
+startImages("years.zip")
+for yr in range(1995, 2010, 5):
+    showTime(yr, 'year', 5)
+    exportPNG("year_%d.png" % yr)
+stopImages()
+```
+
+A name used twice gets `-2`, `-3` and so on added. Every export format works,
+including `exportSVG`. For a movie of the display as it changes, use
+`startMovie(30, "m.webm")` and `stopMovie()`.
 
 **A page anyone can open.** `exportHTML("graph.html")` writes the graph as
 one web page with nothing else to install: open it from disk, email it or put
@@ -1486,7 +1777,7 @@ showTime(1995, year, 5)         # only the last five years
 showTime(3)                     # by ranges: only what exists at time 3
 ```
 
-The **timeline** (*View → Timeline*) gives you a slider and a play button for
+The **timeline** (*View → Panels → Timeline*) gives you a slider and a play button for
 the same thing. It finds number fields that look like time and plays through
 them.
 
@@ -1498,8 +1789,13 @@ them.
 
 ## 12.1 Legends
 
-`legendFor(field)` makes a legend for the current colours of a field.
-`GradientLegend(start, end, min, max)` makes a colour ramp, and a fifth
+`legendFor(field)` makes a legend for the current colours of a field;
+`Legend(field)` does the same. `GradientLegend(field)` always shows a ramp,
+from the field's lowest value to its highest, in the colours the field was
+given (after `colorBy`), titled with the field's name (`GradientLegend(freq,
+"Frequency")` for another title). These three follow the colours: run
+`colorBy` again and they change with it.
+`GradientLegend(start, end, min, max)` makes a fixed colour ramp, and a fifth
 argument adds tick marks. For full control, build one yourself:
 
 ```python
@@ -1510,7 +1806,10 @@ lg.add(red, "important")        # or just a colour
 ```
 
 Legends appear at the top right of the display, and they're included in
-exports and reports.
+exports and reports. The ▾ beside a legend's × folds it to one line
+("Legend: degree"); click that line, or ▸, to open it again. Panels in the
+dock (charts, pinned cells, the history) fold the same way, to their title
+bar, with the ▾ in their header or by double-clicking the title.
 
 ## 12.2 Convex hulls
 
@@ -1546,6 +1845,49 @@ removeConvexHulls()
 
 ![Hulls around three departments.](img/hulls.png){width=75%}
 
+![The three shapes: `shape="hull"` (the default), `"box"` and `"ellipse"`.](img/enclosures.png){width=75%}
+
+**Lombardi-style edges.** The artist Mark Lombardi drew networks with
+circular-arc edges that leave each node at evenly spaced angles.
+`lombardiEdges()` bends the edges into such arcs without moving any node,
+choosing each arc so that every node's edges are spread as evenly as
+possible; `lombardiLayout()` also places the nodes (a spring embedder with an
+extra force that turns edges so both ends can agree on an arc). Both return
+`lombardiness()` before and after: 100 means every node's edges leave it at
+equal angles. Each edge's bend is its `arc` field (degrees; 0 = straight),
+which you can also set yourself; `straightenEdges()` undoes it.
+
+```python
+makeSample("petersen")
+lombardiEdges()          # e.g. (58.7, 83.2)
+lombardiLayout()
+straightenEdges()
+makeFromGDF("sample.gdf")   # back to the sample graph
+```
+
+**Drawing on the display.** `drawLine`, `drawText`, `drawRect` and
+`drawCircle` put plain marks on the display, in graph coordinates (the same
+as node `x` and `y`; a node's centre is `n.x + n.width/2`,
+`n.y + n.height/2`). Lines and shapes go under the graph and text over it;
+all of them zoom with the graph, are saved with the session and appear in
+exports. Each returns the drawing, and `.remove()` takes it away;
+`clearDrawings()` removes them all.
+
+```python
+drawLine(0, 0, 400, 0, style="dashed")             # a guide line
+drawLine(0, 40, 400, 40, color=red, width=3, arrow=true)
+drawText(200, -30, "upstream", size=20)
+drawRect(-20, -60, 440, 120, fill="255,220,0,40", lineWidth=0)
+c = drawCircle(200, 200, 80, style="dotted")
+c.remove()
+clearDrawings()
+```
+
+`color=` defaults to the theme's text colour; `style=` is `"solid"`,
+`"dashed"` or `"dotted"`; `fill=` fills a box or circle (use a colour with
+alpha for a translucent one); `anchor=` places text by its `"start"`,
+`"middle"` or `"end"`.
+
 ## 12.3 The display
 
 - **Theme**: GUESS starts in *Dark*. *View → Theme* switches to *Light* or
@@ -1553,7 +1895,7 @@ removeConvexHulls()
   The graph's background follows the theme, unless you set one with
   `setDisplayBackground(black)`. `setDisplayBackground(None)` follows the
   theme again.
-- **Edges**: *View → Curved edges* or `curvedEdges()`.
+- **Edges**: *View → Edges → Curved edges* or `curvedEdges()`.
   `setEdgeColorMode("mixed")` draws each edge in the colours of its two ends.
   Parallel edges between the same two nodes are always drawn as separate
   curves.
@@ -1569,6 +1911,57 @@ removeConvexHulls()
 - **Background image**: `setBackgroundImage("map.png", x, y)` puts an image
   under the graph (a map, say), and `removeBackgroundImage()` takes it away.
 - **Arrows**: `overrideArrowLength(12)`, `overrideArrowWidth(6)`.
+
+**How directed edges show direction.** By default a directed edge is drawn
+*tapered*: wide where it leaves its source, narrowing to a point at its
+target, with no arrowhead. This follows Holten and van Wijk's user study of
+directed-edge drawings ("A User Study on Visualizing Directed Edges in
+Graphs", CHI 2009). Tapered edges were read fastest and most accurately. A
+dark-to-light intensity ramp came next. Standard arrowheads did worst, being
+cluttered where many edges meet a node. Adding a second cue, such as taper
+plus colour, did not help, so GUESS uses one cue at a time.
+`directedEdges(style)` switches between them:
+
+```python
+directedEdges('taper')    # the default: wide at the source, a point at the target
+directedEdges('fade')     # dark at the source, light at the target
+directedEdges('arrow')    # lines with arrowheads
+```
+
+The same choices are under *View → Edges*. The setting is saved with a
+session and applies to HTML export. An edge's own `arrowhead` still applies,
+and so does a line style that shows direction by itself (`taper`, `fade`,
+`gradient`, `flow`). Styles that can't show direction (`dashed`, `dotted`
+and the like) keep an arrowhead.
+
+**Line styles and arrowheads.** Each edge has a `linestyle` and, when it is
+directed, an `arrowhead`:
+
+```python
+g.edges.linestyle = 'dashed'          # every edge; e.linestyle for one
+g.edges.arrowhead = 'swept'
+lineStyleBy(directed)                 # a style per value, the most common first
+arrowheadBy(directed)
+```
+
+- `linestyle` is `solid` (the default), `dashed`, `dotted`, `taper` (wide at
+  the source, a point at the target, so direction shows without arrows),
+  `wave`, `double`, `fuzzy`, `gradient` (the source node's colour fading to
+  the target's), `fade` (dark to light along the edge) or `flow` (dashes
+  moving from source to target; still, if your system asks for less motion).
+- `arrowhead` is `triangle` (drawn when `directedEdges('arrow')` is set),
+  `swept`, `open`, `diamond`,
+  `circle`, `tee` or `none`.
+- In the *Style* panel, *Line style* and *Arrowhead* give each value of an
+  edge field its own style. SVG export draws them all, and flow edges keep
+  moving in the SVG. DOT files' `arrowhead` and `style` (dashed, dotted,
+  tapered) are read and written.
+- Curved, weighted flows: `curvedEdges()`, `g.edges.arrowhead = 'swept'`,
+  `sizeBy(weight, 0.5, 7)` and `colorBy(weight, lightgray, '50,70,90')`.
+
+![Line styles (left) and arrowheads (right).](img/edgestyles.png)
+
+![The four edge colour modes, with grey edges between red, blue and green nodes.](img/edgecolormodes.png){width=70%}
 
 ![Dark theme, with colorize(dept), labelBy(name) and hideOverlappingLabels().](img/dark.png)
 
@@ -1596,6 +1989,8 @@ edgeLabelsAlong()
 The Style panel sets the same things: map *Label* with a position, or *Label
 size* to a number.
 
+![The six label positions (`labelpos`). For `outside`, GUESS picks the side.](img/labelpos.png){width=55%}
+
 **Finding room for labels.** Labels placed `outside`, and edge labels (which
 slide along their edge), are placed to avoid other labels, nodes and edges:
 
@@ -1610,7 +2005,8 @@ slide along their edge), are placed to avoid other labels, nodes and edges:
   exporting a figure.
 - `constantLabelSize()` keeps labels the same size on screen as you zoom.
   Each label appears once there is room for it and stays as you zoom further
-  in, so zooming in reveals more labels.
+  in, so zooming in reveals more labels. `constantLabelSize(size=14)` sets
+  that size in pixels (10 by default), for presentations and apps.
 
 On the sample graph with every label shown, placing them `outside` cuts
 label overlaps by about two thirds and edges crossing labels by about the
@@ -1642,7 +2038,7 @@ useful.
 The tooltip comes in two stages: the label straight away, so it doesn't
 get in the way as you sweep across the graph, and every field (with the
 code that last changed the element) once you stay on it for a moment. To
-see some fields at once, pick them in *View → Hover fields…* or name them:
+see some fields at once, pick them in *View → Labels and tooltips → Hover fields…* or name them:
 
 ```python
 hoverFields(dept, degree)               # node fields; edge fields go to edges
@@ -1679,7 +2075,7 @@ selected. Each drag is recorded as an ordinary command, such as
 `v12.x = 310.5; v12.y = -42`. It is one undo step, and `history()`,
 `saveHistory()`, `log()` and notebook export include it, so a saved
 script puts the nodes back where you left them. To keep the console readable,
-these commands are hidden. *View → Show node moves in the console* shows
+these commands are hidden. *View → Console → Show node moves in the console* shows
 them.
 
 After some commands, a drag also *means* something. GUESS knows
@@ -1795,11 +2191,12 @@ several things are selected, the function receives the selection.
 | `[n]` | fold or unfold a cell's output; hover it to highlight everything that cell changed |
 | `;` at the end of a line | don't print its value (`louvainClusters();`) |
 
-*View → Vim keys in the code cell* switches the editor to vim bindings.
+*View → Console → Vim keys in the code cell* switches the editor to vim bindings.
 
 Long results print compactly: a set of many groups (`groupBy(dept)`, the
-communities from `louvainClusters()`) shows as `21 groups (402 elements):
-[dept0: 28] [dept1: 43] …`, each entry linked to its members.
+communities from `louvainClusters()`) shows as a list of groups, each folded
+to its first member, `[[v1, … +27 more], [v2, … +42 more], …]`, each linked
+to its members (see *Folding lists* below).
 
 **Code and graph, linked.** The console and the graph point at each other:
 
@@ -1808,6 +2205,27 @@ communities from `louvainClusters()`) shows as `21 groups (402 elements):
   `dept.distinct` to see the nodes in dept1. An edge prints as `v1–v2`
   (`v1→v2` when directed): hover either name for that node, or the dash or
   arrow between them for the edge.
+  A field's value read off one element, `v4.dept`, prints as `'dept4'`
+  linked to every node with that value: hover it to see them, right-click
+  it to act on `dept == 'dept4'`.
+  What commands print is linked the same way. Hover the nodes in each pair
+  `predictLinks` lists, or "added 10 predicted edges" to see the edges
+  `predictLinks(10, add=true)` made. The same goes for cut edges, cliques,
+  routes, merged nodes and newly imported nodes.
+- **Folding lists.** A printed list of two or more things has a small ▾
+  before it: click it to fold the list to its first item and a count,
+  `[v73, … +5 more]`, and ▸ to open it again. A folded list still stands for
+  all its members when you hover or right-click it. Commands that return
+  many groups (`louvainClusters()` or `groupBy(dept)` on a big graph) print
+  a list of the groups with each one folded; hover a group for its name and
+  size, or open it to see its members.
+- **Deleted elements.** A printed node or edge that has since been removed
+  is struck through and no longer linked. Undo brings it back, and the line
+  goes.
+- **Right-clicking a selection.** Select part of the output (drag across
+  it) and right-click the selection: the menu acts on just the nodes and
+  edges selected. A name the selection cuts off counts whole (selecting from
+  the "5" of `v25` includes `v25`), and the selection grows to show it.
 - **Executed code.** Hover a name or a query in code you've run to see what
   it means *now*: a variable's members, the matches of `degree > 5` (or of
   the whole of `3 < degree < 6`), a node, or a value. Hovering a field shows
@@ -1909,6 +2327,25 @@ after(5, gemLayout)      # once, in 5 seconds
 A timer's code runs between your commands, so it never interrupts one. A
 handler that takes longer than its interval doesn't pile up behind itself.
 
+To animate a process so it can be followed, `everyPaced(step)` calls `step()`
+again and again, **slow-fast-slow**: slowly for the first few calls, faster in
+the middle, and slowly again near the end. Give `steps=` when you know how
+many calls there will be, or let `step()` return how many are left (it slows
+down as that number gets small); returning `False` stops it.
+
+```python
+reached = [v1]
+def spread_once():
+    new = [m for n in reached for m in n.getNeighbors() if m not in reached]
+    for m in new:
+        m.color = red
+    reached.extend(new)
+    return len(g.nodes) - len(reached) or False
+
+t = everyPaced(spread_once, slow=1.0, fast=0.2)
+t.stop()
+```
+
 ## 15.4 Example 4: an app
 
 `exportApp` packages the current session with a script that builds its
@@ -1941,7 +2378,7 @@ its script:
   "console": "toggle",
   "theme": "light",
   "data": ["brca1-intact.gdf"],
-  "script": "main.py"
+  "script": "main.gy"
 }
 ```
 
@@ -1952,7 +2389,9 @@ then the script runs; its setup isn't an undo step. `console` is
 `"shown"`; `theme` is `"light"`, `"dark"` or `"auto"`. Instead of
 `script`, short apps can give the code itself as `code`. If the script
 stops with an error, the console opens to show it. An app from another
-web site asks before it runs.
+web site asks before it runs. The script is Gython; name it `.gy`
+rather than `.py`, since some web servers try to run `.py` files as
+programs instead of sending them.
 
 Every app has a *</> Source* button beside its name that shows the script
 and the manifest it was built from, highlighted, with *Copy* and
@@ -1987,6 +2426,18 @@ ui.title("Organisation", "sample data")
 - `Markdown(text)` shows formatted notes. `Label` and `Markdown` given a
   function, as in `Label(lambda: f"{len(sel)} selected")`, are live: they
   update after every command and every change of selection.
+  `linkTo(node)` writes a chip for a node or edge into Markdown. Pointing
+  at the chip highlights the element in the graph and clicking selects
+  it, so a panel can list a queue, a path or search results:
+  `Markdown(lambda: "Queue: " + " ".join(linkTo(n) for n in queue))`.
+  Links may point to web pages (`[text](https://…)`, opened in a new tab)
+  or to another app on the same site (`[text](?app=path/manifest.json)`),
+  so an app can send readers to a related one.
+- `Chart(fn)` puts a chart in a panel instead of the dock: `fn` makes it
+  with any plot command (or returns an Altair chart), and runs again after
+  every command, so `Chart(lambda: plotFrequency(degree, log=true))` follows
+  the graph as an app changes it. Its bars and points are linked to the
+  graph like any chart's.
 - `ui.menubar(Menu(title, items…), keep=[…])` replaces the menus (keeping
   the ones named). Items are `MenuItem(label, run="code")` or
   `MenuItem(label, onClick=fn)`, `Action(name)` for one of GUESS's own
@@ -2014,7 +2465,7 @@ ui.title("GUESS")
 - `installPackage("name")` installs a pure-Python package from PyPI into the
   page, so you can `import` it.
 - Presentations: `addSlide("note")` saves the current view as a slide, and
-  *View → Present* steps through them with the arrow keys.
+  *View → Panels → Presentation* steps through them with the arrow keys.
   `showSlide(2)`, `moveSlide(…)`, `noteSlide(…)` and `removeSlide(…)` edit them.
 
 \newpage
@@ -2037,8 +2488,8 @@ long. *Share as viewer* adds `&app=1`, which hides the console.
 
 ## 16.3 Notebooks and reports
 
-*File → Export notebook* writes a Jupyter notebook of your commands.
-*File → Export report* writes a self-contained HTML page with the commands,
+*File → Export page or notebook → Jupyter notebook* writes a Jupyter notebook of your commands.
+*File → Export page or notebook → Report* writes a self-contained HTML page with the commands,
 their output and a picture of the graph. Use it to send someone what you
 found.
 
@@ -2108,38 +2559,75 @@ to white, and `red.darker(0.3)` 30% of the way to black. Colours compare by
 the colour they mean: `v1.color == red` holds whether the field says `red`,
 `"255,0,0"` or `"#ff0000"`, so `color == red` finds every red node.
 
-The named colours from 2006 are below (case doesn't matter). The standard
-web colour names work as well.
+The named colours are below (case doesn't matter): the ones from 2006 and
+the standard web (CSS) colour names. Where a name is in both, such as `green`
+or `orange`, the 2006 colour is used, so old sessions look the same; use
+`"r,g,b"` for the web version.
 
 | name | r, g, b | name | r, g, b | name | r, g, b |
 |---|---|---|---|---|---|
-| `apricot` | 251, 213, 184 | `lavender` | 251, 190, 254 | `processblue` | 46, 253, 253 |
-| `aquamarine` | 115, 253, 217 | `lfadedgreen` | 241, 253, 230 | `purple` | 191, 106, 253 |
-| `bittersweet` | 223, 45, 2 | `lightcyan` | 227, 253, 254 | `rawsienna` | 194, 1, 1 |
-| `black` | 0, 0, 0 | `lightgray` | 192, 192, 192 | `red` | 255, 0, 0 |
-| `blue` | 0, 0, 255 | `lightgreen` | 228, 253, 216 | `redorange` | 252, 130, 101 |
-| `bluegreen` | 106, 253, 212 | `lightmagenta` | 251, 229, 254 | `redviolet` | 197, 13, 211 |
-| `blueviolet` | 79, 66, 249 | `lightorange` | 252, 229, 216 | `rhodamine` | 250, 118, 253 |
-| `brickred` | 218, 1, 2 | `lightpurple` | 227, 229, 253 | `royalblue` | 0, 187, 253 |
-| `brown` | 168, 0, 1 | `lightyellow` | 252, 252, 202 | `royalpurple` | 130, 91, 253 |
-| `burntorange` | 253, 184, 7 | `limegreen` | 188, 252, 9 | `rubinered` | 250, 14, 239 |
-| `cadetblue` | 161, 174, 226 | `lskyblue` | 234, 247, 254 | `salmon` | 252, 181, 205 |
-| `canary` | 251, 252, 187 | `magenta` | 255, 0, 255 | `seagreen` | 150, 253, 187 |
-| `carnationpink` | 250, 163, 253 | `mahogany` | 209, 0, 2 | `sepia` | 147, 0, 1 |
-| `cerulean` | 61, 240, 253 | `maroon` | 213, 0, 31 | `skyblue` | 162, 253, 240 |
-| `cornflowerblue` | 156, 238, 253 | `melon` | 252, 192, 187 | `springgreen` | 221, 252, 134 |
-| `cyan` | 0, 255, 255 | `midnightblue` | 0, 176, 198 | `tan` | 236, 198, 176 |
-| `dandelion` | 252, 216, 112 | `mulberry` | 204, 82, 251 | `tealblue` | 95, 250, 208 |
-| `darkgray` | 64, 64, 64 | `navyblue` | 57, 180, 254 | `thistle` | 237, 170, 253 |
-| `darkorchid` | 199, 124, 230 | `olivegreen` | 13, 201, 7 | `turquoise` | 104, 253, 230 |
-| `emerald` | 0, 253, 187 | `orange` | 255, 200, 0 | `violet` | 119, 99, 253 |
-| `forestgreen` | 39, 239, 34 | `orangered` | 251, 11, 187 | `violetred` | 250, 121, 253 |
-| `fuchsia` | 174, 47, 244 | `orchid` | 210, 161, 253 | `white` | 255, 255, 255 |
-| `goldenrod` | 253, 241, 112 | `peach` | 252, 186, 148 | `wildstrawberry` | 251, 59, 203 |
-| `gray` | 128, 128, 128 | `periwinkle` | 170, 178, 254 | `yellow` | 255, 255, 0 |
-| `green` | 0, 255, 0 | `pinegreen` | 8, 222, 111 | `yellowgreen` | 196, 252, 139 |
-| `greenyellow` | 236, 252, 151 | `pink` | 255, 175, 175 | `yelloworange` | 253, 198, 7 |
-| `junglegreen` | 23, 253, 184 | `plum` | 182, 18, 253 |  |  |
+| `aliceblue` | 240, 248, 255 | `goldenrod` | 253, 241, 112 | `olivedrab` | 107, 142, 35 |
+| `antiquewhite` | 250, 235, 215 | `gray` | 128, 128, 128 | `olivegreen` | 13, 201, 7 |
+| `apricot` | 251, 213, 184 | `green` | 0, 255, 0 | `orange` | 255, 200, 0 |
+| `aqua` | 0, 255, 255 | `greenyellow` | 236, 252, 151 | `orangered` | 251, 11, 187 |
+| `aquamarine` | 115, 253, 217 | `grey` | 128, 128, 128 | `orchid` | 210, 161, 253 |
+| `azure` | 240, 255, 255 | `honeydew` | 240, 255, 240 | `palegoldenrod` | 238, 232, 170 |
+| `beige` | 245, 245, 220 | `hotpink` | 255, 105, 180 | `palegreen` | 152, 251, 152 |
+| `bisque` | 255, 228, 196 | `indianred` | 205, 92, 92 | `paleturquoise` | 175, 238, 238 |
+| `bittersweet` | 223, 45, 2 | `indigo` | 75, 0, 130 | `palevioletred` | 219, 112, 147 |
+| `black` | 0, 0, 0 | `ivory` | 255, 255, 240 | `papayawhip` | 255, 239, 213 |
+| `blanchedalmond` | 255, 235, 205 | `junglegreen` | 23, 253, 184 | `peach` | 252, 186, 148 |
+| `blue` | 0, 0, 255 | `khaki` | 240, 230, 140 | `peachpuff` | 255, 218, 185 |
+| `bluegreen` | 106, 253, 212 | `lavender` | 251, 190, 254 | `periwinkle` | 170, 178, 254 |
+| `blueviolet` | 79, 66, 249 | `lavenderblush` | 255, 240, 245 | `peru` | 205, 133, 63 |
+| `brickred` | 218, 1, 2 | `lawngreen` | 124, 252, 0 | `pinegreen` | 8, 222, 111 |
+| `brown` | 168, 0, 1 | `lemonchiffon` | 255, 250, 205 | `pink` | 255, 175, 175 |
+| `burlywood` | 222, 184, 135 | `lfadedgreen` | 241, 253, 230 | `plum` | 182, 18, 253 |
+| `burntorange` | 253, 184, 7 | `lightblue` | 173, 216, 230 | `powderblue` | 176, 224, 230 |
+| `cadetblue` | 161, 174, 226 | `lightcoral` | 240, 128, 128 | `processblue` | 46, 253, 253 |
+| `canary` | 251, 252, 187 | `lightcyan` | 227, 253, 254 | `purple` | 191, 106, 253 |
+| `carnationpink` | 250, 163, 253 | `lightgoldenrodyellow` | 250, 250, 210 | `rawsienna` | 194, 1, 1 |
+| `cerulean` | 61, 240, 253 | `lightgray` | 192, 192, 192 | `rebeccapurple` | 102, 51, 153 |
+| `chartreuse` | 127, 255, 0 | `lightgreen` | 228, 253, 216 | `red` | 255, 0, 0 |
+| `chocolate` | 210, 105, 30 | `lightgrey` | 211, 211, 211 | `redorange` | 252, 130, 101 |
+| `coral` | 255, 127, 80 | `lightmagenta` | 251, 229, 254 | `redviolet` | 197, 13, 211 |
+| `cornflowerblue` | 156, 238, 253 | `lightorange` | 252, 229, 216 | `rhodamine` | 250, 118, 253 |
+| `cornsilk` | 255, 248, 220 | `lightpink` | 255, 182, 193 | `rosybrown` | 188, 143, 143 |
+| `crimson` | 220, 20, 60 | `lightpurple` | 227, 229, 253 | `royalblue` | 0, 187, 253 |
+| `cyan` | 0, 255, 255 | `lightsalmon` | 255, 160, 122 | `royalpurple` | 130, 91, 253 |
+| `dandelion` | 252, 216, 112 | `lightseagreen` | 32, 178, 170 | `rubinered` | 250, 14, 239 |
+| `darkblue` | 0, 0, 139 | `lightskyblue` | 135, 206, 250 | `saddlebrown` | 139, 69, 19 |
+| `darkcyan` | 0, 139, 139 | `lightslategray` | 119, 136, 153 | `salmon` | 252, 181, 205 |
+| `darkgoldenrod` | 184, 134, 11 | `lightslategrey` | 119, 136, 153 | `sandybrown` | 244, 164, 96 |
+| `darkgray` | 64, 64, 64 | `lightsteelblue` | 176, 196, 222 | `seagreen` | 150, 253, 187 |
+| `darkgreen` | 0, 100, 0 | `lightyellow` | 252, 252, 202 | `seashell` | 255, 245, 238 |
+| `darkgrey` | 169, 169, 169 | `lime` | 0, 255, 0 | `sepia` | 147, 0, 1 |
+| `darkkhaki` | 189, 183, 107 | `limegreen` | 188, 252, 9 | `sienna` | 160, 82, 45 |
+| `darkmagenta` | 139, 0, 139 | `linen` | 250, 240, 230 | `silver` | 192, 192, 192 |
+| `darkolivegreen` | 85, 107, 47 | `lskyblue` | 234, 247, 254 | `skyblue` | 162, 253, 240 |
+| `darkorange` | 255, 140, 0 | `magenta` | 255, 0, 255 | `slateblue` | 106, 90, 205 |
+| `darkorchid` | 199, 124, 230 | `mahogany` | 209, 0, 2 | `slategray` | 112, 128, 144 |
+| `darkred` | 139, 0, 0 | `maroon` | 213, 0, 31 | `slategrey` | 112, 128, 144 |
+| `darksalmon` | 233, 150, 122 | `mediumaquamarine` | 102, 205, 170 | `snow` | 255, 250, 250 |
+| `darkseagreen` | 143, 188, 143 | `mediumblue` | 0, 0, 205 | `springgreen` | 221, 252, 134 |
+| `darkslateblue` | 72, 61, 139 | `mediumorchid` | 186, 85, 211 | `steelblue` | 70, 130, 180 |
+| `darkslategray` | 47, 79, 79 | `mediumpurple` | 147, 112, 219 | `tan` | 236, 198, 176 |
+| `darkslategrey` | 47, 79, 79 | `mediumseagreen` | 60, 179, 113 | `teal` | 0, 128, 128 |
+| `darkturquoise` | 0, 206, 209 | `mediumslateblue` | 123, 104, 238 | `tealblue` | 95, 250, 208 |
+| `darkviolet` | 148, 0, 211 | `mediumspringgreen` | 0, 250, 154 | `thistle` | 237, 170, 253 |
+| `deeppink` | 255, 20, 147 | `mediumturquoise` | 72, 209, 204 | `tomato` | 255, 99, 71 |
+| `deepskyblue` | 0, 191, 255 | `mediumvioletred` | 199, 21, 133 | `turquoise` | 104, 253, 230 |
+| `dimgray` | 105, 105, 105 | `melon` | 252, 192, 187 | `violet` | 119, 99, 253 |
+| `dimgrey` | 105, 105, 105 | `midnightblue` | 0, 176, 198 | `violetred` | 250, 121, 253 |
+| `dodgerblue` | 30, 144, 255 | `mintcream` | 245, 255, 250 | `wheat` | 245, 222, 179 |
+| `emerald` | 0, 253, 187 | `mistyrose` | 255, 228, 225 | `white` | 255, 255, 255 |
+| `firebrick` | 178, 34, 34 | `moccasin` | 255, 228, 181 | `whitesmoke` | 245, 245, 245 |
+| `floralwhite` | 255, 250, 240 | `mulberry` | 204, 82, 251 | `wildstrawberry` | 251, 59, 203 |
+| `forestgreen` | 39, 239, 34 | `navajowhite` | 255, 222, 173 | `yellow` | 255, 255, 0 |
+| `fuchsia` | 174, 47, 244 | `navy` | 0, 0, 128 | `yellowgreen` | 196, 252, 139 |
+| `gainsboro` | 220, 220, 220 | `navyblue` | 57, 180, 254 | `yelloworange` | 253, 198, 7 |
+| `ghostwhite` | 248, 248, 255 | `oldlace` | 253, 245, 230 |  |  |
+| `gold` | 255, 215, 0 | `olive` | 128, 128, 0 |  |  |
 
 
 # Appendix B. Gython and Python 3
@@ -2297,6 +2785,17 @@ Add an undirected edge between two nodes (by node or name).
 
 Color edges the average of their endpoint colors (all edges by default).
 
+### `bowTie(name='bowtie')`
+
+bowTie() splits a directed network the way the Web was described in
+2000: the largest strongly connected component ("core"), the nodes that
+can reach it but not be reached from it ("in"), those reached from it
+that can't reach back ("out"), "tube" nodes on paths from in to out that
+bypass the core, "tendril" nodes hanging off in or out, and "other"
+for nodes outside the core's weakly connected component. Sets the node
+field `bowtie` and returns the sizes, e.g. {"core": 224, "in": 89, ...}.
+Undirected edges count both ways.
+
 ### `center(*d)`
 
 center() fits the whole graph; center(seq) zooms to the given elements.
@@ -2319,6 +2818,24 @@ up and down look equally strong, e.g. colorBy(lfc, blue, red,
 center=0) for fold changes. Compare colorize, which spaces distinct
 values evenly.
 
+### `colorByPhase(field, period=None, saturation=0.75, lightness=0.55)`
+
+colorByPhase(phase) colours elements around a colour wheel by a cyclic
+value such as an oscillator's phase or an angle, so values a whole
+period apart get the same colour and nearby values similar ones (unlike
+colorBy, whose ends differ). period= is the length of one cycle (default
+2*pi; 360 for degrees, 24 for hours).
+
+### `colorGraph(strategy='DSATUR', show=True)`
+
+colorGraph() gives every node a colour class (`color_class`, 0, 1,
+2, ...) so that no two neighbours share one, using as few as it can
+find (greedy colouring; strategy "DSATUR" (default),
+"largest_first", "smallest_last" or "random_sequential"); show=true
+also colours the nodes by class. Returns the number of colours used.
+Planar networks (maps) never need more than four, though greedy
+methods sometimes use five.
+
 ### `colorize(field, *cs)`
 
 colorize(field) gives each value its own clearly different colour (the
@@ -2338,6 +2855,16 @@ shortcutNodes until nothing changes. Returns [removed, added].
 
 Create node `name` with all field values copied from `template`.
 
+### `corePeriphery(name='core')`
+
+corePeriphery() splits the nodes into a densely connected core and a
+periphery that links to the core but hardly to itself (Newman, Networks,
+section 14.7.3; Borgatti and Everett's discrete model): the split that
+best matches the ideal pattern where every pair involving a core node
+is linked and no pair of peripheral nodes is. Sets the node field
+`core` (1 in the core, 0 outside) and returns {"core": size, "fit": the
+correlation with the ideal pattern}. Direction is ignored.
+
 ### `demo(step=1)`
 
 demo() starts a guided tour of GUESS for newcomers, from selecting
@@ -2353,6 +2880,15 @@ Edges divided by the number of possible undirected node pairs.
 ### `distance(node1, node2)`
 
 Euclidean distance between two nodes' positions.
+
+### `edgeCrossings(pairs=False)`
+
+edgeCrossings() counts the pairs of edges that cross in the current
+drawing (straight edges between node centres; edges sharing a node
+don't count). pairs=true returns the crossing pairs instead, e.g.
+for e1, e2 in edgeCrossings(pairs=true): e1.color = red. A planar
+network can be drawn with no crossings; finding such a drawing is
+another matter.
 
 ### `edgeData(*args)`
 
@@ -2401,6 +2937,19 @@ rows by p-value and returns all rows as dicts, best first.
 ### `execfile(filename)`
 
 Run a Gython script file in the current namespace.
+
+### `expandLayers(field, order=None, directed=False, name='layers')`
+
+expandLayers(kind) turns a multiplex network (one set of nodes,
+several kinds of edge, told apart by the edge field `kind`) into a
+multilayer one in a new graph tab: a copy of every node in each layer
+it has edges in, the layer's edges between the copies, and
+"interlayer" edges joining each node's copies in consecutive layers
+(order= a list of the layer values; default sorted). directed=true
+points the interlayer edges forward, as for time: a temporal network
+where nothing travels back in time. Copies keep the node's position
+and get `layer` and `original`; run isometricLayout(layer) to stack
+the layers. use() goes back to the original.
 
 ### `exportCSV(filename='edges.csv', table='edges')`
 
@@ -2484,6 +3033,20 @@ collapseMotifs(kind) replaces each with one meta-node.
 
 The nodes among the members of a (possibly mixed) set.
 
+### `fitBlockModel(k=2, degreeCorrected=True, restarts=5, seed=0, name='sbm_class')`
+
+fitBlockModel(k) divides the nodes into k groups by fitting a
+stochastic block model by maximum likelihood (Newman, Networks,
+section 14.4; Karrer and Newman 2011): the groups that make the
+observed edges most probable. degreeCorrected=True (the default)
+allows hubs and small nodes in the same group; the plain model
+(False) tends to put hubs in one group and everyone else in another,
+as on the karate club. Uses Kernighan-Lin passes of single-node moves
+from `restarts` random starts and keeps the best. Stores the groups in
+the field `name` (0 = largest) and returns {"loglik": ..., "k": k}.
+Edge direction and self-loops are ignored. Meant for networks of up to
+a few hundred nodes.
+
 ### `fitNodesToLabels(seq=None, padding=4)`
 
 fitNodesToLabels() puts each node's label inside it (labelpos =
@@ -2491,6 +3054,20 @@ fitNodesToLabels() puts each node's label inside it (labelpos =
 Graphviz drawing; fitNodesToLabels(dept == 'dept3') does some nodes.
 padding is the space around the text. Labels with line breaks
 (`\n`) make taller nodes.
+
+### `fitPowerLaw(field='degree', kmin=None, shift=0)`
+
+fitPowerLaw(degree) fits a power law p(k) ~ k^-alpha to the values
+of a numeric node field (or a list of numbers) from kmin up, by maximum likelihood (Newman,
+Networks, eq. 10.9, with the -1/2 correction for whole numbers), not
+by drawing a line through a log-log plot. With kmin left out it is
+chosen as the value that makes the fitted distribution closest to the
+data (the smallest Kolmogorov-Smirnov distance; Clauset, Shalizi and
+Newman 2009). Returns {"alpha", "sigma" (its standard error), "kmin",
+"n" (values in the tail), "ks"}. shift=a fits a power law in k + a
+rather than k, as Price's model gives (p_k ~ (k + a)^-alpha); kmin and
+the returned kmin stay in units of k. plotFrequency(degree, cumulative=true,
+log=true, fit=true) draws the fit.
 
 ### `floatRange(a, b, inc)`
 
@@ -2561,6 +3138,29 @@ highest(degree) is the 10 nodes (or edges) with the largest degree,
 largest first; highest(degree, 5), or highest(degree, 5, seq) within a
 set. Elements without a value are left out.
 
+### `katzCentrality(alpha=None, beta=1.0, name='katz')`
+
+katzCentrality(alpha, beta) gives each node x = alpha A x + beta: the
+importance its in-neighbours pass on (scaled by alpha) plus a free amount
+beta, so even nodes no one points to count. alpha must be below 1/kappa1
+(the largest eigenvalue of A; returned along with the field) for the
+sum to converge; small alpha ranks nodes almost by degree, alpha near
+1/kappa1 almost like eigenvector centrality. With alpha left out it is
+0.85/kappa1. Edges follow their direction (undirected ones both ways).
+Stores the values in the field `name` (default "katz") and returns
+(field, 1/kappa1).
+
+### `kComponents(k=2, name='kcomponent')`
+
+kComponents(k) finds the k-components: the largest groups of nodes in
+which every pair is joined by at least k node-independent paths (k = 1:
+components; 2: bicomponents; 3: tricomponents). Unlike k-cores they need
+the paths, not just the degrees. Returns them as sets, largest first, and
+stores each node's (first) one in the field `name` (-1 for none); a node
+can belong to more than one, e.g. a cut node shared by two bicomponents.
+Direction is ignored. Exact for k <= 2; for k >= 3 uses networkx's
+k_components (Moody and White), which can be slow on big graphs.
+
 ### `labelCluster(nodes, value, field='cluster', relabel=True)`
 
 labelCluster(nodes, value, field="cluster") puts `value` in `field` for
@@ -2580,10 +3180,88 @@ the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank").
 lastClick() is where the display was last clicked, as (x, y) in graph
 coordinates, or None before the first click.
 
+### `lombardiEdges(iterations=300, limit=70)`
+
+lombardiEdges() turns the edges into circular arcs, without moving
+any node, so that each node's edges leave it as evenly spread as
+possible (a "near-Lombardi" drawing, after the artist Mark Lombardi;
+Chernobelskiy et al., GD 2011). Each edge's bend is the angle, in
+degrees, at which it leaves its ends, stored in its `arc` field (0 =
+straight; at most `limit`). Returns lombardiness() before and after.
+straightenEdges() undoes it.
+
+### `lombardiLayout(iterations=400, seed=0)`
+
+lombardiLayout() makes a Lombardi-style drawing: circular-arc edges,
+with each node's edges leaving it at (nearly) equal angles. It is the
+tangent-based spring embedder of Chernobelskiy et al. (GD 2011):
+attraction (d - k)/d along edges and repulsion k^2/d^3 between all
+pairs place the nodes, while a tangential force turns each edge's
+chord so that the angles both ends want for it agree, and each
+node's fan of edge tangents turns to fit; edges then get the arc
+that matches (stored in `arc`, as by lombardiEdges). Returns
+lombardiness() of the straight-line drawing it starts from and of
+the result. Best for small and medium graphs (up to a few hundred
+nodes).
+
+### `lombardiness()`
+
+lombardiness() scores how close the drawing is to a Lombardi drawing,
+0-100: 100 when every node's edges leave it at equal angles (as
+measured by their tangents, so arcs count; see lombardiEdges). Nodes
+with one edge are always perfect (Chernobelskiy et al., GD 2011).
+
 ### `lowest(field, count=10, seq=None)`
 
 lowest(degree, 5): the 5 with the smallest degree, smallest first
 (see highest).
+
+### `makeBlockModel(sizes, p_in, p_out=None, seed=0, layout=True)`
+
+makeBlockModel([30, 30, 40], 0.3, 0.02) makes a stochastic block model:
+nodes in groups of the given sizes, each pair inside a group joined with
+probability p_in and each pair in different groups with p_out, so the
+network has community structure (Newman, Networks, section 12.11.6).
+p_in can instead be a matrix of probabilities between groups. The node
+field `block` gives each node's group (0, 1, ...).
+
+### `makeConfigurationModel(degrees, simple=False, seed=0, layout=True)`
+
+makeConfigurationModel([3, 2, 2, 1, ...]) replaces the graph with a
+random network with exactly those degrees: each node gets that many
+"stubs" (half-edges) and the stubs are paired up uniformly at random
+(Newman, Networks, section 12.1). Some pairs make self-loops or join
+nodes already joined; simple=true deletes those afterwards (so some
+degrees come out lower). degrees can be a node field of the current
+graph, e.g. makeConfigurationModel(degree), which randomises a network
+keeping its degrees. The node field `stubs` keeps each node's intended
+degree. The degrees must add up to an even number. Returns the counts of
+self-loops and repeated edges. layout=false skips the force-directed
+layout (for when you lay it out yourself). (GUESS's degree field counts a self-loop
+once; in the book's convention it adds 2 to the degree, which is what
+`stubs` holds.)
+
+### `makeCopyingModel(n, c=3, copy=0.5, seed=0, layout=True)`
+
+makeCopyingModel(n, c, copy) grows a directed network by node copying
+(Newman, Networks, section 13.5, after Kleinberg et al.): each new node
+picks an existing node at random and goes through its c out-links; each
+one is copied with probability `copy`, otherwise replaced by a link to
+a node chosen uniformly at random. Without any preference this gives a
+power-law in-degree distribution with exponent 1 + 1/copy (it is Price's
+model with a = c(1 - copy)/copy). Starts from c + 1 nodes each linking
+to all the others. Fields: `born` (arrival step, on nodes and edges)
+and `copied` (the index of the node copied, -1 for the first nodes).
+
+### `makeExpectedDegree(weights, seed=0, layout=True)`
+
+makeExpectedDegree([5.5, 3, 1.2, ...]) replaces the graph with a random
+network in which each pair i, j is joined independently with
+probability w_i w_j / sum(w) (at most 1), so node i's expected degree is
+about w_i: the Chung-Lu model, the configuration model's cousin with
+independent edges (Newman, Networks, section 12.1.2). weights can be a
+node field of the current graph. No self-loops or repeated edges. The
+node field `expected` keeps w. layout=false skips the layout.
 
 ### `makeFromCalls(target)`
 
@@ -2671,6 +3349,17 @@ true). level=k merges modules below depth k into their parent (e.g.
 level=2 gives one node per subpackage). Test modules are skipped
 unless tests=true. The code is parsed, never run.
 
+### `makeFromMap(region='usa')`
+
+makeFromMap("usa") makes the network of the lower 48 US states, an
+edge wherever two share a border (touching at a single point, like
+the Four Corners, doesn't count); makeFromMap("world") does the same
+for countries.
+Nodes get `abbrev`, `latitude`, `longitude` (and `continent` for
+countries) and are placed on a map. Such networks are planar (when
+each region is one piece of land), which is why four colours always
+suffice to colour a map. Data: Natural Earth 1:50m, public domain.
+
 ### `makeFromPajek(filename)`
 
 Replace the current graph with a Pajek .net file (nodes are named pajek<id>).
@@ -2716,6 +3405,34 @@ project(kind, "author"). a= and b= name the columns (default: the
 first two); weight= names a numeric column to use as edge weight.
 Repeated rows add to the weight.
 
+### `makeGrowingNetwork(n, m=2, gamma=1.0, a=1.0, extra=0.0, remove=0.0, seed=0, layout=True)`
+
+makeGrowingNetwork(n, m, gamma, a) grows an undirected network one node
+at a time (Newman, Networks, sections 13.2 and 13.4). Each new node links
+to m existing nodes chosen with probability proportional to
+(degree + a)^gamma: gamma = 1 is linear preferential attachment (a
+power law), gamma < 1 gives a stretched exponential, gamma > 1
+"condensation" where one node gets a finite share of all edges, and
+gamma = 0 is uniform attachment. extra= adds that many edges per step
+(on average) between existing nodes, both ends chosen the same way;
+remove= deletes that many random edges per step. Every node and edge
+has a `born` step; removed edges stay in the graph, hidden, with the
+step they were removed in `died` (-1 for edges still there), so
+revealUpTo(step) replays additions and removals.
+
+### `makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=None, layout=True)`
+
+makeLFR(n, tau1, tau2, mu) makes a Lancichinetti-Fortunato-Radicchi
+benchmark network: power-law degrees (exponent tau1) and community sizes
+(exponent tau2), with a share mu of each node's edges leaving its
+community (Newman, Networks, section 14.6.2). mu near 0 gives obvious
+communities; past about 0.5 they stop being communities at all. The
+node field `community` holds the planted groups (0 = largest), to
+compare with what an algorithm finds: compareClusters(louvain_class,
+community). degree= is the mean degree. The construction fails for some
+seeds, so up to ten seeds from seed= (default 0) are tried, the same
+ones every time; if all fail, try larger communities or a lower mu.
+
 ### `makeNicheModel(species=30, connectance=0.15, seed=0)`
 
 makeNicheModel(species, connectance) builds a food web with the niche
@@ -2725,6 +3442,19 @@ every species whose niche falls in a range below its own. connectance
 (links / species^2) is typically 0.05-0.3. Edges run from food to
 eater; nodes get `niche` and `range`. Species left without any link
 are dropped. seed= gives a different web.
+
+### `makePriceModel(n, c=3, a=1.0, seed=0, layout=True)`
+
+makePriceModel(n, c, a) grows a citation network by Price's model
+(Newman, Networks, section 13.1): papers arrive one at a time, and each
+cites c earlier papers (on average, when c isn't a whole number),
+chosen with probability proportional to in-degree + a, so the
+much-cited get cited more (cumulative advantage). The in-degrees end up
+with a power-law tail of exponent 2 + a/c. Uses Newman's fast method:
+with probability c/(c + a) copy a citation made by a random earlier
+paper, otherwise pick a paper uniformly. Edges point from citing to
+cited. The field `born` gives each node's and edge's arrival step (paper
+k arrives at step k), so revealUpTo(step) replays the growth.
 
 ### `mergeNodes(*nodes, name=None)`
 
@@ -2778,7 +3508,7 @@ transmissions caused by the top 20% of cases. offspring(cases) uses
 only those cases, e.g. offspring(onset < 28); their infections count
 wherever they lead. Stores the count in the field `offspring`.
 
-### `outbreaks(runs=200, seeds=1, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, immune=None, weight=None, steps=1000, large=0.1, seed=0, name='risk', show=True)`
+### `outbreaks(runs=200, seeds=1, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, immune=None, weight=None, steps=1000, large=0.1, seed=0, name='risk', show=True, waning=0.05, sigma=0.5, duration=None)`
 
 outbreaks(runs) repeats spread() many times, because one simulated
 outbreak is an anecdote. Each run starts from `seeds` random nodes (a
@@ -2789,6 +3519,26 @@ reached in `risk` (name=...), charts the final sizes (hover a bar to see
 where those outbreaks started), and returns them
 (.mean, .median, .large = share of runs reaching more than `large` of
 the nodes).
+
+### `plotSpectrum(matrix='laplacian')`
+
+plotSpectrum() charts the eigenvalues of the Laplacian (or
+"adjacency", "normalized") in order, one dot each: count the zeros
+to count components; a small second eigenvalue means the network
+nearly splits in two.
+
+### `rankNodes(name='rank', alpha=0.0, endorsements=False)`
+
+rankNodes() places the nodes of a directed network on a ladder so that
+edges mostly point the same way (Newman, Networks, section 14.7.4): the
+SpringRank method (De Bacco, Larremore and Moore 2018), where each edge
+i -> j is a spring pulling i one unit above j, as in dominance networks
+(i beat j) or who-hires-whose-graduates (j hired from i).
+endorsements=true reads each edge the other way, j above i, for links,
+citations or votes, where pointing to someone ranks them up. Sets the
+node field `rank` (higher = above) and returns the share of edges that
+agree with the ladder. alpha > 0 pulls ranks toward 0 (useful when the
+network is in pieces).
 
 ### `readSets(filename, item=None, set=None, where=None)`
 
@@ -2889,7 +3639,16 @@ Nodes around a circle ordered by field; radius shrinks with outdegree.
 sortBy(field) or sortBy(seq, field), smallest first;
 descending=true for largest first.
 
-### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None)`
+### `spectrum(matrix='laplacian')`
+
+spectrum() returns the eigenvalues of the graph Laplacian L = D - A,
+smallest first; spectrum("adjacency") those of A (largest first),
+spectrum("normalized") of the normalised Laplacian I - D^-1/2 A D^-1/2.
+Direction and weights are ignored (edges count once each way). The
+Laplacian has as many zero eigenvalues as the network has
+components; the second smallest is the algebraic connectivity.
+
+### `spread(seeds, model='SIR', beta=0.3, gamma=0.1, threshold=0.5, steps=100, seed=0, show=True, immune=None, weight=None, waning=0.05, sigma=0.5, duration=None)`
 
 spread([v1, v2], model="SIR") simulates something spreading from
 the seed nodes, one step at a time:
@@ -2897,18 +3656,44 @@ the seed nodes, one step at a time:
                neighbour with probability beta
   "SIR"        the same, and each infected node recovers (and can't be
                infected again) with probability gamma
+  "SIS"        the same, but recovered nodes can be infected again (no
+               immunity): the infection can settle at an endemic level
+  "SIRS"       SIR, but immunity wanes: each recovered node becomes
+               susceptible again with probability `waning` per step
+  "SEIR"       SIR with a latent stage: newly infected nodes are Exposed
+               and become infectious with probability `sigma` per step
   "cascade"    independent cascade: a newly active node gets one chance
                (probability beta) to activate each neighbour
   "threshold"  a node becomes active when at least `threshold` of its
                neighbours are (complex contagion: ideas, adoption)
+duration=k makes every infection last exactly k steps (instead of
+recovering with probability gamma); SIR is then exactly bond percolation
+with transmissibility T = 1 - (1 - beta)**k.
 Directed edges are followed in their direction. immune=nodes can't be
 infected (vaccinated, say: state V). weight=field makes long contacts
 riskier: beta is then the chance per unit of weight, so an edge of
 weight w transmits with chance 1 - (1 - beta)**w per step. Stores
-`infected_at` (the step a node was reached; -1 = never) and `state`
-(S, I, R or V at the end), plots how many are in each state at each
+`infected_at` (the step a node was reached; -1 = never), `state`
+(S, E, I, R or V at the end) and `infected_steps` (steps spent
+infected, e.g. for SIS prevalence by degree), plots how many are in each state at each
 step, and returns those counts. Replay it with showTime(t,
 infected_at); outbreaks() repeats it many times.
+
+### `straightenEdges()`
+
+straightenEdges() makes every edge straight again (arc = 0).
+
+### `structuralBalance(sign='sign', name='camp')`
+
+structuralBalance(sign) tests a signed network (an edge field of +1/-1,
+or "+"/"-") for structural balance: every cycle has an even number of
+negative edges, so no triangle has exactly one or three. Harary's
+theorem says a balanced network splits into (at most) two camps with
+positive edges inside and negative edges between; the node field `camp`
+(0 or 1) gets that split, or for an unbalanced network one that follows
+a spanning tree. Returns {"balanced": ..., "unbalanced": [(a, b, c), ...]
+(triangles with an odd number of negative edges), "frustrated": [edges
+that disagree with the camps]}. Direction is ignored.
 
 ### `travelingSalesman(stops=None, weight='weight', cycle=True)`
 
@@ -3037,10 +3822,12 @@ community in the louvain_class field (0 = largest) and returns the
 communities. Try colorize(louvain_class). resolution > 1 gives more,
 smaller communities; seed=None varies the result between runs.
 
-### `modularity(field)`
+### `modularity(field, resolution=1.0)`
 
 modularity(field): the modularity Q of the partition given by a node
-field (e.g. modularity(dept), modularity(louvain_class)).
+field (e.g. modularity(dept), modularity(louvain_class)). resolution=
+weighs the expected edges as in louvainClusters(resolution=): above 1
+favours smaller communities.
 
 ### `mutualEdges()`
 
@@ -3062,6 +3849,20 @@ themselves when read after the graph has changed, so this is rarely
 needed: recompute(pagerank, ...) forces it now (e.g. for a field you
 had overwritten, which then follows the graph again); recompute() redoes
 every computed field that has been used so far.
+
+### `revealUpTo(step, field='born')`
+
+revealUpTo(step) plays back a network's growth: nodes whose `born`
+field (or field=) is at most step are shown and the rest hidden, and an
+edge is shown once both its ends are (and, if edges have the field too,
+once its own value is at most step). The way to animate a growing
+network: build the final network first, give every node (and edge) the
+step it arrives at, lay it out once, center(g.nodes) to fit the final
+picture, then call revealUpTo(0), revealUpTo(1), ... from a timer, so
+nodes appear where they will stay. Edges with a `died` field (as
+makeGrowingNetwork's removed edges have) disappear again from that
+step on. Returns the nodes and edges that arrive at exactly this step
+(to highlight them).
 
 ### `shortestPath(source, target, weighted=False)`
 
@@ -3091,37 +3892,37 @@ Biconnected components (ignoring edge direction).
 
 Split the graph into `count` communities with Girvan-Newman.
 
-### `makeBarabasiAlbertRandom(*args)`
+### `makeBarabasiAlbertRandom(*args, seed=0)`
 
-makeBarabasiAlbertRandom(vert, edges, evolve): preferential attachment; starts from `vert` nodes and adds `evolve` nodes with `edges` edges each.
+makeBarabasiAlbertRandom(vert, edges, evolve): preferential attachment; starts from `vert` nodes and adds `evolve` nodes with `edges` edges each. The field `born` records the step each node and edge arrived (0 for the seeds), so revealUpTo(step) can replay the growth. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeEppsteinRandom(*args)`
+### `makeEppsteinRandom(*args, seed=0)`
 
-makeEppsteinRandom(nodes, edges, r): power-law graph by r rounds of degree-biased rewiring of a uniform random graph (Eppstein & Wang).
+makeEppsteinRandom(nodes, edges, r): power-law graph by r rounds of degree-biased rewiring of a uniform random graph (Eppstein & Wang). seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeErdosRenyiRandom(*args)`
+### `makeErdosRenyiRandom(*args, seed=0)`
 
-makeErdosRenyiRandom(nodes, p): each edge present with probability p.
+makeErdosRenyiRandom(nodes, p): each edge present with probability p. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeKleinbergRandom(*args)`
+### `makeKleinbergRandom(*args, seed=0)`
 
-makeKleinbergRandom(size, clust): Kleinberg small world on a size x size torus with one long-range edge per node, distance exponent clust.
+makeKleinbergRandom(size, clust): Kleinberg small world on a size x size grid with one long-range edge per node, chosen with probability ~ distance^-clust; the fields gx and gy give each node's grid coordinates (for greedy routing by lattice distance). seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeLattice1DRandom(*args)`
+### `makeLattice1DRandom(*args, seed=0)`
 
-makeLattice1DRandom(nodes, toroidal): a path (or ring if toroidal).
+makeLattice1DRandom(nodes, toroidal): a path (or ring if toroidal). seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeLattice2DRandom(*args)`
+### `makeLattice2DRandom(*args, seed=0)`
 
-makeLattice2DRandom(size, toroidal): a size x size grid (torus if toroidal).
+makeLattice2DRandom(size, toroidal): a size x size grid (torus if toroidal). seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeSimpleDirectedRandom(*args)`
+### `makeSimpleDirectedRandom(*args, seed=0)`
 
-makeSimpleDirectedRandom(nodes, edges): uniform random directed graph.
+makeSimpleDirectedRandom(nodes, edges): uniform random directed graph. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
-### `makeSimpleRandom(*args)`
+### `makeSimpleRandom(*args, seed=0)`
 
-makeSimpleRandom(nodes, edges): uniform random undirected graph.
+makeSimpleRandom(nodes, edges): uniform random undirected graph. seed= picks the random graph (the same seed gives the same graph; seed=None, a new one each time).
 
 ### `weakComponentClusters()`
 
@@ -3184,7 +3985,8 @@ network in which old nodes lose their appeal: each new node links to m
 existing ones, chosen with probability proportional to degree x
 age^-aging (age in steps since the node arrived). aging=0 is plain
 Barabási-Albert; larger values favour recent nodes (Dorogovtsev and
-Mendes' model).
+Mendes' model). The field `born` records the step each node and edge
+arrived (0 for the starting clique), for revealUpTo.
 
 ### `makeGeometricRandom(n, radius, seed=0)`
 
@@ -3311,13 +4113,16 @@ plain nodes.
 ancestors(node): every node with a directed path to node (upstream: what it
 depends on or cites, transitively). Undirected edges count both ways.
 
-### `assortativity(field=None)`
+### `assortativity(field=None, categorical=None)`
 
 assortativity() is the degree assortativity of the graph: positive when
 hubs link to hubs, negative when hubs link to small nodes.
 assortativity(dept) measures homophily by a field: near 1 = ties stay
 within the same value, 0 = random mixing, negative = ties cross values.
-Numeric fields use the correlation of values across edges.
+Numeric fields use the correlation of values across edges;
+categorical=true treats a numeric field (a grade, a class number) as
+categories instead, and categorical=false treats a text field's values
+as numbers.
 
 ### `blockmodel(count=4, show=True)`
 
@@ -3382,6 +4187,20 @@ mixingMatrix(dept) counts the edges between each pair of values of a
 node field (dept1-dept1, dept1-dept2, ...), printed as a table and
 returned as {value: {value: count}}. Direction is ignored. With many
 values only the 20 most common are printed.
+
+### `percolation(order='random', bond=False, trials=10, seed=0, show=True)`
+
+percolation() gives the size of the largest connected piece for every
+share of nodes present, in one pass (the Newman-Ziff algorithm, Newman,
+Networks, section 15.5): nodes are added back one at a time, in an
+order, and the pieces they join are merged with union-find. Returns
+[(phi, S)]: phi the share of nodes present (occupation probability),
+S the largest piece as a share of all nodes. order: "random" (failures;
+averaged over `trials` random orders), "degree" (the hubs are the last
+to come back, i.e. the first removed by an attack), or a node field
+(highest removed first). bond=true occupies edges instead of nodes:
+phi is then the share of edges present. Charts the curve. The graph
+isn't changed. Direction is ignored.
 
 ### `reciprocity()`
 
@@ -3476,7 +4295,8 @@ Bring results back with setField:
 
 bipartiteLayout(field) draws a two-mode network in two rows (by a field
 with two values, e.g. bipartite in makeSample("davis")), ordering each
-row to reduce edge crossings.
+row to reduce edge crossings. Without igraph (still loading, or
+turned off) the rows are ordered by the barycenter heuristic instead.
 
 ### `cohesiveBlocks()`
 
@@ -3631,14 +4451,17 @@ that field's value, so the edges between each pair of values stay
 the same in number: rewire(keep=kind) keeps a two-mode network
 two-mode (plants still only link to pollinators).
 
-### `similarTo(node, method='jaccard', top=10)`
+### `similarTo(node, method='jaccard', top=10, alpha=0.9)`
 
 similarTo(v1) scores every node by how much its neighbourhood overlaps
 v1's, stores the score in the field `similarity` and returns the `top`
 most similar nodes. method: "jaccard" (shared neighbours / all
 neighbours of either), "dice" (2 x shared / sum of degrees), or
-"adamic_adar" (shared neighbours, rare ones counting more). Direction
-is ignored.
+"adamic_adar" (shared neighbours, rare ones counting more), or
+"regular": regular equivalence (Leicht, Holme and Newman), where nodes
+are similar if their neighbours are similar, so nodes with the same
+role score high even with no neighbours in common; alpha (below 1)
+weighs longer paths. Direction is ignored.
 
 ### `simplify(combine='sum', loops=True)`
 
@@ -3760,6 +4583,9 @@ centerAfterLayout(state): whether the view re-centres after each layout
 ### `circleLayout(field=None, center=None, x=None, y=None)`
 
 circleLayout() places all nodes evenly on a circle (radius 450 around 500,500).
+
+circleLayout(field) makes one circle per value of a node field (bigger
+groups get bigger circles, the biggest first), packed in rows.
 
 circleLayout(field, centerNode) puts centerNode at (500, 500) and its
 neighbours on a circle around it, ordered by `field`, at a radius
@@ -4059,13 +4885,18 @@ the span of the ordered axis. Nodes without a value go in the middle.
 
 ## Display: hulls, legends, background, edges, labels, selection, export
 
-### `constantLabelSize(on=True)`
+### `clearDrawings()`
+
+Remove every drawing made with drawLine, drawText, drawRect and drawCircle.
+
+### `constantLabelSize(on=True, size=None)`
 
 constantLabelSize() keeps labels the same size on screen as you zoom
 (they grow with the graph otherwise); each label appears once there is
 room for it and stays as you zoom further in, so zooming in reveals more
-labels. Labels inside nodes keep fitting their nodes.
-constantLabelSize(false) turns it off.
+labels. size= sets that size in pixels (default 10; a node's labelsize
+still scales its own label). Labels inside nodes keep fitting their
+nodes. constantLabelSize(false) turns it off.
 
 ### `createConvexHull(seq, color='200,200,255,90', shape='hull', rotate=False, padding=6)`
 
@@ -4083,6 +4914,45 @@ source to target, as in Gephi's preview, so a->b and b->a separate and
 direction reads without arrows. curvedEdges(false) goes back to straight
 lines; curvedEdges(k) sets the curvature: the arc radius is edge length / k
 (default 1.2, as in Gephi; 2 gives semicircles).
+
+### `directedEdges(style='taper')`
+
+directedEdges(style) sets how directed edges show which way they go.
+"taper" (the default): wide at the source, narrowing to a point at the
+target, with no arrowhead. "fade": dark at the source, light at the
+target. "arrow": a line with an arrowhead at the target. Holten and van
+Wijk's user study (CHI 2009) found tapered edges were read fastest and most
+accurately, dark-to-light next, and standard arrows among the worst, and
+that adding a second cue did not help, so the default uses the taper
+alone. An edge's own arrowhead or linestyle still applies: dashed, dotted
+and similar styles keep an arrowhead, since they cannot show direction.
+
+### `drawCircle(x, y, r, color=None, fill=None, lineWidth=1.5, style='solid')`
+
+drawCircle(x, y, r) draws a circle centred at (x, y) with radius r
+(graph coordinates), under the graph. fill=, lineWidth= and style= as
+for drawRect.
+
+### `drawLine(x1, y1, x2, y2, color=None, width=1.5, style='solid', arrow=False)`
+
+drawLine(x1, y1, x2, y2) draws a line on the display, under the
+graph, in graph coordinates (the same as node x and y; a node's
+centre is n.x + n.width/2, n.y + n.height/2). color= (default: the
+theme's text colour), width=, style="dashed" or "dotted", arrow=true
+puts an arrowhead at (x2, y2). Returns the drawing (.remove()).
+
+### `drawRect(x, y, w, h, color=None, fill=None, lineWidth=1.5, style='solid')`
+
+drawRect(x, y, w, h) draws a box with its top-left corner at (x, y)
+(graph coordinates), under the graph. fill= a colour fills it
+(e.g. "255,200,0,60" for a translucent one); color= is the outline
+(default: the theme's text colour) and lineWidth=0 leaves it out.
+
+### `drawText(x, y, text, color=None, size=14, anchor='middle')`
+
+drawText(x, y, "text") writes text on the display at (x, y) in graph
+coordinates, above the graph. size= is in graph units (it zooms with
+the graph); anchor= "start", "middle" or "end" (horizontal).
 
 ### `edgeLabelsAlong(on=True)`
 
@@ -4127,7 +4997,7 @@ Save the display as GIF (downloaded by the browser): an image of the current vie
 
 ### `exportJPG(filename='guess.jpg')`
 
-Save the display as JPG (downloaded by the browser).
+Save the display as JPG (downloaded by the browser, or added to the zip after startImages()).
 
 ### `exportPDF(filename='guess.pdf')`
 
@@ -4135,7 +5005,7 @@ Save the display as PDF (downloaded by the browser): an image of the current vie
 
 ### `exportPNG(filename='guess.png')`
 
-Save the display as PNG (downloaded by the browser).
+Save the display as PNG (downloaded by the browser, or added to the zip after startImages()).
 
 ### `exportPS(filename='guess.ps')`
 
@@ -4143,7 +5013,7 @@ Save the display as PS (downloaded by the browser): an image of the current view
 
 ### `exportSVG(filename='guess.svg')`
 
-Save the display as SVG (downloaded by the browser). Vector: the whole graph, not just the visible area.
+Save the display as SVG (downloaded by the browser, or added to the zip after startImages()). Vector: the whole graph, not just the visible area.
 
 ### `getConvexHulls()`
 
@@ -4153,10 +5023,16 @@ All hulls currently shown.
 
 The display background color, or None when it follows the light/dark theme.
 
-### `GradientLegend(start, end, lo=0, hi=1, ticks=None)`
+### `getDrawings()`
+
+The drawings on the display.
+
+### `GradientLegend(start, end=None, lo=0, hi=1, ticks=None)`
 
 A color ramp legend: GradientLegend(startColor, endColor, min, max[, tickEvery])
 shows the ramp from min to max, with a tick mark every tickEvery units.
+GradientLegend(field[, title]) shows a numeric field's current colours from
+its lowest to its highest value (after colorBy), and follows them.
 
 ### `hideOverlappingLabels(on=True)`
 
@@ -4188,9 +5064,10 @@ node, biggest nodes first, then re-places labels that still collide;
 line to labels it places away from their node. Both avoid other labels,
 nodes and edges.
 
-### `Legend()`
+### `Legend(field=None, title=None)`
 
 A legend box on the display. ``l = Legend(); l.add(bob, "managers")``.
+Legend(field[, title]) explains the current colours by a field, as legendFor does.
 
 Entries snapshot the look of the node, edge or hull at the time they are added.
 
@@ -4229,6 +5106,10 @@ Remove one hull.
 
 Remove the given hulls, or all hulls.
 
+### `removeDrawing(d)`
+
+Remove one drawing (from drawLine, drawText, drawRect or drawCircle).
+
 ### `select(seq=None)`
 
 select(seq) selects these nodes on the display (edges select their
@@ -4252,10 +5133,26 @@ setEdgeColorMode("mixed") draws each edge in the blend of its endpoints'
 colours; "source" / "target" use one endpoint's colour; "original" (the
 default) uses the edge's own color field. As in Gephi's preview.
 
+### `startImages(filename='images.zip')`
+
+Collect the images that exportPNG() and the other exports save into one
+zip file, downloaded by stopImages(), instead of downloading each:
+    startImages('frames.zip')
+    for t in range(1990, 2001):
+        showTime(t, 'year', 1)
+        exportPNG('year_%d.png' % t)
+    stopImages()
+Each export shows the display as it is at that point in the script.
+Repeated names get -2, -3, ... added.
+
 ### `startMovie(fps=30, filename='guess.webm')`
 
 Record the display (graph canvas) as a WebM video until stopMovie().
 Everything shown — layouts, morphs, edits, panning — is captured.
+
+### `stopImages()`
+
+Stop collecting images (see startImages) and download the zip.
 
 ### `stopMovie()`
 
@@ -4266,6 +5163,13 @@ Stop recording and download the video.
 ### `applyStyle(name)`
 
 applyStyle(name) runs a style's commands (one undo step).
+
+### `arrowheadBy(field)`
+
+arrowheadBy(field) gives each value of an edge field its own
+arrowhead (triangle, swept, open, diamond, circle, tee, then
+repeating), the most common value first; heads show on directed edges.
+One edge: e.arrowhead = "swept"; "none" leaves the head off.
 
 ### `defineStyle(name, commands)`
 
@@ -4289,6 +5193,15 @@ one entry per value (for categories, as after colorize), or a gradient
 from the lowest to the highest value (for numbers, as after colorBy).
 The legend follows the colours: run colorize or colorBy again and it
 updates (until you add or remove entries yourself).
+
+### `lineStyleBy(field)`
+
+lineStyleBy(field) gives each value of an edge field its own line
+style (solid, dashed, dotted, double, wave, taper, fuzzy, then
+repeating), the most common value first. One edge: e.linestyle = "dashed";
+the styles are solid, dashed, dotted, taper (narrows towards the
+target), wave, double, fuzzy, gradient (source colour to target colour)
+and flow (dashes moving towards the target).
 
 ### `polygon(sides)`
 
@@ -4351,10 +5264,13 @@ sharper turns). FDEB: stiffness (of each edge), compatibility (0..1, how
 alike edges must be to attract), cycles. Layouts and removeBundles()
 straighten them again.
 
-### `pieChart(fields, palette=None)`
+### `pieChart(fields, palette=None, labels=None)`
 
 pieChart([f1, f2, ...]) draws each node as a pie whose slices are the
-node's values of those numeric fields; palette=[colors] sets slice colours.
+node's values of those numeric fields. pieChart(f) with one text field
+reads each node's own list of values from it: v1.f = [12, 21, 12] gives
+v1 three slices (slice k has the same colour on every node).
+palette=[colors] sets slice colours; labels=[...] names the slices in the legend.
 
 ### `pieNeighbors(field)`
 
@@ -4729,6 +5645,21 @@ and IntAct's `miscore`; repeated evidence for a pair is merged into
 one edge with an `evidence` count (merge=false keeps one edge per
 line). An interactor paired with itself is a self-loop.
 
+### `makeFromPDB(source, cutoff=8.0, chain=None)`
+
+makeFromPDB("1ubq") or makeFromPDB("protein.pdb") turns a protein
+structure into a residue contact network: one node per amino acid
+(named like LYS48, with `residue`, `aa` (one letter), `seq`, `chain`,
+`structure` = helix, strand or coil from the file's HELIX/SHEET
+records, and its alpha-carbon's 3D position `x3`, `y3`, `z3`). Edges
+join residues next to each other along the chain (kind "chain") and
+residues whose alpha carbons are closer than `cutoff` angstroms
+(kind "contact", with `distance`). A four-character PDB id is
+downloaded from RCSB (files.rcsb.org); .pdb and .cif (mmCIF) files
+are read. chain="A" keeps one chain. Nodes are placed by the
+structure's two main directions, so the picture looks like the
+folded protein seen from its widest side.
+
 ### `makeFromPSIMI(filename, merge=True)`
 
 makeFromPSIMI("interactions.xml") opens molecular interactions in
@@ -4915,13 +5846,58 @@ recomputed after any command that changes the graph or the display.
 liveCharts(False) turns that off. (The Live button on a chart does it
 for one chart.)
 
-### `plotDistrib(field, sortField=None)`
+### `plotDistrib(field, sortField=None, log=False)`
 
 Each element's value of field, in rank order (or ordered by sortField).
+log=true draws the values on a log axis.
 
-### `plotHistogram(field, bins=10)`
+### `plotFrequency(field, log=False, cumulative=False, fit=False, kmin=None, shift=0)`
+
+plotFrequency(degree) plots, for each value of a numeric field, the
+fraction of nodes (or edges) with that value: the degree distribution
+p(k). log=true draws both axes on log scales (a power law is then a
+straight line; zeros are left out). cumulative=true plots the fraction
+with that value or more (the complementary cumulative distribution,
+smoother for heavy tails). Pointing at the chart highlights the
+elements with that value. fit=true adds a power law fitted by maximum
+likelihood (fitPowerLaw; kmin= fixes where it starts, shift= fits k + shift)
+as a dashed line.
+
+### `plotHistogram(field, bins=10, log=False, title=None)`
 
 Histogram of a numeric field's values in `bins` equal-width bins.
+log=true uses bins of equal width on a log scale (for heavy-tailed
+values such as degree; values <= 0 are left out) and a log count axis.
+A list of numbers works too (eigenvalues, delivery times):
+plotHistogram([...], 20, title="Eigenvalues").
+
+### `plotLine(data, title='Chart', xlabel='x', ylabel='y', log=False, logX=None, logY=None, dots=False, xrange=None, yrange=None, dashed=None, highlight=None, colors=None)`
+
+plotLine(points) draws a line chart of [(x, y), ...] pairs;
+plotLine({"infected": pts1, "recovered": pts2}) draws one line per
+series. log=true makes both axes logarithmic (or logX=/logY= one of
+them; points <= 0 are left out). dots=true marks each point. A chart
+with the same title replaces the last one, so calling it in a loop
+updates it. yrange=(lo, hi) fixes the y axis (e.g. (0.8, 1) for values
+near 1), xrange= the x axis. dashed=["fit", ...] draws those series
+dashed and without dots (for theory curves and fits), and
+highlight=["this network"] draws those series' points large, so a single
+point stands out among simulated ones. colors={"infected": red,
+"infected (theory)": red} sets series colours (a list goes in series
+order), e.g. to give a theory curve its data's colour.
+
+### `plotScatter(x, y=None, log=False, logX=None, logY=None, ends=False, title=None, xlabel=None, ylabel=None, line=None, xrange=None, yrange=None)`
+
+plotScatter(degree, betweenness) plots one dot per node (or edge) at
+(x, y), in its own colour; pointing at a dot highlights its element and
+clicking selects it. plotScatter(age, ends=true) plots, for every edge,
+the value of a node field at one end against the other (both ways round
+for undirected edges), which shows assortative mixing. Data works too:
+plotScatter([(x, y), ...]) or plotScatter({"name": points, ...}).
+log=true uses log scales on both axes (logX=/logY= for one; values <= 0
+are left out). line=[(x0, y0), (x1, y1), ...] adds a reference line,
+e.g. y = x. xrange=/yrange=(lo, hi) fix the axes. A chart with the same
+title replaces the last one.
 
 ### `plotSizes(field)`
 
@@ -4930,6 +5906,34 @@ Bar chart of how many elements share each value of field (largest first).
 ### `plotSizesPie(field)`
 
 Pie chart of how many elements share each value of field.
+
+### `showDendrogram(merges=None, nodes=None, heights=None, cut=None, field=None, title=None, paint=False)`
+
+showDendrogram() draws the tree of the last walktrapClusters() or
+fastGreedyClusters(); showDendrogram(merges, nodes) draws any
+hierarchy: merges is a list of pairs in merge order, where 0..n-1 are
+the nodes (leaves) and merge i makes cluster n + i (igraph's and
+scipy's convention). heights= gives each merge's height (default: its
+step). cut=k colours the k groups left when the last merges are undone,
+and field="name" also stores each node's group (0 = largest) in a node
+field. Pointing at a branch highlights its nodes; clicking selects them.
+
+### `showMatrix(order=None, weight=None, nodes=None, title=None, numbers=False, rows=None, cols=None)`
+
+showMatrix() draws the adjacency matrix: a row and a column per
+node, and a dark cell where an edge joins them (darker for a bigger
+`weight` field value, when given). order=field sorts the rows and
+columns by that field (a community, a group, a degree), with lines
+between groups, so blocks and nested patterns show; nodes= limits it
+to some nodes. Rows run from the sending node to the receiving one
+for directed edges. Parallel edges add up; an undirected self-edge
+counts 2 on the diagonal (1 if directed), as in the usual definition.
+numbers=true writes each cell's value, zeros included (for small
+matrices). rows= and cols= give two sets of nodes for a rectangular
+matrix, e.g. the incidence matrix of a two-mode network:
+showMatrix(rows=(kind == 'group'), cols=(kind == 'person'), numbers=true).
+Hovering a cell highlights its edge and two nodes; clicking selects
+them. Up to 600 rows and columns.
 
 ## Interface building (panels, widgets, timers, events)
 
@@ -4950,6 +5954,13 @@ Call fn() once after `seconds` seconds; returns a timer with .stop().
 
 Button(text, onClick=fn): calls fn() when clicked; .enabled turns it on/off.
 
+### `Chart(*a, **k)`
+
+Chart(lambda: plotHistogram(degree)) puts a chart inside a panel
+instead of the dock: the function makes the chart (any plot command, or
+an Altair chart) and runs again after every command, so the chart
+follows the graph. .refresh() redraws it now.
+
 ### `Checkbox(*a, **k)`
 
 Checkbox(text, checked=False, onChange=fn): calls fn(checked) when toggled.
@@ -4967,6 +5978,15 @@ fn(value) when the selection changes.
 
 Call fn() every `seconds` seconds; returns a timer with .stop().
 
+### `everyPaced(fn, steps=None, slow=0.9, fast=0.15, ramp=3)`
+
+everyPaced(step) calls step() again and again, slow-fast-slow, so a
+process can be followed on screen: `slow` seconds apart for the first
+`ramp` calls, speeding up to `fast`, and slowing down again over the
+last `ramp` calls. Give steps= when the number of calls is known, or
+let step() return how many calls are left (an int); returning False
+stops. Returns a timer with .stop().
+
 ### `Group(*a, **k)`
 
 Group(title, *widgets, collapsed=False): a titled box that can be folded.
@@ -4976,6 +5996,15 @@ Group(title, *widgets, collapsed=False): a titled box that can be folded.
 Label(text): a line of text in a panel; set .text to change it.
 Label(lambda: f"{len(sel)} selected") is live: the function runs again
 after every command and the label follows.
+
+### `linkTo(element, text=None)`
+
+linkTo(node) is Markdown for a small chip naming a node (or edge):
+in a Markdown panel, pointing at the chip highlights the element in the
+graph and clicking selects it. Good for listing a queue, a path or
+search results beside the graph:
+    Markdown(lambda: "Queue: " + " ".join(linkTo(n) for n in queue))
+text= replaces the shown name (e.g. "v3 (d=2)").
 
 ### `Markdown(*a, **k)`
 
@@ -5231,6 +6260,20 @@ sizeBy(freq, 1, 8)
 ```python
 curvedEdges()
 setEdgeColorMode('mixed')
+```
+
+**Line styles and arrowheads**
+
+```python
+lineStyleBy(directed)
+g.edges.arrowhead = 'swept'
+```
+
+**Tapered or arrowed directed edges**
+
+```python
+directedEdges('taper')
+directedEdges('arrow')
 ```
 
 **Readable labels**
@@ -6009,6 +7052,16 @@ gemLayout()
 stopMovie()
 ```
 
+**Save an image per step, as one zip**
+
+```python
+startImages('steps.zip')
+for k in [1, 2, 3]:
+    (degree >= k).color = red
+    exportPNG('step_%d.png' % k)
+stopImages()
+```
+
 **Arrange the window like an app**
 
 ```python
@@ -6039,6 +7092,7 @@ Built-in node fields:
 | `visible` | BOOLEAN | True |
 | `color` | VARCHAR | 'cornflowerblue' |
 | `strokecolor` | VARCHAR | None |
+| `strokewidth` | DOUBLE | 0.0 |
 | `labelcolor` | VARCHAR | None |
 | `fixed` | BOOLEAN | False |
 | `style` | INTEGER | 2 |
@@ -6071,6 +7125,9 @@ Built-in edge fields:
 | `label` | VARCHAR | None |
 | `labelvisible` | BOOLEAN | False |
 | `labelsize` | DOUBLE | 1.0 |
+| `linestyle` | VARCHAR | 'solid' |
+| `arrowhead` | VARCHAR | 'triangle' |
+| `arc` | DOUBLE | 0.0 |
 
 Computed node fields (calculated the first time they are used, by name or
 as `n.<field>`; `recompute()` after editing the graph): `pagerank`, `hub`, `authority`, `eigenvector`, `closeness`, `harmonic`, `eccentricity`, `clustering`, `triangles`, `coreness`, `strength`, `component`, `strongcomponent`, `betweenness`, `degrank`, `hits`, `rwbetweenness`, `knn`; edge field `betweenness`.
