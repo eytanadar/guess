@@ -558,3 +558,14 @@ test("colours print as swatches whose tooltip gives the rgb value and name", asy
   await expect.poll(() => page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size)).toBeGreaterThan(1);
   expect(await lastError(page)).toBeNull();
 });
+
+test("field values printed in a loop link to the elements with that value", async ({ page }) => {
+  await boot(page);
+  await run(page, "colorize(dept)");
+  await run(page, "for c in groupBy(dept)[:3]: print(c[0].dept, c[0].color)");
+  const out = page.locator(".cell").last();
+  await expect(out.locator(".swatch")).toHaveCount(3);
+  await out.locator(".grp", { hasText: "dept1" }).first().hover();
+  await expect.poll(() => page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size)).toBe(43);
+  expect(await lastError(page)).toBeNull();
+});

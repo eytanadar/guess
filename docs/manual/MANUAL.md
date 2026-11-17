@@ -2309,7 +2309,11 @@ built-in names don't.
   arrow between them for the edge.
   A field's value read off one element, `v4.dept`, prints as `'dept4'`
   linked to every node with that value: hover it to see them, right-click
-  it to act on `dept == 'dept4'`.
+  it to act on `dept == 'dept4'`. The same holds inside `print()` and
+  f-strings. In
+  `for c in groupBy(dept): print(c[0].dept, c[0].color)`, each printed
+  department is linked to its nodes, and each colour shows as a swatch
+  linked to the nodes with that colour.
   What commands print is linked the same way. Hover the nodes in each pair
   `predictLinks` lists, or "added 10 predicted edges" to see the edges
   `predictLinks(10, add=true)` made. The same goes for cut edges, cliques,

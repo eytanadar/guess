@@ -223,3 +223,27 @@ def test_label_cluster_and_cluster_info():
     assert not s.run('labelCluster(["nobody"], 1)')
     s.run("undo()")
     assert s.cluster_info("region")["exists"] is False
+
+
+def test_field_values_in_print_and_fstrings_are_linked():
+    s = _s()
+    s.run("colorize(dept)")
+    s.rec.clear()
+    assert s.run("for clust in groupBy(dept)[:2]: print(clust[0].dept, clust[0].color)")
+    lines = [o["segs"] for o in s.rec.of("out")]
+    assert len(lines) == 2
+    dept, sep, col = lines[0]
+    assert dept["g"] == ["dept0"] and dept["q"] == "dept == 'dept0'" and len(dept["x"]) == 28
+    assert sep == " " and "col" in col["g"][0] and col["q"].startswith("color == '")
+    s.rec.clear()
+    assert s.run("print(f'{v4.dept} has {v4.degree:>4} links')")
+    segs = s.rec.of("out")[0]["segs"]
+    assert segs[0]["g"] == ["dept3"] and segs[1] == " has   " and segs[2]["g"] == ["12"]
+    assert segs[3] == " links"
+    # f-strings kept in a variable stay linked; non-field attributes are plain
+    s.rec.clear()
+    assert s.run("t = f'{v4.dept}'\nprint(t)\nprint(v4.getNeighbors()[0].name, len(g.nodes))")
+    outs = s.rec.of("out")
+    assert outs[0]["segs"][0]["q"] == "dept == 'dept3'"
+    # print to a file, or with end=, is plain Python print
+    assert s.run("print(v4.dept, end='\\n')")

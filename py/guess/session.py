@@ -1007,14 +1007,18 @@ class Session:
         output (hover to highlight, click to select) like displayed values."""
         import builtins
         from .outformats import Formatted, render
+        from .runtime import FieldRead
         if (file is not None or end != "\n" or not isinstance(sep, str)
-                or not any(_linkable(a) or isinstance(a, Formatted) for a in args)):
+                or not any(_linkable(a) or isinstance(a, (Formatted, FieldRead)) for a in args)):
+            args = [a.value if isinstance(a, FieldRead) else a for a in args]
             return builtins.print(*args, sep=sep, end=end, file=file, flush=flush)
         segs = []
         for i, a in enumerate(args):
             if i:
                 segs.append(sep)
-            if isinstance(a, LinkedStr) and a.linked:
+            if isinstance(a, FieldRead):
+                segs.append(_value_seg(a.obj, a.name, a.value, text=str(a.value)) or str(a.value))
+            elif isinstance(a, LinkedStr) and a.linked:
                 segs.extend(a.segs)            # printed text: no quotes
             elif isinstance(a, Formatted):
                 segs.append(render(self, a.value, fmt=a.fmt))
@@ -1711,7 +1715,7 @@ def segment(value, depth=0, limit=MAX_ITEMS):
     return _safe_repr(value)
 
 
-def _value_seg(obj, name, value):
+def _value_seg(obj, name, value, text=None):
     """The segment for a field value read off one element: the value, linked to
     all the elements of its kind sharing it (None if not a plain field value)."""
     from .model import NODE, EDGE
@@ -1736,7 +1740,10 @@ def _value_seg(obj, name, value):
     from .colors import Color
     q = f"{qname} == {str(value)!r}" if isinstance(value, Color) else f"{qname} == {value!r}"
     k = "n" if kind == NODE else "e"
-    shown = _color_seg(value, hint=name.endswith("color")) or _safe_repr(value)
+    shown = _color_seg(value, hint=name.endswith("color"))
+    if shown is not None and text is not None:
+        shown["t"] = text
+    shown = shown or (_safe_repr(value) if text is None else text)
     return {"g": [shown], "a": q, "q": q, "x": [[k, x._id] for x in members[:MAX_EXTRA]]}
 
 
@@ -1885,6 +1892,10 @@ def fstring(*parts):
                 segs.append(p)
             continue
         v, conv, spec = p
+        from .runtime import FieldRead
+        read = v if isinstance(v, FieldRead) else None
+        if read is not None:
+            v = read.value
         if conv == 114:
             t = repr(v)
         elif conv == 115:
@@ -1899,7 +1910,20 @@ def fstring(*parts):
             t = format(v, spec) if spec else format(v)
         texts.append(t)
         plain = conv == -1 and not spec
-        if plain and isinstance(v, (Node, Edge)):
+        core = t.strip()
+        fseg = (_value_seg(read.obj, read.name, v, text=core)
+                if read is not None and conv in (-1, 115) and core else None)
+        if fseg is not None:
+            # padding from a format spec ({n.degree:>3}) stays outside the link
+            lead, trail = t[:len(t) - len(t.lstrip())], t[len(t.rstrip()):]
+            for piece in (lead, fseg, trail):
+                if not piece:
+                    continue
+                if isinstance(piece, str) and segs and isinstance(segs[-1], str):
+                    segs[-1] += piece
+                else:
+                    segs.append(piece)
+        elif plain and isinstance(v, (Node, Edge)):
             segs.append({"n": v._id, "t": t} if isinstance(v, Node) else edge_seg(v, t))
         elif plain and isinstance(v, LinkedStr) and v.linked:
             segs.extend(v.segs)

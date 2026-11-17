@@ -382,12 +382,27 @@ class _Transformer(ast.NodeTransformer):
         return node
 
     # ---- f-strings ------------------------------------------------------------
+    def _field_read(self, expr):
+        """``n.dept`` as an argument of print() or in an f-string: the value,
+        remembering the element and field it was read from, so the printed
+        value links to every element sharing it."""
+        if isinstance(expr, ast.Attribute) and isinstance(expr.ctx, ast.Load) and not expr.attr.startswith("_"):
+            return ast.copy_location(_call("__gfield__", self.visit(expr.value), ast.Constant(expr.attr)), expr)
+        return self.visit(expr)
+
+    def visit_Call(self, node):
+        if isinstance(node.func, ast.Name) and node.func.id == "print":
+            node.args = [self._field_read(a) for a in node.args]
+            node.keywords = [self.visit(k) for k in node.keywords]
+            return node
+        return self.generic_visit(node)
+
     def visit_JoinedStr(self, node):
         parts = []
         for v in node.values:
             if isinstance(v, ast.FormattedValue):
                 spec = self.visit(v.format_spec) if v.format_spec is not None else ast.Constant(None)
-                parts.append(ast.Tuple(elts=[self.visit(v.value), ast.Constant(v.conversion), spec],
+                parts.append(ast.Tuple(elts=[self._field_read(v.value), ast.Constant(v.conversion), spec],
                                        ctx=ast.Load()))
             else:
                 parts.append(v)

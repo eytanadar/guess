@@ -190,6 +190,33 @@ def gisub(a, b):
     return a
 
 
+class FieldRead:
+    """A field value read off a node or edge inside print() or an f-string
+    (print(n.dept)): prints as the value, and links to the elements sharing it."""
+    __slots__ = ("obj", "name", "value")
+
+    def __init__(self, obj, name, value):
+        self.obj, self.name, self.value = obj, name, value
+
+    def __str__(self):
+        return str(self.value)
+
+    def __repr__(self):
+        return repr(self.value)
+
+    def __format__(self, spec):
+        return format(self.value, spec)
+
+
+def gfield(o, name):
+    """``n.dept`` inside print() or an f-string: a FieldRead when it is a
+    plain field value of one node or edge, otherwise just the value."""
+    v = ggetattr(o, name)
+    if isinstance(o, (Node, Edge)) and isinstance(v, (str, int, float)) and not isinstance(v, bool):
+        return FieldRead(o, name, v)
+    return v
+
+
 def autocall(x):
     if callable(x) and getattr(x, "_guess_command", False):
         return x()
@@ -209,4 +236,5 @@ HELPERS = {
     "__gsub__": gsub,
     "__gisub__": gisub,
     "__autocall__": autocall,
+    "__gfield__": gfield,
 }
