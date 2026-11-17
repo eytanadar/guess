@@ -86,7 +86,7 @@ def build(view, currency):
     look()
 
 
-SHAPE = {"metabolite": 2, "currency": 2, "reaction": 1, "enzyme": 11}
+SHAPE = {"metabolite": "circle", "currency": "circle", "reaction": "square", "enzyme": "triangle"}
 COLOUR = {"metabolite": "90,150,220", "currency": "240,150,40", "reaction": "120,120,120", "enzyme": "60,170,110"}
 
 

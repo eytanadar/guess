@@ -226,7 +226,7 @@ def bip_build(v=None):
     load(B)
     for v_ in g.nodes:
         if v_.side == "group":
-            v_.color, v_.width, v_.height, v_.style = "250,190,70", 26, 26, 1
+            v_.color, v_.width, v_.height, v_.style = "250,190,70", 26, 26, "square"
             v_.strokecolor, v_.strokewidth = "120,80,0", 2
             v_.label, v_.labelvisible = "G" + v_.name[2:], true
         else:

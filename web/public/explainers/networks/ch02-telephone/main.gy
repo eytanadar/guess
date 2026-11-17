@@ -34,7 +34,7 @@ E = {frozenset((e.node1.name, e.node2.name)): e for e in g.edges}
 load = {k: 0 for k in E}
 SUBS = sorted(v for v in G if v.startswith("S"))
 SIZE = {"long-distance office": 30, "local exchange": 18, "subscriber": 12}
-SHAPE = {"long-distance office": 1, "local exchange": 3, "subscriber": 2}
+SHAPE = {"long-distance office": "square", "local exchange": "rounded", "subscriber": "circle"}
 for n in g.nodes:
     n.width = n.height = SIZE[n.kind]
     n.style = SHAPE[n.kind]

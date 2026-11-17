@@ -60,10 +60,10 @@ def dress():
     for n in g.nodes:
         n.labelvisible = true
         if n.kind == "page":
-            n.color, n.style, n.width, n.height = "240,240,235", 1, 16, 20
+            n.color, n.style, n.width, n.height = "240,240,235", "square", 16, 20
             n.strokecolor = "90,90,90"
         else:
-            n.color, n.style, n.width, n.height = "70,120,190", 2, 9, 9
+            n.color, n.style, n.width, n.height = "70,120,190", "circle", 9, 9
     g.edges.color = "150,150,150,45"
     g.edges.width = 0.8
 
