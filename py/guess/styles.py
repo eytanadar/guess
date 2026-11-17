@@ -209,27 +209,38 @@ def install(session):
 
     # ---- data table ---------------------------------------------------------------
     @cmd
-    def table(seq=None, *more, sort=None, reverse=None):
+    def table(seq=None, *more, sort=None, descending=None):
         """table() opens the data table of all nodes; table(seq) shows just those
-        nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)).
-        After >> it is an output format: x >> table prints x as a table in the
-        console, x >> table(degree, dept, sort=degree) with those columns."""
-        if isinstance(seq, (Field, str)) or more or sort is not None or reverse is not None:
-            fields = [seq, *more] if seq is not None else []
+        nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)), and
+        table(seq, sort=degree) in that order (largest first; descending=False
+        for smallest first). After >> it is an output format: x >> table prints
+        x as a table in the console, x >> table(degree, dept, sort=degree) with
+        those columns."""
+        if seq is None or isinstance(seq, (Field, str)):
+            fields = [seq, *more] if seq is not None else list(more)
             opts = {"sort": sort} if sort is not None else {}
-            if reverse is not None:
-                opts["reverse"] = reverse
+            if descending is not None:
+                opts["descending"] = descending
+            if seq is None and not fields and not opts:
+                session.emit({"type": "table", "kind": "n", "ids": None})
+                return
             return session.out_formats["table"](*fields, **opts)
-        if seq is None:
-            session.emit({"type": "table", "kind": "n", "ids": None})
-            return
+        if more:
+            raise GuessError("table(seq) takes one set of nodes or edges; for columns use "
+                             "seq >> table(field, ...)")
         items = list(elements_of(seq)) if not isinstance(seq, (Node, Edge)) else [seq]
+        if sort is not None:
+            from .outformats import _field_name, _read, _sort_key
+            name = _field_name(sort)
+            items = sorted(items, key=lambda x: _sort_key(_read(x, name)),
+                           reverse=True if descending is None else bool(descending))
         nodes = [x._id for x in items if isinstance(x, Node)]
         edges = [x._id for x in items if isinstance(x, Edge)]
+        whole = sort is None
         if seq is g.edges or (edges and not nodes):
-            session.emit({"type": "table", "kind": "e", "ids": None if _is_all(seq, g, EDGE) else edges})
+            session.emit({"type": "table", "kind": "e", "ids": None if whole and _is_all(seq, g, EDGE) else edges})
         else:
-            session.emit({"type": "table", "kind": "n", "ids": None if _is_all(seq, g, NODE) else nodes})
+            session.emit({"type": "table", "kind": "n", "ids": None if whole and _is_all(seq, g, NODE) else nodes})
 
     table._guess_format = "table"
 

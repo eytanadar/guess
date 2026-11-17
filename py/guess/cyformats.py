@@ -936,8 +936,9 @@ def install(session):
         [target …]`, or a lone node name. If the file has tabs, fields are
         tab-separated and names may contain spaces; otherwise names are
         separated by spaces. The type goes in the edge field `interaction`
-        (colorize(interaction) shows it). directed=true makes every edge run
-        from source to target."""
+        (colorize(interaction) shows it). Edges are undirected by default
+        (directed=false); directed=true makes every edge run from source to
+        target."""
         text = text_of(filename)
         g = session.graph
         g.clear()
@@ -994,7 +995,8 @@ def install(session):
         format: attributes (typed as declared), node positions, and the
         default and per-node colours, sizes and shapes. Nodes are named by
         their `name` (a name two nodes share gets the id added). CX edges have
-        a direction, as in Cytoscape; directed=false loads them undirected."""
+        a direction, as in Cytoscape, so they load directed by default
+        (directed=true); directed=false loads them undirected."""
         text = text_of(filename)
         g = session.graph
         g.clear()

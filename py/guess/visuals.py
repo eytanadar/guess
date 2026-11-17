@@ -28,8 +28,8 @@ def _hull_shape(shape):
 class ConvexHull:
     """A shaded shape around a group of nodes: its convex hull (the default),
     a box or an ellipse, either upright or turned to fit the group (rotate).
-    Returned by createConvexHull and encircle; .color, .shape, .rotate and
-    .padding can be changed."""
+    Returned by encircle and encircleBy; .color, .shape, .rotate and
+    .padding can be changed, and removeConvexHull(h) takes it away."""
 
     def __init__(self, view, hid, nodes, color, shape="hull", rotate=False, padding=6):
         object.__setattr__(self, "_view", view)
@@ -184,11 +184,13 @@ class Legend:
 
 
 class GradientLegend(Legend):
-    """A color ramp legend: GradientLegend(startColor, endColor, min, max[, tickEvery])
-    shows the ramp from min to max, with a tick mark every tickEvery units;
-    GradientLegend("viridis", min, max) shows a colour scale (see colorScales).
-    GradientLegend(field[, title]) shows a numeric field's current colours from
-    its lowest to its highest value (after colorBy), and follows them."""
+    """A color ramp legend: GradientLegend(start, end, lo, hi[, ticks]) shows
+    the ramp from colour start at value lo to colour end at value hi, with a
+    tick mark every `ticks` units; GradientLegend(palette="viridis", lo=0,
+    hi=10) shows a colour scale (see colorScales; GradientLegend("viridis",
+    0, 10) is the same). GradientLegend(field[, title]) shows a numeric
+    field's current colours from its lowest to its highest value (after
+    colorBy), and follows them."""
 
     def __init__(self, view, lid, start, end, lo=0, hi=1, ticks=None):
         super().__init__(view, lid)
@@ -383,34 +385,31 @@ def install(session):
             raise GuessError("a shape around a group needs nodes or edges")
         return nodes
 
-    def createConvexHull(seq, color="200,200,255,90", shape="hull", rotate=False, padding=6):
-        """createConvexHull(seq) shades the convex hull around the nodes in seq
-        (edges contribute their endpoints). shape="box" or "ellipse" draws a
-        box or an ellipse around them instead; rotate=true turns the box or
-        ellipse to fit the group (the smallest box at any angle) rather than
-        keeping it upright; padding= is the room left around the nodes.
-        encircle(seq) is the same with an ellipse."""
+    def _make_hull(seq, color, shape, rotate, padding):
         h = ConvexHull(view, view.next_id(), _hull_nodes(seq), color, shape, rotate, padding)
         view.hulls[h._id] = h
         view.changed()
         return h
 
     def encircle(seq, shape="ellipse", color=None, rotate=True, padding=10):
-        """encircle(seq) draws a shaded ellipse around a group of nodes, turned
-        to fit it; encircle(seq, "box") a box, encircle(seq, "hull") the
-        convex hull. rotate=false keeps the shape upright. Without a color,
-        each group gets its own (light) colour. Returns the shape: .color,
-        .shape, .rotate and .padding change it; removeConvexHull removes it."""
+        """encircle(seq) draws a shaded ellipse around a group of nodes (edges
+        contribute their endpoints), turned to fit it; encircle(seq, "box") a
+        box, encircle(seq, "hull") the convex hull. rotate=false keeps a box
+        or ellipse upright; padding= is the room left around the nodes.
+        Without a color, each group gets its own (light) colour. Returns the
+        shape: .color, .shape, .rotate and .padding change it;
+        removeConvexHull(shape) removes it and removeConvexHulls() removes
+        them all."""
         if color is None:
             pal = colors.distinctColors(12)
             color = f"{pal[len(view.hulls) % len(pal)]},55"
-        return createConvexHull(seq, color, shape, rotate, padding)
+        return _make_hull(seq, color, shape, rotate, padding)
 
     def encircleBy(field, shape="ellipse", rotate=True, padding=10, smallest=2):
         """encircleBy(field) draws one shape around each group of nodes that
         share a value of a node field (with at least `smallest` members), each
         in its own colour: encircleBy(louvain_class), encircleBy(dept, "box").
-        Returns the shapes."""
+        Returns the shapes; removeConvexHulls() removes them."""
         from .model import NODE, as_field, group_by
         f = as_field(session.graph, field, "encircleBy")
         if f.kind != NODE:
@@ -418,16 +417,17 @@ def install(session):
         groups = [grp for grp in sorted(group_by(f.elements(), f), key=len, reverse=True)
                   if len(grp) >= int(smallest) and f.get(grp[0]) not in (None, "")]
         pal = colors.distinctColors(max(1, min(len(groups), 24)))
-        out = [createConvexHull(grp, f"{pal[i % len(pal)]},55", shape, rotate, padding) for i, grp in enumerate(groups)]
+        out = [_make_hull(grp, f"{pal[i % len(pal)]},55", shape, rotate, padding) for i, grp in enumerate(groups)]
         return out
 
     def removeConvexHull(hull):
-        """Remove one hull."""
+        """removeConvexHull(shape) removes one shape drawn by encircle."""
         view.hulls.pop(hull._id, None)
         view.changed()
 
     def removeConvexHulls(seq=None):
-        """Remove the given hulls, or all hulls."""
+        """removeConvexHulls() removes every shape drawn by encircle and
+        encircleBy; removeConvexHulls(shapes) removes the given ones."""
         if seq is None:
             view.hulls.clear()
         else:
@@ -436,7 +436,8 @@ def install(session):
         view.changed()
 
     def getConvexHulls():
-        """All hulls currently shown."""
+        """getConvexHulls(): every shape drawn by encircle and encircleBy that
+        is currently shown."""
         return list(view.hulls.values())
 
     def _is_field(x):
@@ -457,30 +458,47 @@ def install(session):
     make_legend.__name__ = "Legend"
     make_legend.__doc__ = Legend.__doc__
 
-    def make_gradient(start, end=None, lo=0, hi=1, ticks=None):
+    def make_gradient(start=None, end=None, lo=0, hi=1, ticks=None, palette=None):
+        if palette is not None:
+            if start is not None:
+                raise GuessError("GradientLegend takes start and end colours or palette=, not both")
+            if end is not None:             # GradientLegend(palette="viridis", ...) given lo, hi by keyword
+                raise GuessError("GradientLegend(palette=...) takes lo= and hi=, not end=")
+            from . import scales
+            sc = scales.get(palette)
+            return _scale_legend(sc, lo, hi, ticks)
+        if start is None:
+            raise TypeError("GradientLegend(start, end, lo, hi), GradientLegend(palette=..., lo=, hi=) "
+                            "or GradientLegend(field)")
         if _is_field(start):
             # GradientLegend(degree[, title]): the field's colours from its lowest to highest value
             return session._field_legend(start, end, "gradient", "GradientLegend")
         from . import scales
         sc = scales.find(start)
         if sc is not None and not sc.categorical:
-            # GradientLegend("viridis", min, max[, tickEvery])
+            # GradientLegend("viridis", lo, hi[, ticks]): the positions shift by one
             lo_, hi_ = (0 if end is None else end), (1 if end is None else lo)
             ticks = hi if hi != 1 else ticks
-            stops = [sc.at(i / 16) for i in range(17)]
-            lg = GradientLegend(view, view.next_id(), stops[0], stops[-1], lo_, hi_, ticks)
-            lg._ramp["stops"] = [[round(i / 16, 4), colors.to_rgba_int(c)[0]] for i, c in enumerate(stops)]
-            lg._ramp["title"] = sc.label
-            view.legends[lg._id] = lg
-            view.changed()
-            return lg
+            return _scale_legend(sc, lo_, hi_, ticks)
         if end is None:
-            raise GuessError("GradientLegend(startColor, endColor, min, max), GradientLegend(scale, min, max) "
+            raise GuessError("GradientLegend(start, end, lo, hi), GradientLegend(palette=..., lo=, hi=) "
                              "or GradientLegend(field)")
         lg = GradientLegend(view, view.next_id(), start, end, lo, hi, ticks)
         view.legends[lg._id] = lg
         view.changed()
         return lg
+    def _scale_legend(sc, lo, hi, ticks):
+        if sc.categorical:
+            raise GuessError(f"{sc.name} is a categorical scale; a gradient legend needs a sequential "
+                             "or diverging one")
+        stops = [sc.at(i / 16) for i in range(17)]
+        lg = GradientLegend(view, view.next_id(), stops[0], stops[-1], lo, hi, ticks)
+        lg._ramp["stops"] = [[round(i / 16, 4), colors.to_rgba_int(c)[0]] for i, c in enumerate(stops)]
+        lg._ramp["title"] = sc.label
+        view.legends[lg._id] = lg
+        view.changed()
+        return lg
+
     make_gradient.__name__ = "GradientLegend"
     make_gradient.__doc__ = GradientLegend.__doc__
 
@@ -832,7 +850,7 @@ def install(session):
                          "of the current view inside the file. For vector output use exportSVG.")
         reg(f.__name__, f)
 
-    for fn in (createConvexHull, encircle, encircleBy, removeConvexHull, removeConvexHulls, getConvexHulls,
+    for fn in (encircle, encircleBy, removeConvexHull, removeConvexHulls, getConvexHulls,
                setDisplayBackground, getDisplayBackground, setBackgroundImage,
                removeBackgroundImage, overrideArrowLength, overrideArrowWidth, curvedEdges,
                setEdgeColorMode, directedEdges, labelOutlines, hideOverlappingLabels, edgeLabelsAlong, raiseChanged, hoverFields,

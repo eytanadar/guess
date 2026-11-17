@@ -42,14 +42,15 @@ def install(session):
         raise GuessError(f"{what} needs a node field, e.g. {what}(name)")
 
     @cmd
-    def findDuplicates(field=None, threshold=0.85, among=None, top=50, show=True):
+    def findDuplicates(field=None, threshold=0.85, among=None, count=50, show=True):
         """findDuplicates(name) lists pairs of nodes whose values of a text
         field look like the same entity: compared after normalising (case,
         accents, punctuation, word order, company suffixes and titles like
         Ltd, Inc, Mr), scored 0..1 by string similarity, best first, at least
         `threshold`. among=nodes restricts the search (e.g. one kind of
-        entity). Default field: label. Returns (node, node, score) for review
-        and mergeNodes; it never merges anything itself."""
+        entity). Default field: label. Prints the first `count` pairs and
+        returns them all as (node, node, score) for review and mergeNodes; it
+        never merges anything itself."""
         gr = g()
         f = node_field(field, "findDuplicates") if field is not None else gr.node_schema["label"]
         nodes = [x for x in (elements_of(among) if among is not None else gr._nodes_list()) if isinstance(x, Node)]
@@ -81,7 +82,7 @@ def install(session):
         if show:
             session.say((f"{len(out)} likely duplicate pairs", [x for a, b, _s in out for x in (a, b)]),
                         f" (score >= {threshold})")
-            for a, b, sc in out[:int(top)]:
+            for a, b, sc in out[:int(count)]:
                 session.say(f"  {sc:.2f}  ", (f"{f.get(a)!s}", [a]), "  ~  ", (f"{f.get(b)!s}", [b]))
         return out
 
@@ -183,12 +184,12 @@ def install(session):
         return [sorted(v, key=lambda n: (n is not k, n._id)) for k, v in groups.items() if len(v) > 1]
 
     @cmd
-    def groupStats(field, top=12, show=True):
+    def groupStats(field, count=12, show=True):
         """groupStats(louvain_class) profiles each group of nodes sharing a
         value of a field: size, internal edges, density (internal edges /
         possible pairs), boundary edges (to the rest), conductance (boundary
         / all edges touching the group: low = well separated), and the
-        group's most connected member. Prints the largest `top` groups and
+        group's most connected member. Prints the largest `count` groups and
         returns a row per group, largest first; a dense, isolated group of
         entities that should be unrelated is a classic red flag."""
         gr = g()
@@ -223,14 +224,14 @@ def install(session):
         rows.sort(key=lambda r: (-r["size"], str(r["group"])))
         if show:
             print(f"{'group':>14}  {'size':>5}  {'inside':>6}  {'density':>7}  {'boundary':>8}  {'conduct.':>8}  hub")
-            for r in rows[:int(top)]:
+            for r in rows[:int(count)]:
                 gname = str(r["group"])[:14]
                 session.say(" " * (14 - len(gname)), (gname, r["members"]),
                             f"  {r['size']:>5}  {r['internal']:>6}  {r['density']:7.2f}  "
                             f"{r['boundary']:>8}  {r['conductance']:8.2f}  ",
                             (str(r["hub"].label or r["hub"].name), [r["hub"]]))
-            if len(rows) > top:
-                print(f"  … {len(rows) - top} more groups")
+            if len(rows) > count:
+                print(f"  … {len(rows) - count} more groups")
         return rows
 
     @cmd

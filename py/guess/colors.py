@@ -136,10 +136,15 @@ def averageColor(c1, c2):
     return ",".join(str(int((x + y) / 2)) for x, y in zip(a, b))
 
 
-def generateColors(*args):
-    """generateColors(start, end, n) or generateColors(start, middle, end, n):
-    n colours along a gradient. generateColors("viridis", n): n colours from a
-    colour scale (see colorScales)."""
+def generateColors(*args, palette=None, count=None):
+    """generateColors(start, end, count) or generateColors(start, middle, end,
+    count): count colours along a gradient. generateColors(palette="viridis",
+    count=8) (or generateColors("viridis", 8)): count colours from a colour
+    scale (see colorScales)."""
+    if palette is not None:
+        args = (palette,) + args
+    if count is not None:
+        args = args + (count,)
     if len(args) == 2:
         from . import scales
         return scales.get(args[0]).colors(int(args[1]))

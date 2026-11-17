@@ -176,7 +176,8 @@ def install(session):
         """makeFromSPARQL(query) builds a graph from a SPARQL query whose rows bind
         ?source and ?target (optionally ?sourceLabel / ?targetLabel, used as
         labels; any other variables become edge fields). E.g. a Wikidata query
-        for "influenced by" links."""
+        for "influenced by" links. Edges run from ?source to ?target
+        (directed=true, the default); directed=false makes them undirected."""
         rows = sparql(query, endpoint)
         if rows and not {"source", "target"} <= set(rows[0]):
             raise GuessError("the query must bind ?source and ?target")

@@ -258,12 +258,12 @@ def install(session):
         session.chart_out({"type": "vega", "id": cid, "title": str(title), "spec": spec, "cell": cell,
                       "fields": {"n": list(g.node_schema), "e": list(g.edge_schema)}})
 
-    def wordCloud(field, top=80, stopwords=None, minLength=3):
+    def wordCloud(field, count=80, stopwords=None, minLength=3):
         """wordCloud(field) shows the most frequent words in a text field as a
         word cloud in the dock (as Gephi's Word Cloud plugin), sized by how
         many times each occurs. Hovering a word lights up the nodes (or edges)
         whose text contains it; clicking selects them. Common English words
-        are left out; stopwords=[...] adds more, top= sets how many words,
+        are left out; stopwords=[...] adds more, count= sets how many words,
         minLength= the shortest word kept."""
         import re
         from .builders import STOPWORDS
@@ -283,7 +283,7 @@ def install(session):
                 where.setdefault(w, []).append(x._id)
         if not counts:
             raise GuessError(f"field '{f.name}' has no words to show")
-        words = sorted(counts, key=lambda w: (-counts[w], w))[:max(1, int(top))]
+        words = sorted(counts, key=lambda w: (-counts[w], w))[:max(1, int(count))]
         key = "_nodes" if f.kind == NODE else "_edges"
         rows = [{"text": w, "count": counts[w], "angle": (0, 0, -30, 0, 30)[i % 5],
                  key: sorted(set(where[w]))[:5000]} for i, w in enumerate(words)]

@@ -576,21 +576,21 @@ def install(session):
         return _result(ranked, "community", f"{len(ranked)} overlapping communities")
 
     @cmd
-    def linkCommunities(threshold=None, minEdges=2):
+    def linkCommunities(threshold=None, smallest=2):
         """linkCommunities() finds overlapping communities by clustering edges
         (Ahn, Bagrow & Lehmann 2010): two edges sharing a node are similar when
         their other ends have similar neighbourhoods; edges are merged by
         single linkage and the dendrogram is cut where partition density is
         highest (or at similarity `threshold`, 0-1). Each edge gets link_class;
         a node belongs to the communities of its edges (link_classes "0;3",
-        link_count). Communities of fewer than minEdges edges are dropped
+        link_count). Communities of fewer than `smallest` edges are dropped
         (link_class -1). Returns node communities, largest first."""
         g = session.graph
         ec, cut, D = link_communities(g, None if threshold is None else float(threshold))
         by = defaultdict(list)
         for e, c in ec.items():
             by[c].append(e)
-        kept = sorted((es for es in by.values() if len(es) >= int(minEdges)),
+        kept = sorted((es for es in by.values() if len(es) >= int(smallest)),
                       key=lambda es: (-len(es), min(e._id for e in es)))
         fe = g.addEdgeField("link_class", INT, -1)
         eclass = {}
@@ -637,11 +637,12 @@ def install(session):
         return out
 
     @cmd
-    def showOverlaps(communities, hulls=False, none="lightgray"):
+    def showOverlaps(communities, hulls=False, unassigned="lightgray", palette=None):
         """showOverlaps(communities) shows overlapping communities: each gets
-        its own colour, a node in one takes that colour, a node in several is
-        drawn as a pie with a slice per community, and nodes in none are
-        lightgray (none=...). communities: the result of
+        its own colour (palette= a colour scale or a list of colours to use
+        instead), a node in one takes that colour, a node in several is drawn
+        as a pie with a slice per community, and nodes in none are lightgray
+        (unassigned= another colour). communities: the result of
         cliquePercolationClusters()/linkCommunities(), any set of sets, or a
         field listing them (cpm_classes, link_classes, or a class field).
         hulls=True also shades each community. removePies() goes back to
@@ -650,21 +651,28 @@ def install(session):
         groups = memberships(communities)
         if not groups:
             raise GuessError("no communities to show")
-        cols = colors.distinctColors(len(groups))
+        if palette is None:
+            cols = colors.distinctColors(len(groups))
+        elif isinstance(palette, (list, tuple)):
+            cols = [colors.normalize(c) for c in palette]
+            cols = [cols[i % len(cols)] for i in range(len(groups))]
+        else:
+            from . import scales
+            cols = scales.get(palette).colors(len(groups))
         member_of = defaultdict(list)
         for k, (_, nodes) in enumerate(groups):
             for n in nodes:
                 member_of[n].append(k)
         for n in g._nodes_list():
             ks = member_of.get(n)
-            n.color = cols[ks[0]] if ks else none
+            n.color = cols[ks[0]] if ks else unassigned
         view.pie = {"mode": "members", "labels": [lab for lab, _ in groups], "colors": cols,
                     "members": {n._name: ks for n, ks in member_of.items() if len(ks) > 1}}
         if hulls:
-            make = session.ns.get("createConvexHull")
+            make = session.ns.get("encircle")
             for (_, nodes), c in zip(groups, cols):
                 if len(nodes) >= 3 and make is not None:
-                    make(GSet(nodes), c + ",70")
+                    make(GSet(nodes), "hull", f"{c},70")
         _pie_legend()
         overlap = sum(1 for ks in member_of.values() if len(ks) > 1)
         print(f"{len(groups)} communities; {overlap} nodes in several (pies), "

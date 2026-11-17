@@ -85,7 +85,7 @@ def install(session):
         return [x for x in elements_of(seq) if isinstance(x, Node)]
 
     @cmd
-    def enrichment(seq, sets, background=None, top=10, minSize=2, show=True):
+    def enrichment(seq, sets, background=None, count=10, smallest=2, show=True):
         """enrichment(nodes, sets) tests which sets (from readSets, or any
         {name: [node names]}) are over-represented among the nodes, against
         the background (default: every node in the graph that is in at least
@@ -93,7 +93,7 @@ def install(session):
         size K among the N background nodes, the fold enrichment
         (k/n)/(K/N), the hypergeometric p-value and the Benjamini-Hochberg
         q-value (the false discovery rate over all sets tested). Sets with
-        fewer than minSize background members are skipped. Prints the `top`
+        fewer than smallest background members are skipped. Prints the `count`
         rows by p-value and returns all rows as dicts, best first."""
         gr = g()
 
@@ -125,7 +125,7 @@ def install(session):
         for s, ms in resolved.items():
             ms = ms & bg
             K = len(ms)
-            if K < minSize:
+            if K < smallest:
                 continue
             hit = ms & query
             k = len(hit)
@@ -134,17 +134,17 @@ def install(session):
             rows.append({"set": s, "k": k, "n": n, "K": K, "N": N, "fold": (k / n) / (K / N),
                          "p": hypergeom_sf(k, N, K, n),
                          "members": GSet(sorted(hit, key=key), annotation=str(s))})
-        tested = sum(1 for ms in resolved.values() if len(ms & bg) >= minSize)
+        tested = sum(1 for ms in resolved.values() if len(ms & bg) >= smallest)
         # BH over every set tested (sets with no overlap have p = 1)
         qs = bh([r["p"] for r in rows] + [1.0] * (tested - len(rows)))
         for r, q in zip(rows, qs):
             r["q"] = q
         rows.sort(key=lambda r: (r["p"], -r["fold"]))
         if show:
-            w = min(46, max([len(str(r["set"])) for r in rows[:top]] + [3]))
+            w = min(46, max([len(str(r["set"])) for r in rows[:count]] + [3]))
             print(f"{n} of {N} annotated nodes; {tested} sets tested")
             print(f"{'set':<{w}}  {'k/n':>7}  {'K/N':>8}  {'fold':>5}  {'p':>8}  {'q':>8}")
-            for r in rows[:top]:
+            for r in rows[:count]:
                 name = str(r["set"])[:w]                  # the set's name links to its members in the selection
                 session.say((name, r["members"]), " " * (w - len(name)),
                             f"  {r['k']:>3}/{r['n']:<3}  {r['K']:>4}/{r['N']:<3}  "

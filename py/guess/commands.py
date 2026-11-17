@@ -84,8 +84,9 @@ def install(session):
         an adjacency matrix or an adjacency list. makeFromCSV("edges.csv",
         "nodes.csv") also reads a node table (Id[, Label, ...]). Opening just a node
         table adds its columns to the current graph's nodes (matched by Id).
-        Other columns become fields; directed=true makes edges without a Type
-        directed.
+        Other columns become fields. Edges are undirected by default (directed=false)
+        unless a Type column says otherwise; directed=true makes edges without a
+        Type directed.
 
         As in Cytoscape, any columns can hold the edges: source= and target=
         name them (by header, or number from 0), interaction= the type of
@@ -397,9 +398,10 @@ def install(session):
         return GSet((e for e in g._edges_list() if id(e) not in ids), "edge inverse")
 
     @cmd
-    def distance(node1, node2):
-        """Euclidean distance between two nodes' positions."""
-        return math.hypot(node1.x - node2.x, node1.y - node2.y)
+    def distance(source, target):
+        """distance(source, target): the straight-line distance between two
+        nodes' positions on screen."""
+        return math.hypot(source.x - target.x, source.y - target.y)
 
     @cmd
     def copyNode(template, name, **extra):
@@ -510,15 +512,20 @@ def install(session):
 
     # ---- visual mapping ---------------------------------------------------------
     @cmd
-    def colorize(field, *cs):
+    def colorize(field, *cs, palette=None):
         """colorize(field) gives each value its own clearly different colour (the
         largest group first; see distinctColors); colorize(field, start, end) or
         colorize(field, start, middle, end) a gradient over the sorted values.
-        colorize(field, scale) uses a colour scale (see colorScales): a
-        categorical one ("Set2", "tableau10") gives the largest group its first
-        colour; a sequential or diverging one ("Blues", "viridis", "RdBu") runs
-        over the sorted values."""
+        colorize(field, palette="Set2") uses a colour scale (see colorScales;
+        colorize(field, "Set2") is the same): a categorical one ("Set2",
+        "tableau10") gives the largest group its first colour; a sequential or
+        diverging one ("Blues", "viridis", "RdBu") runs over the sorted
+        values."""
         field = _field(field)
+        if palette is not None:
+            if cs:
+                raise TypeError("colorize(field, palette=...) takes no other colours")
+            cs = (palette,)
         if len(cs) == 1:
             from . import scales
             sc = scales.get(cs[0])
@@ -538,7 +545,7 @@ def install(session):
                 grp.color = c
             return
         if len(cs) not in (2, 3):
-            raise TypeError("colorize(field[, start[, middle], end]) or colorize(field, scale)")
+            raise TypeError("colorize(field[, start[, middle], end]) or colorize(field, palette=...)")
         groups = group_by(field.elements(), field, sort=True)
         if not groups:
             print("No groupings")
@@ -580,7 +587,7 @@ def install(session):
         return vals
 
     def _scaler(vals, scale):
-        """Map values to 0..1 with a linear, log, sqrt or rank scale."""
+        """Map values to 0..1 with a linear, log, sqrt or rank transform."""
         scale = str(scale).lower()
         xs = [v for _, v in vals]
         if scale == "rank":
@@ -595,32 +602,32 @@ def install(session):
         elif scale == "linear":
             f = float
         else:
-            raise GuessError('scale is "linear", "log", "sqrt" or "rank"')
+            raise GuessError('transform is "linear", "log", "sqrt" or "rank"')
         a, b = f(min(xs)), f(max(xs))
         return (lambda v: 0.5) if b == a else (lambda v: (f(v) - a) / (b - a))
 
     @cmd
-    def sizeBy(field, smallest, largest, scale="linear"):
+    def sizeBy(field, smallest, largest, transform="linear"):
         """sizeBy(field, smallest, largest) sizes nodes (or edge widths, for an edge field) in
-        proportion to a numeric field's value, from smallest to largest. scale may be
+        proportion to a numeric field's value, from smallest to largest. transform may be
         "linear", "log", "sqrt" or "rank" (as in Gephi's ranking). Compare
         resizeLinear, which spaces distinct values evenly."""
         field = _field(field)
         vals = _numeric(field)
-        t = _scaler(vals, scale)
+        t = _scaler(vals, transform)
         attr = "size" if field.kind == NODE else "width"
         lo, hi = float(smallest), float(largest)
         for e, v in vals:
             setattr(e, attr, lo + (hi - lo) * t(v))
 
     @cmd
-    def labelSizeBy(field, smallest=0.8, largest=2.0, scale="linear"):
+    def labelSizeBy(field, smallest=0.8, largest=2.0, transform="linear"):
         """labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
         edge field) in proportion to a numeric field: 1 is the normal size. Sets
-        the labelsize field; scale as in sizeBy ("linear", "log", "sqrt", "rank")."""
+        the labelsize field; transform as in sizeBy ("linear", "log", "sqrt", "rank")."""
         field = _field(field)
         vals = _numeric(field)
-        t = _scaler(vals, scale)
+        t = _scaler(vals, transform)
         lo, hi = float(smallest), float(largest)
         if lo <= 0 or hi <= 0:
             raise GuessError("label sizes are scales and must be positive (1 = normal)")
@@ -663,29 +670,36 @@ def install(session):
             e.color = f"{int(r * 255)},{int(g_ * 255)},{int(b * 255)}"
 
     @cmd
-    def colorBy(field, start, end=None, scale="linear", middle=None, center=None):
-        """colorBy(field, startColor, endColor) colours elements along a gradient in
-        proportion to a numeric field's value; colorBy(field, "viridis") uses a
-        colour scale instead (see colorScales; "RdBu" with center=0 for
-        diverging data). scale may be "linear", "log",
-        "sqrt" or "rank"; middle=color adds a midpoint colour. center=value
-        makes a diverging gradient: that value gets the middle colour (white
-        unless given) and the ends are equally far from it, so equal changes
-        up and down look equally strong, e.g. colorBy(lfc, blue, red,
-        center=0) for fold changes. Compare colorize, which spaces distinct
-        values evenly."""
+    def colorBy(field, start=None, end=None, middle=None, palette=None, transform="linear", midpoint=None):
+        """colorBy(field, start, end) colours elements along a gradient in
+        proportion to a numeric field's value; colorBy(field, palette="viridis")
+        uses a colour scale instead (see colorScales; colorBy(field, "viridis")
+        is the same; "RdBu" with midpoint=0 for diverging data). transform may
+        be "linear", "log", "sqrt" or "rank"; middle=color adds a midpoint
+        colour. midpoint=value makes a diverging gradient: that value gets the
+        middle colour (white unless given) and the ends are equally far from
+        it, so equal changes up and down look equally strong, e.g.
+        colorBy(lfc, blue, red, midpoint=0) for fold changes. Compare
+        colorize, which spaces distinct values evenly."""
         field = _field(field)
         from . import scales
         cscale = None
+        if palette is not None:
+            if start is not None or end is not None:
+                raise GuessError("colorBy takes start and end colours or palette=, not both")
+            start = palette
+        if start is None:
+            raise TypeError("colorBy(field, start, end) or colorBy(field, palette=...)")
         if end is None:
-            cscale = scales.get(start, "colour scale (or give colorBy(field, startColor, endColor))")
+            cscale = scales.get(start, "colour scale (or give colorBy(field, start, end))")
             if middle is not None:
                 raise GuessError("colorBy with a colour scale takes no middle= colour")
         vals = _numeric(field)
-        if center is not None:
+        scale = transform
+        if midpoint is not None:
             if scale != "linear":
-                raise GuessError("center= works with the linear scale only")
-            c = float(center)
+                raise GuessError("midpoint= works with the linear transform only")
+            c = float(midpoint)
             dev = max((abs(v - c) for _e, v in vals), default=0.0) or 1.0
             middle = "white" if middle is None and cscale is None else middle
 

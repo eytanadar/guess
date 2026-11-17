@@ -6,7 +6,7 @@ and node embeddings.
     collapseMotifs("fan")          ... each into one meta-node
     report("report.html")          a one-page summary of the graph
     richClub()                     do the hubs link to each other?
-    minCostFlow(a, b, 10)          the cheapest way to send a flow
+    minCostFlow(src, dst, 10)      the cheapest way to send a flow
     travelingSalesman(stops)       a short round trip through some nodes
     embed(dims=8)                  node2vec-style coordinates for machine learning
 """
@@ -189,10 +189,10 @@ def install(session):
 
     # ---- report ----------------------------------------------------------------
     @cmd
-    def report(filename=None, top=5):
+    def report(filename=None, count=5):
         """report() writes a one-page summary of the graph: size, density,
         components, degree distribution, path lengths, clustering,
-        assortativity, the `top` nodes by degree, betweenness and PageRank,
+        assortativity, the `count` nodes by degree, betweenness and PageRank,
         and the communities if any have been found (louvain_class,
         leiden_class, infomap_class). report("summary.html") saves it as a web
         page (offered as a download in the browser) and report("summary.md")
@@ -224,7 +224,7 @@ def install(session):
             lines += ["| measure | value |", "|---|---|"] + [f"| {a} | {b} |" for a, b in rows] + [""]
             for title, fname in (("Most connected", "degree"), ("Most between", "betweenness"), ("Highest PageRank", "pagerank")):
                 f = gr.node_schema.get(fname) or gr._lazy_field(NODE, fname)
-                best = sorted(nodes, key=lambda x: (-(f.get(x) or 0), x._id))[:int(top)]
+                best = sorted(nodes, key=lambda x: (-(f.get(x) or 0), x._id))[:int(count)]
                 lines.append(f"**{title}:** " + ", ".join(f"{x._vals.get('label') or x._name} ({f.get(x):.3g})" for x in best))
                 lines.append("")
             for cf in ("louvain_class", "leiden_class", "infomap_class"):
@@ -314,13 +314,14 @@ def install(session):
 
     # ---- routing ---------------------------------------------------------------
     @cmd
-    def minCostFlow(source, target, amount, capacity="capacity", cost="weight"):
-        """minCostFlow(a, b, 100) finds the cheapest way to send `amount` units
-        from a to b: each edge can carry up to its `capacity` field (missing
-        or empty = unlimited) at its `cost` field per unit (default: weight;
-        missing = 1). Direction is followed for directed edges; an undirected
-        edge can carry flow either way. Stores each edge's flow in `flow` and
-        returns the total cost (an error if the amount can't get through)."""
+    def minCostFlow(source, target, amount, capacity="capacity", cost="weight", name="flow"):
+        """minCostFlow(source, target, 100) finds the cheapest way to send
+        `amount` units from source to target: each edge can carry up to its
+        `capacity` field (missing or empty = unlimited) at its `cost` field
+        per unit (default: weight; missing = 1). Direction is followed for
+        directed edges; an undirected edge can carry flow either way. Stores
+        each edge's flow in flow (name= another field) and returns the total
+        cost (an error if the amount can't get through)."""
         from .algorithms import _nx
         nx = _nx()
         gr = g()
@@ -353,7 +354,7 @@ def install(session):
             flow = nx.min_cost_flow(D)
         except nx.NetworkXUnfeasible:
             raise GuessError(f"can't send {amount} from {a._name} to {b._name} within the capacities") from None
-        f = gr.addEdgeField("flow", DOUBLE, 0.0)
+        f = gr.addEdgeField(str(getattr(name, "name", name)), DOUBLE, 0.0)
         for e in gr._edges_list():
             f.set(e, 0.0)
         total = 0.0

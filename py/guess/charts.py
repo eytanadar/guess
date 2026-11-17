@@ -185,7 +185,7 @@ def install(session):
                     xq=f"{f.name} {op} {{x}}", logX=bool(log), logY=bool(log), dots=True)
 
     def plotLine(data, title="Chart", xlabel="x", ylabel="y", log=False, logX=None, logY=None, dots=False,
-                 xrange=None, yrange=None, dashed=None, highlight=None, colors=None):
+                 xrange=None, yrange=None, dashed=None, highlight=None, palette=None):
         """plotLine(points) draws a line chart of [(x, y), ...] pairs;
         plotLine({"infected": pts1, "recovered": pts2}) draws one line per
         series. log=true makes both axes logarithmic (or logX=/logY= one of
@@ -195,10 +195,11 @@ def install(session):
         near 1), xrange= the x axis. dashed=["fit", ...] draws those series
         dashed and without dots (for theory curves and fits), and
         highlight=["this network"] draws those series' points large, so a single
-        point stands out among simulated ones. colors={"infected": red,
-        "infected (theory)": red} sets series colours (a list goes in series
-        order), e.g. to give a theory curve its data's colour."""
-        palette = [0x4E79A7, 0xE15759, 0x59A14F, 0xF28E2B, 0x76B7B2, 0xB07AA1, 0xEDC948]
+        point stands out among simulated ones. palette={"infected": red,
+        "infected (theory)": red} sets series colours, e.g. to give a theory
+        curve its data's colour; a list goes in series order, and a colour
+        scale's name (palette="Set2") takes its colours in turn."""
+        default = [0x4E79A7, 0xE15759, 0x59A14F, 0xF28E2B, 0x76B7B2, 0xB07AA1, 0xEDC948]
         if isinstance(data, dict):
             named = list(data.items())
         else:
@@ -206,6 +207,9 @@ def install(session):
         lx = bool(log) if logX is None else bool(logX)
         ly = bool(log) if logY is None else bool(logY)
         series = []
+        if isinstance(palette, str) or type(palette).__name__ == "ColorScale":
+            from . import scales
+            palette = scales.get(palette).colors(max(len(named), 1))
         for i, (name, pts) in enumerate(named):
             clean = []
             for p in pts:
@@ -213,11 +217,11 @@ def install(session):
                 if (lx and x <= 0) or (ly and y <= 0):
                     continue
                 clean.append([x, y])
-            col = palette[i % len(palette)]
-            if isinstance(colors, dict) and name in colors:
-                col = colors_mod.to_rgba_int(colors[name], (0, 0, 0, 255))[0]
-            elif isinstance(colors, (list, tuple)) and i < len(colors):
-                col = colors_mod.to_rgba_int(colors[i], (0, 0, 0, 255))[0]
+            col = default[i % len(default)]
+            if isinstance(palette, dict) and name in palette:
+                col = colors_mod.to_rgba_int(palette[name], (0, 0, 0, 255))[0]
+            elif isinstance(palette, (list, tuple)) and i < len(palette):
+                col = colors_mod.to_rgba_int(palette[i], (0, 0, 0, 255))[0]
             rec = {"name": str(name), "color": col, "points": clean}
             if dashed is not None and str(name) in {str(d) for d in ([dashed] if isinstance(dashed, str) else dashed)}:
                 rec["dash"] = True

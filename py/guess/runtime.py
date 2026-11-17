@@ -109,9 +109,9 @@ def _bare_value_hint(a, b, sym):
         if not isinstance(q, GSet) or isinstance(v, bool) or not isinstance(v, (str, int, float)):
             continue
         ann = q.__dict__.get("annotation") if isinstance(q.__dict__.get("annotation"), str) else None
-        if not ann:
+        if not ann or not re.search(r" (==|!=|<=|>=|<|>|in|like) ", ann):
             continue            # a set that isn't a query (sel or "none") is left alone
-        m = re.match(r"^\(?([A-Za-z_]\w*) (==|!=|<=|>=|<|>|in|like) (.*?)\)?$", ann)
+        m = re.match(r"^([A-Za-z_]\w*) (==|!=|<=|>=|<|>|in|like) ([^()]*)$", ann)
         if m and m.group(2) == "==":
             word = "or" if sym in ("or", "|") else "and"
             first = m.group(3)
@@ -120,9 +120,9 @@ def _bare_value_hint(a, b, sym):
             else:
                 hint = f"did you mean ({m.group(1)} == {first}) {sym} ({m.group(1)} == {v!r})?"
         elif m:
-            hint = f"compare the field on both sides, e.g. ({ann}) {sym} ({m.group(1)} ... {v!r})"
+            hint = f"did you mean ({ann}) {sym} ({m.group(1)} {m.group(2)} {v!r})?"
         else:
-            hint = f"compare a field with it, e.g. ({ann}) {sym} (field == {v!r})"
+            hint = f"did you mean ({ann}) {sym} (field == {v!r})? Compare a field with each value"
         raise GuessError(f"'{sym}' between a query and the bare value {v!r} doesn't compare {v!r} "
                          f"with anything: {hint}")
 

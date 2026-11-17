@@ -196,17 +196,25 @@ def install(session):
         return GSet(sorted(nx.articulation_points(G), key=lambda n: n._id), "cut nodes")
 
     @cmd
-    def spanningTree(maximum=False, weighted=True):
+    def spanningTree(maximum=False, weight="weight"):
         """spanningTree() returns the edges of a minimum spanning tree (a forest if
         the graph is in pieces) by edge weight: the cheapest backbone that keeps
         everything connected. spanningTree(maximum=True) keeps the strongest ties
         instead, a good backbone when weight means strength:
-        showOnly(spanningTree(maximum=True)). weighted=False ignores weights."""
+        showOnly(spanningTree(maximum=True)). weight= another edge field to
+        use (weight=km); weight=None counts every edge the same."""
         nx = _nx()
         G = _undirected(g(), prefer="max" if maximum else "min")
-        if not weighted:
+        wname = None if weight is None else str(getattr(weight, "name", weight))
+        if wname is not None and wname != "weight" and wname not in g().edge_schema:
+            raise GuessError(f"weight= should be an edge field, got {weight!r}")
+        if wname != "weight":
             for _a, _b, d in G.edges(data=True):
-                d["weight"] = 1.0
+                v = 1.0 if wname is None else d["edge"]._vals.get(wname, 1.0)
+                try:
+                    d["weight"] = float(v)
+                except (TypeError, ValueError):
+                    d["weight"] = 1.0
         fn = nx.maximum_spanning_edges if maximum else nx.minimum_spanning_edges
         out = [d["edge"] for _a, _b, d in fn(G, weight="weight", data=True)]
         return GSet(sorted(out, key=lambda e: e._id), "maximum spanning tree" if maximum else "spanning tree")

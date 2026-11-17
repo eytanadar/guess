@@ -619,10 +619,10 @@ def install(session):
 
     # ---- similarity and link prediction --------------------------------------
     @cmd
-    def similarTo(node, method="jaccard", top=10, alpha=0.9):
+    def similarTo(node, method="jaccard", count=10, alpha=0.9, name="similarity"):
         """similarTo(v1) scores every node by how much its neighbourhood overlaps
-        v1's, stores the score in the field `similarity` and returns the `top`
-        most similar nodes. method: "jaccard" (shared neighbours / all
+        v1's, stores the score in the field similarity (name= another) and
+        returns the `count` most similar nodes. method: "jaccard" (shared neighbours / all
         neighbours of either), "dice" (2 x shared / sum of degrees), or
         "adamic_adar" (shared neighbours, rare ones counting more), or
         "regular": regular equivalence (Leicht, Holme and Newman), where nodes
@@ -635,11 +635,11 @@ def install(session):
             from .metrics import regular_similarity
             nodes, S = regular_similarity(gr, alpha)
             i = nodes.index(me)
-            f = gr.addNodeField("similarity", DOUBLE, 0.0)
+            f = gr.addNodeField(str(getattr(name, "name", name)), DOUBLE, 0.0)
             for j, x in enumerate(nodes):
                 f.set(x, 0.0 if x is me else float(S[i, j]))
             ranked = sorted((x for x in nodes if x is not me), key=lambda x: (-float(S[i, nodes.index(x)]), x._id))
-            return GSet(ranked[:int(top)], f"most similar to {me._name}")
+            return GSet(ranked[:int(count)], f"most similar to {me._name}")
         nbrs = {}
         for e in gr._edges_list():
             if e._n1 is e._n2:
@@ -664,21 +664,22 @@ def install(session):
                 scores[other] = 2 * len(common) / (len(mine) + len(theirs))
             else:
                 scores[other] = sum(1 / math.log(len(nbrs[z])) for z in common if len(nbrs[z]) > 1)
-        f = gr.addNodeField("similarity", DOUBLE, 0.0)
+        f = gr.addNodeField(str(getattr(name, "name", name)), DOUBLE, 0.0)
         for x in gr._nodes_list():
             f.set(x, float(scores.get(x, 0.0)))
         ranked = sorted((x for x, v in scores.items() if v > 0), key=lambda x: (-scores[x], x._id))
-        return GSet(ranked[:int(top)], f"most similar to {me._name}")
+        return GSet(ranked[:int(count)], f"most similar to {me._name}")
 
     @cmd
-    def predictLinks(top=20, method="adamic_adar", show=True, add=False):
+    def predictLinks(count=20, method="adamic_adar", show=True, add=False, name="predicted"):
         """predictLinks() lists likely missing edges: pairs of nodes that aren't
         linked but share neighbours, scored by "adamic_adar" (shared neighbours,
         rare ones counting more), "jaccard", "common" (count of shared
-        neighbours) or "resource" (resource allocation). Returns the `top`
+        neighbours) or "resource" (resource allocation). Returns the `count`
         pairs as (node, node, score), best first. add=true also adds them as
-        edges, marked with the method's name in the edge field `predicted`
-        (showOnly(predicted != None) shows them; undo() takes them away).
+        edges, marked with the method's name in the edge field predicted
+        (name= another; showOnly(predicted != None) shows them; undo() takes
+        them away).
         evaluateLinks() tests how well a method would have predicted."""
         need("predictLinks")
         I = undirected()
@@ -700,20 +701,20 @@ def install(session):
                         scores[(a, b)] = scores.get((a, b), 0.0) + inc
         if m == "jaccard":
             scores = {(a, b): c / len(nbrs[a] | nbrs[b]) for (a, b), c in scores.items()}
-        best = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))[:int(top)]
+        best = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))[:int(count)]
         out = [(I.nodes[a], I.nodes[b], round(s, 4)) for (a, b), s in best]
         if show:
             for a, b, s in out:
                 session.say((a, ">14"), " - ", (b, "<14"), f" {s}")
         if add and out:
             gr = g()
-            f = gr.addEdgeField("predicted", "VARCHAR", None)
+            f = gr.addEdgeField(str(getattr(name, "name", name)), "VARCHAR", None)
             made = []
             for a, b, _s in out:
                 e = gr.addEdge(a, b, False)
                 f.set(e, m)
                 made.append(e)
-            session.say("added ", (f"{len(made)} predicted edges", made), f" (predicted = {m!r})")
+            session.say("added ", (f"{len(made)} predicted edges", made), f" ({f.name} = {m!r})")
         return out
 
     # ---- patterns, cuts, flows -------------------------------------------------
@@ -765,20 +766,21 @@ def install(session):
         return GSet(out, f"{len(out)} matches")
 
     @cmd
-    def minCut(a, b, capacity=None):
-        """minCut(a, b) returns the fewest edges whose removal separates a from b
-        (direction ignored); minCut(a, b, weight) the cut of least total
-        weight. Prints the cut's size."""
+    def minCut(source, target, capacity=None):
+        """minCut(source, target) returns the fewest edges whose removal
+        separates source from target (direction ignored); capacity= an edge
+        field, minCut(v1, v9, capacity=weight), gives the cut of least total
+        capacity. Prints the cut's size."""
         need("minCut")
         I = undirected()
-        va, vb = I.vid(node(a)), I.vid(node(b))
+        va, vb = I.vid(node(source)), I.vid(node(target))
         if va == vb:
             raise GuessError("minCut needs two different nodes")
         cap = None
         if capacity is not None:
             f = capacity if isinstance(capacity, Field) else g().edge_schema.get(str(capacity))
             if f is None or f.kind != EDGE:
-                raise GuessError("capacity should be an edge field, e.g. minCut(a, b, weight)")
+                raise GuessError("capacity should be an edge field, e.g. minCut(v1, v9, capacity=weight)")
             cap = [sum(float(f.get(e) or 0) for e in es) for es in I.pairs]
         cut = I.G.mincut(source=va, target=vb, capacity=cap)
         edges = [e for k in cut.cut for e in I.pairs[k]]
@@ -786,14 +788,16 @@ def install(session):
         return GSet(sorted(edges, key=lambda e: e._id), f"cut between {I.nodes[va]._name} and {I.nodes[vb]._name}")
 
     @cmd
-    def maxFlow(a, b, capacity="weight"):
-        """maxFlow(a, b) computes the maximum flow from a to b with edge weights
-        as capacities (capacity=None: 1 per edge), following edge direction when
-        the graph has directed edges. Each edge's flow is stored in the edge
-        field `flow`; returns the total."""
+    def maxFlow(source, target, capacity=None, name="flow"):
+        """maxFlow(source, target) computes the maximum flow from source to
+        target, following edge direction when the graph has directed edges.
+        Every edge carries 1 (so the flow counts edge-disjoint routes);
+        capacity= an edge field gives each edge's capacity, e.g.
+        maxFlow(v1, v9, capacity=weight). Each edge's flow is stored in the
+        edge field flow (name= another); returns the total."""
         need("maxFlow")
         I = IG(g(), directed=None)
-        va, vb = I.vid(node(a)), I.vid(node(b))
+        va, vb = I.vid(node(source)), I.vid(node(target))
         if capacity is None:
             cap = None
         else:
@@ -802,7 +806,7 @@ def install(session):
                 raise GuessError(f"no edge field {capacity!r}")
             cap = [max(0.0, sum(float(f.get(e) or 0) for e in es)) for es in I.pairs]
         flow = I.G.maxflow(va, vb, capacity=cap)
-        ff = g().addEdgeField("flow", DOUBLE, 0.0)
+        ff = g().addEdgeField(str(getattr(name, "name", name)), DOUBLE, 0.0)
         for e in g()._edges_list():
             ff.set(e, 0.0)
         for es, x in zip(I.pairs, flow.flow):
@@ -812,11 +816,11 @@ def install(session):
         return float(flow.value)
 
     @cmd
-    def personalizedPagerank(seq, damping=0.85):
+    def personalizedPagerank(seq, damping=0.85, name="ppr"):
         """personalizedPagerank(seq) ranks every node by how easily a random walk
         restarting at the given nodes reaches it: relevance to a chosen set
         (e.g. personalizedPagerank(sel) or personalizedPagerank(v1)). Stored in
-        the field `ppr`."""
+        the field ppr (name= another), which is returned."""
         need("personalizedPagerank")
         I = IG(g(), directed=None)
         seeds = [I.vid(x) for x in elements_of(seq) if isinstance(x, Node)]
@@ -824,22 +828,23 @@ def install(session):
             raise GuessError("personalizedPagerank needs some nodes")
         vals = I.G.personalized_pagerank(damping=float(damping), reset_vertices=seeds,
                                          weights=I.positive_weights(), directed=I.directed)
-        f = g().addNodeField("ppr", DOUBLE, 0.0)
+        f = g().addNodeField(str(getattr(name, "name", name)), DOUBLE, 0.0)
         for n, v in zip(I.nodes, vals):
             f.set(n, float(v))
         return f
 
     @cmd
-    def dominatorTree(root):
+    def dominatorTree(root, name="idom"):
         """dominatorTree(root) follows directed edges from root and finds, for
         every node it reaches, its immediate dominator: the last node every path
         from root must pass through (who controls access to whom). Stored in
-        `idom` (a node name); returns the nodes root reaches."""
+        idom (a node name; name= another field); returns the nodes root
+        reaches."""
         need("dominatorTree")
         I = IG(g(), directed=True)
         r = I.vid(node(root))
         dom = I.G.dominator(r, mode="out")
-        f = g().addNodeField("idom", STRING, None)
+        f = g().addNodeField(str(getattr(name, "name", name)), STRING, None)
         reached = []
         for v, d in enumerate(dom):
             n = I.nodes[v]

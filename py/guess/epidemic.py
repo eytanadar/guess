@@ -308,9 +308,9 @@ def install(session):
         return res
 
     @cmd
-    def effectiveDistance(origin, weight="weight", name="eff_distance"):
-        """effectiveDistance(origin) measures how 'close' every node is to the
-        origin through a travel network, as an epidemic would see it
+    def effectiveDistance(node, weight="weight", name="eff_distance"):
+        """effectiveDistance(node) measures how 'close' every node is to
+        node through a travel network, as an epidemic would see it
         (Brockmann and Helbing, Science 2013). From node m, the share of m's
         traffic (weight) that goes to n is P; the step m -> n costs
         1 - ln P, so busy routes are short and a route among many is long.
@@ -319,7 +319,7 @@ def install(session):
         edge field `eff_tree`. Arrival times of real epidemics grow almost
         linearly with it. Returns the field."""
         gr = g()
-        src = node_list(origin, "effectiveDistance")[0]
+        src = node_list(node, "effectiveDistance")[0]
         wf = weight_field(weight) if weight is not None else None
         out = {n: [] for n in gr._nodes_list()}
         for e in gr._edges_list():

@@ -880,8 +880,9 @@ def install(session):
         Weight, Label, ...]), an adjacency matrix or list; with a node sheet
         (Id[, Label, ...]) too when the workbook has one. sheet= picks the edge
         sheet by name or number (0 = first); nodes= names the node sheet, or
-        another file (.xlsx or .csv). Other columns become fields; directed=true
-        makes edges without a Type directed. makeFromCSV("data.xlsx") does the same.
+        another file (.xlsx or .csv). Other columns become fields; edges are
+        undirected by default (directed=false) unless a Type column says
+        otherwise, and directed=true makes edges without a Type directed. makeFromCSV("data.xlsx") does the same.
         source=, target=, interaction=, weight= and header= choose the edge
         sheet's columns as in makeFromCSV."""
         g = session.graph

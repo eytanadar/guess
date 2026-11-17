@@ -3,7 +3,7 @@
     makeFromText("story.txt", terms={"Holmes": ["Holmes", "Sherlock"], ...})
         terms (characters, concepts) linked when they occur in the same
         paragraph, sentence, line or window of words
-    makeFromSimilarity("profiles.csv", k=5)
+    makeFromSimilarity("profiles.csv", count=5)
         rows of a feature table linked to their most similar rows
 """
 import bisect
@@ -278,10 +278,10 @@ def install(session):
               f"try bipartiteLayout(kind) or project(kind, {b!r})")
 
     @cmd
-    def makeFromSimilarity(filename, k=5, threshold=None, method="cosine", id=None, columns=None,  # noqa: A002
+    def makeFromSimilarity(filename, count=5, threshold=None, method="cosine", id=None, columns=None,  # noqa: A002
                            features=None, values=None, mutual=False):
         """makeFromSimilarity("profiles.csv") links each row of a feature table
-        to the k rows most similar to it (k=5), or, with threshold=t, every
+        to the `count` rows most similar to it (count=5), or, with threshold=t, every
         pair at least t similar. The table is wide (an id column, here the
         first or id=..., then numeric columns; columns=[...] picks them, and
         text columns become node fields) or long, one row per (id, feature,
@@ -289,7 +289,7 @@ def install(session):
         method: "cosine" (default; profiles pointing the same way),
         "correlation" (same ups and downs), "jaccard" (shared nonzero
         features) or "euclidean" (close values; 1/(1+distance)). mutual=true
-        keeps only pairs that are in each other's top k. Edges get `weight`
+        keeps only pairs that are in each other's top count. Edges get `weight`
         = similarity. Typical uses: co-expression networks, documents by
         term profile, people by votes or answers."""
         with open(filename, encoding="utf-8", errors="replace", newline="") as fh:
@@ -356,7 +356,7 @@ def install(session):
             for i, j in zip(a, b):
                 pairs[(i, j)] = S[i, j]
         else:
-            k = max(1, min(int(k), n - 1))
+            k = max(1, min(int(count), n - 1))
             top = np.argsort(-S, axis=1)[:, :k]
             chosen = {(i, int(j)) for i in range(n) for j in top[i] if np.isfinite(S[i, j])}
             for i, j in chosen:

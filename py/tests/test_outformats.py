@@ -12,9 +12,12 @@ def out(s, code):
 
 
 def test_pipe_applies_to_the_whole_query():
-    assert to_python("dept == 'd1' >> table") == "__display__(__gpipe__(dept == 'd1', table))"
-    assert "__gbool__" in to_python("degree > 3 and dept == 'x' >> summary").split("__gpipe__(")[1]
-    assert to_python("a | b >> table(degree)") == "__display__(__gpipe__(__gor__(a, b), table(degree)))"
+    # whether the name after >> is a format is decided at run time (count = 3 makes it a number)
+    assert to_python("dept == 'd1' >> table") == \
+        "__display__(__glift__(__gmark__(), dept == __ghole__('d1', table)))"
+    assert "__gbool__" in to_python("degree > 3 and dept == 'x' >> summary").split("__glift__(")[1]
+    assert to_python("a | b >> table(degree)") == \
+        "__display__(__glift__(__gmark__(), __gor__(a, __ghole__(b, table(degree)))))"
     assert to_python("n == m >> 1") == "__display__(n == __gpipe__(m, 1))"      # still a shift
     # the command a value came from, for setFormat(command, ...)
     assert to_python("louvainClusters() >> table").endswith(", 'louvainClusters')")
@@ -35,7 +38,7 @@ def test_table_of_a_set_has_the_query_fields_and_links_nodes():
     assert seg["tbl"]["cols"] == ["node", "dept", "degree"]
     degs = [int(r[2]) for r in seg["tbl"]["rows"]]
     assert degs == sorted(degs, reverse=True)
-    seg = out(s, "(degree > 8) >> table(degree, sort=degree, reverse=false)")
+    seg = out(s, "(degree > 8) >> table(degree, sort=degree, descending=false)")
     degs = [int(r[1]) for r in seg["tbl"]["rows"]]
     assert degs == sorted(degs)
 

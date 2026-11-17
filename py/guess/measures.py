@@ -285,22 +285,22 @@ def install(session):
 
     # ---- cliques -------------------------------------------------------------------
     @cmd
-    def cliques(minSize=3, limit=1000):
-        """cliques(minSize=3) finds every maximal clique (a group where everyone
+    def cliques(smallest=3, limit=1000):
+        """cliques(smallest=3) finds every maximal clique (a group where everyone
         is linked to everyone, that no other node could join) with at least
-        minSize nodes, ignoring edge direction; largest first, up to `limit`.
+        smallest nodes, ignoring edge direction; largest first, up to `limit`.
         largestCliques() gives just the biggest ones."""
         nx = _nx()
         G = nx.Graph(to_networkx(gr(), directed=False))
         G.remove_edges_from(nx.selfloop_edges(G))
         found = []
         for c in nx.find_cliques(G):
-            if len(c) >= int(minSize):
+            if len(c) >= int(smallest):
                 found.append(sorted(c, key=lambda n: n._id))
         found.sort(key=lambda c: (-len(c), c[0]._id))
         more = len(found) > int(limit)
         found = found[:int(limit)]
-        note = f"{len(found)} cliques of {int(minSize)}+ nodes" + (" (limit reached)" if more else "")
+        note = f"{len(found)} cliques of {int(smallest)}+ nodes" + (" (limit reached)" if more else "")
         return GSet((GSet(c, f"clique {i} ({len(c)})") for i, c in enumerate(found)), note)
 
     # ---- MDS -----------------------------------------------------------------------

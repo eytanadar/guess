@@ -687,7 +687,7 @@ def install(session):
                 M[grp[i], grp[j]] += 1
         return M, np.bincount(grp, minlength=k).astype(float), np.bincount(grp, weights=deg, minlength=k)
 
-    def makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=None, layout=True):
+    def makeLFR(n=250, tau1=2.5, tau2=1.5, mu=0.1, degree=10, maxDegree=None, minCommunity=20, seed=0, layout=True):
         """makeLFR(n, tau1, tau2, mu) makes a Lancichinetti-Fortunato-Radicchi
         benchmark network: power-law degrees (exponent tau1) and community sizes
         (exponent tau2), with a share mu of each node's edges leaving its
@@ -699,7 +699,6 @@ def install(session):
         seeds, so up to ten seeds from seed= (default 0) are tried, the same
         ones every time; if all fail, try larger communities or a lower mu."""
         nx = __import__("networkx")
-        chosen = seed is not None
         seed = 0 if seed is None else seed
         G, last = None, None
         for tries in range(10):                       # networkx gives up on some seeds: try the next few
@@ -713,7 +712,7 @@ def install(session):
         if G is None:
             raise GuessError(f"makeLFR couldn't build that network ({type(last).__name__}: {last}); "
                              "try a larger minCommunity, a larger n or a lower mu") from None
-        if tries and chosen:
+        if tries:
             print(f"  (seed {int(seed)} didn't work out; used seed {int(seed) + tries})")
         comms = []
         for v in G:

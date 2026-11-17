@@ -2371,18 +2371,18 @@ def install(session):
         lay.apply(s, _random_positions(s, w, h, rng()))
 
     @cmd
-    def circleLayout(field=None, center=None, x=None, y=None):
+    def circleLayout(field=None, node=None, x=None, y=None):
         """circleLayout() places all nodes evenly on a circle (radius 450 around 500,500).
 
         circleLayout(field) makes one circle per value of a node field (bigger
         groups get bigger circles, the biggest first), packed in rows.
 
-        circleLayout(field, centerNode) puts centerNode at (500, 500) and its
+        circleLayout(field, node) puts node at (500, 500) and its
         neighbours on a circle around it, ordered by `field`, at a radius
         proportional to `field` (a node field of the neighbours, or an edge
         field of the connecting edges). Other nodes are left alone.
-        circleLayout(field, centerNode, x, y) uses (x, y) as the centre."""
-        if field is None and center is None and x is None and y is None:
+        circleLayout(field, node, x, y) puts it at (x, y) instead."""
+        if field is None and node is None and x is None and y is None:
             s = lay.snap()
             lay.apply(s, _circle_positions(s))
             # dragging a node now slides it around the ring (declarative dragging)
@@ -2390,29 +2390,29 @@ def install(session):
                                          "ids": [nd._id for nd in s.nodes]}
             session.view.changed()
             return
-        if field is not None and center is None and x is None and y is None:
+        if field is not None and node is None and x is None and y is None:
             f = _field_arg(g, field)
             if f.kind != NODE:
                 raise GuessError("circleLayout(field) needs a node field, e.g. circleLayout(dept)")
             s = lay.snap()
             lay.apply(s, _group_circle_positions(s, [f.get(nd) for nd in s.nodes]))
             return
-        if field is None or center is None or ((x is None) != (y is None)):
+        if field is None or node is None or ((x is None) != (y is None)):
             raise TypeError("circleLayout(), circleLayout(field) (a circle per value), "
-                            "circleLayout(field, centerNode) or circleLayout(field, centerNode, x, y)")
+                            "circleLayout(field, node) or circleLayout(field, node, x, y)")
         f = _field_arg(g, field)
-        c = _node_arg(g, center, "center node")
+        c = _node_arg(g, node, "node")
         ox, oy = (500.0, 500.0) if x is None else (float(x), float(y))
         s = lay.snap()
         lay.apply(s, _circular_constrained(s, g, c, f, ox, oy))
 
     @cmd
-    def radialLayout(center, edges=None):
-        """radialLayout(centerNode) lays the graph out as a radial tree around
-        centerNode (placed at 0,0), following a breadth-first spanning tree
-        (Eades' radial drawing). Nodes not reachable from the centre stay put.
-        radialLayout(centerNode, edges) restricts the tree to the given edges."""
-        c = _node_arg(g, center, "center node")
+    def radialLayout(node, edges=None):
+        """radialLayout(node) lays the graph out as a radial tree around node
+        (placed at 0,0), following a breadth-first spanning tree (Eades'
+        radial drawing). Nodes not reachable from it stay put.
+        radialLayout(node, edges) restricts the tree to the given edges."""
+        c = _node_arg(g, node, "node")
         valid = None
         if edges is not None:
             valid = {e._id for e in elements_of(edges) if isinstance(e, Edge)}
@@ -2453,19 +2453,11 @@ def install(session):
         return _bfs_hops(indptr, ind, s.n, np.arange(s.n))
 
     @cmd
-    def jkkLayout1():
-        """jkkLayout1() runs the JUNG Kamada-Kawai layout: unweighted graph
+    def jkkLayout():
+        """jkkLayout() runs the JUNG Kamada-Kawai layout: unweighted graph
         distances, random start, 2000 iterations each moving the worst-placed
-        node."""
-        s = lay.snap()
-        if s.n == 0:
-            return lay.finish()
-        lay.run(s, _jung_kk_gen(s, rng(), _hop_matrix(s), 2000))
-
-    @cmd
-    def jkkLayout2():
-        """jkkLayout2() runs the JUNG Kamada-Kawai layout with integer distances
-        (same algorithm as jkkLayout1)."""
+        node. (kkLayout is GUESS's own Kamada-Kawai: a circle start, each
+        component separately, fitted to a box.)"""
         s = lay.snap()
         if s.n == 0:
             return lay.finish()
@@ -2523,9 +2515,9 @@ def install(session):
         lay.run(s, _spring_gen(s, n, rng(), lengths, tol=0.05 if iterations is None else -1))
 
     @cmd
-    def gemLayout(seed=None):
+    def gemLayout(seed=0):
         """gemLayout() runs the GEM force-directed layout (Frick et al.);
-        gemLayout(seed) seeds the random generator for a repeatable layout."""
+        seed= picks another starting sequence for the random generator."""
         s = lay.snap()
         lay.run(s, _gem_gen(s, rng(None if seed is None else int(seed))))
 
@@ -2716,12 +2708,12 @@ def install(session):
         session.view.changed()
 
     @cmd
-    def hiveLayout(axis=None, position=None, scale="rank", axes=None, inner=60, length=440, curved=True):
+    def hiveLayout(axis=None, position=None, transform="rank", axes=None, inner=60, length=440, curved=True):
         """hiveLayout(axis, position) draws a hive plot (Krzywinski et al.): one
         radial axis per value of the node field `axis` (the most common values,
         at most `axes` of them, the rest merged into "other"), each node placed
         along its axis by the numeric field `position` (default totaldegree),
-        and edges drawn as curves between axes. scale is "rank" (default; evenly
+        and edges drawn as curves between axes. transform is "rank" (default; evenly
         spread), "linear" or "log". Without `axis`: for directed graphs the
         classic source / hub / sink axes (only outgoing, both, only incoming
         edges), otherwise leaves / connectors / hubs by degree. The axes are drawn
@@ -2765,22 +2757,22 @@ def install(session):
             pv = np.array([_num(pf.get(nd), np.nan) for nd in nodes])
             pv = np.where(np.isfinite(pv), pv, np.nanmin(pv) if np.isfinite(pv).any() else 0.0)
             pname = pf.name
-        scale = str(scale).lower()
+        transform = str(transform).lower()
         t = np.zeros(s.n)
         for a in range(k):
             m = ax == a
             if not m.any():
                 continue
             v = pv[m]
-            if scale == "rank":
+            if transform == "rank":
                 # ties share a rank; spread evenly along the axis
                 order = np.argsort(np.argsort(v, kind="stable"), kind="stable")
                 t[m] = order / max(m.sum() - 1, 1)
             else:
-                if scale == "log":
+                if transform == "log":
                     v = np.log1p(v - v.min())
-                elif scale != "linear":
-                    raise GuessError('scale is "rank", "linear" or "log"')
+                elif transform != "linear":
+                    raise GuessError('transform is "rank", "linear" or "log"')
                 lo, hi = v.min(), v.max()
                 t[m] = (v - lo) / (hi - lo) if hi > lo else 0.5
         ang = -math.pi / 2 + 2 * math.pi * np.arange(k) / k
