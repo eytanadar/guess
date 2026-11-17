@@ -2199,6 +2199,65 @@ to its label and first member, `[[dept0: v1, … +27 more], [dept1: v2, … +42
 more], …]`, each linked to its members (see *Folding lists* and *Group
 labels* below).
 
+**Output formats.** You can choose how a value prints. Put `>> format`
+after it to print it differently once:
+
+```python
+dept == 'dept1' >> table                  # a row per node: the node and its dept
+(degree > 8) >> table(dept, degree, sort=degree)
+groupBy(dept) >> table(sort='size')       # a row per group: label, size, members
+groupBy(dept) >> summary                  # grouped by dept: 21 groups, sizes 1–52 (402 nodes)
+dept == 'dept1' >> count                  # 43
+dept == 'dept3' >> plain                  # v4, v5, v20, … as text, easy to copy
+```
+
+The `>>` applies to the whole query, so `dept == 'dept1' >> table` needs no
+parentheses. Between numbers, `>>` is still Python's shift.
+
+| Format | Shows |
+|---|---|
+| `list` | the default: linked lists, `[v1, v2, …]` |
+| `folded` | lists start folded, `[v1, … +27 more]`; one folded list per group |
+| `table` | a table. For a set: a row per node or edge, with columns for the fields its query used (or `table(degree, dept)`). For groups: a row per group (label, size, members). For `dept.distinct`: a row per value, with its count. For a dict: a row per key. For one node: a row per field. `sort=` sorts by a field (or by `'size'`, `'count'` or `'label'`), largest first; add `reverse=false` for smallest first |
+| `summary` | one line: `12 nodes`, `21 groups, sizes 1–52` |
+| `count` | just how many |
+| `plain` | unlinked text, a line per group |
+
+Tables in the output stay linked: hover a node in a cell to see it, or
+hover the table to see all its rows. Click a column header to sort by it,
+and click again to reverse. The ▾ folds the table to one line.
+
+`setFormat` changes how a kind of value prints from now on. It applies to
+every value of that kind, or to just one command's results:
+
+```python
+setFormat("groups", table)                # every set of groups, as a table
+setFormat(louvainClusters, summary)       # just louvainClusters()'s results
+setFormat("set", count)
+formats()                                 # what is set, and the formats there are
+setFormat("set")                          # back to the default for sets
+resetFormats()                            # back to the default for everything
+```
+
+The kinds are `node`, `edge`, `set`, `groups` (from `groupBy` and the
+clustering commands), `values` (`dept.distinct`), `fieldvalue` (`v4.dept`),
+`dict` and `other`. A format given with `>>` beats one set for the command,
+which beats one set for the kind. `print()` follows these settings too.
+Inside a function or loop, a bare expression isn't printed; use
+`showAs(value, format)` there.
+
+A format can be your own function. It gets the value and returns what to
+print, which is linked as usual. Returning `None` prints the value the
+default way:
+
+```python
+def firstThree(v):
+    return v[:3]
+setFormat("set", firstThree)
+dept == 'dept3'                           # [v4, v5, v20]
+resetFormats()
+```
+
 **Code and graph, linked.** The console and the graph point at each other:
 
 - **Output.** Nodes, edges, sets, dicts, f-strings and `dept.distinct`
@@ -5243,10 +5302,12 @@ shapeBy(field) gives each value of a node field its own shape (circle,
 square, rounded square, triangle, diamond, hexagon, octagon, then
 repeating), the most common value first.
 
-### `table(seq=None)`
+### `table(seq=None, *more, sort=None, reverse=None)`
 
 table() opens the data table of all nodes; table(seq) shows just those
 nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)).
+After >> it is an output format: x >> table prints x as a table in the
+console, x >> table(degree, dept, sort=degree) with those columns.
 
 ## Pie nodes, borders and edge bundling
 
@@ -6110,6 +6171,32 @@ SELECTs whose only column is `name` (nodes) or `__edgeid` (edges) return graph
 elements, so they combine with the rest of Gython; other queries return rows.
 UPDATEs are written back through the normal field setters (the display
 updates). Inserting or deleting rows is not supported — use addNode/remove.
+
+## Output formats: tables, summaries and counts in the console
+
+### `formats()`
+
+formats() lists the kinds of values, the format each is shown in, and
+the formats there are (see setFormat, showAs and value >> format).
+
+### `resetFormats()`
+
+resetFormats() goes back to the default output for everything.
+
+### `setFormat(target, format=None)`
+
+setFormat(kind, format) shows every value of that kind in format from now
+on: setFormat("groups", table), setFormat("set", summary). The kind can
+instead be a command, for just its results: setFormat(louvainClusters, table).
+Kinds: node, edge, set, groups, values, fieldvalue, dict, other. format can
+be a function: it gets the value and returns what to show.
+setFormat(kind) (or format None) goes back to the default.
+
+### `showAs(value, format='list')`
+
+showAs(value, format) prints value in an output format, as value >> format
+does: showAs(louvainClusters(), table), showAs(sel, "summary"). Formats: list,
+folded, table, summary, count, plain (see formats()).
 
 ## Colors
 

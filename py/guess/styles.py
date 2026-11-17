@@ -209,9 +209,17 @@ def install(session):
 
     # ---- data table ---------------------------------------------------------------
     @cmd
-    def table(seq=None):
+    def table(seq=None, *more, sort=None, reverse=None):
         """table() opens the data table of all nodes; table(seq) shows just those
-        nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges))."""
+        nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)).
+        After >> it is an output format: x >> table prints x as a table in the
+        console, x >> table(degree, dept, sort=degree) with those columns."""
+        if isinstance(seq, (Field, str)) or more or sort is not None or reverse is not None:
+            fields = [seq, *more] if seq is not None else []
+            opts = {"sort": sort} if sort is not None else {}
+            if reverse is not None:
+                opts["reverse"] = reverse
+            return session.out_formats["table"](*fields, **opts)
         if seq is None:
             session.emit({"type": "table", "kind": "n", "ids": None})
             return
@@ -222,6 +230,8 @@ def install(session):
             session.emit({"type": "table", "kind": "e", "ids": None if _is_all(seq, g, EDGE) else edges})
         else:
             session.emit({"type": "table", "kind": "n", "ids": None if _is_all(seq, g, NODE) else nodes})
+
+    table._guess_format = "table"
 
 
 def _is_all(seq, g, kind):

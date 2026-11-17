@@ -10,6 +10,7 @@ Stage 2 (AST):
   * attribute load / store  -> ``__ggetattr__`` / ``__gsetattr__`` (broadcast over tuples/lists)
   * ``a & b``, ``a | b``    -> ``__gand__`` / ``__gor__`` (set algebra on tuples of nodes)
   * ``a - b``               -> ``__gsub__`` (undirected edges between, as in the original)
+  * ``a >> b``              -> ``__gpipe__`` (a value shown in an output format: x >> table)
   * ``3 < degree < 6``      -> ``__gchain__`` (query sets intersect; plain values compare as usual)
   * ``degree in (1, 2)``    -> ``__gin__`` (a membership query when the left side is a field)
   * f-strings               -> ``__gfstr__`` (the same text, remembering the nodes and
@@ -185,6 +186,58 @@ _WHAT = {
     "node": "'{n}' is a node of this graph (write {n}.color = red to change it); call yours something else",
     "graph": "'{n}' is the graph; call yours something else",
 }
+
+
+# names that are output formats after >> (x >> table)
+FORMAT_NAMES = {"table", "summary", "count", "plain", "folded", "list"}
+
+
+def _is_format(e):
+    if isinstance(e, ast.Constant) and isinstance(e.value, str):
+        return True
+    if isinstance(e, ast.Call):
+        e = e.func
+    return isinstance(e, ast.Name) and e.id in FORMAT_NAMES
+
+
+def _split_pipe(e):
+    if isinstance(e, ast.BinOp) and isinstance(e.op, ast.RShift) and _is_format(e.right):
+        return e.left, e.right
+    return None
+
+
+class _LiftPipe(ast.NodeTransformer):
+    """``dept == 'dept1' >> table`` means ``(dept == 'dept1') >> table``: a
+    trailing ``>> format`` applies to the whole query, though Python's >> binds
+    tighter than ==, and, or, & and |."""
+
+    def _wrap(self, node, inner, fmt):
+        return ast.copy_location(ast.BinOp(left=inner, op=ast.RShift(), right=fmt), node)
+
+    def visit_Compare(self, node):
+        node = self.generic_visit(node)
+        sp = _split_pipe(node.comparators[-1])
+        if sp:
+            node.comparators[-1] = sp[0]
+            return self._wrap(node, node, sp[1])
+        return node
+
+    def visit_BoolOp(self, node):
+        node = self.generic_visit(node)
+        sp = _split_pipe(node.values[-1])
+        if sp:
+            node.values[-1] = sp[0]
+            return self._wrap(node, node, sp[1])
+        return node
+
+    def visit_BinOp(self, node):
+        node = self.generic_visit(node)
+        if isinstance(node.op, (ast.BitAnd, ast.BitOr, ast.BitXor)):
+            sp = _split_pipe(node.right)
+            if sp:
+                node.right = sp[0]
+                return self._wrap(node, node, sp[1])
+        return node
 
 
 class _Transformer(ast.NodeTransformer):
@@ -407,6 +460,8 @@ class _Transformer(ast.NodeTransformer):
             return ast.copy_location(_call("__gor__", node.left, node.right), node)
         if isinstance(node.op, ast.Sub):
             return ast.copy_location(_call("__gsub__", node.left, node.right), node)
+        if isinstance(node.op, ast.RShift):
+            return ast.copy_location(_call("__gpipe__", node.left, node.right), node)
         return node
 
     # ---- attribute broadcast -------------------------------------------
@@ -476,10 +531,25 @@ class _Transformer(ast.NodeTransformer):
                     # v4.dept: shown linked to every element with the same value
                     new.value = _call("__display_attr__", *v.args)
                 else:
-                    new.value = _call("__display__", v)
+                    origin = _origin(v)
+                    new.value = (_call("__display__", v, ast.Constant(origin)) if origin
+                                 else _call("__display__", v))
             body.extend(new if isinstance(new, list) else [new])
         node.body = body
         return node
+
+
+def _origin(v):
+    """The command a displayed value came from (louvainClusters() ->
+    "louvainClusters"), so its output format can be chosen by command."""
+    while isinstance(v, ast.Call) and isinstance(v.func, ast.Name) and v.func.id == "__gpipe__" and v.args:
+        v = v.args[0]
+    if isinstance(v, ast.Call) and isinstance(v.func, ast.Name):
+        if v.func.id == "__autocall__" and v.args and isinstance(v.args[0], ast.Name):
+            return v.args[0].id
+        if not v.func.id.startswith("__"):
+            return v.func.id
+    return None
 
 
 def _flatten_stmts(stmts):
@@ -495,6 +565,7 @@ def _flatten_stmts(stmts):
 def transform(source, *, is_protected=None, interactive=True, filename="<console>", imports=None):
     rewritten = rewrite_tokens(source)
     tree = ast.parse(rewritten, filename=filename, mode="exec")
+    tree = _LiftPipe().visit(tree)
     tr = _Transformer(is_protected, interactive, imports)
     tr.quiet = quiet_rows(source)
     tree = tr.visit(tree)

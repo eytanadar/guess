@@ -42,6 +42,7 @@ Commands can be called without parentheses when they take no arguments
 - [Interface building (panels, widgets, timers, events)](#interface-building-panels-widgets-timers-events) (25)
 - [Sessions and apps](#sessions-and-apps) (3)
 - [SQL](#sql) (1)
+- [Output formats: tables, summaries and counts in the console](#output-formats-tables-summaries-and-counts-in-the-console) (4)
 - [Colors](#colors) (4)
 - [Examples](#examples)
 - [Fields](#fields)
@@ -2533,10 +2534,12 @@ shapeBy(field) gives each value of a node field its own shape (circle,
 square, rounded square, triangle, diamond, hexagon, octagon, then
 repeating), the most common value first.
 
-### `table(seq=None)`
+### `table(seq=None, *more, sort=None, reverse=None)`
 
 table() opens the data table of all nodes; table(seq) shows just those
 nodes or edges (e.g. table(sel), table(freq > 10), table(g.edges)).
+After >> it is an output format: x >> table prints x as a table in the
+console, x >> table(degree, dept, sort=degree) with those columns.
 
 ## Pie nodes, borders and edge bundling
 
@@ -3400,6 +3403,32 @@ SELECTs whose only column is `name` (nodes) or `__edgeid` (edges) return graph
 elements, so they combine with the rest of Gython; other queries return rows.
 UPDATEs are written back through the normal field setters (the display
 updates). Inserting or deleting rows is not supported — use addNode/remove.
+
+## Output formats: tables, summaries and counts in the console
+
+### `formats()`
+
+formats() lists the kinds of values, the format each is shown in, and
+the formats there are (see setFormat, showAs and value >> format).
+
+### `resetFormats()`
+
+resetFormats() goes back to the default output for everything.
+
+### `setFormat(target, format=None)`
+
+setFormat(kind, format) shows every value of that kind in format from now
+on: setFormat("groups", table), setFormat("set", summary). The kind can
+instead be a command, for just its results: setFormat(louvainClusters, table).
+Kinds: node, edge, set, groups, values, fieldvalue, dict, other. format can
+be a function: it gets the value and returns what to show.
+setFormat(kind) (or format None) goes back to the default.
+
+### `showAs(value, format='list')`
+
+showAs(value, format) prints value in an output format, as value >> format
+does: showAs(louvainClusters(), table), showAs(sel, "summary"). Formats: list,
+folded, table, summary, count, plain (see formats()).
 
 ## Colors
 

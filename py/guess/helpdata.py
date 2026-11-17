@@ -36,6 +36,7 @@ GROUPS = [
     ("gui", "Interface building (panels, widgets, timers, events)"),
     ("persist", "Sessions and apps"),
     ("sqlquery", "SQL"),
+    ("outformats", "Output formats: tables, summaries and counts in the console"),
     ("colors", "Colors"),
 ]
 

@@ -514,3 +514,32 @@ test("legends and chart panels fold", async ({ page }) => {
   await panel.locator(".panel-fold").click();
   await expect(panel.locator(".panel-body")).toBeVisible();
 });
+
+test("output formats: x >> table prints a linked, sortable, foldable table", async ({ page }) => {
+  await boot(page);
+  await run(page, "dept == 'dept1' >> table(degree)");
+  const t = page.locator(".result .out-table").last();
+  await expect(t.locator("th")).toHaveText(["node", "degree"]);
+  await expect(t.locator("tbody tr")).toHaveCount(43);
+  // sort by degree, descending on the second click
+  await t.locator("th").nth(1).click();
+  await t.locator("th").nth(1).click();
+  const first = Number(await t.locator("tbody tr").first().locator("td").nth(1).innerText());
+  const last = Number(await t.locator("tbody tr").last().locator("td").nth(1).innerText());
+  expect(first).toBeGreaterThanOrEqual(last);
+  // a node in a cell is linked
+  await t.locator(".obj.node").first().hover();
+  await expect.poll(() => page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size)).toBe(1);
+  // groups: label, size, members (folded); the table folds to one line
+  await run(page, "groupBy(dept) >> table(sort='size')");
+  const gt = page.locator(".result .out-table").last();
+  await expect(gt.locator("th")).toHaveText(["label", "size", "members"]);
+  await expect(gt.locator("tbody tr").first().locator(".grp.collapsed")).toHaveCount(1);
+  await gt.locator(":scope > .list-toggle").click();
+  await expect(gt.locator(".tbl-short")).toHaveText("table: label, size, members (21 rows)");
+  // settings: every set as a count from now on
+  await run(page, "setFormat('set', count)");
+  await run(page, "dept == 'dept1'");
+  await expect(page.locator(".result").last()).toHaveText("43");
+  expect(await lastError(page)).toBeNull();
+});

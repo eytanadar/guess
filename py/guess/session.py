@@ -118,6 +118,8 @@ class Session:
         mathtools.install(self)
         metrics.install(self)
         compat.install(self)
+        from . import outformats
+        outformats.install(self)
         states.install(self)
         ranges.install(self)
         self.pending_morph = None
@@ -1003,8 +1005,9 @@ class Session:
         """print(), except that nodes, edges and sets of them come out as linked
         output (hover to highlight, click to select) like displayed values."""
         import builtins
+        from .outformats import Formatted, render
         if (file is not None or end != "\n" or not isinstance(sep, str)
-                or not any(_linkable(a) for a in args)):
+                or not any(_linkable(a) or isinstance(a, Formatted) for a in args)):
             return builtins.print(*args, sep=sep, end=end, file=file, flush=flush)
         segs = []
         for i, a in enumerate(args):
@@ -1012,15 +1015,23 @@ class Session:
                 segs.append(sep)
             if isinstance(a, LinkedStr) and a.linked:
                 segs.extend(a.segs)            # printed text: no quotes
+            elif isinstance(a, Formatted):
+                segs.append(render(self, a.value, fmt=a.fmt))
             else:
-                segs.append(segment(a) if _linkable(a) else str(a))
+                segs.append(render(self, a) if _linkable(a) else str(a))
         self.emit({"type": "out", "segs": segs, "gid": self.graph_gen})
 
     def say(self, *parts):
         """Print a line whose nodes and edges are linked (see linked()); for commands."""
         self._print(linked(*parts))
 
-    def display(self, value):
+    def display(self, value, origin=None):
+        """Show a top-level expression's value (origin: the command it came from),
+        in the output format chosen for it (see outformats)."""
+        from .outformats import Formatted, render
+        fmt = None
+        if isinstance(value, Formatted):
+            value, fmt = value.value, value.fmt
         if value is None:
             return
         self.ns["_"] = value
@@ -1028,19 +1039,19 @@ class Session:
         if is_altair(value):
             self.system["showChart"][0](value)
             return
-        self.emit({"type": "out", "segs": [segment(value)], "gid": self.graph_gen})
+        self.emit({"type": "out", "segs": [render(self, value, origin=origin, fmt=fmt)], "gid": self.graph_gen})
 
     def display_attr(self, obj, name):
         """Show obj.name; a node's or edge's field value (v4.dept) is linked to
         every node (edge) with that value, so pointing at it shows them all and
         right-clicking acts on the query dept == 'dept4'."""
         from .runtime import ggetattr
+        from .outformats import render
         value = ggetattr(obj, name)
-        seg = _value_seg(obj, name, value)
-        if seg is None:
+        if not isinstance(obj, (Node, Edge)) or value is None:
             return self.display(value)
         self.ns["_"] = value
-        self.emit({"type": "out", "segs": [seg], "gid": self.graph_gen})
+        self.emit({"type": "out", "segs": [render(self, value, obj=obj, attr=name)], "gid": self.graph_gen})
 
     # ---- render state ---------------------------------------------------------
     def node_record(self, n):

@@ -1094,6 +1094,7 @@ function connector(c: string): string {
 
 export function renderSeg(s: Seg): Node {
   if (typeof s === "string") return document.createTextNode(s);
+  if ("tbl" in s) return renderTable(s);
   if ("g" in s) {
     const span = el("span", "grp");
     span.dataset.k = "g";
@@ -1133,6 +1134,72 @@ export function renderSeg(s: Seg): Node {
   } else {
     span.textContent = s.t;
   }
+  return span;
+}
+
+/** A table printed in the console (x >> table): linked cells, columns that
+ *  sort when their header is clicked, and an arrow to fold it to one line. */
+function renderTable(s: Extract<Seg, { tbl: unknown }>): HTMLElement {
+  const span = el("span", "grp out-table");
+  span.dataset.k = "g";
+  if (s.a) span.dataset.a = s.a;
+  if (s.x?.length) span.dataset.x = JSON.stringify(s.x);
+  const { cols, rows } = s.tbl;
+  const table = el("table", "out-tbl");
+  const head = el("tr");
+  const body = el("tbody");
+  const trs = rows.map((r) => {
+    const tr = el("tr");
+    for (const c of r) {
+      const td = el("td");
+      td.append(renderSeg(c));
+      tr.append(td);
+    }
+    return tr;
+  });
+  body.append(...trs);
+  let sorted = -1, desc = false;
+  cols.forEach((name, i) => {
+    const th = el("th");
+    th.textContent = name;
+    th.title = `Sort by ${name}`;
+    th.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      desc = sorted === i ? !desc : false;
+      sorted = i;
+      const text = (tr: HTMLElement) => tr.children[i]?.textContent ?? "";
+      const nums = trs.every((tr) => text(tr) === "" || !isNaN(Number(text(tr))));
+      const order = [...trs].sort((a, b) => {
+        const d = nums ? Number(text(a) || -Infinity) - Number(text(b) || -Infinity)
+          : text(a).localeCompare(text(b), undefined, { numeric: true });
+        return desc ? -d : d;
+      });
+      body.replaceChildren(...order);
+      head.querySelectorAll("th").forEach((h, j) => h.dataset.sort = j === i ? (desc ? "▼" : "▲") : "");
+    });
+    head.append(th);
+  });
+  const thead = el("thead");
+  thead.append(head);
+  table.append(thead, body);
+  const box = el("span", "tbl-box");
+  box.append(table);
+  const short = el("span", "tbl-short");
+  short.textContent = `table: ${cols.join(", ")} (${rows.length} row${rows.length === 1 ? "" : "s"})`;
+  const arrow = el("sup", "list-toggle");
+  arrow.setAttribute("role", "button");
+  const set = (c: boolean) => {
+    span.classList.toggle("collapsed", c);
+    arrow.textContent = c ? "▸" : "▾";
+    arrow.title = c ? `Show the table (${rows.length} rows)` : "Collapse";
+  };
+  arrow.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    set(!span.classList.contains("collapsed"));
+  });
+  arrow.addEventListener("contextmenu", (ev) => ev.stopPropagation());
+  span.append(arrow, short, box);
+  set(!!s.c);
   return span;
 }
 
