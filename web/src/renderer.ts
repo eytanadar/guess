@@ -1723,22 +1723,45 @@ export class Renderer {
     return best;
   }
 
+  /** The cursor for the pointer resting (not dragging) over hit, given the
+   *  click tool and the keys held: in Select, the arrow over a node or edge,
+   *  the hand over the background (drag pans), + with Shift or Alt (drag
+   *  draws a box or lasso). The other tools: + over the background, the
+   *  pointing hand over a node they act on. */
+  private restCursor(hit: Hit, shift: boolean, alt: boolean): string {
+    const tool = (this.app.canvas.closest<HTMLElement>("[data-tool]")?.dataset.tool) ?? "select";
+    if (this.spaceDown) return "grab";
+    if (this.dragSelects) return "crosshair";              // Cluster: every drag is a lasso
+    if (tool === "lens") return "crosshair";
+    if (tool === "path" || tool === "heat" || tool === "paint") return hit?.kind === "n" ? "pointer" : "crosshair";
+    if (hit) return "default";
+    return shift || alt ? "crosshair" : "grab";
+  }
+
   private bindInput() {
     const el = this.app.canvas;
     const typing = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.(".cm-editor, input, textarea, select, [contenteditable=true], dialog");
+    // where the pointer rests, so the cursor can follow Shift / Alt / Space without a move
+    let rest: { sx: number; sy: number; hit: Hit } | null = null;
+    let dragging = false;
+    const setRestCursor = (shift: boolean, alt: boolean) => {
+      if (!rest || dragging) return;
+      el.style.cursor = this.restCursor(rest.hit, shift, alt);
+    };
     window.addEventListener("keydown", (ev) => {
       if (ev.code === "Space" && this.dragSelects && !typing(ev.target)) {
         this.spaceDown = true;
-        el.style.cursor = "grab";
         ev.preventDefault();
       }
+      if (ev.key === "Shift" || ev.key === "Alt" || ev.code === "Space") setRestCursor(ev.shiftKey, ev.altKey);
     });
     window.addEventListener("keyup", (ev) => {
-      if (ev.code === "Space" && this.spaceDown) {
-        this.spaceDown = false;
-        el.style.cursor = "";
-      }
+      if (ev.code === "Space" && this.spaceDown) this.spaceDown = false;
+      if (ev.key === "Shift" || ev.key === "Alt" || ev.code === "Space") setRestCursor(ev.shiftKey, ev.altKey);
     });
+    // a tool change (data-tool on the graph) changes the cursor too
+    const graphEl = el.closest<HTMLElement>("[data-tool]") ?? el.parentElement;
+    if (graphEl) new MutationObserver(() => setRestCursor(false, false)).observe(graphEl, { attributes: true, attributeFilter: ["data-tool"] });
     let drag: { mode: "pan" | "node" | "box" | "lasso"; id?: number; hit: Hit; lx: number; ly: number; moved: boolean; add?: boolean; tool?: boolean;
       beh?: DragBehaviour | null; frame?: DragFrame; saved?: Map<number, [number, number]>; grab?: [number, number] } | null = null;
     const local = (ev: PointerEvent | WheelEvent | MouseEvent) => {
@@ -1747,6 +1770,7 @@ export class Renderer {
     };
     el.addEventListener("pointerdown", (ev) => {
       if (ev.button !== 0) return;
+      dragging = true;
       const { sx, sy } = local(ev);
       const hit = this.hitTest(sx, sy);
       this.tween = null;
@@ -1813,8 +1837,22 @@ export class Renderer {
         }
         return;
       }
-      this.events.hover(this.hitTest(sx, sy), ev.clientX, ev.clientY);
+      const hit = this.hitTest(sx, sy);
+      rest = { sx, sy, hit };
+      el.style.cursor = this.restCursor(hit, ev.shiftKey, ev.altKey);
+      this.events.hover(hit, ev.clientX, ev.clientY);
     });
+    const afterDrag = (ev: PointerEvent) => {
+      const { sx, sy } = local(ev);
+      const r = el.getBoundingClientRect();
+      if (sx < 0 || sy < 0 || sx > r.width || sy > r.height) {
+        rest = null;
+        el.style.cursor = "";
+        return;
+      }
+      rest = { sx, sy, hit: this.hitTest(sx, sy) };
+      el.style.cursor = this.restCursor(rest.hit, ev.shiftKey, ev.altKey);
+    };
     const end = (ev: PointerEvent) => {
       if (drag?.beh) {
         this.dragOverlay = null;
@@ -1824,7 +1862,8 @@ export class Renderer {
         if (!drag.moved) this.events.click(drag.hit, ev.shiftKey, ev.altKey);
         this.drawOverlay();
         drag = null;
-        el.style.cursor = "";
+        dragging = false;
+        afterDrag(ev);
         if (el.hasPointerCapture(ev.pointerId)) el.releasePointerCapture(ev.pointerId);
         return;
       }
@@ -1850,12 +1889,14 @@ export class Renderer {
         this.drawOverlay();
       } else if (drag && !drag.moved) this.events.click(drag.hit, ev.shiftKey, ev.altKey);
       drag = null;
-      el.style.cursor = "";
+      dragging = false;
+      afterDrag(ev);
       if (el.hasPointerCapture(ev.pointerId)) el.releasePointerCapture(ev.pointerId);
     };
     el.addEventListener("pointerup", end);
     el.addEventListener("pointercancel", end);
     el.addEventListener("pointerleave", () => {
+      if (!drag) rest = null;
       if (!drag) this.events.hover(null, 0, 0);
     });
     el.addEventListener("wheel", (ev) => {

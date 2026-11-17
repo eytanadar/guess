@@ -258,6 +258,7 @@ export type ToWorker =
   | { type: "complete"; id: number; code: string }
   | { type: "completions"; id: number; text: string }
   | { type: "docs"; id: number }
+  | { type: "colors"; id: number }
   | { type: "snapshot"; id: number; since: number }
   | { type: "event"; id: number; target: string; name: string; value: string }
   | { type: "describe"; id: number; kind: "n" | "e"; ident: number }

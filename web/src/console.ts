@@ -750,6 +750,23 @@ export class Console {
 
   /** Syntax-highlighted source; documented command names become hoverable,
    *  and every token knows its offset (for hovering names and queries). */
+  /** Colour names GUESS knows ("#rrggbb" by lower-case name), from the worker. */
+  colors: Record<string, string> = {};
+
+  /** The CSS colour a code token stands for: a colour name (red, dandelion)
+   *  or a string holding one ('#ff0000', '255,0,0', 'steelblue'); else null. */
+  private codeColor(text: string, classes: string): string | null {
+    if (classes.includes("variableName") && !(text in this.docs)) return this.colors[text.toLowerCase()] ?? null;
+    if (!classes.includes("string")) return null;
+    const m = /^(['"])(.*)\1$/.exec(text);
+    if (!m) return null;
+    const v = m[2].trim();
+    if (/^#[0-9a-f]{6}$/i.test(v)) return v;
+    const rgb = /^(\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})(?:,\s*(\d{1,3}))?$/.exec(v);
+    if (rgb) return `rgba(${rgb[1]}, ${rgb[2]}, ${rgb[3]}, ${rgb[4] ? Number(rgb[4]) / 255 : 1})`;
+    return this.colors[v.toLowerCase()] ?? null;
+  }
+
   private renderCode(code: string): DocumentFragment {
     // one block per line, so an error can mark the line it happened on
     const frag = document.createDocumentFragment();
@@ -762,6 +779,8 @@ export class Console {
       span.dataset.from = String(pos);
       span.textContent = text;
       line.append(span);
+      const col = this.codeColor(text, classes);
+      if (col) line.append(codeSwatch(col, text));
       pos += text.length;
     }, () => {
       frag.append(line);
@@ -769,6 +788,7 @@ export class Console {
       pos += 1;
     });
     frag.append(line);
+    for (const r of foldRanges(code)) foldCode(frag, r);
     return frag;
   }
 
@@ -1048,6 +1068,83 @@ export class Console {
  *  comparison (with its whole chain, as in 3 < degree < 6) when the name is part
  *  of one, the whole expression when on & | and or not, otherwise the name.
  *  Calls are never included (the worker refuses them anyway). */
+/** Long literal lists of nodes and edges in code (a right-click menu's
+ *  "(v1, v2, v3, …).color = red"): the stretch to fold, after the first item. */
+const ITEM = /^\s*(?:[A-Za-z_]\w*|g\.getNodeByName\("(?:[^"\\]|\\.)*"\)|\((?:[A-Za-z_]\w*|g\.getNodeByName\("(?:[^"\\]|\\.)*"\)) (?:-|->) (?:[A-Za-z_]\w*|g\.getNodeByName\("(?:[^"\\]|\\.)*"\))\))\s*$/;
+const FOLD_MIN = 6;
+export function foldRanges(code: string): { from: number; to: number; count: number; open: number }[] {
+  const out: { from: number; to: number; count: number; open: number }[] = [];
+  const stack: number[] = [];
+  let quote = "";
+  for (let i = 0; i < code.length; i++) {
+    const ch = code[i];
+    if (quote) {
+      if (ch === "\\") i++;
+      else if (ch === quote) quote = "";
+      continue;
+    }
+    if (ch === "'" || ch === '"') quote = ch;
+    else if (ch === "(") stack.push(i);
+    else if (ch === ")" && stack.length) {
+      const open = stack.pop()!;
+      const inner = code.slice(open + 1, i);
+      // split at top-level commas
+      const items: [number, number][] = [];
+      let depth = 0, start = 0, q = "";
+      for (let k = 0; k <= inner.length; k++) {
+        const c = inner[k];
+        if (q) { if (c === "\\") k++; else if (c === q) q = ""; continue; }
+        if (c === "'" || c === '"') q = c;
+        else if (c === "(") depth++;
+        else if (c === ")") depth--;
+        else if ((c === "," && depth === 0) || k === inner.length) { items.push([start, k]); start = k + 1; }
+      }
+      if (items.length < FOLD_MIN || !items.every(([a, b]) => ITEM.test(inner.slice(a, b)))) continue;
+      // keep the first item; fold the rest (with its comma)
+      for (let j = out.length - 1; j >= 0; j--) if (out[j].from > open) out.splice(j, 1);
+      out.push({ from: open + 1 + items[0][1], to: i, count: items.length - 1, open });
+    }
+  }
+  return out;
+}
+
+/** A small swatch after a colour in code (not part of the code's text). */
+function codeSwatch(color: string, text: string): HTMLElement {
+  const sw = el("span", "swatch code-swatch");
+  sw.style.setProperty("--swatch", color);
+  sw.title = `${text.replace(/^['"]|['"]$/g, "")}: ${color}`;
+  sw.setAttribute("aria-hidden", "true");
+  return sw;
+}
+
+/** Wrap the code tokens in [from, to) in a folded span with a "… +N more" toggle. */
+function foldCode(frag: DocumentFragment, r: { from: number; to: number; count: number; open: number }) {
+  const spans = [...frag.querySelectorAll<HTMLElement>("[data-from]")].filter((s) => {
+    const f = Number(s.dataset.from);
+    return f >= r.from && f < r.to;
+  });
+  if (!spans.length) return;
+  const body = el("span", "code-fold-body");
+  spans[0].before(body);
+  body.append(...spans);
+  const toggle = el("span", "code-fold");
+  toggle.setAttribute("role", "button");
+  // hovering the count stands for the whole list (as its brackets do)
+  toggle.dataset.from = String(r.open);
+  const set = (folded: boolean) => {
+    body.hidden = folded;
+    toggle.textContent = folded ? `, … +${r.count} more` : " ▴";
+    toggle.title = folded ? `Show all ${r.count + 1}` : "Fold the list";
+  };
+  toggle.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    set(!body.hidden);
+  });
+  toggle.addEventListener("dblclick", (ev) => ev.stopPropagation());
+  body.after(toggle);
+  set(true);
+}
+
 export function peekRange(code: string, pos: number): [number, number] | null {
   const tree = pythonLanguage.parser.parse(code);
   let node = tree.resolveInner(pos, 1);
@@ -1061,6 +1158,8 @@ export function peekRange(code: string, pos: number): [number, number] | null {
   if (["CompareOp", "in", "is"].includes(node.name) && p && isCmp(p)) return [chain(p).from, chain(p).to];
   if (["BitOp", "and", "or"].includes(node.name) && p?.name === "BinaryExpression") return [p.from, p.to];
   if (node.name === "not" && p?.name === "UnaryExpression") return [p.from, p.to];
+  // the brackets or commas of a tuple of nodes and edges ((v2, v7, v11).color = blue): the whole set
+  if (["(", ")", ","].includes(node.name) && p?.name === "TupleExpression") return [p.from, p.to];
   if (node.name !== "VariableName") return null;
   // a callee (colorize in colorize(dept)) has its documentation instead
   if (p?.name === "CallExpression" && p.firstChild?.from === node.from) return null;

@@ -460,9 +460,46 @@ test("right-clicking selected output acts on just the selected nodes, whole name
   const cells = await page.locator(".cell").count();
   await page.locator("#menu button", { hasText: "Show labels" }).click();
   await expect(page.locator(".cell")).toHaveCount(cells + 1);
-  await expect(page.locator(".cell-code").last()).toHaveText("_sel.labelvisible = true");
-  await run(page, "sorted(n.name for n in _sel)");
-  await expect(page.locator(".result").last()).toHaveText(JSON.stringify([...names].sort()).replace(/"/g, "'").replace(/,/g, ", "));
+  // the cell spells out the nodes, so it means the same when run again or saved
+  await expect(page.locator(".cell-code").last()).toHaveText(`(${names.join(", ")}).labelvisible = true`);
+});
+
+test("menu actions on many elements spell them out, folded in the console", async ({ page }) => {
+  await boot(page);
+  await run(page, "highest(degree, 8)");
+  const objs = page.locator(".result").last().locator(".obj.node");
+  const names = await objs.evaluateAll((els) => els.map((e) => e.textContent));
+  // select them all in the output, then right-click the selection
+  await objs.first().evaluate((first) => {
+    const all = first.parentElement!.querySelectorAll(".obj.node");
+    const r = document.createRange();
+    r.setStartBefore(first);
+    r.setEndAfter(all[all.length - 1]);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(r);
+  });
+  await objs.nth(2).click({ button: "right" });
+  await expect(page.locator("#menu .menu-head")).toContainText("8 nodes");
+  await page.locator("#menu .swatches button[title=red]").click();
+  const code = page.locator(".cell-code").last();
+  await expect(code).toHaveAttribute("data-code", `(${names.join(", ")}).color = red`);
+  // shown folded after the first node; the toggle opens it
+  const shown = () => code.evaluate((e) => (e as HTMLElement).innerText.replace(/\s+$/, ""));
+  await expect.poll(shown).toBe(`(${names[0]}, … +7 more).color = red`);
+  // hovering the count, or the brackets, highlights the whole set
+  const hl = () => page.evaluate(() => (window as any).__guess.renderer.hl.nodes.size);
+  await code.locator(".code-fold").hover();
+  await expect.poll(hl).toBe(8);
+  await page.mouse.move(5, 5);
+  await expect.poll(hl).toBe(0);
+  await code.locator("[data-from='0']:not(.code-fold)").hover();
+  await expect.poll(hl).toBe(8);
+  await code.locator(".code-fold").click();
+  await expect.poll(shown).toBe(`(${names.join(", ")} ▴).color = red`);
+  // the cell runs the same again: every one of them is red
+  await run(page, `all(n.color == red for n in (${names.join(", ")}))`);
+  await expect(page.locator(".result").last()).toHaveText("True");
+  expect(await lastError(page)).toBeNull();
 });
 
 test("printed lists fold to their first item; one-item lists don't fold", async ({ page }) => {
@@ -553,6 +590,12 @@ test("colours print as swatches whose tooltip gives the rgb value and name", asy
   await expect(sw.nth(0)).toHaveAttribute("title", "red — rgb(255, 0, 0)");
   await expect(sw.nth(1)).toHaveAttribute("title", "10,20,30 — rgb(10, 20, 30)");
   expect(await sw.nth(0).evaluate((e) => getComputedStyle(e).backgroundImage)).toContain("rgb(255, 0, 0)");
+  // colours in code get a swatch too: names (2006 and CSS) and colour strings
+  await run(page, "v1.color = blue; v2.color = dandelion; v3.color = '#ff8800'; v5.color = 'navy'; x9 = 5");
+  const code = page.locator(".cell-code").last();
+  await expect(code.locator(".code-swatch")).toHaveCount(4);
+  await expect(code.locator(".code-swatch").first()).toHaveAttribute("title", /^blue: #/);
+  await expect(code).toHaveAttribute("data-code", "v1.color = blue; v2.color = dandelion; v3.color = '#ff8800'; v5.color = 'navy'; x9 = 5");
   // a field's colour stays linked to the nodes with it
   await run(page, "v4.color");
   await page.locator(".result").last().locator(".grp").hover();

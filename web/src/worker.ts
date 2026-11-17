@@ -286,6 +286,9 @@ function handle(msg: ToWorker) {
     case "docs":
       post({ type: "reply", id: msg.id, value: call("command_docs") });
       break;
+    case "colors":
+      post({ type: "reply", id: msg.id, value: call("color_table") });
+      break;
     case "describe":
       post({ type: "reply", id: msg.id, value: call("describe", msg.kind, msg.ident) });
       break;

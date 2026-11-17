@@ -952,3 +952,39 @@ test("boxes and ellipses, upright or turned, enclose their groups", async ({ pag
   ]);
   await page.screenshot({ path: test.info().outputPath("shapes.png") });
 });
+
+test("the graph's cursor shows what a click or drag would do, before pressing", async ({ page }) => {
+  await boot(page);
+  const canvas = page.locator("#graph canvas").first();
+  const cursor = () => canvas.evaluate((c) => (c as HTMLElement).style.cursor);
+  const box = (await canvas.boundingBox())!;
+  // an empty corner of the graph: the hand (drag pans)
+  await page.mouse.move(box.x + 6, box.y + 6);
+  await expect.poll(cursor).toBe("grab");
+  // Shift (box) and Alt (lasso) over the background: +, without moving
+  await page.keyboard.down("Shift");
+  await expect.poll(cursor).toBe("crosshair");
+  await page.keyboard.up("Shift");
+  await expect.poll(cursor).toBe("grab");
+  await page.keyboard.down("Alt");
+  await expect.poll(cursor).toBe("crosshair");
+  await page.keyboard.up("Alt");
+  // over a node: the arrow
+  const [x, y] = await nodePoint(page, "v73");
+  await page.mouse.move(x, y);
+  await expect.poll(cursor).toBe("default");
+  // dragging the background: the closed hand, then back to the open one
+  await page.mouse.move(box.x + 6, box.y + 6);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 40, box.y + 30, { steps: 3 });
+  await expect.poll(cursor).toBe("grabbing");
+  await page.mouse.up();
+  await expect.poll(cursor).toBe("grab");
+  // the Path tool: + over the background, the pointing hand over a node
+  await page.locator("button[data-tool=path]").click();
+  await page.mouse.move(box.x + 6, box.y + 6);
+  await expect.poll(cursor).toBe("crosshair");
+  const [px, py] = await nodePoint(page, "v73");
+  await page.mouse.move(px, py);
+  await expect.poll(cursor).toBe("pointer");
+});

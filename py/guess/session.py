@@ -930,6 +930,11 @@ class Session:
             return styles.table_data(self.graph, kind, ids)
         return styles.field_info(self.graph, kind)
 
+    def color_table(self):
+        """Every colour name GUESS knows (the 2006 names and the CSS ones) as
+        "#rrggbb", so the console can show a swatch beside a colour in code."""
+        return {name: "#%02x%02x%02x" % tuple(c[:3]) for name, c in colors_mod.COLORS.items()}
+
     def command_docs(self):
         """name -> 'signature\ndoc' for every system command (for hover help)."""
         import inspect

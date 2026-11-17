@@ -247,3 +247,9 @@ def test_field_values_in_print_and_fstrings_are_linked():
     assert outs[0]["segs"][0]["q"] == "dept == 'dept3'"
     # print to a file, or with end=, is plain Python print
     assert s.run("print(v4.dept, end='\\n')")
+
+
+def test_color_table_for_code_swatches():
+    s = _s()
+    t = s.color_table()
+    assert t["red"] == "#ff0000" and t["dandelion"] == "#fcd870" and t["navy"] == "#000080" and len(t) > 150

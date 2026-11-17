@@ -2104,6 +2104,16 @@ can see where it is.
 | right-click | a menu for the node, the edge, or the whole selection |
 | Delete or Backspace | remove the selected nodes (also *Edit → Delete selected nodes*, or *Delete* in the right-click menu); undo brings them back |
 
+The pointer shows what a click or drag would do before you press:
+
+- With **Select**, it's the arrow over a node or edge, and the hand over
+  the background (a drag pans).
+- Holding **Shift** or **Alt/Option** over the background turns it into +
+  (a drag draws a box or a lasso).
+- The Path, Heat and Paint tools show + over the background and the
+  pointing hand over a node they can act on.
+- The Lens and Cluster tools show +.
+
 ![A lasso selection (Alt/Option-drag).](../../web/public/help/lasso.png){width=60%}
 
 The selection is `sel` in the console (section 5.4). The right-click menu
@@ -2348,6 +2358,16 @@ built-in names don't.
   it) and right-click the selection: the menu acts on just the nodes and
   edges selected. A name the selection cuts off counts whole (selecting from
   the "5" of `v25` includes `v25`), and the selection grows to show it.
+- **Menu actions write real code.** A menu action on some nodes or edges
+  runs code that names them, e.g. `(v2, v7, v11).color = blue`. So the cell
+  does the same thing when you run it again, and `saveHistory()` replays it.
+  A long list is folded in the cell, `(v2, … +17 more).color = blue`: click
+  the count to see them all. Hovering the count, the brackets or a comma
+  highlights the whole set in the graph (hovering one name highlights that
+  node). *Edit* and copying still give the whole code.
+- **Colours in code.** A colour in code you've run, whether a name (`blue`,
+  `dandelion`) or a string (`'#ff8800'`, `'255,0,0'`), has a small swatch
+  after it. Hover the swatch for its value.
 - **Executed code.** Hover a name or a query in code you've run to see what
   it means *now*: a variable's members, the matches of `degree > 5` (or of
   the whole of `3 < degree < 6`), a node, or a value. Hovering a field shows

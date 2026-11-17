@@ -1146,16 +1146,20 @@ async function insertItems(items: Item[], expr?: string | null) {
   if (code) term.insertAtCursor(code);
 }
 
+/** The code a menu action acts on: the menu's query (a legend row, a chart
+ *  bar) or the elements themselves, spelled out (v4, (v12, v40, v73),
+ *  ((v1 - v2), v9)), so the cell means the same thing when it is run again,
+ *  saved in the history or read later. Long lists fold in the console. */
 async function targetExpr(items: Item[]): Promise<string> {
   if (menuExpr) return menuExpr;
-  const selIds = renderer.selection;
-  if (items.length > 1 && items.length === selIds.size && items.every((i) => i[0] === "n" && selIds.has(i[1]))) return "sel";
-  if (items.length === 1 && items[0][0] === "n") {
-    const name = renderer.nodes.get(items[0][1])?.name ?? "";
-    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) return name;
-  }
-  await request((id) => ({ type: "assign", id, name: "_sel", items }));
-  return "_sel";
+  const one = (it: Item) => {
+    if (it[0] === "n") return nodeExpr(it[1]);
+    const e = renderer.edges.get(it[1]);
+    return e ? `(${nodeExpr(e.s)} ${e.d ? "->" : "-"} ${nodeExpr(e.t)})` : null;
+  };
+  const parts = items.map(one).filter((x): x is string => !!x);
+  if (parts.length === 1) return parts[0];
+  return `(${parts.join(", ")})`;
 }
 
 function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; title?: string } = {}) {
@@ -1207,8 +1211,8 @@ function openMenu(items: Item[], x: number, y: number, opts: { expr?: string; ti
       const v = await ask({ title: "Node size", label: "Size", value: "15", type: "number" });
       if (v && !isNaN(Number(v))) await runOn((t) => `${t}.size = ${Number(v)}`)();
     });
-    act("Style: circle", runOn((t) => `${t}.style = 2`));
-    act("Style: square", runOn((t) => `${t}.style = 1`));
+    act("Style: circle", runOn((t) => `${t}.style = 'circle'`));
+    act("Style: square", runOn((t) => `${t}.style = 'square'`));
   }
   if (edges && !nodes) {
     act("Width…", async () => {
@@ -2395,6 +2399,7 @@ document.addEventListener("keydown", (ev) => {
 // ---- start --------------------------------------------------------------------------
 async function onReady() {
   term.docs = await request<Record<string, string>>((id) => ({ type: "docs", id }));
+  term.colors = await request<Record<string, string>>((id) => ({ type: "colors", id }));
   if (sharedSession) {
     try {
       const text = await unpackSession(sharedSession);
