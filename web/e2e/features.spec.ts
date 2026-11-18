@@ -629,6 +629,22 @@ test("igraph loads in the background and powers statistics, communities and layo
   expect(errors).toEqual([]);
 });
 
+test("ELK loads in the background and lays out graphs", async ({ page }) => {
+  const errors = await boot(page);
+  // elkjs arrives after igraph and Graphviz; retry until elkLayout runs
+  await expect.poll(async () => {
+    await run(page, "try:\n    elkLayout()\n    print('elk', 'ok')\nexcept Exception as e:\n    print('not yet', e)");
+    return page.locator(".cell").last().innerText();
+  }, { timeout: 90000, intervals: [2000] }).toContain("elk ok");
+  await run(page, "makeSimpleDirectedRandom(20, 30)\nremove(feedbackEdges())\nelkLayout()\n"
+    + "print(all(e.node1.y + e.node1.height / 2 < e.node2.y + e.node2.height / 2 for e in g.edges))");
+  await expect(page.locator(".cell").last()).toContainText("True");
+  await run(page, 'elkLayout("stress")\nelkLayout("mrtree")\nprint("algs ok")');
+  await expect(page.locator(".cell").last()).toContainText("algs ok");
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});
+
 test("Graphviz loads in the background and lays out graphs", async ({ page }) => {
   const errors = await boot(page);
   await expect.poll(async () => {

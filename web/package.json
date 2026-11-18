@@ -27,6 +27,7 @@
     "@hpcc-js/wasm-graphviz": "1.30.0",
     "@lezer/highlight": "1.2.5",
     "@replit/codemirror-vim": "6.3.0",
+    "elkjs": "0.9.3",
     "pixi.js": "8.22.0",
     "vega": "6.4.0",
     "vega-embed": "7.3.0",

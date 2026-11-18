@@ -89,7 +89,14 @@ session = Session(lambda m: __js_emit(json.dumps(m)))
         (dot: string, engine: string, nop: number) =>
           gv.layout(dot, "json", engine as Parameters<typeof gv.layout>[2], nop ? { nop } : undefined);
     })
-    .catch((e: unknown) => console.warn("Graphviz did not load; its layouts are unavailable", e));
+    .catch((e: unknown) => console.warn("Graphviz did not load; its layouts are unavailable", e))
+    // then ELK (about 1.6 MB of JavaScript): elkLayout() in py/guess/elk.py
+    .then(() => import("./elk"))
+    .then(({ loadElk }) => loadElk())
+    .then((run) => {
+      (self as unknown as { guessElkLayout: unknown }).guessElkLayout = run;
+    })
+    .catch((e: unknown) => console.warn("ELK did not load; elkLayout is unavailable", e));
 }
 
 // Pyodide's networkx recipe depends on matplotlib (and numpy, Pillow, ...).

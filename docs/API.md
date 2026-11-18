@@ -19,7 +19,8 @@ Commands can be called without parentheses when they take no arguments
 - [networkx bridge and sample graphs](#networkx-bridge-and-sample-graphs) (4)
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
-- [Layouts](#layouts) (33)
+- [ELK layouts (Eclipse Layout Kernel): layered, trees, radial, stress, force, packing](#elk-layouts-eclipse-layout-kernel-layered-trees-radial-stress-force-packing) (1)
+- [Layouts](#layouts) (34)
 - [Structure-aware layout (motifLayout, after LUMINA)](#structure-aware-layout-motiflayout-after-lumina) (1)
 - [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (44)
@@ -1916,6 +1917,20 @@ K is the ideal edge length in inches; overlap="prism" removes overlaps.
 twopiLayout(v1) places nodes on rings by their distance from a root
 (Graphviz's twopi; default root: chosen by Graphviz).
 
+## ELK layouts (Eclipse Layout Kernel): layered, trees, radial, stress, force, packing
+
+### `elkLayout(algorithm='layered', direction=None, spacing=None, route=True, options=None)`
+
+elkLayout() runs an ELK (Eclipse Layout Kernel) layout; the default,
+"layered", is a Sugiyama-style layered drawing with its edges routed
+around the nodes. Other algorithms: "mrtree", "radial", "stress",
+"force", "disco", "box", "rectpacking", "random". direction= "DOWN"
+(default for layered), "RIGHT", "LEFT" or "UP"; spacing= the space
+between nodes; route=false keeps edges straight; options= any other ELK
+options, e.g. options={"layered.spacing.nodeNodeBetweenLayers": 80}
+(the "elk." prefix is added). Pinned nodes keep their positions where
+the algorithm supports it.
+
 ## Layouts
 
 ### `binPackLayout(rescale=True)`
@@ -1948,6 +1963,17 @@ dagLayout() lays out a directed acyclic graph with a spring layout,
 keeping each node on a horizontal line for its level (sources at the
 top), for 500 iterations (fewer on graphs over 1000 nodes). Cycles are
 broken first.
+
+### `fcoseLayout(quality='default', seed=0, idealEdgeLength=50, nodeRepulsion=4500, edgeElasticity=0.45, gravity=0.25, gravityRange=3.8, nodeSeparation=75, sampleSize=25, iterations=2500)`
+
+fcoseLayout() runs fCoSE (Balci & Dogrusoz 2022, as in Cytoscape.js):
+a fast spectral draft, then the CoSE spring embedder to tidy it. Good
+all-round quality, fast on large graphs. quality="draft" stops after the
+spectral step, "proof" cools more slowly for a tidier result.
+idealEdgeLength (50), nodeRepulsion (4500), edgeElasticity (0.45),
+gravity (0.25) and gravityRange (3.8) tune the springs;
+nodeSeparation (75) and sampleSize (25) the spectral step. Pinned
+(fixed) nodes stay where they are. Components are packed side by side.
 
 ### `forceAtlas2Layout(iterations=None, scaling=None, gravity=1.0, strongGravity=False, linLog=False, dissuadeHubs=False, preventOverlap=False, edgeWeightInfluence=1.0, gravitySources=None)`
 

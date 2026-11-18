@@ -71,7 +71,7 @@ class Session:
         self.ns["print"] = self._print
         from . import commands
         commands.install(self)
-        from . import algorithms, analysis, builders, charts, codegraphs, compat, connectors, ecology, enrichment, epidemic, extras, geo, glyphs, investigate, groups, gui, gv, igr, interop, layouts, persist, ranges, slides, states, structure, styles, timeline, visuals, workspaces
+        from . import algorithms, analysis, builders, charts, codegraphs, compat, connectors, ecology, enrichment, epidemic, extras, geo, glyphs, investigate, groups, gui, gv, elk, colalayout, ciselayout, igr, interop, layouts, persist, ranges, slides, states, structure, styles, timeline, visuals, workspaces
         gui.install(self)
         charts.install(self)
         from . import vlcharts
@@ -88,6 +88,9 @@ class Session:
         interop.install(self)
         igr.install(self)
         gv.install(self)
+        elk.install(self)
+        colalayout.install(self)
+        ciselayout.install(self)
         visuals.install(self)
         styles.install(self)
         groups.install(self)

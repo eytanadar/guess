@@ -859,6 +859,8 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `frLayout()` | Fruchterman–Reingold |
 | `kkLayout()`, `weightedKKLayout()` | Kamada–Kawai (spring distances follow graph distance) |
 | `sgdLayout()` | stress layout by stochastic gradient descent (Zheng, Pawar & Goodman, the s_gd2 method): fast and reliable, from a random start; `weight=` an edge field as edge lengths |
+| `fcoseLayout()` | fCoSE (Balci & Dogrusoz), as in Cytoscape.js: a fast spectral draft, then the CoSE spring embedder; `quality="draft"` or `"proof"`, and `idealEdgeLength=`, `nodeRepulsion=`, `gravity=` |
+| `elkLayout()` | the Eclipse Layout Kernel (ELK), loaded in the background like Graphviz: `"layered"` (the default; edges routed), `"mrtree"`, `"radial"`, `"stress"`, `"force"`, `"box"`, `"rectpacking"`, …; `direction=`, `spacing=`, and any ELK option through `options={...}` |
 | `springLayout()`, `weightedSpringLayout(min, max)`, `isomLayout()`, `physicsLayout()` | other force and self-organising layouts |
 | `mdsLayout()` | multidimensional scaling of the graph distances |
 | `sugiyamaLayout()`, `dagLayout()` | layered drawing for hierarchies |

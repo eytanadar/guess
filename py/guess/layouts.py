@@ -956,6 +956,229 @@ def _sgd2_gen(snap, comps, dists, rng, iters, eps, unit):
         yield place()
 
 
+def _fcose_spectral(hops, k, sep, samples, rng):
+    """fCoSE's spectral draft (spectral.js): greedy max-min pivots, the squared
+    pivot distances C (n x s), a regularised inverse of their s x s
+    intersection, and the top two eigenvectors of Gamma C INV C^T Gamma
+    (Gamma centres), solved through the small s x s problem."""
+    s = min(samples, k)
+    piv = [int(rng.integers(k))]
+    rows = [hops(piv[0])]
+    mind = rows[0].copy()
+    for _ in range(s - 1):
+        nxt = int(np.argmax(mind))
+        piv.append(nxt)
+        rows.append(hops(nxt))
+        mind = np.minimum(mind, rows[-1])
+    C = (np.stack(rows, 1) * sep) ** 2
+    PHI = C[piv, :].T
+    U, S, Vt = np.linalg.svd(PHI)
+    max_s = S[0] ** 3
+    sig = np.where(S > 0, S / (S * S + max_s / np.maximum(S * S, 1e-300)), 0.0)
+    INV = Vt.T @ np.diag(sig) @ U.T
+    A = C - C.mean(0)                        # Gamma C
+    B = INV @ A.T                            # INV C^T Gamma
+    vals, vecs = np.linalg.eig(B @ A)
+    order = np.argsort(-np.abs(vals))[:2]
+    X = np.zeros((k, 2))
+    for c, o in enumerate(order):
+        v = np.real(A @ vecs[:, o])
+        nv = np.linalg.norm(v)
+        if nv > 0:
+            X[:, c] = v / nv * math.sqrt(abs(np.real(vals[o])))
+    return X
+
+
+def _fcose_gen(snap, comps, rng, opts):
+    """fCoSE (Balci & Dogrusoz, IEEE TVCG 2022), after cytoscape.js-fcose 2.2 and
+    cose-base 2.2 / layout-base 2.0: a spectral draft per component, then CoSE's spring embedder run
+    incrementally from it -- clipped edge springs towards the ideal length,
+    repulsion between nodes closer than 2 x ideal length (found with a grid
+    rebuilt every 10 steps), overlap separation, gravity towards the centre for
+    nodes outside 3.8 x the graph's estimated size, and the cooling schedule
+    of CoSELayout.tick. Components are packed side by side."""
+    L = opts["ideal"]
+    jobs = []
+    indptr, ind = snap.csr
+    for comp in comps:
+        comp = np.asarray(comp)
+        k = len(comp)
+        hops = lambda i, comp=comp: _bfs_hops(indptr, ind, snap.n, [comp[i]])[0, comp].astype(float)
+        X = _fcose_spectral(hops, k, opts["sep"], opts["samples"], rng) if k > 2 else \
+            np.array([[0.0, 0.0], [snap.size[comp[0], 0] / 2 + snap.size[comp[-1], 0] / 2 + L, 0.0]])[:k]
+        fixed = snap.fixed[comp]
+        if fixed.any():                     # line the draft up with the pinned nodes
+            X += (snap.pos[comp][fixed] + snap.size[comp][fixed] / 2).mean(0) - X[fixed].mean(0)
+            X[fixed] = snap.pos[comp][fixed] + snap.size[comp][fixed] / 2
+        jobs.append((comp, X))
+    P = snap.pos.copy()
+    pinned = snap.fixed.any()
+
+    def place():
+        for comp, X in jobs:
+            P[comp] = X - snap.size[comp] / 2
+        if len(jobs) == 1 or pinned:
+            return P.copy()
+        keep, snap.pos = snap.pos, P
+        try:
+            return _binpack_positions(snap, False)
+        finally:
+            snap.pos = keep
+
+    yield place()
+    if opts["quality"] == "draft":
+        return
+    loc = np.full(snap.n, -1, np.intp)
+    for comp, _ in jobs:
+        loc[comp] = np.arange(len(comp))
+    src, dst = snap.src, snap.dst
+    for comp, X in jobs:
+        k = len(comp)
+        if k < 2:
+            continue
+        inc = np.zeros(snap.n, bool)
+        inc[comp] = True
+        keep_e = inc[src] & inc[dst] & (src != dst)
+        ea, eb = loc[src[keep_e]], loc[dst[keep_e]]
+        half = snap.size[comp] / 2                  # half width, half height
+        free = ~snap.fixed[comp]
+        est = (half.sum(1)).sum() / math.sqrt(k)     # sum of (w + h) / 2, over sqrt(n)
+        rng_rep = 2 * L
+        # FDLayout/CoSELayout.initSpringEmbedder, incremental: the schedule counts down
+        # from initialCoolingFactor (0.3) even when a big graph starts cooler
+        cool = init = opts["energy"]
+        if k > 1000:
+            cool = max(cool * 0.33, cool - (k - 1000) / 4000 * cool * (1 - 0.33))
+        max_disp = 100.0
+        max_it = max(k * 5, opts["iterations"])
+        final = 0.04
+        max_cycle = max_it / 100
+        threshold = (3.0 * L / 100) * k
+        old_total = 0.0
+        cycle = 0
+        pa = pb = None
+        for it in range(1, max_it + 1):
+            if it % 100 == 0:
+                total = old_total_now
+                osc = it > max_it / 3 and abs(total - old_total) < 2
+                if total < threshold or osc:
+                    break
+                old_total = total
+                cycle += 1
+                adj = cycle if opts["quality"] != "proof" else 1
+                cool = max(init - cycle ** (math.log(100 * max(init - final, 1e-9)) / math.log(max(max_cycle, 1.0001))) / 100 * adj, final)
+            if pa is None or it % 10 == 1:          # neighbour grid, as in FDLayout.updateGrid
+                cell = np.floor((X - X.min(0)) / rng_rep).astype(np.int64)
+                key = cell[:, 0] * 1_000_003 + cell[:, 1]
+                buckets = {}
+                for i, kk in enumerate(key.tolist()):
+                    buckets.setdefault(kk, []).append(i)
+                A, B = [], []
+                for kk, mem in buckets.items():
+                    for dx, dy in ((0, 0), (1, -1), (1, 0), (1, 1), (0, 1)):
+                        other = buckets.get(kk + dx * 1_000_003 + dy)
+                        if other is None:
+                            continue
+                        if (dx, dy) == (0, 0):
+                            m = np.array(mem)
+                            ii, jj = np.triu_indices(len(m), 1)
+                            A.append(m[ii]); B.append(m[jj])
+                        else:
+                            m, o = np.array(mem), np.array(other)
+                            A.append(np.repeat(m, len(o))); B.append(np.tile(o, len(m)))
+                pa = np.concatenate(A) if A else np.zeros(0, np.intp)
+                pb = np.concatenate(B) if B else np.zeros(0, np.intp)
+            F = np.zeros((k, 2))
+            # springs, between the node borders (edge.updateLength's clipping points)
+            if len(ea):
+                d = X[eb] - X[ea]
+                ln = np.hypot(d[:, 0], d[:, 1])
+                ok = ln > 0
+                u = d[ok] / ln[ok, None]
+                clip = _rect_clip(half[ea[ok]], u) + _rect_clip(half[eb[ok]], u)
+                length = ln[ok] - clip
+                live = length > 0                  # overlapping ends: no spring
+                f = (opts["elastic"] * (length - L))[:, None] * u
+                f[~live] = 0
+                np.add.at(F, ea[ok], f)
+                np.add.at(F, eb[ok], -f)
+            # repulsion between neighbours in the grid
+            if len(pa):
+                d = X[pb] - X[pa]
+                ox = half[pa, 0] + half[pb, 0] - np.abs(d[:, 0])
+                oy = half[pa, 1] + half[pb, 1] - np.abs(d[:, 1])
+                over = (ox > 0) & (oy > 0)
+                gapx, gapy = np.maximum(-ox, 0), np.maximum(-oy, 0)
+                near = over | ((gapx <= rng_rep) & (gapy <= rng_rep))
+                f = np.zeros_like(d)
+                if over.any():
+                    f[over] = _separation(X[pa[over]], X[pb[over]], half[pa[over]], half[pb[over]], L / 2)
+                # apart: inverse-square on the clipped distance, at least MIN_REPULSION_DIST per axis
+                ap = near & ~over
+                dd = d[ap]
+                ln = np.maximum(np.hypot(dd[:, 0], dd[:, 1]), 1e-9)
+                u = dd / ln[:, None]
+                cl = ln - _rect_clip(half[pa[ap]], u) - _rect_clip(half[pb[ap]], u)
+                vx = u[:, 0] * cl
+                vy = u[:, 1] * cl
+                mn = L / 10
+                vx = np.where(np.abs(vx) < mn, np.where(vx >= 0, 1, -1) * mn, vx)
+                vy = np.where(np.abs(vy) < mn, np.where(vy >= 0, 1, -1) * mn, vy)
+                d2 = vx * vx + vy * vy
+                mag = opts["repulsion"] / d2
+                dn = np.sqrt(d2)
+                f[ap, 0] = mag * vx / dn
+                f[ap, 1] = mag * vy / dn
+                np.add.at(F, pa, -f)
+                np.add.at(F, pb, f)
+            # gravity towards the centre of the bounding box, beyond the gravity range
+            lo = (X - half).min(0)
+            hi = (X + half).max(0)
+            c = (lo + hi) / 2
+            dc = X - c
+            out = ((np.abs(dc[:, 0]) + half[:, 0]) > est * opts["gravity_range"]) | \
+                  ((np.abs(dc[:, 1]) + half[:, 1]) > est * opts["gravity_range"])
+            F[out] -= opts["gravity"] * dc[out]
+            disp = np.clip(cool * F, -cool * max_disp, cool * max_disp)
+            disp[~free] = 0
+            X += disp
+            old_total_now = float(np.abs(disp).sum())
+            if it % 10 == 0:
+                yield place()
+    yield place()
+
+
+def _separation(ca, cb, ha, hb, buffer):
+    """IGeometry.calcSeparationAmount for overlapping rectangles (centres ca, cb,
+    half sizes ha, hb), as the repulsion force on b (a gets the opposite):
+    2 x the amount, times childrenConstant 1/2 for simple nodes."""
+    la, ra, lb, rb = ca - ha, ca + ha, cb - hb, cb + hb
+    ov = np.minimum(ra, rb) - np.maximum(la, lb)
+    a_in = (la <= lb) & (ra >= rb)                     # b inside a along that axis
+    b_in = ~a_in & (lb <= la) & (rb >= ra)
+    ov = ov + np.where(a_in, np.minimum(lb - la, ra - rb), 0.0) + np.where(b_in, np.minimum(la - lb, rb - ra), 0.0)
+    d = cb - ca
+    same = (d[:, 0] == 0) & (d[:, 1] == 0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        slope = np.where(same, 1.0, np.abs(d[:, 1] / d[:, 0]))
+        move_y = slope * ov[:, 0]
+        move_x = ov[:, 1] / slope
+    x_first = ov[:, 0] < move_x
+    move_x = np.where(x_first, ov[:, 0], move_x)
+    move_y = np.where(x_first, move_y, ov[:, 1])
+    direction = np.where(ca < cb, -1.0, 1.0)            # decideDirectionsForOverlappingNodes
+    amount = -direction * (np.stack([move_x, move_y], 1) / 2 + buffer)
+    return amount
+
+
+def _rect_clip(half, u):
+    """Distance from a rectangle's centre to its border along unit vectors u."""
+    with np.errstate(divide="ignore"):
+        tx = np.where(np.abs(u[:, 0]) > 1e-12, half[:, 0] / np.abs(u[:, 0]), np.inf)
+        ty = np.where(np.abs(u[:, 1]) > 1e-12, half[:, 1] / np.abs(u[:, 1]), np.inf)
+    return np.minimum(tx, ty)
+
+
 def _gem_gen(snap, rng):
     """GEM.java (Frick, Ludwig, Mehldau): insertion + arrangement phases.
 
@@ -2654,6 +2877,30 @@ def install(session):
             indptr, ind = s.csr
             dists = [_bfs_hops(indptr, ind, s.n, c)[:, c].astype(float) for c in comps]
         lay.run(s, _sgd2_gen(s, comps, dists, rng(seed), n_iter, float(eps), float(length)))
+
+    @cmd
+    def fcoseLayout(quality="default", seed=0, idealEdgeLength=50, nodeRepulsion=4500,
+                    edgeElasticity=0.45, gravity=0.25, gravityRange=3.8, nodeSeparation=75,
+                    sampleSize=25, iterations=2500):
+        """fcoseLayout() runs fCoSE (Balci & Dogrusoz 2022, as in Cytoscape.js):
+        a fast spectral draft, then the CoSE spring embedder to tidy it. Good
+        all-round quality, fast on large graphs. quality="draft" stops after the
+        spectral step, "proof" cools more slowly for a tidier result.
+        idealEdgeLength (50), nodeRepulsion (4500), edgeElasticity (0.45),
+        gravity (0.25) and gravityRange (3.8) tune the springs;
+        nodeSeparation (75) and sampleSize (25) the spectral step. Pinned
+        (fixed) nodes stay where they are. Components are packed side by side."""
+        if quality not in ("draft", "default", "proof"):
+            raise GuessError('fcoseLayout quality is "draft", "default" or "proof"')
+        s = lay.snap()
+        if s.n == 0:
+            return
+        opts = dict(quality=quality, ideal=float(idealEdgeLength), repulsion=float(nodeRepulsion),
+                    elastic=float(edgeElasticity), gravity=float(gravity),
+                    gravity_range=float(gravityRange), sep=float(nodeSeparation),
+                    samples=max(2, int(sampleSize)), iterations=_iters(iterations, 2500), energy=0.3)
+        comps = [sorted(c) for c in s.components]
+        lay.run(s, _fcose_gen(s, comps, rng(seed), opts))
 
     @cmd
     def sugiyamaLayout(bends=False):
