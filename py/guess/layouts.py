@@ -879,6 +879,83 @@ def _gem_batch_insert(snap, rng, pos, elen):
             yield (pos - pos.min(0)) * 0.25
 
 
+_SGD_MAX = 3000   # all-pairs distances are k x k; larger components need the sparse variant
+
+
+def _round_robin(k):
+    """Every pair of 0..k-1 exactly once, as k-1 (or k) rounds of disjoint pairs
+    (the circle method). Returns two (rounds, k//2) index arrays; a dummy -1
+    pads an odd k."""
+    m = k + (k % 2)
+    ids = np.arange(m)
+    ids[ids == k] = -1
+    rest = ids[1:]
+    A, B = [], []
+    for r in range(m - 1):
+        row = np.concatenate([[ids[0]], np.roll(rest, r)])
+        A.append(row[: m // 2])
+        B.append(row[::-1][: m // 2])
+    return np.array(A), np.array(B)
+
+
+def _sgd2_gen(snap, comps, dists, rng, iters, eps, unit):
+    """Stress layout by stochastic gradient descent: Zheng, Pawar & Goodman,
+    "Graph Drawing by Stochastic Gradient Descent" (IEEE TVCG 2019), after
+    s_gd2's layout.cpp. Each pair (i, j) at graph distance d moves both nodes
+    towards being d apart, by a step mu = min(eta / d^2, 1); eta anneals
+    exponentially from d_max^2 down to eps. Each epoch visits every pair once,
+    in shuffled rounds of disjoint pairs, so a round is applied at once and
+    still matches the one-pair-at-a-time update exactly. Random start; yields
+    after each epoch, with the components packed side by side."""
+    jobs = []
+    for comp, D in zip(comps, dists):
+        k = len(comp)
+        X = rng.random((k, 2)) * max(float(D[np.isfinite(D)].max()), 1.0)
+        A = B = etas = None
+        if k > 1:
+            A, B = _round_robin(k)
+            off = D[np.triu_indices(k, 1)]
+            off = off[np.isfinite(off) & (off > 0)]
+            w_min, w_max = 1.0 / off.max() ** 2, 1.0 / off.min() ** 2
+            lam = math.log((1.0 / w_min) / (eps / w_max)) / max(iters - 1, 1)
+            etas = (1.0 / w_min) * np.exp(-lam * np.arange(iters))
+        jobs.append((np.asarray(comp), X, D, A, B, etas, snap.fixed[comp]))
+    P = snap.pos.copy()
+
+    def place():
+        for comp, X, *_ in jobs:
+            P[comp] = X * unit - snap.size[comp] / 2
+        if len(jobs) == 1:
+            return P.copy()
+        keep, snap.pos = snap.pos, P
+        try:
+            return _binpack_positions(snap, False)
+        finally:
+            snap.pos = keep
+
+    for t in range(iters):
+        for comp, X, D, A, B, etas, fixed in jobs:
+            if A is None:
+                continue
+            perm = rng.permutation(len(comp))   # who meets whom in each round
+            for r in rng.permutation(len(A)):
+                pa, pb = A[r], B[r]
+                ok = (pa >= 0) & (pb >= 0)
+                i, j = perm[pa[ok]], perm[pb[ok]]
+                d = D[i, j].astype(float)
+                live = np.isfinite(d) & (d > 0)
+                i, j, d = i[live], j[live], d[live]
+                mu = np.minimum(etas[t] / (d * d), 1.0)
+                diff = X[i] - X[j]
+                mag = np.maximum(np.hypot(diff[:, 0], diff[:, 1]), 1e-9)
+                step = (mu * (mag - d) / (2 * mag))[:, None] * diff
+                # a pinned node stays put and its partner takes the whole step
+                fi, fj = fixed[i][:, None], fixed[j][:, None]
+                X[i] -= np.where(fi, 0.0, np.where(fj, 2.0, 1.0) * step)
+                X[j] += np.where(fj, 0.0, np.where(fi, 2.0, 1.0) * step)
+        yield place()
+
+
 def _gem_gen(snap, rng):
     """GEM.java (Frick, Ludwig, Mehldau): insertion + arrangement phases.
 
@@ -2547,6 +2624,36 @@ def install(session):
             print("mdsLayout: all edge weights are equal, using graph distances instead")
             P = _pivot_mds(s, rng(0))
         lay.apply(s, P)
+
+    @cmd
+    def sgdLayout(iterations=30, weight=None, seed=0, eps=0.01, length=40):
+        """sgdLayout() draws the graph by minimising stress with stochastic
+        gradient descent (Zheng, Pawar & Goodman 2019, the s_gd2 method): every
+        pair of nodes moves towards being as far apart as their graph distance,
+        `length` pixels per hop. It starts from random positions and is fast
+        and reliable, often better than Kamada-Kawai. iterations= sets the
+        number of passes (30), weight= an edge field used as edge lengths,
+        eps= how small the last steps get (0.01), seed= the random start.
+        Each connected component is laid out on its own, then packed."""
+        s = lay.snap()
+        n_iter = _iters(iterations, 30)
+        if n_iter < 1:
+            return
+        comps = [sorted(c) for c in s.components]
+        if max((len(c) for c in comps), default=0) > _SGD_MAX:
+            # shortcut: full all-pairs version only; add s_gd2's sparse (pivot) variant for bigger graphs
+            raise GuessError(f"sgdLayout handles components up to {_SGD_MAX} nodes; "
+                             "try forceAtlas2Layout() or sfdpLayout() for larger graphs")
+        if weight is not None:
+            f = _field_arg(g, weight)
+            if f.kind == NODE:
+                raise GuessError(f"sgdLayout(weight=...) needs an edge field, got the node field {f.name}")
+            s.weight = np.fromiter((_num(e._vals.get(f.name), 1.0) for e in s.edges), float, len(s.edges))
+            dists = [_dijkstra_all(s, c) for c in comps]
+        else:
+            indptr, ind = s.csr
+            dists = [_bfs_hops(indptr, ind, s.n, c)[:, c].astype(float) for c in comps]
+        lay.run(s, _sgd2_gen(s, comps, dists, rng(seed), n_iter, float(eps), float(length)))
 
     @cmd
     def sugiyamaLayout(bends=False):

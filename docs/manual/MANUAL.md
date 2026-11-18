@@ -858,6 +858,7 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `gemLayout()` | GEM, a fast force-directed layout |
 | `frLayout()` | Fruchterman–Reingold |
 | `kkLayout()`, `weightedKKLayout()` | Kamada–Kawai (spring distances follow graph distance) |
+| `sgdLayout()` | stress layout by stochastic gradient descent (Zheng, Pawar & Goodman, the s_gd2 method): fast and reliable, from a random start; `weight=` an edge field as edge lengths |
 | `springLayout()`, `weightedSpringLayout(min, max)`, `isomLayout()`, `physicsLayout()` | other force and self-organising layouts |
 | `mdsLayout()` | multidimensional scaling of the graph distances |
 | `sugiyamaLayout()`, `dagLayout()` | layered drawing for hierarchies |

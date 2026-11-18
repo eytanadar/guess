@@ -19,7 +19,7 @@ Commands can be called without parentheses when they take no arguments
 - [networkx bridge and sample graphs](#networkx-bridge-and-sample-graphs) (4)
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
-- [Layouts](#layouts) (32)
+- [Layouts](#layouts) (33)
 - [Structure-aware layout (motifLayout, after LUMINA)](#structure-aware-layout-motiflayout-after-lumina) (1)
 - [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (44)
@@ -2088,6 +2088,17 @@ rotateLayout(degrees) turns the layout clockwise about its centre.
 scatterLayout(x, y) places nodes by two numeric fields (x to the
 right, y upwards) in a width x height area. Dragging a node then edits
 those two values.
+
+### `sgdLayout(iterations=30, weight=None, seed=0, eps=0.01, length=40)`
+
+sgdLayout() draws the graph by minimising stress with stochastic
+gradient descent (Zheng, Pawar & Goodman 2019, the s_gd2 method): every
+pair of nodes moves towards being as far apart as their graph distance,
+`length` pixels per hop. It starts from random positions and is fast
+and reliable, often better than Kamada-Kawai. iterations= sets the
+number of passes (30), weight= an edge field used as edge lengths,
+eps= how small the last steps get (0.01), seed= the random start.
+Each connected component is laid out on its own, then packed.
 
 ### `springLayout(iterations=None)`
 
