@@ -42,9 +42,11 @@ console ([CodeMirror 6](https://codemirror.net)). There is no server-side code.
 | `commands.py` | The global commands of the original `Main.py`: loading/saving formats, structure edits, grouping, colour/size mappings (`colorize`, `sizeBy`, `colorBy`, …), `center`, `help`. |
 | `analysis.py` | Gephi-style statistics as lazily computed node fields, Louvain communities, structural filters, `shortestPath`, `heatMap`, `paint`, `showOnly`. |
 | `algorithms.py` | networkx bridge (`to_networkx`), betweenness, Girvan–Newman/components clusters, random-graph generators. |
-| `layouts.py` | All layouts on a numpy snapshot (`_Snapshot`); iterative layouts are generators driven by `_Layouts.run`, which publishes positions ~30×/s and stops cleanly on interrupt. Includes ForceAtlas2, Noverlap and the sampled-stress Kamada–Kawai fast path. |
+| `layouts.py` | All layouts on a numpy snapshot (`_Snapshot`); iterative layouts are generators driven by `_Layouts.run`, which publishes positions ~30×/s and stops cleanly on interrupt. Includes ForceAtlas2, Noverlap and the sampled-stress Kamada–Kawai fast path. Also the ports of s_gd2 (`sgdLayout`) and fCoSE with cose-base (`fcoseLayout`). |
+| `colalayout.py`, `ciselayout.py` | Ports of WebCola (stress majorization with VPSC constraints, overlap avoidance, flow) and CiSE with AVSDF (clusters on circles), each registering its command through `install(session)`. |
+| `gv.py`, `elk.py` | Graphviz and the Eclipse Layout Kernel, which run as JavaScript/WebAssembly in the worker (loaded in the background by `worker.ts`; ELK through `web/src/elk.ts`). Python builds the input (DOT, or ELK JSON), calls the page synchronously and applies positions and edge routes. |
 | `visuals.py` | The `View`: hulls, legends, background, background image, arrow sizes, curved edges, edge colour mode, label options, selection command; sent as one `overlay` message. |
-| `states.py`, `ranges.py` | Saved states (`ss`/`ls`/`morph`, `field[state]`) and existence-interval queries. |
+| `states.py`, `ranges.py` | Saved states (`saveState`/`loadState`/`morph`, `field[state]`) and existence-interval queries. |
 | `charts.py`, `gui.py` | Linked charts and Python-built panels/widgets/timers/graph events (rendered by `dock.ts`). |
 | `persist.py` | `.guess` session files (JSON) and apps; also used for autosave. |
 | `formats.py`, `gdf.py`, `gexf.py`, `sqlquery.py` | Pajek/GraphML/DL, GDF, GEXF/CSV, `sql()` over SQLite. |

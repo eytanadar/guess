@@ -151,6 +151,8 @@
 <button role="menuitem" data-run="fcoseLayout()" title="Spectral draft, then the CoSE spring embedder, as in Cytoscape.js (fcoseLayout)">fCoSE</button>
 <button role="menuitem" data-run="elkLayout()" title="Eclipse Layout Kernel: layered drawing with routed edges (elkLayout)">Layered (ELK)</button>
 <button role="menuitem" data-run='elkLayout("mrtree")' title="Eclipse Layout Kernel: tree (elkLayout(&quot;mrtree&quot;))">Tree (ELK)</button>
+<button role="menuitem" data-run="colaLayout()" title="Constrained stress layout without overlaps, as in WebCola (colaLayout)">Cola</button>
+<button role="menuitem" data-run="ciseLayout(louvainClusters())" title="Each community on its own circle (ciseLayout)">Communities as circles (CiSE)</button>
 <button role="menuitem" data-run="frLayout()">Fruchterman–Reingold</button>
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Distances</button>
@@ -337,7 +339,7 @@
           <dt>Author</dt><dd>Eytan Adar</dd>
           <dt>Version</dt><dd><span id="about-version-2"></span> (version 2, built <span id="about-date"></span>)</dd>
           <dt>Original</dt><dd>GUESS 1 (Java, 2006). E. Adar, “GUESS: A Language and Interface for Graph Exploration,” CHI 2006.</dd>
-          <dt>Runs on</dt><dd>Pyodide (Python in the browser), PixiJS, CodeMirror, Vega-Lite and Graphviz (WebAssembly)</dd>
+          <dt>Runs on</dt><dd>Pyodide (Python in the browser), PixiJS, CodeMirror, Vega-Lite, Graphviz (WebAssembly) and the Eclipse Layout Kernel (elkjs)</dd>
         </dl>
         <div class="about-actions">
           <button type="button" id="about-copy" title="Copy the version, for a bug report">Copy version</button>

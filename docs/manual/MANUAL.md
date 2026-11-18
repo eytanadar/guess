@@ -861,6 +861,8 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `sgdLayout()` | stress layout by stochastic gradient descent (Zheng, Pawar & Goodman, the s_gd2 method): fast and reliable, from a random start; `weight=` an edge field as edge lengths |
 | `fcoseLayout()` | fCoSE (Balci & Dogrusoz), as in Cytoscape.js: a fast spectral draft, then the CoSE spring embedder; `quality="draft"` or `"proof"`, and `idealEdgeLength=`, `nodeRepulsion=`, `gravity=` |
 | `elkLayout()` | the Eclipse Layout Kernel (ELK), loaded in the background like Graphviz: `"layered"` (the default; edges routed), `"mrtree"`, `"radial"`, `"stress"`, `"force"`, `"box"`, `"rectpacking"`, …; `direction=`, `spacing=`, and any ELK option through `options={...}` |
+| `colaLayout()` | Cola (WebCola, Dwyer et al.): stress layout with constraints; no overlapping nodes, `flow="y"` for downward edges, `alignment=` and `gapInequalities=`; stops after 4 s by default (`maxSimulationTime=None` to run to convergence) |
+| `ciseLayout(clusters)` | CiSE (Dogrusoz et al.): each cluster on its own circle, ordered to cut crossings, circles placed by a spring embedder; `clusters` is a field (`ciseLayout(louvain_class)`) or groups (`ciseLayout(groupBy(dept))`) |
 | `springLayout()`, `weightedSpringLayout(min, max)`, `isomLayout()`, `physicsLayout()` | other force and self-organising layouts |
 | `mdsLayout()` | multidimensional scaling of the graph distances |
 | `sugiyamaLayout()`, `dagLayout()` | layered drawing for hierarchies |
@@ -890,9 +892,16 @@ A layout command moves the nodes. Layouts animate while they run, and the
 | `noverlapLayout()`, `labelAdjustLayout()` | nudge nodes until they (or their labels) don't overlap |
 | `rotateLayout(90)`, `mirrorLayout()`, `rescaleLayout(0.5)`, `translateLayout(dx, dy)`, `moveLayout(x, y)` | transform the current layout; `rescaleLayout(nodes, 1.5)` spreads out just those nodes |
 
-The Graphviz and igraph layouts are loaded in the background a few seconds
-after GUESS starts (about 2 MB together). If you run one sooner, GUESS says
-so; run it again a moment later.
+The Graphviz, ELK and igraph layouts are loaded in the background a few
+seconds after GUESS starts (about 3.5 MB together). If you run one sooner,
+GUESS says so; run it again a moment later.
+
+**Which layout?** For a first look, `forceAtlas2Layout()` or `fcoseLayout()`.
+When distances on screen should match distances in the graph, `sgdLayout()`
+(fast and dependable) or `neatoLayout()`. To keep nodes apart, or to make
+edges flow one way, `colaLayout(flow="y")`. For hierarchies and flows,
+`elkLayout()` or `dotLayout()`, which route edges around nodes. To show
+communities, `ciseLayout(louvain_class)` puts each on its own circle.
 
 ![Nine layouts of the sample graph's largest component, coloured by department.](img/layouts.png)
 

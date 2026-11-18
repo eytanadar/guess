@@ -14,6 +14,8 @@ GROUPS = [
     ("igr", "igraph: communities, large-graph layouts, similarity, patterns, cuts and flows"),
     ("gv", "Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal"),
     ("elk", "ELK layouts (Eclipse Layout Kernel): layered, trees, radial, stress, force, packing"),
+    ("colalayout", "Cola layout (WebCola): constrained stress layout, no overlaps, flow"),
+    ("ciselayout", "CiSE: clusters drawn as circles"),
     ("layouts", "Layouts"),
     ("motiflayout", "Structure-aware layout (motifLayout, after LUMINA)"),
     ("morelayouts", "More layouts: multipartite, concentric, ordered, circle packing, isometric layers"),

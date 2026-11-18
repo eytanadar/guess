@@ -37,6 +37,8 @@ Chrome locally (Playwright's Chromium in CI).
 | `py/tests/test_gython.py` | the paper's examples, compiler, operators, completions |
 | `test_phase1.py`, `test_states.py`, `test_visuals.py`, `test_gui.py`, `test_sql.py`, `test_bends.py` | model, commands, states/ranges, hulls/legends, widgets, SQL, routed edges |
 | `test_layouts.py` | every layout (determinism, fixed nodes, quality, the KK fast path) |
+| `test_sgd_layout.py`, `test_fcose_layout.py`, `test_cola_layout.py`, `test_cise_layout.py` | the ported layouts: stress against a random layout, overlaps, pinned nodes, repeatability; s_gd2's round-robin schedule, cose-base's overlap separation, VPSC, AVSDF ordering |
+| `test_graphviz.py`, `test_elk.py` | Graphviz and ELK through Node, using the same builds as the page (skipped without Node and `web/node_modules`) |
 | `test_persist.py` | session files and display settings round trips |
 | `test_gephi.py` | statistics, Louvain, filters, paths, palettes, GEXF/CSV, ForceAtlas2, selection |
 | `test_undo.py` | undo/redo, drags, history, linked `print` |
@@ -110,6 +112,21 @@ position arrays (top-left corners, as node `x`/`y`), and a command that calls
 `lay.run(lay.snap(), _my_gen(...))` (or `lay.apply(snap, positions)` for a
 one-shot layout). Respect `snap.fixed`. `_repulsion(P, power, cutoff, mass=)`
 gives O(n log n)-ish pairwise repulsion for large graphs.
+
+Ports of other tools' layouts follow the same pattern: `sgdLayout` and
+`fcoseLayout` live in `layouts.py`; Cola and CiSE in their own modules
+(`colalayout.py`, `ciselayout.py`), each with an `install(session)` that
+registers its command and is called from `Session.__init__`. Port from the
+original source rather than from the paper, and note deviations in the
+docstring.
+
+Layouts that run in JavaScript (Graphviz in `gv.py`, ELK in `elk.py`) are
+loaded by `worker.ts` in the background after start-up and exposed as a
+synchronous global (`guessGraphvizLayout`, `guessElkLayout`) that Python calls
+through `js`. ELK's loader, `web/src/elk.ts`, evaluates elkjs's worker script
+against a stand-in `self`, so it doesn't take over the Pyodide worker's
+messages. Each module also has a `node_runner` that drives the same build
+through Node, for the Python tests.
 
 ### Change the protocol
 

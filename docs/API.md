@@ -20,6 +20,8 @@ Commands can be called without parentheses when they take no arguments
 - [igraph: communities, large-graph layouts, similarity, patterns, cuts and flows](#igraph-communities-large-graph-layouts-similarity-patterns-cuts-and-flows) (29)
 - [Graphviz layouts: dot, neato, sfdp, fdp, circo, twopi, osage; overlap removal](#graphviz-layouts-dot-neato-sfdp-fdp-circo-twopi-osage;-overlap-removal) (9)
 - [ELK layouts (Eclipse Layout Kernel): layered, trees, radial, stress, force, packing](#elk-layouts-eclipse-layout-kernel-layered-trees-radial-stress-force-packing) (1)
+- [Cola layout (WebCola): constrained stress layout, no overlaps, flow](#cola-layout-webcola-constrained-stress-layout-no-overlaps-flow) (1)
+- [CiSE: clusters drawn as circles](#cise-clusters-drawn-as-circles) (1)
 - [Layouts](#layouts) (34)
 - [Structure-aware layout (motifLayout, after LUMINA)](#structure-aware-layout-motiflayout-after-lumina) (1)
 - [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
@@ -1930,6 +1932,75 @@ between nodes; route=false keeps edges straight; options= any other ELK
 options, e.g. options={"layered.spacing.nodeNodeBetweenLayers": 80}
 (the "elk." prefix is added). Pinned nodes keep their positions where
 the algorithm supports it.
+
+## Cola layout (WebCola): constrained stress layout, no overlaps, flow
+
+### `colaLayout(edgeLength=None, nodeSpacing=10, avoidOverlap=True, flow=None, flowSeparation=50, alignment=None, gapInequalities=None, handleDisconnected=True, unconstrIter=0, userConstIter=0, allConstIter=0, iterations=1000, maxSimulationTime=4000, convergenceThreshold=0.01, edgeSymDiffLength=None, edgeJaccardLength=None, randomize=False, seed=0)`
+
+colaLayout() runs Cola (WebCola, the constraint-based layout of Tim Dwyer
+and colleagues: Dwyer, Koren & Marriott, "IPSep-CoLa", InfoVis 2006; Dwyer,
+Marriott & Stuckey, "Fast node overlap removal", GD 2005), ported from
+WebCola with the defaults of cytoscape.js-cola. It minimises stress (each
+pair of nodes as far apart as their graph distance) by gradient descent,
+and after every step projects the positions onto separation constraints
+solved with VPSC, so nodes never overlap and user constraints hold.
+It starts from the current positions and animates; Stop ends it early.
+
+Options, by keyword:
+  edgeLength        ideal edge length (100), or an edge field giving one per edge
+  edgeSymDiffLength / edgeJaccardLength
+                    instead: base length scaled up by how different the two
+                    end nodes' neighbourhoods are (Cola's link-length helpers)
+  nodeSpacing       extra space around every node (10)
+  avoidOverlap      keep node boxes apart (true)
+  flow              "y": every edge points down, "x": left to right, by at least
+                    flowSeparation (50); edges inside cycles are left free
+  alignment         {"vertical": [[a, b, ...], ...], "horizontal": [[...]]}: each
+                    list shares an x (vertical) or y (horizontal) coordinate;
+                    an entry may be (node, offset)
+  gapInequalities   [{"axis": "y", "left": a, "right": b, "gap": 25}, ...]: b at
+                    least gap below (or right of) a; "equality": true makes it exact
+  handleDisconnected  pack connected components side by side (true; skipped
+                    when any node is pinned, so pinned nodes stay put)
+  unconstrIter, userConstIter, allConstIter
+                    Cola's initial iterations without constraints, with user
+                    constraints only, and with all constraints (0, 0, 0)
+  iterations        most iterations of the main loop (1000)
+  maxSimulationTime stop the main loop after this many ms (4000; None for no
+                    limit -- needed for exactly repeatable results on big graphs)
+  convergenceThreshold  stop when a step moves nodes less than this (0.01)
+  randomize         start from random positions instead (false); seed= picks them
+Pinned (fixed) nodes stay where they are. Every pair of nodes is compared,
+so it suits graphs up to a few thousand nodes.
+
+## CiSE: clusters drawn as circles
+
+### `ciseLayout(clusters, nodeSeparation=12.5, idealInterClusterEdgeLengthCoefficient=1.4, allowNodesInsideCircle=False, maxRatioOfNodesInsideCircle=0.1, springCoeff=0.45, nodeRepulsion=4500, gravity=0.25, gravityRange=3.8, seed=0)`
+
+ciseLayout(clusters) draws each cluster's nodes on a circle and lays
+the circles out with a spring embedder (CiSE, Dogrusoz, Belviranli &
+Dilek, IEEE TVCG 2013; ported from the i-Vis group's (Bilkent)
+cytoscape.js-cise). clusters is a node field or its name -- one
+circle per value, nodes with no value (None) are placed freely, e.g.
+ciseLayout(louvain_class) or ciseLayout("dept") -- or a list of node
+groups such as groupBy(dept).
+
+Steps: AVSDF orders each circle to cut crossings; a CoSE spring embedder
+places the circles (as big nodes) and the free nodes; then springs on
+inter-cluster edges move and turn the circles, circles are reversed
+when that aligns them better with their neighbours, and neighbouring
+nodes on a circle swap when that does not add crossings.
+
+nodeSeparation (12.5) is the gap between nodes on a circle;
+idealInterClusterEdgeLengthCoefficient (1.4) scales the 50 px ideal
+length of inter-cluster edges; allowNodesInsideCircle=true lets up to
+maxRatioOfNodesInsideCircle (0.1) of a circle's nodes that only link to
+their circle neighbours move inside it; springCoeff (0.45),
+nodeRepulsion (4500), gravity (0.25) and gravityRange (3.8) tune the
+spring embedder; seed= the random start of the circle placement.
+
+Pinned (fixed) nodes stay put: CiSE itself has no pinning, so a pinned
+node is taken out of its cluster and treated as an immovable free node.
 
 ## Layouts
 

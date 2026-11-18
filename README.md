@@ -199,7 +199,17 @@ and uses [numpy](https://numpy.org) (BSD), [networkx](https://networkx.org)
 from Pyodide's package set) and [Graphviz](https://graphviz.org) (EPL-2.0;
 source at https://gitlab.com/graphviz/graphviz) through
 [@hpcc-js/wasm-graphviz](https://github.com/hpcc-systems/hpcc-js-wasm)
-(Apache-2.0), unmodified. Edge bundling includes a Python port of [MINGLE](https://github.com/philogb/mingle)
+(Apache-2.0), unmodified, and the [Eclipse Layout Kernel](https://eclipse.dev/elk/)
+(EPL-2.0) through [elkjs](https://github.com/kieler/elkjs) (EPL-2.0), unmodified. Several
+layouts are Python ports of MIT-licensed code: `sgdLayout` of
+[s_gd2](https://github.com/jxz12/s_gd2) (Copyright (c) 2018 Jonathan Zheng),
+`fcoseLayout` of [cytoscape.js-fcose](https://github.com/iVis-at-Bilkent/cytoscape.js-fcose)
+with [cose-base](https://github.com/iVis-at-Bilkent/cose-base) and
+[layout-base](https://github.com/iVis-at-Bilkent/layout-base) (Copyright (c) iVis-at-Bilkent),
+`ciseLayout` of [cytoscape.js-cise](https://github.com/iVis-at-Bilkent/cytoscape.js-cise) with
+[avsdf-base](https://github.com/iVis-at-Bilkent/avsdf-base) (Copyright (c) iVis-at-Bilkent),
+and `colaLayout` of [WebCola](https://github.com/tgdwyer/WebCola) (Copyright (c) 2013 Tim
+Dwyer). Edge bundling includes a Python port of [MINGLE](https://github.com/philogb/mingle)
 (MIT, Copyright (c) 2013 Twitter, Nicolas Garcia Belmonte); the force-directed
 bundling is written from Holten and van Wijk's paper. The display uses [PixiJS](https://pixijs.com) (MIT)
 and the console [CodeMirror](https://codemirror.net) (MIT).
