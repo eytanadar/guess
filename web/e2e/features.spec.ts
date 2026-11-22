@@ -1050,14 +1050,21 @@ test("a continuous layout leaves a dragged node under the pointer until it's let
   await page.mouse.down();
   for (let k = 1; k <= 10; k++) await page.mouse.move(p.sx + 15 * k, p.sy + 10 * k);
   await page.waitForTimeout(300);
-  const held1 = await at();
+  // follow whichever node the pointer caught (another may lie on top of v1)
+  const heldAt = () => page.evaluate(() => {
+    const r = (window as any).__guess.renderer;
+    const n = r.nodes.get([...r.holding][0]);
+    return { wx: n.x, wy: n.y };
+  });
+  const held1 = await heldAt();
   await page.waitForTimeout(1000);                                     // the layout keeps running meanwhile
-  const held2 = await at();
+  const held2 = await heldAt();
   expect(held2.wx).toBeCloseTo(held1.wx, 6);                           // not pulled back while held
   expect(held2.wy).toBeCloseTo(held1.wy, 6);
+  const id = await page.evaluate(() => [...(window as any).__guess.renderer.holding][0]);
   await page.mouse.up();
   await page.waitForTimeout(1200);
-  const after = await at();
+  const after = await page.evaluate((id) => { const n = (window as any).__guess.renderer.nodes.get(id); return { wx: n.x, wy: n.y }; }, id);
   expect(Math.hypot(after.wx - held2.wx, after.wy - held2.wy)).toBeGreaterThan(0.5);   // free again
   await run(page, "stopLayout()");
   expect(await lastError(page)).toBeNull();

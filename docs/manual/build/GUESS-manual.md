@@ -855,8 +855,9 @@ A layout command moves the nodes. Layouts animate while they run, and the
 The spring layouts (`forceAtlas2Layout`, `frLayout`, `springLayout`,
 `weightedSpringLayout`, `physicsLayout`) can also keep running while you
 work, as in Gephi: add `continuous=true`, or tick *Layout → Run continuously
-(ForceAtlas2)*. The console stays free; drag a node or change the graph and
-the layout carries on from there. `stopLayout()`, Esc (on the graph) or
+(ForceAtlas2)*. The console stays free. A node you drag stays under the
+pointer, held in place while the rest of the layout moves around it, until
+you let go; change the graph and the layout carries on from there. `stopLayout()`, Esc (on the graph) or
 starting another layout stops it. Continuous running isn't recorded for undo.
 
 ```python

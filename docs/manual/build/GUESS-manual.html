@@ -1515,10 +1515,11 @@ one step for undo.</p>
 <code>weightedSpringLayout</code>, <code>physicsLayout</code>) can also
 keep running while you work, as in Gephi: add
 <code>continuous=true</code>, or tick <em>Layout → Run continuously
-(ForceAtlas2)</em>. The console stays free; drag a node or change the
-graph and the layout carries on from there. <code>stopLayout()</code>,
-Esc (on the graph) or starting another layout stops it. Continuous
-running isn’t recorded for undo.</p>
+(ForceAtlas2)</em>. The console stays free. A node you drag stays under
+the pointer, held in place while the rest of the layout moves around it,
+until you let go; change the graph and the layout carries on from there.
+<code>stopLayout()</code>, Esc (on the graph) or starting another layout
+stops it. Continuous running isn’t recorded for undo.</p>
 <div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>forceAtlas2Layout(linLog<span class="op">=</span>true, continuous<span class="op">=</span>true)</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>stopLayout()</span></code></pre></div>
 <table>
