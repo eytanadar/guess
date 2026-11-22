@@ -231,37 +231,123 @@
 <div class="menu-root">
 <button class="menu-title" aria-haspopup="menu" aria-expanded="false">Analyze</button>
 <div class="menu-pop" role="menu" hidden>
-<button role="menuitem" data-run="graphStats()">Graph statistics</button>
-<button role="menuitem" data-run="report()" title="report(): sizes, components, degrees, hubs and communities in one summary">Report on the graph</button>
+<button role="menuitem" data-run="graphStats()" title="graphStats()">Graph statistics</button>
+<button role="menuitem" data-run="report()" title="sizes, components, degrees, hubs and communities in one summary (report())">Report on the graph</button>
 <hr />
-<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Communities</button>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Whole-graph measures</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
-<button role="menuitem" data-run="louvainClusters()&#10;colorize(louvain_class)&#10;legendFor(louvain_class)">Find communities</button>
-<button role="menuitem" data-run="leidenClusters()&#10;colorize(leiden_class)&#10;legendFor(leiden_class)" title="igraph Leiden: every community internally connected">Find communities (Leiden)</button>
-<button role="menuitem" data-run="infomapClusters()&#10;colorize(infomap_class)&#10;legendFor(infomap_class)" title="igraph Infomap: communities that trap a random walker; good for directed graphs">Find communities (Infomap)</button>
-<button role="menuitem" data-run="labelPropagationClusters()&#10;colorize(lpa_class)&#10;legendFor(lpa_class)" title="Fast: each node takes the label most of its neighbours have">Find communities (label propagation)</button>
+<button role="menuitem" data-run="diameter()" title="the longest shortest path (diameter())">Diameter</button>
+<button role="menuitem" data-run="radius()" title="the smallest eccentricity (radius())">Radius</button>
+<button role="menuitem" data-run="averagePathLength()" title="averagePathLength()">Average path length</button>
+<button role="menuitem" data-run="averageClustering()" title="averageClustering()">Average clustering</button>
+<button role="menuitem" data-run="transitivity()" title="the share of connected triples that close into triangles (transitivity())">Transitivity</button>
+<button role="menuitem" data-run="assortativity()" title="do well-connected nodes link to each other? (assortativity())">Degree assortativity</button>
+<button role="menuitem" data-run-field="assortativity({field})" title="do nodes link to others with the same value? (asks for the field)">Assortativity by a field…</button>
+<button role="menuitem" data-run="fitPowerLaw(degree)" title="fitPowerLaw(degree)">Fit a power law to degree</button>
+<hr />
+<button role="menuitem" data-run="percolation()" title="the largest connected piece as nodes are removed at random (percolation())">Percolation</button>
+<button role="menuitem" data-run="robustness()" title="how the network falls apart as nodes fail, at random or by degree (robustness())">Robustness to failures and attacks</button>
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Centrality</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
-<button role="menuitem" data-run="sizeBy(degree, 5, 40, &quot;sqrt&quot;)">Size by degree</button>
-<button role="menuitem" data-run="sizeBy(pagerank, 5, 40, &quot;sqrt&quot;)">Size by PageRank</button>
-<button role="menuitem" data-run="sizeBy(betweenness, 5, 40, &quot;sqrt&quot;)">Size by betweenness</button>
-<button role="menuitem" data-run="sizeBy(eigenvector, 5, 40, &quot;sqrt&quot;)">Size by eigenvector centrality</button>
-<button role="menuitem" data-run="colorBy(closeness, &quot;#fff3b0&quot;, &quot;#d7263d&quot;)">Colour by closeness</button>
+<button role="menuitem" data-run="sizeBy(degree, 5, 40, &quot;sqrt&quot;)" title="sizeBy(degree, 5, 40, &quot;sqrt&quot;)">Size by degree</button>
+<button role="menuitem" data-run="sizeBy(pagerank, 5, 40, &quot;sqrt&quot;)" title="sizeBy(pagerank, 5, 40, &quot;sqrt&quot;)">Size by PageRank</button>
+<button role="menuitem" data-run="sizeBy(betweenness, 5, 40, &quot;sqrt&quot;)" title="sizeBy(betweenness, 5, 40, &quot;sqrt&quot;)">Size by betweenness</button>
+<button role="menuitem" data-run="sizeBy(eigenvector, 5, 40, &quot;sqrt&quot;)" title="sizeBy(eigenvector, 5, 40, &quot;sqrt&quot;)">Size by eigenvector centrality</button>
+<button role="menuitem" data-run="sizeBy(katzCentrality(), 5, 40, &quot;sqrt&quot;)" title="sizeBy(katzCentrality(), 5, 40, &quot;sqrt&quot;)">Size by Katz centrality</button>
+<button role="menuitem" data-run="sizeBy(weightedBridging(), 5, 40, &quot;sqrt&quot;)" title="nodes that link otherwise separate parts (sizeBy(weightedBridging(), 5, 40, &quot;sqrt&quot;))">Size by bridging</button>
+<button role="menuitem" data-run="colorBy(closeness, &quot;#fff3b0&quot;, &quot;#d7263d&quot;)" title="colorBy(closeness, &quot;#fff3b0&quot;, &quot;#d7263d&quot;)">Colour by closeness</button>
+<button role="menuitem" data-run-sel="sizeBy(personalizedPagerank({sel}), 5, 40, &quot;sqrt&quot;)" title="personalised PageRank from the selected nodes (sizeBy(personalizedPagerank({sel}), 5, 40, &quot;sqrt&quot;))">Size by closeness to the selection</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Communities</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="louvainClusters()&#10;colorize(louvain_class)&#10;legendFor(louvain_class)" title="Louvain (louvainClusters())">Find communities</button>
+<button role="menuitem" data-run="leidenClusters()&#10;colorize(leiden_class)&#10;legendFor(leiden_class)" title="every community internally connected (leidenClusters())">Find communities (Leiden)</button>
+<button role="menuitem" data-run="infomapClusters()&#10;colorize(infomap_class)&#10;legendFor(infomap_class)" title="communities that trap a random walker; good for directed graphs (infomapClusters())">Find communities (Infomap)</button>
+<button role="menuitem" data-run="labelPropagationClusters()&#10;colorize(lpa_class)&#10;legendFor(lpa_class)" title="fast: each node takes its neighbours&#x27; most common label (labelPropagationClusters())">Find communities (label propagation)</button>
+<hr />
+<button role="menuitem" data-run="fastGreedyClusters()&#10;colorize(fastgreedy_class)&#10;legendFor(fastgreedy_class)" title="merges communities greedily by modularity (fastGreedyClusters())">Fast greedy</button>
+<button role="menuitem" data-run="walktrapClusters()&#10;colorize(walktrap_class)&#10;legendFor(walktrap_class)" title="groups nodes that short random walks keep together (walktrapClusters())">Walktrap</button>
+<button role="menuitem" data-run="eigenvectorClusters()&#10;colorize(eigen_class)&#10;legendFor(eigen_class)" title="eigenvectorClusters()">Leading eigenvector</button>
+<button role="menuitem" data-run="spinglassClusters()&#10;colorize(spinglass_class)&#10;legendFor(spinglass_class)" title="simulated annealing of a spin model (spinglassClusters())">Spinglass</button>
+<button role="menuitem" data-run="chineseWhispersClusters()&#10;colorize(cw_class)&#10;legendFor(cw_class)" title="chineseWhispersClusters()">Chinese Whispers</button>
+<button role="menuitem" data-run="mclClusters()&#10;colorize(mcl_class)&#10;legendFor(mcl_class)" title="mclClusters()">Markov clustering (MCL)</button>
+<button role="menuitem" data-run="optimalClusters()&#10;colorize(optimal_class)&#10;legendFor(optimal_class)" title="exact; slow beyond a few hundred nodes (optimalClusters())">Best possible modularity (small graphs)</button>
+<hr />
+<button role="menuitem" data-run-ask="fluidClusters({value})&#10;colorize(fluid_class)&#10;legendFor(fluid_class)" data-ask-label="How many communities?" data-ask-value="5" title="fluidClusters(count)">Exactly N communities (fluid)…</button>
+<button role="menuitem" data-run-ask="edgeBetweennessClusters({value})&#10;colorize(edgebetweenness_class)&#10;legendFor(edgebetweenness_class)" data-ask-label="How many communities?" data-ask-value="5" title="edgeBetweennessClusters(count)">Edge betweenness (Girvan–Newman)…</button>
+<button role="menuitem" data-run-ask="sbmClusters({value})&#10;colorize(sbm_class)&#10;legendFor(sbm_class)" data-ask-label="How many groups?" data-ask-value="3" title="sbmClusters(count)">Stochastic block model…</button>
+<button role="menuitem" data-run-ask="blockModelClusters({value})&#10;colorize(blockmodel_class)&#10;legendFor(blockmodel_class)" data-ask-label="How many roles?" data-ask-value="4" title="blockModelClusters(count): structurally equivalent positions">Roles (block model)…</button>
+<button role="menuitem" data-run-ask="cutDendrogram({value})" data-ask-label="How many communities?" data-ask-value="5" title="cutDendrogram(count), after Walktrap or Fast greedy">Re-cut the last hierarchy…</button>
+<hr />
+<button role="menuitem" data-run="showOverlaps(cliquePercolationClusters())" title="showOverlaps(cliquePercolationClusters())">Overlapping (clique percolation)</button>
+<button role="menuitem" data-run="showOverlaps(linkCommunities())" title="showOverlaps(linkCommunities())">Overlapping (link communities)</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Groups by a field</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run-field="groupStats({field})" title="size, density and hubs of each group (asks for the field)">Profile the groups…</button>
+<button role="menuitem" data-run-field="mixingMatrix({field})" title="edges between each pair of values (asks for the field)">Mixing matrix…</button>
+<button role="menuitem" data-run-field="modularity({field})" title="how community-like the groups are (asks for the field)">Modularity of a grouping…</button>
+<button role="menuitem" data-run-field="compareClusters({field}, {field2})" data-prompts="the first grouping|the second grouping" title="how well two partitions agree (NMI) (asks for the field)">Compare two groupings…</button>
+<button role="menuitem" data-run-field="select(intraEdges({field}))" title="edges whose two ends share the value (asks for the field)">Select edges within groups…</button>
+<button role="menuitem" data-run-field="select(interEdges({field}))" title="edges joining different values (asks for the field)">Select edges between groups…</button>
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Structure</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
-<button role="menuitem" data-run="showOnly(giantComponent())">Largest component only</button>
-<button role="menuitem" data-run="showOnly(kCore(2))">2-core only</button>
-<button role="menuitem" data-run="select(bridges())" title="bridges(): edges whose removal splits the graph">Select bridges</button>
-<button role="menuitem" data-run="select(cutNodes())" title="cutNodes(): nodes whose removal splits the graph">Select cut nodes</button>
-<button role="menuitem" data-run="triadCensus()" title="triadCensus(): counts of the 16 kinds of three-node pattern (directed graphs)">Triad census</button>
+<button role="menuitem" data-run="showOnly(giantComponent())" title="showOnly(giantComponent())">Largest component only</button>
+<button role="menuitem" data-run="showOnly(kCore(2))" title="showOnly(kCore(2))">2-core only</button>
+<button role="menuitem" data-run="showOnly(kBrace(2))" title="what&#x27;s left after removing edges not in enough triangles (showOnly(kBrace(2)))">2-brace only</button>
+<button role="menuitem" data-run="weakComponentClusters()&#10;colorize(weakcomponent_class)&#10;legendFor(weakcomponent_class)" title="weakComponentClusters()">Colour by component</button>
+<button role="menuitem" data-run="biComponentClusters()&#10;colorize(bicomponent_class)&#10;legendFor(bicomponent_class)" title="biComponentClusters()">Colour by biconnected component</button>
+<button role="menuitem" data-run-ask="kComponents({value})&#10;colorize(kcomponent_class)&#10;legendFor(kcomponent_class)" data-ask-label="k" data-ask-value="2" title="kComponents(k): groups that stay connected after removing k-1 nodes">k-components…</button>
+<button role="menuitem" data-run="cohesiveBlocks()&#10;colorize(cohesion)" title="nested groups that stay connected after removing nodes (cohesiveBlocks())">Cohesive blocks</button>
+<button role="menuitem" data-run="corePeriphery()&#10;colorize(core)&#10;legendFor(core)" title="corePeriphery()">Core and periphery</button>
+<button role="menuitem" data-run="mcodeClusters()&#10;colorize(mcode_class)&#10;legendFor(mcode_class)" title="mcodeClusters()">Dense regions (MCODE)</button>
+<button role="menuitem" data-run="voronoiClusters()&#10;colorize(voronoi_class)&#10;legendFor(voronoi_class)" title="voronoiClusters()">Regions around central nodes (Voronoi)</button>
+<button role="menuitem" data-run="dbscanClusters()&#10;colorize(dbscan_class)&#10;legendFor(dbscan_class)" title="dbscanClusters()">Groups close together on screen (DBSCAN)</button>
+<hr />
+<button role="menuitem" data-run="select(bridges())" title="edges whose removal splits the graph (select(bridges()))">Select bridges</button>
+<button role="menuitem" data-run="select(cutNodes())" title="nodes whose removal splits the graph (select(cutNodes()))">Select cut nodes</button>
+<button role="menuitem" data-run="largestCliques()" title="largestCliques()">Largest cliques</button>
+<button role="menuitem" data-run="cliques()" title="cliques()">All cliques</button>
+<button role="menuitem" data-run="select(spanningTree())" title="select(spanningTree())">Select a spanning tree</button>
+<button role="menuitem" data-run="select(maxMatching())" title="select(maxMatching())">Select a maximum matching</button>
+<button role="menuitem" data-run="findDuplicates()" title="pairs of nodes with near-identical names (findDuplicates())">Find duplicate nodes</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Paths and neighbourhoods</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run-sel="select(shortestPath({first}, {second}))" title="select(shortestPath({first}, {second}))">Shortest path between two selected nodes</button>
+<button role="menuitem" data-run-sel="select(egoNetwork({first}))" title="select(egoNetwork({first}))">Neighbours of the selected node</button>
+<button role="menuitem" data-run-sel="select(egoNetwork({first}, 2))" title="select(egoNetwork({first}, 2))">Within two steps of the selected node</button>
+<button role="menuitem" data-run-sel="similarTo({first})" title="neighbourhood overlap (similarTo({first}))">Nodes like the selected one</button>
+<button role="menuitem" data-run-sel="maxFlow({first}, {second})" title="maxFlow({first}, {second})">Maximum flow between two selected nodes</button>
+<button role="menuitem" data-run-sel="select(minCut({first}, {second}))" title="select(minCut({first}, {second}))">Minimum cut between two selected nodes</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Directed networks</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="reciprocity()" title="the share of directed edges that are returned (reciprocity())">Reciprocity</button>
+<button role="menuitem" data-run="select(mutualEdges())" title="select(mutualEdges())">Select mutual edges</button>
+<button role="menuitem" data-run="select(feedbackEdges())" title="select(feedbackEdges())">Select edges that close cycles</button>
+<button role="menuitem" data-run="findCycles()" title="findCycles()">Find cycles</button>
+<button role="menuitem" data-run="bowTie()&#10;colorize(bowtie)&#10;legendFor(bowtie)" title="core, in, out, tendrils, as the Web was described (bowTie())">Bow tie</button>
+<button role="menuitem" data-run="rankNodes()" title="a hierarchy most edges point up (rankNodes())">Rank on a ladder</button>
+<button role="menuitem" data-run="triadCensus()" title="counts of the 16 kinds of three-node pattern (triadCensus())">Triad census</button>
+<button role="menuitem" data-run="transitiveReduction()" title="transitiveReduction()">Redundant edges (transitive reduction)</button>
+<button role="menuitem" data-run="mainPath()" title="the backbone of a citation network (mainPath())">Main path (citations)</button>
+<button role="menuitem" data-run-sel="select(ancestors({first}))" title="select(ancestors({first}))">Upstream of the selected node</button>
+<button role="menuitem" data-run-sel="select(descendants({first}))" title="select(descendants({first}))">Downstream of the selected node</button>
+<button role="menuitem" data-run-sel="dominatorTree({first})" title="dominatorTree({first})">Dominator tree from the selected node</button>
+</div></div>
+<div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Predicted links</button>
+<div class="menu-pop menu-sub-pop" role="menu" hidden>
+<button role="menuitem" data-run="predictLinks()" title="pairs of nodes with many neighbours in common (predictLinks())">Likely missing links</button>
+<button role="menuitem" data-run="evaluateLinks()" title="hides some edges and checks how many predictLinks finds (evaluateLinks())">How good are the predictions?</button>
 </div></div>
 <div class="menu-sub"><button role="menuitem" class="menu-sub-title" aria-haspopup="menu" aria-expanded="false">Charts</button>
 <div class="menu-pop menu-sub-pop" role="menu" hidden>
-<button role="menuitem" data-run="plotHistogram(totaldegree)">Degree histogram</button>
-<button role="menuitem" data-run="plotFrequency(degree, log=true)" title="plotFrequency(degree, log=true): a power law is a straight line">Degree distribution (log–log)</button>
-<button role="menuitem" data-run="showMatrix()" title="showMatrix(order=field) sorts rows and columns by a field">Adjacency matrix</button>
+<button role="menuitem" data-run="plotHistogram(totaldegree)" title="plotHistogram(totaldegree)">Degree histogram</button>
+<button role="menuitem" data-run="plotFrequency(degree, log=true)" title="a power law is a straight line (plotFrequency(degree, log=true))">Degree distribution (log–log)</button>
+<button role="menuitem" data-run="showMatrix()" title="showMatrix(order=field) sorts rows and columns by a field (showMatrix())">Adjacency matrix</button>
 </div></div>
 </div>
 </div>

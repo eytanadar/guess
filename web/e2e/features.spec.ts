@@ -1081,10 +1081,11 @@ test("layouts by a field ask which field, from the graph's own", async ({ page }
   await menu(page, "Layout", "Scatter plot…");                       // two numeric fields, x then y
   await expect(dlg).toContainText("the field across (x)");
   await expect(dlg.getByRole("button", { name: "dept", exact: true })).toHaveCount(0);   // text: not offered
-  await dlg.getByRole("button", { name: "freq", exact: true }).click();
+  await expect(dlg.getByRole("button", { name: "width", exact: true })).toHaveCount(0);  // nor how nodes are drawn
+  await dlg.getByRole("button", { name: "indegree", exact: true }).click();
   await expect(dlg).toContainText("the field up and down (y)");
-  await dlg.getByRole("button", { name: "freq", exact: true }).click();
-  await expect(page.locator(".cell").last()).toContainText("scatterLayout(freq, freq)");
+  await dlg.getByRole("button", { name: "outdegree", exact: true }).click();
+  await expect(page.locator(".cell").last()).toContainText("scatterLayout(indegree, outdegree)");
   expect(await lastError(page)).toBeNull();
   expect(errors).toEqual([]);
 });

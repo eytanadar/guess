@@ -1682,16 +1682,25 @@ let wireMenuRoot: (r: HTMLElement) => void = () => {};
         else status.textContent = "Nothing selected: shift-drag a box or Alt-drag a lasso first";
         return;
       }
-      const first = nodeExpr([...renderer.selection][0]);
-      void term.submit(b.dataset.runSel!.replaceAll("{sel}", all).replaceAll("{first}", first));
+      const picked = [...renderer.selection];
+      const code = b.dataset.runSel!;
+      if (code.includes("{second}") && picked.length < 2) {
+        status.textContent = "Select two nodes first (shift-click the second)";
+        return;
+      }
+      void term.submit(code.replaceAll("{sel}", all).replaceAll("{first}", nodeExpr(picked[0]))
+        .replaceAll("{second}", picked.length > 1 ? nodeExpr(picked[1]) : ""));
     });
   }
+  const DRAWN = new Set(["x", "y", "visible", "color", "strokecolor", "strokewidth", "labelcolor", "fixed", "style",
+    "width", "height", "label", "labelvisible", "labelpos", "labelsize", "image"]);
   // data-run-field: a command by a node field ({field}, and {field2} for a second),
   // picked from the graph's own fields (numeric ones only with data-numeric)
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-run-field]")) {
     b.addEventListener("click", async () => {
       const numeric = b.dataset.numeric !== undefined;
-      const fields = (await loadFields("n")).filter((f) => !f.builtin && (!numeric || f.numeric));
+      // the graph's own fields and the degrees, not how nodes are drawn (x, color, width, ...)
+      const fields = (await loadFields("n")).filter((f) => !DRAWN.has(f.name) && (!numeric || f.numeric));
       if (!fields.length) {
         status.textContent = `This graph has no ${numeric ? "numeric " : ""}node fields to lay it out by`;
         return;
@@ -1702,11 +1711,12 @@ let wireMenuRoot: (r: HTMLElement) => void = () => {};
         return f && (/^[A-Za-z_]\w*$/.test(f) ? f : pyLit(f));
       };
       let code = b.dataset.runField!;
-      const f1 = await pick(code.includes("{field2}") ? "the field across (x)" : "which field?");
+      const prompts = b.dataset.prompts?.split("|") ?? ["the field across (x)", "the field up and down (y)"];
+      const f1 = await pick(code.includes("{field2}") ? prompts[0] : "which field?");
       if (!f1) return;
       code = code.replaceAll("{field}", f1);
       if (code.includes("{field2}")) {
-        const f2 = await pick("the field up and down (y)");
+        const f2 = await pick(prompts[1]);
         if (!f2) return;
         code = code.replaceAll("{field2}", f2);
       }
@@ -2442,7 +2452,7 @@ const palette = new Palette(async () => {
     const sub = b.closest(".menu-sub")?.querySelector(".menu-sub-title")?.textContent;
     const root = b.closest(".menu-root")?.querySelector(".menu-title")?.textContent;
     const menu = root && sub ? `${root} › ${sub}` : root;
-    items.push({ kind: "action", label: menu ? `${menu} › ${label}` : `Tool: ${label}`, detail: b.title || b.dataset.run || (b.dataset.runSel ?? b.dataset.runField ?? b.dataset.runAsk)?.replace(/\{(sel|first|field|field2|value)\}/g, "…") || "", run: () => b.click() });
+    items.push({ kind: "action", label: menu ? `${menu} › ${label}` : `Tool: ${label}`, detail: b.title || b.dataset.run || (b.dataset.runSel ?? b.dataset.runField ?? b.dataset.runAsk)?.replace(/\{(sel|first|second|field|field2|value)\}/g, "…") || "", run: () => b.click() });
   }
   for (const n of renderer.nodes.values()) {
     items.push({ kind: "node", label: n.name, detail: n.l && n.l !== n.name ? n.l : "", run: () => {
