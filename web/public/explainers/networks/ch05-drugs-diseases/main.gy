@@ -70,7 +70,7 @@ def drug_view(choice):
         keep = "drug" if choice == VIEWS[1] else "target"
         project(side, keep, name="projection")
         g.nodes.labelvisible = true
-        sizeBy(degree, 10, 26)
+        resize(degree, 10, 26)
         g.edges.color = "120,120,120,170"
         louvainClusters()
         if keep == "drug":

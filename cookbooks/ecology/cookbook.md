@@ -42,7 +42,7 @@ makeNicheModel(40, 0.12, seed=1)
 trophicLevels()
 scatterLayout(niche, trophic)
 colorize(role)
-sizeBy(degree, 6, 24)
+resize(degree, 6, 24)
 legendFor(role)
 ```
 
@@ -162,7 +162,7 @@ for n in g.nodes:
                 changed = True
     n.cascade = gone - 1
 for n in sortBy(cascade)[-5:]: print(n.name, n.cascade, n.degree)
-sizeBy(cascade, 6, 30)
+resize(cascade, 6, 30)
 ```
 
 **How it works.** A *keystone* is a species whose loss causes losses out of
@@ -258,7 +258,7 @@ system.
 ```{.python .norun}
 makeFromGloBI(["Vulpes vulpes", "Lynx lynx", "Canis lupus"], limit=300)
 colorize(query)
-sizeBy(degree, 4, 30)
+resize(degree, 4, 30)
 forceAtlas2Layout()
 ```
 

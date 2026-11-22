@@ -43,13 +43,13 @@ person stays infectious for five days on average.
 **You want** to see who meets whom at school, and how much.
 
 ::: ingredients
-**Ingredients:** `school-contacts-SIMULATED.gdf` · `colorize` · `sizeBy`
+**Ingredients:** `school-contacts-SIMULATED.gdf` · `colorize` · `resize`
 :::
 
 ```python
 makeFromGDF("school-contacts-SIMULATED.gdf")
 colorize(room)
-sizeBy(degree, 4, 20)
+resize(degree, 4, 20)
 (role == "teacher").style = "square"
 legendFor(room)
 [(grp[0].room, len(grp)) for grp in groupBy(room)][:3]
@@ -280,7 +280,7 @@ makeFromGDF("school-contacts-SIMULATED.gdf")
 c = spread(g.nodes[:3], model="SIS", beta=0.03, gamma=0.2, steps=300)
 plotScatter(degree, infected_steps, title="Time spent infected, by contacts")
 colorBy(infected_steps, "210,225,250", "200,30,30")   # red: infected most of the time
-sizeBy(degree, 6, 26)
+resize(degree, 6, 26)
 ```
 
 ![SIS in the school: pupils with more contacts are infected more of the time](img/epi-sis.png)
@@ -425,7 +425,7 @@ treeLayout(horizontal=true, spacing=6)
 for n in g.nodes: n.x = 20 * n.onset
 colorize(setting)
 colorBy(onset, yellow, red)
-sizeBy(outdegree, 4, 24)
+resize(outdegree, 4, 24)
 legendFor(setting)
 center()
 ```

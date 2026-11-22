@@ -939,7 +939,7 @@ gemLayout()
 Use `centerAfterLayout(false)` if you'd rather the view didn't re-centre
 after every layout.
 
-![louvainClusters(); colorize(louvain_class); sizeBy(pagerank, 6, 40); forceAtlas2Layout(linLog=true, preventOverlap=true)](img/fa2.png){width=80%}
+![louvainClusters(); colorize(louvain_class); resize(pagerank, 6, 40); forceAtlas2Layout(linLog=true, preventOverlap=true)](img/fa2.png){width=80%}
 
 **Hive plots.** A hive plot puts each group on its own axis and places nodes
 along the axis by a value. Unlike force-directed layouts, the picture
@@ -1090,10 +1090,11 @@ shape:
 
 ```python
 colorize(dept)                          # a distinct colour per value
-colorBy(betweenness, yellow, red)       # a gradient over a number
+colorize(degree)                        # a number: a gradient (sqrt or log when skewed)
+colorBy(betweenness, yellow, red)       # a gradient between two colours you choose
 colorBy(freq, yellow, red, transform='log')   # transforms: 'linear', 'log', 'sqrt', 'rank'
-sizeBy(pagerank, 5, 40)                 # node size (or edge width) from a number
-resizeLinear(totaldegree, 5, 30)        # the 2006 version
+resize(pagerank)                        # node size (or edge width) from a field
+resize(pagerank, 5, 40, transform='log')      # ... with your own sizes and transform
 labelBy(dept)                           # labels from a field
 shapeBy(dept)                           # a shape per value
 polygonBy(dept, 3, 8)                   # a regular polygon per value (3 to 8 sides)
@@ -1101,6 +1102,16 @@ borderBy(dept)                          # a border colour per value
 legendFor(dept)                         # a legend for the current colours
 GradientLegend(betweenness)             # the ramp betweenness is coloured with
 ```
+
+`colorize` and `resize` look at the field before choosing. Text, true/false
+and group ids (the `*_class` fields community commands write) get a distinct
+colour each, or sizes spaced evenly by rank. Numbers get a gradient, or sizes
+in proportion to the value, through a `sqrt` transform when the values are
+skewed (the largest more than ten times the median, as with degree), `log`
+when they span three orders of magnitude, and a diverging scale when they
+cross zero. `resize` picks node sizes from the typical spacing of the layout
+and edge widths from 0.5 up to a few units. Each says what it chose; give
+`transform=`, `smallest=` and `largest=` (or a palette) to choose yourself.
 
 A node's `style` takes a name or a number: `v92.style = 'triangle'` and
 `v92.style = 11` do the same thing. Read back, a style prints as its name
@@ -1161,7 +1172,7 @@ red-to-green gradient isn't.
 
 ![The four scales of `colorBy`. The nodes are in PageRank order, lowest first. `linear` keeps most of the gradient for the few highest values, and `rank` spreads it evenly.](img/colorscales.png){width=85%}
 
-![colorBy(betweenness, yellow, red); sizeBy(betweenness, 5, 40, 'log'); GradientLegend(...)](img/color-by.png){width=75%}
+![colorBy(betweenness, yellow, red); resize(betweenness, 5, 40, 'log'); GradientLegend(...)](img/color-by.png){width=75%}
 
 If you'd rather click than type, the **Style panel** (*View → Panels → Style panel*)
 does the same mappings with menus: pick nodes or edges, a property, a field
@@ -2047,7 +2058,7 @@ arrowheadBy(directed)
   moving in the SVG. DOT files' `arrowhead` and `style` (dashed, dotted,
   tapered) are read and written.
 - Curved, weighted flows: `curvedEdges(true)`, `g.edges.arrowhead = "swept"`,
-  `sizeBy(weight, 0.5, 7)` and `colorBy(weight, lightgray, '50,70,90')`.
+  `resize(weight, 0.5, 7)` and `colorBy(weight, lightgray, '50,70,90')`.
 
 ![Line styles (left) and arrowheads (right).](img/edgestyles.png)
 
@@ -2800,8 +2811,8 @@ Gython is Python 3 with these additions:
 | node names, field names, commands, colours | predefined, protected variables |
 
 **Command conventions.**
-- **Fields.** An argument that takes a field also takes its name: `sizeBy(degree)` and
-  `sizeBy("degree")` are the same. A command with one field argument calls
+- **Fields.** An argument that takes a field also takes its name: `resize(degree)` and
+  `resize("degree")` are the same. A command with one field argument calls
   it `field`; one with several names them by role (`scatterLayout(x, y)`).
 - **Nodes.** One node is `node` (`egoNetwork(node)`, `heatMap(node)`); a
   pair is `source` and `target` (`shortestPath`, `maxFlow`, `minCut`,
@@ -2816,7 +2827,7 @@ Gython is Python 3 with these additions:
   `showOverlaps`).
 - **Transforms.** `transform=` (`"linear"`, `"log"`, `"sqrt"`, `"rank"`)
   says how values are spread before they become sizes, colours or positions
-  (`sizeBy`, `colorBy`, `labelSizeBy`, `hiveLayout`).
+  (`resize`, `colorBy`, `labelSizeBy`, `hiveLayout`).
 - **Counts.** A number of things to make or return is `count`; a cap on a
   search is `limit` (`cliques`, `findCycles`, `findPattern`); a smallest
   group size is `smallest`.
@@ -2912,6 +2923,10 @@ unchanged except where Python 3 differs. The main differences:
 - **Louvain's field** is `louvain_class`, like `leiden_class` and the other
   methods' (it was `modularity_class`, Gephi's name).
 - **More names made consistent (2026-11-17).**
+  - `resizeLinear(field, smallest, largest)` and `sizeBy(field, smallest, largest,
+    transform)` are now one command, `resize(field, smallest=None, largest=None,
+    transform=None)`: sizes and transform are optional and chosen from the field
+    and the layout. `resizeLinear`'s even spacing is `transform="rank"`. (2026-11-22)
   - Commands renamed: `stoplog()` is now `stopLog()`; `ss(state)` and
     `ls(state)` are `saveState(state)` and `loadState(state)`;
     `removeOverlap()` is `prismLayout()`; `blockmodel(k)` is

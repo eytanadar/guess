@@ -672,7 +672,7 @@ class Session:
 
     def _prepare_fields(self, names):
         """Compute fields such as pagerank or closeness that the code names but
-        that have not been used yet, so `sizeBy(pagerank, 5, 20)` just works."""
+        that have not been used yet, so `resize(pagerank, 5, 20)` just works."""
         g = self.graph
         for name in names:
             if name in self.ns or name in g.node_schema or name in g.edge_schema:
@@ -1390,7 +1390,7 @@ class Session:
             if len(named) > 1:
                 out.append(f"shortestPath({a}, {named[-1]}).color = red")
         out += [f"(degree > {cut}).color = orange", "highest(betweenness, 5)", "louvainClusters()",
-                "plotHistogram(degree)", "gemLayout()", "resizeLinear(degree, 5, 30)", "demo('advanced')"]
+                "plotHistogram(degree)", "gemLayout()", "resize(degree, 5, 30, transform='rank')", "demo('advanced')"]
         seen, uniq = set(), []
         for c in out:
             if c not in seen and len(c) <= 40:

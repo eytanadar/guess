@@ -43,7 +43,7 @@ want** its modules and who imports whom.
 
 ```python
 makeFromImports("networkx")
-sizeBy(lines, 3, 30)
+resize(lines, 3, 30)
 dotLayout()
 ```
 
@@ -230,7 +230,7 @@ any package whose `__init__.py` re-exports its contents.
 ```python
 makeFromImports("networkx", level=2)
 labelBy(module)
-sizeBy(lines, 10, 60)
+resize(lines, 10, 60)
 circoLayout()
 ```
 
@@ -245,7 +245,7 @@ a newcomer needs, drawn from the code rather than from memory.
 
 ```python
 makeFromCalls("guess.structure")
-sizeBy(indegree, 6, 30)
+resize(indegree, 6, 30)
 colorize(public)
 labelBy(function)
 forceAtlas2Layout()
@@ -300,7 +300,7 @@ the architecture.
 
 ```python
 makeFromGDF("guess-imports.gdf")
-sizeBy(lines, 8, 50)
+resize(lines, 8, 50)
 colorBy(indegree, lightgray, red)
 labelBy(label)
 dotLayout()

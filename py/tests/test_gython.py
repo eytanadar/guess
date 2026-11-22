@@ -168,7 +168,7 @@ def test_group_by_and_colorize(s):
     s.run("colorize(freq, yellow, red)")
     assert ev(s, "(jane->bob).color") == "255,255,0,255"
     assert ev(s, "(bob->jane).color") == "255,0,0,255"
-    s.run("resizeLinear(freq, 1, 5)")
+    s.run("resize(freq, 1, 5, transform='rank')")
     assert ev(s, "(jane->bob).width") == 1 and ev(s, "(bob->jane).width") == 5
 
 

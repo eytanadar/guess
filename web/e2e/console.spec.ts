@@ -4,7 +4,7 @@ import { boot, input, lastError, menu, run, type } from "./helpers";
 test("loads the sample graph and runs paper examples", async ({ page }) => {
   const errors = await boot(page);
   await expect(page.locator(".console-out")).toContainText("loaded 402 nodes, 725 edges");
-  for (const cmd of ["(freq > 100).color = red", "colorize(dept)", "resizeLinear(totaldegree, 5, 25)",
+  for (const cmd of ["(freq > 100).color = red", "colorize(dept)", "resize(totaldegree, 5, 25, transform='rank')",
                      "name like 'v1%'", "(v1, v2) & (jobfun == 'employee')", "center(dept == 'dept3')"]) {
     await run(page, cmd);
   }

@@ -78,7 +78,7 @@ def test_lazy_statistic_fields_and_recompute(s):
 
 def test_bare_statistic_names_compute_on_use(s):
     assert "closeness" not in s.ns
-    assert s.run("sizeBy(closeness, 5, 20)"), s.rec.of("error")
+    assert s.run("resize(closeness, 5, 20)"), s.rec.of("error")
     assert ev(s, "(closeness > 0)") and "closeness" in s.graph.node_schema
     assert s.run("colorBy(betweenness, white, red)")   # node field wins over the edge one
 
@@ -159,16 +159,16 @@ def test_colorize_uses_distinct_colours(big):
 
 
 def test_size_and_colour_by_value(s):
-    assert s.run("sizeBy(freq, 1, 31)")
+    assert s.run("resize(freq, 1, 31)")
     assert edge(s, "bob", "jane").width == 31 and edge(s, "jane", "bob").width == 1
     assert edge(s, "bob", "alice").width == pytest.approx(1 + 30 * 8 / 28)
-    assert s.run("sizeBy(freq, 1, 31, 'log')")
+    assert s.run("resize(freq, 1, 31, 'log')")
     mid = edge(s, "bob", "alice").width
     assert 1 + 30 * 8 / 28 < mid < 31   # log spreads the low end
     assert s.run("colorBy(freq, white, black, transform='rank')")
     assert edge(s, "jane", "bob").color == "255,255,255,255"
-    assert not s.run("sizeBy(dept, 1, 2)")
-    assert not s.run("sizeBy(freq, 1, 2, 'cubic')")
+    assert not s.run("resize(dept, 1, 2)")
+    assert not s.run("resize(freq, 1, 2, 'cubic')")
 
 
 def test_label_settings_roundtrip(s):

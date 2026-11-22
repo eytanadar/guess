@@ -57,8 +57,8 @@ v1 ? g.nodes                          # any edges between v1 and anything
 (freq > 100).nodes                    # the nodes those edges touch; (dept == 'dept3').edges: their edges
 for n in (dept == 'dept3'):           # sets are iterable
     n.labelvisible = true
-colorize(dept); resizeLinear(totaldegree, 5, 30)
-sizeBy(pagerank, 5, 40, "log"); colorBy(closeness, yellow, red)
+colorize(dept); resize(totaldegree, 5, 30, transform="rank")
+resize(pagerank, 5, 40, "log"); colorBy(closeness, yellow, red)
 gemLayout                             # commands without arguments need no ()
 ```
 

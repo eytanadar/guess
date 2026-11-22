@@ -99,7 +99,7 @@ def pick_view(choice):
     project(side, keep, method=method[0], name="projection")
     louvainClusters()
     colorize(louvain_class)
-    sizeBy(degree, 6, 22)
+    resize(degree, 6, 22)
     g.edges.width = 1
     g.nodes.labelvisible = len(g.nodes) <= 40
     label_, k = BIGGEST[other]

@@ -54,14 +54,14 @@ def toy():
 def airports():
     makeFromFile("us-airports.gdf")
     geoLayout()
-    sizeBy(degree, 3, 18)
+    resize(degree, 3, 18)
     g.edges.color = "120,140,170,60"
 
 
 def papers():
     makeFromFile("vis-papers.gdf")
     colorBy(year, "255,220,150", "120,30,120")
-    sizeBy(indegree, 4, 22)
+    resize(indegree, 4, 22)
     g.edges.color = "150,150,150,70"
     binPackLayout()                       # hundreds of separate pieces: pack them, then keep nodes apart
     noverlapLayout()

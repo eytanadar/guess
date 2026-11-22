@@ -227,7 +227,7 @@
           "run": "colorize(louvain_class)"
         },
         {
-          "run": "sizeBy(pagerank, 5, 40, transform=\"sqrt\")"
+          "run": "resize(pagerank, 5, 40, transform=\"sqrt\")"
         },
         {
           "run": "highest(pagerank, 5) >> table(pagerank, dept)"

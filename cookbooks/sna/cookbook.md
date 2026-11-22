@@ -139,7 +139,7 @@ family dominated without having the most of anything.
 ```python
 makeFromGDF("florentine.gdf")
 kkLayout()
-sizeBy(betweenness, 10, 50)
+resize(betweenness, 10, 50)
 colorBy(degree, lightgray, red)
 labelBy(name)
 Medici.degree, Strozzi.degree
@@ -270,7 +270,7 @@ makeFromGDF("karate.gdf")
 frLayout()
 corePeriphery().fit                       # 0.43; .size is 5
 colorize(core)
-sizeBy(degree, 10, 40)
+resize(degree, 10, 40)
 showMatrix(order=core)
 ```
 
@@ -594,8 +594,8 @@ attend the same events cluster together.
 makeFromGDF("southern-women.gdf")
 project(kind, "woman", method="newman")
 frLayout()
-sizeBy(affiliations, 8, 30)
-sizeBy(weight, 1, 8)
+resize(affiliations, 8, 30)
+resize(weight, 1, 8)
 louvainClusters(); colorize(louvain_class)
 labelBy(name)
 ```
@@ -837,7 +837,7 @@ forceAtlas2Layout()
 colorize(dept)
 addNodeField("span", INTEGER, 0)
 for n in g.nodes: n.span = len(set(m.dept for m in n.getNeighbors()) - {n.dept})
-sizeBy(span, 4, 26)
+resize(span, 4, 26)
 plotHistogram(constraint)
 
 def brokers(v):

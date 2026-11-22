@@ -3,7 +3,7 @@
 
 makeFromFile("us-airports.gdf")
 geoLayout()
-sizeBy(degree, 3, 22)
+resize(degree, 3, 22)
 g.edges.visible = false
 closed = []
 

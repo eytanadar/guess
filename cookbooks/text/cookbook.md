@@ -45,8 +45,8 @@ cast = {"Holmes": ["Holmes", "Sherlock"], "Watson": ["Watson", "Doctor"],
         "Godfrey Norton": ["Godfrey Norton", "Godfrey", "Mr. Norton"],
         "John": ["John"], "Mrs. Turner": ["Mrs. Turner"]}
 makeFromText("scandal-in-bohemia.txt", cast)
-sizeBy(count, 10, 50)
-sizeBy(weight, 1, 10)
+resize(count, 10, 50)
+resize(weight, 1, 10)
 labelBy(label)
 circleLayout()
 ```
@@ -84,7 +84,7 @@ makeFromText("scandal-in-bohemia.txt", maxTerms=50, minCount=4,
 remove(weight < 2)
 louvainClusters()
 colorize(louvain_class)
-sizeBy(count, 6, 30)
+resize(count, 6, 30)
 labelBy(label)
 forceAtlas2Layout()
 ```
@@ -139,7 +139,7 @@ whether "the cited get cited more" is enough to explain it.
 
 ```python
 makePriceModel(500, c=3, a=1, seed=1)
-sizeBy(indegree, 4, 30)
+resize(indegree, 4, 30)
 colorBy(born, "200,60,40", "120,160,230")
 center(g.nodes)
 revealUpTo(150)
@@ -250,7 +250,7 @@ graphs (2011–2016), and ends at a 2024 review of how layout algorithms are
 evaluated. That's the field's arc from drawing small graphs to drawing
 large and changing ones.
 
-**Variations.** `sizeBy(spc, 1, 10)` (before `showOnly`) widens edges by
+**Variations.** `resize(spc, 1, 10)` (before `showOnly`) widens edges by
 their path count, showing the main path and its strongest tributaries.
 
 **Pitfalls.** The main path is only as good as the paper set. It can't
@@ -327,7 +327,7 @@ remove(weight < 0.05)
 showOnly(giantComponent())
 louvainClusters()
 colorize(louvain_class)
-sizeBy(affiliations, 12, 60)
+resize(affiliations, 12, 60)
 labelBy(label)
 labelSizeBy(affiliations)
 forceAtlas2Layout()
@@ -393,7 +393,7 @@ which is often more honest.
 
 ```{.python .norun}
 makeFromWikipedia("Graph drawing", limit=100)
-sizeBy(indegree, 4, 30)
+resize(indegree, 4, 30)
 labelBy(label)
 forceAtlas2Layout()
 ```
@@ -481,7 +481,7 @@ q = """SELECT ?source ?sourceLabel ?target ?targetLabel WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 } LIMIT 400"""
 makeFromSPARQL(q)
-sizeBy(indegree, 6, 40)
+resize(indegree, 6, 40)
 labelBy(label)
 g.nodes.labelpos = "outside"
 forceAtlas2Layout()
@@ -514,7 +514,7 @@ which places took part, and when they joined.
 ```python
 makeFromGDF("vis-institutions.gdf")
 geoLayout(projection="equirectangular")
-sizeBy(papers, 3, 24)
+resize(papers, 3, 24)
 colorBy(firstyear, blue, red)
 legendFor(firstyear)
 g.edges.color = "120,120,120,30"
@@ -644,7 +644,7 @@ for grp in groupBy(leiden_class)[:8]:
     fronts[enrichment(grp, kw, show=False)[0]["set"]] = grp[0].leiden_class
 colorize(leiden_class)
 mp = mainPath()
-sizeBy(indegree, 3, 28)
+resize(indegree, 3, 28)
 
 def until(y):
     showTime(int(y), year)

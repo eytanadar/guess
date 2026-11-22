@@ -122,12 +122,12 @@ def test_minus_assign_matches_minus():
 
 def test_field_names_as_strings_and_renamed_commands():
     s = _s()
-    assert s.run("sizeBy('degree', 4, 20)\ncolorBy('pagerank', yellow, red)\nlegendFor('dept')\n"
+    assert s.run("resize('degree', 4, 20)\ncolorBy('pagerank', yellow, red)\nlegendFor('dept')\n"
                  "__r = len(highest('degree', 3))"), s.rec.of("error")
     assert s.ns["__r"] == 3
-    assert not s.run("sizeBy('degre', 4, 20)")
+    assert not s.run("resize('degre', 4, 20)")
     assert "did you mean 'degree'" in s.rec.of("error")[-1]["summary"]
-    assert s.run("resizeLinear(degree, smallest=5, largest=30)"), s.rec.of("error")
+    assert s.run("resize(degree, smallest=5, largest=30, transform='rank')"), s.rec.of("error")
     assert s.run("addNodeField(name='score', type=DOUBLE, default=1.5)") and ev(s, "v1.score") == 1.5
     assert s.run("pieChart(dept)\nremovePies()\nbundleEdges()\nremoveBundles()"), s.rec.of("error")
     assert not s.run("pieOff()") and not s.run("unbundleEdges()")

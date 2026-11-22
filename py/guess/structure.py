@@ -723,6 +723,7 @@ def install(session):
         clusters = members
         groups = sorted(clusters.values(), key=lambda c: (-len(c), min(c)))
         f = gr.addNodeField(str(getattr(name, "name", name)), INT, -1)
+        f.categorical = True          # group ids, not quantities
         pos = np.empty(n, int)
         for p, members in enumerate(groups):
             for i in members:

@@ -38,7 +38,7 @@ STEPS = [
     dict(level="Basic", title="Colour and size by data",
          text="Rather than colour sets one by one, map a field to colour or size. A legend explains "
               "the colours.",
-         code="colorize(dept)\nresizeLinear(degree, 5, 30)\ncenter()",
+         code="colorize(dept)\nresize(degree, 5, 30, transform='rank')\ncenter()",
          notice="Hover a legend entry to light up its department. Hover `dept` in the code to preview "
                 "colouring by it without changing anything."),
     dict(level="Basic", title="Output is linked to the graph",

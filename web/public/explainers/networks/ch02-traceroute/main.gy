@@ -12,7 +12,7 @@ G0 = toNetworkX()
 ALL_EDGES = {frozenset((e.node1.name, e.node2.name)): e for e in g.edges}
 DEG = dict(G0.degree())
 HUB = sorted(DEG.values())[int(0.9 * len(DEG))]     # the top tenth by degree are "hubs"
-sizeBy(degree, 5, 24)
+resize(degree, 5, 24)
 
 QUIET = "170,170,170,70"
 

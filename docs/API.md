@@ -9,7 +9,7 @@ Commands can be called without parentheses when they take no arguments
 
 ## Contents
 
-- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (122)
+- [Graph structure, loading and saving, mapping, view](#graph-structure-loading-and-saving-mapping-view) (121)
 - [Undo, redo, history and logging](#undo-redo-history-and-logging) (6)
 - [Statistics, communities, filters and paths](#statistics-communities-filters-and-paths) (21)
 - [Clustering and generators](#clustering-and-generators) (11)
@@ -145,10 +145,14 @@ groups, largest first: len(colorGraph()) is the number of colours).
 Planar networks (maps) never need more than four, though greedy
 methods sometimes use five.
 
-### `colorize(field, *cs, palette=None)`
+### `colorize(field, *cs, palette=None, transform=None)`
 
-colorize(field) gives each value its own clearly different colour (the
-largest group first; see distinctColors); colorize(field, start, end) or
+colorize(field) picks colours to suit the field: each value its own
+clearly different colour for text, true/false and group ids (louvain_class
+and the like; the largest group first, see distinctColors), a gradient
+for numbers (viridis; diverging around 0 when the values cross it, and
+a sqrt or log transform when they are skewed; transform= overrides it,
+"linear", "log", "sqrt" or "rank"). colorize(field, start, end) or
 colorize(field, start, middle, end) a gradient over the sorted values.
 colorize(field, palette="Set2") uses a colour scale (see colorScales;
 colorize(field, "Set2") is the same): a categorical one ("Set2",
@@ -477,7 +481,7 @@ Cluster tool writes one of these per selection. Returns the nodes labelled.
 
 labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
 edge field) in proportion to a numeric field: 1 is the normal size. Sets
-the labelsize field; transform as in sizeBy ("linear", "log", "sqrt", "rank").
+the labelsize field; transform as in resize ("linear", "log", "sqrt", "rank").
 
 ### `lastClick()`
 
@@ -900,9 +904,19 @@ leiden_class, infomap_class). report("summary.html") saves it as a web
 page (offered as a download in the browser) and report("summary.md")
 as Markdown; with no name it's printed. Returns the Markdown.
 
-### `resizeLinear(field, smallest, largest)`
+### `resize(field, smallest=None, largest=None, transform=None)`
 
-Size nodes (or edge widths) by rank of field value, from smallest to largest.
+resize(field) sizes nodes (or edge widths, for an edge field) by a
+field, choosing what suits it:
+  the scale      numbers in proportion to their value, with a sqrt or
+                 log transform when they are skewed (degree, pagerank);
+                 text, true/false and group ids evenly by rank
+  the sizes      from the layout: nodes between about a fifth and two
+                 thirds of the typical spacing between them, edges
+                 from 0.5 to a few units wide
+Override any of it: resize(degree, 5, 40), resize(pagerank,
+transform="log"); transform is "linear", "log", "sqrt" or "rank"
+(evenly spaced distinct values).
 
 ### `resizeRandom(field, smallest, largest)`
 
@@ -944,13 +958,6 @@ showChart(chart, title=None) shows an Altair chart in the dock (a cell
 whose value is a chart does this by itself). Hovering a mark highlights
 its nodes, clicking selects them, right-click opens the element menu;
 interval selections (brushes) select what they cover.
-
-### `sizeBy(field, smallest, largest, transform='linear')`
-
-sizeBy(field, smallest, largest) sizes nodes (or edge widths, for an edge field) in
-proportion to a numeric field's value, from smallest to largest. transform may be
-"linear", "log", "sqrt" or "rank" (as in Gephi's ranking). Compare
-resizeLinear, which spaces distinct values evenly.
 
 ### `skitter(field)`
 
@@ -3795,13 +3802,13 @@ colorBy(freq, yellow, red, transform='log')
 **Size by importance**
 
 ```python
-sizeBy(pagerank, 5, 40, 'sqrt')
+resize(pagerank)
 ```
 
 **Size by rank of a field**
 
 ```python
-resizeLinear(totaldegree, 5, 30)
+resize(totaldegree, 5, 30, transform='rank')
 ```
 
 **Labels from a field**
@@ -3826,7 +3833,7 @@ legendFor(dept)
 **Edge width by weight**
 
 ```python
-sizeBy(freq, 1, 8)
+resize(freq, 1, 8)
 ```
 
 **Curved, mixed-colour edges**

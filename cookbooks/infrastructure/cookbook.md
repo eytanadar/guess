@@ -44,7 +44,7 @@ they are, on a map.
 ```python
 makeFromGDF("us-airports.gdf")
 geoLayout(projection="albers")
-sizeBy(degree, 3, 30)
+resize(degree, 3, 30)
 colorBy(degree, lightgray, red)
 hubs = sortBy(degree)[-12:]
 hubs.labelvisible = true
@@ -82,7 +82,7 @@ again. Alaska gets the same treatment in the first case study.
 ```python
 makeFromGDF("world-airports.gdf")
 geoLayout()
-sizeBy(degree, 2, 24)
+resize(degree, 2, 24)
 colorBy(betweenness, lightgray, red, transform="log")
 g.edges.visible = false
 ```
@@ -171,7 +171,7 @@ of individual edges.
 makeFromGDF("us-airports.gdf")
 subgraph((longitude > -130) & (latitude < 50), "lower 48")
 geoLayout(projection="albers")
-sizeBy(degree, 2, 20)
+resize(degree, 2, 20)
 g.edges.color = "40,70,140,50"
 bundleEdges()
 ```
@@ -429,7 +429,7 @@ alaska = (latitude > 51) & (longitude < -129)
 len(alaska)
 subgraph(alaska, "Alaska")
 geoLayout(projection="albers", parallels=(55, 65), center=(-154, 60))
-sizeBy(betweenness, 3, 30)
+resize(betweenness, 3, 30)
 labelBy(iata)
 ```
 
@@ -487,7 +487,7 @@ fragments. This recipe builds a simulator on the US network:
 ```python
 makeFromGDF("us-airports.gdf")
 geoLayout(projection="albers")
-sizeBy(degree, 2, 22)
+resize(degree, 2, 22)
 g.edges.color = "130,130,130,35"
 _ = robustness(["random", "degree", "betweenness"])
 saveState("open")

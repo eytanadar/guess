@@ -131,7 +131,7 @@ name like 'v1%'                    # SQL-style LIKE
 (bob, alice) & (dept == 'IT')      # set algebra on node tuples
 bob -> alice    bob <- alice       # directed edges
 bob <-> alice   bob ? g.nodes      # undirected / any edges
-colorize(dept); resizeLinear(totaldegree, 5, 30)
+colorize(dept); resize(totaldegree, 5, 30, transform="rank")
 for grp in groupBy(dept): grp.color = randomColor()
 center(dept == 'dept3')
 gemLayout                          # commands work without parentheses
@@ -159,7 +159,7 @@ Gephi-style analysis and layout:
 ```python
 cl = louvainClusters(); colorize(louvain_class)   # communities, distinct colours
 forceAtlas2Layout(linLog=true)                       # also scaling=, gravity=, preventOverlap=...
-sizeBy(pagerank, 5, 40, "sqrt"); colorBy(closeness, yellow, red)
+resize(pagerank, 5, 40, "sqrt"); colorBy(closeness, yellow, red)
 graphStats()                                         # diameter, path length, clustering, ...
 showOnly(kCore(3)); showAll()                        # also egoNetwork, giantComponent, intraEdges
 shortestPath(v1, v14).color = red; heatMap(v1)

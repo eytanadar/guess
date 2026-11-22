@@ -196,7 +196,7 @@ export class StylePanel {
         const range = el("span", "pf-inline");
         range.append(lo, " to ", hi);
         opts.append(labelled("from / to", range), labelled("scale", scale));
-        getCode = () => `sizeBy(${ref}, ${Number(lo.value)}, ${Number(hi.value)}, ${JSON.stringify(scale.value)})`;
+        getCode = () => `resize(${ref}, ${Number(lo.value)}, ${Number(hi.value)}, ${JSON.stringify(scale.value)})`;
       } else if (prop.value === "label") {
         const show = el("input") as HTMLInputElement;
         show.type = "checkbox";

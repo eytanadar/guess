@@ -46,7 +46,7 @@ def survey():
         r.shuffle(listed)
         for t in listed[:cap]:
             addDirectedEdge(NODE[s], NODE[t])
-    sizeBy(indegree, 5, 30)
+    resize(indegree, 5, 30)
     colorBy(outdegree, "200,210,230", "30,70,160")
     g.edges.color = "140,140,140,90"
 

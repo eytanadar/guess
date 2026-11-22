@@ -412,6 +412,7 @@ def install(session):
         g = session.graph
         ranked = _ranked(groups)
         f = g.addNodeField(str(getattr(field, "name", field)), INT, -1)
+        f.categorical = True          # group ids, not quantities
         which = {}
         for i, c in enumerate(ranked):
             for n in c:
@@ -539,6 +540,7 @@ def install(session):
         complexes, weight = mcode(adj, int(degreeCutoff), float(scoreCutoff), bool(haircut), bool(fluff),
                                   float(fluffDensity), int(kCore), int(maxDepth))
         f = g.addNodeField(str(getattr(name, "name", name)), INT, -1)
+        f.categorical = True          # group ids, not quantities
         fw = g.addNodeField("mcode_score", "DOUBLE", 0.0)
         which = {}
         for i, (_, members) in enumerate(complexes):

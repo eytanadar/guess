@@ -367,6 +367,7 @@ def install(session):
         comms = nx.community.louvain_communities(G, weight="weight", resolution=float(resolution), seed=seed)
         out = partition(comms, "community")
         f = g.addNodeField(str(getattr(name, "name", name)), INT, -1)
+        f.categorical = True          # group ids, not quantities
         for i, c in enumerate(out):
             for n in c:
                 f.set(n, i)

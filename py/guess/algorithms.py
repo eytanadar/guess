@@ -22,6 +22,7 @@ def store_partition(graph, groups, name, label, annotation=None):
             which.setdefault(n, i)
     for n in graph._nodes_list():
         f.set(n, which.get(n, -1))
+    f.categorical = True          # group ids, not quantities: colorize/resize treat them as labels
     return GSet((GSet(c, f"{label} {i}") for i, c in enumerate(ranked)),
                 annotation or f"{len(ranked)} {_plural(label)}")
 

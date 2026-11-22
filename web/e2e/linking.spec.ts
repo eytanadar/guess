@@ -82,7 +82,7 @@ test("the tooltip and cell numbers say which code changed an element", async ({ 
 
 test("hovering names, queries and fields in executed code", async ({ page }) => {
   await boot(page);
-  await run(page, "hubs = highest(degree, 5)\nshowOnly(3 < degree < 6)\nsizeBy(freq, 1, 3)");
+  await run(page, "hubs = highest(degree, 5)\nshowOnly(3 < degree < 6)\nresize(freq, 1, 3)");
   const code = page.locator(".cell-code").last();
   await code.locator("span", { hasText: /^hubs$/ }).hover();
   await expect(page.locator("#tip")).toContainText("hubs — 5 nodes now");

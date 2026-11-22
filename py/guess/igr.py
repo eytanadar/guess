@@ -251,6 +251,7 @@ def install(session):
             groups.setdefault(c, []).append(I.nodes[v])
         ordered = sorted(groups.values(), key=lambda c: (-len(c), min(n._id for n in c)))
         f = g().addNodeField(fieldname, INT, -1)
+        f.categorical = True          # group ids, not quantities
         renum = [0] * len(I.nodes)
         for i, c in enumerate(ordered):
             for n in c:

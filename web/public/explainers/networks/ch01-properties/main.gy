@@ -28,7 +28,7 @@ def plain():
 def degree_view():
     plain()
     labelBy(degree)
-    sizeBy(degree, 12, 40)
+    resize(degree, 12, 40)
     colorBy(degree, "190,210,235", "30,80,160")
 
 

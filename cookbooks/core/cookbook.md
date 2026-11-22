@@ -307,7 +307,7 @@ important you mean.
 ```python
 makeFromGDF("karate.gdf")
 frLayout()
-sizeBy(betweenness, 8, 40)
+resize(betweenness, 8, 40)
 colorBy(closeness, yellow, red)
 labelBy(label)
 ```
@@ -735,15 +735,15 @@ the two ends of the picture. Dragging a node with the mouse also moves it.
 ```python
 makeFromGDF("sample.gdf")
 colorize(dept)                     # a distinct colour per value
-sizeBy(degree, 6, 30)              # proportional to a number
+resize(degree, 6, 30)              # proportional to a number
 shapeBy(jobfun)                    # a shape per value
-sizeBy(freq, 1, 6)                 # edge widths, for an edge field
+resize(freq, 1, 6)                 # edge widths, for an edge field
 legendFor(dept)
 ```
 
 **How it works.** `colorize` is for categories; `colorBy(field, low, high)`
-is a gradient for numbers. `sizeBy(field, min, max)` scales sizes
-(`transform="log"` or `"sqrt"` for skewed values). `resizeLinear` spaces
+is a gradient for numbers. `resize(field, min, max)` scales sizes
+(`transform="log"` or `"sqrt"` for skewed values). `resize` spaces
 sizes by rank. Legends follow the colours: re-run `colorize` and the legend
 updates.
 
@@ -767,7 +767,7 @@ of the cycle match.
 ```python
 makeFromGDF("lesmis.gdf")
 forceAtlas2Layout()
-sizeBy(degree, 5, 30)
+resize(degree, 5, 30)
 g.nodes.labelvisible = true
 g.nodes.labelpos = "outside"
 optimizeLabels()
@@ -928,7 +928,7 @@ GUESS.
 makeFromGDF("karate.gdf")
 louvainClusters(); colorize(louvain_class)
 legendFor(louvain_class)
-sizeBy(betweenness, 8, 30)
+resize(betweenness, 8, 30)
 exportHTML("karate.html", title="The karate club")
 ```
 
@@ -1097,7 +1097,7 @@ def colour_by(name):
     StatusBar.setStatus(f"colour: {name}")
 
 def size_by(name):
-    sizeBy(name, 4, 30)
+    resize(name, 4, 30)
 
 def min_degree(v):
     showOnly(degree >= int(v))
@@ -1139,7 +1139,7 @@ center()
   sorts the data's fields into categories (few distinct values) and
   numbers, adds three computed measures, and offers them in two
   `Dropdown`s. Choosing one calls `colorize` or
-  `colorBy` (with a live legend), or `sizeBy`, with the field's name:
+  `colorBy` (with a live legend), or `resize`, with the field's name:
   every command that takes a field also takes its name as a string.
 - **Filtering.** The `Slider` calls `showOnly(degree >= v)`, a query
   built from its value.

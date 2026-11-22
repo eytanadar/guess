@@ -97,7 +97,7 @@ test("gephi statistics, layouts, label options and click tools", async ({ page }
   await expect(page.locator(".cell").last()).toContainText(/modularity 0\.\d+: \d+ communities/);
   await run(page, "graphStats()");
   await expect(page.locator(".cell").last()).toContainText("diameter");
-  await run(page, 'labelOutlines(); hideOverlappingLabels(); g.nodes.labelvisible = true; sizeBy(pagerank, 6, 30, "sqrt")');
+  await run(page, 'labelOutlines(); hideOverlappingLabels(); g.nodes.labelvisible = true; resize(pagerank, 6, 30, "sqrt")');
   expect(await lastError(page)).toBeNull();
 
   // shortest path tool: two clicks write the command
@@ -246,12 +246,12 @@ test("help, palette, data table, style and filter panels, parameter hints", asyn
   await page.locator(".help-search").fill("louvain");
   await page.locator(".help-example", { hasText: "Communities" }).first().getByRole("button", { name: "Insert" }).click();
   await expect(page.locator(".console-in .cm-content")).toContainText("louvainClusters()");
-  await run(page, "help(sizeBy)");
+  await run(page, "help(resize)");
   await expect(page.locator(".help-doc")).toContainText("proportion");
   // parameter hints
   await page.locator(".console-in .cm-content").click();
   await page.keyboard.press("ControlOrMeta+a");
-  await page.keyboard.type("sizeBy(freq, 1, ");
+  await page.keyboard.type("resize(freq, 1, ");
   await expect(page.locator(".cm-sig-param.active")).toHaveText("largest");
   // errors: summary, suggestion, line
   await run(page, "a1 = 1\ncolorize(dpet)");

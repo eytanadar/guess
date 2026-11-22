@@ -151,7 +151,7 @@ network, which are often signalling or regulatory links.
 makeFromGDF("yeast-modules.gdf")
 colorize(module)
 legendFor(module)
-sizeBy(betweenness, 6, 40)
+resize(betweenness, 6, 40)
 forceAtlas2Layout()
 interEdges(module).color = gray
 [(n.name, n.module, round(n.betweenness)) for n in sortBy(betweenness)[-6:]]
@@ -483,7 +483,7 @@ that hold it together.
 makeFromPDB("1ubq.pdb")
 colorize(structure)
 legendFor(structure)
-sizeBy(betweenness, 6, 26)
+resize(betweenness, 6, 26)
 (kind == "chain").color = "120,120,120"
 sortBy(betweenness, descending=True)[:6]
 ```
@@ -520,7 +520,7 @@ who receives them, and the hubs.
 makeFromFile("celegans-neural.gdf")
 g.edges.width = 0.4                       # thin connections, so the neurons show
 g.edges.color = "150,150,150,60"
-sizeBy(degree, 3, 24)
+resize(degree, 3, 24)
 colorBy(outdegree, "200,210,240", "200,40,40")
 plotFrequency(degree, cumulative=True, log=True)
 plotSpectrum("adjacency")
@@ -546,7 +546,7 @@ piece.
 
 **Pitfalls.** The neurons are named by number (n1 to n306, as in Watts and
 Strogatz's version), not by their biological names. Weights count
-synapses, so a single connection can stand for many; `sizeBy(weight)` on
+synapses, so a single connection can stand for many; `resize(weight)` on
 the edges shows them.
 
 ## Case study: how pheromone stops the cell cycle [Intermediate]{.level}
@@ -570,7 +570,7 @@ suggestive, not mechanistic: an association can be any kind of link.
 ```python
 showOnly((module == "pheromone response") | (module == "cell cycle"))
 forceAtlas2Layout()
-sizeBy(betweenness, 6, 40)
+resize(betweenness, 6, 40)
 bridging = interEdges(module)
 bridging.color = red
 ends = [n for e in bridging for n in (e.node1, e.node2)]

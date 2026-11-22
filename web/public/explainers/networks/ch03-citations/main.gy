@@ -20,7 +20,7 @@ rnd = random.Random(1)
 for n in g.nodes:                      # x: the year; y: kept from the stored layout
     n.x = (n.year - Y0) * 1600 / (Y1 - Y0) + rnd.uniform(-12, 12)
     n.y = (n.y - lo) * 900 / (hi - lo)
-sizeBy(indegree, 4, 26)
+resize(indegree, 4, 26)
 
 
 def fresh_nodes():
@@ -146,7 +146,7 @@ def build(kind):
     fromNetworkX(H, kind)
     louvainClusters()
     colorize(louvain_class)
-    sizeBy(degree, 4, 20)
+    resize(degree, 4, 20)
     g.edges.color = "150,150,150,60"
     binPackLayout()                       # many separate pieces: pack them, then keep nodes apart
     noverlapLayout()

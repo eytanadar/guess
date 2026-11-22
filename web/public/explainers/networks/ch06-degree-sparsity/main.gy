@@ -21,7 +21,7 @@ def load(choice):
     makeFromFile(DATA[choice])
     if choice.startswith("US airports"):
         geoLayout()
-    sizeBy(degree, 5, 24)
+    resize(degree, 5, 24)
     g.edges.color = "150,150,150,80"
     center()
 

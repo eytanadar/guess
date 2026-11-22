@@ -12,7 +12,7 @@ def install(session):
     g = session.graph
 
     def _field(f):
-        """A field, or a field's name: sizeBy(degree) and sizeBy("degree") both work."""
+        """A field, or a field's name: resize(degree) and resize("degree") both work."""
         return as_field(session.graph, f)
 
     def cmd(fn, name=None):
@@ -515,9 +515,13 @@ def install(session):
 
     # ---- visual mapping ---------------------------------------------------------
     @cmd
-    def colorize(field, *cs, palette=None):
-        """colorize(field) gives each value its own clearly different colour (the
-        largest group first; see distinctColors); colorize(field, start, end) or
+    def colorize(field, *cs, palette=None, transform=None):
+        """colorize(field) picks colours to suit the field: each value its own
+        clearly different colour for text, true/false and group ids (louvain_class
+        and the like; the largest group first, see distinctColors), a gradient
+        for numbers (viridis; diverging around 0 when the values cross it, and
+        a sqrt or log transform when they are skewed; transform= overrides it,
+        "linear", "log", "sqrt" or "rank"). colorize(field, start, end) or
         colorize(field, start, middle, end) a gradient over the sorted values.
         colorize(field, palette="Set2") uses a colour scale (see colorScales;
         colorize(field, "Set2") is the same): a categorical one ("Set2",
@@ -543,6 +547,14 @@ def install(session):
                 grp.color = c
             return
         if not cs:
+            kind, t = _infer(field, transform)
+            if kind != "categorical":
+                # numbers: a gradient over the values (diverging around 0 when they cross it)
+                pal = "RdBu_r" if kind == "diverging" else "viridis"
+                colorBy(field, palette=pal, transform=t, midpoint=0 if kind == "diverging" else None)
+                print(f"colorize({field.name}): numbers, so a {pal} gradient ({t}); "
+                      f"colorize({field.name}, transform=...) or a palette changes it")
+                return
             groups = sorted(group_by(field.elements(), field), key=len, reverse=True)
             for grp, c in zip(groups, colors.distinctColors(len(groups))):
                 grp.color = c
@@ -556,18 +568,6 @@ def install(session):
         palette = colors.generateColors(*cs, len(groups))
         for grp, c in zip(groups, palette):
             grp.color = c
-
-    @cmd
-    def resizeLinear(field, smallest, largest):
-        """Size nodes (or edge widths) by rank of field value, from smallest to largest."""
-        field = _field(field)
-        groups = group_by(field.elements(), field, sort=True)
-        k = len(groups)
-        attr = "size" if field.kind == NODE else "width"
-        for i, grp in enumerate(groups):
-            size = smallest if k == 1 else smallest + (largest - smallest) * i / (k - 1)
-            for e in grp:
-                setattr(e, attr, size)
 
     @cmd
     def resizeRandom(field, smallest, largest):
@@ -610,24 +610,94 @@ def install(session):
         return (lambda v: 0.5) if b == a else (lambda v: (f(v) - a) / (b - a))
 
     @cmd
-    def sizeBy(field, smallest, largest, transform="linear"):
-        """sizeBy(field, smallest, largest) sizes nodes (or edge widths, for an edge field) in
-        proportion to a numeric field's value, from smallest to largest. transform may be
-        "linear", "log", "sqrt" or "rank" (as in Gephi's ranking). Compare
-        resizeLinear, which spaces distinct values evenly."""
+    def resize(field, smallest=None, largest=None, transform=None):
+        """resize(field) sizes nodes (or edge widths, for an edge field) by a
+        field, choosing what suits it:
+          the scale      numbers in proportion to their value, with a sqrt or
+                         log transform when they are skewed (degree, pagerank);
+                         text, true/false and group ids evenly by rank
+          the sizes      from the layout: nodes between about a fifth and two
+                         thirds of the typical spacing between them, edges
+                         from 0.5 to a few units wide
+        Override any of it: resize(degree, 5, 40), resize(pagerank,
+        transform="log"); transform is "linear", "log", "sqrt" or "rank"
+        (evenly spaced distinct values)."""
         field = _field(field)
-        vals = _numeric(field)
-        t = _scaler(vals, transform)
-        attr = "size" if field.kind == NODE else "width"
-        lo, hi = float(smallest), float(largest)
-        for e, v in vals:
-            setattr(e, attr, lo + (hi - lo) * t(v))
+        kind, t = _infer(field, transform)
+        nodes = field.kind == NODE
+        lo, hi = _default_sizes(nodes)
+        lo = lo if smallest is None else float(smallest)
+        hi = hi if largest is None else float(largest)
+        attr = "size" if nodes else "width"
+        if kind == "categorical" or t == "rank":
+            groups = group_by(field.elements(), field, sort=True)
+            k = len(groups)
+            for i, grp in enumerate(groups):
+                v = lo if k == 1 else lo + (hi - lo) * i / (k - 1)
+                for e in grp:
+                    setattr(e, attr, v)
+        else:
+            vals = _numeric(field)
+            f = _scaler(vals, t)
+            for e, v in vals:
+                setattr(e, attr, lo + (hi - lo) * f(v))
+        if smallest is None or largest is None or transform is None:
+            how = "by rank" if kind == "categorical" or t == "rank" else t
+            print(f"resize({field.name}): {how}, {'sizes' if nodes else 'widths'} {lo:.3g} to {hi:.3g}"
+                  f" (resize({field.name}, smallest, largest, transform=...) to choose)")
+
+    def _default_sizes(nodes):
+        """Sizes that suit the drawing: node sizes from the typical spacing
+        between visible nodes (the layout's area over their number), edge
+        widths from a hairline up to a few units."""
+        pts = [(n.x + n.width / 2, n.y + n.height / 2) for n in g._nodes_list() if n.visible]
+        if len(pts) >= 2:
+            xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+            area = max(max(xs) - min(xs), 1.0) * max(max(ys) - min(ys), 1.0)
+            spacing = math.sqrt(area / len(pts))
+        else:
+            spacing = 40.0
+        if nodes:
+            hi = min(max(0.66 * spacing, 12.0), 80.0)
+            return max(hi / 5, 3.0), hi
+        return 0.5, min(max(0.1 * spacing, 3.0), 10.0)
+
+    def _infer(field, transform=None):
+        """("categorical" | "numeric" | "diverging", transform) for a field:
+        text, true/false and group ids (fields written by clustering commands,
+        or named *_class, *cluster*, *community*, *group*) are categorical;
+        numbers get "log" when positive and spanning three orders of magnitude,
+        "sqrt" when skewed (the largest over ten times the median), else
+        "linear". A transform given explicitly wins."""
+        vals = [field.get(e) for e in field.elements()]
+        vals = [v for v in vals if v is not None]
+        name = field.name.lower()
+        grouped = getattr(field, "categorical", False) or name.endswith("class") or \
+            any(w in name for w in ("cluster", "community", "group"))
+        nums = [float(v) for v in vals if isinstance(v, (int, float)) and not isinstance(v, bool)
+                and math.isfinite(v)]
+        if grouped or not vals or len(nums) < len(vals):
+            return "categorical", transform or "rank"
+        if transform is not None:
+            t = str(transform).lower()
+            if t not in ("linear", "log", "sqrt", "rank"):
+                raise GuessError('transform is "linear", "log", "sqrt" or "rank"')
+            return ("diverging" if min(nums) < 0 < max(nums) else "numeric"), t
+        lo, hi = min(nums), max(nums)
+        if lo < 0 < hi:
+            return "diverging", "linear"
+        med = sorted(nums)[len(nums) // 2]
+        if lo > 0 and hi / lo >= 1000:
+            return "numeric", "log"
+        if lo >= 0 and hi > 10 * max(med, 1e-12):
+            return "numeric", "sqrt"
+        return "numeric", "linear"
 
     @cmd
     def labelSizeBy(field, smallest=0.8, largest=2.0, transform="linear"):
         """labelSizeBy(field, 0.8, 2) scales labels (of nodes, or of edges for an
         edge field) in proportion to a numeric field: 1 is the normal size. Sets
-        the labelsize field; transform as in sizeBy ("linear", "log", "sqrt", "rank")."""
+        the labelsize field; transform as in resize ("linear", "log", "sqrt", "rank")."""
         field = _field(field)
         vals = _numeric(field)
         t = _scaler(vals, transform)
