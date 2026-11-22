@@ -546,7 +546,7 @@ def test_legend_for_tells_categories_from_gradients():
         extra = ", middle=white" if middle else ""
         run(s, f"colorBy(totaldegree, yellow, red, transform='{scale}'{extra})\nlg = legendFor(totaldegree)")
         assert s.ns["lg"]._ramp, scale
-    run(s, "colorize(totaldegree)\nlg = legendFor(totaldegree)")
+    run(s, "colorize(totaldegree, palette='tableau20')\nlg = legendFor(totaldegree)")   # one colour per value
     assert s.ns["lg"]._ramp is None
 
 
@@ -568,7 +568,7 @@ def test_legend_for_follows_the_colours():
     assert [e["c"] for e in lg.record()["entries"]] == first
     run(s, "colorBy(totaldegree, white, red)\nl2 = legendFor(totaldegree)")
     assert s.ns["l2"]._ramp and s.ns["l2"]._ramp["to"] == 0xFF0000
-    run(s, "colorize(totaldegree)")                               # ramp → categories
+    run(s, "colorize(totaldegree, palette='tableau20')")        # ramp → categories
     assert s.ns["l2"]._ramp is None and s.ns["l2"].record()["entries"]
     run(s, "lg.add(red, 'mine')\ncolorize(dept)")                # edited: frozen
     assert lg._auto is None and lg.record()["entries"][-1]["t"] == "mine"

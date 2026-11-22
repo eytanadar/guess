@@ -167,7 +167,8 @@ def test_size_and_colour_by_value(s):
     assert 1 + 30 * 8 / 28 < mid < 31   # log spreads the low end
     assert s.run("colorBy(freq, white, black, transform='rank')")
     assert edge(s, "jane", "bob").color == "255,255,255,255"
-    assert not s.run("resize(dept, 1, 2)")
+    assert s.run("resize(dept, 1, 2)")                   # text: sizes evenly by rank
+    assert {1.0, 2.0} <= {n.size for n in s.graph.nodes}  # the first and last departments get the ends
     assert not s.run("resize(freq, 1, 2, 'cubic')")
 
 

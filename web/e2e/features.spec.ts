@@ -252,7 +252,7 @@ test("help, palette, data table, style and filter panels, parameter hints", asyn
   await page.locator(".console-in .cm-content").click();
   await page.keyboard.press("ControlOrMeta+a");
   await page.keyboard.type("resize(freq, 1, ");
-  await expect(page.locator(".cm-sig-param.active")).toHaveText("largest");
+  await expect(page.locator(".cm-sig-param.active")).toHaveText("largest=None");
   // errors: summary, suggestion, line
   await run(page, "a1 = 1\ncolorize(dpet)");
   await expect(cells.last().locator(".error-summary")).toContainText("did you mean 'dept'");
