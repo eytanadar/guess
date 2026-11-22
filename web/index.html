@@ -269,14 +269,14 @@
 <button role="menuitem" data-run="fastGreedyClusters()&#10;colorize(fastgreedy_class)&#10;legendFor(fastgreedy_class)" title="merges communities greedily by modularity (fastGreedyClusters())">Fast greedy</button>
 <button role="menuitem" data-run="walktrapClusters()&#10;colorize(walktrap_class)&#10;legendFor(walktrap_class)" title="groups nodes that short random walks keep together (walktrapClusters())">Walktrap</button>
 <button role="menuitem" data-run="eigenvectorClusters()&#10;colorize(eigen_class)&#10;legendFor(eigen_class)" title="eigenvectorClusters()">Leading eigenvector</button>
-<button role="menuitem" data-run="spinglassClusters()&#10;colorize(spinglass_class)&#10;legendFor(spinglass_class)" title="simulated annealing of a spin model (spinglassClusters())">Spinglass</button>
+<button role="menuitem" data-run="spinglassClusters()&#10;colorize(spinglass_class)&#10;legendFor(spinglass_class)" title="simulated annealing of a spin model (spinglassClusters())">Spinglass (connected graphs)</button>
 <button role="menuitem" data-run="chineseWhispersClusters()&#10;colorize(cw_class)&#10;legendFor(cw_class)" title="chineseWhispersClusters()">Chinese Whispers</button>
 <button role="menuitem" data-run="mclClusters()&#10;colorize(mcl_class)&#10;legendFor(mcl_class)" title="mclClusters()">Markov clustering (MCL)</button>
 <button role="menuitem" data-run="optimalClusters()&#10;colorize(optimal_class)&#10;legendFor(optimal_class)" title="exact; slow beyond a few hundred nodes (optimalClusters())">Best possible modularity (small graphs)</button>
 <hr />
-<button role="menuitem" data-run-ask="fluidClusters({value})&#10;colorize(fluid_class)&#10;legendFor(fluid_class)" data-ask-label="How many communities?" data-ask-value="5" title="fluidClusters(count)">Exactly N communities (fluid)…</button>
+<button role="menuitem" data-run-ask="fluidClusters({value})&#10;colorize(fluid_class)&#10;legendFor(fluid_class)" data-ask-label="How many communities?" data-ask-value="5" title="fluidClusters(count)">Exactly N communities (fluid; connected graphs)…</button>
 <button role="menuitem" data-run-ask="edgeBetweennessClusters({value})&#10;colorize(edgebetweenness_class)&#10;legendFor(edgebetweenness_class)" data-ask-label="How many communities?" data-ask-value="5" title="edgeBetweennessClusters(count)">Edge betweenness (Girvan–Newman)…</button>
-<button role="menuitem" data-run-ask="sbmClusters({value})&#10;colorize(sbm_class)&#10;legendFor(sbm_class)" data-ask-label="How many groups?" data-ask-value="3" title="sbmClusters(count)">Stochastic block model…</button>
+<button role="menuitem" data-run-ask="sbmClusters({value})&#10;colorize(sbm_class)&#10;legendFor(sbm_class)" data-ask-label="How many groups?" data-ask-value="3" title="sbmClusters(count)">Stochastic block model (slow on big graphs)…</button>
 <button role="menuitem" data-run-ask="blockModelClusters({value})&#10;colorize(blockmodel_class)&#10;legendFor(blockmodel_class)" data-ask-label="How many roles?" data-ask-value="4" title="blockModelClusters(count): structurally equivalent positions">Roles (block model)…</button>
 <button role="menuitem" data-run-ask="cutDendrogram({value})" data-ask-label="How many communities?" data-ask-value="5" title="cutDendrogram(count), after Walktrap or Fast greedy">Re-cut the last hierarchy…</button>
 <hr />

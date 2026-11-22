@@ -1089,3 +1089,20 @@ test("layouts by a field ask which field, from the graph's own", async ({ page }
   expect(await lastError(page)).toBeNull();
   expect(errors).toEqual([]);
 });
+
+test("analysis menu items on the selection name the selected nodes", async ({ page }) => {
+  const errors = await boot(page);
+  await menu(page, "Analyze", "Shortest path between two selected nodes");
+  await expect(page.locator("#status")).toContainText("Nothing selected");
+  await run(page, "select(v1)");
+  await menu(page, "Analyze", "Shortest path between two selected nodes");
+  await expect(page.locator("#status")).toContainText("Select two nodes");   // one isn't enough
+  await run(page, "select((v1, v1.getNeighbors()[0].getNeighbors()[0]))");
+  await menu(page, "Analyze", "Shortest path between two selected nodes");
+  await expect(page.locator(".cell").last()).toContainText("select(shortestPath(v1, ");
+  await menu(page, "Analyze", "Profile the groups…");
+  await page.locator("dialog.ask-dialog[open]").getByRole("button", { name: "dept", exact: true }).click();
+  await expect(page.locator(".cell").last()).toContainText("groupStats(dept)");
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});
