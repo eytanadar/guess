@@ -1070,3 +1070,21 @@ test("a continuous layout leaves a dragged node under the pointer until it's let
   expect(await lastError(page)).toBeNull();
   expect(errors).toEqual([]);
 });
+
+test("layouts by a field ask which field, from the graph's own", async ({ page }) => {
+  const errors = await boot(page);
+  await menu(page, "Layout", "Columns…");
+  const dlg = page.locator("dialog.ask-dialog[open]");
+  await expect(dlg).toContainText("Columns: which field?");
+  await dlg.getByRole("button", { name: "dept", exact: true }).click();
+  await expect(page.locator(".cell").last()).toContainText("multipartiteLayout(dept)");
+  await menu(page, "Layout", "Scatter plot…");                       // two numeric fields, x then y
+  await expect(dlg).toContainText("the field across (x)");
+  await expect(dlg.getByRole("button", { name: "dept", exact: true })).toHaveCount(0);   // text: not offered
+  await dlg.getByRole("button", { name: "freq", exact: true }).click();
+  await expect(dlg).toContainText("the field up and down (y)");
+  await dlg.getByRole("button", { name: "freq", exact: true }).click();
+  await expect(page.locator(".cell").last()).toContainText("scatterLayout(freq, freq)");
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});

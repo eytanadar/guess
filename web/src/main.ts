@@ -1686,6 +1686,40 @@ let wireMenuRoot: (r: HTMLElement) => void = () => {};
       void term.submit(b.dataset.runSel!.replaceAll("{sel}", all).replaceAll("{first}", first));
     });
   }
+  // data-run-field: a command by a node field ({field}, and {field2} for a second),
+  // picked from the graph's own fields (numeric ones only with data-numeric)
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-run-field]")) {
+    b.addEventListener("click", async () => {
+      const numeric = b.dataset.numeric !== undefined;
+      const fields = (await loadFields("n")).filter((f) => !f.builtin && (!numeric || f.numeric));
+      if (!fields.length) {
+        status.textContent = `This graph has no ${numeric ? "numeric " : ""}node fields to lay it out by`;
+        return;
+      }
+      const name = (b.textContent ?? "").replace("…", "");
+      const pick = async (which: string) => {
+        const f = await choose({ title: `${name}: ${which}`, choices: fields.map((x) => ({ label: x.name, value: x.name })) });
+        return f && (/^[A-Za-z_]\w*$/.test(f) ? f : pyLit(f));
+      };
+      let code = b.dataset.runField!;
+      const f1 = await pick(code.includes("{field2}") ? "the field across (x)" : "which field?");
+      if (!f1) return;
+      code = code.replaceAll("{field}", f1);
+      if (code.includes("{field2}")) {
+        const f2 = await pick("the field up and down (y)");
+        if (!f2) return;
+        code = code.replaceAll("{field2}", f2);
+      }
+      void term.submit(code);
+    });
+  }
+  // data-run-ask: a command with a typed value ({value})
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-run-ask]")) {
+    b.addEventListener("click", async () => {
+      const v = await ask({ title: (b.textContent ?? "").replace("…", ""), label: b.dataset.askLabel ?? "Value", value: b.dataset.askValue ?? "" });
+      if (v?.trim()) void term.submit(b.dataset.runAsk!.replaceAll("{value}", v.trim()));
+    });
+  }
 }
 $("#find-output").addEventListener("click", () => term.openFind());
 $("#vim-keys").setAttribute("aria-pressed", String(term.vim));
@@ -2408,7 +2442,7 @@ const palette = new Palette(async () => {
     const sub = b.closest(".menu-sub")?.querySelector(".menu-sub-title")?.textContent;
     const root = b.closest(".menu-root")?.querySelector(".menu-title")?.textContent;
     const menu = root && sub ? `${root} › ${sub}` : root;
-    items.push({ kind: "action", label: menu ? `${menu} › ${label}` : `Tool: ${label}`, detail: b.title || b.dataset.run || b.dataset.runSel?.replace(/\{(sel|first)\}/g, "…") || "", run: () => b.click() });
+    items.push({ kind: "action", label: menu ? `${menu} › ${label}` : `Tool: ${label}`, detail: b.title || b.dataset.run || (b.dataset.runSel ?? b.dataset.runField ?? b.dataset.runAsk)?.replace(/\{(sel|first|field|field2|value)\}/g, "…") || "", run: () => b.click() });
   }
   for (const n of renderer.nodes.values()) {
     items.push({ kind: "node", label: n.name, detail: n.l && n.l !== n.name ? n.l : "", run: () => {
