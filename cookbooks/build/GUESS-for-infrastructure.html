@@ -283,7 +283,7 @@ island hop counts the same as a shuttle.</p>
 </div>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;us-airports.gdf&quot;</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>geoLayout(projection<span class="op">=</span><span class="st">&quot;albers&quot;</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>sizeBy(degree, <span class="dv">3</span>, <span class="dv">30</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>resize(degree, <span class="dv">3</span>, <span class="dv">30</span>)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>colorBy(degree, lightgray, red)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>hubs <span class="op">=</span> sortBy(degree)[<span class="op">-</span><span class="dv">12</span>:]</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>hubs.labelvisible <span class="op">=</span> true</span>
@@ -345,8 +345,8 @@ the first case study.</p>
 <h2 data-number="2.2" id="a-world-network-basic"><span class="header-section-number">2.2</span> A world network <span class="level">Basic</span></h2>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;world-airports.gdf&quot;</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>geoLayout()</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>sizeBy(degree, <span class="dv">2</span>, <span class="dv">24</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>colorBy(betweenness, lightgray, red, scale<span class="op">=</span><span class="st">&quot;log&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>resize(degree, <span class="dv">2</span>, <span class="dv">24</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>colorBy(betweenness, lightgray, red, transform<span class="op">=</span><span class="st">&quot;log&quot;</span>)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>g.edges.visible <span class="op">=</span> false</span></code></pre></div>
 <p><strong>How it works.</strong> With 3,257 airports, the routes would
 cover the map, so this recipe hides them and lets size (number of
@@ -426,7 +426,7 @@ from the clutter of individual edges.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;us-airports.gdf&quot;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>subgraph((longitude <span class="op">&gt;</span> <span class="op">-</span><span class="dv">130</span>) <span class="op">&amp;</span> (latitude <span class="op">&lt;</span> <span class="dv">50</span>), <span class="st">&quot;lower 48&quot;</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>geoLayout(projection<span class="op">=</span><span class="st">&quot;albers&quot;</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>sizeBy(degree, <span class="dv">2</span>, <span class="dv">20</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>resize(degree, <span class="dv">2</span>, <span class="dv">20</span>)</span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>g.edges.color <span class="op">=</span> <span class="st">&quot;40,70,140,50&quot;</span></span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>bundleEdges()</span></code></pre></div>
 <figure>
@@ -491,7 +491,7 @@ nodes by how much they’d strand (next recipe) to tell them apart.</p>
 <h2 data-number="3.4" id="what-if-a-hub-closes-intermediate"><span class="header-section-number">3.4</span> What if a hub closes? <span class="level">Intermediate</span></h2>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;us-airports.gdf&quot;</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>geoLayout(projection<span class="op">=</span><span class="st">&quot;albers&quot;</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>ss(<span class="st">&quot;open&quot;</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>saveState(<span class="st">&quot;open&quot;</span>)</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>remove(ANC)</span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>colorize(component)</span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>g.edges.color <span class="op">=</span> <span class="st">&quot;150,150,150,60&quot;</span></span>
@@ -501,14 +501,14 @@ nodes by how much they’d strand (next recipe) to tell them apart.</p>
 <figcaption aria-hidden="true">Without Anchorage, Alaska falls into
 pieces</figcaption>
 </figure>
-<p><strong>How it works.</strong> <code>ss(&quot;open&quot;)</code> saves the
-network and <code>remove(ANC)</code> closes Anchorage. Computed fields
-such as <code>component</code> follow the change on their own: they’re
-recalculated the next time they’re read. Colouring by component shows
-what’s left. Eight airports were already off the main network (two small
-island systems), and closing Anchorage cuts off 87 more, in 12 new
+<p><strong>How it works.</strong> <code>saveState(&quot;open&quot;)</code> saves
+the network and <code>remove(ANC)</code> closes Anchorage. Computed
+fields such as <code>component</code> follow the change on their own:
+they’re recalculated the next time they’re read. Colouring by component
+shows what’s left. Eight airports were already off the main network (two
+small island systems), and closing Anchorage cuts off 87 more, in 12 new
 pieces, nearly all in Alaska. Closing Atlanta, the busiest hub, strands
-eleven. <code>ls(&quot;open&quot;)</code> reopens it, and
+eleven. <code>loadState(&quot;open&quot;)</code> reopens it, and
 <code>morph(&quot;open&quot;, 1500)</code> animates the difference.</p>
 <h1 data-number="4" id="robustness"><span class="header-section-number">4</span> Robustness</h1>
 <h2 data-number="4.1" id="failures-versus-attacks-intermediate"><span class="header-section-number">4.1</span> Failures versus attacks <span class="level">Intermediate</span></h2>
@@ -602,13 +602,13 @@ distance? <span class="level">Intermediate</span></h2>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>hops <span class="op">=</span> shortestPath(BRW, MIA)</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>[n.iata <span class="cf">for</span> n <span class="kw">in</span> hops <span class="cf">if</span> n <span class="kw">in</span> g.nodes], <span class="bu">round</span>(<span class="bu">sum</span>(e.km <span class="cf">for</span> e <span class="kw">in</span> hops <span class="cf">if</span> e <span class="kw">in</span> g.edges))</span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e <span class="kw">in</span> g.edges: e.weight <span class="op">=</span> e.km</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>short <span class="op">=</span> shortestPath(BRW, MIA, weighted<span class="op">=</span>true)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>short <span class="op">=</span> shortestPath(BRW, MIA, weight<span class="op">=</span><span class="st">&quot;weight&quot;</span>)</span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>[n.iata <span class="cf">for</span> n <span class="kw">in</span> short <span class="cf">if</span> n <span class="kw">in</span> g.nodes], <span class="bu">round</span>(<span class="bu">sum</span>(e.km <span class="cf">for</span> e <span class="kw">in</span> short <span class="cf">if</span> e <span class="kw">in</span> g.edges))</span></code></pre></div>
 <p><strong>How it works.</strong> <code>geoDistance()</code> stores each
 route’s great-circle length in kilometres, as the edge field
 <code>km</code>. <code>shortestPath</code> counts hops by default. With
-<code>weighted=true</code> it uses each edge’s <code>weight</code> as a
-length, so copying <code>km</code> into <code>weight</code> gives the
+<code>weight=&quot;weight&quot;</code> it uses each edge’s <code>weight</code> as
+a length, so copying <code>km</code> into <code>weight</code> gives the
 shortest route by distance. From Utqiaġvik (Barrow), Alaska, to Miami,
 both answers take three flights through Anchorage, but by fewest hops
 the route goes via Los Angeles (8,696 km), while the shortest by
@@ -676,7 +676,7 @@ point of failure <span class="level">Intermediate</span></h2>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(alaska)</span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>subgraph(alaska, <span class="st">&quot;Alaska&quot;</span>)</span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>geoLayout(projection<span class="op">=</span><span class="st">&quot;albers&quot;</span>, parallels<span class="op">=</span>(<span class="dv">55</span>, <span class="dv">65</span>), center<span class="op">=</span>(<span class="op">-</span><span class="dv">154</span>, <span class="dv">60</span>))</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>sizeBy(betweenness, <span class="dv">3</span>, <span class="dv">30</span>)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>resize(betweenness, <span class="dv">3</span>, <span class="dv">30</span>)</span>
 <span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>labelBy(iata)</span></code></pre></div>
 <p>Alaska has 135 airports with scheduled service, a quarter of the
 country’s, and few roads between them, so the air network <em>is</em>
@@ -727,10 +727,10 @@ or by betweenness;</li>
 </ul>
 <div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;us-airports.gdf&quot;</span>)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>geoLayout(projection<span class="op">=</span><span class="st">&quot;albers&quot;</span>)</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>sizeBy(degree, <span class="dv">2</span>, <span class="dv">22</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>resize(degree, <span class="dv">2</span>, <span class="dv">22</span>)</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>g.edges.color <span class="op">=</span> <span class="st">&quot;130,130,130,35&quot;</span></span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>_ <span class="op">=</span> robustness([<span class="st">&quot;random&quot;</span>, <span class="st">&quot;degree&quot;</span>, <span class="st">&quot;betweenness&quot;</span>])</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>ss(<span class="st">&quot;open&quot;</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>saveState(<span class="st">&quot;open&quot;</span>)</span>
 <span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>state <span class="op">=</span> {<span class="st">&quot;closed&quot;</span>: []}</span>
 <span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> update():</span>
@@ -747,7 +747,7 @@ or by betweenness;</li>
 <span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>    update()</span>
 <span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> reopen():</span>
-<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>    ls(<span class="st">&quot;open&quot;</span>)</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>    loadState(<span class="st">&quot;open&quot;</span>)</span>
 <span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    state[<span class="st">&quot;closed&quot;</span>] <span class="op">=</span> []</span>
 <span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    update()</span>
 <span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a></span>
@@ -773,8 +773,8 @@ airports and seeing who is cut off</figcaption>
 </figure>
 <p><strong>How it works.</strong></p>
 <ul>
-<li><strong>Saving the network.</strong> <code>ss(&quot;open&quot;)</code> saves
-the full network once. <code>reopen()</code> returns to it with
+<li><strong>Saving the network.</strong> <code>saveState(&quot;open&quot;)</code>
+saves the full network once. <code>reopen()</code> returns to it with
 <code>ls</code>.</li>
 <li><strong>Closing airports.</strong> A click removes that airport. The
 slider ranks airports by routes (<code>degree</code>) or

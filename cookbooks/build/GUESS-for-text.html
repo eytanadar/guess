@@ -313,8 +313,8 @@ as a network: who appears with whom.</p>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;Godfrey Norton&quot;</span>: [<span class="st">&quot;Godfrey Norton&quot;</span>, <span class="st">&quot;Godfrey&quot;</span>, <span class="st">&quot;Mr. Norton&quot;</span>],</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;John&quot;</span>: [<span class="st">&quot;John&quot;</span>], <span class="st">&quot;Mrs. Turner&quot;</span>: [<span class="st">&quot;Mrs. Turner&quot;</span>]}</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>makeFromText(<span class="st">&quot;scandal-in-bohemia.txt&quot;</span>, cast)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>sizeBy(count, <span class="dv">10</span>, <span class="dv">50</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>sizeBy(weight, <span class="dv">1</span>, <span class="dv">10</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>resize(count, <span class="dv">10</span>, <span class="dv">50</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>resize(weight, <span class="dv">1</span>, <span class="dv">10</span>)</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>labelBy(label)</span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>circleLayout()</span></code></pre></div>
 <figure>
@@ -350,7 +350,7 @@ want</strong> its main words and how they cluster.</p>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>remove(weight <span class="op">&lt;</span> <span class="dv">2</span>)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>louvainClusters()</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>colorize(louvain_class)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>sizeBy(count, <span class="dv">6</span>, <span class="dv">30</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>resize(count, <span class="dv">6</span>, <span class="dv">30</span>)</span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>labelBy(label)</span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>forceAtlas2Layout()</span></code></pre></div>
 <p><strong>How it works.</strong> Without <code>terms</code>,
@@ -400,7 +400,7 @@ explain it.</p>
 <code>fitPowerLaw</code></p>
 </div>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>makePriceModel(<span class="dv">500</span>, c<span class="op">=</span><span class="dv">3</span>, a<span class="op">=</span><span class="dv">1</span>, seed<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>sizeBy(indegree, <span class="dv">4</span>, <span class="dv">30</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>resize(indegree, <span class="dv">4</span>, <span class="dv">30</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>colorBy(born, <span class="st">&quot;200,60,40&quot;</span>, <span class="st">&quot;120,160,230&quot;</span>)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>center(g.nodes)</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>revealUpTo(<span class="dv">150</span>)</span></code></pre></div>
@@ -445,7 +445,7 @@ covers, and anything that doesn’t belong.</p>
 <code>wordCloud</code></p>
 </div>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;vis-papers.gdf&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>wordCloud(title, top<span class="op">=</span><span class="dv">60</span>)</span></code></pre></div>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>wordCloud(title, count<span class="op">=</span><span class="dv">60</span>)</span></code></pre></div>
 <p><strong>How it works.</strong> <code>wordCloud(field)</code> counts
 the words of a text field, leaves out common English words, and draws
 the most frequent ones sized by count. It is linked like the other
@@ -501,7 +501,7 @@ bundling (2008–2010, including Holten’s force-directed bundling), then
 to the visualisation of dynamic graphs (2011–2016), and ends at a 2024
 review of how layout algorithms are evaluated. That’s the field’s arc
 from drawing small graphs to drawing large and changing ones.</p>
-<p><strong>Variations.</strong> <code>sizeBy(spc, 1, 10)</code> (before
+<p><strong>Variations.</strong> <code>resize(spc, 1, 10)</code> (before
 <code>showOnly</code>) widens edges by their path count, showing the
 main path and its strongest tributaries.</p>
 <p><strong>Pitfalls.</strong> The main path is only as good as the paper
@@ -564,7 +564,7 @@ more authors fixes both problems.</p>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>showOnly(giantComponent())</span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>louvainClusters()</span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>colorize(louvain_class)</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>sizeBy(affiliations, <span class="dv">12</span>, <span class="dv">60</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>resize(affiliations, <span class="dv">12</span>, <span class="dv">60</span>)</span>
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>labelBy(label)</span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>labelSizeBy(affiliations)</span>
 <span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>forceAtlas2Layout()</span></code></pre></div>
@@ -592,7 +592,7 @@ other.</p>
 <p><strong>Ingredients:</strong> <code>vis-paper-keywords.csv</code>,
 <code>vis-papers-nodes.csv</code> · <code>makeFromSimilarity</code></p>
 </div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>makeFromSimilarity(<span class="st">&quot;vis-paper-keywords.csv&quot;</span>, features<span class="op">=</span><span class="st">&quot;keyword&quot;</span>, values<span class="op">=</span><span class="st">&quot;score&quot;</span>, k<span class="op">=</span><span class="dv">4</span>)</span>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>makeFromSimilarity(<span class="st">&quot;vis-paper-keywords.csv&quot;</span>, features<span class="op">=</span><span class="st">&quot;keyword&quot;</span>, values<span class="op">=</span><span class="st">&quot;score&quot;</span>, count<span class="op">=</span><span class="dv">4</span>)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>makeFromCSV(<span class="st">&quot;vis-papers-nodes.csv&quot;</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>leidenClusters()</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>kw <span class="op">=</span> readSets(<span class="st">&quot;vis-paper-keywords.csv&quot;</span>, item<span class="op">=</span><span class="st">&quot;paper&quot;</span>, <span class="bu">set</span><span class="op">=</span><span class="st">&quot;keyword&quot;</span>)</span>
@@ -653,7 +653,7 @@ network leaves outliers isolated, which is often more honest.</p>
 <h2 data-number="6.1" id="wikipedias-link-neighbourhood-basic"><span class="header-section-number">6.1</span> Wikipedia’s link neighbourhood
 <span class="level">Basic</span></h2>
 <div class="sourceCode" id="cb13"><pre class="sourceCode python norun"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>makeFromWikipedia(<span class="st">&quot;Graph drawing&quot;</span>, limit<span class="op">=</span><span class="dv">100</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>sizeBy(indegree, <span class="dv">4</span>, <span class="dv">30</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>resize(indegree, <span class="dv">4</span>, <span class="dv">30</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>labelBy(label)</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>forceAtlas2Layout()</span></code></pre></div>
 <p><strong>How it works.</strong> <code>makeFromWikipedia(title)</code>
@@ -689,7 +689,8 @@ reached from the core but doesn’t link back. <em>Tendrils</em> hang off
 in or out, <em>tubes</em> run from in to out past the core, and the rest
 isn’t connected to the core at all. <code>bowTie()</code> sorts the
 nodes into those parts, stores the part in the field
-<code>bowtie</code>, and returns the sizes:</p>
+<code>bowtie</code>, and returns it, with the sizes in
+<code>.sizes</code>:</p>
 <table>
 <thead>
 <tr>
@@ -765,7 +766,7 @@ here “influenced by” links among philosophers.</p>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="st">  SERVICE wikibase:label { bd:serviceParam wikibase:language &quot;en&quot;. }</span></span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="st">} LIMIT 400&quot;&quot;&quot;</span></span>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>makeFromSPARQL(q)</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>sizeBy(indegree, <span class="dv">6</span>, <span class="dv">40</span>)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>resize(indegree, <span class="dv">6</span>, <span class="dv">40</span>)</span>
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>labelBy(label)</span>
 <span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>g.nodes.labelpos <span class="op">=</span> <span class="st">&quot;outside&quot;</span></span>
 <span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>forceAtlas2Layout()</span></code></pre></div>
@@ -794,7 +795,7 @@ change over time: which places took part, and when they joined.</p>
 </div>
 <div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;vis-institutions.gdf&quot;</span>)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>geoLayout(projection<span class="op">=</span><span class="st">&quot;equirectangular&quot;</span>)</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>sizeBy(papers, <span class="dv">3</span>, <span class="dv">24</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>resize(papers, <span class="dv">3</span>, <span class="dv">24</span>)</span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>colorBy(firstyear, blue, red)</span>
 <span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>legendFor(firstyear)</span>
 <span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>g.edges.color <span class="op">=</span> <span class="st">&quot;120,120,120,30&quot;</span></span>
@@ -910,7 +911,7 @@ right-click shows everything that builds on it;</li>
 <span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    fronts[enrichment(grp, kw, show<span class="op">=</span><span class="va">False</span>)[<span class="dv">0</span>][<span class="st">&quot;set&quot;</span>]] <span class="op">=</span> grp[<span class="dv">0</span>].leiden_class</span>
 <span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>colorize(leiden_class)</span>
 <span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>mp <span class="op">=</span> mainPath()</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>sizeBy(indegree, <span class="dv">3</span>, <span class="dv">28</span>)</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>resize(indegree, <span class="dv">3</span>, <span class="dv">28</span>)</span>
 <span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> until(y):</span>
 <span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    showTime(<span class="bu">int</span>(y), year)</span>

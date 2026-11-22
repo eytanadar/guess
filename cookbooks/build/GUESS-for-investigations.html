@@ -322,7 +322,7 @@ phones and addresses.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>makeFromGDF(<span class="st">&quot;claims-SIMULATED.gdf&quot;</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>project(kind, <span class="st">&quot;person&quot;</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>removeDisconnected()</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> groupStats(component, top<span class="op">=</span><span class="dv">6</span>)</span></code></pre></div>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> groupStats(component, count<span class="op">=</span><span class="dv">6</span>)</span></code></pre></div>
 <p><strong>How it works.</strong> <code>project(kind, &quot;person&quot;)</code>
 links two people when they share a neighbour: here, a phone or an
 address (claims belong to one person each). After removing people who
@@ -428,7 +428,7 @@ reviewable. Here is the whole path for the claims data in one place:</p>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> phones(p): <span class="cf">return</span> <span class="bu">set</span>(x <span class="cf">for</span> x <span class="kw">in</span> p.getNeighbors() <span class="cf">if</span> x.kind <span class="op">==</span> <span class="st">&quot;phone&quot;</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>pairs <span class="op">=</span> findDuplicates(label, among<span class="op">=</span>(kind <span class="op">==</span> <span class="st">&quot;person&quot;</span>), threshold<span class="op">=</span><span class="fl">0.7</span>, show<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>mergeNodes([(a, b, sc) <span class="cf">for</span> a, b, sc <span class="kw">in</span> pairs <span class="cf">if</span> phones(a) <span class="op">&amp;</span> phones(b)])</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>ss(<span class="st">&quot;resolved&quot;</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>saveState(<span class="st">&quot;resolved&quot;</span>)</span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>addNodeField(<span class="st">&quot;claims&quot;</span>, INTEGER, <span class="dv">0</span>)</span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> (kind <span class="op">==</span> <span class="st">&quot;person&quot;</span>): p.claims <span class="op">=</span> <span class="bu">sum</span>(<span class="dv">1</span> <span class="cf">for</span> c <span class="kw">in</span> p.getNeighbors() <span class="cf">if</span> c.kind <span class="op">==</span> <span class="st">&quot;claim&quot;</span>)</span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>project(kind, <span class="st">&quot;person&quot;</span>)</span>
