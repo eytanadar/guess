@@ -42,6 +42,8 @@ export interface RendererEvents {
   clickedAt?(x: number, y: number): void;
   /** pointer down on a node: a semantic drag behaviour, or null for a plain move */
   dragBehaviour?(id: number, alt: boolean): DragBehaviour | null;
+  /** nodes being dragged, as [id, x, y, ...], on every move; done on release */
+  held?(pos: number[], done: boolean): void;
   /** hint text while dragging (null when done) */
   dragHint?(text: string | null): void;
   /** a wheel turn over the graph; return true to take it (no zoom) */
@@ -281,6 +283,8 @@ export class Renderer {
   // the last center() request, so a panel or chart that opens just after it
   // (and shrinks the graph area) doesn't leave the graph cut off
   private fitted: { nodes: number[]; edges: number[]; at: number } | null = null;
+  /** nodes under the pointer in a drag: position patches (a running layout) leave them alone */
+  private holding = new Set<number>();
   private hulls: HullRec[] = [];
   private arrowLen: number | null = null;
   private arrowWidth: number | null = null;
@@ -360,7 +364,7 @@ export class Renderer {
       } else {
         for (let k = 0; k < pos.length; k += 3) {
           const n = this.nodes.get(pos[k]);
-          if (n) { n.x = pos[k + 1]; n.y = pos[k + 2]; }
+          if (n && !this.holding.has(n.i)) { n.x = pos[k + 1]; n.y = pos[k + 2]; }
         }
       }
     }
@@ -1827,13 +1831,17 @@ export class Renderer {
         } else {
           // dragging a selected node moves the whole selection
           const ids = this.selection.has(drag.id!) ? this.selection : [drag.id!];
+          const pos: number[] = [];
           for (const id of ids) {
             const n = this.nodes.get(id);
             if (!n) continue;
             n.x += dx / this.scale;
             n.y += dy / this.scale;
+            pos.push(n.i, n.x, n.y);
+            this.holding.add(n.i);
           }
           this.invalidate(true);
+          this.events.held?.(pos, false);
         }
         return;
       }
@@ -1869,10 +1877,14 @@ export class Renderer {
       }
       if (drag?.mode === "node" && drag.moved) {
         const ids = this.selection.has(drag.id!) ? [...this.selection] : [drag.id!];
+        const pos: number[] = [];
         for (const id of ids) {
           const n = this.nodes.get(id);
-          if (n) this.events.moved(n.i, n.x, n.y);
+          if (n) pos.push(n.i, n.x, n.y);
         }
+        this.holding.clear();
+        this.events.held?.(pos, true);
+        for (let k = 0; k < pos.length; k += 3) this.events.moved(pos[k], pos[k + 1], pos[k + 2]);
       }
       if (drag && (drag.mode === "box" || drag.mode === "lasso")) {
         const m = this.marquee!;

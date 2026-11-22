@@ -179,7 +179,8 @@ export type UiMsg =
   | { type: "ui"; op: "toolbar"; items: BarItem[] }
   | { type: "ui"; op: "statusbar"; items: BarItem[] }
   | { type: "ui"; op: "title"; text: string; subtitle: string | null }
-  | { type: "ui"; op: "console"; mode: "hidden" | "toggle" | "shown" };
+  | { type: "ui"; op: "console"; mode: "hidden" | "toggle" | "shown" }
+  | { type: "ui"; op: "layoutLoop"; on: boolean; label: string };
 
 /** What a hovered name or query in executed code means now. */
 export interface PeekInfo {
@@ -277,6 +278,8 @@ export type ToWorker =
   | { type: "assign"; id: number; name: string; items: ["n" | "e", number][] }
   /** nodes dragged on the display, as [id, x, y, id, x, y, ...] (one undo step) */
   | { type: "select"; nodes: number[] }
+  /** nodes being dragged, as [id, x, y, ...]: a continuous layout holds them there; done = released */
+  | { type: "hold"; pos: number[]; done: boolean }
   | { type: "install"; name: string }
   /** the last click on the graph, in graph coordinates */
   | { type: "click"; x: number; y: number }

@@ -645,6 +645,23 @@ class Session:
             for line in lines[1:]:
                 print(" " * (len(str(i)) + 3) + line)
 
+    def hold_nodes(self, pos, done):
+        """Nodes being dragged ([id, x, y, ...]) while a continuous layout runs: it
+        treats them as fixed there. On release (done) their final positions are
+        written straight away, so the layout doesn't pull them back before the
+        drop's own (recorded) cell arrives."""
+        held = {int(pos[k]): (float(pos[k + 1]), float(pos[k + 2])) for k in range(0, len(pos) - 2, 3)}
+        if not done:
+            self.layout_hold = held
+            return
+        self.layout_hold = {}
+        g = self.graph
+        for nid, (x, y) in held.items():
+            n = g.node_by_id(nid)
+            if n is not None:
+                n.x, n.y = x, y
+        self.flush()
+
     def set_selection(self, ids):
         """The display's selection (box/lasso/shift-click) as the variable `sel`."""
         g = self.graph

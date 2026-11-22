@@ -1009,3 +1009,57 @@ test("the graph's cursor shows what a click or drag would do, before pressing", 
   await page.mouse.move(px, py);
   await expect.poll(cursor).toBe("pointer");
 });
+
+test("a spring layout can run continuously while you work", async ({ page }) => {
+  const errors = await boot(page);
+  const pos = () => page.evaluate(() => { const n = [...(window as any).__guess.renderer.nodes.values()][5]; return n.x + "," + n.y; });
+  await menu(page, "Layout", "#layout-loop");
+  await expect(page.locator(".cell").last()).toContainText("forceAtlas2Layout(continuous=true)");
+  await expect(page.locator("#layout-loop")).toHaveAttribute("aria-pressed", "true");
+  const a = await pos();
+  await page.waitForTimeout(1200);
+  expect(await pos()).not.toBe(a);                                   // keeps moving
+  await run(page, "print('free', len(g.nodes))");                    // the console is free meanwhile
+  await expect(page.locator(".cell").last()).toContainText("free 402");
+  const b = await pos();
+  await page.waitForTimeout(800);
+  expect(await pos()).not.toBe(b);                                   // and still moving after a cell
+  await page.mouse.click(300, 300);
+  await page.keyboard.press("Escape");                               // Esc (on the graph) stops it
+  await expect(page.locator(".cell").last()).toContainText("stopLayout()");
+  await expect(page.locator("#layout-loop")).toHaveAttribute("aria-pressed", "false");
+  const c = await pos();
+  await page.waitForTimeout(600);
+  expect(await pos()).toBe(c);
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test("a continuous layout leaves a dragged node under the pointer until it's let go", async ({ page }) => {
+  const errors = await boot(page);
+  await run(page, "forceAtlas2Layout(continuous=true)");
+  await page.waitForTimeout(1500);                                     // let it settle a little
+  const at = () => page.evaluate(() => {
+    const r = (window as any).__guess.renderer;
+    const n = [...r.nodes.values()].find((m: any) => m.name === "v1");
+    const c = r.app.canvas.getBoundingClientRect(), v = r.getView();
+    return { wx: n.x, wy: n.y, sx: c.left + c.width / 2 + (n.x + n.w / 2 - v[0]) * v[2], sy: c.top + c.height / 2 + (n.y + n.h / 2 - v[1]) * v[2] };
+  });
+  const p = await at();
+  await page.mouse.move(p.sx, p.sy);
+  await page.mouse.down();
+  for (let k = 1; k <= 10; k++) await page.mouse.move(p.sx + 15 * k, p.sy + 10 * k);
+  await page.waitForTimeout(300);
+  const held1 = await at();
+  await page.waitForTimeout(1000);                                     // the layout keeps running meanwhile
+  const held2 = await at();
+  expect(held2.wx).toBeCloseTo(held1.wx, 6);                           // not pulled back while held
+  expect(held2.wy).toBeCloseTo(held1.wy, 6);
+  await page.mouse.up();
+  await page.waitForTimeout(1200);
+  const after = await at();
+  expect(Math.hypot(after.wx - held2.wx, after.wy - held2.wy)).toBeGreaterThan(0.5);   // free again
+  await run(page, "stopLayout()");
+  expect(await lastError(page)).toBeNull();
+  expect(errors).toEqual([]);
+});

@@ -22,7 +22,7 @@ Commands can be called without parentheses when they take no arguments
 - [ELK layouts (Eclipse Layout Kernel): layered, trees, radial, stress, force, packing](#elk-layouts-eclipse-layout-kernel-layered-trees-radial-stress-force-packing) (1)
 - [Cola layout (WebCola): constrained stress layout, no overlaps, flow](#cola-layout-webcola-constrained-stress-layout-no-overlaps-flow) (1)
 - [CiSE: clusters drawn as circles](#cise-clusters-drawn-as-circles) (1)
-- [Layouts](#layouts) (34)
+- [Layouts](#layouts) (35)
 - [Structure-aware layout (motifLayout, after LUMINA)](#structure-aware-layout-motiflayout-after-lumina) (1)
 - [More layouts: multipartite, concentric, ordered, circle packing, isometric layers](#more-layouts-multipartite-concentric-ordered-circle-packing-isometric-layers) (7)
 - [Display: hulls, legends, background, edges, labels, selection, export](#display-hulls-legends-background-edges-labels-selection-export) (44)
@@ -2046,7 +2046,7 @@ gravity (0.25) and gravityRange (3.8) tune the springs;
 nodeSeparation (75) and sampleSize (25) the spectral step. Pinned
 (fixed) nodes stay where they are. Components are packed side by side.
 
-### `forceAtlas2Layout(iterations=None, scaling=None, gravity=1.0, strongGravity=False, linLog=False, dissuadeHubs=False, preventOverlap=False, edgeWeightInfluence=1.0, gravitySources=None)`
+### `forceAtlas2Layout(iterations=None, scaling=None, gravity=1.0, strongGravity=False, linLog=False, dissuadeHubs=False, preventOverlap=False, edgeWeightInfluence=1.0, gravitySources=None, continuous=False)`
 
 forceAtlas2Layout() runs Gephi's ForceAtlas2 from the current positions
 (animated; Stop ends it early). Options, by keyword:
@@ -2063,12 +2063,16 @@ forceAtlas2Layout() runs Gephi's ForceAtlas2 from the current positions
                        hops) instead of the centre, so the graph forms
                        a cluster around each (MultiGravity ForceAtlas2)
 E.g. forceAtlas2Layout(linLog=true, preventOverlap=true)
+continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+drag nodes or change the graph and it carries on from there.
 
-### `frLayout(width=None, height=None)`
+### `frLayout(width=None, height=None, continuous=False)`
 
 frLayout() runs Fruchterman-Rheingold (as in Pajek) starting from the
 current positions and fits the result into a 1000 x 1000 grid with cells
 the size of the largest node; frLayout(width, height) uses that area.
+continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+drag nodes or change the graph and it carries on from there.
 
 ### `gemLayout(seed=0)`
 
@@ -2142,11 +2146,13 @@ moveLayout(x, y) moves the layout so its top-left corner is at (x, y).
 noverlapLayout() nudges nodes apart until none overlap (Gephi's Noverlap):
 each node is treated as a disc of ratio x its size plus margin.
 
-### `physicsLayout(iterations=None)`
+### `physicsLayout(iterations=None, continuous=False)`
 
 physicsLayout() runs the graphopt physics layout (charged nodes, springs)
 for 500 steps from the current positions (fewer on graphs over 1000
 nodes); physicsLayout(iterations=n) runs n steps.
+continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+drag nodes or change the graph and it carries on from there.
 
 ### `radialLayout(node, edges=None)`
 
@@ -2197,12 +2203,18 @@ number of passes (30), weight= an edge field used as edge lengths,
 eps= how small the last steps get (0.01), seed= the random start.
 Each connected component is laid out on its own, then packed.
 
-### `springLayout(iterations=None)`
+### `springLayout(iterations=None, continuous=False)`
 
 springLayout() runs the GUESS spring layout from the current positions
 until it settles or for 1000 iterations (fewer on graphs over 1000
 nodes: 1000 * 1000 / nodes, at least 100); springLayout(iterations=n)
 runs exactly n iterations. Stop it early with the Stop button.
+continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+drag nodes or change the graph and it carries on from there.
+
+### `stopLayout()`
+
+stopLayout() stops a layout started with continuous=true.
 
 ### `sugiyamaLayout(bends=False)`
 
@@ -2232,12 +2244,14 @@ right; spacing sets the distance between neighbouring leaves.
 weightedKKLayout() runs the JUNG Kamada-Kawai layout using shortest
 paths where each edge's `weight` is its length.
 
-### `weightedSpringLayout(minLength, maxLength, iterations=None)`
+### `weightedSpringLayout(minLength, maxLength, iterations=None, continuous=False)`
 
 weightedSpringLayout(minLength, maxLength[, iterations]) is springLayout
 with each edge's natural length mapped linearly from its `weight`
 (lowest weight -> minLength, highest -> maxLength). Iterations as for
 springLayout.
+continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+drag nodes or change the graph and it carries on from there.
 
 ## Structure-aware layout (motifLayout, after LUMINA)
 

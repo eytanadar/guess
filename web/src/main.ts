@@ -80,6 +80,23 @@ const renderer = new Renderer($("#graph"), {
       openMenu([...renderer.selection].map((id) => ["n", id] as Item), x, y);
     } else if (hit) openMenu([[hit.kind, hit.id]], x, y);
   },
+  held: (pos, done) => {
+    // only while a continuous layout runs; a release only follows a hold, so a
+    // plain drag is still one ordinary, undoable cell
+    if (done ? !holdActive : !layoutLooping) return;
+    holdActive = !done;
+    holdLatest = pos;
+    if (done) {
+      if (holdFrame) cancelAnimationFrame(holdFrame);
+      holdFrame = 0;
+      send({ type: "hold", pos, done: true });
+    } else if (!holdFrame) {
+      holdFrame = requestAnimationFrame(() => {
+        holdFrame = 0;
+        send({ type: "hold", pos: holdLatest, done: false });
+      });
+    }
+  },
   moved: (ident, x, y) => {
     // a group drag reports each node in turn; run them as one cell (one undo step).
     // The cell is hidden unless View → Show hidden commands is on, but it is in
@@ -571,6 +588,11 @@ function onUi(m: Extract<FromWorker, { type: "ui" }>) {
     case "statusbar": appChrome.statusbar(m.items); break;
     case "title": appChrome.title(m.text, m.subtitle); break;
     case "console": appChrome.console(m.mode); break;
+    case "layoutLoop":
+      layoutLooping = m.on;
+      $("#layout-loop").setAttribute("aria-pressed", String(m.on));
+      status.textContent = m.on ? `${m.label} running continuously (Esc stops it)` : "Ready";
+      break;
     case "timer": {
       clearTimer(m.id);
       const fire = async () => {
@@ -1270,6 +1292,7 @@ document.addEventListener("keydown", (ev) => {
   if (ev.key !== "Escape") return;
   closeMenu();
   if (!$("#console").contains(ev.target as Node)) {
+    if (layoutLooping) { void term.submit("stopLayout()"); return; }
     if (tool === "lens" && lens.release()) return;
     if (tool !== "select") setTool("select");
     else if (renderer.focused !== null) renderer.setFocus(null);
@@ -1477,6 +1500,12 @@ function renderLegends(legends: LegendRec[]) {
 $("#sample").addEventListener("click", () => term.submit(`makeFromGDF("sample.gdf")`));
 $("#save").addEventListener("click", () => term.submit(`saveSession("session.guess")`));
 $("#curved").addEventListener("click", () => term.submit(`curvedEdges(${renderer.curvature > 0 ? "false" : "true"})`));
+// a layout that keeps running between cells (forceAtlas2Layout(continuous=true), ...)
+let layoutLooping = false;
+let holdFrame = 0;
+let holdActive = false;
+let holdLatest: number[] = [];
+$("#layout-loop").addEventListener("click", () => term.submit(layoutLooping ? "stopLayout()" : "forceAtlas2Layout(continuous=true)"));
 $("#center").addEventListener("click", () => term.submit("center()"));
 // ---- light / dark theme: dark by default; Automatic follows the system (View menu) -----
 {

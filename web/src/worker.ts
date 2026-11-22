@@ -341,6 +341,10 @@ function handle(msg: ToWorker) {
     case "click":
       py!.runPython(`session.last_click = (${Number(msg.x)}, ${Number(msg.y)})`);
       break;
+    case "hold":
+      py!.globals.set("__hold", JSON.stringify([msg.pos, msg.done]));
+      py!.runPython("session.hold_nodes(*json.loads(__hold))");
+      break;
     case "select":
       py!.globals.set("__sel", JSON.stringify(msg.nodes));
       py!.runPython("session.set_selection(json.loads(__sel))");

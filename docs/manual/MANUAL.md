@@ -852,6 +852,18 @@ A layout command moves the nodes. Layouts animate while they run, and the
 *Stop* button or **Esc** stops them where they are. They're all under the
 *Layout* menu too, and every layout is one step for undo.
 
+The spring layouts (`forceAtlas2Layout`, `frLayout`, `springLayout`,
+`weightedSpringLayout`, `physicsLayout`) can also keep running while you
+work, as in Gephi: add `continuous=true`, or tick *Layout → Run continuously
+(ForceAtlas2)*. The console stays free; drag a node or change the graph and
+the layout carries on from there. `stopLayout()`, Esc (on the graph) or
+starting another layout stops it. Continuous running isn't recorded for undo.
+
+```python
+forceAtlas2Layout(linLog=true, continuous=true)
+stopLayout()
+```
+
 | command | what it does |
 |---|---|
 | `forceAtlas2Layout()` | Gephi's force-directed layout. Options: `linLog=true` (tighter clusters), `preventOverlap=true`, `gravity=`, `scaling=`, `dissuadeHubs=true`, `edgeWeightInfluence=`, `iterations=` |

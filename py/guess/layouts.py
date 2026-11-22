@@ -443,7 +443,70 @@ class _Layouts:
         self.graph = session.graph
         self.center_after = True
 
+    # the continuous layout, if one is running (see loop); kept on the session so
+    # the other _Layouts (Graphviz, ELK, igraph) stop it too when they start
+    @property
+    def looping(self):
+        return getattr(self.session, "_layout_loop", None)
+
+    @looping.setter
+    def looping(self, state):
+        self.session._layout_loop = state
+
+    def loop(self, label, make):
+        """Run a layout continuously, between cells: make(snapshot) gives its
+        generator, which a timer steps ~30 times a second (25 ms each), so the
+        console stays free and the layout keeps its state (FA2's speeds, ...).
+        Anything else that changes the graph (a drag, a cell, adding nodes)
+        restarts it from where the nodes are; a layout that settles waits for
+        that. Not recorded for undo: timer handlers run outside a cell."""
+        self.snap()                         # stops a running loop, clears old routes
+        state = {"make": make, "gen": None, "snap": None, "graph": None, "rev": None}
+
+        def tick():
+            s = self.session
+            if self.looping is not state:
+                return
+            changed = s.graph is not state["graph"] or s.revision != state["rev"]
+            held = getattr(s, "layout_hold", None) or {}
+            if changed or held:
+                # nodes being dragged are fixed where the pointer has them; the
+                # layout begins again around them each tick until they're let go
+                snap = _Snapshot(s.graph)
+                for nid, xy in held.items():
+                    i = snap.index.get(nid)
+                    if i is not None:
+                        snap.pos[i] = xy
+                        snap.fixed[i] = True
+                state["snap"] = snap
+                state["graph"] = s.graph
+                state["gen"] = make(snap) if snap.n else None
+            if state["gen"] is not None:
+                end = time.monotonic() + 0.025
+                P = None
+                for P in state["gen"]:
+                    if time.monotonic() > end:
+                        break
+                else:
+                    state["gen"] = None          # settled: wait for the next outside change
+                if P is not None and np.isfinite(P).all():
+                    state["snap"].write(P)
+                s.flush()
+            state["rev"] = s.revision
+
+        state["timer"] = self.session.gui.add_timer(tick, 1 / 30, True)
+        self.looping = state
+        self.session.emit({"type": "ui", "op": "layoutLoop", "on": True, "label": label})
+
+    def stop_loop(self):
+        state, self.looping = self.looping, None
+        if state is not None:
+            state["timer"].stop()
+            self.session.emit({"type": "ui", "op": "layoutLoop", "on": False, "label": ""})
+        return state is not None
+
     def snap(self):
+        self.stop_loop()                    # starting any layout ends a continuous one
         # a new layout invalidates edge routes computed by an earlier one,
         # and the drag constraints (ring, scatter axes) of the previous layout
         self.graph.clear_bends()
@@ -490,6 +553,21 @@ class _Layouts:
         finally:
             snap.write(best)
         self.finish()
+
+
+_FOREVER = 10 ** 9    # the iteration count of a continuous layout: it runs until stopped
+
+
+def _run_or_loop(lay, name, go, continuous):
+    """Run a layout once, or keep it running (continuous=true). go(snapshot)
+    gives the generator; it's called once up front either way, so bad
+    arguments fail here and not later in a timer."""
+    if continuous:
+        go(_Snapshot(lay.session.graph))
+        lay.loop(name, go)
+    else:
+        s = lay.snap()
+        lay.run(s, go(s))
 
 
 def _iters(max_iter, default):
@@ -2720,15 +2798,16 @@ def install(session):
         lay.apply(s, _radial_positions(s, g, c, valid))
 
     @cmd
-    def frLayout(width=None, height=None):
+    def frLayout(width=None, height=None, continuous=False):
         """frLayout() runs Fruchterman-Rheingold (as in Pajek) starting from the
         current positions and fits the result into a 1000 x 1000 grid with cells
-        the size of the largest node; frLayout(width, height) uses that area."""
+        the size of the largest node; frLayout(width, height) uses that area.
+        continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+        drag nodes or change the graph and it carries on from there."""
         if (width is None) != (height is None):
             raise TypeError("frLayout() or frLayout(width, height)")
         w, h = (1000, 1000) if width is None else (width, height)
-        s = lay.snap()
-        lay.run(s, _fr_gen(s, w, h, rng()))
+        _run_or_loop(lay, "frLayout", lambda s: _fr_gen(s, w, h, rng()), continuous)
 
     @cmd
     def jfrLayout():
@@ -2780,14 +2859,17 @@ def install(session):
         lay.run(s, _jung_kk_gen(s, rng(), D, 2000))
 
     @cmd
-    def springLayout(iterations=None):
+    def springLayout(iterations=None, continuous=False):
         """springLayout() runs the GUESS spring layout from the current positions
         until it settles or for 1000 iterations (fewer on graphs over 1000
         nodes: 1000 * 1000 / nodes, at least 100); springLayout(iterations=n)
-        runs exactly n iterations. Stop it early with the Stop button."""
-        s = lay.snap()
-        n = _iters(iterations, _scaled(1000, s.n))
-        lay.run(s, _spring_gen(s, n, rng(), tol=0.05 if iterations is None else -1))
+        runs exactly n iterations. Stop it early with the Stop button.
+        continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+        drag nodes or change the graph and it carries on from there."""
+        def go(s):
+            n = _iters(iterations, _FOREVER if continuous else _scaled(1000, s.n))
+            return _spring_gen(s, n, rng(), tol=0.05 if iterations is None else -1)
+        _run_or_loop(lay, "springLayout", go, continuous)
 
     @cmd
     def jSpringLayout(iterations=None):
@@ -2799,20 +2881,24 @@ def install(session):
         lay.run(s, _jspring_gen(s, n, rng(), tol=0.05 if iterations is None else -1))
 
     @cmd
-    def weightedSpringLayout(minLength, maxLength, iterations=None):
+    def weightedSpringLayout(minLength, maxLength, iterations=None, continuous=False):
         """weightedSpringLayout(minLength, maxLength[, iterations]) is springLayout
         with each edge's natural length mapped linearly from its `weight`
         (lowest weight -> minLength, highest -> maxLength). Iterations as for
-        springLayout."""
-        s = lay.snap()
-        n = _iters(iterations, _scaled(1000, s.n))
-        w = s.weight
+        springLayout.
+        continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+        drag nodes or change the graph and it carries on from there."""
         lo, hi = float(minLength), float(maxLength)
-        if len(w) and w.max() > w.min():
-            lengths = lo + (w - w.min()) / (w.max() - w.min()) * (hi - lo)
-        else:
-            lengths = np.full(len(w), lo)
-        lay.run(s, _spring_gen(s, n, rng(), lengths, tol=0.05 if iterations is None else -1))
+
+        def go(s):
+            n = _iters(iterations, _FOREVER if continuous else _scaled(1000, s.n))
+            w = s.weight
+            if len(w) and w.max() > w.min():
+                lengths = lo + (w - w.min()) / (w.max() - w.min()) * (hi - lo)
+            else:
+                lengths = np.full(len(w), lo)
+            return _spring_gen(s, n, rng(), lengths, tol=0.05 if iterations is None else -1)
+        _run_or_loop(lay, "weightedSpringLayout", go, continuous)
 
     @cmd
     def gemLayout(seed=0):
@@ -2829,12 +2915,20 @@ def install(session):
         lay.run(s, _isom_gen(s, rng(), _iters(iterations, 2000)))
 
     @cmd
-    def physicsLayout(iterations=None):
+    def physicsLayout(iterations=None, continuous=False):
         """physicsLayout() runs the graphopt physics layout (charged nodes, springs)
         for 500 steps from the current positions (fewer on graphs over 1000
-        nodes); physicsLayout(iterations=n) runs n steps."""
-        s = lay.snap()
-        lay.run(s, _physics_gen(s, _iters(iterations, _scaled(500, s.n)), rng()))
+        nodes); physicsLayout(iterations=n) runs n steps.
+        continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+        drag nodes or change the graph and it carries on from there."""
+        _run_or_loop(lay, "physicsLayout", lambda s: _physics_gen(
+            s, _iters(iterations, _FOREVER if continuous else _scaled(500, s.n)), rng()), continuous)
+
+    @cmd
+    def stopLayout():
+        """stopLayout() stops a layout started with continuous=true."""
+        if not lay.stop_loop():
+            print("no layout is running continuously")
 
     @cmd
     def mdsLayout():
@@ -2940,7 +3034,7 @@ def install(session):
     @cmd
     def forceAtlas2Layout(iterations=None, scaling=None, gravity=1.0, strongGravity=False,
                           linLog=False, dissuadeHubs=False, preventOverlap=False,
-                          edgeWeightInfluence=1.0, gravitySources=None):
+                          edgeWeightInfluence=1.0, gravitySources=None, continuous=False):
         """forceAtlas2Layout() runs Gephi's ForceAtlas2 from the current positions
         (animated; Stop ends it early). Options, by keyword:
           iterations           steps to run (default 500, fewer on big graphs)
@@ -2955,36 +3049,41 @@ def install(session):
                                node is pulled toward the nearest of them (in
                                hops) instead of the centre, so the graph forms
                                a cluster around each (MultiGravity ForceAtlas2)
-        E.g. forceAtlas2Layout(linLog=true, preventOverlap=true)"""
-        s = lay.snap()
-        anchors = None
-        if gravitySources is not None:
-            srcs = [x for x in elements_of(gravitySources) if isinstance(x, Node)] \
-                if not isinstance(gravitySources, (Node, str)) else [gravitySources]
-            idx = []
-            for x in srcs:
-                nd = _node_arg(g, x, "gravity source")
-                if nd._id in s.index and s.index[nd._id] not in idx:
-                    idx.append(s.index[nd._id])
-            if not idx:
-                raise GuessError("gravitySources should be one or more nodes, e.g. gravitySources=[v1, v2]")
-            if s.n:
-                indptr, ind = s.csr
-                D = _bfs_hops(indptr, ind, s.n, idx).astype(float)
-                D[D < 0] = np.inf
-                near = np.argmin(D, 0)
-                anchors = np.where(np.isfinite(D.min(0)), np.array(idx)[near], -1)
-                anchors[idx] = -1                 # the sources themselves feel the usual gravity
-        js = _js_fa2() if s.n >= _JS_FA2_MIN and anchors is None else None
-        if js:
-            # Barnes-Hut in JS is ~20x faster than the numpy version at this size
-            k = _iters(iterations, _scaled(500, s.n) * 3)
-            lay.run(s, _fa2_js_gen(s, k, rng(0), scaling, float(gravity), bool(strongGravity), bool(linLog),
-                                   bool(dissuadeHubs), bool(preventOverlap), float(edgeWeightInfluence), engine=js))
-            return
-        k = _iters(iterations, _scaled(500, s.n))
-        lay.run(s, _fa2_gen(s, k, rng(0), scaling, float(gravity), bool(strongGravity), bool(linLog),
-                            bool(dissuadeHubs), bool(preventOverlap), float(edgeWeightInfluence), anchors=anchors))
+        E.g. forceAtlas2Layout(linLog=true, preventOverlap=true)
+        continuous=true keeps it running between cells (stopLayout() or Esc ends it):
+        drag nodes or change the graph and it carries on from there."""
+        big = _FOREVER if continuous else None
+
+        def go(s):
+            anchors = None
+            if gravitySources is not None:
+                srcs = [x for x in elements_of(gravitySources) if isinstance(x, Node)] \
+                    if not isinstance(gravitySources, (Node, str)) else [gravitySources]
+                idx = []
+                for x in srcs:
+                    nd = _node_arg(g, x, "gravity source")
+                    if nd._id in s.index and s.index[nd._id] not in idx:
+                        idx.append(s.index[nd._id])
+                if not idx:
+                    raise GuessError("gravitySources should be one or more nodes, e.g. gravitySources=[v1, v2]")
+                if s.n:
+                    indptr, ind = s.csr
+                    D = _bfs_hops(indptr, ind, s.n, idx).astype(float)
+                    D[D < 0] = np.inf
+                    near = np.argmin(D, 0)
+                    anchors = np.where(np.isfinite(D.min(0)), np.array(idx)[near], -1)
+                    anchors[idx] = -1                 # the sources themselves feel the usual gravity
+            js = _js_fa2() if s.n >= _JS_FA2_MIN and anchors is None else None
+            if js:
+                # Barnes-Hut in JS is ~20x faster than the numpy version at this size
+                k = _iters(iterations, big or _scaled(500, s.n) * 3)
+                return _fa2_js_gen(s, k, rng(0), scaling, float(gravity), bool(strongGravity), bool(linLog),
+                                       bool(dissuadeHubs), bool(preventOverlap), float(edgeWeightInfluence), engine=js)
+            k = _iters(iterations, big or _scaled(500, s.n))
+            return _fa2_gen(s, k, rng(0), scaling, float(gravity), bool(strongGravity), bool(linLog),
+                                bool(dissuadeHubs), bool(preventOverlap), float(edgeWeightInfluence), anchors=anchors)
+
+        _run_or_loop(lay, "forceAtlas2Layout", go, continuous)
 
     @cmd
     def noverlapLayout(margin=5, ratio=1.2):
